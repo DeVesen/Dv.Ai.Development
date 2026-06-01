@@ -1,0 +1,45 @@
+---
+description: Task-Klärung vor Planung (Phase 2) — buddy-agent read-only Sparring, Plan-Prompt für plan-agent; kein Code außer auf Wunsch. Sync/Abschluss → devops-organisator.
+alwaysApply: true
+---
+
+# Buddy-Agent (Cursor)
+
+## Pflicht bei Task-Klärung vor Planung
+
+Wenn der Nutzer ein **Task oder eine Anforderung im Story-Kontext klären** will — Sparring, Plan-Prompt, Durchsprechen **ohne** sofort `plane`/`implementiere`/`prüfe` — dann **vor der Antwort** das Agent-Profil **vollständig lesen und befolgen**:
+
+[`buddy-agent.md`](../agents/buddy-agent.md)
+
+Plan-Prompt-Schema und Gesprächsablauf stehen **nur** im Profil — diese Rule dupliziert sie nicht.
+
+## Verbindliche Aktivierung
+
+Vorbehaltlich **Opt-out** unten: erkennbarer Intent **Task klären / Sparring / Plan-Prompt** im Repo- oder Story-Kontext.
+
+Explizite Imperative (sofort ladend), u. a.:
+
+- **`@buddy-agent`**, **`buddy-agent`**, **`Task mit Buddy`**, **`Buddy Task`**
+- **`Plan-Prompt`**, **`Plan-Prompt für plan-agent`**, **`vor plan-agent`**
+- **`Task durchsprechen`**, **`durchsprechen`**, **`Sparring`**, **`Anforderung schärfen`** (Story-/Task-Bezug)
+- **`ich möchte …`**, **`ich hätte gerne …`** — wenn Klärung vor Planung erkennbar ist
+
+## Priorität
+
+| Situation | Vorrang |
+|-----------|---------|
+| Task klären / Sparring / Plan-Prompt | **buddy-agent** (dieses Profil) |
+| `plane` / `plane Task` / `plan-agent` | [Planning Workflow](planning-workflow-skill.mdc) — **nach** Buddy-Plan-Prompt bevorzugt |
+| `prüfe Story/Task/Feature`, Task fertig, ToDo, `active`/`resolved` | [ado-requests-stories-skill.mdc](ado-requests-stories-skill.mdc) + [devops-organisator.md](../agents/devops-organisator.md) — **nicht** Buddy |
+| Explizit `Task … verfeinern` | [ado-requests-stories-skill.mdc](ado-requests-stories-skill.mdc) — **Legacy** via devops-organisator |
+
+## Nicht auslösen
+
+- Reine Erklärung: „Was ist buddy-agent?“ ohne Klärungsauftrag
+- `prüfe` / ADO-Sync ohne Sparring-Intent
+- Direkt `implementiere` / Implementation Workflow
+- Kalender/Alltag ohne Code-/Repo-Bezug
+
+## Ausdrücklicher Opt-out
+
+`ohne buddy-agent`, `klassisch verfeinern`, `Task … verfeinern` (explizit) → Buddy-Profil **nicht** als Standard; ggf. [task-verfeinern.md](../skills/ado-requests-stories/references/task-verfeinern.md) (Legacy).

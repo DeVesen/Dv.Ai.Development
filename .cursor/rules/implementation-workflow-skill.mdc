@@ -1,0 +1,213 @@
+---
+description: Schreibende Umsetzung im Agent-Modus — Skill laden bei implementiere/setze um/fix/einbauen/leg los, Plan ausführen, impliziter Repo-Code-Intent, @implementation-workflow, Hard Gate, Meta Schritt 2/IMP-*; Opt-out ohne implement-skill. Nicht bei reiner Erklärung oder Planung ohne Writes.
+alwaysApply: true
+---
+
+## Parameter
+
+| Parameter | Beschreibung |
+|-----------|-------------|
+| `{agent-index}` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
+| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
+
+# Implementation Workflow (Cursor)
+
+## Pflicht bei Umsetzung (Cursor Agent)
+
+Wenn du im **Agent-Modus** (oder [gleichwertig schreibend](#agent-modus--gleichwertig-schreibend)) **Umsetzung** ausführst — z. B. Code oder Projekt-Konfiguration ändern, **schreibende** Shell-Kommandos (nicht rein lesend), Repo-Zustand ändernde Tool-Aktionen, oder Subagents zur **Implementierung** starten — dann **vor der ersten schreibenden Aktion** diesen Skill lesen und bis zum Abschluss der Umsetzung befolgen:
+
+[`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md)
+
+**Discovery:** Der Skill hat `disable-model-invocation: true` — er wird **nicht** automatisch per Host-Skill-Routing geladen. Auslösung und Skill-Laden laufen über **diese Rule** (alwaysApply), [{agent-index}]({agent-index}) und explizite @-Referenzen; siehe [Pflegehinweis / Skill-Discovery](#pflegehinweis--skill-discovery).
+
+**Nicht** erforderlich bei: reinem **Ask** ohne Umsetzung, **reiner Planung** ohne Umsetzung (ohne schreibende Schritte), **read-only** Recherche oder rein informellen Antworten ohne Repo-Änderung — siehe [Nicht auslösen](#nicht-auslösen).
+
+**Abgrenzung Planung:** Enthält dieselbe Nachricht **nur** Planung ohne schreibende Umsetzung → [Planning Workflow](planning-workflow-skill.mdc). Enthält sie **auch** schreibende Umsetzung oder folgt unmittelbar ein Umsetzungsauftrag nach freigegebenem Plan → **dieser** Workflow (nicht „nur Planung“).
+
+## Verbindliche Aktivierung
+
+Vorbehaltlich **Ausdrücklicher Opt-out** unten: **Jede** erkennbare **repo- oder codebezogene Umsetzungsabsicht** im schreibenden Modus löst diesen Workflow aus — **vor** dem ersten Write **[`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md)** laden und bis zum Abschluss befolgen.
+
+Explizite Imperative (sofort ladend), u. a.: **`implementiere bitte`**, **`setze … um`**, **`führe den Plan aus`**, **`wende die Änderungen an`**, **`starte die Umsetzung`**.
+
+Gilt zusätzlich die **Implizite Aktivierung**, **Fortsetzung & Thread-Kontext**, **Plan-Freigabe**, **Explizite @-Referenzen** und **Meta-Trigger** (Abschnitte unten). Die Listen in [Trigger-Beispiele](#trigger-beispiele-nicht-abschließend) sind **Orientierung**, nicht abschließend.
+
+## Agent-Modus / gleichwertig schreibend
+
+**Agent-Modus** im Sinne dieser Rule umfasst jeden Cursor-/Host-Modus, in dem du **repo-Zustand ändernde** Aktionen ausführst (z. B. Agent, Edit mit Schreib-Tools, Composer mit Code-Edits).
+
+**Gleichwertig schreibend** = jede Session, in der du **schreibende** Tool-Calls planst oder ausführst (`Write`, `StrReplace`, `EditNotebook`, schreibende Shell, `Task` zur Implementierung, …).
+
+**Nicht** gleichwertig schreibend: reiner **Ask** / read-only Recherche ohne repo-Änderung.
+
+Bei @-Referenz auf eine **Code-Datei** plus schreibendem Imperativ (`ändere Zeile 42`, `fix in dieser Datei`) gilt **Umsetzungsabsicht** — dieser Workflow, sofern [Nicht auslösen](#nicht-auslösen) nicht greift.
+
+## Implizite Aktivierung
+
+Der Implementation Workflow gilt auch **ohne** die Wörter `implementiere` oder `setze um`, wenn der Nutzer erkennbar **repo-/codebezogene Umsetzung** verlangt (nicht rein konzeptionell ohne Codeauftrag).
+
+**Intent zählt, nicht exakte Schreibweise** (Umgangssprache, Tippfehler, EN/DE-Mix).
+
+Beispiele:
+
+- `fix das` / `behebe den Bug` / `korrigiere den Import`
+- `mach das` / `mach den Fix` / `kannst du das anpassen?`
+- `ändern` / `anpassen` / `ergänzen` / `nur die SCSS-Datei anpassen`
+- `einbauen` / `bau mir …` / `häng das an die Route`
+- `leg los` / `los geht's` / `go ahead` / `do it` / `just do it`
+- `stell das fertig` / `bring das unter` / `hake das ab` / `rüste das nach`
+- `wie besprochen` / `laut Plan` / `nutze den Plan von oben` (mit Umsetzungskontext im Thread)
+- `Ticket … erledigen` / `Story abschließen` (repo-Code)
+- `refactor` / `portiere` / `schreib um` (repo-bezogen)
+- `ship it` / `make it work` / `wire it up` / `apply changes` (EN)
+- `bitte umsetzen` / `jetzt umsetzen` (auch ohne „Plan umsetzen“)
+
+## Fortsetzung & Thread-Kontext
+
+Bei **laufender oder kürzlich abgebrochener Umsetzung** im selben Thread gilt der Workflow erneut, auch ohne erneutes `implementiere`:
+
+- `weiter` / `mach weiter` / `nächster Schritt` / `continue` (mit Implementierungskontext)
+- `nächster Slice` / `übernimm Slice IMP-*` / `Wave W1 starten`
+- `Hard Gate` erfüllt — dann Schritt 2 / Subagents
+
+Skill **erneut** laden, wenn seit dem letzten Turn längere Pause oder Scope-Wechsel unklar ist.
+
+## Plan-Freigabe
+
+Wenn im Thread ein **freigegebener Plan**, **Umsetzungs-Topologie (Phase 6)** oder ein abgestimmtes Plan-Artefakt liegt und der Nutzer Umsetzung signalisiert — auch nur mit `leg los`, `go ahead`, `wie beschrieben`, `ok, los` — gilt **immer** der Implementation Workflow, auch **ohne** Wort `implement`.
+
+**Kombi mit Planning:** `plane … und implementiere` in **einer** Nachricht → zuerst Planning bis Freigabe; danach Implementation. Steht der Plan bereits freigegeben, reicht Umsetzungsabsicht für Implementation.
+
+## Explizite @-Referenzen
+
+Wenn der Nutzer **`@implementation-workflow-skill`**, **`@.cursor/rules/implementation-workflow-skill.mdc`**, **`@.cursor/skills/implementation-workflow`** (oder sinngemäß Rule/Skill-Pfad) referenziert **und** zugleich Umsetzungs-, Code- oder Plan-Ausführungsbezug hat → Skill **muss** geladen werden.
+
+Beispiele: `Nutze @.cursor/skills/implementation-workflow`, `@file + setze um`, `gemäß @.cursor/rules/implementation-workflow-skill.mdc`.
+
+**Nicht auslösen:** reine Inhalts-/Erklärfrage zur Datei ohne Umsetzungsauftrag (`Was steht in dieser Rule?`).
+
+## Priorität gegen andere Workflows
+
+| Situation | Vorrang |
+|-----------|---------|
+| Handoff / Prompt-Zusammenfassung (`Prompt für neuen Agent`, `als Prompt zusammenfassen`, `wasserdicht`, `describe-as-prompt`) | [Describe-as-Prompt](describe-as-prompt-skill.mdc) — ob Implementation im Handoff verpflichtend ist, entscheidet **dieser** Skill |
+| Reine Planung ohne schreibende Umsetzung | [Planning Workflow](planning-workflow-skill.mdc) |
+| **Kombi:** `plane … und implementiere` (ohne Freigabe in derselben Nachricht) | Zuerst **Planning** bis Nutzer-Freigabe; danach **Implementation** |
+| Schreibende Umsetzung (`implementiere`, `setze um`, `fix`, `leg los`, Plan ausführen, implizit s. oben) | **Implementation Workflow** (diese Rule) |
+| Reine Erklärung/Review ohne Repo-Änderung | Kein Implementation Workflow (siehe [Nicht auslösen](#nicht-auslösen)) |
+| Ask / read-only | Weder Implementation noch schreibende Umsetzung |
+
+## Meta-Trigger
+
+Folgende Meta-Formulierungen aktivieren den Workflow bei **implementierungsbezogenem** Kontext (nicht isoliert ohne Umsetzungsbezug):
+
+`Hard Gate`, `Schritt 1`–`Schritt 3`, `Ausführungsform`, `Umsetzungs-Topologie`, `IMP-*`, `Verifikations-Subagent`, `Integration checkpoint`, `Starte Implementation Workflow`, `Implementation Workflow anwenden`, `Review nach Umsetzung`.
+
+**Orchestrator** / **Subagent** nur mit **Implementierungskontext** (`zur Implementierung`, `Slice IMP-*`, `Verifikations-Subagent`) — nicht allein bei Planungs-Subagents (siehe [Planning Workflow](planning-workflow-skill.mdc)).
+
+## Konflikt-Nutzeranweisungen
+
+Wenn der Nutzer Umsetzung verlangt, aber den Workflow **umgehen** will:
+
+| Nutzer sagt | Pflicht des Agenten |
+|-------------|---------------------|
+| `ohne Subagents` / `direkt hier` / `ohne Task` | **Nicht** Workflow ignorieren. **`BLOCKER: Implementation Workflow verlangt Implementierungs-Subagents`** — oder Nutzer wählt explizit [Opt-out](#ausdrücklicher-opt-out-höchste-priorität) (`ohne implementation-skill`). |
+| `ohne Verifikation` / nur schnell testen | Kein Orchestrator-`ng test`/`dotnet build` — Verifikations-Subagents oder dokumentierter Opt-out **B/C/D** im Thread per Skill. |
+| `ohne agents-skill` | Nur Opt-out für **diesen** Implementation-Workflow — **nicht** [`{agent-index}`]({agent-index}) oder andere Projektregeln ignorieren. |
+
+## Nicht auslösen
+
+- Reine Erklärung: `Was bedeutet Implementation Workflow?`, `fasse die Rule zusammen`, `was steht im Skill?`
+- Ask ohne schreibende Umsetzung: `wie würdest du das fixen?` (ohne Code schreiben)
+- Reine Planung: `plane …`, `Optionen vergleichen`, `noch nicht umsetzen` — [Planning Workflow](planning-workflow-skill.mdc)
+- Plan-Review ohne Umsetzung: `review den Plan`, `erkläre den Umsetzungsplan` (ohne Code ändern)
+- Handoff ohne Umsetzungsauftrag: `Prompt für neuen Agent` (ohne Implementierung) → Describe-as-Prompt
+- Nur Verifikation: `Plan steht — nur Tests grün machen`, `mach die Tests grün` — Verifikationspfad im Skill, **kein** neues Schritt-2-Implementieren ohne Umsetzungsauftrag
+- Meta **ohne** Implementierungskontext: isoliertes `Doing` als Status, `Subagent` allein
+- Homonyme: Domain-„Implementation“ in Doku, npm-Skript-Namen ohne Repo-Umsetzung
+- `entwickle einen Plan für …` → Planning; `entwickle die Lösung im Code` → Implementation (Intent)
+
+## Trigger-Beispiele (nicht abschließend)
+
+Nutzeranfragen können den Implementation Workflow auslösen, wenn **Umsetzungsabsicht** erkennbar ist. Orientierung (vollständig inkl. Abschnitte oben):
+
+- **Imperativ „implementiere …“:** `implementiere`, `implementiere jetzt`, `implementiere bitte`, `implementiere das`, `implementieren`; Tippfehler `implmentiere`, `implementir` — Intent zählt.
+- **„setze um …“:** `setze um`, `setz um`, `setze das um`, `setze die Änderungen um`, `Plan umsetzen`, `Umsetzung nach Plan`, isoliert `umsetzen` / `jetzt umsetzen`.
+- **Fix / Bugfix / Minimal-Edit:** `fix`, `fixe`, `behebe`, `korrigiere`, `patch`, `Bugfix`.
+- **Entwickeln / Programmieren:** `entwickle`, `programmiere`, `erstelle die Implementierung für …` — nur bei **repo-/codemäßiger** Umsetzung, nicht `entwickle einen Plan`.
+- **Änderungen / Plan ausführen:** `wende die Änderungen an`, `wende den Plan an`, `führe den Plan aus`, `arbeite den Plan ab`, `realisiere Plan`.
+- **Start / Fortsetzung:** `beginne mit der Implementierung`, `starte die Umsetzung`, `mach weiter`, `weiter`, `nächster Slice`.
+- **Einbau / Integration:** `baue das ein`, `bau mir …`, `integriere das`, `einbauen`, `häng an`.
+- **Refactor / Migration / Port:** `refactor`, `refactoren`, `portiere`, `migration` (mit Code-Bezug), `schreib um`.
+- **Umgangssprache DE:** `mach das`, `leg los`, `los geht's`, `stell fertig`, `erledige Ticket`, `schreib den Code`, `codier das`, `trag die Änderung ein`.
+- **Englisch:** `execute plan`, `apply plan`, `implement the plan`, `apply changes`, `make it work`, `ship it`, `go ahead`, `do it`, `wire it up`, `continue with implementation`, `carry out the plan`.
+- **@-Referenz / Skill-Pfad:** `@implementation-workflow-skill`, `@.cursor/rules/implementation-workflow-skill.mdc`, `@.cursor/skills/implementation-workflow`, `Nutze den Skill implementation-workflow`.
+- **Meta / Workflow:** `Implementation Workflow`, `Hard Gate`, `Schritt 2`, `Umsetzungs-Topologie`, `IMP-*`, `Verifikations-Subagent`, `Subagent` zur **Implementierung**, `ad-hoc implement in Agent mode`, `schreibende Änderungen`, commit-relevante Edits.
+- **Implizit / Kontext:** siehe [Implizite Aktivierung](#implizite-aktivierung), [Plan-Freigabe](#plan-freigabe), [Fortsetzung & Thread-Kontext](#fortsetzung--thread-kontext).
+
+## Keine Abweichung (verbindlich)
+
+Diese Regeln sind **nicht optional** und dürfen während einer Umsetzung im Agent-Modus **nicht** umgangen werden:
+
+- **Implementierung** erfolgt **ausschließlich** über **1–10 Implementierungs-Subagents** — **verboten:** der Hauptagent schreibt Produktcode während „Implementierung“ ohne Subagents. Ist das Task-Tool nicht verfügbar: **`BLOCKER`** im Chat melden, **nicht** still im Single-Agent-Modus ersetzen.
+- **Verifikation** erfolgt **ausschließlich** über dedizierte **Verifikations-Subagents** pro geändertem Stack — **verboten:** der Hauptagent führt `ng build`, `npm test`, `dotnet build`, `dotnet test` oder gleichwertige Abschluss-Verifikation **selbst** aus — **auch** nach Subagent-**FAIL**, **auch** nach eigenem Integrations-Fix (Import entfernen, Merge, Konfiguration). Ist das Task-Tool nicht verfügbar: **`BLOCKER`** melden, **nicht** still ersetzen durch Orchestrator-Build/Test.
+- **Nach** Verifikations-Subagent **FAIL** oder **Orchestrator-Integrations-Edit:** **neuen** Verifikations-Subagent starten (Fix-Kontext im Prompt); **kein** Orchestrator-Fix-Schleife mit direktem Log-Lesen — siehe [Orchestrator-Nachlauf](genericrtk-output-filter.mdc#orchestrator-nachlauf-hauptagent).
+- **Vor** Start der Verifikationsphase und bei **jedem** Build-/Test-Lauf: [`genericrtk-output-filter.mdc`](genericrtk-output-filter.mdc) — bei anwendbarem Kommando im Scope **zwingend** genericRTK; bei nicht erreichbarem MCP: [Hard Stop](genericrtk-output-filter.mdc#hard-stop--mcp-nicht-erreichbar) — **Stopp**, Slice **nicht** als verifiziert abschließen.
+
+## Subagents und Modellwahl (Implementierung + Verifikation)
+
+**Agent-Profile (Pflicht):** [`.cursor/agents/`](../../agents/) — **Modellwahl nur in den `.md`-Dateien** (Abschnitt **`## Modell`** primär, sonst YAML), nicht in Rule/Skill duplizieren.
+
+**Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; `modelUsed` nennen.
+
+| Rolle | Agent-Typ | Profil |
+|-------|-----------|--------|
+| Implementierung Schritt 2 | `implement-agent` | [implement-agent.md](../agents/implement-agent.md) |
+| Verifikation / Abschlussprüfung pro Stack | `verify-agent` | [verify-agent.md](../agents/verify-agent.md) |
+
+**Implementierung (verbindlich):**
+
+- Umsetzung **ausschließlich** über **1–10** **`implement-agent`**-Läufe (kein Single-Agent-Implementierungsmodus).
+- **Task-Prompt:** Orchestrator übernimmt den passenden Abschnitt aus [implementation-workflow/references/subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — bei Build/Test **Implementierer (Slice — Build/Test + genericRTK)**; nicht frei formulieren ohne genericRTK-Pflicht.
+- **Build/Test slice-relevant** in Schritt 2 erlaubt (`dotnet`/`ng`/`npm` build & test, Unit-Tests im Slice) — siehe [implement-agent.md](../agents/implement-agent.md); **genericRTK** pro Lauf; bei unklarer MCP-Ausgabe **Nutzer informieren** (Filter nachschärfen).
+- **Stack-weite Abschlussprüfung** nur via **`verify-agent`** nach Integration-Checkpoint.
+- **Parallelität (Implementierung):** wenn Plan + Hard Gate parallele Wellen erlauben → parallel bevorzugt — [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md).
+
+**Verifikation (Abschlussprüfung, nach Integration-Checkpoint):**
+
+- Pro geändertem Stack **ein** **`verify-agent`** (Abschlussprüfer / Gesamt-Tester). Kein Agent für unveränderte Stacks.
+- **Task-Prompt:** Vorlage **Verifikation pro Stack** in [implementation-workflow/references/subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md).
+- Stack-weiter Build-Fix dann Unit-Test-Fix (max. 8 Turns); genericRTK Pflicht — [`genericrtk-output-filter.mdc`](genericrtk-output-filter.mdc); unklare MCP-Ausgabe → **Nutzer informieren**.
+
+### Pflicht-Checkliste (Verifikation, kurz)
+
+- Pro **geändertem** Stack ein **Verifikations-Subagent**; **Phase 1** (Build mit Fix-Schleife), dann **Phase 2** (Unit-Tests mit Fix-Schleife) — Details: **[`{verification-commands}`]({verification-commands})** und [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md).
+- Nach **jedem** Build-/Test-Lauf: **[`genericrtk-output-filter.mdc`](genericrtk-output-filter.mdc)** inkl. **Ausführungs-Checkliste (Schritte 1, 1b, 2–8)** und **[Verifikations-Matrix](genericrtk-output-filter.mdc#verifikations-matrix)** (eine Zeile pro Shell-Lauf); vor jedem MCP **`Rufe genericRTK …`** in der **sichtbaren** Antwort; Schritt **1b**: kein Reasoning aus Shell-Return vor `filter_*`.
+- **Hauptagent/Orchestrator:** Verifikation **nur** via Verifikations-Subagents — **kein** eigenes `ng build`/`ng test` ohne Subagent; Abschluss nur mit **vollständiger Matrix** aller Läufe **nach letztem Code-Edit** (nicht Representative-Filter; kein Abschluss-MCP mit Kurz-`raw`).
+- **Verboten:** Abschluss „Build/Test OK“ / „verifiziert“ ohne nachweisliche genericRTK-Kette **pro** applicable Lauf (mehrfaches `ng test` = mehrfach MCP); inhaltliche Diagnose/Freigabe ohne intern gelesenes MCP-Ergebnis (in-scope); Orchestrator liest Capture/Shell-UI **vor** `filter_*` (Schritt **1b** in genericRTK-Regel).
+- **Verboten:** Subagent-Matrix als Abschluss, wenn der Orchestrator **danach** noch Repo-Dateien geändert hat — erneute Verifikation Pflicht.
+- MCP bei applicable Kommando **nicht** erreichbar: **`BLOCKER: genericRTK nicht erreichbar`** — **Stopp**, **keine** manuelle Fortsetzung; Orchestrator schließt **nicht** als verifiziert ab.
+
+## Pflegehinweis / Skill-Discovery
+
+**Entscheidung `disable-model-invocation`:** **Option A (verbindlich)** — `true` beibehalten im Skill. Der Host invoked den Skill **nicht** automatisch; **diese Rule** (alwaysApply), vollständiges `read_file` des Skills bei erkanntem Umsetzungsintent und [{agent-index}]({agent-index}) tragen die Discovery. **Nicht** auf `false` wechseln ohne explizite Host-/Projektentscheidung (Risiko Doppel-Laden mit alwaysApply).
+
+**Trigger doppelt pflegen:** Kanonische Trigger-Liste in **dieser Rule**; kompakte Spiegelung in Skill-YAML-`description` und {agent-index}-Zeile Implementation Workflow. Nach Änderungen: Rule ⊇ Skill-description ⊇ AGENTS-Kurzliste (Schlüsselwörter `implementiere`, `setze um`, `fix`, `leg los`, `@implementation-workflow`, `Hard Gate`, `ohne implement-skill`).
+
+## Ausdrücklicher Opt-out (höchste Priorität)
+
+Wenn der Nutzer **ausdrücklich** nur den **Implementation Workflow** (diesen Skill / diese Ausführungsregel) ausschließt, z. B.:
+
+- `ohne implement-skill`
+- `ohne implmentations-skill` / `ohne implementations-skill`
+- `ohne implementation-skill` / `ohne umsetzungs-skill` / `ohne umsetzungsworkflow`
+- `ohne programmier-skill`
+- `skip implementation` / `no implementation workflow`
+- `Implementation Workflow nicht` / `nicht verwenden` / `Implementation Workflow ignorieren`
+- sinngleich eindeutig: diesen Skill **bewusst ignorieren**
+
+**Kein** Workflow-Opt-out (nur `BLOCKER` oder expliziter Skill-Opt-out oben): `ohne Subagents`, `direkt hier`, `ohne Task`, `ohne Verifikations-Subagent`.
+
+**`ohne agents-skill`:** nur dieser Implementation-Workflow — **nicht** [`{agent-index}`]({agent-index}) oder andere Projektregeln.
+
+Dann: **[`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md)** nicht laden und nicht anwenden.

@@ -1,0 +1,34 @@
+---
+description: HTML-Handoffs mit Mermaid (Sequence + Modelle/Methoden) folgen dem Describe-as-HTML-Prompt-Skill; Wasserdicht und Planning-Pflicht wie Describe-as-Prompt.
+alwaysApply: true
+---
+
+# Describe-as-HTML-Prompt (Cursor)
+
+## Pflicht bei HTML-Handoff-/Prompt-Anfragen
+
+Wenn der Nutzer eine **Unterhaltung als HTML** für einen Folge-Agenten verdichten will — inkl. **Mermaid-Sequence** für System-/Service-Abläufe und **Mermaid-Klassen-/Strukturdiagrammen** für Modelle und Methoden — oder Formulierungen im Sinne von **Describe-as-HTML-Prompt** nutzt, dann **vor der Antwort** diesen Skill **vollständig lesen und befolgen**:
+
+[`describe-as-html-prompt/SKILL.md`](../skills/describe-as-html-prompt/SKILL.md)
+
+**Wasserdicht-Modus** und **Planning obligation** entscheiden sich wie beim Describe-as-Prompt — siehe [`describe-as-prompt/SKILL.md`](../skills/describe-as-prompt/SKILL.md); diese Regel dupliziert die Logik nicht.
+
+## Trigger-Beispiele (nicht abschließend)
+
+- **HTML / Zielformat:** `describe-as-html-prompt`, `Describe-as-HTML-Prompt`, `beschreibe als HTML`, `beschreib als HTML`, `als HTML zusammenfassen`, `in HTML zusammenfassen`, `in HTML prompt zusammenfassen`, `HTML Prompt`, `HTML-Prompt`, `html prompt für`, `HTML Handoff`, `Handoff als HTML`.
+- **Diagramme (oft kombiniert mit obigen):** `sequenceDiagram`, `Mermaid`, `Ablauf als Diagramm`, `Frontend zu Backend diagrammieren`, `Service zu Service`.
+- **Meta:** `wie describe-as-prompt aber HTML`, `Prompt aber als HTML-Datei`.
+
+## Abgrenzung zu Describe-as-Prompt
+
+| Aspekt | Describe-as-Prompt | Describe-as-HTML-Prompt |
+|--------|-------------------|-------------------------|
+| Artefakt (Section B) | Ein fenced Block `markdown` | Ein fenced Block `html` (vollständiges Dokument) |
+| Ablauf-Diagramme | optional, frei | bei grenzüberschreitenden Flows im Thread **sequenceDiagram** (Pflicht nach Skill) |
+| Modelle/Methoden | optional, frei | bei genannten Typen/Signaturen **`classDiagram`** bevorzugt (Pflicht nach Skill) |
+
+Nutzt der Nutzer **klassische** Copy-Paste-**Markdown**-Prompt-Trigger ohne HTML-Bezug — [.cursor/rules/describe-as-prompt-skill.mdc](.cursor/rules/describe-as-prompt-skill.mdc).
+
+## Zusammenspiel mit anderen Regeln
+
+Der [Planning Workflow](.cursor/rules/planning-workflow-skill.mdc) gilt separat, wenn der Nutzer **plant**; dieser Skill regelt nur **Format (HTML + Mermaid)** und **Handoff-Payload** analog Describe-as-Prompt.

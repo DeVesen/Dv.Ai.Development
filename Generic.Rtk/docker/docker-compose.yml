@@ -1,0 +1,10 @@
+services:
+  dv-generic-rtk-mcp:
+    build:
+      context: ..
+      dockerfile: Generic.Rtk/Dockerfile
+      args:
+        BUILD_NUMBER: ${BUILD_NUMBER:-0}
+    image: dv-generic-rtk-mcp:local
+    stdin_open: true
+    tty: false

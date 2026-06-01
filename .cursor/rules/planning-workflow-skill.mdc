@@ -1,0 +1,146 @@
+---
+description: Planungsaufgaben — Skill laden bei plane/Plan/Roadmap/Umsetzungsplan, plane die/das … (Korrektur, Erweiterung, Anpassung), implizitem Vorgehen (Optionen, Strategie, Migration, Refactor), @planning-workflow-Referenz, Plan Mode mit Code-Bezug, Meta-Phasen; Opt-out ohne plan-skill. Nicht bei reiner Erklärung oder Implementierung.
+alwaysApply: true
+---
+
+# Planning Workflow (Cursor)
+
+## Pflicht wenn geplant wird
+
+Wenn der Nutzer **planen** will (mehrstufig, Architektur, Vorgehen, Umsetzungsplan, Review von Optionen) – nicht bei reinen Trivial-Einzeilern oder rein informativen Fragen ohne Planbedarf – dann **vor** Plan-Erstellung oder Plan-Optionen **diesen Skill lesen und befolgen**:
+
+[`planning-workflow/SKILL.md`](../skills/planning-workflow/SKILL.md)
+
+## Verbindliche Aktivierung
+
+Vorbehaltlich **Ausdrücklicher Opt-out** unten: Formulierungen wie **`Plane bitte`**, **`plane bitte`**, **`plane mir`**, **`plane für mich`**, **`plane jetzt`**, **`plane die Korrektur`**, **`plane die Erweiterung`**, **`plane die Anpassung`**, **`plane das`** / **`plane das …`**, **`ich möchte einen Plan`**, **`ich wünsche einen Plan`**, **`einen Plan …`** (bei erkennbarer Planungsabsicht) oder vergleichbare Imperative mit **„plane …“** in Planungsabsicht **lösen diesen Workflow aus** — der Skill ist zu laden und der Ablauf in `SKILL.md` ist einzuhalten.
+
+**Explizit auslösend** (auch mit angehängtem Kontext `…`): **`plane die`** + Änderungsart (*Korrektur*, *Erweiterung*, *Anpassung*, *Migration*, *Refactor*, …) und **`plane das`** (+ optionaler Bezug). Intent zählt; Groß-/Kleinschreibung und Tippfehler sind unkritisch.
+
+Gilt zusätzlich die **Implizite Aktivierung**, **Plan Mode / Cursor-Kontext**, **Explizite @-Referenzen** und **Meta-Trigger** (Abschnitte unten).
+
+## SubAgents und Modelle (Pflicht bei diesem Workflow)
+
+- **Agent-Profile:** [`.cursor/agents/`](../../agents/) — Modellwahl **nur** in den jeweiligen `*.md` (Abschnitt **`## Modell`** primär, sonst YAML). Skill-Abschnitt **Subagent-Typen** in [`planning-workflow/SKILL.md`](../skills/planning-workflow/SKILL.md) bzw. [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md).
+- **Planning — Phase 3, 4b, 5:** `plan-agent` (Orchestrator), `plan-agent-scout`, `plan-agent-topic-planner`, `plan-agent-optimist`, `plan-agent-pessimist`, `plan-agent-normalo` — siehe Planning-Skill.
+- **Phase 3 (Scout)**, **Phase 4b (Topic-Planer)**, **Phase 5 (Review):** jeweiliger Agent-Typ aus [../../agents/](../../agents/); **Parallelität nur innerhalb derselben Stufe** (siehe [Phasen-Gates](#phasen-gates-verbindlich)); **Verboten:** Rollensimulation, `explore`/`generalPurpose` fuer Planung.
+- **Modell:** **nicht** in dieser Rule duplizieren — siehe Agent-`.md` (Abschnitt **`## Modell`** primär, sonst YAML).
+- **Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; `modelUsed` nennen.
+- **Phase 4a/4c (Hauptagent):** Schnittstellen-Design (4a) und Merge zur Arbeitsversion (4c) — Modell = Nutzer-Chat. **Phase 4b:** Topic-Planer **parallel untereinander** bevorzugt, sofern der Host es erlaubt — **erst nach** abgeschlossener Phase 3 und 4a.
+- **Phase 5 (Review):** Optimist, Pessimist und Normalo **parallel untereinander** bevorzugt — **erst nach** abgeschlossener Phase 4 (4b + 4c-Arbeitsversion); Details im Skill (kein Rollenspiel durch den Hauptagenten).
+
+## Phasen-Gates (verbindlich)
+
+Strikte Reihenfolge — **Stufe N+1 erst, wenn Stufe N vollständig abgeschlossen** (alle Subagents der Stufe zurück, ggf. Merge durch Orchestrator):
+
+| Stufe | Inhalt | Start erst nach … |
+|-------|--------|-------------------|
+| **1** | Anforderung prüfen (Phase 1–2); bei Mehrdeutigkeit **Fragen** an Nutzer | — |
+| **2** | Scouts (Phase 3): Code **fokussiert auf die Anforderung** — kein blindes Repo-Scouting | Stufe 1 |
+| **3** | Plan (Phase 4a → 4b → 4c): Arbeitsversion für Review | Stufe 2 (+ Scout-Merge, 4a) |
+| **4** | Review (Phase 5): drei Perspektiven auf **Arbeitsversion aus 4c** | Stufe 3 |
+| **5** | Synthese & Freigabe (Phase 6) | Stufe 4 |
+
+**Verboten (Orchestrator):** Review (Phase 5) starten, während Topic-Planer (4b) noch laufen; Plan/4b starten, während Scouts noch laufen; Review auf **vorläufigem** Scout- oder 4a-Entwurf statt **fertiger 4c-Arbeitsversion**. Parallelität **nur innerhalb** derselben Stufe (mehrere Scouts, mehrere Topic-Planer, drei Reviewer).
+
+## Finales Planpaket und parallele Umsetzung
+
+Wenn **Implementierung** vorgesehen ist, enthält das **finale Planpaket (Phase 6)** einen verbindlichen Abschnitt **„Umsetzungs-Topologie (Implementation Workflow)“** — nicht nur einen optionalen Topologie-Hinweis: 1–10 Implementierungs-Slices mit IDs gemäß **`IMP-FE-{Bereich}-…` / `IMP-BE-{ServiceKürzel}-…`** (Details: Skill-Abschnitt **Slice-ID-Konvention**), Wellen, welche Slices **parallel** laufen dürfen, Blocking, contract-first, Orchestrator-Integration; Verweis auf [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md) (Ausführungsform / Schritt 2). **Single-Slice** nur mit **expliziter Begründung**. Mindestschema und Trivial-Kurzform: [`planning-workflow/SKILL.md`](../skills/planning-workflow/SKILL.md) Phase 6.
+
+## Implizite Aktivierung
+
+Der Planning Workflow gilt auch **ohne** das Wort `Plan` oder `plane`, wenn der Nutzer erkennbar eine **vorangestellte** Vorgehens-, Architektur-, Refactor-, Migrations-, Risiko-, Optionen- oder Arbeitspaket-Planung verlangt (repo-/codebezogen, nicht rein konzeptionell ohne Umsetzungsbezug).
+
+**Intent zählt, nicht exakte Schreibweise** (Umgangssprache, Tippfehler, EN/DE-Mix).
+
+Beispiele:
+
+- `Wie gehen wir hier am besten vor?` / `wie würdest du vorgehen?`
+- `Sag mir den sichersten Ansatz für diesen Umbau.` / `wie packen wir das an?`
+- `Nicht direkt implementieren` / `nicht direkt loslegen` / `erst sauber durchdenken` / `noch nicht umsetzen` / `erst abstimmen`
+- `Welche Schritte brauchen wir, bevor wir das anfassen?`
+- `Skizziere die Strategie für die Migration.` / `Vorgehen skizzieren`
+- `Optionen vergleichen` / `welche Optionen haben wir?` / `Trade-offs`
+- `Scope klären` / `Akzeptanzkriterien und Umsetzungsschritte`
+- `Teil das sinnvoll in Arbeitspakete` / `Subagent-Arbeitspakete`
+- `lass uns planen` / `lass uns das planen`
+
+## Plan Mode / Cursor-Kontext
+
+Wenn **Cursor Plan Mode** aktiv ist und der Nutzer eine **repo- oder codebezogene** Änderung, Architekturentscheidung, Refactor-, Feature- oder Vorgehensfrage stellt, gilt dies **standardmäßig** als Planungsintent — Skill laden, außer [Nicht auslösen](#nicht-auslösen) oder **Ausdrücklicher Opt-out**.
+
+Beispiele: `Plan Mode`, `Plan-Modus`, `im Plan Mode`, `Cursor Plan`, `Plan mode: erst mal Vorgehen für diese Änderung`, `Wie würdest du das umbauen?` (im Plan Mode mit Code-/Feature-Bezug).
+
+**Abgrenzung:** Cursor Plan Mode / CreatePlan-Tool allein ersetzen nicht den Phasenablauf — bei Planungsauftrag trotzdem diesen Skill befolgen.
+
+## Explizite @-Referenzen
+
+Wenn der Nutzer **`@planning-workflow-skill`**, **`@.cursor/rules/planning-workflow-skill.mdc`**, **`@.cursor/skills/planning-workflow`** (oder sinngemäß Rule/Skill-Pfad) referenziert **und** zugleich Planungs-, Vorgehens-, Architektur-, Refactor- oder Umsetzungsplan-Frage stellt → Skill **muss** geladen werden.
+
+Beispiele: `Nutze @.cursor/skills/planning-workflow für …`, `@file + plane die Anpassung`, `gemäß @.cursor/rules/planning-workflow-skill.mdc vorgehen`.
+
+**Nicht auslösen:** reine Inhalts-/Erklärfrage zur Datei ohne Planungsauftrag (`Was steht in dieser Rule?`).
+
+## Priorität gegen andere Workflows
+
+| Situation | Vorrang |
+|-----------|---------|
+| Handoff / Prompt-Zusammenfassung (`Prompt für neuen Agent`, `als Prompt zusammenfassen`, `wasserdicht`, `describe-as-prompt`) | [Describe-as-Prompt](describe-as-prompt-skill.mdc) — ob Planning im Handoff verpflichtend ist, entscheidet **dieser** Skill |
+| Schreibende Umsetzung (`implementiere`, `setze um`, `führe den Plan aus`, `wende den Plan an`) | [Implementation Workflow](implementation-workflow-skill.mdc) |
+| **Kombi:** `plane … und implementiere` | Zuerst **Planning** bis Nutzer-Freigabe des Plans; danach Implementation |
+| Reine Erklärung/Review eines **vorhandenen** Plans ohne Neuerstellung | Kein Planning Workflow (siehe [Nicht auslösen](#nicht-auslösen)) |
+| Reine Planung ohne Repo-Änderung (Ask, Plan Mode read-only) | Planning Workflow; **nicht** Implementation Workflow |
+
+## Meta-Trigger
+
+Folgende Meta-Formulierungen aktivieren den Workflow bei **planungsbezogenem** Kontext (nicht isoliert ohne Planungsbezug):
+
+`Phase 1`–`Phase 6`, `Phase 4a`, `Phase 4b`, `Phase 4c`, `Scout`, `Codebereichs-Scouting`, `Topic-Planer`, `Topic-Map`, `Schnittstellen-Design`, `Drei-Perspektiven-Review`, `Optimist`, `Pessimist`, `Normalo`, `Review-Digest`, `Synthese`, `Umsetzungs-Topologie`, `Implementation Slices`, `Orchestrator-Plan`, `Executor-Empfehlung`, `Komplexitätsbewertung`, `Starte Planning Workflow`, `Planning Workflow anwenden`.
+
+**Orchestrator** / **Subagent** nur mit Planungskontext (`im Planungsworkflow`, `für den Plan`, `Slice-Topologie`) — nicht allein bei Implementierungs-Subagents.
+
+## Nicht auslösen
+
+- Reine Erklärung: `Was bedeutet Planning Workflow?`, `fasse die Rule zusammen`, `was steht im Skill?`
+- Vorhandener Plan ohne Neuerstellung: `erkläre den Umsetzungsplan`, `review den Plan auf Widersprüche` (ohne neuen Plan)
+- Implementation: `setze den Plan um`, `führe den Plan aus`, `Plan steht — nur Tests grün machen`
+- Handoff ohne Planungsauftrag: `erstelle einen Prompt für einen neuen Agenten` (ohne Planung) → Describe-as-Prompt
+- Homonyme / Nicht-Planungsartefakt: Domain-Objekt `Plan`, Flugplan, `Roadmap`-UI-Komponente, npm-`plan`-Script
+- Kalender/Alltag: `plane nächste Woche Urlaub` (ohne Code-/Repo-Bezug)
+- Meta-Rollen **ohne** Planungskontext: isoliertes `Normalo` / `Orchestrator` / `Pessimist`
+- Weiche Verben nur für Struktur ohne Plan: `strukturiere die README` / `organisiere Ordner` ohne Plan-/Roadmap-/Umsetzungsartefakt
+- `Konzept` nur bei **Begriffserklärung** (`Erklär mir das Konzept von Signals`) — nicht bei `Konzept für Migration ausarbeiten`
+- `quick plan` / `Plan` nur als **Kurzfassung** ohne Feature-/Architektur-/Refactor-Bezug
+
+## Trigger-Beispiele (nicht abschließend)
+
+Nutzeranfragen können den Planning Workflow auslösen, wenn der Planungsintent erkennbar ist. Orientierung (vollständig inkl. Abschnitte oben):
+
+- **Imperativ „plane …“:** `plane`, `plane jetzt`, `plane bitte`, `plane mir`, `plane für mich`, `Plane das`, `plan mir`; `plane …` allein nur bei erkennbarer Planungsabsicht.
+- **Imperativ „plane die/das …“ (Änderungsbezug):** `plane die Korrektur`, `plane die Erweiterung`, `plane die Anpassung` (jeweils mit oder ohne angehängten Kontext `…`); `plane das`, `plane das …`; sinngleich `plane die Migration`, `plane die Anpassung am Dialog`, `plane die Korrektur für …` — **immer** Planungsintent, sofern kein [Opt-out](#ausdrücklicher-opt-out-höchste-priorität) und nicht [Kalender/Alltag ohne Code-Bezug](#nicht-auslösen).
+- **Kurz-/Schnell-Formulierungen:** `quick plan`, `schneller Plan`, `kurzer Plan`; `nur ein schneller Plan`, `mach mir einen kurzen Plan`, `quick plan für …`, `schnell planen`, `lass uns planen` — bei Feature-/Architektur-/Refactor-Bezug.
+- **Plan erstellen / erzeugen (Deutsch):** `ich möchte einen Plan`, `ich wünsche einen Plan`, `einen Plan …`, `erstelle (mir) einen Plan`, `mache Plan`, `mach einen Plan`, `mach mir einen Plan`, `lege Plan an`, `Plan anlegen`, `Plan erstellen`, `generiere einen Plan`, `entwickle einen Plan für`, `entwirf einen Plan für`, `skizziere einen Plan für`, `gib mir einen Plan für`, `ich brauche einen Plan für`, `kannst du einen Plan erstellen für`.
+- **Planung als Prozess / Hilfe:** `starte Planung`, `beginne Planung`, `hilf mir bei der Planung von`, `hilf mir beim Planen von`, `unterstütze mich bei der Planung von`, `ich möchte … planen`, `ich will … planen`, `kannst du … planen`, `planend vorgehen`, `nur planend`.
+- **Fragen / Gliederung / implizit:** `Was wäre der Plan für`, `Schritt-für-Schritt-Plan für`, `glieder mir einen Plan`, `mach mir einen Fahrplan`, `Wie gehen wir vor`, `am besten angehen`, `Welche Reihenfolge`, `Was wäre eine sinnvolle Roadmap`.
+- **Optionen / Architektur / Refactor / Migration:** `Optionen vergleichen`, `welche Optionen`, `Trade-offs`, `Strategie`, `architektonisch`, `Systemdesign`, `Architekturplan`, `refactoren`, `Refactoring-Vorgehen`, `Refactor-Plan`, `Migration`, `Migrationsstrategie`, `technische Konzeption`, `Design Doc`.
+- **Nomen / Artefakte:** `Planung`, `planen`, `Konzept` (Entwurf/Vorgehen), `Vorgehen`, `Roadmap`, `Roadmap erstellen`, `Umsetzungsplan`, `Umsetzungsschritte`, `bevor wir coden`.
+- **Englisch:** `create plan`, `setup plan`, `auto-plan`, `quick plan`, `write a plan`, `draft a plan`, `how should we approach`, `outline the steps`, `break down into phases`, `approach`, `migration path`, `design the`, `planning session`.
+- **@-Referenz / Skill-Pfad:** `@planning-workflow-skill`, `@.cursor/rules/planning-workflow-skill.mdc`, `@.cursor/skills/planning-workflow`, `Nutze den Skill planning-workflow`.
+- **Plan Mode:** siehe Abschnitt [Plan Mode / Cursor-Kontext](#plan-mode--cursor-kontext).
+- **Workflow / Rollen / Meta:** `Planungsworkflow`, `Planning Workflow`, `parallel planen`, `Phase 3`, `Phase 4a`, `Phase 4b`, `Phase 4c`, `Scout`, `Topic-Planer`, `Schnittstellen-Design`, `Drei-Perspektiven-Review`, `Umsetzungs-Topologie`, `Review-Digest`; `Optimist` / `Pessimist` / `Normalo` / `Orchestrator` / `Subagent` nur im Planungskontext.
+- **Weiche Verben (nur bei erkennbarem Planungsziel):** `strukturiere`, `organisiere`, `konzipiere`, `bereite … vor` — wenn Plan, Planung, Roadmap oder Umsetzungsvorgehen gemeint ist.
+- **Kombi Planung + Umsetzung:** `plane … und implementiere` → zuerst Planning bis Freigabe.
+
+## Ausdrücklicher Opt-out (höchste Priorität)
+
+Wenn der Nutzer **ausdrücklich** den Planning-Skill ausschließt, z. B.:
+
+- `bitte ohne plan-skill` / `ohne plan-skill`
+- `ohne planning-workflow` / `ohne planning-skill` / `ohne planungsworkflow`
+- `Planning Workflow nicht` / `nicht verwenden` / `Planning Workflow ignorieren`
+- `skip planning` / `no planning workflow`
+- sinngleich eindeutig: Skill **bewusst ignorieren**
+
+Dann: **[`planning-workflow/SKILL.md`](../skills/planning-workflow/SKILL.md)** nicht laden und nicht anwenden (kein Phasen-1–6-Ablauf aus diesem Skill).
+
+**Nur** dieser Opt-out betrifft den Planning Workflow (nicht z. B. den Implementation Workflow — dort gilt die eigene Opt-out-Regel unter `.cursor/rules/implementation-workflow-skill.mdc`).

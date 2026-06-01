@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "genericRTK": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "genericrtk-mcp:local"
+      ],
+      "transport": "stdio"
+    },
+    "ado": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "<IhreOrganisation>",
+        "-d",
+        "core",
+        "work",
+        "work-items"
+      ]
+    }
+  }
+}

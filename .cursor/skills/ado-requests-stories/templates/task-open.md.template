@@ -1,0 +1,55 @@
+# {{taskTitle}}
+
+← [[../UserStory-{{workItemId}}-{{storySlug}}|Story #{{workItemId}}]]
+
+**Status:** Offen · **Priorität:** {{priority}}
+
+## Anforderung
+
+{{requirementText}}
+
+## Offene Fragen
+
+{{openQuestions}}
+
+## Story-Bezug
+
+{{originalText}}
+
+## Akzeptanzkriterien
+
+### Lesbar
+
+- _(aus Anforderung ableiten)_
+
+### Planung
+
+- [ ] **AC-P1:** {{acPlanningPlaceholder}}
+
+### Umsetzung
+
+- [ ] **AC-I1:** {{acImplementationPlaceholder}}
+
+### Testabsicherung
+
+| AC | Test / Spezifikation | Status |
+|----|----------------------|--------|
+| AC-P1 | _(noch zu benennen)_ | offen |
+| AC-I1 | _(noch zu benennen)_ | offen |
+
+## Umsetzung
+
+_(Wird bei Implementierung gefüllt — nicht durch `verfeinern` überschreiben.)_
+
+## Nutzer-ToDos
+
+{{userTodos}}
+
+## Möglichkeiten
+
+- `@buddy-agent Task {{taskDateistamm}} in Story {{workItemId}} — Plan-Prompt, kurz, ohne Code`
+- `markiere Task {{taskDateistamm}} in Story {{workItemId}} als fertig`
+- `ToDo für Task {{taskDateistamm}} in Story {{workItemId}}: `
+- `Task {{taskDateistamm}} in Story {{workItemId}} verfeinern`
+- `plane Task {{taskDateistamm}} in Story {{workItemId}}`
+- `Commit-Vorschlag für Task {{taskDateistamm}} in Story {{workItemId}}`

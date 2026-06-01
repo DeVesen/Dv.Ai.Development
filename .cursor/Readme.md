@@ -85,6 +85,9 @@ Jedes Package bündelt Rule(s), Skill-Ordner, Agent-Profile und geteilte Referen
 # Einzelnes Package (mit Abhängigkeiten) in ein Zielprojekt kopieren
 .\.cursor\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor
 
+# Alle Packages auf einmal installieren
+.\.cursor\install-skill.ps1 all C:\Projects\MyApp\.cursor
+
 # Vorschau ohne Dateikopie
 .\.cursor\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor -DryRun
 

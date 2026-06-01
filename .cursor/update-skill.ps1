@@ -19,6 +19,7 @@
 .EXAMPLE
     .\update-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor
     .\update-skill.ps1 genericrtk-filter C:\Projects\MyApp\.cursor -DryRun
+    .\update-skill.ps1 all C:\Projects\MyApp\.cursor
     .\update-skill.ps1 -List
 #>
 [CmdletBinding()]
@@ -377,7 +378,7 @@ if ($List) {
 }
 
 if (-not $PackageName) {
-    Write-Error "PackageName is required. Use -List to see available packages."
+    Write-Error "PackageName is required. Use 'all' to update all packages, or -List to see available packages."
     exit 1
 }
 
@@ -398,7 +399,14 @@ Read-ParamsStore
 
 if ($DryRun) { Write-Host "[DRY RUN — keine Dateien werden veraendert]" -ForegroundColor Yellow }
 
-Update-Package $PackageName
+if ($PackageName -eq 'all') {
+    Write-Host "Updating all packages..." -ForegroundColor Cyan
+    Get-ChildItem $script:PackagesDir -Filter "*.json" | Sort-Object Name | ForEach-Object {
+        Update-Package $_.BaseName
+    }
+} else {
+    Update-Package $PackageName
+}
 
 if ($script:ParamsStore.Count -gt 0) {
     Save-ParamsStore

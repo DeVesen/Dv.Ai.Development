@@ -18,6 +18,7 @@
 .EXAMPLE
     .\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor
     .\install-skill.ps1 genericrtk-filter C:\Projects\MyApp\.cursor -DryRun
+    .\install-skill.ps1 all C:\Projects\MyApp\.cursor
     .\install-skill.ps1 -List
 #>
 [CmdletBinding()]
@@ -261,7 +262,7 @@ if ($List) {
 }
 
 if (-not $PackageName) {
-    Write-Error "PackageName is required. Use -List to see available packages."
+    Write-Error "PackageName is required. Use 'all' to install all packages, or -List to see available packages."
     exit 1
 }
 
@@ -282,7 +283,14 @@ Read-ParamsStore
 
 if ($DryRun) { Write-Host "[DRY RUN — no files will be copied]" -ForegroundColor Yellow }
 
-Install-Package $PackageName
+if ($PackageName -eq 'all') {
+    Write-Host "Installing all packages..." -ForegroundColor Cyan
+    Get-ChildItem $script:PackagesDir -Filter "*.json" | Sort-Object Name | ForEach-Object {
+        Install-Package $_.BaseName
+    }
+} else {
+    Install-Package $PackageName
+}
 
 Save-ParamsStore
 

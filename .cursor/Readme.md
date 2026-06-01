@@ -68,7 +68,7 @@ Jedes Package bündelt Rule(s), Skill-Ordner, Agent-Profile und geteilte Referen
 | Package | Enthält | Abhängigkeiten |
 |---------|---------|----------------|
 | `ado-requests-stories` | Rule + Skill + 3 Agents | `buddy-agent` |
-| `buddy-agent` | Rule + Agent | — |
+| `buddy-agent` | Rule + Agent | `caveman`, `commit-message` |
 | `angular-bundle` | Rule + 5 Skills | — |
 | `angular-refactor` | Skill | `angular-bundle` |
 | `angular-material-custom-input` | Skill | `angular-bundle` |

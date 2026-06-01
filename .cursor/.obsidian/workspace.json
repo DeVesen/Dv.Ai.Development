@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "agents/ado-story-pruefe-agent.md",
+                "file": "skills/caveman/SKILL.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ado-story-pruefe-agent"
+              "title": "SKILL"
             }
           }
         ]
@@ -185,17 +185,18 @@
   },
   "active": "aebdd7743c22e2ff",
   "lastOpenFiles": [
+    "Readme.md.tmp.36244.e8aa37823deb",
+    "packages/Readme.md.tmp.36244.25128ee178da",
+    "packages/Readme.md.tmp.36244.304aac7fafd3",
+    "packages/buddy-agent.json.tmp.36244.f62d9ce8c7de",
+    "agents/buddy-agent.md.tmp.36244.216174312ba4",
+    "rules/buddy-agent-skill.mdc.tmp.36244.37e4f0cf6230",
+    "agents/buddy-agent.md.tmp.36244.1890a32f0ee8",
+    "agents/buddy-agent.md.tmp.36244.069e766ff791",
+    "agents/buddy-agent.md.tmp.36244.f66e4bb0ba7a",
+    "agents/buddy-agent.md.tmp.36244.32075cea1989",
+    "agents/ado-story-pruefe-agent.md",
     "update-skill.ps1.tmp.18368.9c7980920d23",
-    "install-skill.ps1.tmp.18368.ee48d2b3c239",
-    "packages/ado-requests-stories.json.tmp.18368.28f4ac6e7819",
-    "packages/genericrtk-filter.json.tmp.18368.785d8ba688c8",
-    "update-skill.ps1.tmp.18368.eb47fe5d42d5",
-    "install-skill.ps1.tmp.18368.ed56525eb981",
-    "packages/genericrtk-filter.json.tmp.18368.c76846bb52cb",
-    "update-skill.ps1.tmp.18368.960d5b2b5d4c",
-    "install-skill.ps1.tmp.18368.1614fa962966",
-    "packages/genericrtk-filter.json.tmp.18368.3b49089b5114",
-    "update-skill.ps1",
     "packages/Readme.md"
   ]
 }

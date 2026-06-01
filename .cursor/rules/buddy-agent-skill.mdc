@@ -40,6 +40,15 @@ Explizite Imperative (sofort ladend), u. a.:
 - Direkt `implementiere` / Implementation Workflow
 - Kalender/Alltag ohne Code-/Repo-Bezug
 
+## Kommunikationsmodus: Caveman (zwingend)
+
+Sobald buddy-agent aktiviert ist, gilt für **alle Chat-Antworten** im Kontext — auch in Folge-Diskussionen desselben Kontextes — der Skill **[caveman](../skills/caveman/SKILL.md)** im Modus **`full`**:
+
+- Pflicht ab der **ersten Antwort**; **kein** expliziter `/caveman full`-Aufruf nötig.
+- Gilt für den **gesamten Kontext**, bis der Nutzer explizit deaktiviert: `stop caveman`, `normal mode` oder eigene Anweisung.
+- **Auto-Clarity:** Caveman pausiert bei Sicherheitshinweisen, irreversiblen Aktionen, Nutzer-Verwirrung — danach automatisch zurück zu `full`.
+- **Ausnahmen (normal formuliert):** End-Artefakte (Plan-Prompt, Task-MD, Commit-Message-Blöcke) — diese werden von anderen Agenten gelesen.
+
 ## Ausdrücklicher Opt-out
 
 `ohne buddy-agent`, `klassisch verfeinern`, `Task … verfeinern` (explizit) → Buddy-Profil **nicht** als Standard; ggf. [task-verfeinern.md](../skills/ado-requests-stories/references/task-verfeinern.md) (Legacy).

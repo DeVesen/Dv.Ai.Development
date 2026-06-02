@@ -489,15 +489,22 @@ Scouting gestartet werden soll.
 
 
 
-**Code-Recherche (verbindlich):** Vor Grep bei Bezug auf Klassen, Methoden, Properties, Services,
-
-Routen oder „von Stelle A nach Stelle B" — MCP-Landkarte gemäß
-
+**Code-Recherche (verbindlich) — MCP zuerst, Fallback (Read/Grep) nur wenn MCP nicht verfügbar:**
+Bei Bezug auf Klassen, Methoden, Properties, Services, Routen oder „von Stelle A nach Stelle B" —
+Basis-Landkarte (`index_project` + `find_in_index`) gemäß
 [code-review-mcp — Code-Landkarte](../code-review-mcp/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
-
 UI-Elemente ohne Symbol (Button-Label, Feld ohne Klassenname) sind davon ausgenommen.
 
-Scouts dokumentieren im Deliverable: genutzte Index-Anker + ergänzendes Grep.
+**Erweiterte MCP-Analyse in Phase 3** (nach `find_in_index`, wenn konkrete Klassen/Methoden aufgelöst):
+Scouts rufen zusätzlich (MCP primär, Fallback nur bei MCP-Fehler):
+
+| Schritt | MCP-Call (primär) | Fallback | Bedingung |
+|---------|-------------------|----------|-----------|
+| A | `analyze_complexity` auf betroffene Dateien | Methoden-Länge via Grep | mind. 1 Klasse im Scope |
+| B | `analyze_refactoring_safety` auf Klassen mit geplantem Umbau | Abhängigkeiten via `find_in_index` | nur bei Umbau |
+| C | `suggest_class_splits` bei Klassen mit >1 Verantwortung | Manuelle Lektüre via Read | nur wenn relevant |
+
+Scouts dokumentieren im Deliverable: MCP-Analyse-Status + Positionen 6–8 (Hotspots, Risiken, Split-Kandidaten).
 
 **Orchestrator-Vorindizierung (empfohlen, bei Multi-Scout mit Symbolen):** Orchestrator
 ruft **vor** Scout-Delegation einmal pro betroffenen Stack `index_project` auf und gibt

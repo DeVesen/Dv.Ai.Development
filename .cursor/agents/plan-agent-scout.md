@@ -38,17 +38,36 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## Aufgabe (Deliverable)
 
-**Recherche-Reihenfolge:** Code-Landkarte vor Grep ([code-review-mcp SKILL.md](../skills/code-review-mcp/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge)).
-Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten; Grep-Fundstellen nur als Ergänzung.
+**Recherche-Reihenfolge: MCP zuerst — Fallback (Read/Grep) nur wenn MCP nicht verfügbar oder kein Symbol auflösbar.**
+Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten; Read/Grep nur als Fallback.
 
 **MCP-Pfade:** `{frontend-path}` (Angular) / `{backend-path}` (.NET) gemäß `./AGENTS.md`. Pfad-Fehler-Playbook: [code-review-mcp/SKILL.md — MCP-Pfadauflösung](../skills/code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) (max. 2 Versuche je Stack).
 
-0. **MCP-Status (Pflicht-Header):** Erste Zeile des Deliverable: `MCP: ok` wenn `index_project` + `find_in_index` erfolgreich; sonst `MCP: fallback (<Grund>); Anker via Read/Grep: <Liste>`. Alle vom Orchestrator genannten Symbole via `find_in_index` auflösen — kein stilles Überspringen.
+**Schritt 1 — Basis-Landkarte (Pflicht):**
+- `index_project` + `find_in_index` für alle genannten Symbole — kein stilles Überspringen.
+- Fallback (nur bei MCP-Fehler): Read/Grep mit Dokumentation des Grunds.
+
+**Schritt 2 — Erweiterte MCP-Analyse** (nach `find_in_index`, sofern konkrete Klassen/Methoden in Scope-Dateien aufgelöst):
+
+| Schritt | MCP-Call (primär) | Fallback (nur bei MCP-Fehler) | Bedingung |
+|---------|-------------------|-------------------------------|-----------|
+| A | `analyze_complexity` auf betroffene Dateien | Methoden-Länge manuell via Grep abschätzen | mind. 1 Klasse/Methode im Scope |
+| B | `analyze_refactoring_safety` auf Klassen, die strukturell geändert werden | Abhängigkeiten per `find_in_index` manuell zählen | nur wenn Umbau geplant |
+| C | `suggest_class_splits` auf Klassen mit >1 Verantwortung | Manuelle Lektüre via Read | nur wenn Klasse zu groß/mehrdeutig |
+
+Kein Schritt 2 bei: ausschließlich UI-Labels, leerer Fundliste, rein neuen Dateien ohne bestehende Klassen.
+
+**Deliverable-Struktur:**
+
+0. **MCP-Analyse-Status (Pflicht-Header):** `MCP: ok` wenn Basis-Landkarte + Schritt 2 erfolgreich; sonst `MCP: fallback (<Grund>); Anker via Read/Grep: <Liste>`.
 1. Betroffene Dateien/Ordner (relativ zum Repo-Root) — oder Suchhinweise statt Raten.
 2. Konkrete Einstiegspunkte (Komponenten, Services, Routen, Config).
 3. Nachbarschaftskontext (Aufrufketten, relevante Schnittstellen).
 4. Risiken und Annahmen, die noch verifiziert werden müssen.
 5. Offene Lücken aus dem Scouting.
+6. Komplexitäts-Hotspots: `Klasse · Metric · Handlungsempfehlung` — oder `nicht gerufen — <Grund>`.
+7. Refactoring-Risiken: `kritisch | unkritisch` — oder `nicht gerufen — <Grund>`.
+8. Split-Kandidaten: `<Liste>` — oder `nicht gerufen — <Grund>`.
 
 **Ausgabe:** strukturierte Aufzählung — **kein** Schritt-für-Schritt-Umsetzungsplan.
 

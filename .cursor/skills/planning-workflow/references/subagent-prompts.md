@@ -35,15 +35,27 @@ MCP-Pfade (aus AGENTS.md des Projekts — Platzhalter vor Versand ersetzen):
 Fokus (Pflicht): Nur Code/Flows kartieren, die **direkt** fuer diese Anforderung noetig sind —
 kein blindes Repo-Scouting, kein Scope-Creep ausserhalb Teil-Scope/Anforderung.
 
-Aufgabe:
-0. MCP-Status (Pflicht-Header, erste Zeile im Deliverable):
-   `MCP: ok` wenn index_project + find_in_index erfolgreich;
-   sonst `MCP: fallback (<Grund>); Anker via Read/Grep: <Liste>`.
-   Code-Landkarte: index_project(projectPath="[MCP_FRONTEND_PATH]", type="angular") fuer FE,
+Aufgabe (MCP zuerst — Fallback Read/Grep nur wenn MCP nicht verfuegbar):
+
+Schritt 1 — Basis-Landkarte (Pflicht):
+   index_project(projectPath="[MCP_FRONTEND_PATH]", type="angular") fuer FE,
    index_project(projectPath="[MCP_BACKEND_PATH]", type="dotnet") fuer BE (nur relevanter Stack).
-   Alle genannten Symbole via find_in_index aufloesen. Grep nur ergaenzend.
+   Alle genannten Symbole via find_in_index aufloesen. Read/Grep nur als Fallback.
    Bei Fehler: max. 2 Versuche je Stack dokumentieren, dann MCP-Fallback erklaeren.
    UI-only-Begriffe ohne Symbol ausnehmen.
+
+Schritt 2 — Erweiterte MCP-Analyse (nach find_in_index, wenn konkrete Klassen/Methoden aufgeloest):
+   A. analyze_complexity auf betroffene Dateien (primaer) | Fallback: Methoden-Laenge via Grep
+      — Bedingung: mind. 1 Klasse/Methode im Scope aufgeloest
+   B. analyze_refactoring_safety auf Klassen, die strukturell geaendert werden (primaer) | Fallback: Abhaengigkeiten via find_in_index zaehlen
+      — Bedingung: nur wenn Umbau geplant
+   C. suggest_class_splits auf Klassen mit >1 Verantwortung (primaer) | Fallback: manuelle Lektuere via Read
+      — Bedingung: nur wenn Klasse zu gross oder mehrdeutig
+   Kein Schritt 2 bei: ausschliesslich UI-Labels, leerer Fundliste, rein neuen Dateien.
+
+0. MCP-Analyse-Status (Pflicht-Header, erste Zeile im Deliverable):
+   `MCP: ok` wenn Schritt 1 + Schritt 2 erfolgreich;
+   sonst `MCP: fallback (<Grund>); Anker via Read/Grep: <Liste>`.
 1. Identifiziere die voraussichtlich betroffenen Dateien und Ordner (relativ zum
    Repo-Root). Wenn unbekannt, nenne Suchhinweise statt zu raten.
 2. Nenne konkrete Einstiegspunkte (z. B. Komponenten, Services, Routen,
@@ -52,6 +64,9 @@ Aufgabe:
    Schnittstellen).
 4. Liste Risiken und Annahmen auf, die noch verifiziert werden muessten.
 5. Markiere offene Luecken: Was konnte beim Scouting nicht geklaert werden?
+6. Komplexitaets-Hotspots: Klasse · Metric · Handlungsempfehlung — oder "nicht gerufen — <Grund>".
+7. Refactoring-Risiken: kritisch | unkritisch — oder "nicht gerufen — <Grund>".
+8. Split-Kandidaten: <Liste> — oder "nicht gerufen — <Grund>".
 
 Deliverable: strukturierte Aufzaehlung, keine Code-Aenderungen, kein Plan mit
 Schritt-fuer-Schritt-Umsetzung.
@@ -82,7 +97,15 @@ Anforderung (Auszug Phasen 1–2):
 Scout-Auszug (nur fuer dieses Topic):
 [relevante Dateien, Einstiegspunkte, Nachbarschaft]
 
-Aufgabe:
+Aufgabe (MCP zuerst — Fallback nur bei MCP-Fehler):
+
+MCP-Vorbereitung (vor Schritt-Formulierung, wenn bestehende Klassen im Topic-Scope):
+   A. analyze_complexity auf Topic-relevante Dateien (primaer) | Fallback: Zeilenzahl / Methoden-Zaehlung via Read
+      — Bedingung: mind. 1 bestehende Klasse im Scope
+   B. analyze_refactoring_safety auf Klassen, die umgebaut werden (primaer) | Fallback: Import-Zaehlung via Grep
+      — Bedingung: nur wenn Klassen-Umbau geplant
+   Kein Call bei reinen Neu-Implementierungen. Ergebnisse in Risiken (Schritt 4) und IMP-Slice-Blocking (5/6) einbetten.
+
 1. Konkrete Umsetzungsschritte NUR fuer dieses Topic (Dateien, Klassen, Komponenten).
 2. Einstiegspunkte und betroffene Pfade (relativ zum Repo-Root).
 3. Akzeptanzkriterien fuer dieses Topic.
@@ -95,7 +118,7 @@ Aufgabe:
    **Slice-ID-Konvention (IMP-*)** — `IMP-FE-{Bereich}-…` bzw. `IMP-BE-{ServiceKuerzel}-…`
    (projektspezifische Kuerzel im Teilplan nennen) plus Wellen-/Blocking-Hinweis.
 
-Falls Scout MCP=fallback ohne Index-Anker: fuer neue Symbole aus Phase 4a
+Falls Scout MCP=fallback ohne Index-Anker: fuer neue Symbole aus Phase 4a zunaechst
 find_in_index versuchen (projectPath aus AGENTS.md: {frontend-path} / {backend-path});
 Ergebnis (ok oder fallback) im Teilplan festhalten — kein stilles Ueberspringen.
 

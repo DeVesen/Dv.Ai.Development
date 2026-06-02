@@ -146,11 +146,22 @@ Siehe [Task-MD übernehmen](#task-md-übernehmen).
 
 **Trigger** (mindestens eines): *refacture*, *refactor review*, *clean code prüfen*, *code review*, *was könnte verbessert werden*, *was sollte extrahiert werden*.
 
-**Ablauf (read-only):**
+**Ablauf (read-only) — MCP zuerst, Prosa-Analyse nur als Fallback:**
 
 1. Kontext aus dem laufenden Gespräch zusammenfassen.
 2. Git-State lesen: `git diff` (unstaged) + `git diff --cached` (staged) — nur tatsächlich geänderte Stellen, kein blindes Repo-Scan.
-3. Aus Kontext + Diff **Ideen** formulieren — **kein** fertiger Plan, **keine** IMP-Slices, **keine** Implementierung.
+2b. **MCP-Analyse** (wenn Diff ≥10 Zeilen und Symbole identifizierbar):
+
+   | Schritt | MCP-Call (primär) | Fallback (nur bei MCP-Fehler) |
+   |---------|-------------------|-------------------------------|
+   | a | `index_project({stack-path})` — Landkarte für geänderte Dateien | Read der geänderten Dateien direkt |
+   | b | `review_git_diff` — strukturierte Review der geänderten Zeilen | Prosa-Analyse aus Diff-Text |
+   | c | `analyze_complexity` auf geänderte Dateien — Komplexitäts-Delta | Methoden-Längen manuell aus Diff ableiten |
+   | d | `analyze_duplicates` (wenn Diff ≥30 Zeilen) — Duplikations-Kandidaten | Muster-Suche per Grep im betroffenen Bereich |
+
+   Ergebnisse aus 2b fließen in Dimension „Clean Code / Clean Development" ein.
+
+3. Aus Kontext + Diff + MCP-Analyse-Ergebnissen **Ideen** formulieren — **kein** fertiger Plan, **keine** IMP-Slices, **keine** Implementierung.
 
 **Prüfdimensionen (alle vier, sofern relevant):**
 
@@ -165,6 +176,12 @@ Siehe [Task-MD übernehmen](#task-md-übernehmen).
 
 ```
 ## Refacture-Ideen
+
+### MCP-Analyse
+- MCP-Status: ok | fallback(<Grund>)
+- review_git_diff: <Kernbefunde oder "nicht gerufen — <Grund>">
+- analyze_complexity: <Hotspots oder "unauffällig" oder "nicht gerufen — <Grund>">
+- analyze_duplicates: <Kandidaten oder "keine" oder "nicht gerufen — <Grund>">
 
 ### Clean Code / Clean Development
 - …

@@ -73,6 +73,8 @@ Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rol
 
 ## Code-Landkarte (Phase 2→3)
 
+**MCP zuerst — Fallback nur bei MCP-Fehler.**
+
 **Vor jeder Scout-Delegation** mit Symbolen (Klasse, Service, Component, Methode, Route):
 
 1. Orchestrator ruft **einmal pro Stack** `index_project` auf — `{frontend-path}` (Angular) und/oder `{backend-path}` (.NET) gemäß `./AGENTS.md`.
@@ -80,6 +82,15 @@ Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rol
 3. **Schlägt `index_project` fehl:** Pfad-Playbook aus [code-review-mcp/SKILL.md — MCP-Pfadauflösung](../skills/code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) befolgen (max. 2 Versuche je Stack); danach `MCP-BLOCKER: <Fehlermeldung>` im Scout-Auftrag vermerken — **kein** stilles Überspringen.
 
 **Gate — Plan 4a nicht starten**, wenn alle Scouts `MCP: fallback` ohne dokumentierten Anker-Pfad zurückliefern.
+
+## Phase 4a — Vorbereitung Interface-Design
+
+**Nach** Scout-Merge, **vor** Topologie-Entwurf, wenn Scout ≥2 Service- oder Interface-Typen im Scope liefert:
+
+1. **MCP (primär):** `analyze_type_graph({frontend-path} | {backend-path})` — auf Typen aus dem Scout-Ergebnis filtern; liefert Typ-Abhängigkeitsgraph der betroffenen Interfaces/Services.
+2. **Fallback (nur bei MCP-Fehler):** `find_in_index`-Kette für jede Interface/Service-Referenz manuell; Imports/Dependencies aus Datei-Lektüre ableiten.
+
+Ergebnis in Interface-Contract einbetten. Kein Call bei rein neuen Typen ohne Bestandsabhängigkeiten.
 
 ## Ablauf (Orchestrator)
 

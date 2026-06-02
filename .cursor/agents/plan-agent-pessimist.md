@@ -45,6 +45,16 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei.
 - Multi-Subagent: gleiche Dateien ohne interface-first, Merge-Konflikte
 - Orchestrator: Integration, Schnittstellendrift, E2E-Prüfung konkret genug?
 
+**Optionale MCP-Checks (MCP zuerst — Fallback nur bei MCP-Fehler):**
+Nur wenn Scout-Bericht Testdateien oder nullable-Chains nennt:
+
+| Schritt | MCP-Call (primär) | Fallback (nur bei MCP-Fehler) | Ergebnis |
+|---------|-------------------|-------------------------------|----------|
+| A | `analyze_coverage` auf betroffene Dateien | Testdatei-Existenz via Grep prüfen | Fehlende Abdeckung als konkretes Risiko-Item |
+| B | `analyze_nullability` auf nullable-Typen aus Scout | Nullable-Annotation-Suche via Grep | Null-Safety-Lücken explizit benennen |
+
+Calls nur wenn Scout-Ergebnis es begründet — nicht blind für jeden Plan.
+
 ## Deliverable
 
 Kompakte **nummerierte Punkte** — nur Risiken und Lücken, **kein** neuer Plan.

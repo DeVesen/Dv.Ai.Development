@@ -52,6 +52,15 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## Aufgabe (Deliverable)
 
+**MCP-Vorbereitung (vor Schritt-Formulierung) — MCP zuerst, Fallback nur bei MCP-Fehler:**
+
+| Schritt | MCP-Call (primär) | Fallback (nur bei MCP-Fehler) | Bedingung |
+|---------|-------------------|-------------------------------|-----------|
+| A | `analyze_complexity` auf Topic-relevante Dateien | Manuelle Zeilenzahl / Methoden-Zählung via Read | mind. 1 bestehende Klasse im Topic-Scope |
+| B | `analyze_refactoring_safety` auf Klassen, die umgebaut werden | Import-Zählung via Grep als Proxy | nur wenn Klassen-Umbau geplant |
+
+Kein Call bei reinen Neu-Implementierungen ohne Berührung bestehender Klassen. Ergebnisse in Risiken (Schritt 4) und IMP-Slice-Blocking (Schritt 5/6) einbetten.
+
 1. Konkrete Umsetzungsschritte **nur** für dieses Topic (Dateien, Klassen, Komponenten).
 2. Einstiegspunkte und Pfade (relativ zum Repo-Root).
 3. Akzeptanzkriterien topic-lokal.
@@ -59,7 +68,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 5. **Pflicht — Parallele Implementierung:** welche Teil-Arbeiten parallel möglich, Blocking zu anderen Topics, contract-first gemäß 4a.
 6. **Pflicht — Vorgeschlagene IMP-Slice-IDs:** gemäß [SKILL.md](../skills/planning-workflow/SKILL.md) **Slice-ID-Konvention** — `IMP-FE-{Bereich}-…` bzw. `IMP-BE-{ServiceKürzel}-…` (z. B. `IMP-FE-Search-Rules`, `IMP-BE-GW-Logging`) plus Wellen-/Blocking-Hinweis; ohne Gesamtplan.
 
-> **MCP-Lücke (wenn Scout `MCP: fallback`):** Für neue Symbole aus Phase 4a `find_in_index` aufrufen (`{frontend-path}` / `{backend-path}` aus `./AGENTS.md`); Ergebnis (ok oder fallback) im Teilplan festhalten — kein stilles Überspringen.
+> **MCP-Lücke (wenn Scout `MCP: fallback`):** Für neue Symbole aus Phase 4a zunächst `find_in_index` aufrufen (`{frontend-path}` / `{backend-path}` aus `./AGENTS.md`); Ergebnis (ok oder fallback) im Teilplan festhalten — kein stilles Überspringen.
 
 ## Verboten
 

@@ -1,0 +1,30 @@
+{
+  "name": "genericrtk-filter",
+  "description": "GenericRTK output filter MCP server with buffer web UI (port 8089).",
+  "rules": [
+    "rules/genericrtk-output-filter.mdc"
+  ],
+  "skills": [],
+  "agents": [],
+  "dependsOn": [],
+  "mcp": [
+    {
+      "serverName": "genericRTK",
+      "type": "docker",
+      "imageParamKey": "genericrtk-image",
+      "pullAlwaysKey": "genericrtk-pull-always",
+      "globalImage": "devesen/dv.generic-rtk-mcp:latest",
+      "localDefault": "genericrtk-mcp:local",
+      "entry": {
+        "command": "docker",
+        "args": ["run", "-i", "--rm", "-p", "8089:8089", "__IMAGE__"],
+        "transport": "stdio"
+      },
+      "entryPullAlways": {
+        "command": "docker",
+        "args": ["run", "-i", "--rm", "-p", "8089:8089", "--pull", "always", "__IMAGE__"],
+        "transport": "stdio"
+      }
+    }
+  ]
+}

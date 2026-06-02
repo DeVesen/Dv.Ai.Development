@@ -2,6 +2,7 @@ using Generic.Rtk.Filtering;
 using Generic.Rtk.Models;
 using Generic.Rtk.Streaming;
 using Generic.Rtk.Tools;
+using Generic.Rtk.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -29,6 +30,7 @@ builder.Services.AddSingleton<IToolOutputParser, NodeScriptParser>();
 builder.Services.AddSingleton<OutputFilterService>();
 builder.Services.AddSingleton<StreamFilterSessionManager>();
 builder.Services.AddSingleton<FilterCallHistory>();
+builder.Services.AddHostedService<BufferWebServer>();
 
 builder.Services
     .AddMcpServer()

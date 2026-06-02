@@ -1,0 +1,19 @@
+{
+  "name": "conversation-insights",
+  "description": "Captures decisive session insights into a learning log.",
+  "files": [
+    "rules/conversation-insights-skill.mdc",
+    "skills/conversation-insights/SKILL.md",
+    "agents/conversation-insights-agent.md",
+    "insights/README.md"
+  ],
+  "params": [
+    {
+      "key": "insights-path",
+      "placeholder": "{insights-path}",
+      "label": "Insights log path (relative to repo root, e.g. .cursor/insights)",
+      "default": ".cursor/insights"
+    }
+  ],
+  "dependencies": []
+}

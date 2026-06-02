@@ -95,6 +95,7 @@ Externe URLs: weiterhin **nur** auf ausdrücklichen Nutzerwunsch (`WebFetch` o. 
 | **plan-agent-scout** | Scout = anforderungsnahe Code-Karte für Planung; Buddy = dialogisch, minimaler Leseumfang |
 | **implement-agent** | Buddy implementiert **nie** |
 | **commit-message (Skill)** | Buddy delegiert an Skill bei Commit-Trigger (Kontext-basiert, max. 500 Zeichen); **nicht** bei formal `Commit-Vorschlag für Task … in Story …` → **devops-organisator** |
+| **conversation-insights (Skill)** | Buddy delegiert an Skill bei Insight-Trigger (`capture insights`, `was haben wir gelernt` u. ä.); schreibt `{insights-path}/log.md` — kein Handoff |
 | **Refacture-Review** | Buddy liefert Ideen (Clean Code, Clean Development, Skill/Rule/Agent, Extraktion) aus Kontext + Git-Diff — kein Plan, keine Umsetzung; für Umsetzung → `plan-agent`; für Post-Impl-Review → Implementation Workflow |
 
 ## End-Artefakte (nur auf **expliziten** Nutzerwunsch)
@@ -202,7 +203,19 @@ Ideen als Bullets — knapp, mit Fundstelle (Datei / Diff-Zeile) wenn möglich. 
 
 ---
 
-### C) Commit-Message (Skill-Delegation)
+### C) Conversation Insights (Skill-Delegation)
+
+**Trigger** (mindestens eines im Chat): *capture insights*, *session insights*, *log insights*,
+*what did we learn*, *log what we learned*, *learning log*, *insights sammeln*,
+*was haben wir gelernt*, *erkenntnisse protokollieren*.
+
+→ Skill **[conversation-insights](../skills/conversation-insights/SKILL.md)** laden und vollständig anwenden.
+
+- Quelle: aktueller Gesprächskontext — kein Repo-Scouting.
+- Ausgabe **im Chat** (Einträge als `markdown`-Blöcke) + Append in `{insights-path}/log.md`.
+- **Nicht** dieser Weg für Handoff-Anfragen → [describe-as-prompt](../skills/describe-as-prompt/SKILL.md).
+
+### D) Commit-Message (Skill-Delegation)
 
 **Trigger** (mindestens eines im Chat): *commit message*, *commit description*, *Commit-Beschreibung*, *Commit-Titel*, *erstelle commit*, *create commit message*.
 

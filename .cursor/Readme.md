@@ -76,6 +76,7 @@ Nur bei Azure DevOps:
 | `describe-as-html-prompt` | Rule + Skill | `describe-as-prompt` |
 | `caveman` | Skill | — |
 | `commit-message` | Skill | — |
+| `conversation-insights` | Rule + Skill + Agent + insights/README.md | — |
 
 Abhängigkeiten werden automatisch zuerst installiert.
 
@@ -229,6 +230,22 @@ Vollständige Liste aller `{parameter}`-Platzhalter — für Mensch und Agent.
 
 ---
 
+### `{insights-path}`
+
+| Feld | Inhalt |
+|------|--------|
+| **Typ** | Verzeichnispfad (relativ zum Repo-Root) |
+| **Beschreibung** | Pfad wo `log.md` abgelegt wird — Standard: `.cursor/insights` |
+| **Beispiel** | `.cursor/insights` · `docs/insights` · `memory` |
+| **Konvention** | Ohne trailing Slash; Verzeichnis wird automatisch angelegt wenn nicht vorhanden |
+
+**Verwendet in:**
+- `rules/conversation-insights-skill.mdc`
+- `skills/conversation-insights/SKILL.md`
+- `agents/conversation-insights-agent.md`
+
+---
+
 ### `ADO.Project-GUID` *(config.defaults.json)*
 
 | Feld | Inhalt |
@@ -269,4 +286,5 @@ angular-refactor      →  angular-bundle
 angular-material-*    →  angular-bundle
 describe-as-html-*    →  describe-as-prompt
 implementation-*      →  genericrtk-filter
+conversation-insights →  (keine)
 ```

@@ -17,6 +17,7 @@
 *.nupkg
 **/[Pp]ackages/*
 !**/[Pp]ackages/build/
+!.cursor/packages/
 
 # .NET build artifacts
 artifacts/
@@ -107,7 +108,7 @@ htmlcov/
 ._*
 
 # Custom folder icons
-Icon
+Icon
 
 # Volume root files
 .DocumentRevisions-V100

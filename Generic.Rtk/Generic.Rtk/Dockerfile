@@ -13,4 +13,5 @@ FROM mcr.microsoft.com/dotnet/runtime:9.0
 WORKDIR /app
 COPY --from=build /out ./
 ENV DOTNET_ENVIRONMENT=Production
+EXPOSE 8089
 ENTRYPOINT ["dotnet", "Generic.Rtk.dll"]

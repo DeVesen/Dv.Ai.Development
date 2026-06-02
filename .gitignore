@@ -18,6 +18,7 @@
 **/[Pp]ackages/*
 !**/[Pp]ackages/build/
 !.cursor/packages/
+!.cursor/packages/**
 
 # .NET build artifacts
 artifacts/

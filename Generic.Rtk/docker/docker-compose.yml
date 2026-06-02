@@ -8,3 +8,7 @@ services:
     image: dv-generic-rtk-mcp:local
     stdin_open: true
     tty: false
+    ports:
+      - "127.0.0.1:8089:8089"
+    environment:
+      BUFFER_WEB_PORT: "8089"

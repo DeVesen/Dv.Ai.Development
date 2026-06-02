@@ -6,7 +6,9 @@
         "run",
         "-i",
         "--rm",
-        "genericrtk-mcp:local"
+        "-p",
+        "127.0.0.1:8089:8089",
+        "devesen/dv.generic-rtk-mcp:latest"
       ],
       "transport": "stdio"
     },

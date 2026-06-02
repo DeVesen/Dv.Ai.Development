@@ -9,7 +9,7 @@ public sealed class FilterCallHistory
     private readonly LinkedList<FilterCallRecord> _history = new();
     private readonly ConcurrentDictionary<string, StringBuilder> _streamAccumulators = new();
     private readonly object _lock = new();
-    private const int MaxEntries = 20;
+    private const int MaxEntries = 100;
 
     public void Record(FilterCallRecord entry)
     {
@@ -29,6 +29,14 @@ public sealed class FilterCallHistory
         }
     }
 
+    public List<FilterCallRecord> GetAll()
+    {
+        lock (_lock)
+        {
+            return _history.Reverse().ToList();
+        }
+    }
+
     public FilterCallRecord? GetById(string id)
     {
         lock (_lock)
@@ -37,13 +45,26 @@ public sealed class FilterCallHistory
         }
     }
 
+    public void Remove(string id)
+    {
+        lock (_lock)
+        {
+            var node = _history.First;
+            while (node is not null)
+            {
+                if (node.Value.Id == id) { _history.Remove(node); return; }
+                node = node.Next;
+            }
+        }
+    }
+
     public void Clear()
     {
         lock (_lock)
         {
             _history.Clear();
+            _streamAccumulators.Clear();
         }
-        _streamAccumulators.Clear();
     }
 
     public void AccumulateStreamInput(string sessionId, string chunk)

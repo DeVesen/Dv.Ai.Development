@@ -6,6 +6,7 @@
   ],
   "skills": [],
   "agents": [],
+  "params": [],
   "dependsOn": [],
   "mcp": [
     {
@@ -17,12 +18,12 @@
       "localDefault": "genericrtk-mcp:local",
       "entry": {
         "command": "docker",
-        "args": ["run", "-i", "--rm", "-p", "8089:8089", "__IMAGE__"],
+        "args": ["run", "-i", "--rm", "-p", "127.0.0.1:8089:8089", "__IMAGE__"],
         "transport": "stdio"
       },
       "entryPullAlways": {
         "command": "docker",
-        "args": ["run", "-i", "--rm", "-p", "8089:8089", "--pull", "always", "__IMAGE__"],
+        "args": ["run", "-i", "--rm", "-p", "127.0.0.1:8089:8089", "--pull", "always", "__IMAGE__"],
         "transport": "stdio"
       }
     }

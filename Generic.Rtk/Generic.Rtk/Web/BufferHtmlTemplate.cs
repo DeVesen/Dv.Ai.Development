@@ -130,7 +130,7 @@ internal static class BufferHtmlTemplate
                 const pct = it.savedPercent.toFixed(1);
                 const ts = fmt(it.timestamp);
                 return `
-                  <div class="item${open}" data-id="${it.id}">
+                  <div class="item${open}" data-id="${escHtml(it.id)}">
                     <div class="item-header" onclick="toggle(this)">
                       <span class="chevron">&#9658;</span>
                       <span class="tag">${escHtml(it.toolType)}</span>
@@ -139,7 +139,7 @@ internal static class BufferHtmlTemplate
                       <span class="chars">${fmtNum(it.inputChars)} &rarr; ${fmtNum(it.outputChars)}</span>
                       <span class="savings">&#8722;${pct}%</span>
                       <div class="spacer-h"></div>
-                      <button class="btn-remove" title="Entfernen" onclick="removeItem('${it.id}', event)">&#215;</button>
+                      <button class="btn-remove" title="Entfernen" data-remove-id="${escHtml(it.id)}" onclick="removeItem(this.getAttribute('data-remove-id'), event)">&#215;</button>
                     </div>
                     <div class="item-body">
                       <div class="section">
@@ -172,7 +172,8 @@ internal static class BufferHtmlTemplate
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
             }
 
             function toggle(header) {

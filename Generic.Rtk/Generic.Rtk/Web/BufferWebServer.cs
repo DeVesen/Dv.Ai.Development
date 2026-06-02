@@ -12,7 +12,7 @@ public sealed class BufferWebServer : IHostedService, IDisposable
     private readonly FilterCallHistory _history;
     private readonly ILogger<BufferWebServer> _logger;
     private readonly HttpListener _listener = new();
-    private CancellationTokenSource _cts = new();
+    private CancellationTokenSource? _cts;
     private Task _listenTask = Task.CompletedTask;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -29,9 +29,20 @@ public sealed class BufferWebServer : IHostedService, IDisposable
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        var port = int.TryParse(Environment.GetEnvironmentVariable("BUFFER_WEB_PORT"), out var p) ? p : 8089;
-        _listener.Prefixes.Add($"http://+:{port}/");
-        _listener.Start();
+        var port = int.TryParse(Environment.GetEnvironmentVariable("BUFFER_WEB_PORT"), out var p) && p is > 0 and <= 65535
+            ? p : 8089;
+
+        try
+        {
+            _listener.Prefixes.Add($"http://+:{port}/");
+            _listener.Start();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Buffer web UI could not start on port {Port} — continuing without it", port);
+            return Task.CompletedTask;
+        }
+
         _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _listenTask = RunAsync(_cts.Token);
         _logger.LogInformation("Buffer web UI: http://localhost:{Port}/", port);
@@ -40,6 +51,7 @@ public sealed class BufferWebServer : IHostedService, IDisposable
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        if (_cts is null) return;
         await _cts.CancelAsync();
         _listener.Stop();
         try { await _listenTask.WaitAsync(cancellationToken); } catch { /* shutting down */ }
@@ -47,7 +59,7 @@ public sealed class BufferWebServer : IHostedService, IDisposable
 
     public void Dispose()
     {
-        _cts.Dispose();
+        _cts?.Dispose();
         _listener.Close();
     }
 
@@ -61,7 +73,9 @@ public sealed class BufferWebServer : IHostedService, IDisposable
             catch (ObjectDisposedException) when (token.IsCancellationRequested) { break; }
             catch (Exception ex) { _logger.LogWarning(ex, "HttpListener error"); continue; }
 
-            _ = Task.Run(() => HandleAsync(ctx, token), token);
+            _ = Task.Run(() => HandleAsync(ctx, token), token)
+                .ContinueWith(t => _logger.LogWarning(t.Exception, "Unhandled error in HTTP handler"),
+                    TaskContinuationOptions.OnlyOnFaulted);
         }
     }
 

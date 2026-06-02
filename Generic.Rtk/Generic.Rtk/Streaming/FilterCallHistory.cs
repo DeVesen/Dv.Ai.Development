@@ -63,8 +63,8 @@ public sealed class FilterCallHistory
         lock (_lock)
         {
             _history.Clear();
+            _streamAccumulators.Clear();
         }
-        _streamAccumulators.Clear();
     }
 
     public void AccumulateStreamInput(string sessionId, string chunk)

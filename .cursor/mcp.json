@@ -7,7 +7,7 @@
         "-i",
         "--rm",
         "-p",
-        "8089:8089",
+        "127.0.0.1:8089:8089",
         "genericrtk-mcp:local"
       ],
       "transport": "stdio"

@@ -140,7 +140,7 @@ export function indexDotnetProject(rootPath: string, useCache = true): DotnetPro
     return buildFallback(rootPath, "dotnet-script not available");
   }
 
-  const result = spawnSync("dotnet", ["script", SCRIPT_PATH, "--", rootPath], {
+  const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", rootPath], {
     encoding: "utf-8",
     timeout: 60_000,
     maxBuffer: 20 * 1024 * 1024,

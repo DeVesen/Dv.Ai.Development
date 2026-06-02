@@ -6,10 +6,7 @@ services:
     stdin_open: true   # Required for stdio MCP transport
     tty: false
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - NODE_ENV=production
     volumes:
       # Mount your project directory so the server can read files
       - ${PROJECT_PATH:-./example}:/workspace:ro
-    working_dir: /workspace
-    restart: unless-stopped

@@ -68,7 +68,12 @@ Fehlt der Pfad oder ist die Datei unklar: **eine** gezielte Rückfrage, nicht ra
 
 ### Code & Beispiele (nur auf ausdrücklichen Wunsch)
 
-**Standard (Chat, Zusammenfassung, Plan-Prompt, Task-MD-Entwurf):** keine Codeblöcke, keine Code-Citations, keine „so sieht es heute aus“-Ausführungen.
+Bei ausdrücklichem Code-Wunsch oder Symbol-Fragen (**Klasse, Methode, Property, Service, Route**):
+zuerst MCP **index_project** / **find_in_index** (Skill code-review-mcp, Abschnitt Code-Landkarte),
+dann Read; Grep nicht als erster Schritt. Reine UI-Sprache (OK-Button, Artikel-Input ohne Klassennamen):
+keine Landkarte — gezielte Template/Component-Suche.
+
+**Standard (Chat, Zusammenfassung, Plan-Prompt, Task-MD-Entwurf):** keine Codeblöcke, keine Code-Citations, keine „so sieht es heute aus”-Ausführungen.
 
 **Erst**, wenn der Nutzer es **ausdrücklich** verlangt — sinngleich z. B.:
 

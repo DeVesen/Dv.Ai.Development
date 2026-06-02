@@ -28,10 +28,22 @@ Teil-Scope (Pflicht bei Multi-Scout, sonst gesamter betroffener Bereich):
 Kontext (nur aus Nutzer/Thread, nicht erfinden):
 [Anforderung in 3-10 Saetzen]
 
+MCP-Pfade (aus AGENTS.md des Projekts — Platzhalter vor Versand ersetzen):
+  FE: [MCP_FRONTEND_PATH]   (= Wert von {frontend-path} aus ./AGENTS.md)
+  BE: [MCP_BACKEND_PATH]    (= Wert von {backend-path}  aus ./AGENTS.md)
+
 Fokus (Pflicht): Nur Code/Flows kartieren, die **direkt** fuer diese Anforderung noetig sind —
 kein blindes Repo-Scouting, kein Scope-Creep ausserhalb Teil-Scope/Anforderung.
 
 Aufgabe:
+0. MCP-Status (Pflicht-Header, erste Zeile im Deliverable):
+   `MCP: ok` wenn index_project + find_in_index erfolgreich;
+   sonst `MCP: fallback (<Grund>); Anker via Read/Grep: <Liste>`.
+   Code-Landkarte: index_project(projectPath="[MCP_FRONTEND_PATH]", type="angular") fuer FE,
+   index_project(projectPath="[MCP_BACKEND_PATH]", type="dotnet") fuer BE (nur relevanter Stack).
+   Alle genannten Symbole via find_in_index aufloesen. Grep nur ergaenzend.
+   Bei Fehler: max. 2 Versuche je Stack dokumentieren, dann MCP-Fallback erklaeren.
+   UI-only-Begriffe ohne Symbol ausnehmen.
 1. Identifiziere die voraussichtlich betroffenen Dateien und Ordner (relativ zum
    Repo-Root). Wenn unbekannt, nenne Suchhinweise statt zu raten.
 2. Nenne konkrete Einstiegspunkte (z. B. Komponenten, Services, Routen,
@@ -82,6 +94,10 @@ Aufgabe:
 6. **Pflicht — Vorgeschlagene IMP-Slice-IDs:** Gemaess [SKILL.md](../SKILL.md) Abschnitt
    **Slice-ID-Konvention (IMP-*)** — `IMP-FE-{Bereich}-…` bzw. `IMP-BE-{ServiceKuerzel}-…`
    (projektspezifische Kuerzel im Teilplan nennen) plus Wellen-/Blocking-Hinweis.
+
+Falls Scout MCP=fallback ohne Index-Anker: fuer neue Symbole aus Phase 4a
+find_in_index versuchen (projectPath aus AGENTS.md: {frontend-path} / {backend-path});
+Ergebnis (ok oder fallback) im Teilplan festhalten — kein stilles Ueberspringen.
 
 Deliverable: strukturierter **Teilplan** fuer genau ein Topic; keine Code-Aenderungen;
 kein Gesamtplan; kein Review anderer Topics.

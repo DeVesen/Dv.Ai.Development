@@ -1,7 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import Anthropic from "@anthropic-ai/sdk";
 import { execSync } from "child_process";
 import { readFileSync, existsSync } from "fs";
 import { extname, resolve } from "path";
@@ -23,8 +22,6 @@ import { runDotnetIntelligence } from "./features/dotnet-intelligence-runner.js"
 import { parseLcov, parseCobertura } from "./features/coverage-parser.js";
 import { analyzeAngularTestQuality } from "./features/test-quality-analyzer.js";
 import { runDotnetTestQuality } from "./features/dotnet-test-quality-runner.js";
-
-const client = new Anthropic();
 
 // ─── Language Detection ───────────────────────────────────────────────────────
 
@@ -142,198 +139,31 @@ function formatRoslynSection(meta: RoslynMetadata): string {
   return lines.join("\n");
 }
 
-// ─── Prompt Builder ───────────────────────────────────────────────────────────
-
-function buildReviewPrompt(
-  code: string,
-  language: Language,
-  filename: string,
-  focusAreas: string[],
-  astMetadata?: string
-): string {
-  const dotnetRules = `
-## .NET / C# Review Rules
-### SOLID & Clean Code
-- Single Responsibility: each class/method does ONE thing
-- Open/Closed: prefer extension over modification (Strategy/Decorator over switch chains)
-- Liskov: subclasses must be substitutable; no throwing NotImplementedException in overrides
-- Interface Segregation: small focused interfaces; flag interfaces with > 7 members
-- Dependency Inversion: depend on abstractions; flag new ConcreteClass() in business logic
-- No magic strings/numbers → use constants or enums
-- Method length: flag methods > 25 lines
-- Avoid deep nesting (> 3 levels); extract methods
-- Meaningful names: no abbreviations, no generic names like "data", "obj", "temp"
-- Use async/await correctly – NEVER use .Result / .Wait() (deadlock risk)
-- Prefer records for immutable DTOs
-
-### Security
-- Never interpolate user input into SQL → always parameterized queries / EF Core
-- No hardcoded secrets, connection strings, or API keys in code
-- Validate and sanitize all inputs (DataAnnotations or FluentValidation)
-- Authorization checks on all controller actions ([Authorize], policy-based)
-- CORS: no wildcard (*) in production
-- Sensitive data must not appear in logs
-- Enforce HTTPS
-
-### Performance
-- Avoid N+1 queries → use .Include() / projection (.Select())
-- Use IQueryable vs IEnumerable correctly (DB-side vs in-memory)
-- Cache expensive operations (IMemoryCache / IDistributedCache)
-- Avoid unnecessary ToList() calls mid-chain
-- Use CancellationToken in async methods
-- Prefer StringBuilder for string concatenation in loops
-`;
-
-  const angularRules = `
-## Angular / TypeScript Review Rules
-### SOLID & Clean Code
-- SRP: Components should be lean → push logic to services; no HttpClient in components
-- OCP: prefer Strategy pattern or polymorphism over switch/if-else type chains
-- DIP: never new ConcreteService() in components → always inject()
-- No business logic in templates
-- Avoid any type → always type everything explicitly
-- Unsubscribe from Observables (takeUntilDestroyed, async pipe preferred)
-- No direct DOM manipulation → use Renderer2 or Angular APIs
-- Meaningful names for variables, methods, components
-
-### Security (XSS / Injection)
-- Never use [innerHTML] with untrusted content → use DomSanitizer or avoid
-- No direct document/window manipulation with user input
-- Use HttpClient (built-in XSRF protection), not raw fetch
-- Route guards for protected pages
-- Never store tokens in localStorage → prefer httpOnly cookies or sessionStorage
-- Validate all form inputs (Reactive Forms with Validators)
-
-### Performance
-- Use OnPush ChangeDetection on ALL components
-- Prefer Signals (signal(), computed(), effect()) over manual subscriptions
-- Use trackBy / track in ngFor to avoid full re-renders
-- Lazy-load feature modules / standalone components
-- Avoid heavy computations in templates (use pipes or computed signals)
-- Use virtual scrolling for large lists (@angular/cdk)
-
-### Angular Best Practices (Modern Angular)
-- Prefer standalone components over NgModules
-- Use inject() function instead of constructor injection
-- Use the new control flow syntax (@if, @for, @switch) over *ngIf / *ngFor
-- Use input() / output() signals instead of @Input() / @Output() decorators
-- Prefer toSignal() for converting Observables to Signals
-- Use functional guards/resolvers instead of class-based
-`;
-
-  const focusSection =
-    focusAreas.length > 0
-      ? `\n## Priority Focus Areas:\n${focusAreas.map((f) => `- ${f}`).join("\n")}\n`
-      : "";
-
-  const astSection = astMetadata
-    ? `\n${astMetadata}\n\n> The AST analysis above has already detected specific violations with line numbers. Make sure to include ALL of them in your issues output and add any additional ones you find from reading the code.\n`
-    : "";
-
-  const rules = language === "dotnet" ? dotnetRules : angularRules;
-  const langLabel = language === "dotnet" ? ".NET/C#" : "Angular/TypeScript";
-
-  return `You are a senior ${langLabel} code reviewer with deep knowledge of SOLID principles and clean architecture.
-
-${rules}
-${focusSection}
-${astSection}
-
-## Output Format
-Respond ONLY in this exact JSON structure — no markdown fences, no extra text:
-{
-  "summary": "1-2 sentence overall assessment",
-  "score": <integer 1-10>,
-  "solidAnalysis": {
-    "SRP": { "status": "ok|warning|critical", "notes": "..." },
-    "OCP": { "status": "ok|warning|critical", "notes": "..." },
-    "LSP": { "status": "ok|warning|critical", "notes": "..." },
-    "ISP": { "status": "ok|warning|critical", "notes": "..." },
-    "DIP": { "status": "ok|warning|critical", "notes": "..." }
-  },
-  "issues": [
-    {
-      "severity": "critical|warning|suggestion",
-      "category": "security|performance|solid-SRP|solid-OCP|solid-LSP|solid-ISP|solid-DIP|angular-best-practices|clean-code",
-      "line": <number or null>,
-      "title": "short issue title",
-      "description": "what the problem is and why it matters",
-      "fix": "concrete code example or fix suggestion"
-    }
-  ],
-  "positives": ["list of things done well"],
-  "quickWins": ["top 3 most impactful fixes to do first"]
-}
-
-## File: ${filename}
-\`\`\`
-${code}
-\`\`\``;
-}
-
 // ─── Review Logic ─────────────────────────────────────────────────────────────
 
-async function performReview(
+function performReview(
   code: string,
   filename: string,
   focusAreas: string[]
-): Promise<string> {
+): string {
   const language = detectLanguage(filename, code);
 
-  if (language === "unknown") {
-    return JSON.stringify({
-      summary: `File "${filename}" is not a recognized .NET or Angular file.`,
-      score: null,
-      issues: [],
-      positives: [],
-      quickWins: [],
-    });
-  }
+  if (language === "unknown")
+    return `File "${filename}" is not a recognized .NET or Angular file.`;
 
-  // ── Run AST Analyzer ──────────────────────────────────────────────────────
-  let astMetadata: string | undefined;
-  let rawMeta: TsMorphMetadata | RoslynMetadata | undefined;
+  const focusLine = focusAreas.length > 0 ? `Focus: ${focusAreas.join(", ")}\n\n` : "";
 
   if (language === "angular") {
+    let meta: TsMorphMetadata;
     try {
-      const meta = analyzeTypeScript(code, filename);
-      rawMeta = meta;
-      astMetadata = formatTsMorphSection(meta);
+      meta = analyzeTypeScript(code, filename);
     } catch (e) {
-      astMetadata = `## AST Analysis (ts-morph)\n⚠️ ts-morph analysis failed: ${(e as Error).message}\n`;
+      return `## AST Analysis Failed\n⚠️ ${(e as Error).message}`;
     }
-  } else if (language === "dotnet") {
+    return `# Code Analysis: ${filename} (Angular/TypeScript)\n${focusLine}${formatTsMorphSection(meta)}\n\n## Raw AST\n\`\`\`json\n${JSON.stringify(meta, null, 2)}\n\`\`\``;
+  } else {
     const meta = analyzeCSharp(code, filename);
-    rawMeta = meta;
-    astMetadata = formatRoslynSection(meta);
-  }
-
-  // ── Build prompt with AST context ─────────────────────────────────────────
-  const prompt = buildReviewPrompt(code, language, filename, focusAreas, astMetadata);
-
-  const message = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 4096,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const raw = message.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b as { type: "text"; text: string }).text)
-    .join("");
-
-  try {
-    const parsed = JSON.parse(raw);
-    parsed._meta = {
-      filename,
-      language,
-      reviewedAt: new Date().toISOString(),
-      astAnalyzer: language === "angular" ? "ts-morph" : "roslyn",
-      astAvailable: !!rawMeta && !("error" in rawMeta && rawMeta.error),
-    };
-    return JSON.stringify(parsed, null, 2);
-  } catch {
-    return raw;
+    return `# Code Analysis: ${filename} (.NET/C#)\n${focusLine}${formatRoslynSection(meta)}\n\n## Raw AST\n\`\`\`json\n${JSON.stringify(meta, null, 2)}\n\`\`\``;
   }
 }
 
@@ -353,13 +183,12 @@ server.tool(
     filePath: z.string().describe("Absolute or relative path to the file"),
     focusAreas: focusAreasSchema,
   },
-  async ({ filePath, focusAreas }) => {
+  ({ filePath, focusAreas }) => {
     const absolutePath = resolve(filePath);
     if (!existsSync(absolutePath))
       return { content: [{ type: "text", text: `File not found: ${absolutePath}` }], isError: true };
     const code = readFileSync(absolutePath, "utf-8");
-    const result = await performReview(code, filePath, focusAreas);
-    return { content: [{ type: "text", text: result }] };
+    return { content: [{ type: "text", text: performReview(code, filePath, focusAreas) }] };
   }
 );
 
@@ -371,9 +200,8 @@ server.tool(
     filename: z.string().describe('e.g. "UserService.cs" or "user.component.ts"'),
     focusAreas: focusAreasSchema,
   },
-  async ({ code, filename, focusAreas }) => {
-    const result = await performReview(code, filename, focusAreas);
-    return { content: [{ type: "text", text: result }] };
+  ({ code, filename, focusAreas }) => {
+    return { content: [{ type: "text", text: performReview(code, filename, focusAreas) }] };
   }
 );
 
@@ -407,11 +235,9 @@ server.tool(
     if (relevant.length === 0)
       return { content: [{ type: "text", text: "No .NET or Angular files found in the diff." }] };
 
-    const reviews: Record<string, unknown> = {};
-    for (const file of relevant) {
-      const result = await performReview(file.content, file.filename, focusAreas);
-      try { reviews[file.filename] = JSON.parse(result); } catch { reviews[file.filename] = { raw: result }; }
-    }
+    const reviews: Record<string, string> = {};
+    for (const file of relevant)
+      reviews[file.filename] = performReview(file.content, file.filename, focusAreas);
 
     return { content: [{ type: "text", text: JSON.stringify(reviews, null, 2) }] };
   }
@@ -424,14 +250,13 @@ server.tool(
     filePaths: z.array(z.string()).describe("List of file paths to review"),
     focusAreas: focusAreasSchema,
   },
-  async ({ filePaths, focusAreas }) => {
-    const reviews: Record<string, unknown> = {};
+  ({ filePaths, focusAreas }) => {
+    const reviews: Record<string, string> = {};
     for (const filePath of filePaths) {
       const absolutePath = resolve(filePath);
-      if (!existsSync(absolutePath)) { reviews[filePath] = { error: "File not found" }; continue; }
+      if (!existsSync(absolutePath)) { reviews[filePath] = "File not found"; continue; }
       const code = readFileSync(absolutePath, "utf-8");
-      const result = await performReview(code, filePath, focusAreas);
-      try { reviews[filePath] = JSON.parse(result); } catch { reviews[filePath] = { raw: result }; }
+      reviews[filePath] = performReview(code, filePath, focusAreas);
     }
     return { content: [{ type: "text", text: JSON.stringify(reviews, null, 2) }] };
   }
@@ -705,45 +530,15 @@ server.tool(
       return { content: [{ type: "text", text: `File not found: ${absFile}` }], isError: true };
 
     const code = readFileSync(absFile, "utf-8");
-    const language = detectLanguage(filePath, code);
 
-    // Load index for context
-    let indexContext = "";
-    if (type === "angular") {
-      const index = indexAngularProjectCached(absProject, true);
-      indexContext = formatAngularIndexForLLM(index);
-    } else {
-      const index = indexDotnetProject(absProject, true);
-      indexContext = formatDotnetIndexForLLM(index);
-    }
+    const indexContext = type === "angular"
+      ? formatAngularIndexForLLM(indexAngularProjectCached(absProject, true))
+      : formatDotnetIndexForLLM(indexDotnetProject(absProject, true));
 
-    // Run AST analysis on the file
-    let astMetadata: string | undefined;
-    if (language === "angular") {
-      try { astMetadata = formatTsMorphSection(analyzeTypeScript(code, filePath)); } catch {}
-    } else if (language === "dotnet") {
-      astMetadata = formatRoslynSection(analyzeCSharp(code, filePath));
-    }
+    const fileAnalysis = performReview(code, filePath, focusAreas);
 
-    // Build enriched prompt with project index prepended
-    const combinedContext = `## Project Index (full codebase context)\n${indexContext}\n\n---\n\n${astMetadata ?? ""}`;
-    const prompt = buildReviewPrompt(code, language, filePath, focusAreas, combinedContext);
-
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const raw = message.content.filter((b) => b.type === "text").map((b) => (b as { type: "text"; text: string }).text).join("");
-
-    try {
-      const parsed = JSON.parse(raw);
-      parsed._meta = { filename: filePath, language, reviewedAt: new Date().toISOString(), hadProjectIndex: true };
-      return { content: [{ type: "text", text: JSON.stringify(parsed, null, 2) }] };
-    } catch {
-      return { content: [{ type: "text", text: raw }] };
-    }
+    const output = `## Project Index\n${indexContext}\n\n---\n\n${fileAnalysis}`;
+    return { content: [{ type: "text", text: output }] };
   }
 );
 
@@ -766,6 +561,7 @@ server.tool(
       return { content: [{ type: "text", text: summary + "\n\n" + JSON.stringify(results, null, 2) }] };
     } else {
       const res = runDotnetAdvancedAnalysis(abs, "complexity");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const items = res.cyclomaticComplexity ?? [];
       const summary = `Found ${items.length} complex methods.\n` +
         items.slice(0, 5).map((r) => `  [${r.severity}] ${r.className}.${r.methodName} (${r.file}:${r.line}) → CC=${r.complexity}`).join("\n");
@@ -788,6 +584,7 @@ server.tool(
       return { content: [{ type: "text", text: summary + "\n\n" + JSON.stringify(results, null, 2) }] };
     } else {
       const res = runDotnetAdvancedAnalysis(abs, "deadcode");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const items = res.deadCode ?? [];
       const summary = `Found ${items.length} dead code items.\n` +
         items.slice(0, 8).map((r) => `  [${r.kind}] ${r.name} (${r.file}:${r.line}) — ${r.reason}`).join("\n");
@@ -812,6 +609,7 @@ server.tool(
       return { content: [{ type: "text", text: summary + "\n\n" + JSON.stringify(results, null, 2) }] };
     } else {
       const res = runDotnetAdvancedAnalysis(abs, "nullflow");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const items = res.nullabilityIssues ?? [];
       const criticals = items.filter((r) => r.severity === "critical").length;
       const summary = `Found ${items.length} nullability issues (${criticals} critical).\n` +
@@ -838,6 +636,7 @@ server.tool(
       return { content: [{ type: "text", text: summary + "\n\n" + JSON.stringify(results, null, 2) }] };
     } else {
       const res = runDotnetAdvancedAnalysis(abs, "duplicates");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const items = res.duplicates ?? [];
       const summary = `Found ${items.length} duplicate method groups.\n` +
         items.slice(0, 5).map((g) =>
@@ -869,6 +668,7 @@ server.tool(
       return { content: [{ type: "text", text: summary + "\n\n" + JSON.stringify(results.slice(0, 20), null, 2) }] };
     } else {
       const res = runDotnetAdvancedAnalysis(abs, "refactoring");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const items = res.refactoringSafety ?? [];
       const risky = items.filter((r) => !r.safeToRename);
       const summary = `Analyzed ${items.length} public members. ${risky.length} have rename risks.\n` +
@@ -897,6 +697,7 @@ server.tool(
       return { content: [{ type: "text", text: summary + "\n\n" + JSON.stringify(fixes, null, 2) }] };
     } else {
       const res = runDotnetAdvancedAnalysis(abs, "autofix");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const fixes = res.autoFixes ?? [];
       const automated = fixes.filter((f) => f.automated).length;
       const summary = `Generated ${fixes.length} fixes (${automated} fully automated).\n\n` +
@@ -925,6 +726,7 @@ server.tool(
       return { content: [{ type: "text", text: summary + "\n\n" + JSON.stringify(results, null, 2) }] };
     } else {
       const res = runDotnetAdvancedAnalysis(abs, "dataflow");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const items = res.crossFileDataflow ?? [];
       const criticals = items.filter((r) => r.severity === "critical").length;
       const summary = `Found ${items.length} cross-file dataflow issues (${criticals} critical).\n` +
@@ -980,6 +782,7 @@ server.tool(
       };
     } else {
       const res = runDotnetAdvancedAnalysis(abs, "all");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       report = {
         ...res,
         summary: {
@@ -1023,7 +826,12 @@ server.tool(
       return { content: [{ type: "text", text: text + "\n\n" + JSON.stringify(results, null, 2) }] };
 
     } else {
-      const results = runDotnetSplitAnalysis(abs, targetClass);
+      let results: ReturnType<typeof runDotnetSplitAnalysis>;
+      try {
+        results = runDotnetSplitAnalysis(abs, targetClass);
+      } catch (e) {
+        return { content: [{ type: "text", text: `⚠️ .NET split analyzer error: ${(e as Error).message}` }], isError: true };
+      }
 
       if (results.length === 0)
         return { content: [{ type: "text", text: targetClass ? `No split needed for "${targetClass}" — class is well-focused.` : "No split candidates found in project." }] };
@@ -1141,6 +949,7 @@ server.tool(
 
     } else {
       const res = runDotnetIntelligence(abs, "maintainability");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const items = res.maintainabilityIndex ?? [];
       const fGrade = items.filter((r) => r.grade === "F").length;
       const avg = items.length > 0 ? Math.round(items.reduce((s, r) => s + r.maintainabilityIndexScore, 0) / items.length) : 0;
@@ -1241,6 +1050,7 @@ server.tool(
 
     } else {
       const res = runDotnetIntelligence(abs, "cfg");
+      if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const results = res.controlFlow ?? [];
       const totalUnreachable = results.reduce((s, r) => s + r.unreachableBlocks.length, 0);
       const totalInfinite = results.reduce((s, r) => s + r.infiniteLoopRisks.length, 0);
@@ -1408,6 +1218,9 @@ server.tool(
     const quality = type === "angular"
       ? analyzeAngularTestQuality(abs)
       : runDotnetTestQuality(abs);
+
+    if ("error" in quality && quality.error)
+      return { content: [{ type: "text", text: `⚠️ Test quality analyzer error: ${quality.error}` }], isError: true };
 
     const qs = "summary" in quality ? quality.summary : null;
     const cs = coverage.summary;

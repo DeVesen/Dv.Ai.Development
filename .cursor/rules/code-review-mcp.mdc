@@ -1,5 +1,5 @@
 ---
-description: Code-Review-MCP — Planung (index_project, find_in_index, suggest_class_splits, analyze_refactoring_safety, analyze_type_graph, analyze_maintainability_index, analyze_dataflow), Implementierung (review_file, review_code, review_git_diff, review_files_batch, analyze_nullability, analyze_complexity, generate_auto_fixes, analyze_control_flow, analyze_dead_code, analyze_ast_only) oder Nach-Implementierung (analyze_coverage, analyze_test_quality, analyze_test_health, analyze_duplicates, review_with_index, analyze_advanced_all) je nach Phase; Ausgabe strukturiert mit Score, Kritisch/Warnung/Gut/Sofortmaßnahmen.
+description: Code-Review-MCP — Planung (index_project, find_in_index, suggest_class_splits, analyze_refactoring_safety, analyze_type_graph, analyze_maintainability_index, analyze_dataflow), Implementierung (review_file, review_code, review_git_diff, review_files_batch, analyze_nullability, analyze_complexity, generate_auto_fixes, analyze_control_flow, analyze_dead_code, analyze_ast_only) oder Nach-Implementierung (analyze_coverage, analyze_test_quality, analyze_test_health, analyze_duplicates, review_with_index, analyze_advanced_all) je nach Phase; Ausgabe strukturiert mit Score, Kritisch/Warnung/Gut/Sofortmaßnahmen. Symbol-Bezug (Klasse, Methode, Property, Service, Route): Grep nicht zuerst — zuerst index_project, dann find_in_index. Kein Index bei reinem UI-Wortschatz (Button-Label, sichtbares Feld) ohne Symbol.
 alwaysApply: true
 ---
 
@@ -22,15 +22,25 @@ Schlüsselwörter: "Tests laufen", "Feature fertig", "vor dem Merge", "Sprint-En
 
 ## PLANUNG — Vorgehen
 
-**Schritt 1** — Immer zuerst:
+**Symbol-Bezug (Klasse, Methode, Property, Service, Route):** Grep nicht zuerst —
+zuerst `index_project`, dann `find_in_index`. Grep nur für Caller, String-Literale, Routes.
+**Kein Index** bei reinem UI-Wortschatz (Button-Label, sichtbares Feld) ohne genanntes Symbol.
+Vollständige Recherche-Reihenfolge: [code-review-mcp SKILL.md](../skills/code-review-mcp/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
+
+**Schritt 1** — Immer zuerst (`projectPath` = `{frontend-path}` / `{backend-path}` aus `./AGENTS.md`):
 ```
-index_project(projectPath: "<Pfad>", type: "auto")
+// Angular FE:
+index_project(projectPath: "{frontend-path}", type: "angular")
+// .NET Backend:
+index_project(projectPath: "{backend-path}", type: "dotnet")
 ```
+Bei Fehler: Pfad-Playbook in [code-review-mcp SKILL.md — MCP-Pfadauflösung](../skills/code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) befolgen (max. 2 Versuche je Stack, dann MCP-Fallback dokumentieren).
 Zeige kompakt: was gibt es, was sind die größten Abhängigkeiten, gibt es Warnungen?
 
 **Schritt 2** — Bei konkreter Klasse/Service:
 ```
-find_in_index(projectPath: "...", type: "...", query: "<Name>")
+find_in_index(projectPath: "{frontend-path}", type: "angular", query: "<Name>")
+// bzw. projectPath: "{backend-path}", type: "dotnet"
 ```
 
 **Schritt 3** — Wenn bestehende Klasse erweitert werden soll:

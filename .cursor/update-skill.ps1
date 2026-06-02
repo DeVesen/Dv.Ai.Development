@@ -235,7 +235,16 @@ function Invoke-McpConfig {
         }
 
         if ($mcpDoc.mcpServers.PSObject.Properties[$serverName]) {
-            $mcpDoc.mcpServers.PSObject.Properties[$serverName].Value = $entry
+            # Merge: keep existing fields not in template (e.g. autoApprove)
+            $existing = $mcpDoc.mcpServers.PSObject.Properties[$serverName].Value
+            foreach ($prop in $entry.PSObject.Properties) {
+                if ($existing.PSObject.Properties[$prop.Name]) {
+                    $existing.PSObject.Properties[$prop.Name].Value = $prop.Value
+                } else {
+                    $existing | Add-Member -NotePropertyName $prop.Name -NotePropertyValue $prop.Value
+                }
+            }
+            $mcpDoc.mcpServers.PSObject.Properties[$serverName].Value = $existing
         } else {
             $mcpDoc.mcpServers | Add-Member -NotePropertyName $serverName -NotePropertyValue $entry
         }

@@ -3,7 +3,8 @@
 // Usage: dotnet script roslyn-advanced.csx -- <rootPath> <feature>
 // Features: complexity | deadcode | nullflow | duplicates | refactoring | autofix | dataflow | all
 
-#r "nuget: Microsoft.CodeAnalysis.CSharp, 4.9.2"
+#r "nuget: Microsoft.CodeAnalysis.CSharp, 5.0.0-2.final"
+#nullable enable
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -131,9 +132,9 @@ static List<DeadCodeEntry> AnalyzeDeadCode(List<(string Path, string RelPath, st
                 var name = method.Identifier.Text;
                 if (name == cls.Identifier.Text) continue; // constructor-like
                 var calledInClass = cls.DescendantNodes()
-                    .OfType<InvocationExpressionSyntax>()
-                    .Any(inv => inv.Expression is MemberAccessExpressionSyntax ma && ma.Name.Identifier.Text == name
-                             || inv.Expression is IdentifierNameSyntax id && id.Identifier.Text == name);
+                    .OfType<IdentifierNameSyntax>()
+                    .Any(id => id.Identifier.Text == name
+                            && id.Parent is not MethodDeclarationSyntax);
                 if (!calledInClass)
                     results.Add(new DeadCodeEntry { File = relPath, Name = $"{cls.Identifier.Text}.{name}", Kind = "method", Line = method.GetLocation().GetLineSpan().StartLinePosition.Line + 1, Visibility = "private", Reason = "Private method never called within class" });
             }
@@ -147,7 +148,7 @@ static List<DeadCodeEntry> AnalyzeDeadCode(List<(string Path, string RelPath, st
                     var name = variable.Identifier.Text;
                     var readCount = cls.DescendantNodes().OfType<IdentifierNameSyntax>()
                         .Count(id => id.Identifier.Text == name);
-                    if (readCount <= 1) // only the declaration itself
+                    if (readCount == 0) // declaration is SyntaxToken, not IdentifierNameSyntax — any count > 0 is a real usage
                         results.Add(new DeadCodeEntry { File = relPath, Name = $"{cls.Identifier.Text}.{name}", Kind = "field", Line = field.GetLocation().GetLineSpan().StartLinePosition.Line + 1, Visibility = "private", Reason = "Private field never read after assignment" });
                 }
             }
@@ -536,13 +537,13 @@ static List<DataflowEntry> AnalyzeDataflow(List<(string Path, string RelPath, st
 }
 
 // ── Data Models ───────────────────────────────────────────────────────────────
-class AdvancedAnalysisResult { public string ProjectRoot{get;set;}="" public string GeneratedAt{get;set;}="" public List<ComplexityEntry>? CyclomaticComplexity{get;set;} public List<DeadCodeEntry>? DeadCode{get;set;} public List<NullabilityEntry>? NullabilityIssues{get;set;} public List<DuplicateGroup>? Duplicates{get;set;} public List<RefactoringSafetyEntry>? RefactoringSafety{get;set;} public List<AutoFixEntry>? AutoFixes{get;set;} public List<DataflowEntry>? CrossFileDataflow{get;set;} }
-class ComplexityEntry { public string File{get;set;}="" public string ClassName{get;set;}="" public string MethodName{get;set;}="" public int Line{get;set;} public int Complexity{get;set;} public string Severity{get;set;}="" public List<string> Branches{get;set;}=new(); }
-class DeadCodeEntry { public string File{get;set;}="" public string Name{get;set;}="" public string Kind{get;set;}="" public int Line{get;set;} public string Visibility{get;set;}="" public string Reason{get;set;}="" }
-class NullabilityEntry { public string File{get;set;}="" public int Line{get;set;} public string Code{get;set;}="" public string Issue{get;set;}="" public string Severity{get;set;}="" public string Fix{get;set;}="" }
-class DuplicateGroup { public int Similarity{get;set;} public List<DuplicateInstance> Instances{get;set;}=new(); public string Suggestion{get;set;}="" }
-class DuplicateInstance { public string File{get;set;}="" public string ClassName{get;set;}="" public string MethodName{get;set;}="" public int Line{get;set;} }
-class RefactoringSafetyEntry { public string File{get;set;}="" public string ClassName{get;set;}="" public string MemberName{get;set;}="" public int Line{get;set;} public int UsageCount{get;set;} public List<UsageEntry> Usages{get;set;}=new(); public bool SafeToRename{get;set;} public List<string> Risks{get;set;}=new(); }
-class UsageEntry { public string File{get;set;}="" public int Line{get;set;} public string Context{get;set;}="" }
-class AutoFixEntry { public string File{get;set;}="" public int Line{get;set;} public string Category{get;set;}="" public string Description{get;set;}="" public string Before{get;set;}="" public string After{get;set;}="" public bool Automated{get;set;} }
-class DataflowEntry { public string File{get;set;}="" public int Line{get;set;} public string FromClass{get;set;}="" public string FromMethod{get;set;}="" public string ToClass{get;set;}="" public string ToMethod{get;set;}="" public string Issue{get;set;}="" public string Severity{get;set;}="" public string DataPath{get;set;}="" }
+class AdvancedAnalysisResult { public string ProjectRoot{get;set;}=""; public string GeneratedAt{get;set;}=""; public List<ComplexityEntry>? CyclomaticComplexity{get;set;} public List<DeadCodeEntry>? DeadCode{get;set;} public List<NullabilityEntry>? NullabilityIssues{get;set;} public List<DuplicateGroup>? Duplicates{get;set;} public List<RefactoringSafetyEntry>? RefactoringSafety{get;set;} public List<AutoFixEntry>? AutoFixes{get;set;} public List<DataflowEntry>? CrossFileDataflow{get;set;} }
+class ComplexityEntry { public string File{get;set;}=""; public string ClassName{get;set;}=""; public string MethodName{get;set;}=""; public int Line{get;set;} public int Complexity{get;set;} public string Severity{get;set;}=""; public List<string> Branches{get;set;}=new(); }
+class DeadCodeEntry { public string File{get;set;}=""; public string Name{get;set;}=""; public string Kind{get;set;}=""; public int Line{get;set;} public string Visibility{get;set;}=""; public string Reason{get;set;}=""; }
+class NullabilityEntry { public string File{get;set;}=""; public int Line{get;set;} public string Code{get;set;}=""; public string Issue{get;set;}=""; public string Severity{get;set;}=""; public string Fix{get;set;}=""; }
+class DuplicateGroup { public int Similarity{get;set;} public List<DuplicateInstance> Instances{get;set;}=new(); public string Suggestion{get;set;}=""; }
+class DuplicateInstance { public string File{get;set;}=""; public string ClassName{get;set;}=""; public string MethodName{get;set;}=""; public int Line{get;set;} }
+class RefactoringSafetyEntry { public string File{get;set;}=""; public string ClassName{get;set;}=""; public string MemberName{get;set;}=""; public int Line{get;set;} public int UsageCount{get;set;} public List<UsageEntry> Usages{get;set;}=new(); public bool SafeToRename{get;set;} public List<string> Risks{get;set;}=new(); }
+class UsageEntry { public string File{get;set;}=""; public int Line{get;set;} public string Context{get;set;}=""; }
+class AutoFixEntry { public string File{get;set;}=""; public int Line{get;set;} public string Category{get;set;}=""; public string Description{get;set;}=""; public string Before{get;set;}=""; public string After{get;set;}=""; public bool Automated{get;set;} }
+class DataflowEntry { public string File{get;set;}=""; public int Line{get;set;} public string FromClass{get;set;}=""; public string FromMethod{get;set;}=""; public string ToClass{get;set;}=""; public string ToMethod{get;set;}=""; public string Issue{get;set;}=""; public string Severity{get;set;}=""; public string DataPath{get;set;}=""; }

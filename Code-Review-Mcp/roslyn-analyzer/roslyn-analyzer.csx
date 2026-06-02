@@ -3,7 +3,8 @@
 // Usage: dotnet script roslyn-analyzer.csx -- <file.cs>
 // Output: JSON metadata for SOLID analysis
 
-#r "nuget: Microsoft.CodeAnalysis.CSharp, 4.9.2"
+#r "nuget: Microsoft.CodeAnalysis.CSharp, 5.0.0-2.final"
+#nullable enable
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -160,7 +161,7 @@ static List<int> DetectDeepNesting(ClassDeclarationSyntax classDecl)
         int currentDepth = 0;
         foreach (var node in method.DescendantNodes())
         {
-            if (node is IfStatementSyntax or ForStatementSyntax or ForeachStatementSyntax or WhileStatementSyntax or SwitchStatementSyntax)
+            if (node is IfStatementSyntax or ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax or SwitchStatementSyntax)
                 currentDepth++;
             else if (node is BlockSyntax)
                 currentDepth = Math.Max(0, currentDepth - 1);
@@ -235,7 +236,7 @@ class AnalysisResult
     public List<InterfaceMeta> Interfaces { get; set; } = new();
     public List<string> Usings { get; set; } = new();
     public List<SolidViolation> SolidViolations { get; set; } = new();
-    public Metrics? Metrics { get; set; }
+    public Metrics Metrics { get; set; } = new();
 }
 
 class ClassMeta
@@ -259,8 +260,8 @@ class ClassMeta
     public bool IsPartial { get; set; }
 }
 
-class InterfaceMeta { public string Name { get; set; } = ""; public int LineStart { get; set; }; public int MethodCount { get; set; }; public int PropertyCount { get; set; }; }
-class NewExpression { public string TypeName { get; set; } = ""; public int Line { get; set; }; }
-class LongMethod { public string Name { get; set; } = ""; public int Lines { get; set; }; }
-class SolidViolation { public string Principle { get; set; } = ""; public string Severity { get; set; } = ""; public string ClassName { get; set; } = ""; public int Line { get; set; }; public string Description { get; set; } = ""; public string Evidence { get; set; } = ""; }
-class Metrics { public int TotalClasses { get; set; }; public int TotalInterfaces { get; set; }; public int TotalUsings { get; set; }; public double AvgMethodsPerClass { get; set; }; public int MaxMethodsInClass { get; set; }; public int TotalSolidViolations { get; set; }; public int CriticalViolations { get; set; }; }
+class InterfaceMeta { public string Name { get; set; } = ""; public int LineStart { get; set; } public int MethodCount { get; set; } public int PropertyCount { get; set; } }
+class NewExpression { public string TypeName { get; set; } = ""; public int Line { get; set; } }
+class LongMethod { public string Name { get; set; } = ""; public int Lines { get; set; } }
+class SolidViolation { public string Principle { get; set; } = ""; public string Severity { get; set; } = ""; public string ClassName { get; set; } = ""; public int Line { get; set; } public string Description { get; set; } = ""; public string Evidence { get; set; } = ""; }
+class Metrics { public int TotalClasses { get; set; } public int TotalInterfaces { get; set; } public int TotalUsings { get; set; } public double AvgMethodsPerClass { get; set; } public int MaxMethodsInClass { get; set; } public int TotalSolidViolations { get; set; } public int CriticalViolations { get; set; } }

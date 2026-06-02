@@ -38,6 +38,12 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## Aufgabe (Deliverable)
 
+**Recherche-Reihenfolge:** Code-Landkarte vor Grep ([code-review-mcp SKILL.md](../skills/code-review-mcp/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge)).
+Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten; Grep-Fundstellen nur als Ergänzung.
+
+**MCP-Pfade:** `{frontend-path}` (Angular) / `{backend-path}` (.NET) gemäß `./AGENTS.md`. Pfad-Fehler-Playbook: [code-review-mcp/SKILL.md — MCP-Pfadauflösung](../skills/code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) (max. 2 Versuche je Stack).
+
+0. **MCP-Status (Pflicht-Header):** Erste Zeile des Deliverable: `MCP: ok` wenn `index_project` + `find_in_index` erfolgreich; sonst `MCP: fallback (<Grund>); Anker via Read/Grep: <Liste>`. Alle vom Orchestrator genannten Symbole via `find_in_index` auflösen — kein stilles Überspringen.
 1. Betroffene Dateien/Ordner (relativ zum Repo-Root) — oder Suchhinweise statt Raten.
 2. Konkrete Einstiegspunkte (Komponenten, Services, Routen, Config).
 3. Nachbarschaftskontext (Aufrufketten, relevante Schnittstellen).

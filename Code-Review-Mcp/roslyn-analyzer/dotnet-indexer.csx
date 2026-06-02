@@ -3,8 +3,8 @@
 // Usage: dotnet script dotnet-indexer.csx -- <solutionOrProjectRoot>
 // Output: Full JSON index of the .NET project
 
-#r "nuget: Microsoft.CodeAnalysis.CSharp, 4.9.2"
-#r "nuget: Microsoft.CodeAnalysis.CSharp.Workspaces, 4.9.2"
+#r "nuget: Microsoft.CodeAnalysis.CSharp, 5.0.0-2.final"
+#nullable enable
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -369,15 +369,15 @@ class ProjectIndex
     public ArchitectureReport? ArchitectureReport { get; set; }
 }
 
-class ProjectSummary { public int TotalFiles{get;set;} public int TotalClasses{get;set;} public int TotalInterfaces{get;set;} public int TotalEnums{get;set;} public int TotalRecords{get;set;} public int ControllerCount{get;set;} public int ServiceCount{get;set;} public int RepositoryCount{get;set;} public int AbstractClasses{get;set;} public int GenericClasses{get;set;} public int TotalAsyncMethods{get;set;} public int ClassesWithResultWait{get;set;} public int ClassesWithDipViolations{get;set;} public int TotalSwitchStatements{get;set;} public int InterfacesWithoutImplementation{get;set;} public int UniqueNamespaces{get;set;}; }
-class ClassEntry { public string Name{get;set;}="" public string File{get;set;}="" public int Line{get;set;} public string Namespace{get;set;}="" public string Layer{get;set;}="" public bool IsAbstract{get;set;} public bool IsSealed{get;set;} public bool IsPartial{get;set;} public bool IsGeneric{get;set;} public List<string> Attributes{get;set;}=new(); public List<string> ImplementedInterfaces{get;set;}=new(); public string? BaseClass{get;set;} public List<string> ConstructorDeps{get;set;}=new(); public List<MethodEntry> PublicMethods{get;set;}=new(); public List<string> Properties{get;set;}=new(); public List<DipViolation> DipViolations{get;set;}=new(); public List<string> AsyncMethods{get;set;}=new(); public List<int> ResultWaitLines{get;set;}=new(); public List<LongMethod> LongMethods{get;set;}=new(); public int MethodCount{get;set;} public int PropertyCount{get;set;} public int SwitchCount{get;set;} }
-class InterfaceEntry { public string Name{get;set;}="" public string File{get;set;}="" public int Line{get;set;} public string Namespace{get;set;}="" public List<string> Methods{get;set;}=new(); public List<string> Properties{get;set;}=new(); public List<string> ExtendedInterfaces{get;set;}=new(); public List<string> ImplementedBy{get;set;}=new(); public int MethodCount{get;set;} }
-class EnumEntry { public string Name{get;set;}="" public string File{get;set;}="" public int Line{get;set;} public string Namespace{get;set;}="" public List<string> Values{get;set;}=new(); }
-class RecordEntry { public string Name{get;set;}="" public string File{get;set;}="" public int Line{get;set;} public string Namespace{get;set;}="" public List<string> Properties{get;set;}=new(); public bool IsPositional{get;set;} }
-class MethodEntry { public string Name{get;set;}="" public string ReturnType{get;set;}="" public bool IsAsync{get;set;} public bool HasCancellationToken{get;set;} public int ParamCount{get;set;} public int Lines{get;set;} }
-class LongMethod { public string Name{get;set;}="" public int Lines{get;set;} public bool IsAsync{get;set;} public string ReturnType{get;set;}="" }
-class DipViolation { public string TypeName{get;set;}="" public int Line{get;set;} }
-class DependencyNode { public List<string> DependsOn{get;set;}=new(); public List<string> UsedBy{get;set;}=new(); public string File{get;set;}="" }
+class ProjectSummary { public int TotalFiles{get;set;} public int TotalClasses{get;set;} public int TotalInterfaces{get;set;} public int TotalEnums{get;set;} public int TotalRecords{get;set;} public int ControllerCount{get;set;} public int ServiceCount{get;set;} public int RepositoryCount{get;set;} public int AbstractClasses{get;set;} public int GenericClasses{get;set;} public int TotalAsyncMethods{get;set;} public int ClassesWithResultWait{get;set;} public int ClassesWithDipViolations{get;set;} public int TotalSwitchStatements{get;set;} public int InterfacesWithoutImplementation{get;set;} public int UniqueNamespaces{get;set;} }
+class ClassEntry { public string Name{get;set;}=""; public string File{get;set;}=""; public int Line{get;set;} public string Namespace{get;set;}=""; public string Layer{get;set;}=""; public bool IsAbstract{get;set;} public bool IsSealed{get;set;} public bool IsPartial{get;set;} public bool IsGeneric{get;set;} public List<string> Attributes{get;set;}=new(); public List<string> ImplementedInterfaces{get;set;}=new(); public string? BaseClass{get;set;} public List<string> ConstructorDeps{get;set;}=new(); public List<MethodEntry> PublicMethods{get;set;}=new(); public List<string> Properties{get;set;}=new(); public List<DipViolation> DipViolations{get;set;}=new(); public List<string> AsyncMethods{get;set;}=new(); public List<int> ResultWaitLines{get;set;}=new(); public List<LongMethod> LongMethods{get;set;}=new(); public int MethodCount{get;set;} public int PropertyCount{get;set;} public int SwitchCount{get;set;} }
+class InterfaceEntry { public string Name{get;set;}=""; public string File{get;set;}=""; public int Line{get;set;} public string Namespace{get;set;}=""; public List<string> Methods{get;set;}=new(); public List<string> Properties{get;set;}=new(); public List<string> ExtendedInterfaces{get;set;}=new(); public List<string> ImplementedBy{get;set;}=new(); public int MethodCount{get;set;} }
+class EnumEntry { public string Name{get;set;}=""; public string File{get;set;}=""; public int Line{get;set;} public string Namespace{get;set;}=""; public List<string> Values{get;set;}=new(); }
+class RecordEntry { public string Name{get;set;}=""; public string File{get;set;}=""; public int Line{get;set;} public string Namespace{get;set;}=""; public List<string> Properties{get;set;}=new(); public bool IsPositional{get;set;} }
+class MethodEntry { public string Name{get;set;}=""; public string ReturnType{get;set;}=""; public bool IsAsync{get;set;} public bool HasCancellationToken{get;set;} public int ParamCount{get;set;} public int Lines{get;set;} }
+class LongMethod { public string Name{get;set;}=""; public int Lines{get;set;} public bool IsAsync{get;set;} public string ReturnType{get;set;}=""; }
+class DipViolation { public string TypeName{get;set;}=""; public int Line{get;set;} }
+class DependencyNode { public List<string> DependsOn{get;set;}=new(); public List<string> UsedBy{get;set;}=new(); public string File{get;set;}=""; }
 class CouplingReport { public List<CouplingEntry> MostDepended{get;set;}=new(); public List<CouplingEntry> MostDepending{get;set;}=new(); public List<string> CircularRiskPairs{get;set;}=new(); }
-class CouplingEntry { public string Name{get;set;}="" public int Count{get;set;} }
+class CouplingEntry { public string Name{get;set;}=""; public int Count{get;set;} }
 class ArchitectureReport { public List<string> LayerViolations{get;set;}=new(); public List<string> OrphanInterfaces{get;set;}=new(); public List<string> GodClassCandidates{get;set;}=new(); public List<string> InterfaceWithSingleImpl{get;set;}=new(); }

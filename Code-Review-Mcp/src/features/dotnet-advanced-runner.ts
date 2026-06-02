@@ -26,7 +26,7 @@ export interface DotnetAutoFixEntry { file: string; line: number; category: stri
 export interface DotnetDataflowEntry { file: string; line: number; fromClass: string; fromMethod: string; toClass: string; toMethod: string; issue: string; severity: string; dataPath: string; }
 
 export function runDotnetAdvancedAnalysis(rootPath: string, feature: AdvancedFeature = "all"): DotnetAdvancedAnalysis {
-  const result = spawnSync("dotnet", ["script", SCRIPT_PATH, "--", rootPath, feature], {
+  const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", rootPath, feature], {
     encoding: "utf-8",
     timeout: 120_000,
     maxBuffer: 20 * 1024 * 1024,

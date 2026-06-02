@@ -41,6 +41,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 - [planning-workflow/SKILL.md](../skills/planning-workflow/SKILL.md) — Phase 4b, Schnittstellen aus 4a
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Abschnitt **Topic-Planer**
+- [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md) — Abschnitt „Code-Landkarte" und „MCP-Pfadauflösung"
 - Topic-relevante Skills aus Wirtsprojekt-Doku (z. B. `./AGENTS.md`, projektspezifische Skills)
 
 ## Eingaben vom Planer (Orchestrator)
@@ -57,6 +58,8 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 4. Risiken und offene Punkte topic-lokal.
 5. **Pflicht — Parallele Implementierung:** welche Teil-Arbeiten parallel möglich, Blocking zu anderen Topics, contract-first gemäß 4a.
 6. **Pflicht — Vorgeschlagene IMP-Slice-IDs:** gemäß [SKILL.md](../skills/planning-workflow/SKILL.md) **Slice-ID-Konvention** — `IMP-FE-{Bereich}-…` bzw. `IMP-BE-{ServiceKürzel}-…` (z. B. `IMP-FE-Search-Rules`, `IMP-BE-GW-Logging`) plus Wellen-/Blocking-Hinweis; ohne Gesamtplan.
+
+> **MCP-Lücke (wenn Scout `MCP: fallback`):** Für neue Symbole aus Phase 4a `find_in_index` aufrufen (`{frontend-path}` / `{backend-path}` aus `./AGENTS.md`); Ergebnis (ok oder fallback) im Teilplan festhalten — kein stilles Überspringen.
 
 ## Verboten
 

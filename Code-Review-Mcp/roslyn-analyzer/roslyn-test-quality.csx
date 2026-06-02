@@ -2,7 +2,8 @@
 // roslyn-test-quality.csx
 // Usage: dotnet script roslyn-test-quality.csx -- <rootPath>
 
-#r "nuget: Microsoft.CodeAnalysis.CSharp, 4.9.2"
+#r "nuget: Microsoft.CodeAnalysis.CSharp, 5.0.0-2.final"
+#nullable enable
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -258,9 +259,9 @@ static string Fix(string p) => p switch
 };
 
 // ── Data Models ───────────────────────────────────────────────────────────────
-class TestQualityResult { public string ProjectRoot{get;set;}="" public string GeneratedAt{get;set;}="" public TestSummary? Summary{get;set;} public List<TestFileEntry> TestFiles{get;set;}=new(); public List<AntiPatternEntry> AntiPatterns{get;set;}=new(); public List<CoverageGapEntry> CoverageGaps{get;set;}=new(); public List<string> Recommendations{get;set;}=new(); }
-class TestSummary { public int TotalTestFiles{get;set;} public int TotalTests{get;set;} public int TestsWithoutAssertions{get;set;} public int TestsWithWeakAssertions{get;set;} public int TestsWithOnlyHappyPath{get;set;} public double AvgAssertionsPerTest{get;set;} public int QualityScore{get;set;} public string Grade{get;set;}="" }
-class TestFileEntry { public string File{get;set;}="" public int TestCount{get;set;} public string Framework{get;set;}="" public List<TestEntry> Tests{get;set;}=new(); public int QualityScore{get;set;} public List<string> Issues{get;set;}=new(); }
-class TestEntry { public string Name{get;set;}="" public int Line{get;set;} public int AssertionCount{get;set;} public bool HasSetup{get;set;} public bool HasTeardown{get;set;} public int MockCount{get;set;} public List<string> AssertionTypes{get;set;}=new(); public List<string> AntiPatterns{get;set;}=new(); public bool IsParameterized{get;set;} public string Quality{get;set;}="" }
-class AntiPatternEntry { public string File{get;set;}="" public string TestName{get;set;}="" public int Line{get;set;} public string Pattern{get;set;}="" public string Description{get;set;}="" public string Severity{get;set;}="" public string Fix{get;set;}="" }
-class CoverageGapEntry { public string SourceFile{get;set;}="" public List<string> UntestedMethods{get;set;}=new(); public bool TestFileExists{get;set;} public string SuggestedTestFile{get;set;}="" }
+class TestQualityResult { public string ProjectRoot{get;set;}=""; public string GeneratedAt{get;set;}=""; public TestSummary? Summary{get;set;} public List<TestFileEntry> TestFiles{get;set;}=new(); public List<AntiPatternEntry> AntiPatterns{get;set;}=new(); public List<CoverageGapEntry> CoverageGaps{get;set;}=new(); public List<string> Recommendations{get;set;}=new(); }
+class TestSummary { public int TotalTestFiles{get;set;} public int TotalTests{get;set;} public int TestsWithoutAssertions{get;set;} public int TestsWithWeakAssertions{get;set;} public int TestsWithOnlyHappyPath{get;set;} public double AvgAssertionsPerTest{get;set;} public int QualityScore{get;set;} public string Grade{get;set;}=""; }
+class TestFileEntry { public string File{get;set;}=""; public int TestCount{get;set;} public string Framework{get;set;}=""; public List<TestEntry> Tests{get;set;}=new(); public int QualityScore{get;set;} public List<string> Issues{get;set;}=new(); }
+class TestEntry { public string Name{get;set;}=""; public int Line{get;set;} public int AssertionCount{get;set;} public bool HasSetup{get;set;} public bool HasTeardown{get;set;} public int MockCount{get;set;} public List<string> AssertionTypes{get;set;}=new(); public List<string> AntiPatterns{get;set;}=new(); public bool IsParameterized{get;set;} public string Quality{get;set;}=""; }
+class AntiPatternEntry { public string File{get;set;}=""; public string TestName{get;set;}=""; public int Line{get;set;} public string Pattern{get;set;}=""; public string Description{get;set;}=""; public string Severity{get;set;}=""; public string Fix{get;set;}=""; }
+class CoverageGapEntry { public string SourceFile{get;set;}=""; public List<string> UntestedMethods{get;set;}=new(); public bool TestFileExists{get;set;} public string SuggestedTestFile{get;set;}=""; }

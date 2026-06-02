@@ -8,40 +8,55 @@ COPY src/ ./src/
 RUN npm run build
 
 # ── Final Stage ────────────────────────────────────────────────────────────────
-# Use .NET SDK image as base so Roslyn/dotnet-script works
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine
 
-# Install Node.js 22 into the .NET image
 RUN apk add --no-cache nodejs npm git
 
 WORKDIR /app
 
-# Install dotnet-script globally for Roslyn analysis
+# Install dotnet-script globally
 RUN dotnet tool install -g dotnet-script
 ENV PATH="$PATH:/root/.dotnet/tools"
 
-# Warm up dotnet-script NuGet cache (avoids cold-start delay on first review)
-COPY roslyn-analyzer/roslyn-analyzer.csx ./roslyn-analyzer/
-RUN echo 'public class Dummy {}' > /tmp/warm.cs \
-    && dotnet script roslyn-analyzer/roslyn-analyzer.csx -- /tmp/warm.cs > /dev/null 2>&1 || true \
-    && rm /tmp/warm.cs
+# NuGet packages at a fixed world-readable path — same for root AND mcpuser
+ENV NUGET_PACKAGES=/app/nuget-cache
 
-# Install Node production deps
+# Copy roslyn scripts
+COPY roslyn-analyzer/ ./roslyn-analyzer/
+
+# Warm up ALL scripts as root — packages land in /app/nuget-cache
+RUN echo 'public class Dummy {}' > /tmp/warm.cs && mkdir -p /tmp/warmdir \
+    && dotnet script roslyn-analyzer/roslyn-analyzer.csx -- /tmp/warm.cs > /dev/null \
+    && dotnet script roslyn-analyzer/dotnet-indexer.csx -- /tmp/warmdir > /dev/null 2>&1 || true \
+    && dotnet script roslyn-analyzer/roslyn-advanced.csx -- /tmp/warmdir all > /dev/null 2>&1 || true \
+    && dotnet script roslyn-analyzer/roslyn-split.csx -- /tmp/warmdir > /dev/null 2>&1 || true \
+    && dotnet script roslyn-analyzer/roslyn-intelligence.csx -- /tmp/warmdir maintainability > /dev/null 2>&1 || true \
+    && dotnet script roslyn-analyzer/roslyn-test-quality.csx -- /tmp/warmdir > /dev/null 2>&1 || true \
+    && rm -rf /tmp/warm.cs /tmp/warmdir
+
+# Verify critical packages are cached
+RUN ls /app/nuget-cache/microsoft.codeanalysis.csharp/5.0.0-2.final > /dev/null \
+    && ls /app/nuget-cache/microsoft.codeanalysis.common/5.0.0-2.final > /dev/null
+
+# Make cache readable by all users
+RUN chmod -R 755 /app/nuget-cache
+
+# Copy dotnet-script tools to shared location accessible by mcpuser
+RUN cp -r /root/.dotnet/tools /app/dotnet-tools
+
+# Install Node production deps and compiled JS
 COPY package*.json ./
 RUN npm ci --omit=dev
-
-# Copy compiled JS
 COPY --from=node-builder /app/dist ./dist/
 
 # Non-root user
-RUN addgroup -S mcpuser && adduser -S mcpuser -G mcpuser -h /home/mcpuser
-RUN chown -R mcpuser:mcpuser /app
-# dotnet tools need home dir access
-RUN cp -r /root/.dotnet /home/mcpuser/.dotnet && chown -R mcpuser:mcpuser /home/mcpuser/.dotnet
-USER mcpuser
-ENV PATH="$PATH:/home/mcpuser/.dotnet/tools"
-ENV HOME=/home/mcpuser
+RUN addgroup -S mcpuser && adduser -S mcpuser -G mcpuser -h /home/mcpuser \
+    && chown -R mcpuser:mcpuser /app/dist /app/node_modules /app/package.json
 
+USER mcpuser
+ENV HOME=/home/mcpuser
+ENV NUGET_PACKAGES=/app/nuget-cache
+ENV PATH="$PATH:/app/dotnet-tools"
 ENV NODE_ENV=production
 
 CMD ["node", "dist/index.js"]

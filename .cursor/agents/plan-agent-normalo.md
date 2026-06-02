@@ -3,7 +3,6 @@ name: plan-agent-normalo
 model: auto
 description: Normalo-Perspektive für Planning Workflow Phase 5. Prüft Alltagstauglichkeit, Detailtiefe und Ausführbarkeit für folgende Agenten — kein neuer Plan.
 readonly: true
-is_background: true
 ---
 
 # Mitarbeiterprofil: Normalo (Planning Phase 5)

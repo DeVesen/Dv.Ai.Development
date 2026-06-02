@@ -2,7 +2,6 @@
 name: ado-story-pruefe-agent
 model: auto
 description: Story-Subagent für ADO prüfe Feature/Story. Führt Story-Phase aus (ADO lesen, Story-MD, Task-Inventar, parallele ado-task-pruefe-agent). Kein Drei-Perspektiven-Review. Use when devops-organisator or user delegates prüfe Story or prüfe Feature child story.
-is_background: true
 ---
 
 # Mitarbeiterprofil: ADO Story-Prüfe-Agent

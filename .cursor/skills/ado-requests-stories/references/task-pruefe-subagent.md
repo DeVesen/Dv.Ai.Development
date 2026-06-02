@@ -38,6 +38,7 @@ Ziel-Profil [ado-task-pruefe-agent.md](../../../agents/ado-task-pruefe-agent.md)
 
 1. **Codebase-Scout** (read-only) im Repo unter `{code-root}/`:
    - Scope aus Task/Story ableiten: typisch `{frontend-path}`, `{backend-path}`, ggf. weitere Stacks.
+   - **Recherche-Reihenfolge (Pflicht):** Bei Bezug auf Klassen, Methoden, Services, Components oder Routen zuerst `index_project` + `find_in_index` (MCP `code-review-mcp`), dann `Read`; Grep nur ergänzend. UI-only-Begriffe ohne Symbol (Button-Label, Feldname) ausnehmen. Siehe [code-review-mcp — Code-Landkarte](../../../skills/code-review-mcp/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
    - Konkrete Dateien, Einstiegspunkte, Nachbarschaft — **keine** Implementierung.
 2. **`tasks/task-{slug}.md`** anlegen oder aktualisieren mit **schlankem Schema** ([task-verfeinern.md](task-verfeinern.md#pflichtabschnitte-in-der-task-md)):
    - `## Story-Bezug` — Story-Zitat für diesen Task (bei Neuanlage; bei bestehender Datei nur wenn Story-Quelle geändert)

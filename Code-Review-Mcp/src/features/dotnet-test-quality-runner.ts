@@ -14,7 +14,7 @@ export interface DotnetTestQualityResult {
 }
 
 export function runDotnetTestQuality(rootPath: string): DotnetTestQualityResult {
-  const result = spawnSync("dotnet", ["script", SCRIPT_PATH, "--", rootPath], {
+  const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", rootPath], {
     encoding: "utf-8", timeout: 120_000, maxBuffer: 20 * 1024 * 1024,
   });
 

@@ -2,7 +2,6 @@
 name: implement-agent
 model: auto
 description: Implementierungs-Subagent für Implementation Workflow Schritt 2. Setzt genau einen Plan-Slice (IMP-*) um inkl. Build/Test und Unit-Tests im Slice-Scope — genericRTK Pflicht. Kein Scope-Creep.
-is_background: true
 ---
 
 ## Parameter

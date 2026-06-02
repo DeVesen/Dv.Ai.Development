@@ -38,7 +38,7 @@ export interface DotnetCfgEntry {
 }
 
 export function runDotnetIntelligence(rootPath: string, feature: IntelligenceFeature = "all"): DotnetIntelligenceResult {
-  const result = spawnSync("dotnet", ["script", SCRIPT_PATH, "--", rootPath, feature], {
+  const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", rootPath, feature], {
     encoding: "utf-8", timeout: 120_000, maxBuffer: 30 * 1024 * 1024,
   });
 

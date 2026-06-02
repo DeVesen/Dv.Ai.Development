@@ -71,13 +71,23 @@ Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rol
 3. **Phasen-Gates (verbindlich):** Stufe N+1 **erst**, wenn Stufe N **vollständig** abgeschlossen — siehe Skill **Phasen-Gates**. Parallelität **nur innerhalb derselben Stufe** (Scouts untereinander, Topic-Planer untereinander, Reviewer untereinander). **Verboten:** Review (Phase 5) während Topic-Planer (4b) läuft; Plan/4b während Scouts laufen; Review auf vorläufigem Entwurf statt **4c-Arbeitsversion**.
 4. Nur **kompakte Deliverables** zurückverlangen — du mergst und synthetisierst.
 
+## Code-Landkarte (Phase 2→3)
+
+**Vor jeder Scout-Delegation** mit Symbolen (Klasse, Service, Component, Methode, Route):
+
+1. Orchestrator ruft **einmal pro Stack** `index_project` auf — `{frontend-path}` (Angular) und/oder `{backend-path}` (.NET) gemäß `./AGENTS.md`.
+2. Ergebnis: aufgelöste Symbole und **verifizierter `projectPath`** als feste Werte in den Scout-Auftrag eintragen.
+3. **Schlägt `index_project` fehl:** Pfad-Playbook aus [code-review-mcp/SKILL.md — MCP-Pfadauflösung](../skills/code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) befolgen (max. 2 Versuche je Stack); danach `MCP-BLOCKER: <Fehlermeldung>` im Scout-Auftrag vermerken — **kein** stilles Überspringen.
+
+**Gate — Plan 4a nicht starten**, wenn alle Scouts `MCP: fallback` ohne dokumentierten Anker-Pfad zurückliefern.
+
 ## Ablauf (Orchestrator)
 
 **Strikte Reihenfolge — keine Cross-Phase-Parallelität:**
 
 1. **Phase 1** — Anforderung ohne Code-Scouting; bei Mehrdeutigkeit **Nutzer fragen**.
 2. **Phase 2** — Zwischenstand; **sofort** Phase 3 (kein Gate vor Scout).
-3. **Phase 3** — `plan-agent-scout`(s) starten → **warten bis alle zurück** → Merge vor 4a. Scouts: **nur** anforderungsrelevanter Code (YAGNI).
+3. **Phase 3** — **Vor Scout-Start:** Code-Landkarte (Abschnitt oben) — `index_project` pro Stack, verifizierten `projectPath` in Scout-Auftrag. Dann `plan-agent-scout`(s) starten → **warten bis alle zurück** → Merge vor 4a. Scouts: **nur** anforderungsrelevanter Code (YAGNI). Scout-Merge prüft `MCP: ok | fallback`-Status aller Scouts.
 4. **Phase 4a** — Topic-Map + Schnittstellen-Vertrag (du).
 5. **Phase 4b** — `plan-agent-topic-planner` pro Topic → **warten bis alle zurück** → **4c** Merge (du) zur **Arbeitsversion**.
 6. **Phase 5** — **erst nach fertiger 4c-Arbeitsversion** — drei Review-Agenten (parallel untereinander erlaubt) → **Phase 6** Review-Digest, Synthese, finales Planpaket inkl. **Umsetzungs-Topologie**.

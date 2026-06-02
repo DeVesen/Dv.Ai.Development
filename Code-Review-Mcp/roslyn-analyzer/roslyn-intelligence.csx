@@ -3,7 +3,8 @@
 // Usage: dotnet script roslyn-intelligence.csx -- <rootPath> <feature>
 // Features: maintainability | typegraph | cfg | all
 
-#r "nuget: Microsoft.CodeAnalysis.CSharp, 4.9.2"
+#r "nuget: Microsoft.CodeAnalysis.CSharp, 5.0.0-2.final"
+#nullable enable
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -439,7 +440,7 @@ static CfgEntry AnalyzeMethod(MethodDeclarationSyntax method, string className, 
                     var ln = ifStmt.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
                     entry.MissingReturnPaths.Add(new MissingReturnPath
                     {
-                        Path = $"if ({ifStmt.Condition.ToString().Truncate(40)}) → else/fallthrough",
+                        Path = $"if ({Tr(ifStmt.Condition.ToString(), 40)}) → else/fallthrough",
                         Line = ln,
                         Suggestion = $"Add explicit return {(retType.Contains("Task") ? "await Task.CompletedTask" : "value")} or throw in the fallthrough path",
                     });
@@ -486,20 +487,17 @@ static CfgEntry AnalyzeMethod(MethodDeclarationSyntax method, string className, 
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-static class StringExtensions
-{
-    public static string Truncate(this string s, int max) => s.Length <= max ? s : s[..max] + "…";
-}
+static string Tr(string s, int max) => s.Length <= max ? s : s[..max] + "…";
 
 // ── Data Models ───────────────────────────────────────────────────────────────
-class IntelligenceResult { public string ProjectRoot{get;set;}="" public string GeneratedAt{get;set;}="" public List<MaintainabilityEntry>? MaintainabilityIndex{get;set;} public TypeGraphResult? TypeGraph{get;set;} public List<CfgEntry>? ControlFlow{get;set;} }
-class MaintainabilityEntry { public string File{get;set;}="" public string ClassName{get;set;}="" public string MethodName{get;set;}="" public int Line{get;set;} public int MaintainabilityIndexScore{get;set;} public string Grade{get;set;}="" public int CyclomaticComplexity{get;set;} public int HalsteadVolume{get;set;} public int LinesOfCode{get;set;} public double Lcom{get;set;} public string Interpretation{get;set;}="" }
+class IntelligenceResult { public string ProjectRoot{get;set;}=""; public string GeneratedAt{get;set;}=""; public List<MaintainabilityEntry>? MaintainabilityIndex{get;set;} public TypeGraphResult? TypeGraph{get;set;} public List<CfgEntry>? ControlFlow{get;set;} }
+class MaintainabilityEntry { public string File{get;set;}=""; public string ClassName{get;set;}=""; public string MethodName{get;set;}=""; public int Line{get;set;} public int MaintainabilityIndexScore{get;set;} public string Grade{get;set;}=""; public int CyclomaticComplexity{get;set;} public int HalsteadVolume{get;set;} public int LinesOfCode{get;set;} public double Lcom{get;set;} public string Interpretation{get;set;}=""; }
 class TypeGraphResult { public List<TypeNodeEntry> Nodes{get;set;}=new(); public List<TypeEdgeEntry> Edges{get;set;}=new(); public List<List<string>> Cycles{get;set;}=new(); public List<string> OrphanTypes{get;set;}=new(); public List<ConnectionEntry> MostConnected{get;set;}=new(); public List<string> LayerViolations{get;set;}=new(); }
-class TypeNodeEntry { public string Id{get;set;}="" public string Name{get;set;}="" public string Kind{get;set;}="" public string File{get;set;}="" public int Line{get;set;} public bool IsPublic{get;set;} public bool IsAbstract{get;set;} public string Layer{get;set;}="" public List<string> GenericParams{get;set;}=new(); public int MethodCount{get;set;} }
-class TypeEdgeEntry { public string From{get;set;}="" public string To{get;set;}="" public string Relation{get;set;}="" public string File{get;set;}="" public int Line{get;set;} }
-class ConnectionEntry { public string Name{get;set;}="" public int Count{get;set;} }
-class CfgEntry { public string File{get;set;}="" public string ClassName{get;set;}="" public string MethodName{get;set;}="" public int Line{get;set;} public List<UnreachableBlock> UnreachableBlocks{get;set;}=new(); public List<MissingReturnPath> MissingReturnPaths{get;set;}=new(); public List<AlwaysTrueCondition> AlwaysTrueConditions{get;set;}=new(); public List<InfiniteLoopRisk> InfiniteLoopRisks{get;set;}=new(); }
-class UnreachableBlock { public int Line{get;set;} public string Code{get;set;}="" public string Reason{get;set;}="" }
-class MissingReturnPath { public string Path{get;set;}="" public int Line{get;set;} public string Suggestion{get;set;}="" }
-class AlwaysTrueCondition { public int Line{get;set;} public string Code{get;set;}="" public string Reason{get;set;}="" }
-class InfiniteLoopRisk { public int Line{get;set;} public string LoopType{get;set;}="" public string Reason{get;set;}="" }
+class TypeNodeEntry { public string Id{get;set;}=""; public string Name{get;set;}=""; public string Kind{get;set;}=""; public string File{get;set;}=""; public int Line{get;set;} public bool IsPublic{get;set;} public bool IsAbstract{get;set;} public string Layer{get;set;}=""; public List<string> GenericParams{get;set;}=new(); public int MethodCount{get;set;} }
+class TypeEdgeEntry { public string From{get;set;}=""; public string To{get;set;}=""; public string Relation{get;set;}=""; public string File{get;set;}=""; public int Line{get;set;} }
+class ConnectionEntry { public string Name{get;set;}=""; public int Count{get;set;} }
+class CfgEntry { public string File{get;set;}=""; public string ClassName{get;set;}=""; public string MethodName{get;set;}=""; public int Line{get;set;} public List<UnreachableBlock> UnreachableBlocks{get;set;}=new(); public List<MissingReturnPath> MissingReturnPaths{get;set;}=new(); public List<AlwaysTrueCondition> AlwaysTrueConditions{get;set;}=new(); public List<InfiniteLoopRisk> InfiniteLoopRisks{get;set;}=new(); }
+class UnreachableBlock { public int Line{get;set;} public string Code{get;set;}=""; public string Reason{get;set;}=""; }
+class MissingReturnPath { public string Path{get;set;}=""; public int Line{get;set;} public string Suggestion{get;set;}=""; }
+class AlwaysTrueCondition { public int Line{get;set;} public string Code{get;set;}=""; public string Reason{get;set;}=""; }
+class InfiniteLoopRisk { public int Line{get;set;} public string LoopType{get;set;}=""; public string Reason{get;set;}=""; }

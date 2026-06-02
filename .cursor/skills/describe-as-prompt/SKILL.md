@@ -3,7 +3,7 @@ name: describe-as-prompt
 description: >
   Compresses conversation into copy-paste handoff prompt (two-part: Section A complexity note,
   Section B fenced markdown prompt). Planning-relevant → mandatory Planning obligation block.
-  Wasserdicht → no planning meta. Output style: Caveman Full.
+  Wasserdicht → no planning meta. Output style: /caveman full.
   Triggers: describe-as-prompt, handoff, Ask zusammenfassen, wasserdicht, erstelle prompt,
   plane als/im prompt, das/als prompt, für neuen Agent.
 disable-model-invocation: true
@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 # Describe-as-Prompt
 
-**Output-Stil: Caveman Full** — Prompt-Inhalt terse, keine Füllsätze, Bullets statt Prosa, Identifier (Pfade, Skills, Zeilen) vollständig erhalten.
+**Output-Stil:** [`/caveman full`](../caveman/SKILL.md) — gilt für Section A und Section B.
 
 ## Vor der Antwort
 

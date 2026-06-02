@@ -61,33 +61,20 @@ export interface RoslynMetrics {
 
 const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-analyzer.csx";
 
-/**
- * Checks whether dotnet-script is available in the container.
- */
 export function isRoslynAvailable(): boolean {
-  try {
-    execSync("dotnet script --version", { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
+  try { execSync("dotnet script --version", { stdio: "ignore" }); return true; } catch { return false; }
 }
 
-/**
- * Runs the Roslyn analyzer on a given C# code string.
- * Writes a temp file, runs dotnet-script, parses JSON output.
- */
 export function analyzeCSharp(code: string, filename: string): RoslynMetadata {
   if (!isRoslynAvailable()) {
-    return buildFallbackMetadata(filename, "dotnet-script not available. Falling back to prompt-only analysis.");
+    return buildFallbackMetadata(filename, "dotnet-script not available.");
   }
 
-  // Write code to temp file
   const tmpFile = join(tmpdir(), `roslyn-${Date.now()}.cs`);
   try {
     writeFileSync(tmpFile, code, "utf-8");
 
-    const result = spawnSync("dotnet", ["script", SCRIPT_PATH, "--", tmpFile], {
+    const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", tmpFile], {
       encoding: "utf-8",
       timeout: 30_000,
       maxBuffer: 5 * 1024 * 1024,

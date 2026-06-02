@@ -2,7 +2,6 @@
 name: ado-task-pruefe-agent
 model: auto
 description: Task-Subagent für ADO prüfe. Code-Scout (read-only) und schlanke task-*.md inkl. Akzeptanzkriterien. Kein interaktives verfeinern. Use when ado-story-pruefe-agent or devops-organisator delegates prüfe for an open discussion task.
-is_background: true
 ---
 
 ## Parameter

@@ -2,7 +2,8 @@
 // roslyn-split.csx
 // Usage: dotnet script roslyn-split.csx -- <rootPath> [targetClass]
 
-#r "nuget: Microsoft.CodeAnalysis.CSharp, 4.9.2"
+#r "nuget: Microsoft.CodeAnalysis.CSharp, 5.0.0-2.final"
+#nullable enable
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -353,10 +354,10 @@ static (bool ShouldSplit, string SplitUrgency) ComputeUrgency(LcomResult lcom, L
 }
 
 // ── Data Models ───────────────────────────────────────────────────────────────
-class ClassSplitResult { public string File{get;set;}="" public string ClassName{get;set;}="" public int Line{get;set;} public LcomResult Lcom{get;set;}=new(); public List<MethodCluster> MethodClusters{get;set;}=new(); public List<FieldAccessEntry> FieldAccessMap{get;set;}=new(); public List<DependencyGroup> DependencyGroups{get;set;}=new(); public List<SplitSuggestion> SplitSuggestions{get;set;}=new(); public bool ShouldSplit{get;set;} public string SplitUrgency{get;set;}="" }
-class LcomResult { public double Score{get;set;} public int MethodCount{get;set;} public int FieldCount{get;set;} public int SharedFieldPairs{get;set;} public string Interpretation{get;set;}="" }
-class MethodCluster { public int ClusterId{get;set;} public List<string> Methods{get;set;}=new(); public List<string> SharedFields{get;set;}=new(); public List<string> SharedDependencies{get;set;}=new(); public string SuggestedName{get;set;}="" }
-class FieldAccessEntry { public string FieldName{get;set;}="" public string TypeName{get;set;}="" public List<string> ReadByMethods{get;set;}=new(); public List<string> WrittenByMethods{get;set;}=new(); public int? ExclusiveToCluster{get;set;} }
-class DependencyGroup { public string Dependency{get;set;}="" public List<string> UsedByMethods{get;set;}=new(); public string SuggestedOwner{get;set;}="" }
-class SplitSuggestion { public string NewClassName{get;set;}="" public string Responsibility{get;set;}="" public List<string> Methods{get;set;}=new(); public List<string> Fields{get;set;}=new(); public List<string> Dependencies{get;set;}=new(); public string Reasoning{get;set;}="" public int EstimatedLines{get;set;} }
-class FieldInfo { public string Name{get;set;}="" public string TypeName{get;set;}="" public bool IsInjected{get;set;} }
+class ClassSplitResult { public string File{get;set;}=""; public string ClassName{get;set;}=""; public int Line{get;set;} public LcomResult Lcom{get;set;}=new(); public List<MethodCluster> MethodClusters{get;set;}=new(); public List<FieldAccessEntry> FieldAccessMap{get;set;}=new(); public List<DependencyGroup> DependencyGroups{get;set;}=new(); public List<SplitSuggestion> SplitSuggestions{get;set;}=new(); public bool ShouldSplit{get;set;} public string SplitUrgency{get;set;}=""; }
+class LcomResult { public double Score{get;set;} public int MethodCount{get;set;} public int FieldCount{get;set;} public int SharedFieldPairs{get;set;} public string Interpretation{get;set;}=""; }
+class MethodCluster { public int ClusterId{get;set;} public List<string> Methods{get;set;}=new(); public List<string> SharedFields{get;set;}=new(); public List<string> SharedDependencies{get;set;}=new(); public string SuggestedName{get;set;}=""; }
+class FieldAccessEntry { public string FieldName{get;set;}=""; public string TypeName{get;set;}=""; public List<string> ReadByMethods{get;set;}=new(); public List<string> WrittenByMethods{get;set;}=new(); public int? ExclusiveToCluster{get;set;} }
+class DependencyGroup { public string Dependency{get;set;}=""; public List<string> UsedByMethods{get;set;}=new(); public string SuggestedOwner{get;set;}=""; }
+class SplitSuggestion { public string NewClassName{get;set;}=""; public string Responsibility{get;set;}=""; public List<string> Methods{get;set;}=new(); public List<string> Fields{get;set;}=new(); public List<string> Dependencies{get;set;}=new(); public string Reasoning{get;set;}=""; public int EstimatedLines{get;set;} }
+class FieldInfo { public string Name{get;set;}=""; public string TypeName{get;set;}=""; public bool IsInjected{get;set;} }

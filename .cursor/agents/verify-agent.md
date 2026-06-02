@@ -2,7 +2,6 @@
 name: verify-agent
 model: gpt-5.5-medium
 description: Abschlussprüfer / Gesamt-Tester nach Integration-Checkpoint. Ein Stack (FE/BE) oder eine Backend-Build-Einheit: Release-Build + Unit-Tests mit genericRTK — keine Features, finale Freigabe-Ebene.
-is_background: true
 ---
 
 ## Parameter

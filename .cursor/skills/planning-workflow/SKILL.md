@@ -489,6 +489,31 @@ Scouting gestartet werden soll.
 
 
 
+**Code-Recherche (verbindlich):** Vor Grep bei Bezug auf Klassen, Methoden, Properties, Services,
+
+Routen oder „von Stelle A nach Stelle B" — MCP-Landkarte gemäß
+
+[code-review-mcp — Code-Landkarte](../code-review-mcp/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
+
+UI-Elemente ohne Symbol (Button-Label, Feld ohne Klassenname) sind davon ausgenommen.
+
+Scouts dokumentieren im Deliverable: genutzte Index-Anker + ergänzendes Grep.
+
+**Orchestrator-Vorindizierung (empfohlen, bei Multi-Scout mit Symbolen):** Orchestrator
+ruft **vor** Scout-Delegation einmal pro betroffenen Stack `index_project` auf und gibt
+den verifizierten `projectPath` als festen Wert in den Scout-Auftrag. Pfade gemäß
+`./AGENTS.md` (`{frontend-path}` / `{backend-path}`).
+Schlägt `index_project` fehl: BLOCKER dokumentieren; Fallback-Playbook in
+[code-review-mcp/SKILL.md — MCP-Pfadauflösung](../code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook)
+befolgen — **kein** stilles Überspringen.
+
+**Scout-Merge — MCP-Status-Gate:** Beim Zusammenführen aller Scout-Deliverables prüfen:
+Wenn **alle** Scouts `MCP: fallback` ohne dokumentierten Anker-Pfad zurückliefern →
+**Plan 4a nicht starten** bis mindestens ein Stack-Pfad verifiziert oder als
+`MCP-BLOCKER` im Plan markiert und dem Nutzer kommuniziert ist.
+
+
+
 **Anzahl Scouts:**
 
 - **1 Scout** bei kleinem, zusammenhaengendem Scope oder wenn ein Bereich den Kontext traegt.

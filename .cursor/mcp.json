@@ -18,7 +18,32 @@
         "--rm",
         "devesen/dv.code-review.mcp:latest"
       ],
-      "transport": "stdio"
+      "transport": "stdio",
+      "autoApprove": [
+        "review_file",
+        "review_code",
+        "review_git_diff",
+        "review_files_batch",
+        "review_with_index",
+        "analyze_ast_only",
+        "index_project",
+        "find_in_index",
+        "analyze_complexity",
+        "analyze_dead_code",
+        "analyze_nullability",
+        "analyze_duplicates",
+        "analyze_refactoring_safety",
+        "generate_auto_fixes",
+        "analyze_dataflow",
+        "analyze_advanced_all",
+        "suggest_class_splits",
+        "analyze_maintainability_index",
+        "analyze_type_graph",
+        "analyze_control_flow",
+        "analyze_coverage",
+        "analyze_test_quality",
+        "analyze_test_health"
+      ]
     },
     "ado": {
       "command": "npx",

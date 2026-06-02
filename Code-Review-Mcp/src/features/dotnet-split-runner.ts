@@ -16,7 +16,7 @@ export interface DotnetClassSplitAnalysis {
 }
 
 export function runDotnetSplitAnalysis(rootPath: string, targetClass?: string): DotnetClassSplitAnalysis[] {
-  const args = ["script", SCRIPT_PATH, "--", rootPath];
+  const args = ["script", "--no-cache", SCRIPT_PATH, "--", rootPath];
   if (targetClass) args.push(targetClass);
 
   const result = spawnSync("dotnet", args, {
@@ -26,8 +26,7 @@ export function runDotnetSplitAnalysis(rootPath: string, targetClass?: string): 
   });
 
   if (result.error || result.status !== 0) {
-    console.error("roslyn-split error:", result.stderr);
-    return [];
+    throw new Error(result.error?.message ?? result.stderr ?? "roslyn-split failed");
   }
 
   try {

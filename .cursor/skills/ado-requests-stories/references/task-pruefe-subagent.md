@@ -40,20 +40,19 @@ Ziel-Profil [ado-task-pruefe-agent.md](../../../agents/ado-task-pruefe-agent.md)
    - Scope aus Task/Story ableiten: typisch `{frontend-path}`, `{backend-path}`, ggf. weitere Stacks.
    - **Recherche-Reihenfolge (Pflicht):** Bei Bezug auf Klassen, Methoden, Services, Components oder Routen zuerst `index_project` + `find_in_index` (MCP `code-review-mcp`), dann `Read`; Grep nur ergänzend. UI-only-Begriffe ohne Symbol (Button-Label, Feldname) ausnehmen. Siehe [code-review-mcp — Code-Landkarte](../../../skills/code-review-mcp/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
    - Konkrete Dateien, Einstiegspunkte, Nachbarschaft — **keine** Implementierung.
-2. **`tasks/task-{slug}.md`** anlegen oder aktualisieren mit **schlankem Schema** ([task-verfeinern.md](task-verfeinern.md#pflichtabschnitte-in-der-task-md)):
+2. **`tasks/task-{slug}.md`** anlegen oder aktualisieren mit **schlankem Schema**:
    - `## Story-Bezug` — Story-Zitat für diesen Task (bei Neuanlage; bei bestehender Datei nur wenn Story-Quelle geändert)
    - `## Anforderung` — knappe erste Interpretation (Agent-Verständnis)
    - `## Offene Fragen`
-   - `## Akzeptanzkriterien` inkl. `### Lesbar`, `### Planung`, `### Umsetzung`, `### Testabsicherung` — [acceptance-criteria.md](acceptance-criteria.md)
-3. **Legacy-Abschnitte entfernen** (falls vorhanden): `## Original Text`, `## Zielsetzung`, `## Vorgehen`, `## Ablauf (Sequenzdiagramme)`, `## Nicht im Scope`, `## Erlebnis im Zusammenspiel (Frontend & Backend)`, `## Verfeinerung (Meta)`.
-4. **`## Möglichkeiten`:** Block ersetzen ([copy-commands.md](copy-commands.md)).
-5. Unter `## Offene Fragen`: Copy-Zeile `` `Task {slug} in Story {storyId} verfeinern` `` nur bei ≥1 echter Frage.
+   - `## Akzeptanzkriterien` — menschlich lesbare Bullet-Liste, keine IDs, keine Unterabschnitte — [acceptance-criteria.md](acceptance-criteria.md)
+   - `## AI Zusammenfassung` — Caveman Ultra: was · wie · wo · weshalb aus dem Code-Scout (Bullets, Pfade, Bezeichner — kein Fließtext)
+3. **Legacy-Abschnitte entfernen** (falls vorhanden): `## Original Text`, `## Zielsetzung`, `## Vorgehen`, `## Ablauf (Sequenzdiagramme)`, `## Nicht im Scope`, `## Erlebnis im Zusammenspiel (Frontend & Backend)`, `## Verfeinerung (Meta)`, `## Umsetzung`, `## Nutzer-ToDos`, `## Möglichkeiten`.
+4. Unter `## Offene Fragen`: Copy-Zeile `` `Task {slug} in Story {storyId} verfeinern` `` nur bei ≥1 echter Frage.
 
 **Hinweis in Task-Bericht:** Für ausgearbeitete Anforderung → `Task {slug} in Story {storyId} verfeinern` (interaktiver Klärungsworkflow).
 
 ## Geschützt (nicht überschreiben)
 
-- `## Umsetzung`, `## Nutzer-ToDos`
 - Bei effektivem `TASK-CLOSED`: gesamter `## Akzeptanzkriterien`-Block — Task-SubAgent **nicht** starten (Entscheidung Story-Phase)
 - `## Story-Bezug`: nur bei geänderter Story-Quelle aktualisieren
 
@@ -61,6 +60,7 @@ Ziel-Profil [ado-task-pruefe-agent.md](../../../agents/ado-task-pruefe-agent.md)
 
 - `## Umsetzungs-Topologie`, `IMP-*`-Tabellen, finales Planpaket
 - `## Vorgehen`, `## Zielsetzung`, separate Mermaid-Abschnitte, `## Verfeinerung (Meta)`
+- AC-IDs (`AC-P*`, `AC-I*`), `### Testabsicherung`-Tabellen, Unterabschnitte in `## Akzeptanzkriterien`
 - Scout-Rohlog, Review-Volltext
 
 ## Rückgabe an Story-Orchestrator
@@ -72,7 +72,6 @@ Ziel-Profil [ado-task-pruefe-agent.md](../../../agents/ado-task-pruefe-agent.md)
 | `modelUsed` | Erster erfolgreicher Slug der Kette |
 | `sectionsUpdated` | Liste der geschriebenen `##`-Abschnitte |
 | `legacySectionsRemoved` | Entfernte Legacy-Abschnitte (falls bereinigt) |
-| `codeTouchpoints` | Kurz: relevante Pfade (max. 10 Zeilen) |
 | `openQuestions` | Anzahl / Kurzfassung |
 | `errors` | Fehler falls `FAIL` |
 

@@ -80,9 +80,8 @@ Reihenfolge in der Datei (nach Kopf/Status, vor geschützten Abschnitten) — **
 | 1 | `## Anforderung` | Verständnis nach Freigabe — ausgearbeitet | Fließtext + Bullets; Kernaussagen **fett**; optional Mermaid; **kein** IMP-/Slice-Jargon; kein nummeriertes Vorgehen |
 | 2 | `## Offene Fragen` | Verständnisprobleme, Unklarheiten, Annahmen | Bullets; Copy-Zeile `Task … verfeinern` nur bei ≥1 echter Frage — [copy-commands.md](copy-commands.md) |
 | 3 | `## Story-Bezug` | Punkte aus der **Story**, die diesen Task inspiriert haben | Zitate/Auszüge aus Story-Description, ggf. `## Feature-Kontext`; **keine** Scout-Interpretation |
-| 4 | `## Akzeptanzkriterien` | Lesbar + technische ACs | [acceptance-criteria.md](acceptance-criteria.md) — bei Phase 5 aus freigegebener Anforderung ableiten |
-
-Danach: geschützt `## Umsetzung`, `## Nutzer-ToDos`, `## Möglichkeiten`.
+| 4 | `## Akzeptanzkriterien` | Menschlich lesbare Kriterien, keine IDs | [acceptance-criteria.md](acceptance-criteria.md) — bei Phase 5 aus freigegebener Anforderung ableiten |
+| 5 | `## AI Zusammenfassung` | Scout-Findings (Caveman Ultra: was · wie · wo · weshalb) | Aus Phase-1-Code-Scout; bei `verfeinern` aus neuem Scout ableiten oder beibehalten |
 
 ### Entfallene Abschnitte (nicht mehr in Task.md)
 
@@ -141,25 +140,17 @@ sequenceDiagram
 
 **Bei `verfeinern`/`prüfe` entfernen** (falls vorhanden): alle [entfallenen Abschnitte](#entfallene-abschnitte-nicht-mehr-in-taskmd) oben.
 
-**Nie bei `verfeinern` überschreiben:** `## Umsetzung`, `## Nutzer-ToDos`, `## Möglichkeiten` (Inhalt der Copy-Zeilen).
+**Nie bei `verfeinern` überschreiben:** `## AI Zusammenfassung` (Scout-Findings beibehalten; nur bei neuem Code-Scout in Phase 1 ersetzen).
 
-**Verboten in der Task-MD:** `## Umsetzungs-Topologie`, `IMP-*`-Tabellen, Review-Digest-Volltext, Scout-Rohreports, `## Vorgehen`.
+**Verboten in der Task-MD:** `## Umsetzungs-Topologie`, `IMP-*`-Tabellen, Review-Digest-Volltext, Scout-Rohreports, `## Vorgehen`, AC-IDs (`AC-P*`, `AC-I*`), `### Testabsicherung`-Tabellen, Unterabschnitte in `## Akzeptanzkriterien`.
 
 ## `## Akzeptanzkriterien` nach Verfeinerung
 
 Zusätzlich zu [acceptance-criteria.md](acceptance-criteria.md):
 
-### Lesbar
-
-- Kurze, für Menschen scanbare Bullets (ohne `AC-P`/`AC-I`-IDs).
-- Deckt freigegebene Anforderung und wesentliches Verhalten ab (optional Bezug zu `## Story-Bezug`).
-
-### Planung / Umsetzung / Testabsicherung
-
-- Aus `### Lesbar` und freigegebener `## Anforderung` **ableiten**.
-- `AC-P*`: Scope, Architektur, Schnittstellen, Risiken vor Code.
-- `AC-I*`: lieferbares Verhalten.
-- Jede ID in `### Testabsicherung` (Status zunächst `offen`, sofern unbekannt).
+- Menschlich lesbare Bullet-Liste aus freigegebener `## Anforderung` und `## Story-Bezug` ableiten.
+- **Keine IDs** (`AC-P*`, `AC-I*`), **keine Unterabschnitte**.
+- Kurz und scanbar — was soll sichtbar / messbar funktionieren?
 
 ## `## Offene Fragen`
 

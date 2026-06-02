@@ -15,7 +15,7 @@
       "imageParamKey": "genericrtk-image",
       "pullAlwaysKey": "genericrtk-pull-always",
       "globalImage": "devesen/dv.generic-rtk-mcp:latest",
-      "localDefault": "genericrtk-mcp:local",
+      "localDefault": "dv-generic-rtk-mcp:local",
       "entry": {
         "command": "docker",
         "args": ["run", "-i", "--rm", "-p", "127.0.0.1:8089:8089", "__IMAGE__"],

@@ -9,8 +9,8 @@ readonly: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{code-root}` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
-| `{agent-index}` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
+| `.` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
+| `./AGENTS.md` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
 
 # Mitarbeiterprofil: Planer / Senior-Architekt (Orchestrator)
 
@@ -48,7 +48,7 @@ Vor **jedem** Subagent-Task: [subagent-model-before-task.md](../references/subag
 - [.cursor/rules/planning-workflow-skill.mdc](../rules/planning-workflow-skill.mdc)
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Platzhalter für Delegations-Prompts
 - [subagent-model-before-task.md](../references/subagent-model-before-task.md) — vor jedem Subagent-Task
-- `{agent-index}`, bei Bedarf `{verification-commands}`
+- `./AGENTS.md`, bei Bedarf `.cursor/references/verification-commands.md`
 
 **Opt-out:** Nur bei explizitem `ohne plan-skill` / `ohne planning-workflow`.
 
@@ -86,9 +86,9 @@ Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rol
 
 | Bereich | Planung |
 |---------|---------|
-| Repo | Code unter `{code-root}/` |
+| Repo | Code unter `./` |
 | Frontend | Kein Tailwind; Styleguide; Angular-Skills bei FE-Topics |
-| Backend | `{code-root}/.skills/backend-*`; EF nur per CLI |
+| Backend | `./.skills/backend-*`; EF nur per CLI |
 | Danach | [Implementation Workflow](../skills/implementation-workflow/SKILL.md) — du lieferst Slices/Wellen |
 
 ## Phase 6 — finales Planpaket

@@ -9,8 +9,8 @@ readonly: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{code-root}` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
-| `{agent-index}` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
+| `.` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
+| `./AGENTS.md` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
 
 # Mitarbeiterprofil: Codebereichs-Scout (Planning Phase 3)
 
@@ -34,7 +34,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 - [planning-workflow/SKILL.md](../skills/planning-workflow/SKILL.md) — Phase 3
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Abschnitt **Codebereichs-Scout** (Auftrag wortgetreu)
-- `{agent-index}` (Repo-Root, kein fester Pfad)
+- `./AGENTS.md` (Repo-Root, kein fester Pfad)
 
 ## Aufgabe (Deliverable)
 

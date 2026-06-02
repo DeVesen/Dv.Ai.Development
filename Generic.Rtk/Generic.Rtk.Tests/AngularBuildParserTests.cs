@@ -97,6 +97,44 @@ public class AngularBuildParserTests
     }
 
     [Fact]
+    public void EsbuildFormat_X_ERROR_Is_Detected_As_Failure()
+    {
+        // Angular 17+ esbuild output: ASCII "X [ERROR]" not Unicode "✘ [ERROR]"
+        var raw = """
+            > Building...
+
+            ✓ Building...
+
+            Application bundle generation failed. [1.829 seconds] - 2026-06-01T18:18:40.873Z
+
+            X [ERROR] TS2322: Type 'ComponentFixture<ExAutocompleteFieldComponent<unknown>>' is not assignable to type 'ComponentFixture<ExAutocompleteFieldComponent<string>>'.
+
+              src/app/shared/ui/ex-autocomplete-field/ex-autocomplete-field.component.spec.ts:15:4:
+                15 │     fixture = TestBed.createComponent(ExAutocompleteFieldComponent);
+                   ╵     ~~~~~~~
+
+            """;
+        var r = _p.Parse(raw, _limits);
+        Assert.Equal("Failed", r.Summary.Status);
+        Assert.True(r.Errors.Count > 0 || r.Summary.Errors > 0);
+        Assert.NotEqual("Angular build completed successfully.", r.RawFiltered);
+    }
+
+    [Fact]
+    public void BundleGenerationFailed_Without_Parsed_Error_Is_Still_Failure()
+    {
+        // Even if no error block is parsed, explicit failure message must mark as Failed
+        var raw = """
+            ✓ Building...
+
+            Application bundle generation failed. [1.829 seconds]
+            """;
+        var r = _p.Parse(raw, _limits);
+        Assert.Equal("Failed", r.Summary.Status);
+        Assert.NotEqual("Angular build completed successfully.", r.RawFiltered);
+    }
+
+    [Fact]
     public void Mixed_Webpack_Noise_And_Warning_Block()
     {
         var raw = """

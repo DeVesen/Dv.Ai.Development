@@ -237,6 +237,7 @@ function Install-Package {
     foreach ($s   in $m.skills)     { Copy-Asset (Join-Path $script:SourceCursorPath $s)   (Join-Path $script:TargetCursorPath "skills\$(Split-Path $s -Leaf)") }
     foreach ($a   in $m.agents)     { Copy-Asset (Join-Path $script:SourceCursorPath $a)   (Join-Path $script:TargetCursorPath "agents\$(Split-Path $a -Leaf)") }
     foreach ($ref in $m.references) { Copy-Asset (Join-Path $script:SourceCursorPath $ref) (Join-Path $script:TargetCursorPath "references\$(Split-Path $ref -Leaf)") }
+    foreach ($doc in $m.docs)       { Copy-Asset (Join-Path $script:SourceCursorPath $doc) (Join-Path $script:TargetCursorPath "$(Split-Path $doc -Leaf)") }
 
     if ($m.PSObject.Properties['mcp'] -and $m.mcp.Count -gt 0) {
         Invoke-McpConfig $m.mcp

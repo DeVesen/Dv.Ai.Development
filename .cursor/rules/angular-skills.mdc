@@ -7,10 +7,10 @@ alwaysApply: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{frontend-path}` | Pfad zum Frontend-Projekt innerhalb von `{code-root}` |
-| `{code-root}` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
-| `{agent-index}` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
-| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
+| `{frontend-path}` | Pfad zum Frontend-Projekt innerhalb von `.` |
+| `.` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
+| `./AGENTS.md` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
+| `.cursor/references/verification-commands.md` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
 
 # Pflicht Angular-Skills (Workspace)
 
@@ -30,7 +30,7 @@ Sobald die Aufgabe **Angular betrifft** — z. B. Arbeit unter `{frontend-path}`
 
 5. [`angular-cache-busting/SKILL.md`](../skills/angular-cache-busting/SKILL.md)
 
-LAC-spezifische Regeln aus [`{agent-index}`]({agent-index}) (z. B. Tailwind-Verbot, Styleguide in `{code-root}/.skills`) **überschreiben** dort, wo Vendor-Skills anderes nahelegen.
+LAC-spezifische Regeln aus [`./AGENTS.md`](./AGENTS.md) (z. B. Tailwind-Verbot, Styleguide in `./.skills`) **überschreiben** dort, wo Vendor-Skills anderes nahelegen.
 
 ## Ausnahme (einzig zulässiger Opt-out)
 
@@ -40,4 +40,4 @@ Wenn der Nutzer im Prompt oder in der Aufgabenstellung **ausdrücklich** schreib
 
 (genau diese Formulierung oder eindeutig gleichbedeutend für **dieses** Skill-Bündel), dann **diese Pflicht-Skills nicht laden** und sie **bewusst ignorieren**.
 
-**Alle übrigen** Projektregeln — insbesondere [`{agent-index}`]({agent-index}), Verifikation gemäß [`{verification-commands}`]({verification-commands}), Implementation Workflow — bleiben **vollständig** wirksam.
+**Alle übrigen** Projektregeln — insbesondere [`./AGENTS.md`](./AGENTS.md), Verifikation gemäß [`verification-commands.md`](.cursor/references/verification-commands.md), Implementation Workflow — bleiben **vollständig** wirksam.

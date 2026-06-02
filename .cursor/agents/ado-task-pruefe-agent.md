@@ -9,7 +9,7 @@ is_background: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{code-root}` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
+| `.` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
 
 # Mitarbeiterprofil: ADO Task-Prüfe-Agent
 
@@ -51,7 +51,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## Ablauf (verbindlich)
 
-1. **Code-Scout** unter `{code-root}/` — Scope aus Task/Story; **keine** Implementierung.
+1. **Code-Scout** unter `./` — Scope aus Task/Story; **keine** Implementierung.
 2. **`task-{slug}.md`:** schlankes Schema — `## Anforderung` (knapp), `## Offene Fragen`, `## Story-Bezug`, `## Akzeptanzkriterien`.
 3. **Legacy-Abschnitte entfernen** falls vorhanden (Original Text, Zielsetzung, Vorgehen, Ablauf, Nicht im Scope, Erlebnis, Verfeinerung Meta).
 4. **`## Möglichkeiten`:** Block ersetzen.

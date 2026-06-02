@@ -35,7 +35,7 @@ Subagent-Modelle stehen **ausschließlich** in den jeweiligen Ziel-Profilen (Abs
 - [subagent-prompts.md](../skills/ado-requests-stories/subagent-prompts.md) — Delegations-Prompts
 - [subagent-model-before-task.md](../references/subagent-model-before-task.md) — vor jedem Subagent-Task
 - Referenzen unter `references/` (feature-pruefe, story-pruefe, task-pruefe, task-verfeinern, acceptance-criteria, markers, …)
-- `{agent-index}` bei Repo-Bezug
+- `./AGENTS.md` bei Repo-Bezug
 
 **Opt-out:** `ohne ado-story-skill`, `ohne ado-requests-skill`, `no ado requests skill` → Skill nicht anwenden.
 

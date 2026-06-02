@@ -11,86 +11,59 @@ disable-model-invocation: true
 
 # Angular New App Extension
 
-**Load order:** read **[angular-new-app](../angular-new-app/SKILL.md)** first for baseline CLI steps (`ng new`, generators, MCP); then apply **this extension** for stricter orchestration and approvals.
+**Ladereihenfolge:** Erst [angular-new-app](../angular-new-app/SKILL.md) (Basis-CLI-Schritte); dann diese Extension (striktere Orchestrierung + Freigaben).
 
-This extension is an **orchestration layer**, not a replacement for the upstream skill. A **cheap/subagent** receives only **narrow, user-approved** tasks (see [subagent-prompts.md](subagent-prompts.md)).
+**Rolle:** Orchestrierung, keine direkte Implementierung. Subagent erhält nur **enge, nutzerfreigegebene** Aufgaben — [subagent-prompts.md](subagent-prompts.md).
 
----
+## Verboten
 
-## Role and forbidden behavior
+- Stille Produkt-Entscheidungen — Defaults nur nach Nutzer-Bestätigung.
+- `next`/`rc`/Pre-Release ohne separate Freigabe.
+- Leere oder mehrdeutige Platzhalter in Commands: `APP_NAME`, `TARGET_DIR`, `PACKAGE_MANAGER`, `AI_CONFIG` müssen lesbar bleiben.
 
-- **Parent agent (this extension):** discovery, documentation check, **Decision Gate** (`AskQuestion` or equivalent), **written** implementation plan, delegation to subagents.
-- **No silent product decisions.** Suggested defaults are applied only after explicit user confirmation.
-- **No** `next`/`rc`/pre-release toolchains without separate approval.
-- Placeholders in commands must stay readable: `APP_NAME`, `TARGET_DIR`, `PACKAGE_MANAGER`, `AI_CONFIG` — **no** empty or ambiguous placeholder fragments.
+## Schritt 0 — Dokumentation zuerst
 
----
+Vor CLI-Kommandos abgleichen mit:
 
-## Step 0 — Documentation first (before decisions)
-
-Before locking CLI commands, align the plan with **current** Angular references (at minimum):
-
-| Topic | Source |
+| Topic | Quelle |
 |--------|--------|
-| `ng new` options and defaults | [angular.dev/cli/new](https://angular.dev/cli/new) |
-| Node / TypeScript / RxJS compatibility | [angular.dev/reference/versions](https://angular.dev/reference/versions) |
-| Support lifecycle | [angular.dev/reference/releases](https://angular.dev/reference/releases) |
-| IDE / LLM context | [best-practices.md](https://angular.dev/assets/context/best-practices.md), [Develop with AI](https://angular.dev/ai/develop-with-ai) |
+| `ng new` Optionen | [angular.dev/cli/new](https://angular.dev/cli/new) |
+| Node/TS/RxJS Kompatibilität | [angular.dev/reference/versions](https://angular.dev/reference/versions) |
+| Support Lifecycle | [angular.dev/reference/releases](https://angular.dev/reference/releases) |
+| AI-Kontext | [best-practices.md](https://angular.dev/assets/context/best-practices.md) |
 
-From the docs, confirm **array-style / repeated** flag syntax for the exact CLI version you target (per `ng new` help / docs at creation time).
+Flag-Array-Syntax für die gezielte CLI-Version bestätigen.
 
----
+## Schritt 1 — Decision Gate (Pflicht)
 
-## Step 1 — Decision Gate (required)
+Checkliste: [questionnaire.md](questionnaire.md). `AskQuestion` wenn verfügbar; sonst conversational. Erst nach Antworten → Implementierungsplan.
 
-Full checklist: [questionnaire.md](questionnaire.md).
+## Schritt 2 — Implementierungsplan (vor `ng new`)
 
-- Use **`AskQuestion`** when available; otherwise ask the same items conversationally.
-- Proceed to the implementation plan only after all **relevant** items are answered.
+Kurzer, prüfbarer Plan:
+1. Workspace-Name, App-Name, Zielverzeichnis.
+2. Node/Angular-Anforderungen, Package-Manager, CLI-Muster.
+3. Exaktes `ng new`-Kommando als Code-Block.
+4. Follow-up-Schritte (`ng build`, `ng test`; `ng serve` nur auf Wunsch).
+5. Subagent-Aufteilung → [subagent-prompts.md](subagent-prompts.md).
 
----
+Shell-Commands/Subagents nur nach **expliziter Nutzer-Freigabe**.
 
-## Step 2 — Implementation plan (required before `ng new`)
+## Schritt 3 — Subagents (nach Freigabe)
 
-After the Decision Gate, produce a **short, auditable plan**:
+Vorlagen: [subagent-prompts.md](subagent-prompts.md).
 
-1. **Goal:** workspace name, app name (if different), target directory.
-2. **Tooling:** Node vs. Angular requirements, package manager, CLI invocation pattern from [angular-new-app](../angular-new-app/SKILL.md) (global `ng` vs. `npx`).
-3. **Exact `ng new` command** as one code block — placeholders or final values **after** approval.
-4. **Follow-up steps:** e.g. `ng build`, `ng test`; `ng serve` only if the user asked.
-5. **Subagent split:** map work to roles in [subagent-prompts.md](subagent-prompts.md).
+Reihenfolge: `docs-check` → `workspace-scout` → `app-skeleton` → `quality-runner`; `feature-builder` nur nach separatem Feature-Plan + Freigabe.
 
-Run subagents or shell commands only after **explicit user approval** of the plan.
+Parent-Agent fasst zusammen und formuliert explizite nächste Entscheidungen — kein stiller Autopilot.
 
----
+## Qualität (nach Erstellung)
 
-## Step 3 — Subagents (after approval)
+- Minimum: `ng build` erfolgreich (wenn angefragt).
+- Tests: passende Kommandos zum gewählten `--test-runner`.
 
-Templates: [subagent-prompts.md](subagent-prompts.md).
+## Anti-Patterns
 
-Typical order:
-
-1. `docs-check` → 2. `workspace-scout` → 3. `app-skeleton` → 4. `quality-runner`; `feature-builder` only after a **separate** feature plan and approval.
-
-The parent agent summarizes results and surfaces **explicit** next decisions — no silent autopilot.
-
----
-
-## Optional layout conventions
-
-If the target repo includes **[angular-developer-extension](../angular-developer-extension/SKILL.md)** and the user opts in via the questionnaire, schedule `feature-builder` only after that separate approval.
-
----
-
-## Quality bar (after creation)
-
-- At minimum: successful `ng build` when the user requested a build.
-- If tests are in scope: commands appropriate to the chosen `--test-runner` / generator output.
-
----
-
-## Anti-patterns
-
-- Starting `ng serve`, dev servers, or long background jobs without user approval.
-- Global `@angular/cli` install without confirming package manager and user preference (baseline: [angular-new-app](../angular-new-app/SKILL.md)).
-- One subagent asked to “implement the whole product” — split work.
+- `ng serve`/Dev-Server ohne Nutzer-Freigabe.
+- Globales `@angular/cli` ohne Package-Manager-Bestätigung.
+- Ein Subagent für „ganzes Produkt implementieren" — Arbeit aufteilen.

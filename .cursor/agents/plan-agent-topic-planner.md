@@ -9,7 +9,7 @@ readonly: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{agent-index}` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
+| `./AGENTS.md` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
 
 # Mitarbeiterprofil: Topic-Planer (Planning Phase 4b)
 
@@ -41,7 +41,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 - [planning-workflow/SKILL.md](../skills/planning-workflow/SKILL.md) — Phase 4b, Schnittstellen aus 4a
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Abschnitt **Topic-Planer**
-- Topic-relevante Skills aus Wirtsprojekt-Doku (z. B. `{agent-index}`, projektspezifische Skills)
+- Topic-relevante Skills aus Wirtsprojekt-Doku (z. B. `./AGENTS.md`, projektspezifische Skills)
 
 ## Eingaben vom Planer (Orchestrator)
 

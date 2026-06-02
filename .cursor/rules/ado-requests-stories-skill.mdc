@@ -18,7 +18,7 @@ Wenn der Nutzer ein **Azure DevOps Work Item** (Story, Task, Feature) mit **loka
 
 [`ado-requests-stories/SKILL.md`](../skills/ado-requests-stories/SKILL.md)
 
-**Discovery:** `disable-model-invocation: true` — Auslösung über diese Rule und [{agent-index}]({agent-index}).
+**Discovery:** `disable-model-invocation: true` — Auslösung über diese Rule und [./AGENTS.md](./AGENTS.md).
 
 ## Verbindliche Aktivierung
 

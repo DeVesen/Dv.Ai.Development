@@ -7,15 +7,14 @@ alwaysApply: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{frontend-path}` | Pfad zum Frontend-Projekt innerhalb von `{code-root}` |
-| `{backend-path}` | Pfad zum Backend-Projekt innerhalb von `{code-root}` |
-| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
+| `{frontend-path}` | Pfad zum Frontend-Projekt |
+| `{backend-path}` | Pfad zum Backend-Projekt |
 
 # genericRTK — Build-, Test- und Serve-Ausgaben verdichten
 
 ## Geltung
 
-Gilt, wenn du **Build-/Test-Verifikation** (z. B. gemäß [`{verification-commands}`]({verification-commands})) ausführst oder Konsolen-Output zu **`.NET`** oder **Angular** im Repo anfällt, insbesondere:
+Gilt, wenn du **Build-/Test-Verifikation** (z. B. gemäß [`verification-commands.md`](.cursor/references/verification-commands.md)) ausführst oder Konsolen-Output zu **`.NET`** oder **Angular** im Repo anfällt, insbesondere:
 
 **Backend (`{backend-path}` typisch):**
 
@@ -257,7 +256,7 @@ Bei **mehreren** MCP-Aufrufen nacheinander (z. B. `filter_output` und `analyze_b
 
 Bei **unklarem** `npm`-Script nur das Angular-/Frontend-Mapping verwenden, wenn Arbeitsverzeichnis oder Script eindeutig `{frontend-path}` ist.
 
-## Reporting (Pflicht, kompatibel mit Verifikations-Reporting aus [`{verification-commands}`]({verification-commands}))
+## Reporting (Pflicht, kompatibel mit Verifikations-Reporting aus [`verification-commands.md`](.cursor/references/verification-commands.md))
 
 Im Abschlussbericht **immer** angeben:
 

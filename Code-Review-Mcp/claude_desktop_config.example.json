@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "code-review-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--env", "ANTHROPIC_API_KEY",
+        "-v", "/path/to/your/project:/workspace:ro",
+        "-w", "/workspace",
+        "code-review-mcp:latest"
+      ],
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-ant-..."
+      }
+    }
+  }
+}

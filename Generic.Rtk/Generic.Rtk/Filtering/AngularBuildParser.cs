@@ -16,6 +16,10 @@ public sealed partial class AngularBuildParser : IToolOutputParser
     [GeneratedRegex(@"Error:\s*(?<msg>.+)", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex ErrorColon();
 
+    // esbuild format: "X [ERROR] TS2322: <message>" (Angular 17+ with esbuild)
+    [GeneratedRegex(@"^X \[ERROR\]\s*(?:(?<code>TS\d+):\s*)?(?<msg>.+)", RegexOptions.Compiled)]
+    private static partial Regex EsbuildError();
+
     [GeneratedRegex(@"(?<file>[^\s'].+\.tsx?)\((?<line>\d+),(?<col>\d+)\):\s*error\s*(?<code>TS\d+):\s*(?<msg>.+)", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex TsError();
 
@@ -49,7 +53,18 @@ public sealed partial class AngularBuildParser : IToolOutputParser
                     var markerLine = trimmed[0];
                     var blockText = string.Join("\n", trimmed);
 
-                    if (ErrorColon().Match(markerLine) is { Success: true } em)
+                    if (EsbuildError().Match(markerLine) is { Success: true } eb)
+                    {
+                        errors.Add(new FilterDiagnostic
+                        {
+                            Message = eb.Groups["msg"].Value.Trim(),
+                            Code = eb.Groups["code"].Success ? eb.Groups["code"].Value : null,
+                            Severity = FilterSeverity.Error,
+                            Source = "ng build",
+                            RawLine = blockText,
+                        });
+                    }
+                    else if (ErrorColon().Match(markerLine) is { Success: true } em)
                     {
                         errors.Add(new FilterDiagnostic
                         {
@@ -82,7 +97,11 @@ public sealed partial class AngularBuildParser : IToolOutputParser
         var time = Regex.Match(normalizedText, @"Time:\s*(?<t>\d+\s*ms|\d+(\.\d+)?\s*s)", RegexOptions.IgnoreCase);
         var chunkMatch = Regex.Matches(normalizedText, @"chunk\s+\{+", RegexOptions.IgnoreCase);
 
-        var hasErrors = errors.Count > 0;
+        // "Application bundle generation failed." is an explicit failure indicator —
+        // catches cases where error lines were not recognized by the block parser.
+        var bundleFailed = normalizedText.Contains("Application bundle generation failed", StringComparison.OrdinalIgnoreCase);
+
+        var hasErrors = errors.Count > 0 || bundleFailed;
         var summary = new FilterSummary
         {
             Status = hasErrors ? "Failed" : "Succeeded",
@@ -134,7 +153,8 @@ public sealed partial class AngularBuildParser : IToolOutputParser
             }
 
             if (t.StartsWith("\u25b2 [ERROR]", StringComparison.Ordinal) ||
-                t.StartsWith("\u2718 [ERROR]", StringComparison.Ordinal))
+                t.StartsWith("\u2718 [ERROR]", StringComparison.Ordinal) ||
+                t.StartsWith("X [ERROR]", StringComparison.Ordinal))
             {
                 if (currentLines.Count > 0)
                     blocks.Add((currentKind, currentLines));

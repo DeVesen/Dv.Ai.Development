@@ -67,6 +67,14 @@ function Get-PackageParams {
     param([object] $Manifest)
 
     $found = [System.Collections.Generic.HashSet[string]]::new()
+
+    # If manifest explicitly defines params, use that list (no file scanning)
+    if ($Manifest.PSObject.Properties['params']) {
+        foreach ($p in $Manifest.params) { $found.Add($p) | Out-Null }
+        return $found
+    }
+
+    # Fallback: scan files for {param} patterns
     $paths = @()
     foreach ($r   in $Manifest.rules)      { $paths += Join-Path $script:SourceCursorPath $r }
     foreach ($s   in $Manifest.skills)     { $paths += Join-Path $script:SourceCursorPath $s }
@@ -352,6 +360,7 @@ function Update-Package {
     foreach ($s   in $m.skills)     { Copy-Asset (Join-Path $script:SourceCursorPath $s)   (Join-Path $script:TargetCursorPath "skills\$(Split-Path $s -Leaf)") }
     foreach ($a   in $m.agents)     { Copy-Asset (Join-Path $script:SourceCursorPath $a)   (Join-Path $script:TargetCursorPath "agents\$(Split-Path $a -Leaf)") }
     foreach ($ref in $m.references) { Copy-Asset (Join-Path $script:SourceCursorPath $ref) (Join-Path $script:TargetCursorPath "references\$(Split-Path $ref -Leaf)") }
+    foreach ($doc in $m.docs)       { Copy-Asset (Join-Path $script:SourceCursorPath $doc) (Join-Path $script:TargetCursorPath "$(Split-Path $doc -Leaf)") }
 
     # MCP configuration (e.g. genericRTK Docker image)
     if ($m.PSObject.Properties['mcp'] -and $m.mcp.Count -gt 0) {

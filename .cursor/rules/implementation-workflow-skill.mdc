@@ -3,12 +3,6 @@ description: Schreibende Umsetzung im Agent-Modus — Skill laden bei implementi
 alwaysApply: true
 ---
 
-## Parameter
-
-| Parameter | Beschreibung |
-|-----------|-------------|
-| `{agent-index}` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
-| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
 
 # Implementation Workflow (Cursor)
 
@@ -18,7 +12,7 @@ Wenn du im **Agent-Modus** (oder [gleichwertig schreibend](#agent-modus--gleichw
 
 [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md)
 
-**Discovery:** Der Skill hat `disable-model-invocation: true` — er wird **nicht** automatisch per Host-Skill-Routing geladen. Auslösung und Skill-Laden laufen über **diese Rule** (alwaysApply), [{agent-index}]({agent-index}) und explizite @-Referenzen; siehe [Pflegehinweis / Skill-Discovery](#pflegehinweis--skill-discovery).
+**Discovery:** Der Skill hat `disable-model-invocation: true` — er wird **nicht** automatisch per Host-Skill-Routing geladen. Auslösung und Skill-Laden laufen über **diese Rule** (alwaysApply), [./AGENTS.md](./AGENTS.md) und explizite @-Referenzen; siehe [Pflegehinweis / Skill-Discovery](#pflegehinweis--skill-discovery).
 
 **Nicht** erforderlich bei: reinem **Ask** ohne Umsetzung, **reiner Planung** ohne Umsetzung (ohne schreibende Schritte), **read-only** Recherche oder rein informellen Antworten ohne Repo-Änderung — siehe [Nicht auslösen](#nicht-auslösen).
 
@@ -113,7 +107,7 @@ Wenn der Nutzer Umsetzung verlangt, aber den Workflow **umgehen** will:
 |-------------|---------------------|
 | `ohne Subagents` / `direkt hier` / `ohne Task` | **Nicht** Workflow ignorieren. **`BLOCKER: Implementation Workflow verlangt Implementierungs-Subagents`** — oder Nutzer wählt explizit [Opt-out](#ausdrücklicher-opt-out-höchste-priorität) (`ohne implementation-skill`). |
 | `ohne Verifikation` / nur schnell testen | Kein Orchestrator-`ng test`/`dotnet build` — Verifikations-Subagents oder dokumentierter Opt-out **B/C/D** im Thread per Skill. |
-| `ohne agents-skill` | Nur Opt-out für **diesen** Implementation-Workflow — **nicht** [`{agent-index}`]({agent-index}) oder andere Projektregeln ignorieren. |
+| `ohne agents-skill` | Nur Opt-out für **diesen** Implementation-Workflow — **nicht** [`./AGENTS.md`](./AGENTS.md) oder andere Projektregeln ignorieren. |
 
 ## Nicht auslösen
 
@@ -181,7 +175,7 @@ Diese Regeln sind **nicht optional** und dürfen während einer Umsetzung im Age
 
 ### Pflicht-Checkliste (Verifikation, kurz)
 
-- Pro **geändertem** Stack ein **Verifikations-Subagent**; **Phase 1** (Build mit Fix-Schleife), dann **Phase 2** (Unit-Tests mit Fix-Schleife) — Details: **[`{verification-commands}`]({verification-commands})** und [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md).
+- Pro **geändertem** Stack ein **Verifikations-Subagent**; **Phase 1** (Build mit Fix-Schleife), dann **Phase 2** (Unit-Tests mit Fix-Schleife) — Details: **[`verification-commands.md`](.cursor/references/verification-commands.md)** und [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md).
 - Nach **jedem** Build-/Test-Lauf: **[`genericrtk-output-filter.mdc`](genericrtk-output-filter.mdc)** inkl. **Ausführungs-Checkliste (Schritte 1, 1b, 2–8)** und **[Verifikations-Matrix](genericrtk-output-filter.mdc#verifikations-matrix)** (eine Zeile pro Shell-Lauf); vor jedem MCP **`Rufe genericRTK …`** in der **sichtbaren** Antwort; Schritt **1b**: kein Reasoning aus Shell-Return vor `filter_*`.
 - **Hauptagent/Orchestrator:** Verifikation **nur** via Verifikations-Subagents — **kein** eigenes `ng build`/`ng test` ohne Subagent; Abschluss nur mit **vollständiger Matrix** aller Läufe **nach letztem Code-Edit** (nicht Representative-Filter; kein Abschluss-MCP mit Kurz-`raw`).
 - **Verboten:** Abschluss „Build/Test OK“ / „verifiziert“ ohne nachweisliche genericRTK-Kette **pro** applicable Lauf (mehrfaches `ng test` = mehrfach MCP); inhaltliche Diagnose/Freigabe ohne intern gelesenes MCP-Ergebnis (in-scope); Orchestrator liest Capture/Shell-UI **vor** `filter_*` (Schritt **1b** in genericRTK-Regel).
@@ -190,9 +184,9 @@ Diese Regeln sind **nicht optional** und dürfen während einer Umsetzung im Age
 
 ## Pflegehinweis / Skill-Discovery
 
-**Entscheidung `disable-model-invocation`:** **Option A (verbindlich)** — `true` beibehalten im Skill. Der Host invoked den Skill **nicht** automatisch; **diese Rule** (alwaysApply), vollständiges `read_file` des Skills bei erkanntem Umsetzungsintent und [{agent-index}]({agent-index}) tragen die Discovery. **Nicht** auf `false` wechseln ohne explizite Host-/Projektentscheidung (Risiko Doppel-Laden mit alwaysApply).
+**Entscheidung `disable-model-invocation`:** **Option A (verbindlich)** — `true` beibehalten im Skill. Der Host invoked den Skill **nicht** automatisch; **diese Rule** (alwaysApply), vollständiges `read_file` des Skills bei erkanntem Umsetzungsintent und [./AGENTS.md](./AGENTS.md) tragen die Discovery. **Nicht** auf `false` wechseln ohne explizite Host-/Projektentscheidung (Risiko Doppel-Laden mit alwaysApply).
 
-**Trigger doppelt pflegen:** Kanonische Trigger-Liste in **dieser Rule**; kompakte Spiegelung in Skill-YAML-`description` und {agent-index}-Zeile Implementation Workflow. Nach Änderungen: Rule ⊇ Skill-description ⊇ AGENTS-Kurzliste (Schlüsselwörter `implementiere`, `setze um`, `fix`, `leg los`, `@implementation-workflow`, `Hard Gate`, `ohne implement-skill`).
+**Trigger doppelt pflegen:** Kanonische Trigger-Liste in **dieser Rule**; kompakte Spiegelung in Skill-YAML-`description` und ./AGENTS.md-Zeile Implementation Workflow. Nach Änderungen: Rule ⊇ Skill-description ⊇ AGENTS-Kurzliste (Schlüsselwörter `implementiere`, `setze um`, `fix`, `leg los`, `@implementation-workflow`, `Hard Gate`, `ohne implement-skill`).
 
 ## Ausdrücklicher Opt-out (höchste Priorität)
 
@@ -208,6 +202,6 @@ Wenn der Nutzer **ausdrücklich** nur den **Implementation Workflow** (diesen Sk
 
 **Kein** Workflow-Opt-out (nur `BLOCKER` oder expliziter Skill-Opt-out oben): `ohne Subagents`, `direkt hier`, `ohne Task`, `ohne Verifikations-Subagent`.
 
-**`ohne agents-skill`:** nur dieser Implementation-Workflow — **nicht** [`{agent-index}`]({agent-index}) oder andere Projektregeln.
+**`ohne agents-skill`:** nur dieser Implementation-Workflow — **nicht** [`./AGENTS.md`](./AGENTS.md) oder andere Projektregeln.
 
 Dann: **[`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md)** nicht laden und nicht anwenden.

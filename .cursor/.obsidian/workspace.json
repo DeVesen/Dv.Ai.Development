@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "ba3a164f8b023eb1",
+        "id": "b7bd1404a6910ab9",
         "type": "tabs",
         "children": [
           {
-            "id": "aebdd7743c22e2ff",
+            "id": "de4419a9e8629c90",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -183,19 +183,25 @@
       "bases:Neue Base erstellen": false
     }
   },
-  "active": "aebdd7743c22e2ff",
+  "active": "1f0489b3e24beb3a",
   "lastOpenFiles": [
-    "Readme.md.tmp.36244.2564b3e2e335",
-    "packages/Readme.md.tmp.36244.c339cb5f40b8",
-    "update-skill.ps1.tmp.36244.9e538b796eb7",
-    "update-skill.ps1.tmp.36244.dcab6f32e596",
-    "update-skill.ps1.tmp.36244.0ceb7f893284",
-    "install-skill.ps1.tmp.36244.d911ab95d4d0",
-    "install-skill.ps1.tmp.36244.2b4ac6cea2d3",
-    "install-skill.ps1.tmp.36244.b3e66df8abe6",
-    "Readme.md.tmp.36244.e8aa37823deb",
-    "packages/Readme.md.tmp.36244.25128ee178da",
-    "packages/Readme.md.tmp.36244.304aac7fafd3",
+    "skills/describe-as-prompt/SKILL.md.tmp.37884.433616d021e0",
+    "rules/genericrtk-output-filter.mdc.tmp.37884.6626e7b0a519",
+    "rules/implementation-workflow-skill.mdc.tmp.37884.940c6445ebd4",
+    "update-skill.ps1.tmp.37884.652336593c84",
+    "packages/describe-as-html-prompt.json.tmp.37884.6040d55b4792",
+    "packages/describe-as-prompt.json.tmp.37884.4a497e45cb13",
+    "packages/code-review-mcp.json.tmp.37884.86c3eacbc996",
+    "packages/commit-message.json.tmp.37884.4ba5ae7bd680",
+    "packages/buddy-agent.json.tmp.37884.810b15246508",
+    "packages/caveman.json.tmp.37884.e5b2f04af88c",
+    "packages/angular-refactor.json.tmp.37884.f41db208e776",
+    "references/verification-commands.md",
+    "skills/code-review-mcp/SKILL.md",
+    "skills/Code-Review-Mcp-SKILL/SKILL.md",
+    "skills/SKILL.md",
+    "skills/Code-Review-Mcp-SKILL.md",
+    "skills/caveman/SKILL.md",
     "agents/ado-story-pruefe-agent.md",
     "packages/Readme.md"
   ]

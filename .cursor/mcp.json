@@ -10,6 +10,16 @@
       ],
       "transport": "stdio"
     },
+    "code-review-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "devesen/dv.code-review.mcp:latest"
+      ],
+      "transport": "stdio"
+    },
     "ado": {
       "command": "npx",
       "args": [

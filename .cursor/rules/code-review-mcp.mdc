@@ -1,0 +1,159 @@
+---
+description: Code-Review-MCP — Planung (index_project, find_in_index, suggest_class_splits, analyze_refactoring_safety, analyze_type_graph, analyze_maintainability_index, analyze_dataflow), Implementierung (review_file, review_code, review_git_diff, review_files_batch, analyze_nullability, analyze_complexity, generate_auto_fixes, analyze_control_flow, analyze_dead_code, analyze_ast_only) oder Nach-Implementierung (analyze_coverage, analyze_test_quality, analyze_test_health, analyze_duplicates, review_with_index, analyze_advanced_all) je nach Phase; Ausgabe strukturiert mit Score, Kritisch/Warnung/Gut/Sofortmaßnahmen.
+alwaysApply: true
+---
+
+# Code-Review-MCP
+
+Wenn ein User über Code spricht, erkenne die Phase und handle entsprechend.
+
+## Phase erkennen
+
+**→ PLANUNG** wenn der User noch nicht angefangen hat zu schreiben:
+Schlüsselwörter: "planen", "bauen wollen", "vorgehen", "API ändern", "Klasse erweitern", "wie soll ich…"
+
+**→ IMPLEMENTIERUNG** wenn Code bereits existiert:
+Schlüsselwörter: "schau an", "ist das okay", "vor dem Commit", "hier mein Code", "kann ich verbessern"
+
+**→ NACH IMPLEMENTIERUNG** wenn Feature fertig ist und Tests laufen:
+Schlüsselwörter: "Tests laufen", "Feature fertig", "vor dem Merge", "Sprint-End", "Release", "wie gut sind meine Tests"
+
+---
+
+## PLANUNG — Vorgehen
+
+**Schritt 1** — Immer zuerst:
+```
+index_project(projectPath: "<Pfad>", type: "auto")
+```
+Zeige kompakt: was gibt es, was sind die größten Abhängigkeiten, gibt es Warnungen?
+
+**Schritt 2** — Bei konkreter Klasse/Service:
+```
+find_in_index(projectPath: "...", type: "...", query: "<Name>")
+```
+
+**Schritt 3** — Wenn bestehende Klasse erweitert werden soll:
+```
+suggest_class_splits(projectPath: "...", type: "...", targetClass: "<Name>")
+```
+Urgency "high"/"critical" → Split empfehlen bevor das neue Feature kommt.
+
+**Schritt 4** — Nur bei API-Änderungen:
+```
+analyze_refactoring_safety(projectPath: "...", type: "...", targetName: "<Methode>")
+```
+
+**Schritt 5** — Bei Architektur-/Abhängigkeitsfragen:
+```
+analyze_type_graph(projectPath: "...", type: "...")
+```
+
+**Ausgabe Planung:**
+1. Kurze Zusammenfassung was der Index zeigt (2–3 Sätze, kein Fachjargon)
+2. Konkrete Empfehlung in 3–5 Punkten
+3. Risiko-Hinweis wenn etwas die Planung wesentlich beeinflusst
+
+---
+
+## IMPLEMENTIERUNG — Vorgehen
+
+**Schritt 1** — Je nach Eingabe:
+- Dateipfad → `review_file(filePath: "...", focusAreas: ["solid","security","performance","angular-best-practices"])`
+- Code im Chat → `review_code(code: "...", filename: "<Name>.cs oder .ts")`
+- Vor dem Commit → `review_git_diff(repoPath: "...", staged: false)`
+- Mehrere Dateien → `review_files_batch(filePaths: [...])`
+
+**Schritt 2** — Zusatz wenn async/nullable Code dabei:
+```
+analyze_nullability(projectPath: "...", type: "...")
+```
+
+**Schritt 3** — Wenn Methoden komplex oder lang wirken:
+```
+analyze_complexity(projectPath: "...", type: "...")
+```
+
+**Schritt 4** — Wenn "was kann ich verbessern?" gefragt wird:
+```
+generate_auto_fixes(projectPath: "...", type: "...")
+```
+
+**Schritt 5** — Nach einem Refactoring:
+```
+analyze_dead_code(projectPath: "...", type: "...")
+```
+
+**Ausgabe Implementierung — immer dieses Format:**
+```
+Score: X/10
+
+🔴 Kritisch (sofort fixen):
+  - Zeile XX: [Problem] → [konkreter Fix mit Code]
+
+🟠 Warnung:
+  - Zeile XX: [Problem] → [Fix]
+
+✅ Gut gemacht:
+  - [Was positiv auffällt]
+
+💡 Top 3 Sofortmaßnahmen:
+  1. ...
+  2. ...
+  3. ...
+```
+
+---
+
+## NACH IMPLEMENTIERUNG — Vorgehen
+
+**Schritt 1** — Test-Qualität prüfen (kein Test-Run nötig):
+```
+analyze_test_quality(projectPath: "...", type: "...")
+```
+Findet Tests ohne Assertions, Tautologien, Mock-Heavy-Tests, fehlende Fehler-Szenarien.
+
+**Schritt 2** — Coverage auswerten (nur wenn Test-Run bereits gelaufen):
+```
+analyze_coverage(projectPath: "...", type: "...")
+```
+⚠️ Erst ausführen nach: `ng test --code-coverage` oder `dotnet test --collect:"XPlat Code Coverage"`
+
+**Schritt 3** — Gesamtbild Coverage + Qualität:
+```
+analyze_test_health(projectPath: "...", type: "...")
+```
+
+**Schritt 4** — Duplikate nach Feature-Freeze finden:
+```
+analyze_duplicates(projectPath: "...", type: "...")
+```
+
+**Schritt 5** — Finaler Review mit vollem Projektkontext vor dem Merge:
+```
+review_with_index(filePath: "...", projectPath: "...", type: "...")
+```
+oder für alle Feature-Dateien auf einmal:
+```
+review_files_batch(filePaths: [...])
+```
+
+**Schritt 6** — Vollständiger Projekt-Gesundheitsbericht (Sprint-End / Release):
+```
+analyze_advanced_all(projectPath: "...", type: "...")
+```
+
+**Ausgabe Nach-Implementierung:**
+1. Test-Gesundheit: Score + die kritischsten Test-Probleme
+2. Coverage: Grade A–F + welche Methoden gar nicht getestet sind
+3. Code-Qualität: Duplikate und offene Review-Findings
+4. Empfehlung: Was muss noch vor dem Merge behoben werden?
+
+---
+
+## Immer
+
+- Alltagssprache — Fachbegriffe nur wenn nötig, dann in einem Satz erklären
+- Fixes immer als konkretes Codebeispiel zeigen, nicht nur beschreiben
+- Kein Build nötig erwähnen wenn der User fragt ob er erst bauen muss
+- Coverage-Tools immer mit dem Hinweis versehen dass zuerst ein Test-Run nötig ist

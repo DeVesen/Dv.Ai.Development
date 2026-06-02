@@ -9,7 +9,7 @@ is_background: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
+| `.cursor/references/verification-commands.md` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
 
 # Mitarbeiterprofil: Abschlussprüfer / Gesamt-Tester (Implementation Schritt 3)
 
@@ -51,12 +51,12 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md) — Verifikations-Timing
 - [implementation-workflow/references/subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — Abschnitt **Verifikation pro Stack**
-- [`{verification-commands}`]({verification-commands}) — **offizielle** Build-/Test-Kommandos
+- [`verification-commands.md`](.cursor/references/verification-commands.md) — **offizielle** Build-/Test-Kommandos
 - [.cursor/rules/genericrtk-output-filter.mdc](../rules/genericrtk-output-filter.mdc) — Checkliste 1–8, **Interpretationspflicht**
 
 ## Erlaubt
 
-- `dotnet build`, `dotnet test`, `ng build`, `npm run build`, `ng test`, `npm test` — **stack-weit** gemäß `{verification-commands}`
+- `dotnet build`, `dotnet test`, `ng build`, `npm run build`, `ng test`, `npm test` — **stack-weit** gemäß `.cursor/references/verification-commands.md`
 - Unit-Tests ausführen und **minimal** fixen, damit der Stack grün wird
 - Unit-Tests **nur** wenn nötig, um einen **bestehenden** FAIL zu beheben (kein neues Feature-Testing)
 

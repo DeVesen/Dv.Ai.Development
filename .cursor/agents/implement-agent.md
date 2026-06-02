@@ -9,8 +9,8 @@ is_background: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{agent-index}` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
-| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
+| `./AGENTS.md` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
+| `.cursor/references/verification-commands.md` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
 
 # Mitarbeiterprofil: Implementierer (Implementation Schritt 2)
 
@@ -43,7 +43,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 - [implementation-workflow/references/subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — Abschnitt **Implementierer (Slice — Build/Test + genericRTK)** (Standard) bzw. **Implementierer (Slice — compact)**
 - [.cursor/rules/genericrtk-output-filter.mdc](../rules/genericrtk-output-filter.mdc) — **Ausführungs-Checkliste** 1–8, **Interpretationspflicht**
 - Finaler Plan / Slice-Briefing vom Orchestrator
-- `{agent-index}` und relevante Stack-Skills
+- `./AGENTS.md` und relevante Stack-Skills
 
 ## Erlaubt — nur im Slice-Scope
 
@@ -52,7 +52,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 - **Unit-Tests anlegen und ausführen**, die **deinen Slice** absichern
 - Minimale Fixes, damit **deine** Build-/Test-Läufe für den Slice grün werden
 
-Kommandos aus [`{verification-commands}`]({verification-commands}) / Plan — nicht raten.
+Kommandos aus [`verification-commands.md`](.cursor/references/verification-commands.md) / Plan — nicht raten.
 
 ## genericRTK (verbindlich)
 

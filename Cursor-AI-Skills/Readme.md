@@ -70,25 +70,31 @@ lass uns planen
 
 ### buddy-agent
 
-Task-Klärung und Sparring **vor** der Planung (read-only). Erzeugt einen Plan-Prompt als Eingabe für `plan-agent`. Kommuniziert im Caveman-Modus (full) — automatisch, ohne expliziten Aufruf.
+Phasen-basiertes Sparring **vor** der Planung. Führt den Nutzer durch `intake → compress → repo-check → diskussion → plan-prompt`. Liefert einen describe-as-Handoff als Eingabe für `plan-agent`. Kommuniziert in normalem Deutsch — kein Caveman im Chat.
 
 **Ausgelöst durch:** `rules/buddy-agent-skill.mdc`
 
 #### Operations
 
-| Operation | Beschreibung | Direkte Sub-Agents |
-|-----------|-------------|-------------------|
-| Task klären | Read-only Sparring zur Anforderungsschärfung | — |
-| Plan-Prompt erstellen | Strukturierten Plan-Prompt für `plan-agent` generieren | — |
+| Operation | Beschreibung | Cursor-Modus |
+|-----------|-------------|-------------|
+| intake | Wunsch aufnehmen, Repo-Fragen sammeln — kein Scouting | Ask |
+| compress | Wunsch verdichten, Repo-Fragen konsolidieren | Ask |
+| repo-check | MCP-gestütztes Fakten-Sammeln zu Repo-Fragen | Agent (Pflicht) |
+| diskussion | Wunsch + Repo-Check-Ergebnis interpretieren | Ask |
+| plan-prompt | describe-as-Handoff (Section A + B) für plan-agent erzeugen | Ask |
+| Refacture-Review | MCP-gestützter Review von Diff + Code | Agent |
+| Task-MD schreiben | task-*.md nach expliziter Freigabe schreiben/aktualisieren | Agent |
 
 ```
 @buddy-agent
+intake ich hätte gerne …
 Task mit Buddy
-Task durchsprechen
-Anforderung schärfen
 Sparring
+compress
+repo-check
+plan-prompt
 Plan-Prompt für plan-agent
-Plan-Prompt erstellen
 ```
 
 ---
@@ -241,37 +247,44 @@ Story 287638 resolved
 
 ### buddy-agent
 
-Task-Klärung und Plan-Prompt-Generierung vor dem Planning Workflow. Read-only Sparring, kein Code schreiben. Aktiviert automatisch den Caveman-Modus (full).
+Phasen-basiertes Sparring vor dem Planning Workflow (`intake → compress → repo-check → diskussion → plan-prompt`). Liefert describe-as-Handoff für `plan-agent`. Chat in normalem Deutsch — kein Caveman.
 
-**Abhängigkeiten:** `caveman`, `commit-message`
+**Abhängigkeiten:** `describe-as-prompt`, `commit-message`
 
 #### Operations
 
-| Operation | Trigger |
-|-----------|---------|
-| Task klären | `@buddy-agent`, `Task mit Buddy`, `Sparring` |
-| Plan-Prompt erstellen | `Plan-Prompt`, `Plan-Prompt für plan-agent` |
-| Anforderung schärfen | `Task durchsprechen`, `Anforderung schärfen` |
+| Operation | Trigger | Modus |
+|-----------|---------|-------|
+| intake | `intake`, `intake-only`, `zuhören`, `ich hätte gerne …` | Ask |
+| compress | `compress` | Ask |
+| repo-check | `repo-check`, `überlege` | Agent |
+| diskussion | implizit nach repo-check; `diskussion` | Ask |
+| plan-prompt | `plan-prompt`, `describe-as-prompt`, `handoff` | Ask |
+| Anforderung schärfen | `Task durchsprechen`, `Anforderung schärfen`, `Sparring` | Ask |
+| Refacture-Review | `refacture`, `refactor review`, `clean code prüfen` | Agent |
 
 ```
 @buddy-agent
+intake ich hätte gerne …
+compress
+repo-check
+plan-prompt
 Task mit Buddy
-Task durchsprechen
-Anforderung schärfen
 Sparring
 Plan-Prompt für plan-agent
-Plan-Prompt erstellen
 ```
 
 #### Rules
 
 | Datei | Trigger |
 |-------|---------|
-| `rules/buddy-agent-skill.mdc` | `@buddy-agent`, `buddy-agent`, `Task mit Buddy`, `Plan-Prompt`, `Sparring`, `Task durchsprechen` |
+| `rules/buddy-agent-skill.mdc` | `@buddy-agent`, `buddy-agent`, `Task mit Buddy`, `Plan-Prompt`, `Sparring`, `intake`, `compress`, `repo-check`, `plan-prompt` |
 
 #### Skills
 
-_keine_
+| Datei | Inhalt |
+|-------|--------|
+| `skills/buddy-agent/buddy-repo-check.md` | Template für `./buddy-repo-check.md` — konfiguriert die MCP-Pipeline für repo-check |
 
 #### References
 
@@ -283,7 +296,14 @@ _keine_
 
 #### Parameters
 
-_keine_
+| Parameter | Beschreibung |
+|-----------|-------------|
+| `./buddy-repo-check.md` | Ressourcen-Pipeline im **Repo-Root** (nicht unter `.cursor/`). Template kopieren: `skills/buddy-agent/buddy-repo-check.md` → `./buddy-repo-check.md`. Ohne Datei: Default-Pipeline `code-review-mcp` → lokaler Code. |
+
+**PrimeNG aktivieren (projektspezifisch):**
+1. `primeng`-Server in `mcp.json` eintragen
+2. `primeng-mcp` als Zeile in `./buddy-repo-check.md` unter `## Pipeline` hinzufügen
+3. Buddy erkennt `primeng-mcp` als bekannten Schritt und ruft z. B. `export_component_docs` auf
 
 ---
 
@@ -632,7 +652,7 @@ _keine_
 
 ### caveman
 
-Kommunikationsmodus: antwortet knapp wie ein kluger Höhlenmensch — technischer Inhalt vollständig, alle Füllwörter entfallen. Wird automatisch durch `buddy-agent` aktiviert.
+Kommunikationsmodus: antwortet knapp wie ein kluger Höhlenmensch — technischer Inhalt vollständig, alle Füllwörter entfallen. Manuell per `caveman full` aktivierbar.
 
 **Abhängigkeiten:** _keine_
 
@@ -640,7 +660,7 @@ Kommunikationsmodus: antwortet knapp wie ein kluger Höhlenmensch — technische
 
 | Operation | Trigger |
 |-----------|---------|
-| Caveman-Modus aktivieren | `caveman full` / automatisch via `buddy-agent` |
+| Caveman-Modus aktivieren | `caveman full` |
 | Modus beenden | `stop caveman`, `normal mode` |
 
 ```
@@ -949,7 +969,7 @@ Nach der Installation alle `{parameter}`-Platzhalter in `agents/`, `rules/` und 
 
 ```
 ado-requests-stories      →  buddy-agent
-buddy-agent               →  caveman, commit-message
+buddy-agent               →  describe-as-prompt, commit-message
 angular-refactor          →  angular-bundle
 angular-material-*        →  angular-bundle
 describe-as-html-prompt   →  describe-as-prompt

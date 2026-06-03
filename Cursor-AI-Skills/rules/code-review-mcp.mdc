@@ -161,6 +161,18 @@ analyze_advanced_all(projectPath: "...", type: "...")
 
 ---
 
+## Buddy-Agent — Phasen-Ausnahme
+
+Diese Rule hat `alwaysApply: true`. Ausnahme: Wenn **buddy-agent** aktiv ist und die aktuelle Phase **intake**, **compress**, **diskussion** oder **plan-prompt** ist, diese Rule **nicht** anwenden:
+
+- Kein `index_project`, kein `find_in_index`, kein Grep als Ersatz
+- Erkenntnisbedarf in intake/compress → `## Repo-Fragen` notieren; in diskussion → keine neue Repo-Tour ohne erneutes `repo-check`
+- Nur in **repo-check** gilt diese Rule normal (MCP aktiv)
+
+Phasen-State erkennbar an der Statuszeile `Phase: intake | compress | …` in Buddy-Antworten.
+
+---
+
 ## Immer
 
 - Alltagssprache — Fachbegriffe nur wenn nötig, dann in einem Satz erklären

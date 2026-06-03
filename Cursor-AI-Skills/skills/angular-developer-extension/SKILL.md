@@ -6,6 +6,8 @@ description: >
   Stacks auf angular-developer; ersetzt nicht den Vendor-Baseline für Language-Level-Guidance.
   Trigger: angular-developer-extension, angular architecture, project structure after angular-developer,
   feature facade, smart vs dumb, ng generate path, extension architecture skill,
+  pages folder, page component, PageComponent, route entry point, lazy loadComponent, feature pages,
+  showcase feature, demo feature, section component,
   unit test, integration test, TestBed, component.spec.ts, HttpTestingController, Router test,
   Signal test, Harness, flaky test, ng test,
   signal architecture, feature facade state, BehaviorSubject migration, RxJS boundary,
@@ -26,7 +28,9 @@ disable-model-invocation: true
 | Pfad | Inhalt |
 |------|--------|
 | `src/app/components/[name]/` | Shared/Dumb — 4 Dateien: `.ts .html .scss .spec.ts` |
-| `src/app/features/[feature]/` | Feature-Root mit Facade, `models/`, opt. `services/`, `rules/`, `pipes/` |
+| `src/app/features/[feature]/pages/[route-name]-page/` | Routete Page-Komponente (`*PageComponent`) — Lazy Route-Einstiegspunkt |
+| `src/app/features/[feature]/components/[name]/` | Nicht-routete Feature-Bausteine (Sections, Dialoge) |
+| `src/app/features/[feature]/` | Feature-Root: Facade, `models/`, `[f].constants.ts`, opt. `services/`, `rules/`, `pipes/` |
 | `src/app/models/` | Cross-Feature Models |
 | `src/app/services/` | Global Singleton Services |
 

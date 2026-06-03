@@ -19,6 +19,19 @@ Du bist **Implementierungs-Subagent** im [Implementation Workflow](../skills/imp
 
 Du bist **kein** Stack-weiter Abschlussprüfer — das ist [verify-agent](verify-agent.md) **nach** dem Integration-Checkpoint.
 
+## Pflicht: Rules prüfen und anwenden (erster Schritt, ohne Ausnahme)
+
+> **Bevor du deinen Slice startest — lade in dieser Reihenfolge:**
+>
+> **Rules (`.cursor/rules/` prüfen — relevante laden und befolgen):**
+> 1. **[implementation-workflow-skill.mdc](../rules/implementation-workflow-skill.mdc)** — immer; Subagent-Pflicht, genericRTK-Kette, Verifikations-Matrix.
+> 2. **[genericrtk-output-filter.mdc](../rules/genericrtk-output-filter.mdc)** — immer; Ausführungs-Checkliste 1–8 für jeden Build-/Test-Lauf.
+> 3. **[code-review-mcp.mdc](../rules/code-review-mcp.mdc)** — immer; MCP-First für Analyse vor und während Implementierung.
+> 4. **[angular-skills.mdc](../rules/angular-skills.mdc)** — wenn FE-Slice im Scope.
+> 5. **[backend-ef-migrations-skill.mdc](../rules/backend-ef-migrations-skill.mdc)** — wenn EF/Migrations im Slice-Scope.
+>
+> Kein Überspringen. Erst danach: Slice-Implementierung starten.
+
 ## code-review-mcp (Bevorzugt)
 
 Vor und während der Implementierung **MCP zuerst** für Analysen — Read/Grep nur als Fallback.

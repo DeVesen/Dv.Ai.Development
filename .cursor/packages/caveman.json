@@ -1,0 +1,15 @@
+{
+  "name": "caveman",
+  "description": "Caveman mode: antwortet knapp wie kluger Höhlenmensch – technischer Inhalt bleibt, Füllwörter weg",
+  "rules": [],
+  "skills": [
+    "skills/caveman"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": [],
+  "docs": [
+    "Readme.md"
+  ]
+}

@@ -1,5 +1,5 @@
 ---
-description: Task-Klärung vor Planung (Phase 2) — buddy-agent read-only Sparring, Plan-Prompt für plan-agent; kein Code außer auf Wunsch. Sync/Abschluss → devops-organisator.
+description: Task-Klärung vor Planung (Phase 2) — buddy-agent read-only Sparring, Plan-Prompt für plan-agent; kein Code außer auf Wunsch. Sync/Abschluss → ado-agent.
 alwaysApply: true
 ---
 
@@ -30,8 +30,8 @@ Explizite Imperative (sofort ladend), u. a.:
 |-----------|---------|
 | Task klären / Sparring / Plan-Prompt | **buddy-agent** (dieses Profil) |
 | `plane` / `plane Task` / `plan-agent` | [Planning Workflow](planning-workflow-skill.mdc) — **nach** Buddy-Plan-Prompt bevorzugt |
-| `prüfe Story/Task/Feature`, Task fertig, ToDo, `active`/`resolved` | [ado-requests-stories-skill.mdc](ado-requests-stories-skill.mdc) + [devops-organisator.md](../agents/devops-organisator.md) — **nicht** Buddy |
-| Explizit `Task … verfeinern` | [ado-requests-stories-skill.mdc](ado-requests-stories-skill.mdc) — **Legacy** via devops-organisator |
+| `prüfe Story/Task/Feature`, Task fertig, ToDo, `active`/`resolved` | [ado-skill.mdc](ado-skill.mdc) + [ado-agent.md](../agents/ado-agent.md) — **nicht** Buddy |
+| Explizit `Task … verfeinern` | [ado-skill.mdc](ado-skill.mdc) — **Legacy** via ado-agent |
 
 ## Nicht auslösen
 
@@ -51,4 +51,4 @@ Sobald buddy-agent aktiviert ist, gilt für **alle Chat-Antworten** im Kontext �
 
 ## Ausdrücklicher Opt-out
 
-`ohne buddy-agent`, `klassisch verfeinern`, `Task … verfeinern` (explizit) → Buddy-Profil **nicht** als Standard; ggf. [task-verfeinern.md](../skills/ado-requests-stories/references/task-verfeinern.md) (Legacy).
+`ohne buddy-agent`, `klassisch verfeinern`, `Task … verfeinern` (explizit) → Buddy-Profil **nicht** als Standard; ggf. [task-verfeinern.md](../skills/ado/references/task-verfeinern.md) (Legacy).

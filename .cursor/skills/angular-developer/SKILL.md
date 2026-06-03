@@ -1,82 +1,40 @@
 ---
 name: angular-developer
-description: Generates Angular code and provides architectural guidance. Trigger when creating projects, components, or services, or for best practices on reactivity (signals, linkedSignal, resource), forms, dependency injection, routing, SSR, accessibility (ARIA), animations, styling (component styles, Tailwind CSS), testing, or CLI tooling.
+description: >
+  Generates Angular code and provides architectural guidance. Trigger when creating
+  projects, components, or services, or for best practices on reactivity (signals,
+  linkedSignal, resource), forms, dependency injection, routing, SSR, accessibility
+  (ARIA), animations, styling (component styles, Tailwind CSS), testing, or CLI tooling.
 license: MIT
 metadata:
   author: Copyright 2026 Google LLC
   version: '1.0'
+disable-model-invocation: true
 ---
 
-# Angular Developer Guidelines
+## Voraussetzungen
 
-1. **Angular-Version** vor Antwort prüfen — Best Practices variieren stark zwischen Majors. Bei neuem Projekt mit CLI keine Version angeben außer auf Nutzerwunsch.
-2. Angular Style Guide + Best Practices für Wartbarkeit/Performance einhalten. Angular CLI für Scaffolding nutzen.
+1. **Angular-Version** vor Antwort prüfen — Best Practices variieren stark zwischen Majors.
+2. Angular Style Guide + Best Practices für Wartbarkeit/Performance einhalten.
 3. Nach Code-Generierung `ng build` ausführen; Fehler analysieren und beheben — Pflicht.
 
-## Neue Projekte
+## Operationen
 
-Defaults bei fehlenden Vorgaben:
-1. Neueste stabile Angular-Version.
-2. Signal Forms für neue Formulare (Angular v21+) — [signal-forms.md](references/signal-forms.md).
+| Trigger | Operation | Detail |
+|---------|-----------|--------|
+| `ng new`, neues Projekt | Projekt erstellen | [references/op-new-project.md](references/op-new-project.md) |
+| `component`, `input`, `output`, `host binding` | Komponenten | [references/op-components.md](references/op-components.md) |
+| `signal`, `computed`, `linkedSignal`, `resource`, `effect` | Reaktivität / State | [references/op-reactivity.md](references/op-reactivity.md) |
+| `form`, `Formular`, `signal forms`, `reactive forms` | Formulare | [references/op-forms.md](references/op-forms.md) |
+| `inject`, `DI`, `service`, `provider`, `InjectionToken` | Dependency Injection | [references/op-di.md](references/op-di.md) |
+| `ARIA`, `accessibility`, `a11y` | Accessibility | [references/op-accessibility.md](references/op-accessibility.md) |
+| `route`, `router`, `guard`, `lazy loading`, `SSR` | Routing | [references/op-routing.md](references/op-routing.md) |
+| `style`, `CSS`, `Tailwind`, `animation` | Styling & Animations | [references/op-styling.md](references/op-styling.md) |
+| `test`, `Vitest`, `TestBed`, `Cypress`, `E2E` | Testing | [references/op-testing.md](references/op-testing.md) |
+| `CLI`, `ng generate`, `migration`, `MCP` | Tooling | [references/op-tooling.md](references/op-tooling.md) |
 
-**`ng new`-Ausführungsregel:**
-- Nutzer nennt Version → `npx @angular/cli@<version> new <project-name>`
-- Keine Version, CLI vorhanden (`ng version` OK) → `ng new <project-name>`
-- Keine Version, CLI fehlt → `npx @angular/cli@latest new <project-name>`
+**Vor Ausführung:** relevante `op-*.md` vollständig lesen.
 
-## Referenzen nach Thema
+## Opt-out
 
-### Komponenten
-- Anatomie, Metadata, `@if`/`@for`/`@switch` → [components.md](references/components.md)
-- Signal-Inputs, Transforms, Model-Inputs → [inputs.md](references/inputs.md)
-- Signal-Outputs, Custom Events → [outputs.md](references/outputs.md)
-- Host-Bindings → [host-elements.md](references/host-elements.md)
-
-### Reaktivität / State
-- `signal`, `computed`, `untracked` → [signals-overview.md](references/signals-overview.md)
-- `linkedSignal` → [linked-signal.md](references/linked-signal.md)
-- Async mit `resource` → [resource.md](references/resource.md)
-- `effect`, `afterRenderEffect`, wann **nicht** nutzen → [effects.md](references/effects.md)
-
-### Formulare
-v21+, neue Formulare → Signal Forms; ältere Apps → bestehende Strategie beibehalten.
-- Signal Forms → [signal-forms.md](references/signal-forms.md)
-- Template-driven (einfach) → [template-driven-forms.md](references/template-driven-forms.md)
-- Reactive (komplex) → [reactive-forms.md](references/reactive-forms.md)
-
-### Dependency Injection
-- Grundlagen, `inject()` → [di-fundamentals.md](references/di-fundamentals.md)
-- Services, `providedIn: 'root'` → [creating-services.md](references/creating-services.md)
-- `InjectionToken`, `useClass/Value/Factory` → [defining-providers.md](references/defining-providers.md)
-- `inject()` Kontext, `runInInjectionContext` → [injection-context.md](references/injection-context.md)
-- Hierarchical Injectors, Modifier → [hierarchical-injectors.md](references/hierarchical-injectors.md)
-
-### Accessibility (ARIA)
-- Accordion, Listbox, Combobox, Menu, Tabs, Toolbar, Tree, Grid → [angular-aria.md](references/angular-aria.md)
-
-### Routing
-- URL-Pfade, Wildcards, Redirects → [define-routes.md](references/define-routes.md)
-- Eager vs. Lazy Loading → [loading-strategies.md](references/loading-strategies.md)
-- `<router-outlet>`, Named Outlets → [show-routes-with-outlets.md](references/show-routes-with-outlets.md)
-- `RouterLink`, programmatisch → [navigate-to-routes.md](references/navigate-to-routes.md)
-- Guards (`CanActivate`, `CanMatch`) → [route-guards.md](references/route-guards.md)
-- `ResolveFn` → [data-resolvers.md](references/data-resolvers.md)
-- Navigation Events → [router-lifecycle.md](references/router-lifecycle.md)
-- CSR/SSG/SSR+Hydration → [rendering-strategies.md](references/rendering-strategies.md)
-- View Transitions API → [route-animations.md](references/route-animations.md)
-
-### Styling & Animations
-- Tailwind CSS Integration → [tailwind-css.md](references/tailwind-css.md)
-- CSS-Animations vs. Legacy-DSL → [angular-animations.md](references/angular-animations.md)
-- Component Styles + Encapsulation → [component-styling.md](references/component-styling.md)
-
-### Testing
-- Unit-Testing (Vitest), async, TestBed → [testing-fundamentals.md](references/testing-fundamentals.md)
-- Component Harnesses → [component-harnesses.md](references/component-harnesses.md)
-- `RouterTestingHarness` → [router-testing.md](references/router-testing.md)
-- E2E mit Cypress → [e2e-testing.md](references/e2e-testing.md)
-
-### Tooling
-- CLI: Apps, Generate, Serve, Build → [cli.md](references/cli.md)
-- Modernisierungs-Migrationen → [migrations.md](references/migrations.md)
-- Angular MCP Server → [mcp.md](references/mcp.md)
+`no-angular-developer` → Skill nicht laden.

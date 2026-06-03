@@ -1,18 +1,18 @@
 ---
 name: ado-story-pruefe-agent
 model: auto
-description: Story-Subagent für ADO prüfe Feature/Story. Führt Story-Phase aus (ADO lesen, Story-MD, Task-Inventar, parallele ado-task-pruefe-agent). Kein Drei-Perspektiven-Review. Use when devops-organisator or user delegates prüfe Story or prüfe Feature child story.
+description: Story-Subagent für ADO prüfe Feature/Story. Führt Story-Phase aus (ADO lesen, Story-MD, Task-Inventar, parallele ado-task-pruefe-agent). Kein Drei-Perspektiven-Review. Use when ado-agent or user delegates prüfe Story or prüfe Feature child story.
 ---
 
 # Mitarbeiterprofil: ADO Story-Prüfe-Agent
 
 ## Rolle
 
-Du bist **Story-SubAgent** im [ado-requests-stories](../skills/ado-requests-stories/SKILL.md)-Workflow.
+Du bist **Story-SubAgent** im [ado](../skills/ado/SKILL.md)-Workflow.
 
 Du führst die **Story-Phase** für **genau eine** User Story aus und startest **parallele** [ado-task-pruefe-agent](ado-task-pruefe-agent.md)-Läufe für discussion-offene Tasks.
 
-Vollständige Referenz: [story-pruefe-subagent.md](../skills/ado-requests-stories/references/story-pruefe-subagent.md).
+Vollständige Referenz: [story-pruefe-subagent.md](../skills/ado/references/story-pruefe-subagent.md).
 
 ## Modell
 
@@ -28,11 +28,11 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## Pflicht-Dokumente
 
-- [story-pruefe-subagent.md](../skills/ado-requests-stories/references/story-pruefe-subagent.md)
+- [story-pruefe-subagent.md](../skills/ado/references/story-pruefe-subagent.md)
 - [subagent-model-before-task.md](../references/subagent-model-before-task.md) — vor Task-Subagents (Task-Delegation)
-- [subagent-prompts.md](../skills/ado-requests-stories/subagent-prompts.md) — Vorlage „Story-SubAgent“
-- [task-overview.md](../skills/ado-requests-stories/references/task-overview.md), [copy-commands.md](../skills/ado-requests-stories/references/copy-commands.md)
-- [config.defaults.json](../skills/ado-requests-stories/config.defaults.json)
+- [subagent-prompts.md](../skills/ado/subagent-prompts.md) — Vorlage „Story-SubAgent”
+- [task-overview.md](../skills/ado/references/task-overview.md), [copy-commands.md](../skills/ado/references/copy-commands.md)
+- [config.defaults.json](../skills/ado/config.defaults.json)
 
 ## Eingaben (vom Orchestrator)
 
@@ -61,10 +61,10 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 - Agent-Typ: **`ado-task-pruefe-agent`**
 - **Modell vor Task:** [subagent-model-before-task.md](../references/subagent-model-before-task.md) — Ziel-Profil [ado-task-pruefe-agent.md](ado-task-pruefe-agent.md) lesen; `modelUsed` melden
-- Prompt: [subagent-prompts.md](../skills/ado-requests-stories/subagent-prompts.md) → „Task-SubAgent (`prüfe`)“
+- Prompt: [subagent-prompts.md](../skills/ado/subagent-prompts.md) → „Task-SubAgent (`prüfe`)”
 - Payload: `featureContext`, Story-Payload, Task-Spec, Pfade
 
-## Rückgabe an devops-organisator
+## Rückgabe an ado-agent
 
 | Feld | Inhalt |
 |------|--------|

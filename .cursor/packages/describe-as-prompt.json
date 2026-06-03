@@ -1,0 +1,17 @@
+{
+  "name": "describe-as-prompt",
+  "description": "Condenses conversations into copy-paste Markdown handoff prompts for follow-up agents",
+  "rules": [
+    "rules/describe-as-prompt-skill.mdc"
+  ],
+  "skills": [
+    "skills/describe-as-prompt"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": [],
+  "docs": [
+    "Readme.md"
+  ]
+}

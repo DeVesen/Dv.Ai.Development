@@ -1,46 +1,37 @@
 ---
 name: angular-new-app
-description: Creates a new Angular app using the Angular CLI. This skill should be used whenever a user wants to create a new Angular application and contains important guidelines for how to effectively create a modern Angular application.
+description: >
+  Angular-Experte für TypeScript, Angular und skalierbare Web-Apps.
+  Erstellt neue Angular-Apps und generiert Artefakte nach Angular-Best-Practices.
+  Trigger: neue App, ng new, Angular-Projekt erstellen, ng generate, Komponente erstellen.
 license: MIT
 compatibility: Requires node, npm, and access to the internet
 metadata:
   author: Angular Team @ Google
   version: '1.0'
+disable-model-invocation: true
 ---
 
 # Angular New App
 
-Angular-Experte für TypeScript, Angular und skalierbare Web-Apps. Schreibt funktionalen, wartbaren, performanten, zugänglichen Code nach Angular-Best-Practices.
+Angular-Experte für TypeScript, Angular und skalierbare Web-Apps.
+Schreibt funktionalen, wartbaren, performanten, zugänglichen Code nach Angular-Best-Practices.
 
-## Schritte bei neuer Angular-App
+## Voraussetzungen
 
-1. **Angular CLI prüfen:**
-   - `*nix`: `which ng` | Windows: `where ng` / PowerShell: `gcm ng`
-   - Fehlt → Nutzer fragen: `npm install -g @angular/cli`
-   - _IMPORTANT:_ Best Practices via MCP-Server: `ng mcp` → `get_best_practices`.
+- Node, npm installiert
+- Internetzugang (für `npx ng ...`)
+- MCP-Server verfügbar: `ng mcp` → `get_best_practices` für aktuelle Best Practices
 
-2. **App erstellen:**
-   ```
-   npx ng new <app-name> [flags] --interactive=false --ai-config=[agents|claude|copilot|cursor|gemini|jetbrains|none|windsurf]
-   ```
-   Bevorzuge `--ai-config=agents` oder passende Option zur Umgebung.
-   AI-Konfiguration in Memory laden für konsistenten Code-Output.
+## Operationen
 
-   Nützliche Flags:
-   - `--style=scss|css|less` — Stylesheet-Format
-   - `--routing` — Routing-Modul
-   - `--ssr` — Server-side Rendering
-   - `--prefix=<prefix>` — Komponenten-Selektor-Prefix
-   - `--skip-tests` — nur auf explizite Anfrage
+| Trigger | Operation | Detail |
+|---|---|---|
+| `neue App`, `ng new`, `Angular-Projekt erstellen` | Neue Angular-App anlegen inkl. CLI-Check, Flags, Build-Verify, Tailwind | [references/op-create-app.md](references/op-create-app.md) |
+| `ng generate`, `Komponente erstellen`, `neues Artefakt` | Angular-Artefakte per CLI generieren und anpassen | [references/op-generate.md](references/op-generate.md) |
 
-3. App nicht starten bis Features gebaut. `npx ng build` zum Fehler-Check.
+**Vor Ausführung:** relevante `op-*.md` vollständig lesen.
 
-4. **Code-Generierung:**
-   ```
-   npx ng generate component|service|pipe|directive|interface|guard|interceptor|resolver|enum|class <name>
-   ```
-   Rückgegebenen Pfad merken. CLI generieren → dann Code für App-Anforderungen anpassen.
+## Opt-out
 
-5. **Tailwind:** `npx ng add tailwindcss`. Danach direkt Tailwind-Classes nutzen (Best Practices v4).
-
-_IMPORTANT:_ Best Practices: `npx ng mcp` → `get_best_practices`.
+`no-angular-new-app` → Skill nicht laden.

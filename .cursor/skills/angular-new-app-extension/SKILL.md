@@ -1,69 +1,44 @@
 ---
 name: angular-new-app-extension
 description: >
-  Portable follow-on to [angular-new-app](../angular-new-app/SKILL.md): documentation-first
-  validation, mandatory AskQuestion Decision Gate (questionnaire), written implementation plan before any
-  CLI execution, and narrow subagent tasks. Use after loading angular-new-app when creating a new Angular
-  workspace or app via the CLI, for greenfield scaffolding with explicit user approval, or when a cheap
-  subagent should only run pre-approved ng commands.
+  Portable follow-on zu angular-new-app: documentation-first validation,
+  mandatory Decision Gate (questionnaire), written implementation plan before
+  any CLI execution, narrow subagent tasks. Triggers: new Angular workspace,
+  greenfield scaffolding with user approval, pre-approved ng commands via subagent.
 disable-model-invocation: true
 ---
 
 # Angular New App Extension
 
-**Ladereihenfolge:** Erst [angular-new-app](../angular-new-app/SKILL.md) (Basis-CLI-Schritte); dann diese Extension (striktere Orchestrierung + Freigaben).
+**Ladereihenfolge:** Erst [angular-new-app](../../angular-new-app/SKILL.md) (Basis-CLI-Schritte); dann diese Extension (striktere Orchestrierung + Freigaben).
 
-**Rolle:** Orchestrierung, keine direkte Implementierung. Subagent erhält nur **enge, nutzerfreigegebene** Aufgaben — [subagent-prompts.md](subagent-prompts.md).
+**Rolle:** Orchestrierung, keine direkte Implementierung. Subagent erhält nur enge, nutzerfreigegebene Aufgaben.
 
-## Verboten
+## Voraussetzungen
 
-- Stille Produkt-Entscheidungen — Defaults nur nach Nutzer-Bestätigung.
-- `next`/`rc`/Pre-Release ohne separate Freigabe.
-- Leere oder mehrdeutige Platzhalter in Commands: `APP_NAME`, `TARGET_DIR`, `PACKAGE_MANAGER`, `AI_CONFIG` müssen lesbar bleiben.
+- Basis-Skill [angular-new-app](../../angular-new-app/SKILL.md) muss geladen sein.
+- Kein `next`/`rc`/Pre-Release ohne separate Freigabe.
+- Alle Platzhalter (`APP_NAME`, `TARGET_DIR`, `PACKAGE_MANAGER`, `AI_CONFIG`) müssen vor Ausführung aufgelöst sein.
 
-## Schritt 0 — Dokumentation zuerst
+## Operationen
 
-Vor CLI-Kommandos abgleichen mit:
+| Trigger | Operation | Detail |
+|---------|-----------|--------|
+| Vor jedem CLI-Kommando | Docs abgleichen (ng new, Versionen, AI-Kontext) | [references/op-docs-check.md](references/op-docs-check.md) |
+| Start / Anforderungsklärung | Decision Gate — alle Fragen klären (Pflicht) | [references/op-decision-gate.md](references/op-decision-gate.md) |
+| Nach Decision Gate | Implementierungsplan erstellen (vor `ng new`) | [references/op-implementation-plan.md](references/op-implementation-plan.md) |
+| Nach Nutzer-Freigabe | Subagents ausführen + Qualität prüfen | [references/op-subagents.md](references/op-subagents.md) |
 
-| Topic | Quelle |
-|--------|--------|
-| `ng new` Optionen | [angular.dev/cli/new](https://angular.dev/cli/new) |
-| Node/TS/RxJS Kompatibilität | [angular.dev/reference/versions](https://angular.dev/reference/versions) |
-| Support Lifecycle | [angular.dev/reference/releases](https://angular.dev/reference/releases) |
-| AI-Kontext | [best-practices.md](https://angular.dev/assets/context/best-practices.md) |
+**Vor Ausführung:** relevante `op-*.md` vollständig lesen.
 
-Flag-Array-Syntax für die gezielte CLI-Version bestätigen.
+## Geteilte Referenzen
 
-## Schritt 1 — Decision Gate (Pflicht)
+| Thema | Link |
+|-------|------|
+| Questionnaire (Decision Gate) | [questionnaire.md](questionnaire.md) |
+| Subagent-Vorlagen | [subagent-prompts.md](subagent-prompts.md) |
+| Verboten & Anti-Patterns | [references/constraints.md](references/constraints.md) |
 
-Checkliste: [questionnaire.md](questionnaire.md). `AskQuestion` wenn verfügbar; sonst conversational. Erst nach Antworten → Implementierungsplan.
+## Opt-out
 
-## Schritt 2 — Implementierungsplan (vor `ng new`)
-
-Kurzer, prüfbarer Plan:
-1. Workspace-Name, App-Name, Zielverzeichnis.
-2. Node/Angular-Anforderungen, Package-Manager, CLI-Muster.
-3. Exaktes `ng new`-Kommando als Code-Block.
-4. Follow-up-Schritte (`ng build`, `ng test`; `ng serve` nur auf Wunsch).
-5. Subagent-Aufteilung → [subagent-prompts.md](subagent-prompts.md).
-
-Shell-Commands/Subagents nur nach **expliziter Nutzer-Freigabe**.
-
-## Schritt 3 — Subagents (nach Freigabe)
-
-Vorlagen: [subagent-prompts.md](subagent-prompts.md).
-
-Reihenfolge: `docs-check` → `workspace-scout` → `app-skeleton` → `quality-runner`; `feature-builder` nur nach separatem Feature-Plan + Freigabe.
-
-Parent-Agent fasst zusammen und formuliert explizite nächste Entscheidungen — kein stiller Autopilot.
-
-## Qualität (nach Erstellung)
-
-- Minimum: `ng build` erfolgreich (wenn angefragt).
-- Tests: passende Kommandos zum gewählten `--test-runner`.
-
-## Anti-Patterns
-
-- `ng serve`/Dev-Server ohne Nutzer-Freigabe.
-- Globales `@angular/cli` ohne Package-Manager-Bestätigung.
-- Ein Subagent für „ganzes Produkt implementieren" — Arbeit aufteilen.
+`no-angular-new-app-extension` → Skill nicht laden.

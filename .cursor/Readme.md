@@ -53,7 +53,7 @@ Nach der Installation: alle `{parameter}`-Platzhalter in den Dateien unter `agen
 ### 4. ADO-Skills (optional)
 
 Nur bei Azure DevOps:
-- `skills/ado-requests-stories/config.defaults.json` mit `defaultProject` (GUID) befüllen
+- `skills/ado/config.defaults.json` mit `defaultProject` (GUID) befüllen
 - MCP-Server `ado` in `mcp.json` konfigurieren
 
 ---
@@ -210,7 +210,7 @@ Vollständige Liste aller `{parameter}`-Platzhalter — für Mensch und Agent.
 | **Konvention** | Verzeichnis wo `*.yml`/`*.yaml` Pipeline-Dateien liegen |
 
 **Verwendet in:**
-- `rules/ado-requests-stories-skill.mdc`
+- `rules/ado-skill.mdc`
 
 ---
 
@@ -222,11 +222,11 @@ Vollständige Liste aller `{parameter}`-Platzhalter — für Mensch und Agent.
 | **Beschreibung** | Azure DevOps Organisationsname — wird für ADO MCP-API-Aufrufe verwendet |
 | **Beispiel** | `MeineFirma` · `contoso` |
 | **Konvention** | Exakter Name wie in der ADO-URL: `https://dev.azure.com/{Organisation}` |
-| **Speicherort** | `skills/ado-requests-stories/config.defaults.json` → Feld `defaultOrganization` |
+| **Speicherort** | `skills/ado/config.defaults.json` → Feld `defaultOrganization` |
 
 **Verwendet in:**
-- `skills/ado-requests-stories/references/config.md`
-- `skills/ado-requests-stories/config.defaults.json`
+- `skills/ado/references/config.md`
+- `skills/ado/config.defaults.json`
 
 ---
 
@@ -254,11 +254,11 @@ Vollständige Liste aller `{parameter}`-Platzhalter — für Mensch und Agent.
 | **Beschreibung** | Azure DevOps Projekt-GUID — wird für ADO MCP Work-Item-Abfragen verwendet |
 | **Beispiel** | `42a6dde2-3b2c-4f1a-8e9d-1a2b3c4d5e6f` |
 | **Konvention** | GUID-Format (`xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`); abrufbar in ADO unter Projekteinstellungen → Eigenschaften |
-| **Speicherort** | `skills/ado-requests-stories/config.defaults.json` → Feld `defaultProject` |
+| **Speicherort** | `skills/ado/config.defaults.json` → Feld `defaultProject` |
 
 **Verwendet in:**
-- `skills/ado-requests-stories/references/config.md`
-- `skills/ado-requests-stories/config.defaults.json`
+- `skills/ado/references/config.md`
+- `skills/ado/config.defaults.json`
 
 ---
 

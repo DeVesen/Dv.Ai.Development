@@ -1,0 +1,17 @@
+{
+  "name": "angular-refactor",
+  "description": "Angular refactoring workflow: modernize APIs, signal migration, test policy alignment",
+  "rules": [],
+  "skills": [
+    "skills/angular-refactor"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": [
+    "angular-bundle"
+  ],
+  "docs": [
+    "Readme.md"
+  ]
+}

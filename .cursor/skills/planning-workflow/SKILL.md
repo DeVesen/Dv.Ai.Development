@@ -997,9 +997,9 @@ Perspektiven vorhanden).
 
 ## Abgrenzung ADO `Task … verfeinern` und buddy-agent
 
-Copy-Befehl **`Task … in Story … verfeinern`** im [ado-requests-stories](../ado-requests-stories/SKILL.md)-Skill ist **kein** Ersatz fuer diesen Planning Workflow (**Legacy**):
+Copy-Befehl **`Task … in Story … verfeinern`** im [ado](../ado/SKILL.md)-Skill ist **kein** Ersatz fuer diesen Planning Workflow (**Legacy**):
 
-- **Verfeinern (Legacy):** menschenlesbare Task-MD ([task-verfeinern.md](../ado-requests-stories/references/task-verfeinern.md)) — interaktiver 5-Phasen-Dialog im Orchestrator; **kein** finales Planpaket / keine Umsetzungs-Topologie in der Datei.
+- **Verfeinern (Legacy):** menschenlesbare Task-MD ([task-verfeinern.md](../ado/references/task-verfeinern.md)) — interaktiver 5-Phasen-Dialog im Orchestrator; **kein** finales Planpaket / keine Umsetzungs-Topologie in der Datei.
 - **buddy-agent (Standard, Phase 2):** read-only Sparring — End-Artefakt **Plan-Prompt** ([buddy-agent.md](../../agents/buddy-agent.md)) mit Pflichtabschnitten Wo/Was/AC; **kein** finales Planpaket; **kein** IMP-Slice-Vorgehen im Prompt.
 - **`plane Task …`:** dieser Planning Workflow — **bevorzugte Eingabe** ist der **Plan-Prompt aus Buddy** (ggf. plus `task-*.md`); finales Planpaket und **Umsetzungs-Topologie** zur Freigabe **im Chat**.
 

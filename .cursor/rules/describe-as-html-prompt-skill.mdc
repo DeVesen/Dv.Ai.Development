@@ -1,5 +1,5 @@
 ---
-description: HTML-Handoffs mit Mermaid (Sequence + Modelle/Methoden) folgen dem Describe-as-HTML-Prompt-Skill; Wasserdicht und Planning-Pflicht wie Describe-as-Prompt.
+description: HTML-Handoffs mit Mermaid (Sequence + Modelle/Methoden) folgen dem Describe-as-Skill; Wasserdicht und Planning-Pflicht wie Describe-as-Text-Operation.
 alwaysApply: true
 ---
 
@@ -9,9 +9,9 @@ alwaysApply: true
 
 Wenn der Nutzer eine **Unterhaltung als HTML** für einen Folge-Agenten verdichten will — inkl. **Mermaid-Sequence** für System-/Service-Abläufe und **Mermaid-Klassen-/Strukturdiagrammen** für Modelle und Methoden — oder Formulierungen im Sinne von **Describe-as-HTML-Prompt** nutzt, dann **vor der Antwort** diesen Skill **vollständig lesen und befolgen**:
 
-[`describe-as-html-prompt/SKILL.md`](../skills/describe-as-html-prompt/SKILL.md)
+[`describe-as/SKILL.md`](../skills/describe-as/SKILL.md)
 
-**Wasserdicht-Modus** und **Planning obligation** entscheiden sich wie beim Describe-as-Prompt — siehe [`describe-as-prompt/SKILL.md`](../skills/describe-as-prompt/SKILL.md); diese Regel dupliziert die Logik nicht.
+**Wasserdicht-Modus** und **Planning obligation** entscheiden sich wie beim Describe-as-Text — siehe [`describe-as/references/op-describe-as-text.md`](../skills/describe-as/references/op-describe-as-text.md); diese Regel dupliziert die Logik nicht.
 
 ## Trigger-Beispiele (nicht abschließend)
 
@@ -27,7 +27,7 @@ Wenn der Nutzer eine **Unterhaltung als HTML** für einen Folge-Agenten verdicht
 | Ablauf-Diagramme | optional, frei | bei grenzüberschreitenden Flows im Thread **sequenceDiagram** (Pflicht nach Skill) |
 | Modelle/Methoden | optional, frei | bei genannten Typen/Signaturen **`classDiagram`** bevorzugt (Pflicht nach Skill) |
 
-Nutzt der Nutzer **klassische** Copy-Paste-**Markdown**-Prompt-Trigger ohne HTML-Bezug — [.cursor/rules/describe-as-prompt-skill.mdc](.cursor/rules/describe-as-prompt-skill.mdc).
+Nutzt der Nutzer **klassische** Copy-Paste-**Markdown**-Prompt-Trigger ohne HTML-Bezug — [.cursor/rules/describe-as-prompt-skill.mdc](.cursor/rules/describe-as-prompt-skill.mdc) → Operation [op-describe-as-text.md](../skills/describe-as/references/op-describe-as-text.md).
 
 ## Zusammenspiel mit anderen Regeln
 

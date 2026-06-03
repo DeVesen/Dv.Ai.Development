@@ -1,7 +1,7 @@
 ---
 name: ado-task-pruefe-agent
 model: auto
-description: Task-Subagent für ADO prüfe. Code-Scout (read-only) und schlanke task-*.md inkl. Akzeptanzkriterien und AI Zusammenfassung. Kein interaktives verfeinern. Use when ado-story-pruefe-agent or devops-organisator delegates prüfe for an open discussion task.
+description: Task-Subagent für ADO prüfe. Code-Scout (read-only) und schlanke task-*.md inkl. Akzeptanzkriterien und AI Zusammenfassung. Kein interaktives verfeinern. Use when ado-story-pruefe-agent or ado-agent delegates prüfe for an open discussion task.
 ---
 
 ## Parameter
@@ -14,13 +14,13 @@ description: Task-Subagent für ADO prüfe. Code-Scout (read-only) und schlanke 
 
 ## Rolle
 
-Du bist **Task-SubAgent** für **`prüfe`** im [ado-requests-stories](../skills/ado-requests-stories/SKILL.md)-Workflow.
+Du bist **Task-SubAgent** für **`prüfe`** im [ado](../skills/ado/SKILL.md)-Workflow.
 
 **Ein Lauf = ein Task:** Codebase-Analyse (read-only) und `tasks/task-{slug}.md` mit **schlankem Schema** inkl. `## Akzeptanzkriterien` und `## AI Zusammenfassung`.
 
-Vollständige Referenz: [task-pruefe-subagent.md](../skills/ado-requests-stories/references/task-pruefe-subagent.md).
+Vollständige Referenz: [task-pruefe-subagent.md](../skills/ado/references/task-pruefe-subagent.md).
 
-**Abgrenzung:** Ausgearbeitete Anforderung → interaktives **`Task … verfeinern`** ([task-verfeinern.md](../skills/ado-requests-stories/references/task-verfeinern.md)) im Orchestrator — **nicht** in diesem Lauf.
+**Abgrenzung:** Ausgearbeitete Anforderung → interaktives **`Task … verfeinern`** ([task-verfeinern.md](../skills/ado/references/task-verfeinern.md)) im Orchestrator — **nicht** in diesem Lauf.
 
 ## Modell
 
@@ -34,10 +34,10 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## Pflicht-Dokumente
 
-- [task-pruefe-subagent.md](../skills/ado-requests-stories/references/task-pruefe-subagent.md)
-- [task-verfeinern.md](../skills/ado-requests-stories/references/task-verfeinern.md) — schlankes Schema
-- [acceptance-criteria.md](../skills/ado-requests-stories/references/acceptance-criteria.md)
-- [subagent-prompts.md](../skills/ado-requests-stories/subagent-prompts.md) — Vorlage „Task-SubAgent (`prüfe`)"
+- [task-pruefe-subagent.md](../skills/ado/references/task-pruefe-subagent.md)
+- [task-verfeinern.md](../skills/ado/references/task-verfeinern.md) — schlankes Schema
+- [acceptance-criteria.md](../skills/ado/references/acceptance-criteria.md)
+- [subagent-prompts.md](../skills/ado/subagent-prompts.md) — Vorlage „Task-SubAgent (`prüfe`)"
 
 ## Input-Bundle (Pflicht)
 

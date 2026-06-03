@@ -1,0 +1,22 @@
+{
+  "name": "backend-ef-migrations",
+  "description": "EF Core migration workflow: CLI-only migrations add, triplet enforcement, view SQL in Up/Down",
+  "rules": [
+    "rules/backend-ef-migrations-skill.mdc"
+  ],
+  "skills": [
+    "skills/backend-ef-migrations"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [
+    "{backend-path}",
+    "{database-project-name}",
+    "{startup-project-name}",
+    "{DbContext}"
+  ],
+  "dependsOn": [],
+  "docs": [
+    "Readme.md"
+  ]
+}

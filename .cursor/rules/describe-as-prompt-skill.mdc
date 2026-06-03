@@ -1,5 +1,5 @@
 ---
-description: Handoff-/Prompt-Zusammenfassungen folgen dem Describe-as-Prompt-Skill; Wasserdicht-Modus und Planning-Pflicht gemäß Skill.
+description: Handoff-/Prompt-Zusammenfassungen folgen dem Describe-as-Skill; Wasserdicht-Modus und Planning-Pflicht gemäß Skill.
 alwaysApply: true
 ---
 
@@ -9,7 +9,7 @@ alwaysApply: true
 
 Wenn der Nutzer eine **Unterhaltung als Copy-Paste-Prompt** für einen Folge-Agenten verdichten will oder Formulierungen im Sinne von **Handoff** / **Describe-as-Prompt** nutzt, dann **vor der Antwort** diesen Skill **vollständig lesen und befolgen**:
 
-[`describe-as-prompt/SKILL.md`](../skills/describe-as-prompt/SKILL.md)
+[`describe-as/SKILL.md`](../skills/describe-as/SKILL.md)
 
 **Wasserdicht-Modus** (kein Planning-Workflow im Prompt, keine `@.cursor/skills/planning-workflow`-Pflicht) und sonstige Prioritäten entscheidet **ausschließlich** der Skill — diese Regel dupliziert die Logik nicht.
 

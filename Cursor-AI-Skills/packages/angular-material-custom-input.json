@@ -1,0 +1,21 @@
+{
+  "name": "angular-material-custom-input",
+  "description": "Angular Material custom form fields via MatFormFieldControl and shell+directive pattern",
+  "rules": [],
+  "skills": [
+    "skills/angular-material-custom-input"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [
+    "{frontend-path}",
+    "{component-prefix}",
+    "{ComponentPrefix}"
+  ],
+  "dependsOn": [
+    "angular-bundle"
+  ],
+  "docs": [
+    "Readme.md"
+  ]
+}

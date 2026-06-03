@@ -1,0 +1,17 @@
+{
+  "name": "conversation-insights",
+  "description": "Captures decisive session insights into a learning log.",
+  "rules": [
+    "rules/conversation-insights-skill.mdc"
+  ],
+  "skills": [
+    "skills/conversation-insights"
+  ],
+  "agents": [
+    "agents/conversation-insights-agent.md"
+  ],
+  "params": [
+    "{insights-path}"
+  ],
+  "dependsOn": []
+}

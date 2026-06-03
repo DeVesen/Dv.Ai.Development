@@ -1,0 +1,19 @@
+{
+  "name": "describe-as-html-prompt",
+  "description": "Condenses conversations into HTML handoff prompts with Mermaid sequence and class diagrams",
+  "rules": [
+    "rules/describe-as-html-prompt-skill.mdc"
+  ],
+  "skills": [
+    "skills/describe-as"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": [
+    "describe-as"
+  ],
+  "docs": [
+    "Readme.md"
+  ]
+}

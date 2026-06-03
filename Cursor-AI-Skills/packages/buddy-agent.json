@@ -1,0 +1,20 @@
+{
+  "name": "buddy-agent",
+  "description": "Task clarification and Plan-Prompt generation before planning (read-only sparring agent)",
+  "rules": [
+    "rules/buddy-agent-skill.mdc"
+  ],
+  "skills": [],
+  "agents": [
+    "agents/buddy-agent.md"
+  ],
+  "references": [],
+  "params": [],
+  "dependsOn": [
+    "caveman",
+    "commit-message"
+  ],
+  "docs": [
+    "Readme.md"
+  ]
+}

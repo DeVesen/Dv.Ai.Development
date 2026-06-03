@@ -19,6 +19,8 @@
 !**/[Pp]ackages/build/
 !.cursor/packages/
 !.cursor/packages/**
+!Cursor-AI-Skills/packages/
+!Cursor-AI-Skills/packages/**
 
 # .NET build artifacts
 artifacts/

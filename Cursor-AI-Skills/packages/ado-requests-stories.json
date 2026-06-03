@@ -1,0 +1,52 @@
+{
+  "name": "ado-requests-stories",
+  "description": "Synchronizes Azure DevOps Work Items with Markdown artifacts under requests/stories/",
+  "rules": [
+    "rules/ado-skill.mdc"
+  ],
+  "skills": [
+    "skills/ado"
+  ],
+  "agents": [
+    "agents/ado-agent.md",
+    "agents/ado-story-pruefe-agent.md",
+    "agents/ado-task-pruefe-agent.md"
+  ],
+  "references": [
+    "references/subagent-model-before-task.md"
+  ],
+  "params": [
+    "{devops-pipelines-path}"
+  ],
+  "dependsOn": [
+    "buddy-agent"
+  ],
+  "mcp": [
+    {
+      "serverName": "ado",
+      "type": "simple",
+      "params": [
+        {
+          "key": "ado-organisation",
+          "label": "Azure DevOps Organisation",
+          "placeholder": "__ORG__"
+        }
+      ],
+      "entry": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@azure-devops/mcp",
+          "__ORG__",
+          "-d",
+          "core",
+          "work",
+          "work-items"
+        ]
+      }
+    }
+  ],
+  "docs": [
+    "Readme.md"
+  ]
+}

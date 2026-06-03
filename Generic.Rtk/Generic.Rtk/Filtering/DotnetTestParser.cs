@@ -55,7 +55,9 @@ public sealed partial class DotnetTestParser : IToolOutputParser
             Summary = summary,
             Errors = errors,
             Warnings = [],
-            RawFiltered = failureMode ? string.Join("\n", kept) : (summaryLine?.Trim() ?? string.Empty),
+            RawFiltered = failureMode
+                ? string.Join("\n", kept)
+                : ((summary.Skipped > 0 || summary.Failed > 0) ? (summaryLine?.Trim() ?? string.Empty) : string.Empty),
         };
     }
 

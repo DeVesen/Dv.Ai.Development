@@ -20,6 +20,20 @@ public class DotnetTestParserTests
         Assert.Equal("Passed", r.Summary.Status);
         Assert.Empty(r.Errors);
         Assert.DoesNotContain("Starting test execution", r.RawFiltered);
+        Assert.Empty(r.RawFiltered);
+    }
+
+    [Fact]
+    public void All_Passed_With_Skipped_Shows_Summary()
+    {
+        var raw = """
+            Starting test execution, please wait...
+            A total of 1 test files matched the specified pattern.
+            Passed!  - Failed:     0, Passed:     2, Skipped:     1, Total:     3, Duration: 12 ms
+            """;
+        var r = _p.Parse(raw, _limits);
+        Assert.Equal("Passed", r.Summary.Status);
+        Assert.Empty(r.Errors);
         Assert.Contains("Passed!", r.RawFiltered);
     }
 

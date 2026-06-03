@@ -4,8 +4,8 @@ import { z } from "zod";
 import { execSync } from "child_process";
 import { readFileSync, existsSync } from "fs";
 import { extname, resolve } from "path";
-import { analyzeTypeScript, TsMorphMetadata } from "./analyzers/ts-morph-analyzer.js";
-import { analyzeCSharp, RoslynMetadata } from "./analyzers/roslyn-runner.js";
+import { analyzeTypeScript, extractAngularValidators, extractHttpCalls, TsMorphMetadata, AngularFormField, HttpCallEntry } from "./analyzers/ts-morph-analyzer.js";
+import { analyzeCSharp, RoslynMetadata, RoslynPropertyAnnotation } from "./analyzers/roslyn-runner.js";
 import { indexAngularProjectCached, AngularProjectIndex } from "./indexers/angular-indexer-runner.js";
 import { indexDotnetProject, DotnetProjectIndex } from "./indexers/dotnet-indexer-runner.js";
 import {
@@ -49,7 +49,7 @@ function detectLanguage(filename: string, content: string): Language {
 
 // ─── Metadata → Prompt Section ────────────────────────────────────────────────
 
-function formatTsMorphSection(meta: TsMorphMetadata): string {
+function formatTsMorphSection(meta: TsMorphMetadata, compact = false): string {
   const lines: string[] = ["## AST Analysis (ts-morph)\n"];
 
   lines.push(`**Metrics:** ${meta.metrics.totalLines} lines | ${meta.metrics.classCount} classes | ${meta.metrics.importCount} imports | ~${meta.metrics.concernCount} concerns`);
@@ -91,7 +91,7 @@ function formatTsMorphSection(meta: TsMorphMetadata): string {
   return lines.join("\n");
 }
 
-function formatRoslynSection(meta: RoslynMetadata): string {
+function formatRoslynSection(meta: RoslynMetadata, compact = false): string {
   if (meta.error) {
     return `## AST Analysis (Roslyn)\n⚠️ ${meta.error} — review based on code only.\n`;
   }
@@ -100,10 +100,47 @@ function formatRoslynSection(meta: RoslynMetadata): string {
   lines.push(`**Metrics:** ${meta.metrics.totalClasses} classes | ${meta.metrics.totalInterfaces} interfaces | ${meta.metrics.totalUsings} usings | avg ${meta.metrics.avgMethodsPerClass.toFixed(1)} methods/class`);
 
   if (meta.solidViolations.length > 0) {
-    lines.push("\n### Pre-detected SOLID/Quality Violations:");
-    for (const v of meta.solidViolations) {
-      lines.push(`- [${v.principle}] [${v.severity}] Line ${v.line} in \`${v.className}\`: ${v.description}`);
-      lines.push(`  Evidence: \`${v.evidence}\``);
+    if (compact) {
+      const critCount = meta.solidViolations.filter((v) => v.severity === "critical").length;
+      lines.push(`\n**SOLID Violations:** ${meta.solidViolations.length} (${critCount} critical) — use format:"full" for details`);
+    } else {
+      lines.push("\n### Pre-detected SOLID/Quality Violations:");
+      for (const v of meta.solidViolations) {
+        lines.push(`- [${v.principle}] [${v.severity}] Line ${v.line} in \`${v.className}\`: ${v.description}`);
+        lines.push(`  Evidence: \`${v.evidence}\``);
+      }
+    }
+  }
+
+  if (meta.apiValidationIssues && meta.apiValidationIssues.length > 0) {
+    const criticalCount = meta.apiValidationIssues.filter((i) => i.severity === "critical").length;
+    lines.push(`\n### API Validation Issues (${meta.apiValidationIssues.length} found, ${criticalCount} critical):`);
+    for (const issue of meta.apiValidationIssues) {
+      const icon = issue.severity === "critical" ? "🔴" : "⚠️";
+      lines.push(`- ${icon} [${issue.issueType}] Line ${issue.line} in \`${issue.className}\`${issue.methodName ? `::${issue.methodName}` : ""}: ${issue.description}`);
+      if (!compact) lines.push(`  Evidence: \`${issue.evidence}\``);
+    }
+  }
+
+  // Property annotations per class
+  for (const cls of meta.classes) {
+    if (cls.propertyAnnotations && cls.propertyAnnotations.length > 0) {
+      const annotated = cls.propertyAnnotations.filter((p) => p.annotations.length > 0).length;
+      const unannotated = cls.propertyAnnotations.filter((p) => p.annotations.length === 0);
+      if (compact) {
+        // One summary line instead of per-property list
+        if (unannotated.length > 0) {
+          lines.push(`\n**${cls.isRecord ? "Record" : "Class"} \`${cls.name}\`:** ${annotated}/${cls.propertyAnnotations.length} properties annotated — missing: ${unannotated.map((p) => p.propertyName).join(", ")}`);
+        }
+      } else {
+        if (unannotated.length > 0 || annotated > 0) {
+          lines.push(`\n### ${cls.isRecord ? "Record" : "Class"} \`${cls.name}\` — Properties:`);
+          for (const prop of cls.propertyAnnotations) {
+            const annStr = prop.annotations.length > 0 ? ` [${prop.annotations.join(", ")}]` : " ⚠️ no annotations";
+            lines.push(`- \`${prop.type} ${prop.propertyName}\`${annStr}${prop.isPrimaryConstructorParam ? " (primary ctor)" : ""}`);
+          }
+        }
+      }
     }
   }
 
@@ -115,18 +152,25 @@ function formatRoslynSection(meta: RoslynMetadata): string {
       issues.push(`🔴 Possible hardcoded secrets on lines: ${cls.hardcodedSecretLines.join(", ")}`);
     if (cls.deepNestingLines.length > 0)
       issues.push(`⚠️ Deep nesting (>3) in methods starting at lines: ${cls.deepNestingLines.join(", ")}`);
-    if (cls.longMethods.length > 0)
-      issues.push(`⚠️ Long methods: ${cls.longMethods.map((m) => `${m.name} (${m.lines} lines)`).join(", ")}`);
+    if (cls.longMethods.length > 0) {
+      if (compact) {
+        issues.push(`⚠️ ${cls.longMethods.length} long method(s)`);
+      } else {
+        issues.push(`⚠️ Long methods: ${cls.longMethods.map((m) => `${m.name} (${m.lines} lines)`).join(", ")}`);
+      }
+    }
 
     if (issues.length > 0) {
       lines.push(`\n### Class \`${cls.name}\` (line ${cls.lineStart}):`);
-      lines.push(`- Deps: ${cls.constructorDeps.join(", ") || "none"}`);
-      lines.push(`- Base types: ${cls.baseTypes.join(", ") || "none"}`);
+      if (!compact) {
+        lines.push(`- Deps: ${cls.constructorDeps.join(", ") || "none"}`);
+        lines.push(`- Base types: ${cls.baseTypes.join(", ") || "none"}`);
+      }
       issues.forEach((i) => lines.push(`- ${i}`));
     }
   }
 
-  if (meta.interfaces.length > 0) {
+  if (!compact && meta.interfaces.length > 0) {
     const bigInterfaces = meta.interfaces.filter((i) => i.methodCount > 7);
     if (bigInterfaces.length > 0) {
       lines.push("\n### ISP Candidates (large interfaces):");
@@ -144,9 +188,11 @@ function formatRoslynSection(meta: RoslynMetadata): string {
 function performReview(
   code: string,
   filename: string,
-  focusAreas: string[]
+  focusAreas: string[],
+  format: "full" | "compact" = "full"
 ): string {
   const language = detectLanguage(filename, code);
+  const compact = format === "compact";
 
   if (language === "unknown")
     return `File "${filename}" is not a recognized .NET or Angular file.`;
@@ -160,21 +206,31 @@ function performReview(
     } catch (e) {
       return `## AST Analysis Failed\n⚠️ ${(e as Error).message}`;
     }
-    return `# Code Analysis: ${filename} (Angular/TypeScript)\n${focusLine}${formatTsMorphSection(meta)}\n\n## Raw AST\n\`\`\`json\n${JSON.stringify(meta, null, 2)}\n\`\`\``;
+    const body = `# Code Analysis: ${filename} (Angular/TypeScript)\n${focusLine}${formatTsMorphSection(meta, compact)}`;
+    return compact ? body : `${body}\n\n## Raw AST\n\`\`\`json\n${JSON.stringify(meta, null, 2)}\n\`\`\``;
   } else {
     const meta = analyzeCSharp(code, filename);
-    return `# Code Analysis: ${filename} (.NET/C#)\n${focusLine}${formatRoslynSection(meta)}\n\n## Raw AST\n\`\`\`json\n${JSON.stringify(meta, null, 2)}\n\`\`\``;
+    const apiValidationNote = focusAreas.includes("api-validation") && meta.apiValidationIssues && meta.apiValidationIssues.length > 0
+      ? `\n> **api-validation focus:** ${meta.apiValidationIssues.length} issue(s) found — see "API Validation Issues" section below.\n`
+      : "";
+    const body = `# Code Analysis: ${filename} (.NET/C#)\n${focusLine}${apiValidationNote}${formatRoslynSection(meta, compact)}`;
+    return compact ? body : `${body}\n\n## Raw AST\n\`\`\`json\n${JSON.stringify(meta, null, 2)}\n\`\`\``;
   }
 }
 
 // ─── MCP Server ───────────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: "code-review-mcp", version: "2.0.0" });
+const server = new McpServer({ name: "code-review-mcp", version: "2.2.0" });
 
 const focusAreasSchema = z
-  .array(z.enum(["solid", "security", "performance", "angular-best-practices"]))
+  .array(z.enum(["solid", "security", "performance", "angular-best-practices", "api-validation"]))
   .default(["solid", "security", "performance", "angular-best-practices"])
-  .describe("Which review categories to focus on");
+  .describe("Which review categories to focus on. Use 'api-validation' to highlight missing DataAnnotations, unvalidated POST/PUT endpoints, and DTO contract issues.");
+
+const formatSchema = z
+  .enum(["full", "compact"])
+  .default("full")
+  .describe("'full' includes the Raw AST JSON block (complete metadata). 'compact' skips Raw AST and shortens per-property detail — ideal for planning inventories with many files. API Validation Issues are always shown in full regardless of format.");
 
 server.tool(
   "review_file",
@@ -182,13 +238,14 @@ server.tool(
   {
     filePath: z.string().describe("Absolute or relative path to the file"),
     focusAreas: focusAreasSchema,
+    format: formatSchema,
   },
-  ({ filePath, focusAreas }) => {
+  ({ filePath, focusAreas, format }) => {
     const absolutePath = resolve(filePath);
     if (!existsSync(absolutePath))
       return { content: [{ type: "text", text: `File not found: ${absolutePath}` }], isError: true };
     const code = readFileSync(absolutePath, "utf-8");
-    return { content: [{ type: "text", text: performReview(code, filePath, focusAreas) }] };
+    return { content: [{ type: "text", text: performReview(code, filePath, focusAreas, format) }] };
   }
 );
 
@@ -199,9 +256,10 @@ server.tool(
     code: z.string().describe("Source code to review"),
     filename: z.string().describe('e.g. "UserService.cs" or "user.component.ts"'),
     focusAreas: focusAreasSchema,
+    format: formatSchema,
   },
-  ({ code, filename, focusAreas }) => {
-    return { content: [{ type: "text", text: performReview(code, filename, focusAreas) }] };
+  ({ code, filename, focusAreas, format }) => {
+    return { content: [{ type: "text", text: performReview(code, filename, focusAreas, format) }] };
   }
 );
 
@@ -212,8 +270,9 @@ server.tool(
     repoPath: z.string().default(".").describe("Path to git repository root"),
     staged: z.boolean().default(false).describe("true = staged only, false = unstaged"),
     focusAreas: focusAreasSchema,
+    format: formatSchema,
   },
-  async ({ repoPath, staged, focusAreas }) => {
+  async ({ repoPath, staged, focusAreas, format }) => {
     let diffOutput: string;
     try {
       const flag = staged ? "--cached" : "";
@@ -237,7 +296,7 @@ server.tool(
 
     const reviews: Record<string, string> = {};
     for (const file of relevant)
-      reviews[file.filename] = performReview(file.content, file.filename, focusAreas);
+      reviews[file.filename] = performReview(file.content, file.filename, focusAreas, format);
 
     return { content: [{ type: "text", text: JSON.stringify(reviews, null, 2) }] };
   }
@@ -249,15 +308,46 @@ server.tool(
   {
     filePaths: z.array(z.string()).describe("List of file paths to review"),
     focusAreas: focusAreasSchema,
+    format: formatSchema,
   },
-  ({ filePaths, focusAreas }) => {
+  ({ filePaths, focusAreas, format }) => {
     const reviews: Record<string, string> = {};
     for (const filePath of filePaths) {
       const absolutePath = resolve(filePath);
       if (!existsSync(absolutePath)) { reviews[filePath] = "File not found"; continue; }
       const code = readFileSync(absolutePath, "utf-8");
-      reviews[filePath] = performReview(code, filePath, focusAreas);
+      reviews[filePath] = performReview(code, filePath, focusAreas, format);
     }
+
+    if (format === "compact") {
+      // Build endpoint inventory table across all .cs controller files
+      const inventoryRows: string[] = [];
+      for (const filePath of filePaths) {
+        const absolutePath = resolve(filePath);
+        if (!existsSync(absolutePath) || !filePath.endsWith(".cs")) continue;
+        const code = readFileSync(absolutePath, "utf-8");
+        const meta = analyzeCSharp(code, filePath);
+        for (const cls of meta.classes) {
+          const isController = cls.attributes.some((a: string) => a.includes("ApiController") || a.includes("Controller")) || cls.name.endsWith("Controller");
+          if (!isController) continue;
+          for (const method of (cls.methodAnnotations ?? [])) {
+            if (!method.httpVerb) continue;
+            const dtoParam = method.parameters.find((p: { type: string }) => /^[A-Z]/.test(p.type) && !["Guid", "string", "int", "bool"].includes(p.type));
+            const validationIssue = meta.apiValidationIssues?.find((i: { methodName?: string }) => i.methodName === method.methodName);
+            const validationStatus = validationIssue ? "⚠️ check" : dtoParam ? "✅ ok" : "—";
+            inventoryRows.push(`| \`${cls.name}\` | \`${method.methodName}\` | ${method.httpVerb} | \`${dtoParam?.type ?? "—"}\` | ${validationStatus} |`);
+          }
+        }
+      }
+
+      const inventoryTable = inventoryRows.length > 0
+        ? `## Endpoint Inventory\n\n| Controller | Method | Verb | DTO Type | Validation |\n|---|---|---|---|---|\n${inventoryRows.join("\n")}\n\n---\n\n`
+        : "";
+
+      const parts = Object.entries(reviews).map(([f, r]) => `### ${f}\n${r}`).join("\n\n---\n\n");
+      return { content: [{ type: "text", text: inventoryTable + parts }] };
+    }
+
     return { content: [{ type: "text", text: JSON.stringify(reviews, null, 2) }] };
   }
 );
@@ -285,6 +375,194 @@ server.tool(
     }
 
     return { content: [{ type: "text", text: `Unsupported file type: ${filePath}` }] };
+  }
+);
+
+// ─── Validation Comparison Helpers ───────────────────────────────────────────
+
+function normalizeDotnetAnnotation(annotation: string): string {
+  if (annotation === "Required") return "required";
+  if (annotation === "EmailAddress") return "email";
+  if (annotation === "Phone") return "phone";
+  if (annotation === "Url") return "url";
+  const strLen = annotation.match(/StringLength\((\d+)/);
+  if (strLen) return `maxLength:${strLen[1]}`;
+  const maxLen = annotation.match(/MaxLength\((\d+)/);
+  if (maxLen) return `maxLength:${maxLen[1]}`;
+  const minLen = annotation.match(/MinLength\((\d+)/);
+  if (minLen) return `minLength:${minLen[1]}`;
+  const range = annotation.match(/Range\((\d+),\s*(\d+)/);
+  if (range) return `range:${range[1]}-${range[2]}`;
+  const regex = annotation.match(/RegularExpression\(["']([^"']+)["']/);
+  if (regex) return `pattern:${regex[1]}`;
+  return annotation.toLowerCase();
+}
+
+function toCamelCase(s: string): string {
+  return s.charAt(0).toLowerCase() + s.slice(1);
+}
+
+server.tool(
+  "compare_validation_rules",
+  "Compare Angular reactive-form validators with .NET DTO DataAnnotations. Returns a delta matrix showing which fields are fully aligned, missing validation in backend, missing in frontend, or have conflicting constraints (e.g. FE maxLength:50 vs BE maxLength:100). Requires an Angular component/form file and a .NET DTO/Request class file.",
+  {
+    angularFormFile: z.string().describe("Path to the Angular .ts component or form file"),
+    dotnetDtoFile: z.string().describe("Path to the .NET .cs DTO / Request class file"),
+  },
+  ({ angularFormFile, dotnetDtoFile }) => {
+    const angularPath = resolve(angularFormFile);
+    const dotnetPath = resolve(dotnetDtoFile);
+
+    if (!existsSync(angularPath))
+      return { content: [{ type: "text", text: `Angular file not found: ${angularPath}` }], isError: true };
+    if (!existsSync(dotnetPath))
+      return { content: [{ type: "text", text: `.NET file not found: ${dotnetPath}` }], isError: true };
+
+    const angularCode = readFileSync(angularPath, "utf-8");
+    const dotnetCode = readFileSync(dotnetPath, "utf-8");
+
+    // Angular side: extract form fields and validators
+    const angularFields = extractAngularValidators(angularCode, angularFormFile);
+
+    // .NET side: run Roslyn and get property annotations
+    const dotnetMeta = analyzeCSharp(dotnetCode, dotnetDtoFile);
+    const dtoSuffixes = ["Request", "Dto", "Model", "Command", "Body", "Input", "Payload"];
+    const dtoClass = dotnetMeta.classes.find((c) =>
+      dtoSuffixes.some((s) => c.name.endsWith(s))
+    ) ?? dotnetMeta.classes[0];
+
+    const dotnetProperties = dtoClass?.propertyAnnotations ?? [];
+
+    // Build normalized lookup maps
+    const angularMap = new Map<string, string[]>(
+      angularFields.map((f) => [f.name.toLowerCase(), f.validators])
+    );
+    const dotnetMap = new Map<string, string[]>(
+      dotnetProperties.map((p) => [
+        toCamelCase(p.propertyName).toLowerCase(),
+        p.annotations.map(normalizeDotnetAnnotation),
+      ])
+    );
+
+    // Collect all field names from both sides
+    const allFields = new Set([...angularMap.keys(), ...dotnetMap.keys()]);
+
+    interface MatrixRow {
+      fieldName: string;
+      angularValidators: string[];
+      dotnetAnnotations: string[];
+      status: "ok" | "missing-be" | "missing-fe" | "conflict";
+      details: string;
+    }
+
+    const matrix: MatrixRow[] = [];
+    let fullyAligned = 0, missingInBackend = 0, missingInFrontend = 0, conflicting = 0;
+
+    for (const field of allFields) {
+      const feValidators = angularMap.get(field) ?? [];
+      const beAnnotations = dotnetMap.get(field) ?? [];
+
+      const onlyInFe = feValidators.filter((v) => !beAnnotations.includes(v));
+      const onlyInBe = beAnnotations.filter((v) => !feValidators.includes(v));
+
+      let status: MatrixRow["status"];
+      let details: string;
+
+      if (feValidators.length === 0 && beAnnotations.length === 0) {
+        status = "ok";
+        details = "No constraints on either side";
+      } else if (onlyInFe.length === 0 && onlyInBe.length === 0) {
+        status = "ok";
+        details = "Fully aligned";
+        fullyAligned++;
+      } else if (feValidators.length > 0 && beAnnotations.length === 0) {
+        status = "missing-be";
+        details = `FE enforces: ${feValidators.join(", ")} — BE has no DataAnnotations`;
+        missingInBackend++;
+      } else if (feValidators.length === 0 && beAnnotations.length > 0) {
+        status = "missing-fe";
+        details = `BE requires: ${beAnnotations.join(", ")} — FE has no validators`;
+        missingInFrontend++;
+      } else {
+        status = "conflict";
+        details = [
+          onlyInFe.length > 0 ? `FE only: ${onlyInFe.join(", ")}` : "",
+          onlyInBe.length > 0 ? `BE only: ${onlyInBe.join(", ")}` : "",
+        ].filter(Boolean).join(" | ");
+        conflicting++;
+      }
+
+      matrix.push({ fieldName: field, angularValidators: feValidators, dotnetAnnotations: beAnnotations, status, details });
+    }
+
+    const result = {
+      angularFile: angularFormFile,
+      dotnetFile: dotnetDtoFile,
+      dotnetClass: dtoClass?.name ?? "(not found)",
+      summary: {
+        totalFields: allFields.size,
+        fullyAligned,
+        missingInBackend,
+        missingInFrontend,
+        conflicting,
+      },
+      matrix,
+    };
+
+    const lines: string[] = [
+      `# Validation Comparison: ${angularFormFile} ↔ ${dotnetDtoFile}`,
+      `**DTO class:** \`${result.dotnetClass}\``,
+      `**Total fields:** ${allFields.size} | ✅ Aligned: ${fullyAligned} | ⚠️ Missing BE: ${missingInBackend} | ⚠️ Missing FE: ${missingInFrontend} | ❌ Conflict: ${conflicting}`,
+      "",
+      "## Delta Matrix",
+      "| Field | Angular Validators | .NET Annotations | Status | Details |",
+      "|-------|-------------------|-----------------|--------|---------|",
+    ];
+    for (const row of matrix) {
+      const statusIcon = row.status === "ok" ? "✅" : row.status === "conflict" ? "❌" : "⚠️";
+      lines.push(`| \`${row.fieldName}\` | ${row.angularValidators.join(", ") || "—"} | ${row.dotnetAnnotations.join(", ") || "—"} | ${statusIcon} ${row.status} | ${row.details} |`);
+    }
+
+    return { content: [{ type: "text", text: lines.join("\n") + "\n\n## Raw JSON\n```json\n" + JSON.stringify(result, null, 2) + "\n```" }] };
+  }
+);
+
+server.tool(
+  "find_api_callers",
+  "Scan an Angular .ts file (service or component) for all HttpClient calls (GET/POST/PUT/PATCH/DELETE) and return a table showing which class/method calls which URL pattern. Optionally filter by endpoint pattern. Use this to answer 'which Angular component calls endpoint X?' or to build a FE→BE call map for contract reviews.",
+  {
+    filePath: z.string().describe("Path to the Angular .ts service or component file"),
+    endpointPattern: z.string().optional().describe("Optional filter — only return calls whose URL contains this string (e.g. 'experiments', 'search')"),
+  },
+  ({ filePath, endpointPattern }) => {
+    const absolutePath = resolve(filePath);
+    if (!existsSync(absolutePath))
+      return { content: [{ type: "text", text: `File not found: ${absolutePath}` }], isError: true };
+
+    const code = readFileSync(absolutePath, "utf-8");
+    let calls = extractHttpCalls(code, filePath);
+
+    if (endpointPattern) {
+      const pattern = endpointPattern.toLowerCase();
+      calls = calls.filter((c) => c.urlPattern.toLowerCase().includes(pattern));
+    }
+
+    if (calls.length === 0) {
+      return { content: [{ type: "text", text: `No HttpClient calls found in \`${filePath}\`${endpointPattern ? ` matching "${endpointPattern}"` : ""}.` }] };
+    }
+
+    const lines: string[] = [
+      `# HTTP Calls in \`${filePath}\``,
+      `**${calls.length} call(s) found**${endpointPattern ? ` matching \`${endpointPattern}\`` : ""}`,
+      "",
+      "| Class | Method | HTTP Verb | URL Pattern | Line |",
+      "|-------|--------|-----------|-------------|------|",
+    ];
+    for (const c of calls) {
+      lines.push(`| \`${c.containingClass}\` | \`${c.containingMethod}\` | **${c.httpMethod}** | \`${c.urlPattern}\` | ${c.line} |`);
+    }
+
+    return { content: [{ type: "text", text: lines.join("\n") + "\n\n## Raw JSON\n```json\n" + JSON.stringify(calls, null, 2) + "\n```" }] };
   }
 );
 
@@ -1288,4 +1566,4 @@ function parseDiff(diff: string): { filename: string; content: string }[] {
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("code-review-mcp v2.0 running (ts-morph + Roslyn AST analyzers active)");
+console.error("code-review-mcp v2.2 running (compact format, find_api_callers, FromQuery-fix)");

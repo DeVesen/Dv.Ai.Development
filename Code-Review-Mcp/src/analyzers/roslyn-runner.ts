@@ -9,12 +9,14 @@ export interface RoslynMetadata {
   interfaces: RoslynInterfaceMeta[];
   usings: string[];
   solidViolations: RoslynSolidViolation[];
+  apiValidationIssues: RoslynApiValidationIssue[];
   metrics: RoslynMetrics;
   error?: string;
 }
 
 export interface RoslynClassMeta {
   name: string;
+  isRecord: boolean;
   lineStart: number;
   methodCount: number;
   propertyCount: number;
@@ -31,6 +33,32 @@ export interface RoslynClassMeta {
   isAbstract: boolean;
   isSealed: boolean;
   isPartial: boolean;
+  propertyAnnotations: RoslynPropertyAnnotation[];
+  methodAnnotations: RoslynMethodAnnotation[];
+}
+
+export interface RoslynPropertyAnnotation {
+  propertyName: string;
+  type: string;
+  annotations: string[];
+  isPrimaryConstructorParam: boolean;
+}
+
+export interface RoslynMethodAnnotation {
+  methodName: string;
+  line: number;
+  httpVerb?: string;
+  parameters: { name: string; type: string; annotations: string[] }[];
+}
+
+export interface RoslynApiValidationIssue {
+  className: string;
+  methodName?: string;
+  line: number;
+  issueType: string;
+  severity: string;
+  description: string;
+  evidence: string;
 }
 
 export interface RoslynInterfaceMeta {
@@ -57,6 +85,8 @@ export interface RoslynMetrics {
   maxMethodsInClass: number;
   totalSolidViolations: number;
   criticalViolations: number;
+  totalApiValidationIssues: number;
+  criticalApiValidationIssues: number;
 }
 
 const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-analyzer.csx";
@@ -106,7 +136,8 @@ function buildFallbackMetadata(filename: string, error: string): RoslynMetadata 
     interfaces: [],
     usings: [],
     solidViolations: [],
-    metrics: { totalClasses: 0, totalInterfaces: 0, totalUsings: 0, avgMethodsPerClass: 0, maxMethodsInClass: 0, totalSolidViolations: 0, criticalViolations: 0 },
+    apiValidationIssues: [],
+    metrics: { totalClasses: 0, totalInterfaces: 0, totalUsings: 0, avgMethodsPerClass: 0, maxMethodsInClass: 0, totalSolidViolations: 0, criticalViolations: 0, totalApiValidationIssues: 0, criticalApiValidationIssues: 0 },
     error,
   };
 }

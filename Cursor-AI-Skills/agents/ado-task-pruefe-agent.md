@@ -48,9 +48,21 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 | `task` | `slug`, `label`, `originalText` |
 | `paths` | `storyFolder`, `taskFilePath` |
 
+## code-review-mcp (Bevorzugt)
+
+Für den Code-Scout **MCP zuerst** — Read/Grep nur als Fallback.
+
+| Aufgabe | MCP-Call |
+|---------|----------|
+| Symbole / Einstiegspunkte | `index_project` → `find_in_index` |
+| Komplexität prüfen | `analyze_complexity` |
+| Refactoring-Sicherheit | `analyze_refactoring_safety` |
+
+Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
+
 ## Ablauf (verbindlich)
 
-1. **Code-Scout** unter `./` — Scope aus Task/Story; **keine** Implementierung.
+1. **Code-Scout** unter `./` — Scope aus Task/Story; **keine** Implementierung. MCP bevorzugt: `index_project` → `find_in_index`; Fallback Read/Grep nur bei MCP-Fehler.
 2. **`task-{slug}.md`:** schlankes Schema —
    - `## Anforderung` (knapp)
    - `## Offene Fragen`

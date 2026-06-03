@@ -19,6 +19,19 @@ Du bist **Implementierungs-Subagent** im [Implementation Workflow](../skills/imp
 
 Du bist **kein** Stack-weiter Abschlussprüfer — das ist [verify-agent](verify-agent.md) **nach** dem Integration-Checkpoint.
 
+## code-review-mcp (Bevorzugt)
+
+Vor und während der Implementierung **MCP zuerst** für Analysen — Read/Grep nur als Fallback.
+
+| Aufgabe | MCP-Call |
+|---------|----------|
+| Symbole / Einstiegspunkte | `index_project` → `find_in_index` |
+| Komplexität prüfen | `analyze_complexity` |
+| Refactoring-Sicherheit | `analyze_refactoring_safety` |
+| Build-/Test-Fehler analysieren | `analyze_build_output` |
+
+Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
+
 ## Mantra
 
 **Clean Code · SOLID · YAGNI · minimaler Diff**

@@ -41,6 +41,18 @@ Je nach Aufgabe den passenden Skill laden (Routing über [ado-skill.mdc](../rule
 
 **Opt-out:** `ohne ado-story-skill`, `ohne ado-requests-skill`, `no ado requests skill` → Skill nicht anwenden.
 
+## code-review-mcp (Bevorzugt)
+
+Für Code-Analysen bei `Task … verfeinern` und Code-Scouting **MCP zuerst** — Read/Grep nur als Fallback.
+
+| Aufgabe | MCP-Call |
+|---------|----------|
+| Symbole / Einstiegspunkte | `index_project` → `find_in_index` |
+| Komplexität prüfen | `analyze_complexity` |
+| Refactoring-Sicherheit | `analyze_refactoring_safety` |
+
+Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
+
 **MCP `ado` nicht erreichbar:** Vorgang abbrechen, Nutzer informieren — bei `prüfe` keine halben lokalen Dateien ohne ADO-Abruf.
 
 ## Standard-Workflow mit buddy-agent (Nutzer-Pipeline)

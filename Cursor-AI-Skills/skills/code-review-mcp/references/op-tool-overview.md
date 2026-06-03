@@ -1,14 +1,16 @@
-# Tool-Übersicht: Alle verfügbaren Tools (23)
+# Tool-Übersicht: Alle verfügbaren Tools (26)
 
 ## ① Code Review
 
 | Tool | Was es tut |
 |------|------------|
-| `review_file` | Einzelne Datei vollständig analysieren — SOLID, Security, Performance, Best Practices. Gibt Score 1–10 und konkrete Fixes. |
+| `review_file` | Einzelne Datei vollständig analysieren — SOLID, Security, Performance, Best Practices. `focusAreas` unterstützt jetzt auch `"api-validation"`. |
 | `review_code` | Code direkt aus dem Chat reviewen (Copy-Paste, kein Dateipfad nötig). |
 | `review_git_diff` | Alle Änderungen seit dem letzten Commit reviewen — staged oder unstaged. |
-| `review_files_batch` | Mehrere Dateien auf einmal reviewen, kombinierter Report. |
-| `analyze_ast_only` | Nur Struktur lesen ohne LLM — Klassen, Methoden, Abhängigkeiten. Sehr schnell, ideal für CI. |
+| `review_files_batch` | Mehrere Dateien auf einmal reviewen, kombinierter Report. Mit `focusAreas: ["api-validation"]` werden fehlende DataAnnotations auf DTOs und unvalidierte POST/PUT-Endpunkte priorisiert ausgegeben. |
+| `analyze_ast_only` | Nur Struktur lesen ohne LLM — Klassen, Methoden, Abhängigkeiten. Ab v2.1 auch `record`-Typen mit Properties und Annotations. |
+| `compare_validation_rules` | **v2.1** — Vergleicht Angular Reactive Form Validators mit .NET DTO DataAnnotations. Liefert Delta-Matrix: welche Felder sind aligned, welche fehlen im BE, welche im FE, welche haben Konflikte. |
+| `find_api_callers` | **NEU v2.2** — Scannt Angular `.ts`-Datei nach HttpClient-Aufrufen (GET/POST/PUT/PATCH/DELETE). Zeigt welche Klasse/Methode welche URL aufruft. Optional nach URL-Pattern filtern. Löst "welche Komponente ruft Endpoint X?" ohne Grep. |
 
 ## ② Projekt-Index & Navigation
 
@@ -66,4 +68,24 @@
 
 **Niemals** Windows-Pfade (`C:\...`) oder nur IDE-relative Pfade (`src/...`) übergeben — der Container kennt nur `/workspace/`.
 
-Kein Build nötig für 20 der 23 Tools — nur die Coverage-Tools brauchen einen vorherigen Test-Run.
+Kein Build nötig für 23 der 25 Tools — nur die Coverage-Tools brauchen einen vorherigen Test-Run.
+
+## Parameter: `format` (v2.2+)
+
+`review_file`, `review_code`, `review_git_diff`, `review_files_batch` unterstützen:
+
+| Wert | Effekt |
+|------|--------|
+| `"full"` (default) | Vollständiges Output inkl. `## Raw AST` JSON — für tiefe Analyse |
+| `"compact"` | Kein Raw AST, Property-Summaries statt per-Property-Listen — für Planungs-Inventare |
+
+Bei `review_files_batch` + `"compact"`: **Endpoint-Inventar-Tabelle** wird vorangestellt (Controller, Method, Verb, DTO-Typ, Validation-Status).
+
+## Wann welches Tool für Validierungs-Reviews?
+
+| Frage | Tool |
+|-------|------|
+| Hat dieser Controller DataAnnotations auf seinen DTOs? | `review_files_batch` + `focusAreas: ["api-validation"]` |
+| Welche Properties hat `CreateXRequest.cs`? (war vorher 0 Klassen bei records) | `analyze_ast_only` |
+| Stimmen FE-Validators mit BE-Annotations überein? | `compare_validation_rules` |
+| Wie viele POST-Endpunkte ohne Validierung gibt es gesamt? | `index_project` (dotnet) → controllers-Liste, dann `review_files_batch` |

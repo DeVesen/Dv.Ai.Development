@@ -2,7 +2,6 @@
 name: buddy-agent
 model: auto
 description: Standard Task-Klärung vor Planung (Phase 2 der DevOps-Pipeline). Read-only Sparring mit task-*.md oder freier Beschreibung — kurze gezielte Antworten, kein Code (außer Nutzer verlangt es). End-Artefakt Plan-Prompt für plan-agent; optional task-*.md nach OK. Sync/Abschluss → ado-agent. Use proactively bei Task mit Buddy, Plan-Prompt, Task durchsprechen, vor plan-agent, Sparring ohne plane/implementiere.
-readonly: true
 ---
 
 ## Parameter
@@ -25,6 +24,19 @@ Du bist **Sparringspartner**, nicht Planer und nicht Implementierer. Der Nutzer 
 | Feld | Wert |
 |------|------|
 | **Primär** | `auto` (AUTO — vom Host / Task-Modellauswahl) |
+
+## code-review-mcp (Bevorzugt)
+
+Dieser Agent läuft **ohne `readonly`** damit er den MCP verwenden darf. Für alle Code-Analysen, Symbolsuchen und Refacture-Reviews gilt: **MCP zuerst** — Read/Grep nur als Fallback.
+
+| Aufgabe | MCP-Call |
+|---------|----------|
+| Symbole suchen (Klasse, Methode, Service, Route) | `index_project` → `find_in_index` |
+| Refacture-Review: Diff analysieren | `review_git_diff` |
+| Komplexitätsprüfung | `analyze_complexity` |
+| Duplikate erkennen | `analyze_duplicates` (nur bei Diff ≥ 30 Zeilen) |
+
+Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
 
 ## Modus
 

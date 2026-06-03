@@ -371,6 +371,150 @@ function detectAngularMeta(
   };
 }
 
+// ─── Angular HTTP Call Extraction ────────────────────────────────────────────
+
+export interface HttpCallEntry {
+  httpMethod: string;     // "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
+  urlPattern: string;     // first argument string / template literal
+  containingClass: string;
+  containingMethod: string;
+  line: number;
+}
+
+export function extractHttpCalls(code: string, filename: string): HttpCallEntry[] {
+  const project = new Project({ useInMemoryFileSystem: true });
+  const sourceFile = project.createSourceFile(filename, code);
+  const entries: HttpCallEntry[] = [];
+  const httpVerbs = new Set(["get", "post", "put", "patch", "delete", "head", "options"]);
+
+  sourceFile.forEachDescendant((node) => {
+    if (!Node.isCallExpression(node)) return;
+    const expr = node.getExpression();
+    if (!Node.isPropertyAccessExpression(expr)) return;
+    const methodName = expr.getName().toLowerCase();
+    if (!httpVerbs.has(methodName)) return;
+
+    // Check the object is "http" or ends with ".http" (injected HttpClient)
+    const objText = expr.getExpression().getText();
+    if (!objText.endsWith("http") && !objText.endsWith("this.http") && !objText.includes("Http")) return;
+
+    // Extract URL pattern from first argument
+    const args = node.getArguments();
+    let urlPattern = "(dynamic)";
+    if (args.length > 0) {
+      const first = args[0];
+      if (Node.isStringLiteral(first) || Node.isNoSubstitutionTemplateLiteral(first)) {
+        urlPattern = first.getLiteralValue();
+      } else if (Node.isTemplateExpression(first)) {
+        // Convert template literal to pattern — strip backtick syntax
+        const raw = first.getHead().getText().replace(/^`/, "").replace(/\$\{$/, "");
+        urlPattern = raw + "{...}";
+      } else {
+        urlPattern = first.getText().slice(0, 80);
+      }
+    }
+
+    // Determine containing class and method
+    let containingClass = "(module)";
+    let containingMethod = "(top-level)";
+    let current: Node | undefined = node.getParent();
+    while (current) {
+      if (Node.isMethodDeclaration(current) || Node.isArrowFunction(current) || Node.isFunctionDeclaration(current)) {
+        if (Node.isMethodDeclaration(current)) containingMethod = current.getName() ?? "(anonymous)";
+      }
+      if (Node.isClassDeclaration(current)) {
+        containingClass = current.getName() ?? "(anonymous)";
+        break;
+      }
+      current = current.getParent();
+    }
+
+    entries.push({
+      httpMethod: methodName.toUpperCase(),
+      urlPattern,
+      containingClass,
+      containingMethod,
+      line: node.getStartLineNumber(),
+    });
+  });
+
+  return entries;
+}
+
+// ─── Angular Form Validator Extraction ───────────────────────────────────────
+
+export interface AngularFormField {
+  name: string;
+  validators: string[];  // normalized: "required", "maxLength:100", "minLength:2", "email", "pattern:..."
+  line: number;
+}
+
+export function extractAngularValidators(code: string, filename: string): AngularFormField[] {
+  const project = new Project({ useInMemoryFileSystem: true });
+  const sourceFile = project.createSourceFile(filename, code);
+  const fields: AngularFormField[] = [];
+
+  sourceFile.forEachDescendant((node) => {
+    if (!Node.isCallExpression(node)) return;
+    const expr = node.getExpression();
+    const methodName = Node.isPropertyAccessExpression(expr) ? expr.getName() : "";
+    if (methodName !== "group") return;
+
+    const args = node.getArguments();
+    if (args.length === 0) return;
+    const firstArg = args[0];
+    if (!Node.isObjectLiteralExpression(firstArg)) return;
+
+    firstArg.getProperties().forEach((prop) => {
+      if (!Node.isPropertyAssignment(prop)) return;
+      const fieldName = prop.getNameNode().getText().replace(/['"]/g, "");
+      const init = prop.getInitializer();
+      const validators = init ? parseValidatorsFromText(init.getText()) : [];
+      fields.push({ name: fieldName, validators, line: prop.getStartLineNumber() });
+    });
+  });
+
+  // Also detect standalone FormControl / fb.control() patterns
+  sourceFile.forEachDescendant((node) => {
+    if (!Node.isNewExpression(node)) return;
+    const typeName = node.getExpression().getText();
+    if (typeName !== "FormControl") return;
+    const args = node.getArguments();
+    if (args.length < 2) return;
+    // Try to infer field name from variable assignment context
+    const parent = node.getParent();
+    let fieldName = "(unknown)";
+    if (Node.isVariableDeclaration(parent)) {
+      fieldName = parent.getName();
+    } else if (Node.isPropertyAssignment(parent) && Node.isPropertyAssignment(parent)) {
+      fieldName = parent.getNameNode().getText().replace(/['"]/g, "");
+    }
+    const validators = parseValidatorsFromText(args[1].getText());
+    if (validators.length > 0) {
+      fields.push({ name: fieldName, validators, line: node.getStartLineNumber() });
+    }
+  });
+
+  return fields;
+}
+
+function parseValidatorsFromText(text: string): string[] {
+  const validators: string[] = [];
+  if (/Validators\.required\b/.test(text)) validators.push("required");
+  if (/Validators\.email\b/.test(text)) validators.push("email");
+  const maxLen = text.match(/Validators\.maxLength\((\d+)\)/);
+  if (maxLen) validators.push(`maxLength:${maxLen[1]}`);
+  const minLen = text.match(/Validators\.minLength\((\d+)\)/);
+  if (minLen) validators.push(`minLength:${minLen[1]}`);
+  const maxVal = text.match(/Validators\.max\((\d+)\)/);
+  if (maxVal) validators.push(`max:${maxVal[1]}`);
+  const minVal = text.match(/Validators\.min\((\d+)\)/);
+  if (minVal) validators.push(`min:${minVal[1]}`);
+  const pattern = text.match(/Validators\.pattern\(([^)]+)\)/);
+  if (pattern) validators.push(`pattern:${pattern[1].trim().replace(/['"]/g, "")}`);
+  return validators;
+}
+
 // ─── Metrics ──────────────────────────────────────────────────────────────────
 
 function computeMetrics(

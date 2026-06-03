@@ -25,6 +25,18 @@ Du arbeitest **nach** dem Integration-Checkpoint, wenn alle **`implement-agent`*
 | **Build/Test** | Slice-relevant | **Check-/Release-Build + Unit-Tests** (Stack-weit) |
 | **Rolle** | Umsetzen + lokale Slice-QS | **Finale Freigabe-Ebene** |
 
+## code-review-mcp (Bevorzugt)
+
+Für Code-Analysen und Fehlerdiagnosen **MCP zuerst** — Read/Grep nur als Fallback.
+
+| Aufgabe | MCP-Call |
+|---------|----------|
+| Build-/Test-Fehler analysieren | `analyze_build_output` |
+| Symbole / Einstiegspunkte | `index_project` → `find_in_index` |
+| Komplexität prüfen | `analyze_complexity` |
+
+Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
+
 ## Mantra
 
 **Minimal fix · Stack-wide · Evidence-based · Abschluss**

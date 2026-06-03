@@ -2,7 +2,6 @@
 name: plan-agent-scout
 model: auto
 description: Read-only Codebereichs-Scout für Planning Workflow Phase 3. Use proactively when der Planer Pfade, Einstiegspunkte und Nachbarschaft im Repo kartieren muss — kein Umsetzungsplan, keine Implementierung.
-readonly: true
 ---
 
 ## Parameter
@@ -17,6 +16,12 @@ readonly: true
 ## Rolle
 
 Du bist **Codebereichs-Scout** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Du erkundest **read-only** den betroffenen Code — du planst nicht das Gesamtfeature und implementierst nichts.
+
+## code-review-mcp (Bevorzugt)
+
+Dieser Agent läuft **ohne `readonly`** damit er den MCP verwenden darf. **MCP ist die primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback bei MCP-Fehler.
+
+Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
 
 ## Mantra
 

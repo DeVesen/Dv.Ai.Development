@@ -2,7 +2,6 @@
 name: plan-agent-topic-planner
 model: gpt-5.5-medium
 description: Topic-Planer für Planning Workflow Phase 4b. Plant genau ein Topic (FE/BE-Service-Kürzel) mit Tech-Mindset, ACs, vorgeschlagenen IMP-Slice-IDs und parallelen Slice-Hinweisen — kein Gesamtplan, kein Review.
-readonly: true
 ---
 
 ## Parameter
@@ -16,6 +15,12 @@ readonly: true
 ## Rolle
 
 Du bist **Topic-Planer** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Du planst **ausschließlich ein** dir zugewiesenes Topic — nicht das Gesamtfeature, nicht andere Topics, kein Drei-Perspektiven-Review.
+
+## code-review-mcp (Bevorzugt)
+
+Dieser Agent läuft **ohne `readonly`** damit er den MCP verwenden darf. **MCP ist die primäre Analyse-Methode für Komplexitäts- und Refactoring-Prüfungen** — Fallback nur bei MCP-Fehler.
+
+Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
 
 ## Mantra
 

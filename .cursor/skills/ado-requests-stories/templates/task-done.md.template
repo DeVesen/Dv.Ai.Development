@@ -2,43 +2,28 @@
 
 ← [[../UserStory-{{workItemId}}-{{storySlug}}|Story #{{workItemId}}]]
 
-**Status:** Erledigt ({{closedSource}}) · **Priorität:** —
+**Status:** Erledigt ({{closedSource}}) · **Priorität:** {{priority}}
 
 ## Anforderung
 
 {{requirementText}}
 
+## Offene Fragen
+
+{{openQuestions}}
+
 ## Story-Bezug
 
 {{originalText}}
 
-## Umsetzung
-
-{{umsetzungText}}
-
 ## Akzeptanzkriterien
 
-### Planung
+{{acText}}
 
-{{acPlanningDone}}
+### Lösung
 
-### Umsetzung
+{{loesungText}}
 
-{{acImplementationDone}}
+## AI Zusammenfassung
 
-### Testabsicherung
-
-{{acTestMatrixDone}}
-
-## Nutzer-ToDos
-
-{{userTodos}}
-
-## Möglichkeiten
-
-- `@buddy-agent Task {{taskDateistamm}} in Story {{workItemId}} — Plan-Prompt, kurz, ohne Code`
-- `markiere Task {{taskDateistamm}} in Story {{workItemId}} als fertig`
-- `ToDo für Task {{taskDateistamm}} in Story {{workItemId}}: `
-- `Task {{taskDateistamm}} in Story {{workItemId}} verfeinern`
-- `plane Task {{taskDateistamm}} in Story {{workItemId}}`
-- `Commit-Vorschlag für Task {{taskDateistamm}} in Story {{workItemId}}`
+{{aiSummary}}

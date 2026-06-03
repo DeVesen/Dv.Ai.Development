@@ -36,7 +36,7 @@ Vor `TASK-CLOSED` oder `TODO`: `wit_list_work_item_comments` auswerten.
 1. Kommentare chronologisch sortieren (API-Reihenfolge bzw. Zeitstempel falls vorhanden).
 2. Pro `task-slug` letzten Status aus CLOSED/REOPENED bestimmen.
 3. Story-`## Task-Übersicht` neu ordnen: CLOSED-Slugs → Discussion-Liste; dieselben aus Code-Stand und Offen **entfernen** ([task-overview.md](task-overview.md)).
-4. `TODO`-Zeilen in `## Nutzer-ToDos` der jeweiligen `task-*.md` spiegeln (append-only, Duplikate vermeiden).
+4. `TODO`-Zeilen in `## Offene Fragen` der jeweiligen `task-*.md` spiegeln (append-only, Duplikate vermeiden).
 
 ## Menschliche Lesbarkeit
 

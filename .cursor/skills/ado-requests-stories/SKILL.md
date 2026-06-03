@@ -3,12 +3,12 @@ name: ado-requests-stories
 description: >
   Synchronisiert Azure DevOps User Stories/Work Items (MCP ado) mit Markdown-Artefakten unter
   requests/stories/: prüfe Feature mit parallelen Story-Subagents; prüfe Story mit Task-Inventar und
-  parallelen Task-Subagents (Code + Task-MD/ACs); Feature-Kontext in Story-MD; ADO-Description `(x)` in Story-Analyse
+  parallelen Task-Subagents (Code + Task-MD/ACs + AI Zusammenfassung); Feature-Kontext in Story-MD; ADO-Description `(x)` in Story-Analyse
   und Task-Übersicht. Task erledigt
   (TASK-CLOSED nur unter Discussion-Abgeschlossen, kein Code-Stand/Repo-Abgleich), ToDos, active/resolved,
   Commit-Vorschlag, Task verfeinern (Legacy — interaktiver 5-Phasen-Klärungsworkflow), Task klären via buddy-agent (Standard, Plan-Prompt),
   plane Task (Planning),
-  Task-Akzeptanzkriterien (Lesbar/Planung/Umsetzung/Testabsicherung). Kein HTML. ADO Description/AC nicht schreiben.
+  Task-Akzeptanzkriterien (menschlich lesbar, keine IDs). Kein HTML. ADO Description/AC nicht schreiben.
   Trigger: prüfe Story/Task/Feature, requests/stories, markiere Task fertig, ToDo, active, resolved,
   buddy-agent, Buddy Task, Plan-Prompt, Task verfeinern (Legacy), Commit-Vorschlag, @ado-requests-stories.
   Opt-out: ohne ado-story-skill.
@@ -35,7 +35,7 @@ Referenz-Story: `requests/stories/UserStory-{id}-{Titel}/`.
 
 - Work Item per ID abrufen und mit lokalem Ordner abgleichen
 - **`prüfe Feature`:** Feature-Kontext laden; **parallele Story-Subagents** pro Child-Story; pro Story **parallele Task-Subagents** (Code + Task-MD) — [references/feature-pruefe.md](references/feature-pruefe.md), [references/story-pruefe-subagent.md](references/story-pruefe-subagent.md), [references/task-pruefe-subagent.md](references/task-pruefe-subagent.md)
-- Story- und Task-Markdown anlegen/aktualisieren (Obsidian-Wikilinks); **`(x)`-Markierungen** aus Story-Description in Analyse und Task-Übersicht — [description-x-markers.md](references/description-x-markers.md); pro Task **`## Akzeptanzkriterien`** (Planung, Umsetzung, Testabsicherung) — [acceptance-criteria.md](references/acceptance-criteria.md)
+- Story- und Task-Markdown anlegen/aktualisieren (Obsidian-Wikilinks); **`(x)`-Markierungen** aus Story-Description in Analyse und Task-Übersicht — [description-x-markers.md](references/description-x-markers.md); pro Task **`## Akzeptanzkriterien`** (menschlich lesbar, keine IDs) und **`## AI Zusammenfassung`** — [acceptance-criteria.md](references/acceptance-criteria.md)
 - Task-Schließung und ToDos über **Discussion**-Kommentare (`[{markerVersion}]`) an der **Story**
 - **`Task … verfeinern` (Legacy):** interaktiver Klärungsworkflow — [references/task-verfeinern.md](references/task-verfeinern.md)
 - **Task klären (Standard):** **buddy-agent** — Plan-Prompt für `plan-agent`; siehe [buddy-agent.md](../../agents/buddy-agent.md), Rule [buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc)
@@ -81,23 +81,22 @@ Templates: [templates/](templates/). Feld-Mapping: [references/field-mapping.md]
 
 ## Copy-Befehle (Möglichkeiten)
 
-Am Ende von Story- und Task-Markdown steht `## Möglichkeiten` mit **fertig ausgefüllten** Backtick-Zeilen zum Kopieren (Format: [copy-commands.md](references/copy-commands.md)).
+Story-Markdown enthält `## Möglichkeiten` mit **fertig ausgefüllten** Backtick-Zeilen zum Kopieren (Format: [copy-commands.md](references/copy-commands.md)). Task-Markdown enthält **kein** `## Möglichkeiten`.
 
-**Wann erzeugen oder aktualisieren**
+**Wann erzeugen oder aktualisieren (Story-MD)**
 
-- Neue `task-*.md` aus Template (enthält Block bereits).
+- Neue Story-MD aus Template (enthält Block bereits).
 - `prüfe`: fehlenden Block anfügen oder bestehenden Block `## Möglichkeiten` … bis vor nächstes `##` / EOF **ersetzen** (idempotent).
-- Unter `## Offene Fragen`: Zeile `` `Task {dateistamm} in Story {id} verfeinern` `` **nur** wenn ≥1 Fragen-Bullet; setzen/aktualisieren, **nicht** duplizieren.
-- Umbenennung `task-*.md` oder explizite Nutzeranfrage „Möglichkeiten aktualisieren“.
+- Unter `## Offene Fragen` in Task-MD: Zeile `` `Task {dateistamm} in Story {id} verfeinern` `` **nur** wenn ≥1 Fragen-Bullet; setzen/aktualisieren, **nicht** duplizieren.
 
 **Geschützt (nie blind überschreiben)**
 
-- `## Umsetzung`, `## Nutzer-ToDos` (Inhalt).
 - Verfeinerungs-Abschnitte bei `prüfe`: **Task-SubAgent** schreibt schlankes Initial-Schema ([task-pruefe-subagent.md](references/task-pruefe-subagent.md)); Story-Phase **nicht**. Bei **`Task … verfeinern`**: interaktiver 5-Phasen-Ablauf — [task-verfeinern.md](references/task-verfeinern.md). **`## Story-Bezug`:** bei `verfeinern` nur bei geänderter Story-Quelle überschreiben.
 - `## Akzeptanzkriterien`: bei `prüfe` durch **Task-SubAgent** ersetzen (discussion-offene Tasks) — [acceptance-criteria.md](references/acceptance-criteria.md).
+- `## AI Zusammenfassung`: bei `verfeinern` beibehalten; nur bei neuem Code-Scout in Phase 1 ersetzen.
 - `## Feature-Kontext`: bei Feature-`prüfe` den **gesamten Abschnitt** ersetzen (idempotent) — kein Mischen mit manuellen Zusätzen außerhalb des Blocks.
 - **`Task … verfeinern`** → [task-verfeinern.md](references/task-verfeinern.md) (interaktiv; **kein** autonomes MD-Schreiben ohne Nutzer-Freigabe).
-- **`plane Task …`** → [planning-workflow](../planning-workflow/SKILL.md) — **keine** ADO-MCP-Operation; finales Planpaket **im Chat**; Task-MD höchstens `### Planung` / `AC-P*` nach Freigabe.
+- **`plane Task …`** → [planning-workflow](../planning-workflow/SKILL.md) — **keine** ADO-MCP-Operation; finales Planpaket **im Chat**.
 
 ## Delegation und Modellwahl (ADO-Subagents bei `prüfe`)
 
@@ -183,10 +182,10 @@ Vollständig: [references/feature-pruefe.md](references/feature-pruefe.md).
 **Ablauf**
 
 1. Story-ID + `task-slug` auflösen.
-2. **`## Akzeptanzkriterien` / `### Testabsicherung`:** alle ACs mit Testbezug; Status idealerweise **`grün`** ([acceptance-criteria.md](references/acceptance-criteria.md)). Sonst Nutzer **warnen** — nur nach expliziter Freigabe „trotzdem schließen“ fortfahren.
+2. **`## Akzeptanzkriterien`:** kurz prüfen ob wesentliche Kriterien erfüllt sind ([acceptance-criteria.md](references/acceptance-criteria.md)). Sonst Nutzer **warnen** — nur nach expliziter Freigabe „trotzdem schließen” fortfahren.
 3. Idempotenz: letzter Marker prüfen ([references/markers.md](references/markers.md)).
 4. `wit_add_work_item_comment` — `format: markdown`, Zeile `TASK-CLOSED`.
-5. `task-*.md`: **Erledigt**, Abschnitt **Umsetzung** (mindestens Verweis auf Schließzeitpunkt); Akzeptanzkriterien-Block aktualisieren; Template [task-done.md.template](templates/task-done.md.template) wo sinnvoll.
+5. `task-*.md`: **Erledigt**, `### Lösung` befüllen (Begründung warum Task fertig); Template [task-done.md.template](templates/task-done.md.template) wo sinnvoll.
 6. Story-MD: Checkbox `[x]`; **nur** unter „Abgeschlossen (laut Discussion / TASK-CLOSED)“ eintragen; Slug aus „Abgeschlossen (laut Code-Stand)“ und „Offen“ entfernen ([task-overview.md](references/task-overview.md)).
 
 **Verboten:** Description/AC in ADO ändern.
@@ -198,7 +197,7 @@ Vollständig: [references/feature-pruefe.md](references/feature-pruefe.md).
 **Ablauf**
 
 1. Freitext und Task-Slug ermitteln.
-2. In `task-*.md` unter **`## Nutzer-ToDos`**: `- YYYY-MM-DD: …` anhängen.
+2. In `task-*.md` unter **`## Offene Fragen`**: `- YYYY-MM-DD: …` anhängen.
 3. `wit_add_work_item_comment` mit `TODO`-Marker an der **Story**.
 4. Idempotenz beachten.
 
@@ -232,7 +231,7 @@ Vollständig: [references/feature-pruefe.md](references/feature-pruefe.md).
 **Ablauf**
 
 1. Story-ID und `tasks/{taskDateistamm}.md` auflösen.
-2. Abschnitte lesen: `## Anforderung`; bei Status **Erledigt** zusätzlich `## Umsetzung` ([copy-commands.md](references/copy-commands.md) — Commit-Vorschlag).
+2. Abschnitte lesen: `## Anforderung`; bei Status **Erledigt** zusätzlich `### Lösung` ([copy-commands.md](references/copy-commands.md) — Commit-Vorschlag).
 3. **Title** und **Description** **auf Englisch** ableiten: Title max. 50 Zeichen, Description max. **400** Zeichen, **mit** `Story #{storyId}`; Längen **hart** einhalten.
 4. Ausgabe im Chat: Zeichenzähler (`Title (n/50)`, `Description (n/400)`), optional `git commit -m "…" -m "…"`.
 
@@ -264,20 +263,20 @@ Vollständig: [references/feature-pruefe.md](references/feature-pruefe.md).
 
 ## Schutz bestehender Inhalte
 
-- Nie `## Umsetzung`, `## Nutzer-ToDos` blind überschreiben.
+- Nie `## AI Zusammenfassung` bei `verfeinern` überschreiben (Scout-Findings beibehalten).
 - Bei `prüfe`: Task-SubAgent schreibt schlankes Initial-Schema; discussion-closed: **kein** Task-SubAgent, AC unverändert. **`Task … verfeinern`:** interaktiver Klärungsworkflow nach Nutzer-Freigabe.
 - Story-Task-Listen: bestehende Wikilinks beibehalten; pro Slug **genau eine** Liste ([task-overview.md](references/task-overview.md)).
 - Zwei Checkbox-Kategorien **gegenseitig ausschließend**: **Discussion (TASK-CLOSED)** schließt **Code-Stand** und Repo-Abgleich bei `prüfe` aus.
 
-## Akzeptanzkriterien und Tests (verbindlich)
+## Akzeptanzkriterien (verbindlich)
 
 Details: [references/acceptance-criteria.md](references/acceptance-criteria.md).
 
-- **Bei `prüfe`:** Task-SubAgent pflegt `### Lesbar`, `### Planung`, `### Umsetzung`, `### Testabsicherung` ([task-pruefe-subagent.md](references/task-pruefe-subagent.md)).
+- **Bei `prüfe`:** Task-SubAgent schreibt `## Akzeptanzkriterien` (menschlich lesbare Bullets, keine IDs) und `## AI Zusammenfassung` ([task-pruefe-subagent.md](references/task-pruefe-subagent.md)).
 - **`Task … verfeinern`:** interaktiver Klärungsworkflow + AC-Ableitung nach Freigabe — [task-verfeinern.md](references/task-verfeinern.md); **kein** Vorgehen/Planpaket in die MD.
-- **`plane Task …`:** [planning-workflow](../planning-workflow/SKILL.md) — Planpaket und Slices **im Chat**; referenzieren `AC-P*` aus der Task-MD.
-- **Umsetzung** ([implementation-workflow](../implementation-workflow/SKILL.md)): Definition of Done = alle `AC-I*` **grün** in Testabsicherung; Verifikations-Subagents decken die genannten Tests ab.
-- **Abschluss:** Task nur schließen, wenn Testabsicherung vollständig und (nach Verifikation) **grün** — siehe Operation „Task als fertig markieren“.
+- **`plane Task …`:** [planning-workflow](../planning-workflow/SKILL.md) — Planpaket und Slices **im Chat**; referenziert Kriterien aus der Task-MD.
+- **Umsetzung** ([implementation-workflow](../implementation-workflow/SKILL.md)): DoD an `## Akzeptanzkriterien`; Verifikations-Subagents decken die genannten Kriterien ab.
+- **Abschluss:** Task nur schließen wenn Kriterien erfüllt; `### Lösung` in Task-done befüllen — siehe Operation „Task als fertig markieren”.
 
 ## Zusammenspiel andere Workflows
 
@@ -286,8 +285,8 @@ Details: [references/acceptance-criteria.md](references/acceptance-criteria.md).
 | `prüfe` | **dieser Skill** — Story-/Task-Subagents ([story-pruefe-subagent.md](references/story-pruefe-subagent.md), [task-pruefe-subagent.md](references/task-pruefe-subagent.md)); **ohne** Drei-Perspektiven-Review |
 | Task klären / Plan-Prompt (Standard) | **buddy-agent** — [buddy-agent.md](../../agents/buddy-agent.md); End-Artefakt für `plane Task` |
 | `Task … verfeinern` (**Legacy**) | **dieser Skill** — [task-verfeinern.md](references/task-verfeinern.md) (interaktiv, Freigabe-Gate; nach Story-Änderung oder wenn `prüfe`-MD veraltet) |
-| `plane Task …` / Umsetzungsplan | [planning-workflow](../planning-workflow/SKILL.md) — bevorzugte Eingabe: **Plan-Prompt aus Buddy**; Scope/DoD aus Task `### Planung` + `AC-P*`; Topologie **im Chat** |
-| Code umsetzen | [implementation-workflow](../implementation-workflow/SKILL.md) — DoD aus `### Umsetzung` + `AC-I*`; Tests in `### Testabsicherung` grün |
+| `plane Task …` / Umsetzungsplan | [planning-workflow](../planning-workflow/SKILL.md) — bevorzugte Eingabe: **Plan-Prompt aus Buddy**; Scope/DoD aus Task `## Akzeptanzkriterien`; Topologie **im Chat** |
+| Code umsetzen | [implementation-workflow](../implementation-workflow/SKILL.md) — DoD aus `## Akzeptanzkriterien`; Abschluss mit `### Lösung` + `TASK-CLOSED` |
 | Handoff als Markdown-Prompt | [describe-as-prompt](../describe-as-prompt/SKILL.md) — **nicht** HTML |
 
 ## Reporting (Pflicht)
@@ -300,7 +299,7 @@ Jede Operation endet mit:
 - Bei `resolved`: Bestätigung + gelöschter Pfad
 - Offene Punkte / MCP-Fehler / `BLOCKER` (Subagent-Modell, Task-Tool)
 - Bei `prüfe`: Anzahl Story-Subagents (0 bei direktem `prüfe Story`) / Task-Subagents; je Task verwendetes Modell-Slug
-- Tasks: fehlende oder ungetestete Akzeptanzkriterien (`AC-*` ohne Zeile oder Status `offen` in Testabsicherung)
+- Tasks: fehlende Akzeptanzkriterien oder `### Lösung` (bei erledigten Tasks)
 
 ## Opt-out
 

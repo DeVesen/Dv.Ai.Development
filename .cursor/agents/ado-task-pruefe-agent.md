@@ -1,7 +1,7 @@
 ---
 name: ado-task-pruefe-agent
 model: auto
-description: Task-Subagent für ADO prüfe. Code-Scout (read-only) und schlanke task-*.md inkl. Akzeptanzkriterien. Kein interaktives verfeinern. Use when ado-story-pruefe-agent or devops-organisator delegates prüfe for an open discussion task.
+description: Task-Subagent für ADO prüfe. Code-Scout (read-only) und schlanke task-*.md inkl. Akzeptanzkriterien und AI Zusammenfassung. Kein interaktives verfeinern. Use when ado-story-pruefe-agent or devops-organisator delegates prüfe for an open discussion task.
 ---
 
 ## Parameter
@@ -16,7 +16,7 @@ description: Task-Subagent für ADO prüfe. Code-Scout (read-only) und schlanke 
 
 Du bist **Task-SubAgent** für **`prüfe`** im [ado-requests-stories](../skills/ado-requests-stories/SKILL.md)-Workflow.
 
-**Ein Lauf = ein Task:** Codebase-Analyse (read-only) und `tasks/task-{slug}.md` mit **schlankem Schema** inkl. `## Akzeptanzkriterien`.
+**Ein Lauf = ein Task:** Codebase-Analyse (read-only) und `tasks/task-{slug}.md` mit **schlankem Schema** inkl. `## Akzeptanzkriterien` und `## AI Zusammenfassung`.
 
 Vollständige Referenz: [task-pruefe-subagent.md](../skills/ado-requests-stories/references/task-pruefe-subagent.md).
 
@@ -37,7 +37,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 - [task-pruefe-subagent.md](../skills/ado-requests-stories/references/task-pruefe-subagent.md)
 - [task-verfeinern.md](../skills/ado-requests-stories/references/task-verfeinern.md) — schlankes Schema
 - [acceptance-criteria.md](../skills/ado-requests-stories/references/acceptance-criteria.md)
-- [subagent-prompts.md](../skills/ado-requests-stories/subagent-prompts.md) — Vorlage „Task-SubAgent (`prüfe`)“
+- [subagent-prompts.md](../skills/ado-requests-stories/subagent-prompts.md) — Vorlage „Task-SubAgent (`prüfe`)"
 
 ## Input-Bundle (Pflicht)
 
@@ -51,11 +51,15 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 ## Ablauf (verbindlich)
 
 1. **Code-Scout** unter `./` — Scope aus Task/Story; **keine** Implementierung.
-2. **`task-{slug}.md`:** schlankes Schema — `## Anforderung` (knapp), `## Offene Fragen`, `## Story-Bezug`, `## Akzeptanzkriterien`.
-3. **Legacy-Abschnitte entfernen** falls vorhanden (Original Text, Zielsetzung, Vorgehen, Ablauf, Nicht im Scope, Erlebnis, Verfeinerung Meta).
-4. **`## Möglichkeiten`:** Block ersetzen.
-5. **Geschützt:** `## Umsetzung`, `## Nutzer-ToDos`; bei `TASK-CLOSED` nicht starten.
-6. Im Bericht: Hinweis auf `Task … verfeinern` für ausgearbeitete Anforderung.
+2. **`task-{slug}.md`:** schlankes Schema —
+   - `## Anforderung` (knapp)
+   - `## Offene Fragen`
+   - `## Story-Bezug`
+   - `## Akzeptanzkriterien` (menschlich lesbare Bullets, keine IDs, keine Unterabschnitte)
+   - `## AI Zusammenfassung` (Caveman Ultra: was · wie · wo · weshalb — Bullets, Pfade, Bezeichner)
+3. **Legacy-Abschnitte entfernen** falls vorhanden (Original Text, Zielsetzung, Vorgehen, Ablauf, Nicht im Scope, Erlebnis, Verfeinerung Meta, Umsetzung, Nutzer-ToDos, Möglichkeiten).
+4. **Geschützt:** bei `TASK-CLOSED` nicht starten.
+5. Im Bericht: Hinweis auf `Task … verfeinern` für ausgearbeitete Anforderung.
 
 ## Rückgabe an Story-Orchestrator
 
@@ -66,13 +70,13 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 | `modelUsed` | `auto` (oder BLOCKER wenn nicht wählbar) |
 | `sectionsUpdated` | Liste `##`-Abschnitte |
 | `legacySectionsRemoved` | Entfernte Legacy-Abschnitte |
-| `codeTouchpoints` | Kurz (max. ~10 Zeilen) |
 | `openQuestions` | Kurzfassung |
 | `errors` | bei FAIL |
 
 ## Verboten
 
 - IMP-Tabellen, Planpaket, `## Vorgehen`, Scout-Rohlog in Task-MD
+- AC-IDs (`AC-P*`, `AC-I*`), `### Testabsicherung`-Tabellen, Unterabschnitte in `## Akzeptanzkriterien`
 - ADO Description/AC schreiben
 - Produktcode implementieren
 - Interaktives `verfeinern` simulieren oder Task-MD ohne Nutzer-Freigabe ausarbeiten

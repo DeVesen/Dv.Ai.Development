@@ -55,7 +55,15 @@
 
 ## Wichtige Parameter
 
-- `projectPath` = Wurzelverzeichnis des Projekts
-- `type` = `"angular"` oder `"dotnet"` (oder `"auto"` für automatische Erkennung)
-- `filePath` = absoluter oder relativer Pfad zur Datei
-- Kein Build nötig für 20 der 23 Tools — nur die Coverage-Tools brauchen einen vorherigen Test-Run
+**Alle Pfade = Container-Pfade unter `/workspace/`** (Volume-Mount: `${workspaceFolder}:/workspace:ro`)
+
+| Parameter | Verwendet von | Format |
+|-----------|--------------|--------|
+| `projectPath` | `index_project`, `review_with_index` | `/workspace/<relativer/pfad>` z.B. `/workspace/src/frontend` |
+| `filePath` | `review_file`, `analyze_ast_only`, `analyze_complexity` u.a. | `/workspace/<relativer/pfad/datei.ts>` |
+| `filePaths` | `review_files_batch` | Array von `/workspace/...`-Pfaden |
+| `type` | alle dateibasierten Tools | `"angular"` \| `"dotnet"` \| `"auto"` |
+
+**Niemals** Windows-Pfade (`C:\...`) oder nur IDE-relative Pfade (`src/...`) übergeben — der Container kennt nur `/workspace/`.
+
+Kein Build nötig für 20 der 23 Tools — nur die Coverage-Tools brauchen einen vorherigen Test-Run.

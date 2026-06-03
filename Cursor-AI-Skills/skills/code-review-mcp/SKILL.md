@@ -15,8 +15,22 @@ disable-model-invocation: true
 ## Voraussetzungen
 
 - MCP `code-review-mcp` muss in `.cursor/mcp.json` konfiguriert sein (Docker-Image).
+- **Volume-Mount ist Pflicht** für alle dateibasierten Tools: `-v ${workspaceFolder}:/workspace:ro`
+  - Host-Workspace → `/workspace` im Container (read-only)
+  - Kein `-w`-Flag setzen — MCP-Server läuft in `/app`, nicht im gemounteten Verzeichnis
 - `projectPath` und `type` (`angular` | `dotnet` | `auto`) pro Aufruf angeben.
 - Coverage-Tools (`analyze_coverage`, `analyze_test_health`) benötigen vorherigen Test-Run.
+
+## Pfadregel (verbindlich)
+
+Alle dateibezogenen Parameter (`filePath`, `filePaths`, `projectPath`) verwenden **Container-Pfade**:
+
+| Format | Korrekt | Falsch |
+|--------|---------|--------|
+| `projectPath` | `/workspace/src/frontend` | `C:\Develop\...\frontend` |
+| `filePath` | `/workspace/src/frontend/app/my.component.ts` | `src/frontend/app/my.component.ts` |
+
+**Fehlerdiagnose:** `File not found: /app/...` oder `Path not found: /app/...` = falsches Pfadformat (Windows-Pfad oder IDE-relativer Pfad statt `/workspace/...`), nicht defekte MCP-Verbindung.
 
 ## Operationen
 

@@ -18,6 +18,8 @@
         "run",
         "-i",
         "--rm",
+        "-v",
+        "${workspaceFolder}:/workspace:ro",
         "devesen/dv.code-review.mcp:latest"
       ],
       "transport": "stdio",

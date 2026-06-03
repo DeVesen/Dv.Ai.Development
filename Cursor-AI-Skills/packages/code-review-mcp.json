@@ -25,6 +25,8 @@
           "run",
           "-i",
           "--rm",
+          "-v",
+          "${workspaceFolder}:/workspace:ro",
           "__IMAGE__"
         ],
         "transport": "stdio"
@@ -37,6 +39,8 @@
           "--rm",
           "--pull",
           "always",
+          "-v",
+          "${workspaceFolder}:/workspace:ro",
           "__IMAGE__"
         ],
         "transport": "stdio"

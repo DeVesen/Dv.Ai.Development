@@ -31,20 +31,23 @@ Komponenten-Namen wenn der Nutzer sie nennt) — **ohne** `index_project` nur we
 
 | Stack | `projectPath` | `type` |
 |-------|---------------|--------|
-| Angular FE | `{frontend-path}` aus `./AGENTS.md` | `angular` |
-| .NET Backend | `{backend-path}` aus `./AGENTS.md` | `dotnet` |
+| Angular FE | `/workspace/{frontend-path}` aus `./AGENTS.md` | `angular` |
+| .NET Backend | `/workspace/{backend-path}` aus `./AGENTS.md` | `dotnet` |
 
-`{frontend-path}` und `{backend-path}` sind Platzhalter — die konkreten Werte stehen in `./AGENTS.md` des jeweiligen Projekts.
+`{frontend-path}` und `{backend-path}` sind Platzhalter — die konkreten Werte stehen in `./AGENTS.md` des jeweiligen Projekts. Präfix immer `/workspace/` voranstellen (Container-Pfad, kein Windows-Pfad, kein IDE-relativer Pfad).
+
 Bei Multi-Stack-Aufgaben: **pro Stack einmal** `index_project` (Cache ~5 min, `useCache: true`).
 
-**MCP-Pfadauflösung (Docker/Windows) — Pflicht-Playbook:**
+**Volume-Mount-Voraussetzung:** Die `.cursor/mcp.json` muss `-v ${workspaceFolder}:/workspace:ro` enthalten. Ohne Mount schlagen alle dateibasierten Tools fehl — dann MCP-Fallback deklarieren und auf Read/Grep ausweichen.
+
+**MCP-Pfadauflösung (Docker) — Pflicht-Playbook:**
 
 Bei `index_project`-Fehler: Pfade in dieser Reihenfolge prüfen — **max. 2 Versuche je Stack**:
 
 | Versuch | Pfad |
 |---------|------|
-| 1 (primär) | `{frontend-path}` bzw. `{backend-path}` (relativ, aus `./AGENTS.md`) |
-| 2 (Fallback) | `/workspace/{frontend-path}` bzw. `/workspace/{backend-path}` (absolut im Container) |
+| 1 (primär) | `/workspace/{frontend-path}` bzw. `/workspace/{backend-path}` (absolut im Container) |
+| 2 (Fallback) | `/workspace` allein als `projectPath` mit `type: auto` |
 
 **Dokumentationspflicht bei Fehler** — jeder fehlgeschlagene Call im Scout-Deliverable:
 ```
@@ -55,9 +58,7 @@ Nach 2 Fehlern pro Stack: **MCP-Fallback deklarieren** (kein weiteres Raten):
 MCP-Fallback: <Grund>; Anker via Read/Grep: <Liste der Einstiegspunkte>
 ```
 
-## Bekannte MCP-Limitation (Docker ohne Volume-Mount)
-
-Das `code-review-mcp`-Image läuft laut `.cursor/mcp.json` **ohne** `-v`-Mount. Ohne Volume-Mount hat der Container keinen Zugriff auf Projektdateien — `index_project` und `find_in_index` scheitern, bis die IDE (Cursor) den Workspace automatisch bereitstellt oder ein Mount in `.cursor/mcp.json` ergänzt wird. Die Pfade aus der Tabelle oben (relativ `{frontend-path}` / `/workspace/{frontend-path}`) gelten nur wenn ein Mount aktiv ist. **Kein Raten** über die zwei dokumentierten Versuche hinaus.
+**Fehlerdiagnose:** `File not found: /app/...` = Container-Pfad fehlt `/workspace/`-Präfix — kein Verbindungsproblem.
 
 **Schritt 1 — Landkarte (einmal pro Stack pro Session/Aufgabe):**
 

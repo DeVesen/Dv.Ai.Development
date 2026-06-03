@@ -30,6 +30,16 @@
           "key": "ado-organisation",
           "label": "Azure DevOps Organisation",
           "placeholder": "__ORG__"
+        },
+        {
+          "key": "ado-project",
+          "label": "Azure DevOps Projekt",
+          "placeholder": "__PROJECT__"
+        },
+        {
+          "key": "ado-team",
+          "label": "Azure DevOps Team (optional, Enter zum Ueberspringen)",
+          "placeholder": "__TEAM__"
         }
       ],
       "entry": {
@@ -42,7 +52,11 @@
           "core",
           "work",
           "work-items"
-        ]
+        ],
+        "env": {
+          "ado_mcp_project": "__PROJECT__",
+          "ado_mcp_team": "__TEAM__"
+        }
       }
     }
   ],

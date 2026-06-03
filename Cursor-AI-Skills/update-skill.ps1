@@ -213,6 +213,18 @@ function Invoke-McpConfig {
             }
 
             $entry    = $entryJson | ConvertFrom-Json
+
+            # Remove env keys whose placeholder was not substituted (optional params skipped)
+            if ($entry.PSObject.Properties['env']) {
+                $toRemove = $entry.env.PSObject.Properties |
+                    Where-Object { $_.Value -is [string] -and $_.Value -match '^__[A-Z_]+__$' } |
+                    Select-Object -ExpandProperty Name
+                foreach ($key in $toRemove) { $entry.env.PSObject.Properties.Remove($key) }
+                if ($entry.env.PSObject.Properties.Count -eq 0) {
+                    $entry.PSObject.Properties.Remove('env')
+                }
+            }
+
             $infoLine = $parts -join ', '
         }
 

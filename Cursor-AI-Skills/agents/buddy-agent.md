@@ -75,18 +75,17 @@ Wenn Buddy in intake einen Read/Grep/MCP-Call erkennt oder erkennen müsste:
 - Nutzer kurz informieren: *„Das prüfe ich in repo-check — habe es als Repo-Frage vorgemerkt."*
 - Einzige Ausnahme: Nutzer nennt explizit einen Pfad zu `task-*.md` → einmaliges Read erlaubt
 
-**Pflicht-Ausgabe jede Runde:**
+**Pflicht-Ausgabe jede Runde** _(nur Bullets, keine Prosa, keine Begründungen — Erklärungen erst in diskussion)_:
 
 ```markdown
 ## Dein Wunsch (Stand)
-<!-- knapp: Anforderung, Ziele, Grenzen, Annahmen — keine Codeblöcke -->
+- …  <!-- ein Bullet pro Punkt; kein "weil / da / weshalb" -->
 
 ## Offen / Annahmen
-<!-- Offene Wunsch-Punkte und getroffene Annahmen -->
+- …
 
 ## Repo-Fragen _(noch nicht geprüft)_
 1. …
-2. …
 ```
 
 **Meta-Fragen des Nutzers:**

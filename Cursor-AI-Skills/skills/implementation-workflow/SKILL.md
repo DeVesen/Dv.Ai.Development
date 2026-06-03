@@ -16,7 +16,7 @@ disable-model-invocation: true
 | `{frontend-path}` | Pfad zum Frontend-Projekt innerhalb von `{code-root}` |
 | `{backend-path}` | Pfad zum Backend-Projekt innerhalb von `{code-root}` |
 | `{agent-index}` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
-| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
+| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents |
 
 
 # Implementation Workflow

@@ -9,7 +9,7 @@ description: Implementierungs-Subagent für Implementation Workflow Schritt 2. S
 | Parameter | Beschreibung |
 |-----------|-------------|
 | `./AGENTS.md` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
-| `.cursor/references/verification-commands.md` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
+| `.cursor/references/verification-commands.md` | Datei mit den Verifikationsbefehlen für Agents |
 
 # Mitarbeiterprofil: Implementierer (Implementation Schritt 2)
 

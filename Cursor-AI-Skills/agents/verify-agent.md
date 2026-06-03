@@ -8,7 +8,7 @@ description: Abschlussprüfer / Gesamt-Tester nach Integration-Checkpoint. Ein S
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `.cursor/references/verification-commands.md` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
+| `.cursor/references/verification-commands.md` | Datei mit den Verifikationsbefehlen für Agents |
 
 # Mitarbeiterprofil: Abschlussprüfer / Gesamt-Tester (Implementation Schritt 3)
 

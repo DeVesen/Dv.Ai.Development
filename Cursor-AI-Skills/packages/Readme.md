@@ -40,7 +40,7 @@ Sechsphasiger Planungs-Workflow mit Scout-, Topic-Planer- und Drei-Perspektiven-
 | Parameter | Bedeutung | Beispiel |
 |-----------|-----------|---------|
 | `{agent-index}` | Datei mit Agentenübersicht im Ziel-Repo | `AGENTS.md` |
-| `{verification-commands}` | Datei mit Build/Test-Befehlen | `.github/copilot-instructions.md` |
+| `{verification-commands}` | Datei mit Build/Test-Befehlen | `.cursor/references/verification-commands.md` |
 
 ---
 
@@ -59,7 +59,7 @@ Agent-Modus Umsetzungs-Workflow: Implementierungs-Subagents (Slices), Hard Gate,
 | Parameter | Bedeutung | Beispiel |
 |-----------|-----------|---------|
 | `{agent-index}` | Datei mit Agentenübersicht | `AGENTS.md` |
-| `{verification-commands}` | Datei mit Build/Test-Befehlen | `.github/copilot-instructions.md` |
+| `{verification-commands}` | Datei mit Build/Test-Befehlen | `.cursor/references/verification-commands.md` |
 
 ---
 
@@ -134,7 +134,7 @@ Basis für alle weiteren `angular-*` Packages.
 | `{frontend-path}` | Pfad zum Angular-Projekt | `src/MyApp.Frontend` |
 | `{code-root}` | Wurzelpfad des Repositories | `my-project/` |
 | `{agent-index}` | Datei mit Agentenübersicht | `AGENTS.md` |
-| `{verification-commands}` | Datei mit Build/Test-Befehlen | `.github/copilot-instructions.md` |
+| `{verification-commands}` | Datei mit Build/Test-Befehlen | `.cursor/references/verification-commands.md` |
 
 ---
 

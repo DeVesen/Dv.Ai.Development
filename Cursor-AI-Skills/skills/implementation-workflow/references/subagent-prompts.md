@@ -2,7 +2,7 @@
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents (z. B. `.github/copilot-instructions.md`) |
+| `{verification-commands}` | Datei mit den Verifikationsbefehlen für Agents |
 
 # Subagent-Prompts — Implementation Workflow
 
@@ -86,7 +86,7 @@ Hard rules:
 - **Forbidden:** stack-wide release verification; diagnosis from raw console/Tool-UI/`terminals/*.txt` without completed MCP chain; MCP body in reports to orchestrator.
 
 After each build or test run (slice-scoped):
-1. Run the command for this slice (from copilot-instructions + plan — do not guess stack-wide commands unless the slice requires them).
+1. Run the command for this slice (from `.cursor/references/verification-commands.md` + plan — do not guess stack-wide commands unless the slice requires them).
 2. Capture exit code and **full** stdout/stderr **of this run**. If command is **in scope**: **must** read tool schemas and run `filter_output` / `filter_output_stream` with **full** capture as `raw`/`chunk` (**forbidden:** summary-as-`raw`, terminal-file content); on **every** run including exit 0; if exit ≠ 0 add `analyze_build_output`. Before each MCP call: **`Rufe genericRTK …`** in reply to orchestrator. **Internally read** MCP response before any diagnosis. **Do not** paste MCP return text; **kurze Diagnose** in own words from internal MCP only. If MCP **unreachable**: **STOP** — `BLOCKER: genericRTK nicht erreichbar` (no fix loop continue). If **out of scope**: state **Außerhalb des Scopes**, concise summary, no raw dump.
 3. If exit code ≠ 0: diagnose **only** from **internally read** MCP result when applicable, apply minimal fixes within slice scope, repeat from step 1 as needed for slice green.
 
@@ -125,7 +125,7 @@ Hard rules:
 - **Max 8 turns** in Phase 1; **max 8 turns** in Phase 2 (a “turn” = analyze → edit if needed → re-run the same command).
 
 Phase 1 — Build-fix loop (max 8 turns):
-1. Run the **check / release-style build** command for this stack (from copilot-instructions + repo docs — do not guess).
+1. Run the **check / release-style build** command for this stack (from `.cursor/references/verification-commands.md` + repo docs — do not guess).
 2. Capture exit code and **full** stdout/stderr **of this run**. If command is **in scope**: **must** read tool schemas and run `filter_output` / `filter_output_stream` with **full** capture as `raw`/`chunk` (**forbidden:** summary-as-`raw`, terminal-file content); on **every** run including exit 0; if exit ≠ 0 add `analyze_build_output`. Before each MCP call: **`Rufe genericRTK …`** in reply to orchestrator. **Internally read** MCP response before any diagnosis. **Do not** paste MCP return text; **kurze Diagnose** in own words from internal MCP only. If MCP **unreachable**: **STOP** — `BLOCKER: genericRTK nicht erreichbar` (no fix loop continue). If **out of scope**: state **Außerhalb des Scopes**, concise summary, no raw dump.
 3. If exit code ≠ 0: diagnose **only** from **internally read** MCP result when applicable (**kurze Prosa**, no raw/full log paste), apply minimal fixes, repeat from step 1.
 4. After 8 turns without success: STOP and escalate with the same reporting style (no unfiltered raw log).

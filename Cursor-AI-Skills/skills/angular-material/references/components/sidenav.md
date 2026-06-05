@@ -58,6 +58,44 @@ Seitliches Navigations-Panel neben dem Hauptinhalt. `MatSidenav` erweitert `MatD
 </mat-sidenav-container>
 ```
 
+## Responsives Muster (mobile `over` / desktop `side`)
+
+```typescript
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Component, ViewChild, inject } from '@angular/core';
+import { MatSidenav } from '@angular/material/sidenav';
+
+@Component({ ... })
+export class AppComponent {
+  @ViewChild(MatSidenav) sidenav!: MatSidenav;
+  private breakpoint = inject(BreakpointObserver);
+
+  isHandset$ = this.breakpoint.observe([Breakpoints.Handset]);
+
+  ngAfterViewInit() {
+    this.isHandset$.subscribe(state => {
+      this.sidenav.mode = state.matches ? 'over' : 'side';
+      this.sidenav.opened = !state.matches;
+    });
+  }
+}
+```
+
+```html
+<mat-sidenav-container>
+  <mat-sidenav #sidenav>
+    <!-- Navigation -->
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <button mat-icon-button (click)="sidenav.toggle()"
+            *ngIf="(isHandset$ | async)?.matches">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <router-outlet></router-outlet>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+```
+
 ## Besonderheiten / Gotchas
 
 - `side`-Modus verschiebt den Inhalt; `over`-Modus liegt darüber

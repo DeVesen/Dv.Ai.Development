@@ -60,6 +60,38 @@ Tabs organisieren Inhalte in mehrere Bereiche, von denen jeweils einer sichtbar 
 </mat-tab-group>
 ```
 
+## Navigation-Tabs — `mat-tab-nav-bar` (Router-Integration)
+
+Für Tab-artige Navigation mit Angular Router — kein `selectedIndex`, stattdessen `active`-Property auf dem Link.
+
+```html
+<!-- component.html -->
+<nav mat-tab-nav-bar [tabPanel]="tabPanel">
+  <a mat-tab-link
+     *ngFor="let link of navLinks"
+     [routerLink]="link.path"
+     routerLinkActive
+     #rla="routerLinkActive"
+     [active]="rla.isActive">
+    {{ link.label }}
+  </a>
+</nav>
+<mat-tab-nav-panel #tabPanel>
+  <router-outlet></router-outlet>
+</mat-tab-nav-panel>
+```
+
+```typescript
+navLinks = [
+  { path: '/tab1', label: 'Tab 1' },
+  { path: '/tab2', label: 'Tab 2' },
+  { path: '/tab3', label: 'Tab 3' },
+];
+```
+
+**Inputs auf `<nav mat-tab-nav-bar>`:** `tabPanel` (Pflicht für Accessibility), `animationDuration`, `disableRipple`, `stretchTabs`.
+**Input auf `<a mat-tab-link>`:** `active: boolean`, `disabled: boolean`.
+
 ## Besonderheiten / Gotchas
 
 - `<ng-template matTabContent>` aktiviert Lazy-Loading

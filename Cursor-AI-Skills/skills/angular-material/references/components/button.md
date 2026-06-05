@@ -43,6 +43,12 @@ Direktiven auf nativen `<button>` und `<a>` Elementen. M3 bietet 5 Erscheinungsb
 <button mat-fab color="primary"><mat-icon>add</mat-icon></button>
 <button mat-mini-fab><mat-icon>edit</mat-icon></button>
 
+<!-- Extended FAB (M3) -->
+<button mat-fab extended>
+  <mat-icon>add</mat-icon>
+  Neuer Eintrag
+</button>
+
 <!-- Link-Button -->
 <a mat-button routerLink="/home">Zurück zur Startseite</a>
 ```
@@ -53,3 +59,4 @@ Direktiven auf nativen `<button>` und `<a>` Elementen. M3 bietet 5 Erscheinungsb
 - `<a matButton>` rendert semantisch als Link, verhält sich visuell wie Button
 - `setAppearance()` für programmatisches Ändern des Erscheinungsbilds
 - `color` wirkt nur in M2-Themes
+- `mat-fab extended` (oder `<button mat-extended-fab>`) rendert einen FAB mit Textlabel; empfohlen wenn der Aktionskontext nicht eindeutig aus dem Icon hervorgeht

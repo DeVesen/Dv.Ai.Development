@@ -49,7 +49,29 @@
 </table>
 ```
 
+## Programmatisches Sortieren — `MatSortable`
+
+```typescript
+export interface MatSortable {
+  id: string;
+  start: 'asc' | 'desc';
+  disableClear: boolean;
+}
+
+// Initiale Sortierung setzen:
+@ViewChild(MatSort) sort!: MatSort;
+
+ngAfterViewInit() {
+  this.dataSource.sort = this.sort;
+  // Programmatisch sortieren:
+  this.sort.sort({ id: 'name', start: 'asc', disableClear: true });
+}
+```
+
+`MatSort`-Service-Properties: `active: string`, `direction: SortDirection`, `sortables: Map<string, MatSortable>`.
+
 ## Besonderheiten / Gotchas
 
 - `MatTableDataSource` mit eingebauter Sortierung: `dataSource.sort = this.sort`
 - `SortDirection` ist `'asc' | 'desc' | ''`
+- Initiale Sortierung: `this.sort.sort({ id: 'columnId', start: 'asc', disableClear: true })` in `ngAfterViewInit`

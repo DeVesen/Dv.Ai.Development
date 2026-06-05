@@ -48,7 +48,7 @@ Flexibles, datengebundenes Tabellen-Framework auf Basis des CDK-Table. Beliebige
   <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
   <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selectRow(row)"></tr>
   <tr mat-footer-row *matFooterRowDef="displayedColumns; sticky: true"></tr>
-  <tr class="mat-row" *matNoDataRow>
+  <tr matNoDataRow>
     <td class="mat-cell" [attr.colspan]="displayedColumns.length">Keine Einträge</td>
   </tr>
 </table>
@@ -70,8 +70,45 @@ applyFilter(event: Event) {
 }
 ```
 
+## MatTableDataSource API
+
+| Property/Methode | Typ | Beschreibung |
+|-----------------|-----|-------------|
+| `data: T[]` | `T[]` | Rohdaten |
+| `filter: string` | `string` | Aktiver Filterstring |
+| `filteredData: T[]` | readonly | Gefilterte Daten |
+| `sort: MatSort \| null` | property | Verknüpfte Sort-Direktive |
+| `paginator: MatPaginator \| null` | property | Verknüpfter Paginator |
+| `filterPredicate: (data: T, filter: string) => boolean` | Funktion | Eigene Filterlogik (überschreibbar) |
+| `sortingDataAccessor: (data: T, sortHeaderId: string) => string \| number` | Funktion | Spalten-Wert für Sortierung |
+| `sortData: (data: T[], sort: MatSort) => T[]` | Funktion | Vollständige Sortierlogik überschreiben |
+
+### Beispiel: Eigener `filterPredicate`
+
+```typescript
+this.dataSource.filterPredicate = (data: MyRow, filter: string) => {
+  const search = filter.toLowerCase();
+  return data.name.toLowerCase().includes(search)
+      || data.description.toLowerCase().includes(search);
+};
+
+// Filter anwenden
+this.dataSource.filter = searchInput.value.trim().toLowerCase();
+```
+
+### Beispiel: Eigener `sortingDataAccessor`
+
+```typescript
+this.dataSource.sortingDataAccessor = (data: MyRow, sortHeaderId: string) => {
+  switch (sortHeaderId) {
+    case 'date': return new Date(data.dateString).getTime();
+    default: return (data as any)[sortHeaderId];
+  }
+};
+```
+
 ## Besonderheiten / Gotchas
 
-- `MatTableDataSource` hat eingebaute `filter`-, `sort`-, `paginator`-Properties
+- `MatTableDataSource` hat eingebaute `filter`-, `sort`-, `paginator`-Properties; `filterPredicate` und `sortingDataAccessor` sind für eigene Logik überschreibbar
 - Sticky-Spalten: `[sticky]="true"` auf `MatColumnDef`; `fixedLayout="true"` auf Tabelle
 - HTML-`<table>` Syntax: `<table mat-table>` statt `<mat-table>`

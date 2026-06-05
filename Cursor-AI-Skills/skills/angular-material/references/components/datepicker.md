@@ -62,3 +62,37 @@ Besteht aus mehreren zusammenarbeitenden Komponenten: Eingabefeld (`input[matDat
 - `MatNativeDateModule` (oder `MatMomentDateModule`) **muss** importiert werden — sonst Fehler
 - Für Datumsbereiche: `<mat-date-range-input>` und `<mat-date-range-picker>`
 - `matDatepickerFilter` verhindert Auswahl bestimmter Tage (z.B. Wochenenden)
+
+## Date Range Picker
+
+Für die Auswahl eines Zeitraums: `<mat-date-range-input>` enthält `matStartDate` und `matEndDate`, `<mat-date-range-picker>` öffnet den Kalender.
+
+**Import:** `MatDateRangeInput`, `MatDateRangePicker`, `MatStartDate`, `MatEndDate`, `MatDateRangeSelectionStrategy`
+
+```html
+<mat-form-field>
+  <mat-label>Zeitraum</mat-label>
+  <mat-date-range-input [rangePicker]="rangePicker" [min]="minDate" [max]="maxDate">
+    <input matStartDate formControlName="start" placeholder="Startdatum">
+    <input matEndDate formControlName="end" placeholder="Enddatum">
+  </mat-date-range-input>
+  <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+  <mat-date-range-picker #rangePicker></mat-date-range-picker>
+</mat-form-field>
+```
+
+```typescript
+form = new FormGroup({
+  start: new FormControl<Date | null>(null),
+  end: new FormControl<Date | null>(null),
+});
+```
+
+**DateRange-Inputs (`<mat-date-range-input>`):**
+- `rangePicker` — verknüpfter `MatDateRangePicker`
+- `min` / `max` — Begrenzungsdaten
+- `disabled` — Deaktivieren
+
+**`DateRange<D>`-Typ:** `{ start: D | null; end: D | null }` — kann für programmatischen Zugriff genutzt werden.
+
+**Benutzerdefinierte Auswahlstrategie:** `MatDateRangeSelectionStrategy<D>` implementieren und via `MAT_DATE_RANGE_SELECTION_STRATEGY` bereitstellen.

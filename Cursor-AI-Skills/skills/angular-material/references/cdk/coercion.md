@@ -68,7 +68,7 @@ coerceCssPixelValue('2em'); // '2em' (unverändert)
 
 ## Besonderheiten
 
-- `coerceBooleanProperty('')` gibt `false` zurück — leere Strings werden als `false` interpretiert.
+- `coerceBooleanProperty('')` gibt `true` zurück — ein leerer String bedeutet dass das Attribut gesetzt ist (z. B. `<my-button disabled>`).
 - `coerceBooleanProperty(null)` und `coerceBooleanProperty(undefined)` geben `false` zurück.
 - `coerceNumberProperty` verwendet sowohl `parseFloat` als auch `Number()` für robustere Validierung (z.B. wird `'123hello'` nicht als gültige Zahl akzeptiert).
 - Ein optionaler Fallback-Wert kann als zweites Argument an `coerceNumberProperty` übergeben werden.

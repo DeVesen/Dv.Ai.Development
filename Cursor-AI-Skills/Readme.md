@@ -460,6 +460,56 @@ _keine — verwendet `{frontend-path}` aus `angular-bundle`_
 
 ---
 
+### angular-material
+
+Vollständige Angular Material v22.0.0 Referenz — alle 35 Komponenten, 23 CDK-Module und 8 Guides.
+
+**Abhängigkeiten:** `angular-bundle`
+
+#### Operations
+
+| Operation | Trigger |
+|-----------|---------|
+| Material Komponenten | Automatisch bei `mat-`-Selektoren, `MatDialog`, `MatTable`, `mat-form-field` etc. |
+| CDK-Arbeit | `CdkDrag`, `Overlay`, `FocusMonitor`, Virtual Scrolling, `BreakpointObserver` |
+| Theming | `mat.theme()`, M3-Paletten, Token Overrides, `--mat-sys-` |
+| Installation | `ng add @angular/material`, `provideAnimationsAsync()` |
+
+```
+mat-button, mat-form-field, mat-table, MatDialog, matSort, MatSnackBar
+mat-datepicker, mat-chips, mat-select, mat-sidenav, mat-stepper
+cdkDrag, cdkDropList, Overlay, FocusMonitor, BreakpointObserver
+mat.theme(), --mat-sys-primary, ng add @angular/material
+```
+
+#### Rules
+
+_keine eigene Rule — wird durch `angular-bundle` → `angular-skills.mdc` getriggert_
+
+#### Skills
+
+| Datei | Inhalt |
+|-------|--------|
+| `skills/angular-material/skill.md` | Operationen-Tabelle: 35 Komponenten, 23 CDK-Module, 8 Guides + Theming-Schnellreferenz |
+
+#### References
+
+| Datei | Inhalt |
+|-------|--------|
+| `skills/angular-material/references/components/` | 35 Komponenten-Referenzen (autocomplete … table) |
+| `skills/angular-material/references/cdk/` | 23 CDK-Modul-Referenzen (a11y … tree) |
+| `skills/angular-material/references/guides/` | 8 Guides (Installation, Theming, Schematics u. a.) |
+
+#### Sub-Agents
+
+_keine_
+
+#### Parameters
+
+_keine_
+
+---
+
 ### angular-material-custom-input
 
 Implementierung von Custom Angular Material Form Controls (`ControlValueAccessor`). Setzt `angular-bundle` voraus.
@@ -971,6 +1021,7 @@ Nach der Installation alle `{parameter}`-Platzhalter in `agents/`, `rules/` und 
 ado-requests-stories      →  buddy-agent
 buddy-agent               →  describe-as-prompt, commit-message
 angular-refactor          →  angular-bundle
+angular-material          →  angular-bundle
 angular-material-*        →  angular-bundle
 describe-as-html-prompt   →  describe-as-prompt
 implementation-workflow   →  genericrtk-filter

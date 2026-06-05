@@ -116,6 +116,7 @@ export class TooltipComponent implements OnDestroy {
 
 - **Strukturelle Styles**: Müssen manuell importiert werden wenn Material nicht verwendet wird: `@angular/cdk/overlay-prebuilt.css`.
 - **Z-Index**: Overlays werden in einem eigenen Container außerhalb des App-Roots gerendert.
-- **FlexibleConnectedPositionStrategy**: Unterstützt mehrere Fallback-Positionen, Viewport-Margins, `push: true` um das Overlay in sichtbaren Bereich zu drängen.
+- **GlobalPositionStrategy** (`overlay.position().global()`): Methoden `.top(v)`, `.bottom(v)`, `.left(v)`, `.right(v)`, `.centerHorizontally()`, `.centerVertically()` — positioniert das Overlay relativ zum Viewport.
+- **FlexibleConnectedPositionStrategy**: `.withFlexibleDimensions(true)` erlaubt wachsendes Overlay, `.withPush(true)` drängt es in den sichtbaren Bereich, `.withViewportMargin(n)` setzt Mindestabstand zum Viewport-Rand, `.withLockedPosition(true)` verhindert Neupositionierung beim Scrollen.
 - **PositionStrategy**: Benutzerdefinierte Strategien durch Implementierung des `PositionStrategy`-Interface möglich.
 - `STANDARD_DROPDOWN_ADJACENT_POSITIONS` und `STANDARD_DROPDOWN_BELOW_POSITIONS` sind vordefinierte Position-Arrays.

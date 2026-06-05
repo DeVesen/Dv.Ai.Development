@@ -51,8 +51,19 @@ Vollständig barrierefreier Dropdown-Selektor mit Material Design-Styling. Unter
 </mat-form-field>
 ```
 
+## `MatOption` und `MatOptgroup` API
+
+**Inputs `<mat-option>`:** `value: any`, `disabled: boolean`, `id: string`
+
+**Outputs `<mat-option>`:** `onSelectionChange: EventEmitter<MatOptionSelectionChange>`
+
+**Methoden `MatOption`:** `select()`, `deselect()`, `focus()`
+
+**Inputs `<mat-optgroup>`:** `label: string`, `disabled: boolean`
+
 ## Besonderheiten / Gotchas
 
 - Bei Objektwerten `compareWith` implementieren — sonst fehlt Auswahl nach Datenneu-Laden
 - `<mat-select-trigger>` für benutzerdefinierte Anzeige im geschlossenen Zustand
 - `MAT_SELECT_CONFIG` für applikationsweite Standardkonfiguration
+- `MAT_OPTION_PARENT_COMPONENT` und `MAT_OPTGROUP` sind interne Tokens; für programmatischen Zugriff `MatOption.select()` / `MatOption.deselect()` verwenden

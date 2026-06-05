@@ -34,6 +34,7 @@ Kurze Benachrichtigungen am unteren Bildschirmrand. Einfache Text-Snackbars via 
 | Methode | Beschreibung |
 |---------|-------------|
 | `dismiss()` | Schließen |
+| `afterOpened()` | Observable: nach Öffnen |
 | `afterDismissed()` | Observable: nach Schließen |
 | `onAction()` | Observable: Aktions-Klick |
 

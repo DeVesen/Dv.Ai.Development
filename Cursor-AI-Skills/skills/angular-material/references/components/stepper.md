@@ -61,8 +61,53 @@ Führt Benutzer durch mehrstufige Prozesse (Wizards, mehrteilige Formulare). Hor
 </mat-stepper>
 ```
 
+## Stepper-Icons (benutzerdefiniert)
+
+```html
+<mat-stepper>
+  <ng-template matStepperIcon="edit">
+    <mat-icon>create</mat-icon>
+  </ng-template>
+  <ng-template matStepperIcon="done">
+    <mat-icon>check_circle</mat-icon>
+  </ng-template>
+  <!-- Schritte ... -->
+</mat-stepper>
+```
+
+Mögliche Werte für `matStepperIcon`: `'number'` (aktiver Schritt), `'edit'` (bearbeitbarer Schritt), `'done'` (abgeschlossener Schritt), `'error'`.
+
+## Lokalisierung — `MatStepperIntl`
+
+```typescript
+import { MatStepperIntl } from '@angular/material/stepper';
+import { Injectable } from '@angular/core';
+
+@Injectable()
+export class CustomStepperIntl extends MatStepperIntl {
+  override optionalLabel = 'Optional';
+  override completedLabel = 'Abgeschlossen';
+  override editableLabel = 'Bearbeiten';
+}
+
+// In providers:
+providers: [{ provide: MatStepperIntl, useClass: CustomStepperIntl }]
+```
+
+## Methoden — `MatStepper`
+
+| Methode | Beschreibung |
+|---------|-------------|
+| `next()` | Nächster Schritt |
+| `previous()` | Vorheriger Schritt |
+| `reset()` | Alle Schritte zurücksetzen (Index 0, Formulare zurücksetzen) |
+| `selectedIndex` | Aktiver Index (lesen/setzen) |
+
 ## Besonderheiten / Gotchas
 
 - `matStepperNext` und `matStepperPrevious` als Direktiven auf Buttons
 - `<ng-template matStepLabel>` für Rich-Content-Labels mit Icons
 - `<ng-template matStepContent>` für Lazy-Loading des Schritts-Inhalts
+- `reset()` setzt `selectedIndex` auf 0 und ruft `reset()` auf allen `stepControl`-Formularen auf
+- `MAT_STEPPER_GLOBAL_OPTIONS: { showError: boolean, displayDefaultIndicatorType: boolean }` — applikationsweite Stepper-Konfiguration
+- `linear="true"`: Validierung mit `stepControl`-Property auf jedem Schritt; erst wenn gültig kann vorwärts navigiert werden

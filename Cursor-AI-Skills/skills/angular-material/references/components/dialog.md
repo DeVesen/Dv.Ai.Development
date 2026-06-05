@@ -25,6 +25,14 @@ Service für modale Dialoge mit beliebigen Komponenten als Inhalt. Strukturelle 
 | `autoFocus` | `AutoFocusTarget \| string \| boolean` | Fokus beim Öffnen |
 | `restoreFocus` | `boolean` | Fokus nach Schließen |
 | `closeOnNavigation` | `boolean` | Bei Navigation schließen |
+| `scrollStrategy` | `ScrollStrategy` | Scroll-Verhalten während Dialog offen |
+| `id` | `string` | Dialog-ID für `getDialogById()` |
+| `enterAnimationDuration` | `string \| number` | Öffnen-Animations-Dauer (z.B. `'150ms'`) |
+| `exitAnimationDuration` | `string \| number` | Schließen-Animations-Dauer |
+| `ariaLabelledBy` | `string` | ID des Elements das den Dialog benennt |
+| `ariaDescribedBy` | `string` | ID des Elements das den Dialog beschreibt |
+| `ariaModal` | `boolean` | ARIA-modal Attribut |
+| `injector` | `Injector` | Benutzerdefinierter Injector |
 
 ## `MatDialogRef`-Methoden
 
@@ -56,6 +64,28 @@ dialogRef.afterClosed().subscribe(result => {
   <button mat-button mat-dialog-close>Abbrechen</button>
   <button mat-button [mat-dialog-close]="true" cdkFocusInitial>Löschen</button>
 </mat-dialog-actions>
+```
+
+## MatDialog Service Properties
+
+| Property/Methode | Beschreibung |
+|-----------------|-------------|
+| `openDialogs: MatDialogRef<any>[]` | Alle aktuell offenen Dialoge |
+| `afterAllClosed: Observable<void>` | Observable: alle Dialoge geschlossen |
+| `getDialogById(id: string)` | Dialog per ID suchen |
+| `closeAll()` | Alle Dialoge schließen |
+
+## Daten mit `inject()` (v14+, empfohlen)
+
+```typescript
+import { inject } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+
+@Component({ ... })
+export class ConfirmDialogComponent {
+  data = inject<{ message: string }>(MAT_DIALOG_DATA);
+  dialogRef = inject(MatDialogRef<ConfirmDialogComponent>);
+}
 ```
 
 ## Besonderheiten / Gotchas

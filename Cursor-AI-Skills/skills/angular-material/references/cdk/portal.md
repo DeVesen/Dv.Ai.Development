@@ -85,13 +85,12 @@ export class ParentComponent {
 ```
 
 ```typescript
-// DomPortalOutlet für Rendering außerhalb des Angular-Baums
+// DomPortalOutlet für Rendering außerhalb des Angular-Baums (v14+, kein ComponentFactoryResolver nötig)
 import { DomPortalOutlet, ComponentPortal, ApplicationRef } from '@angular/cdk/portal';
 import { Injector } from '@angular/core';
 
 const outlet = new DomPortalOutlet(
   document.body,
-  componentFactoryResolver,
   appRef,
   injector
 );
@@ -105,3 +104,4 @@ outlet.attach(new ComponentPortal(NotificationComponent));
 - `TemplatePortal` benötigt eine `ViewContainerRef` für die Erzeugung.
 - Das Portal-System bildet die Grundlage für `Overlay`, `Dialog` und andere CDK-Komponenten.
 - `CdkPortalOutlet` emittiert bei jedem Anhängen das zugehörige Portal-Ref-Objekt.
+- `DomPortalOutlet` benötigt seit Angular v14 (Ivy) keinen `ComponentFactoryResolver` mehr — der Konstruktor akzeptiert nur noch `(element, appRef, injector)`.

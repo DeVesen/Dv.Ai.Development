@@ -20,7 +20,7 @@ disable-model-invocation: true
 |---------|-----------|--------|
 | `mat-autocomplete`, `matAutocomplete` | Autocomplete | [references/components/autocomplete.md](references/components/autocomplete.md) |
 | `mat-checkbox`, `MatCheckbox` | Checkbox | [references/components/checkbox.md](references/components/checkbox.md) |
-| `mat-datepicker`, `MatDatepicker` | Datepicker | [references/components/datepicker.md](references/components/datepicker.md) |
+| `mat-datepicker`, `MatDatepicker`, `mat-date-range-input`, `mat-date-range-picker`, `MatDateRangeInput` | Datepicker | [references/components/datepicker.md](references/components/datepicker.md) |
 | `mat-form-field`, `MatFormField` | Form Field | [references/components/form-field.md](references/components/form-field.md) |
 | `matInput`, `MatInput` | Input | [references/components/input.md](references/components/input.md) |
 | `mat-radio-button`, `mat-radio-group` | Radio Button | [references/components/radio-button.md](references/components/radio-button.md) |
@@ -38,7 +38,7 @@ disable-model-invocation: true
 | `mat-stepper`, `mat-step`, `matStepperNext` | Stepper | [references/components/stepper.md](references/components/stepper.md) |
 | `mat-tab-group`, `mat-tab` | Tabs | [references/components/tabs.md](references/components/tabs.md) |
 | `mat-tree`, `mat-tree-node` | Tree | [references/components/tree.md](references/components/tree.md) |
-| `matButton`, `mat-button`, `mat-raised-button`, `mat-icon-button`, `mat-fab` | Button | [references/components/button.md](references/components/button.md) |
+| `matButton`, `mat-button`, `mat-flat-button`, `mat-raised-button`, `mat-stroked-button`, `mat-icon-button`, `mat-fab`, `mat-extended-fab` | Button | [references/components/button.md](references/components/button.md) |
 | `mat-button-toggle`, `mat-button-toggle-group` | Button Toggle | [references/components/button-toggle.md](references/components/button-toggle.md) |
 | `matBadge` | Badge | [references/components/badge.md](references/components/badge.md) |
 | `mat-chip`, `mat-chip-grid`, `mat-chip-listbox`, `matChipInputFor` | Chips | [references/components/chips.md](references/components/chips.md) |
@@ -144,6 +144,8 @@ html {
 | `MAT_SNACK_BAR_DEFAULT_OPTIONS` | Standardoptionen für Snack Bars |
 | `MAT_RIPPLE_GLOBAL_OPTIONS` | Globale Ripple-Konfiguration |
 | `MAT_PAGINATOR_DEFAULT_OPTIONS` | Standardoptionen für Paginator |
+| `MAT_BOTTOM_SHEET_DEFAULT_OPTIONS` | Standardoptionen für Bottom Sheets |
+| `MAT_EXPANSION_PANEL_DEFAULT_OPTIONS` | Standardoptionen für Expansion Panels |
 | `MAT_SELECT_CONFIG` | Standardkonfiguration für Select |
 
 ## Opt-out

@@ -81,22 +81,39 @@ export class VirtualListComponent {
 
 ```typescript
 // Benutzerdefinierte Scroll-Strategie für variable Item-Größen
+// HINWEIS: Angular CDK hat keine eingebaute VariableSizeVirtualScrollStrategy.
+// Sie müssen das VirtualScrollStrategy-Interface selbst implementieren.
 import { VIRTUAL_SCROLL_STRATEGY, VirtualScrollStrategy } from '@angular/cdk/scrolling';
+import { ListRange } from '@angular/cdk/collections';
+import { Subject } from 'rxjs';
 
-@Directive({ selector: '[variableSizeScroll]', providers: [{
+class CustomVariableScrollStrategy implements VirtualScrollStrategy {
+  scrolledIndexChange = new Subject<number>();
+  private _viewport: any = null;
+
+  attach(viewport: any) { this._viewport = viewport; }
+  detach() { this._viewport = null; }
+  onContentScrolled() { /* eigene Scroll-Logik */ }
+  onDataLengthChanged() { /* bei Datenmenge-Änderung */ }
+  onContentRendered() {}
+  onRenderedOffsetChanged() {}
+  scrollToIndex(index: number, behavior: ScrollBehavior) {}
+}
+
+@Directive({ selector: '[customVariableScroll]', providers: [{
   provide: VIRTUAL_SCROLL_STRATEGY,
-  useFactory: (d: VariableSizeScrollDirective) => d.scrollStrategy,
-  deps: [VariableSizeScrollDirective]
+  useFactory: (d: CustomVariableScrollDirective) => d.scrollStrategy,
+  deps: [CustomVariableScrollDirective]
 }]})
-export class VariableSizeScrollDirective {
-  scrollStrategy = new VariableSizeScrollStrategy(/* ... */);
+export class CustomVariableScrollDirective {
+  scrollStrategy = new CustomVariableScrollStrategy();
 }
 ```
 
 ## Besonderheiten
 
 - `appendOnly: true` verhindert das Entfernen von bereits gerenderten Items — sinnvoll wenn Items über die Zeit wachsen können.
-- Für variable Item-Größen muss eine benutzerdefinierte `VirtualScrollStrategy` implementiert werden.
+- Für variable Item-Größen muss das Interface `VirtualScrollStrategy` selbst implementiert werden — Angular CDK stellt dafür keine fertige Strategie bereit. Das Interface verlangt: `attach()`, `detach()`, `onContentScrolled()`, `onDataLengthChanged()`, `onContentRendered()`, `onRenderedOffsetChanged()`, `scrollToIndex()`.
 - `ScrollDispatcher` verwendet `auditTime()` intern, um Scroll-Events zu drosseln.
 - `ViewportRuler` liefert `getViewportSize()`, `getViewportRect()` und `getViewportScrollPosition()`.
 - Virtual Scrolling erfordert eine **feste Höhe/Breite** am `cdk-virtual-scroll-viewport`.

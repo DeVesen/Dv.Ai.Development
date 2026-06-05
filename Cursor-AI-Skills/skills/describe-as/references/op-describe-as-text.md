@@ -58,9 +58,10 @@ Pflicht-Abschnitte (leere weglassen oder `keine im Thread`):
 4. `## Beispiele aus der Unterhaltung` — Edge Cases, User Stories, Fehlermeldungen aus Thread.
 5. `## Referenzen (Skills, Regeln, Docs)` — `@.cursor/skills/...`, `.mdc` Rules, `./AGENTS.md`-Einträge, URLs, Befehle.
 6. `## Acceptance criteria` — Wenn im Thread besprochen.
-7. `## Edge cases / open questions` — Offene Entscheidungen explizit.
-8. `## Current vs desired behavior` — Wenn Thread Ist/Soll kontrastiert.
-9. `## Planning obligation` — **Nur wenn Planning-relevant (nicht Wasserdicht):** Nächsten Agent anweisen `@.cursor/skills/planning-workflow` zu laden und Phase 1–6 strikt zu befolgen. Subagent-Prompts: `.cursor/skills/planning-workflow/references/subagent-prompts.md`.
+7. `## Decisions / already clarified` — In Buddy-Sparring oder Thread **bereits geklärte** Entscheidungen, Richtungen, beantwortete Fragen. Plan-agent **darf diese nicht erneut hinterfragen**.
+8. `## Edge cases / open questions` — **Nur noch offene** Entscheidungen explizit.
+9. `## Current vs desired behavior` — Wenn Thread Ist/Soll kontrastiert.
+10. `## Planning obligation` — **Nur wenn Planning-relevant (nicht Wasserdicht):** Nächsten Agent anweisen `@.cursor/skills/planning-workflow` zu laden und Phase 1–6 strikt zu befolgen. Subagent-Prompts: `.cursor/skills/planning-workflow/references/subagent-prompts.md`. Bei Buddy-Handoff: Verweis auf Abschnitt **Eingabe Buddy-Plan-Prompt** im Planning-Skill.
 
 Sprache: Nutzersprache, außer Englisch explizit gewünscht.
 

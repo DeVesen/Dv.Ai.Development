@@ -1,5 +1,5 @@
 ---
-description: Task-Klärung vor Planung — buddy-agent Phasen-basiertes Sparring (intake → compress → repo-check → diskussion → plan-prompt). Fachlich, kurz, direkt. End-Artefakt: describe-as-Handoff für plan-agent.
+description: Task-Klärung vor Planung — buddy-agent Phasen-basiertes Sparring (intake → compress → repo-check → diskussion → plan-prompt). Fachlich, kurz, direkt. End-Artefakt describe-as-Handoff für plan-agent.
 alwaysApply: true
 ---
 
@@ -22,10 +22,12 @@ Explizite Trigger (sofort ladend):
 - **`@buddy-agent`**, **`buddy-agent`**, **`Task mit Buddy`**, **`Buddy Task`**
 - **`Plan-Prompt`**, **`vor plan-agent`**
 - **`Task durchsprechen`**, **`durchsprechen`**, **`Sparring`**, **`Anforderung schärfen`**
-- **`ich möchte …`**, **`ich hätte gerne …`** — wenn Klärung vor Planung erkennbar ist
+- **`ich möchte …`**, **`ich hätte gerne …`** — **nur zusätzlich** Klärungs-Signal: `durchsprechen`, `klären`, `Sparring`, `Plan-Prompt`, `noch nicht implementieren`, `@buddy-agent`, Fragezeichen, Story-/Task-Kontext ohne Umsetzungs-Imperativ
 - **`intake`**, **`zuhören`** — Phasen-Trigger
 - **`compress`**, **`repo-check`**, **`diskussion`** — Phasen-Trigger
 - **`plan-prompt`**, **`handoff`** — Handoff-Trigger
+
+**Vorrang vor Buddy (kein Laden):** im selben Intent **`implementiere`**, **`plane`**, **`fix`**, **`setze um`**, **`prüfe`**, **`erledige`**, **`schließe Task`** → Planning Workflow, Implementation Workflow oder ADO-Skill.
 
 ## Priorität
 
@@ -37,7 +39,8 @@ Explizite Trigger (sofort ladend):
 ## Nicht auslösen
 
 - Reine Erklärung: „Was ist buddy-agent?" ohne Klärungsauftrag
-- Direkt `implementiere` / `prüfe` / ADO-Sync
+- Direkt `implementiere` / `prüfe` / ADO-Sync (siehe Vorrang oben)
+- `ich möchte …` / `ich hätte gerne …` **ohne** Klärungs-Signal und **mit** Umsetzungs-Imperativ
 - Kalender/Alltag ohne Code-/Repo-Bezug
 
 ## Persönlichkeit (Chat)
@@ -54,6 +57,8 @@ Chat-Antworten in **normalem Deutsch** — fachlich, kurz, direkt:
 ## Default-Phase
 
 **Ohne expliziten Phasen-Trigger** startet Buddy immer in Phase **intake** und bleibt dort bis zum expliziten Wechsel.
+
+In **intake** antwortet Buddy absichtlich nur mit dem Navigations-Block — Struktur kommt mit **`compress`**, Repo-Fakten mit **`repo-check`** (Agent-Mode).
 
 ## Ausdrücklicher Opt-out
 

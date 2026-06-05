@@ -88,7 +88,7 @@ Review auf unvollstaendigem Plan.
 
 |-------|--------------|--------------|-------------------|
 
-| **1** | Request pruefen; bei Mehrdeutigkeit **Fragen** | 1, 2 | — |
+| **1** | Request pruefen; bei Mehrdeutigkeit **Fragen** (Ausnahme: Buddy-Handoff, siehe unten) | 1, 2 | — |
 
 | **2** | Scouts: Code **nur fuer die Anforderung** kartieren | 3 | Stufe 1 |
 
@@ -283,6 +283,8 @@ plan-agent (Phase 1–2)
 
   Planinhalt aendern koennten. **Phase 1:** Bei offenen Punkten **zuerst** Nutzer fragen — **kein** Scout/Plan vor Klaerung.
 
+  **Ausnahme Buddy-Plan-Prompt:** Wenn Eingabe ein Buddy-Handoff (describe-as Section B) ist oder enthaelt — siehe Abschnitt **Eingabe Buddy-Plan-Prompt** — **keine** Rueckfragen zu Eintraegen unter `## Decisions / already clarified`; nur noch fragen, wenn **neue** Mehrdeutigkeit den Planinhalt aendern wuerde und im Handoff nicht unter Edge cases steht.
+
 - **Phasen-Gates:** Siehe Abschnitt **Phasen-Gates (verbindlich)** — keine Cross-Phase-Parallelitaet.
 
 - **Codebereichs-Scouting (Phase 3):** unmittelbar nach Phase 2 (Zwischenstand) **mindestens einen**
@@ -439,25 +441,66 @@ plan-agent (Phase 1–2)
 
 
 
+## Eingabe Buddy-Plan-Prompt (bevorzugt)
+
+
+
+**Bevorzugte Eingabe** fuer `plane …` / plan-agent: describe-as-Handoff aus [buddy-agent.md](../../agents/buddy-agent.md) (Phase **plan-prompt**), Section B.
+
+
+
+Wenn der Nutzer einen Buddy-Handoff liefert (ganzer Prompt oder Section B eingebettet):
+
+
+
+| Handoff-Abschnitt | Planungs-Nutzung |
+|-------------------|------------------|
+| `## Goal` | Zielbild, Motivation, Ist-Kontext (**Was**) |
+| `## Code & Fundstellen` | **Wo** im Repo — fuer Scout-Auftrag Phase 3, nicht erneut beim Nutzer erfragen |
+| `## Acceptance criteria` | Bindend fuer Plan und Review |
+| `## Decisions / already clarified` | **Abgeschlossen** — **nicht** erneut hinterfragen |
+| `## Edge cases / open questions` | Einzige Quelle fuer verbleibende Nutzer-Fragen in Phase 1 |
+| `## Current vs desired behavior` | Ist/Soll fuer Phase 2 und 4a |
+
+
+
+**Phase 1 mit Buddy-Handoff:**
+
+
+
+- Handoff als **verbindliche Anforderungsbasis** behandeln — nicht von vorn aufrollen.
+
+- **Verboten:** Rueckfragen zu Punkten unter `## Decisions / already clarified`.
+
+- **Erlaubt:** Fragen **nur** zu Eintraegen unter `## Edge cases / open questions` oder zu **neuer** Mehrdeutigkeit im aktuellen Nutzer-Text, die den Planinhalt aendern wuerde.
+
+- **Ziel:** Idealerweise **null** Nutzer-Fragen in Phase 1–2, wenn Handoff vollstaendig ist — direkt Phase 2 und Phase 3.
+
+
+
+**Phase 2 mit Buddy-Handoff:** Zwischenstand aus Handoff-Abschnitten zusammenfassen (Goal, AC, Decisions, offene Edge cases) — kein paraphrasierendes Neuverhandeln.
+
+
+
 ## Phase 1 - Anforderung pruefen (ohne Code-Kontext)
 
 
 
 **Erlaubt:** Verstaendnis der Aufgabe, Zielbild, Randbedingungen,
 
-Akzeptanzkriterien, minimale Klaerungsfragen bei Mehrdeutigkeit.
+Akzeptanzkriterien, minimale Klaerungsfragen bei Mehrdeutigkeit — **nur** wo Buddy-Handoff fehlt oder Edge cases offen sind (siehe **Eingabe Buddy-Plan-Prompt**).
 
 
 
 **Verboten:** Code-Recherche, Dateisuche, Repo-Navigation, Architekturannahmen
 
-aus dem Kopf, Entwurf oder Finalisierung eines Umsetzungsplans.
+aus dem Kopf, Entwurf oder Finalisierung eines Umsetzungsplans; Rueckfragen zu bereits geklaerten Buddy-Entscheidungen.
 
 
 
 Bei Bedarf: grobe Einschaetzung von Komplexitaet und Unsicherheit, rein aus dem
 
-Gespraech, nicht aus Code.
+Gespraech/Handoff, nicht aus Code.
 
 
 
@@ -467,7 +510,7 @@ Gespraech, nicht aus Code.
 
 Kurze Zusammenfassung dessen, was bisher vereinbart/gesichert ist (Ziel,
 
-Randbedingungen, Akzeptanzkriterien, offene Punkte).
+Randbedingungen, Akzeptanzkriterien, offene Punkte). Bei Buddy-Handoff: aus Section B uebernehmen, nicht neu erfinden.
 
 
 
@@ -1000,8 +1043,8 @@ Perspektiven vorhanden).
 Copy-Befehl **`Task … in Story … verfeinern`** im [ado](../ado/SKILL.md)-Skill ist **kein** Ersatz fuer diesen Planning Workflow (**Legacy**):
 
 - **Verfeinern (Legacy):** menschenlesbare Task-MD ([task-verfeinern.md](../ado/references/task-verfeinern.md)) — interaktiver 5-Phasen-Dialog im Orchestrator; **kein** finales Planpaket / keine Umsetzungs-Topologie in der Datei.
-- **buddy-agent (Standard, Phase 2):** read-only Sparring — End-Artefakt **Plan-Prompt** ([buddy-agent.md](../../agents/buddy-agent.md)) mit Pflichtabschnitten Wo/Was/AC; **kein** finales Planpaket; **kein** IMP-Slice-Vorgehen im Prompt.
-- **`plane Task …`:** dieser Planning Workflow — **bevorzugte Eingabe** ist der **Plan-Prompt aus Buddy** (ggf. plus `task-*.md`); finales Planpaket und **Umsetzungs-Topologie** zur Freigabe **im Chat**.
+- **buddy-agent (Standard):** read-only Sparring — End-Artefakt **Plan-Prompt** ([buddy-agent.md](../../agents/buddy-agent.md)) als describe-as-Handoff: **Wo** → `## Code & Fundstellen`, **Was** → `## Goal` + Fundstellen, **Achten** → offene `## Edge cases / open questions`, geklaerte Punkte → `## Decisions / already clarified` (Planer nicht erneut hinterfragen); **kein** finales Planpaket; **kein** IMP-Slice-Vorgehen im Prompt.
+- **`plane Task …`:** dieser Planning Workflow — **bevorzugte Eingabe** ist der **vollständige Plan-Prompt aus Buddy** (Section B inkl. `## Decisions / already clarified`, Fundstellen, AC; ggf. plus `task-*.md`); Phase 1–2 ideally ohne Rueckfragen zu geklaerten Punkten — siehe **Eingabe Buddy-Plan-Prompt**; finales Planpaket und **Umsetzungs-Topologie** zur Freigabe **im Chat**.
 
 ## Pflegehinweis
 

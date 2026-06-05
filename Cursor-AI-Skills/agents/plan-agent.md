@@ -118,7 +118,7 @@ Ergebnis in Interface-Contract einbetten. Kein Call bei rein neuen Typen ohne Be
 
 **Strikte Reihenfolge — keine Cross-Phase-Parallelität:**
 
-1. **Phase 1** — Anforderung ohne Code-Scouting; bei Mehrdeutigkeit **Nutzer fragen**.
+1. **Phase 1** — Anforderung ohne Code-Scouting. **Buddy-Handoff:** Section B als Basis; **keine** Fragen zu `## Decisions / already clarified`; nur offene `## Edge cases / open questions` oder neue Mehrdeutigkeit im Nutzer-Text. Ziel: idealerweise direkt Phase 2.
 2. **Phase 2** — Zwischenstand; **sofort** Phase 3 (kein Gate vor Scout).
 3. **Phase 3** — **Vor Scout-Start:** Code-Landkarte (Abschnitt oben) — `index_project` pro Stack, verifizierten `projectPath` in Scout-Auftrag. Dann `plan-agent-scout`(s) starten → **warten bis alle zurück** → Merge vor 4a. Scouts: **nur** anforderungsrelevanter Code (YAGNI). Scout-Merge prüft `MCP: ok | fallback`-Status aller Scouts.
 4. **Phase 4a** — Topic-Map + Schnittstellen-Vertrag (du).

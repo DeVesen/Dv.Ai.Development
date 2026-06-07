@@ -249,13 +249,36 @@ skills:
 [Markdown body = system prompt for BOTH systems]
 ```
 
-**Shared source:** `Cursor-AI-Skills/agents/agent-name.md` (single file, no content duplication):
-- Symlink → `.cursor/agents/agent-name.md` — **required** for Cursor to discover the agent
-- **Claude Code via skill reference** (Subagent reference pattern): link the file in SKILL.md body → Claude Code reads it directly — `.claude/agents/` is **not** needed
-- Symlink → `.claude/agents/agent-name.md` — only needed if the agent should be **auto-discoverable** by Claude Code *without* a skill referencing it
+**Shared source:** `AI-Skills/agents/agent-name.md` — deployed via install script (no manual symlinks):
+
+```powershell
+# Deploy: Cursor + Claude Code gleichzeitig
+.\install-skill.ps1 <package> C:\Project\.cursor C:\Project\.claude
+.\update-skill.ps1  <package> C:\Project\.cursor C:\Project\.claude
+```
+
+| Deploy-Ziel | Cursor | Claude Code |
+|-------------|--------|-------------|
+| Rules (`.mdc`) | `.cursor/rules/` | — (Cursor-only) |
+| Skills | `.cursor/skills/<name>/` | `.claude/skills/<name>/` |
+| Agents | `.cursor/agents/` | `.claude/agents/` |
+| References | `.cursor/references/` | `.claude/references/` |
 
 **Cursor:** reads Markdown body as fresh subagent context (no parent conversation history). **Claude Code:** reads YAML + body.
 **Note:** Claude Code-only fields (`tools`, `disallowedTools`, `memory`, etc.) are not recognized by Cursor's YAML parser and are treated as unknown keys — standard YAML behavior, but verify with your Cursor version.
+
+#### Package-Manifest und Readme — immer zusammen pflegen
+
+Wenn ein Skill, eine Rule, ein Agent oder ein Parameter hinzukommt oder sich ändert:
+
+| Was | Wo |
+|-----|----|
+| Inhalt anlegen/ändern | `AI-Skills/skills/`, `agents/`, `rules/` |
+| Package-Manifest aktualisieren | `AI-Skills/packages/<name>.json` — Datei in `skills`, `agents`, `rules`, `references`, `params` eintragen |
+| Readme aktualisieren | `AI-Skills/Readme.md` — Abschnitt: Operations, Rules, Skills, Sub-Agents, Parameters |
+| Parameter pflegen | `{platzhalter}` im Inhalt → in `packages/<name>.json` → `"params"` und in Readme → Parameters-Tabelle |
+
+**Vergissene Manifest/Readme-Updates:** Deploy bricht für andere Nutzer lautlos oder liefert falsche Parameterwerte.
 
 ### Agent description quality
 

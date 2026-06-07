@@ -1,25 +1,32 @@
 <#
 .SYNOPSIS
-    Installs a skill package into a target project's .cursor directory.
+    Updates a skill package in a target project's .cursor and optionally .claude directory.
+    Already configured parameters and MCP settings are preserved; new ones are prompted for.
 
 .PARAMETER PackageName
-    Name of the package to install (without .json extension).
+    Name of the package to update (without .json extension).
     Use -List to see all available packages.
 
 .PARAMETER TargetCursorPath
     Absolute path to the target project's .cursor directory.
 
+.PARAMETER TargetClaudePath
+    Optional. Absolute path to the target project's .claude directory.
+    When provided, skills, agents and references are also updated for Claude Code.
+    Rules are Cursor-only and are never deployed to .claude.
+
 .PARAMETER DryRun
-    Show what would be copied without actually copying anything.
+    Show what would be copied/substituted without making any changes.
 
 .PARAMETER List
     List all available packages and exit.
 
 .EXAMPLE
-    .\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor
-    .\install-skill.ps1 genericrtk-filter C:\Projects\MyApp\.cursor -DryRun
-    .\install-skill.ps1 all C:\Projects\MyApp\.cursor
-    .\install-skill.ps1 -List
+    .\update-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor
+    .\update-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
+    .\update-skill.ps1 genericrtk-filter C:\Projects\MyApp\.cursor -DryRun
+    .\update-skill.ps1 all C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
+    .\update-skill.ps1 -List
 #>
 [CmdletBinding()]
 param(
@@ -29,6 +36,9 @@ param(
     [Parameter(Position = 1)]
     [string] $TargetCursorPath,
 
+    [Parameter(Position = 2)]
+    [string] $TargetClaudePath,
+
     [switch] $DryRun,
     [switch] $List
 )
@@ -36,15 +46,16 @@ param(
 $script:SourceCursorPath = $PSScriptRoot
 $script:PackagesDir      = Join-Path $PSScriptRoot "packages"
 $script:DryRun           = $DryRun.IsPresent
+$script:TargetClaudePath = $null
 $script:ParamsFile       = $null
 $script:ParamsStore      = @{}
 
 # ---------------------------------------------------------------------------
-# Params store (skill-params.json) — used only when MCP entries are present
+# Parameter store (skill-params.json in target .cursor)
 # ---------------------------------------------------------------------------
 
 function Read-ParamsStore {
-    if ($script:ParamsFile -and (Test-Path $script:ParamsFile)) {
+    if (Test-Path $script:ParamsFile) {
         $json = Get-Content $script:ParamsFile -Raw | ConvertFrom-Json
         $ht   = @{}
         $json.PSObject.Properties | ForEach-Object { $ht[$_.Name] = $_.Value }
@@ -53,13 +64,75 @@ function Read-ParamsStore {
 }
 
 function Save-ParamsStore {
-    if ($script:DryRun -or -not $script:ParamsFile) { return }
+    if ($script:DryRun) { return }
     if ($script:ParamsStore.Count -eq 0) { return }
     $script:ParamsStore | ConvertTo-Json -Depth 2 | Set-Content $script:ParamsFile -Encoding UTF8
 }
 
 # ---------------------------------------------------------------------------
-# MCP configuration
+# Collect all {param} placeholders from source template files of a package
+# ---------------------------------------------------------------------------
+
+function Get-PackageParams {
+    param([object] $Manifest)
+
+    $found = [System.Collections.Generic.HashSet[string]]::new()
+
+    # If manifest explicitly defines params, use that list (no file scanning)
+    if ($Manifest.PSObject.Properties['params']) {
+        foreach ($p in $Manifest.params) { $found.Add($p) | Out-Null }
+        return $found
+    }
+
+    # Fallback: scan files for {param} patterns
+    $paths = @()
+    foreach ($r   in $Manifest.rules)      { $paths += Join-Path $script:SourceCursorPath $r }
+    foreach ($s   in $Manifest.skills)     { $paths += Join-Path $script:SourceCursorPath $s }
+    foreach ($a   in $Manifest.agents)     { $paths += Join-Path $script:SourceCursorPath $a }
+    foreach ($ref in $Manifest.references) { $paths += Join-Path $script:SourceCursorPath $ref }
+
+    foreach ($path in $paths) {
+        $files = if (Test-Path $path -PathType Container) {
+            Get-ChildItem $path -Recurse -File -Include "*.md","*.mdc","*.json"
+        } else {
+            Get-Item $path -ErrorAction SilentlyContinue
+        }
+        foreach ($file in $files) {
+            $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
+            if ($content) {
+                [regex]::Matches($content, '\{[a-zA-Z][a-zA-Z0-9._-]*\}') | ForEach-Object {
+                    $found.Add($_.Value) | Out-Null
+                }
+            }
+        }
+    }
+    return $found
+}
+
+# ---------------------------------------------------------------------------
+# Prompt for a regular {param} value
+# ---------------------------------------------------------------------------
+
+function Request-ParamValue {
+    param([string] $Param, [string] $Existing)
+
+    if ($Existing) {
+        Write-Host "  $Param" -ForegroundColor White -NoNewline
+        Write-Host " (aktuell: " -ForegroundColor DarkGray -NoNewline
+        Write-Host $Existing -ForegroundColor Yellow -NoNewline
+        Write-Host ") — Enter zum Behalten:" -ForegroundColor DarkGray
+        $input = Read-Host "  Neuer Wert"
+        return if ($input) { $input } else { $Existing }
+    } else {
+        Write-Host "  $Param" -ForegroundColor White -NoNewline
+        Write-Host " (neu — leer lassen = Platzhalter behalten):" -ForegroundColor DarkGray
+        $input = Read-Host "  Wert"
+        return $input
+    }
+}
+
+# ---------------------------------------------------------------------------
+# MCP configuration (shared with install-skill.ps1)
 # ---------------------------------------------------------------------------
 
 function Invoke-McpConfig {
@@ -204,7 +277,49 @@ function Invoke-McpConfig {
 }
 
 # ---------------------------------------------------------------------------
-# Copy a file or directory to target
+# Apply stored {params} to a single text file
+# ---------------------------------------------------------------------------
+
+function Apply-Params {
+    param([string] $FilePath)
+
+    if ($script:ParamsStore.Count -eq 0) { return }
+
+    $content = Get-Content $FilePath -Raw -ErrorAction SilentlyContinue
+    if (-not $content) { return }
+
+    $changed = $false
+    foreach ($key in $script:ParamsStore.Keys) {
+        $val = $script:ParamsStore[$key]
+        if ($val -and $content.Contains($key)) {
+            $content = $content.Replace($key, $val)
+            $changed = $true
+        }
+    }
+
+    if ($changed) {
+        if ($script:DryRun) {
+            $rel = ($FilePath -replace [regex]::Escape($script:TargetCursorPath), '').TrimStart('\', '/')
+            Write-Host "  [DRY] params anwenden: $rel" -ForegroundColor Yellow
+        } else {
+            Set-Content $FilePath $content -Encoding UTF8 -NoNewline
+        }
+    }
+}
+
+function Apply-ParamsToPath {
+    param([string] $Path)
+    if (Test-Path $Path -PathType Container) {
+        Get-ChildItem $Path -Recurse -File -Include "*.md","*.mdc","*.json" | ForEach-Object {
+            Apply-Params $_.FullName
+        }
+    } elseif (Test-Path $Path -PathType Leaf) {
+        Apply-Params $Path
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Copy asset (file or directory) to target, then substitute params
 # ---------------------------------------------------------------------------
 
 function Copy-Asset {
@@ -226,18 +341,20 @@ function Copy-Asset {
 
     $rel = ($Dst -replace [regex]::Escape($script:TargetCursorPath), '').TrimStart('\', '/')
     Write-Host "  + $rel" -ForegroundColor Green
+
+    Apply-ParamsToPath $Dst
 }
 
 # ---------------------------------------------------------------------------
-# Install one package (recursively resolves dependsOn)
+# Update one package (recursively resolves dependsOn)
 # ---------------------------------------------------------------------------
 
-$script:installed = [System.Collections.Generic.HashSet[string]]::new()
+$script:updated = [System.Collections.Generic.HashSet[string]]::new()
 
-function Install-Package {
+function Update-Package {
     param([string] $Name)
 
-    if (-not $script:installed.Add($Name)) { return }
+    if (-not $script:updated.Add($Name)) { return }
 
     $manifestFile = Join-Path $script:PackagesDir "$Name.json"
     if (-not (Test-Path $manifestFile)) {
@@ -252,14 +369,48 @@ function Install-Package {
     Write-Host "-> $Name" -ForegroundColor Cyan
     if ($m.description) { Write-Host "   $($m.description)" -ForegroundColor DarkGray }
 
-    foreach ($dep in $m.dependsOn) { Install-Package $dep }
+    foreach ($dep in $m.dependsOn) { Update-Package $dep }
 
-    foreach ($r   in $m.rules)      { Copy-Asset (Join-Path $script:SourceCursorPath $r)   (Join-Path $script:TargetCursorPath "rules\$(Split-Path $r -Leaf)") }
-    foreach ($s   in $m.skills)     { Copy-Asset (Join-Path $script:SourceCursorPath $s)   (Join-Path $script:TargetCursorPath "skills\$(Split-Path $s -Leaf)") }
-    foreach ($a   in $m.agents)     { Copy-Asset (Join-Path $script:SourceCursorPath $a)   (Join-Path $script:TargetCursorPath "agents\$(Split-Path $a -Leaf)") }
-    foreach ($ref in $m.references) { Copy-Asset (Join-Path $script:SourceCursorPath $ref) (Join-Path $script:TargetCursorPath "references\$(Split-Path $ref -Leaf)") }
-    foreach ($doc in $m.docs)       { Copy-Asset (Join-Path $script:SourceCursorPath $doc) (Join-Path $script:TargetCursorPath "$(Split-Path $doc -Leaf)") }
+    # Prompt for missing/new {param} placeholders found in template files
+    $needed = Get-PackageParams $m
+    $hasNew  = $false
+    foreach ($param in ($needed | Sort-Object)) {
+        if (-not $script:ParamsStore.ContainsKey($param) -or -not $script:ParamsStore[$param]) {
+            if (-not $hasNew) {
+                Write-Host ""
+                Write-Host "  Parameter fuer $Name :" -ForegroundColor Cyan
+                $hasNew = $true
+            }
+            $val = Request-ParamValue $param $script:ParamsStore[$param]
+            if ($val) { $script:ParamsStore[$param] = $val }
+        }
+    }
 
+    # Copy fresh files and apply params
+    # Rules → Cursor only (.mdc rules have no equivalent in Claude Code)
+    foreach ($r in $m.rules) {
+        Copy-Asset (Join-Path $script:SourceCursorPath $r) (Join-Path $script:TargetCursorPath "rules\$(Split-Path $r -Leaf)")
+    }
+    # Skills, Agents, References → Cursor + Claude Code (when TargetClaudePath provided)
+    foreach ($s in $m.skills) {
+        $leaf = Split-Path $s -Leaf
+        Copy-Asset (Join-Path $script:SourceCursorPath $s) (Join-Path $script:TargetCursorPath "skills\$leaf")
+        if ($script:TargetClaudePath) { Copy-Asset (Join-Path $script:SourceCursorPath $s) (Join-Path $script:TargetClaudePath "skills\$leaf") }
+    }
+    foreach ($a in $m.agents) {
+        $leaf = Split-Path $a -Leaf
+        Copy-Asset (Join-Path $script:SourceCursorPath $a) (Join-Path $script:TargetCursorPath "agents\$leaf")
+        if ($script:TargetClaudePath) { Copy-Asset (Join-Path $script:SourceCursorPath $a) (Join-Path $script:TargetClaudePath "agents\$leaf") }
+    }
+    foreach ($ref in $m.references) {
+        $leaf = Split-Path $ref -Leaf
+        Copy-Asset (Join-Path $script:SourceCursorPath $ref) (Join-Path $script:TargetCursorPath "references\$leaf")
+        if ($script:TargetClaudePath) { Copy-Asset (Join-Path $script:SourceCursorPath $ref) (Join-Path $script:TargetClaudePath "references\$leaf") }
+    }
+    # Docs (AGENTS.md etc.) → Cursor only
+    foreach ($doc in $m.docs) { Copy-Asset (Join-Path $script:SourceCursorPath $doc) (Join-Path $script:TargetCursorPath "$(Split-Path $doc -Leaf)") }
+
+    # MCP configuration (e.g. genericRTK Docker image)
     if ($m.PSObject.Properties['mcp'] -and $m.mcp.Count -gt 0) {
         Invoke-McpConfig $m.mcp
     }
@@ -284,7 +435,7 @@ if ($List) {
 }
 
 if (-not $PackageName) {
-    Write-Error "PackageName is required. Use 'all' to install all packages, or -List to see available packages."
+    Write-Error "PackageName is required. Use 'all' to update all packages, or -List to see available packages."
     exit 1
 }
 
@@ -298,23 +449,33 @@ if (-not (Test-Path $TargetCursorPath) -and -not $DryRun) {
     exit 1
 }
 
+if ($TargetClaudePath -and -not (Test-Path $TargetClaudePath) -and -not $DryRun) {
+    Write-Error "Claude target path not found: $TargetClaudePath"
+    exit 1
+}
+
 $script:TargetCursorPath = $TargetCursorPath.TrimEnd('\', '/')
+$script:TargetClaudePath = if ($TargetClaudePath) { $TargetClaudePath.TrimEnd('\', '/') } else { $null }
 $script:ParamsFile       = Join-Path $script:TargetCursorPath "skill-params.json"
 
 Read-ParamsStore
 
-if ($DryRun) { Write-Host "[DRY RUN — no files will be copied]" -ForegroundColor Yellow }
+if ($DryRun) { Write-Host "[DRY RUN — keine Dateien werden veraendert]" -ForegroundColor Yellow }
 
 if ($PackageName -eq 'all') {
-    Write-Host "Installing all packages..." -ForegroundColor Cyan
+    Write-Host "Updating all packages..." -ForegroundColor Cyan
     Get-ChildItem $script:PackagesDir -Filter "*.json" | Sort-Object Name | ForEach-Object {
-        Install-Package $_.BaseName
+        Update-Package $_.BaseName
     }
 } else {
-    Install-Package $PackageName
+    Update-Package $PackageName
 }
 
-Save-ParamsStore
+if ($script:ParamsStore.Count -gt 0) {
+    Save-ParamsStore
+    Write-Host ""
+    Write-Host "  Parameter gespeichert: $script:ParamsFile" -ForegroundColor DarkGray
+}
 
 Write-Host ""
-Write-Host "Done." -ForegroundColor Green
+Write-Host "Fertig." -ForegroundColor Green

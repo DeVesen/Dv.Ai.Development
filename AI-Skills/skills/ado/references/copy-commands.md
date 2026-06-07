@@ -69,7 +69,7 @@ Am **Ende** der Story-`UserStory-{id}-*.md`:
 | `prüfe Feature …` | ado — Feature-`prüfe` (alle Child-Stories + `## Feature-Kontext`) |
 | `markiere Task … als fertig`, `ToDo für Task …` | ado — Task fertig / ToDo |
 | `Story … auf active` / `… resolved` | ado — State setzen |
-| `@buddy-agent Task … — Plan-Prompt …` | **buddy-agent** — [../../../agents/buddy-agent.md](../../../agents/buddy-agent.md); End-Artefakt für `plane Task`; **kein** ADO-MCP |
+| `@buddy-agent Task … — Plan-Prompt …` | **buddy-agent** — [../../buddy-agent/SKILL.md](../../buddy-agent/SKILL.md); End-Artefakt für `plane Task`; **kein** ADO-MCP |
 | `Task … verfeinern` (**Legacy**) | ado — [task-verfeinern.md](task-verfeinern.md): interaktiver Klärungsworkflow (Phasen 1–4 read-only, Phase 5 nach Freigabe); **kein** Vorgehen/Planning-Planpaket in die Datei; **kein** ADO-MCP |
 | `plane Task …` | [planning-workflow](../../planning-workflow/SKILL.md) — finales Planpaket + Umsetzungs-Topologie **im Chat**; Task `### Planung` / `AC-P*`; **kein** ADO-MCP |
 

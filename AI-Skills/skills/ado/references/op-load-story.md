@@ -22,7 +22,7 @@ Referenz-Story: `requests/stories/UserStory-{id}-{Titel}/`.
 | Wikilink Task | `[[tasks/task-{slug}\|>> Label <<<]]` |
 | Rücklink Task | `← [[../UserStory-{id}-{slug}\|Story #{id}]]` |
 
-Templates: [`../templates/`](../templates/). Feld-Mapping: [`field-mapping.md`](field-mapping.md). Akzeptanzkriterien: [`acceptance-criteria.md`](acceptance-criteria.md). `prüfe`-Subagents: [`story-pruefe-subagent.md`](story-pruefe-subagent.md), [`task-pruefe-subagent.md`](task-pruefe-subagent.md), [`../subagent-prompts.md`](../subagent-prompts.md). Copy-Befehle: [`copy-commands.md`](copy-commands.md).
+Templates: [`../templates/`](../templates/). Feld-Mapping: [`field-mapping.md`](field-mapping.md). Akzeptanzkriterien: [`acceptance-criteria.md`](acceptance-criteria.md). `prüfe`-Subagents: [`story-pruefe-subagent.md`](story-pruefe-subagent.md), [`task-pruefe-subagent.md`](task-pruefe-subagent.md), [`subagent-prompts.md`](subagent-prompts.md). Copy-Befehle: [`copy-commands.md`](copy-commands.md).
 
 ## Konfiguration
 
@@ -52,10 +52,10 @@ Story-Markdown enthält `## Möglichkeiten` mit **fertig ausgefüllten** Backtic
 
 | Rolle | Agent-Typ | Profil |
 |-------|-----------|--------|
-| Orchestrator | `ado-agent` | [`../../agents/ado-agent.md`](../../agents/ado-agent.md) |
+| Orchestrator | `ado-agent` | [`../SKILL.md`](../SKILL.md) |
 | Story-`prüfe` | `ado-story-pruefe-agent` | [`../../agents/ado-story-pruefe-agent.md`](../../agents/ado-story-pruefe-agent.md) |
 | Task-`prüfe` | `ado-task-pruefe-agent` | [`../../agents/ado-task-pruefe-agent.md`](../../agents/ado-task-pruefe-agent.md) |
-| Task klären (Plan-Prompt, Standard) | `buddy-agent` | [`../../agents/buddy-agent.md`](../../agents/buddy-agent.md) |
+| Task klären (Plan-Prompt, Standard) | `buddy-agent` | [`../../buddy-agent/SKILL.md`](../../buddy-agent/SKILL.md) |
 
 Details: [`story-pruefe-subagent.md`](story-pruefe-subagent.md), [`task-pruefe-subagent.md`](task-pruefe-subagent.md).
 

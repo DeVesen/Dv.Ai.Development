@@ -7,9 +7,7 @@
   "skills": [
     "skills/conversation-insights"
   ],
-  "agents": [
-    "agents/conversation-insights-agent.md"
-  ],
+  "agents": [],
   "params": [
     "{insights-path}"
   ],

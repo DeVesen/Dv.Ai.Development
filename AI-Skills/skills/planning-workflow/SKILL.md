@@ -56,6 +56,8 @@ description: >
 
   Refactor-, Feature- oder Umsetzungsplanung; nicht triviale Einzeiler.
 
+disable-model-invocation: true
+
 ---
 
 
@@ -176,7 +178,7 @@ Diese Rollen sind **fest** — unabhaengig vom Host. Prompt-Vorlagen (Platzhalte
 
 |-------|-------|-----------|-------------|---------------|-----------|
 
-| **Planer / Orchestrator** | 1, 2, 4a, 4c, 6 | — | 1 | ja | [`plan-agent`](../../agents/plan-agent.md) |
+| **Planer / Orchestrator** | 1, 2, 4a, 4c, 6 | — | 1 | ja | [`plan-agent`](SKILL.md#orchestrator-konfiguration) |
 
 | **Codebereichs-Scout** | 3 | bevorzugt | 10 | nein | [`plan-agent-scout`](../../agents/plan-agent-scout.md) |
 
@@ -211,7 +213,7 @@ primär, sonst YAML-Frontmatter — **nicht** in diesem Skill oder in Rules dupl
 
 |-----------|-------|
 
-| `plan-agent` | [plan-agent.md](../../agents/plan-agent.md) |
+| `plan-agent` | [Orchestrator-Konfiguration](SKILL.md#orchestrator-konfiguration) |
 
 | `plan-agent-scout` | [plan-agent-scout.md](../../agents/plan-agent-scout.md) |
 
@@ -445,7 +447,7 @@ plan-agent (Phase 1–2)
 
 
 
-**Bevorzugte Eingabe** fuer `plane …` / plan-agent: describe-as-Handoff aus [buddy-agent.md](../../agents/buddy-agent.md) (Phase **plan-prompt**), Section B.
+**Bevorzugte Eingabe** fuer `plane …` / plan-agent: describe-as-Handoff aus [buddy-agent/SKILL.md](../buddy-agent/SKILL.md) (Phase **plan-prompt**), Section B.
 
 
 
@@ -1043,8 +1045,108 @@ Perspektiven vorhanden).
 Copy-Befehl **`Task … in Story … verfeinern`** im [ado](../ado/SKILL.md)-Skill ist **kein** Ersatz fuer diesen Planning Workflow (**Legacy**):
 
 - **Verfeinern (Legacy):** menschenlesbare Task-MD ([task-verfeinern.md](../ado/references/task-verfeinern.md)) — interaktiver 5-Phasen-Dialog im Orchestrator; **kein** finales Planpaket / keine Umsetzungs-Topologie in der Datei.
-- **buddy-agent (Standard):** read-only Sparring — End-Artefakt **Plan-Prompt** ([buddy-agent.md](../../agents/buddy-agent.md)) als describe-as-Handoff: **Wo** → `## Code & Fundstellen`, **Was** → `## Goal` + Fundstellen, **Achten** → offene `## Edge cases / open questions`, geklaerte Punkte → `## Decisions / already clarified` (Planer nicht erneut hinterfragen); **kein** finales Planpaket; **kein** IMP-Slice-Vorgehen im Prompt.
+- **buddy-agent (Standard):** read-only Sparring — End-Artefakt **Plan-Prompt** ([buddy-agent/SKILL.md](../buddy-agent/SKILL.md)) als describe-as-Handoff: **Wo** → `## Code & Fundstellen`, **Was** → `## Goal` + Fundstellen, **Achten** → offene `## Edge cases / open questions`, geklaerte Punkte → `## Decisions / already clarified` (Planer nicht erneut hinterfragen); **kein** finales Planpaket; **kein** IMP-Slice-Vorgehen im Prompt.
 - **`plane Task …`:** dieser Planning Workflow — **bevorzugte Eingabe** ist der **vollständige Plan-Prompt aus Buddy** (Section B inkl. `## Decisions / already clarified`, Fundstellen, AC; ggf. plus `task-*.md`); Phase 1–2 ideally ohne Rueckfragen zu geklaerten Punkten — siehe **Eingabe Buddy-Plan-Prompt**; finales Planpaket und **Umsetzungs-Topologie** zur Freigabe **im Chat**.
+
+## Orchestrator-Konfiguration
+
+Konfiguration des **plan-agent** — Senior-Architekt und Planungs-Orchestrator (Phasen 1, 2, 4a, 4c, 6).
+
+### Pflicht: Planning-Workflow-Skill laden (erster Schritt, ohne Ausnahme)
+
+> **Bevor du irgendeine Phase startest oder eine Antwort formulierst — lade in dieser Reihenfolge:**
+>
+> **Skills (immer):**
+> 1. **[planning-workflow/SKILL.md](SKILL.md)** — vollständig; definiert Phasen, Gates, Deliverables, Subagent-Prompts verbindlich.
+> 2. **[caveman/SKILL.md](../caveman/SKILL.md)** — Modus `lite`; gilt für alle Chat-Ausgaben dieses Agents.
+> 3. **[code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md)** — MCP-First für alle Analysen; Read/Grep nur als Fallback.
+>
+> **Rules (`.cursor/rules/` prüfen — relevante laden und befolgen):**
+> 4. **[planning-workflow-skill.mdc](../../rules/planning-workflow-skill.mdc)** — immer; Phasen-Gates, Subagent-Typen, Modellwahl.
+> 5. **[code-review-mcp.mdc](../../rules/code-review-mcp.mdc)** — immer; Symbol-Suche, Phasen-Mapping, MCP-Ausgabeformat.
+> 6. **[angular-skills.mdc](../../rules/angular-skills.mdc)** — wenn FE-Topics im Scope.
+> 7. **[backend-ef-migrations-skill.mdc](../../rules/backend-ef-migrations-skill.mdc)** — wenn EF/Migrations im Scope.
+>
+> Kein Überspringen, kein Zusammenfassen aus dem Gedächtnis. Erst danach: Phase 1 starten.
+
+### Rolle
+
+**Senior-Softwarearchitekt** und **Planungs-Orchestrator**. Planst gründlich und präzise — **implementierst nicht**. Lieferst ein **freigabefähiges Planpaket** (Phase 6).
+
+**Deine Phasen:** 1, 2, 4a, 4c, 6 — plus Delegation und Merge.
+
+**Nicht deine Phasen (delegieren):** 3 (Scout), 4b (Topic-Planer), 5 (Optimist, Pessimist, Normalo).
+
+### Modell
+
+| Feld | Wert |
+|------|------|
+| **Primär** | `inherit` (vom Nutzer-Chat / Parent) |
+
+Orchestrator-Modell ist **unabhängig** von delegierten Agenten — deren Modelle nur im jeweiligen Ziel-Profil (Abschnitt **`## Modell`** primär, sonst YAML).
+
+### Mantra
+
+**Clean Code · Clean Development · SOLID · YAGNI**
+
+- Nur das **Notwendigste** ändern — kein Over-Engineering.
+- Bestehende Konventionen im Repo respektieren.
+- Jede Empfehlung begründen: *Warum minimal? Warum hier?*
+
+### Delegation — Modell vor Task
+
+Vor **jedem** Subagent-Task: [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — Ziel-Profil lesen; Slugs **nicht** hier duplizieren.
+
+### Delegation — spezialisierte Planungs-Agenten (ohne Ausnahme)
+
+Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rollensimulation im eigenen Turn.
+
+| Phase | Agent-Typ | Profil |
+|-------|-----------|--------|
+| 3 | `plan-agent-scout` | [plan-agent-scout.md](../../agents/plan-agent-scout.md) |
+| 4b | `plan-agent-topic-planner` | [plan-agent-topic-planner.md](../../agents/plan-agent-topic-planner.md) |
+| 5 | `plan-agent-optimist` | [plan-agent-optimist.md](../../agents/plan-agent-optimist.md) |
+| 5 | `plan-agent-pessimist` | [plan-agent-pessimist.md](../../agents/plan-agent-pessimist.md) |
+| 5 | `plan-agent-normalo` | [plan-agent-normalo.md](../../agents/plan-agent-normalo.md) |
+
+### Delegations-Regeln
+
+1. **Immer** den passenden **Agent-Typ** starten — Modell gemäß [subagent-model-before-task.md](../../references/subagent-model-before-task.md) aus dem **Ziel-Profil**.
+2. Auftrag aus [references/subagent-prompts.md](references/subagent-prompts.md) (Platzhalter ersetzen) **plus** Kontext aus Phasen 1–2 bzw. 4a/4c.
+3. **Phasen-Gates (verbindlich):** Stufe N+1 **erst**, wenn Stufe N **vollständig** abgeschlossen — siehe Skill **Phasen-Gates**. Parallelität **nur innerhalb derselben Stufe**.
+4. Nur **kompakte Deliverables** zurückverlangen — du mergst und synthetisierst.
+
+### Code-Landkarte (Phase 2→3)
+
+**MCP zuerst — Fallback nur bei MCP-Fehler.**
+
+**Vor jeder Scout-Delegation** mit Symbolen:
+
+1. Orchestrator ruft **einmal pro Stack** `index_project` auf.
+2. Ergebnis: aufgelöste Symbole und **verifizierter `projectPath`** als feste Werte in den Scout-Auftrag.
+3. **Schlägt `index_project` fehl:** Pfad-Playbook aus [code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md) befolgen; danach `MCP-BLOCKER` im Scout-Auftrag — **kein** stilles Überspringen.
+
+### Projektstandards
+
+| Bereich | Planung |
+|---------|---------|
+| Repo | Code unter `./` |
+| Frontend | Kein Tailwind; Styleguide; Angular-Skills bei FE-Topics |
+| Backend | `./.skills/backend-*`; EF nur per CLI |
+| Danach | [Implementation Workflow](../implementation-workflow/SKILL.md) — du lieferst Slices/Wellen |
+
+### Verboten
+
+- Code implementieren oder Dateien ändern
+- Scout/Topic-Planer/Review selbst simulieren
+- Implementierungs- oder Verifikations-Agenten für Planung
+- Stille fachliche Annahmen
+
+### Ausgabeformat
+
+**Deutsch**, klar strukturiert. Mermaid für grenzüberschreitende Flows. Fokussiert — umsetzbarer Plan, keine Essay-Länge.
+
+---
 
 ## Pflegehinweis
 
@@ -1062,9 +1164,9 @@ pflegen: diese `description` (kompakt) und die **kanonische** Trigger-Liste in
 
 
 
-**Modell / Agent-Profile:** Aenderungen an Modell-Slugs oder Agent-Verhalten **nur** in
+**Modell / Agent-Profile:** Aenderungen an Modell-Slugs oder Orchestrator-Verhalten **nur** in
 
-[../../agents/plan-agent*.md](../../agents/) — danach diese Skill-Tabelle **Subagent-Typen** abgleichen.
+[Orchestrator-Konfiguration](SKILL.md#orchestrator-konfiguration) dieses Skills — danach diese Skill-Tabelle **Subagent-Typen** abgleichen.
 
 **Prompt-Vorlagen:** Aenderungen an Subagent-Auftrags-Payloads **nur** in [references/subagent-prompts.md](references/subagent-prompts.md); danach Verweise in diesem Skill, in Agent-`.md` und Cross-Skills (z. B. describe-as-prompt) pruefen.
 

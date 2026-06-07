@@ -19,35 +19,6 @@ Vorbehaltlich **Ausdrücklicher Opt-out** unten: Formulierungen wie **`Plane bit
 
 Gilt zusätzlich die **Implizite Aktivierung**, **Plan Mode / Cursor-Kontext**, **Explizite @-Referenzen** und **Meta-Trigger** (Abschnitte unten).
 
-## SubAgents und Modelle (Pflicht bei diesem Workflow)
-
-- **Agent-Profile:** [`.cursor/agents/`](../../agents/) — Modellwahl **nur** in den jeweiligen `*.md` (Abschnitt **`## Modell`** primär, sonst YAML). Skill-Abschnitt **Subagent-Typen** in [`planning-workflow/SKILL.md`](../skills/planning-workflow/SKILL.md) bzw. [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md).
-- **Planning — Phase 3, 4b, 5:** `plan-agent` (Orchestrator), `plan-agent-scout`, `plan-agent-topic-planner`, `plan-agent-optimist`, `plan-agent-pessimist`, `plan-agent-normalo` — siehe Planning-Skill.
-- **Phase 3 (Scout)**, **Phase 4b (Topic-Planer)**, **Phase 5 (Review):** jeweiliger Agent-Typ aus [../../agents/](../../agents/); **Parallelität nur innerhalb derselben Stufe** (siehe [Phasen-Gates](#phasen-gates-verbindlich)); **Verboten:** Rollensimulation, `explore`/`generalPurpose` fuer Planung.
-- **Symbol-Planung (Phase 3):** Vor Scout-Delegation `index_project` pro Stack ([code-review-mcp.mdc](code-review-mcp.mdc), Pfade aus `./AGENTS.md`); Scout-Deliverable enthält Pflicht-Header `MCP: ok | fallback (<Grund>)`.
-- **Modell:** **nicht** in dieser Rule duplizieren — siehe Agent-`.md` (Abschnitt **`## Modell`** primär, sonst YAML).
-- **Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; `modelUsed` nennen.
-- **Phase 4a/4c (Hauptagent):** Schnittstellen-Design (4a) und Merge zur Arbeitsversion (4c) — Modell = Nutzer-Chat. **Phase 4b:** Topic-Planer **parallel untereinander** bevorzugt, sofern der Host es erlaubt — **erst nach** abgeschlossener Phase 3 und 4a.
-- **Phase 5 (Review):** Optimist, Pessimist und Normalo **parallel untereinander** bevorzugt — **erst nach** abgeschlossener Phase 4 (4b + 4c-Arbeitsversion); Details im Skill (kein Rollenspiel durch den Hauptagenten).
-
-## Phasen-Gates (verbindlich)
-
-Strikte Reihenfolge — **Stufe N+1 erst, wenn Stufe N vollständig abgeschlossen** (alle Subagents der Stufe zurück, ggf. Merge durch Orchestrator):
-
-| Stufe | Inhalt | Start erst nach … |
-|-------|--------|-------------------|
-| **1** | Anforderung prüfen (Phase 1–2); bei Mehrdeutigkeit **Fragen** an Nutzer | — |
-| **2** | Scouts (Phase 3): Code **fokussiert auf die Anforderung** — kein blindes Repo-Scouting | Stufe 1 |
-| **3** | Plan (Phase 4a → 4b → 4c): Arbeitsversion für Review | Stufe 2 (+ Scout-Merge, 4a) |
-| **4** | Review (Phase 5): drei Perspektiven auf **Arbeitsversion aus 4c** | Stufe 3 |
-| **5** | Synthese & Freigabe (Phase 6) | Stufe 4 |
-
-**Verboten (Orchestrator):** Review (Phase 5) starten, während Topic-Planer (4b) noch laufen; Plan/4b starten, während Scouts noch laufen; Review auf **vorläufigem** Scout- oder 4a-Entwurf statt **fertiger 4c-Arbeitsversion**. Parallelität **nur innerhalb** derselben Stufe (mehrere Scouts, mehrere Topic-Planer, drei Reviewer).
-
-## Finales Planpaket und parallele Umsetzung
-
-Wenn **Implementierung** vorgesehen ist, enthält das **finale Planpaket (Phase 6)** einen verbindlichen Abschnitt **„Umsetzungs-Topologie (Implementation Workflow)“** — nicht nur einen optionalen Topologie-Hinweis: 1–10 Implementierungs-Slices mit IDs gemäß **`IMP-FE-{Bereich}-…` / `IMP-BE-{ServiceKürzel}-…`** (Details: Skill-Abschnitt **Slice-ID-Konvention**), Wellen, welche Slices **parallel** laufen dürfen, Blocking, contract-first, Orchestrator-Integration; Verweis auf [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md) (Ausführungsform / Schritt 2). **Single-Slice** nur mit **expliziter Begründung**. Mindestschema und Trivial-Kurzform: [`planning-workflow/SKILL.md`](../skills/planning-workflow/SKILL.md) Phase 6.
-
 ## Implizite Aktivierung
 
 Der Planning Workflow gilt auch **ohne** das Wort `Plan` oder `plane`, wenn der Nutzer erkennbar eine **vorangestellte** Vorgehens-, Architektur-, Refactor-, Migrations-, Risiko-, Optionen- oder Arbeitspaket-Planung verlangt (repo-/codebezogen, nicht rein konzeptionell ohne Umsetzungsbezug).

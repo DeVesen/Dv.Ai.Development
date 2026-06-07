@@ -8,7 +8,6 @@
     "skills/planning-workflow"
   ],
   "agents": [
-    "agents/plan-agent.md",
     "agents/plan-agent-scout.md",
     "agents/plan-agent-topic-planner.md",
     "agents/plan-agent-optimist.md",

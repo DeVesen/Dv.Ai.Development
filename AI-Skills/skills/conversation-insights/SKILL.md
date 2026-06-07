@@ -43,6 +43,40 @@ Trigger-Keywords müssen an zwei Stellen synchron gehalten werden:
 1. YAML `description` (diese Datei).
 2. `.cursor/rules/conversation-insights-skill.mdc` — Trigger-Beispiele section.
 
+## Agent-Konfiguration
+
+Konfiguration des **conversation-insights-agent** — führt diesen Skill vollständig aus.
+
+### Modell
+
+| Feld | Wert |
+|------|------|
+| **Primär** | `auto` |
+
+### Kontextquelle
+
+Dieser Agent sieht den aktuellen Conversation-Thread.
+Bei **Fresh Start ohne Kontext** (Aufruf außerhalb einer laufenden Session):
+
+> "No conversation context found. Paste the relevant session content or describe what was decisive."
+
+### Trigger
+
+Explizite Aufrufe: `/conversation-insights` · `@conversation-insights-agent`
+
+Keyword-basierter Einstieg (ohne expliziten Agent-Aufruf) → Rule [`../../rules/conversation-insights-skill.mdc`](../../rules/conversation-insights-skill.mdc).
+
+Beide Einstiegspunkte führen zur selben SKILL.md und erzeugen dieselbe Ausgabe.
+
+### Reporting an den Parent
+
+Wenn als Subagent beendet:
+1. Anzahl erfasster Einträge
+2. Pfad der aktualisierten Datei
+3. Falls keine Einträge: eine Zeile Begründung
+
+---
+
 ## Opt-out
 
 `describe-as-prompt` / `handoff` → Skill **nicht** laden (anderer Skill).

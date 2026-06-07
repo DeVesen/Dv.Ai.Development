@@ -4,10 +4,10 @@
   "rules": [
     "rules/buddy-agent-skill.mdc"
   ],
-  "skills": [],
-  "agents": [
-    "agents/buddy-agent.md"
+  "skills": [
+    "skills/buddy-agent"
   ],
+  "agents": [],
   "references": [],
   "params": [],
   "dependsOn": [

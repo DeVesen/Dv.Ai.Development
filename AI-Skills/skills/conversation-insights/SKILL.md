@@ -37,7 +37,7 @@ append them to `{insights-path}/log.md` — then display them in chat.
 |-------|-------|
 | README-Header für neue Log-Dateien | [references/op-new-log.md](references/op-new-log.md) |
 
-## Trigger-Pflege
+## Pflegehinweis
 
 Trigger-Keywords müssen an zwei Stellen synchron gehalten werden:
 1. YAML `description` (diese Datei).

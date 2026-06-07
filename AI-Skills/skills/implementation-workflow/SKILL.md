@@ -416,7 +416,7 @@ The **initial agent** (not a subagent) must review all changes before closure:
 
 ## Orchestrator-Konfiguration
 
-Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt 2 (genau einen Plan-Slice).
+Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt 2 (genau einen Plan-Slice). Der implement-agent orchestriert Build/Test/genericRTK innerhalb seines Scopes; der übergeordnete Orchestrator ist der Nutzer-Chat (Initial Agent).
 
 ### Rolle
 

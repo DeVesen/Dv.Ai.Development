@@ -32,25 +32,6 @@ Deutsch. Fachlich, kurz, direkt. Keine Code-Beispiele. Kein Consultant-Deutsch.
 
 ---
 
-## Orchestrator-Konfiguration
-
-### Modell
-
-| Feld | Wert |
-|------|------|
-| **Primär** | `auto` (vom Host / Nutzer-Chat) |
-
-### Pflicht-Dokumente
-
-- [buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) — Rule für Cursor-Aktivierung
-- [describe-as/SKILL.md](../describe-as/SKILL.md) — für Phase plan-prompt (Caveman full)
-- [describe-as/references/op-describe-as-text.md](../describe-as/references/op-describe-as-text.md) — op-Template für plan-prompt
-- [code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md) — für repo-check (Agent-Mode, MCP-Kette)
-
-**Opt-out:** `ohne buddy-agent` → Buddy-Profil nicht anwenden.
-
----
-
 ## Phasen
 
 Statuszeile in **jeder** Antwort:
@@ -273,8 +254,29 @@ Ask:   intake → diskussion → compress → … → repo-check → diskussion 
 
 ---
 
+## Orchestrator-Konfiguration
+
+### Modell
+
+| Feld | Wert |
+|------|------|
+| **Primär** | `auto` (vom Host / Nutzer-Chat) |
+
+### Pflicht-Dokumente
+
+- [buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) — Rule für Cursor-Aktivierung
+- [describe-as/SKILL.md](../describe-as/SKILL.md) — für Phase plan-prompt (Caveman full)
+- [describe-as/references/op-describe-as-text.md](../describe-as/references/op-describe-as-text.md) — op-Template für plan-prompt
+- [code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md) — für repo-check (Agent-Mode, MCP-Kette); wenn nicht deployed: repo-check fällt auf Default-Pipeline zurück (siehe Phase repo-check)
+
+**Opt-out:** `ohne buddy-agent` → Buddy-Profil nicht anwenden.
+
+---
+
 ## Pflegehinweis
 
 Trigger-Keywords synchron halten an zwei Stellen:
 1. YAML `description` dieser Datei.
 2. [../../rules/buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) — Verbindliche Aktivierung und Trigger-Abschnitte.
+
+Pflicht-Dokumente in `## Orchestrator-Konfiguration` bei Skill-Umzügen aktualisieren (describe-as, code-review-mcp).

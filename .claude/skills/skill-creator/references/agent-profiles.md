@@ -34,7 +34,9 @@ permissionMode: default        # default | acceptEdits | auto | dontAsk | bypass
 maxTurns: 10                   # max agentic turns before agent stops
 background: false              # true = always run as background task
 effort: high                   # low|medium|high|xhigh|max (overrides session effort)
-isolation: worktree            # worktree = isolated git copy; cleaned up if no changes
+isolation: worktree            # worktree = isolated git copy; cleaned up automatically if
+                               # agent makes no changes. If changes exist: worktree path is
+                               # returned in the result — user must merge manually.
 
 # Context enrichment
 skills:                        # preload full skill content at startup (not just description)
@@ -100,7 +102,7 @@ File location: `.cursor/agents/` (project) or `~/.cursor/agents/` (personal).
 ```yaml
 ---
 name: agent-name
-model: auto                    # auto | specific model ID (e.g. gpt-5.5-medium)
+model: auto                    # auto | specific model ID (e.g. gpt-4o, claude-sonnet-4-6)
 description: >
   Same delegation trigger as Claude Code. Keyword-first, imperative.
 # Cursor-specific (Claude Code ignores):

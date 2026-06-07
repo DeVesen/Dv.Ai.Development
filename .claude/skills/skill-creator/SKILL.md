@@ -129,7 +129,7 @@ my-skill/
 Keep SKILL.md under 500 lines. Push large reference material to `references/` with a note on
 when to read it. For files >300 lines, include a table of contents.
 
-**Sub-agent reference pattern** (works for both Cursor and Claude Code — no duplication):
+**Sub-agent reference pattern** (Claude Code follows these links; Cursor agents use the same `.md` file directly via `.cursor/agents/` — no duplication needed):
 ```markdown
 Subagent: [`agents/worker.md`](agents/worker.md)
 Read full profile before delegation. Do not repeat model slug or behavior here.

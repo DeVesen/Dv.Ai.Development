@@ -83,7 +83,7 @@ copy_asset() {
     mkdir -p "$(dirname "$dst")"
     if [[ -d "$src" ]]; then
         rm -rf "$dst"
-        cp -rP "$src" "$dst"
+        cp -rL "$src" "$dst"
     else
         cp -f "$src" "$dst"
     fi
@@ -113,46 +113,56 @@ install_package() {
     local desc; desc=$(json_string "$manifest" description)
     [[ -n "$desc" ]] && echo "   $desc"
 
+    # Capture json_array output via variable assignment so set -e catches parse errors.
+    # Process substitution < <(...) does not propagate exit codes under set -e.
+    local out
+
     # Dependencies first
+    out=$(json_array "$manifest" dependsOn)
     while IFS= read -r dep; do
         [[ -n "$dep" ]] && install_package "$dep"
-    done < <(json_array "$manifest" dependsOn)
+    done <<< "$out"
 
     # Rules → Cursor only (.mdc has no Claude Code equivalent)
+    out=$(json_array "$manifest" rules)
     while IFS= read -r r; do
         [[ -z "$r" ]] && continue
         copy_asset "$SCRIPT_DIR/$r" "$TARGET_CURSOR/rules/$(basename "$r")"
-    done < <(json_array "$manifest" rules)
+    done <<< "$out"
 
     # Skills → Cursor + Claude Code
+    out=$(json_array "$manifest" skills)
     while IFS= read -r s; do
         [[ -z "$s" ]] && continue
         local leaf; leaf=$(basename "$s")
         copy_asset "$SCRIPT_DIR/$s" "$TARGET_CURSOR/skills/$leaf"
         [[ -n "$TARGET_CLAUDE" ]] && copy_asset "$SCRIPT_DIR/$s" "$TARGET_CLAUDE/skills/$leaf"
-    done < <(json_array "$manifest" skills)
+    done <<< "$out"
 
     # Agents → Cursor + Claude Code
+    out=$(json_array "$manifest" agents)
     while IFS= read -r a; do
         [[ -z "$a" ]] && continue
         local leaf; leaf=$(basename "$a")
         copy_asset "$SCRIPT_DIR/$a" "$TARGET_CURSOR/agents/$leaf"
         [[ -n "$TARGET_CLAUDE" ]] && copy_asset "$SCRIPT_DIR/$a" "$TARGET_CLAUDE/agents/$leaf"
-    done < <(json_array "$manifest" agents)
+    done <<< "$out"
 
     # References → Cursor + Claude Code
+    out=$(json_array "$manifest" references)
     while IFS= read -r ref; do
         [[ -z "$ref" ]] && continue
         local leaf; leaf=$(basename "$ref")
         copy_asset "$SCRIPT_DIR/$ref" "$TARGET_CURSOR/references/$leaf"
         [[ -n "$TARGET_CLAUDE" ]] && copy_asset "$SCRIPT_DIR/$ref" "$TARGET_CLAUDE/references/$leaf"
-    done < <(json_array "$manifest" references)
+    done <<< "$out"
 
     # Docs (AGENTS.md etc.) → Cursor only
+    out=$(json_array "$manifest" docs)
     while IFS= read -r doc; do
         [[ -z "$doc" ]] && continue
         copy_asset "$SCRIPT_DIR/$doc" "$TARGET_CURSOR/$(basename "$doc")"
-    done < <(json_array "$manifest" docs)
+    done <<< "$out"
 
     # MCP config warning
     local has_mcp; has_mcp=$(json_has_mcp "$manifest")

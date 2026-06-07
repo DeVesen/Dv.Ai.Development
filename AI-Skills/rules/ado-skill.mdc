@@ -24,7 +24,7 @@ Vorbehaltlich **Opt-out** unten: erkennbare Kombination aus **DevOps-Work-Item-B
 
 Explizite Imperative (sofort ladend), u. a.:
 
-- **`prüfe Story`**, **`prüfe Task`**, **`prüfe Feature`**, **`prüfe … 287638`**, **`ado-agent`**, **`@ado-agent`**
+- **`prüfe Story`**, **`prüfe Task`**, **`prüfe Feature`**, **`prüfe … 287638`**
 - **`markiere Task … als fertig`**, **`Task … erledigt`**, **`schließe Task`**
 - **`ToDo für Task`**, **`notiere im Task`**, **`dictiere ToDo`**
 - **`… auf active`**, **`… resolved`**, **`setze Story … active`**

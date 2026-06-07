@@ -1,63 +1,33 @@
 ---
-
 name: planning-workflow
-
 description: >
-
   Beschreibt einen portablen Planungsworkflow fuer Coding-Agenten: zuerst
-
   reine Anforderungsarbeit ohne Code-Recherche, dann kurzer Zwischenstand
-
   (Phase 2), unmittelbar gefolgt von Codebereichs-Scouting (Phase 3) per
-
   einem bis zu zehn **plan-agent-scout**-Laeufen (Phase 3), anschliessend **Phase 4** in **4a** (Orchestrator
-
   **plan-agent**: Topic-Map und Schnittstellen-Vertrag), **4b** (bis zu zehn **plan-agent-topic-planner**,
-
   je ein Topic mit Tech-Mindset und Teilplan inkl. paralleler Implementierung) und **4c** (Merge zur
-
   **Arbeitsversion**), verpflichtendes Drei-Perspektiven-Review (**plan-agent-optimist**,
-
   **plan-agent-pessimist**, **plan-agent-normalo**), Synthese und finales Planpaket mit verbindlicher
-
   **Umsetzungs-Topologie** fuer den [Implementation Workflow](../implementation-workflow/SKILL.md)
-
   (1–10 Implementierungs-Slices, **Slice-ID-Konvention** IMP-FE-{Bereich}/IMP-BE-{ServiceKuerzel},
-
   Wellen, Integration); Phase 6 formuliert der Orchestrator **plan-agent**.
-
   Agent-Profile und **Modellwahl** zentral unter `.cursor/agents/plan-agent*.md`; Abschnitt
-
   **Subagent-Typen und Agent-Definitionen** in diesem Skill. Phase 6 umfasst Review-Digest,
-
   Synthese, Komplexitaets- und Executor-Empfehlung. Drei-Perspektiven-Review nicht optional.
-
   Trigger (vollstaendig: .cursor/rules/planning-workflow-skill.mdc): plane/plane bitte/,
-
   plane die Korrektur/Erweiterung/Anpassung, plane das; Plan/Roadmap/Umsetzungsplan;
-
   implizit Wie gehen wir vor, Vorgehen skizzieren,
-
   Optionen/Strategie/Trade-offs, Migration/Refactor/Architektur, lass uns planen,
-
   noch nicht umsetzen; @planning-workflow-skill, @.cursor/rules/planning-workflow-
-
   skill.mdc, @.cursor/skills/planning-workflow; Plan Mode mit Code-Bezug; Meta Phase
-
   3/Scout, Phase 4a/4b/4c, Topic-Planer, Schnittstellen-Design, Drei-Perspektiven-Review,
-
   Umsetzungs-Topologie; EN write a plan, how
-
   should we approach, outline/break down; Kombi plane und implementiere zuerst
-
   Planning. Nicht bei reiner Erklaerung, Plan umsetzen, Handoff describe-as-prompt.
-
   Opt-out ohne plan-skill/planning-workflow. Ausloesung: unklarer Scope, Architektur-,
-
   Refactor-, Feature- oder Umsetzungsplanung; nicht triviale Einzeiler.
-
 disable-model-invocation: true
-
 ---
 
 # Planning Workflow

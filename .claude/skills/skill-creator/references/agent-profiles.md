@@ -146,13 +146,14 @@ skills:
 [Full system prompt follows — both Cursor and Claude Code use this as the system prompt]
 ```
 
-**File placement:**
+**File placement (single source — no content duplication):**
 - Shared source: `Cursor-AI-Skills/agents/agent-name.md`
-- Claude Code: copy or symlink to `.claude/agents/agent-name.md`
-- Cursor: copy or symlink to `.cursor/agents/agent-name.md`
+- **Cursor:** symlink → `.cursor/agents/agent-name.md` — always required (Cursor only discovers agents here)
+- **Claude Code (skill-driven):** link the file from SKILL.md body using the Subagent reference pattern — Claude Code reads it directly; no `.claude/agents/` entry needed
+- **Claude Code (auto-discovery):** symlink → `.claude/agents/agent-name.md` — only if the agent should be discoverable outside of a skill context
 
 **What each system does with the file:**
-- **Cursor:** reads Markdown body as fresh sub-agent context (no parent conversation history)
+- **Cursor:** reads Markdown body as fresh subagent context (no parent conversation history)
 - **Claude Code:** reads YAML as agent definition; body as system prompt
 
 ---

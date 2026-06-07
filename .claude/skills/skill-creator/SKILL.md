@@ -249,7 +249,11 @@ skills:
 [Markdown body = system prompt for BOTH systems]
 ```
 
-**Shared source:** `Cursor-AI-Skills/agents/agent-name.md` → copy/symlink to `.cursor/agents/` and `.claude/agents/`.
+**Shared source:** `Cursor-AI-Skills/agents/agent-name.md` (single file, no content duplication):
+- Symlink → `.cursor/agents/agent-name.md` — **required** for Cursor to discover the agent
+- **Claude Code via skill reference** (Subagent reference pattern): link the file in SKILL.md body → Claude Code reads it directly — `.claude/agents/` is **not** needed
+- Symlink → `.claude/agents/agent-name.md` — only needed if the agent should be **auto-discoverable** by Claude Code *without* a skill referencing it
+
 **Cursor:** reads Markdown body as fresh subagent context (no parent conversation history). **Claude Code:** reads YAML + body.
 **Note:** Claude Code-only fields (`tools`, `disallowedTools`, `memory`, etc.) are not recognized by Cursor's YAML parser and are treated as unknown keys — standard YAML behavior, but verify with your Cursor version.
 

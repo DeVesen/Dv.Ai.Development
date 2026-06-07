@@ -42,3 +42,5 @@ Workflow for refactoring Angular code in the **target** repository. **Always** l
 ## Opt-out
 
 `no-refactor-skill` → Skill nicht laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

@@ -954,3 +954,7 @@ pflegen: diese `description` (kompakt) und die **kanonische** Trigger-Liste in
 
 **Prompt-Vorlagen:** Aenderungen an Subagent-Auftrags-Payloads **nur** in [references/subagent-prompts.md](references/subagent-prompts.md); danach Verweise in diesem Skill, in Agent-`.md` und Cross-Skills (z. B. describe-as-prompt) pruefen.
 
+## Antwortformat
+
+Keine Code-Beispiele ohne explizite Nachfrage.
+

@@ -523,6 +523,10 @@ After changing this skill, verify host-facing guidance still matches—per host 
 
 **Agent-Profile:** Modell-Slugs und Ketten für den implement-agent **nur** in [## Orchestrator-Konfiguration](SKILL.md#orchestrator-konfiguration) dieses Skills; verify-agent: [../../agents/verify-agent.md](../../agents/verify-agent.md); Skills/Rules verweisen auf [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — keine Slug-Duplikate.
 
+## Antwortformat
+
+Keine Code-Beispiele ohne explizite Nachfrage.
+
 ## Prompt-Vorlagen
 
 Kopierbare Auftrags-Payloads (Platzhalter) — **nicht** Ersatz für Agent-Profile unter [../../agents/](../../agents/):

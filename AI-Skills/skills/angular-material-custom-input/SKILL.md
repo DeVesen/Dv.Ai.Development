@@ -45,3 +45,5 @@ Vor Umsetzung zusätzlich laden: globale Angular-Skills (`angular-developer`, `a
 ## Opt-out
 
 `kein custom-input`, `kein mat-form-field-control` → Skill nicht laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

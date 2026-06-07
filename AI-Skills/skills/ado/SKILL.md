@@ -132,3 +132,5 @@ flowchart TB
 ## Opt-out
 
 `ohne ado-story-skill` · `ohne ado-requests-skill` · `no ado requests skill` → Skill nicht laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

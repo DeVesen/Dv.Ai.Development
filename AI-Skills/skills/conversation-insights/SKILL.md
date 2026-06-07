@@ -80,3 +80,5 @@ Wenn als Subagent beendet:
 ## Opt-out
 
 `describe-as-prompt` / `handoff` → Skill **nicht** laden (anderer Skill).
+
+Keine Code-Beispiele ohne explizite Nachfrage.

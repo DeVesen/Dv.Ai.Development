@@ -35,3 +35,5 @@ Schreibt funktionalen, wartbaren, performanten, zugänglichen Code nach Angular-
 ## Opt-out
 
 `no-angular-new-app` → Skill nicht laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

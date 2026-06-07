@@ -466,15 +466,7 @@ Ist `auto` **nicht** wählbar → **stoppen**, transparent melden — **kein** s
 
 ### genericRTK (verbindlich)
 
-**Jeder** Build-/Test-Lauf im Scope:
-
-1. Shell → **vollständiges** stdout/stderr-Capture dieses Laufs
-2. **Sofort** `filter_output` / `filter_output_stream` (bei Exit ≠ 0 zusätzlich `analyze_build_output`)
-3. Vor jedem MCP: **`Rufe genericRTK …`** sichtbar
-4. **Inhaltliche Diagnose nur** aus **intern gelesenem** MCP-Ergebnis — **niemals** Roh-Konsole
-5. MCP-Body **nicht** in Berichte kopieren — nur **Kurzprosa** aus MCP
-
-**MCP nicht erreichbar:** **`BLOCKER: genericRTK nicht erreichbar`** — stoppen.
+Kanon via Pflicht-Schritt 2: [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc) — Schritte 1–8 und **[Interpretationspflicht (verbindlich)](../../rules/genericrtk-output-filter.mdc#interpretationspflicht-verbindlich)** pro Build-/Test-Lauf. **MCP nicht erreichbar:** **`BLOCKER: genericRTK nicht erreichbar`** — stoppen.
 
 ### Parallelität
 

@@ -261,27 +261,7 @@ plan-agent (Phase 1–2)
 
   als Nutzerfrage markieren. **Ohne** abgeschlossene 4b **kein** 4c.
 
-- **Drei-Perspektiven-Review (Phase 5):** verpflichtend, ohne Nutzer-Opt-in.
-
-  **Gate:** Erst starten, wenn Phase **4b abgeschlossen** und Phase **4c** (Merge zur **Arbeitsversion**)
-
-  durch den Hauptagenten **fertig** ist. Input fuer Review: **ausschliesslich** diese Arbeitsversion —
-
-  **nicht** Scout-Rohnotizen, **nicht** nur 4a-Schnittstellen, **nicht** „geplante Massnahmen (vorlaeufig)“.
-
-  **`plan-agent-optimist`**, **`plan-agent-pessimist`** und **`plan-agent-normalo`** — je **ein** Lauf;
-
-  Prompts aus `references/subagent-prompts.md`. **Verboten:** die drei
-
-  Perspektiven nur durch **Rollensimulation** im Hauptagenten-Turn (Perspektivwechsel
-
-  ohne Subagents). **Parallelitaet** der drei Review-Subagents ist **bevorzugt**,
-
-  sofern die Umgebung es erlaubt; sonst **sequenziell** drei getrennte Task-
-
-  Subagent-Laeufe in festgelegter Reihenfolge — **kein** Ersatz durch einen einzigen
-
-  Agenten mit drei Rollenabschnitten.
+- **Drei-Perspektiven-Review (Phase 5):** verpflichtend, ohne Nutzer-Opt-in. Gate: erst nach vollstaendiger 4c-Arbeitsversion (nicht Scout-Notizen/4a-Schnittstellen). Je ein Lauf `plan-agent-optimist`/`pessimist`/`normalo` — parallel bevorzugt; sonst sequenziell drei Task-Subagent-Laeufe. **Verboten:** Rollensimulation statt Subagents. → Phase 5 (vollstaendige Ausfuehrungsregeln).
 
 - Parallele Subagenten **nur innerhalb derselben Stufe** (siehe **Phasen-Gates**); **keine**
 
@@ -880,10 +860,6 @@ Orchestrator-Modell ist **unabhängig** von delegierten Agenten — deren Modell
 - Nur das **Notwendigste** ändern — kein Over-Engineering.
 - Bestehende Konventionen im Repo respektieren.
 - Jede Empfehlung begründen: *Warum minimal? Warum hier?*
-
-### Delegation — Modell vor Task
-
-Vor **jedem** Subagent-Task: [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — Ziel-Profil lesen; Slugs **nicht** hier duplizieren.
 
 ### Delegation — spezialisierte Planungs-Agenten (ohne Ausnahme)
 

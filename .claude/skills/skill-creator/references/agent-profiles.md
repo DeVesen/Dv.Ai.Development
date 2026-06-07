@@ -120,14 +120,16 @@ Write one file that satisfies both systems:
 ```markdown
 ---
 name: plan-agent
-model: inherit
+# model: omit for platform default (Claude Code → inherit; Cursor → auto)
+#        'inherit' is Claude Code-specific; Cursor may treat it as unknown model ID.
+#        Use a full model-id (e.g. claude-sonnet-4-6) only if both platforms must share it.
 description: >
   Senior-Architekt und Planungs-Orchestrator (Planning Workflow). Führt Phasen 1, 2, 4a, 4c, 6 aus;
   delegiert Scout, Topic-Planer und Review. Liefert Phase-6-Planpaket. Implementiert nicht.
   Use proactively für Architektur, Refactor, Feature-Planung. Alias: Planer.
 
-# Claude Code only (Cursor silently ignores):
-tools: Read, Grep, Glob, Bash, Agent
+# Claude Code only (Cursor treats these as unknown YAML keys and ignores them):
+tools: Read, Grep, Glob, Bash, Agent  # Agent only valid when profile runs as top-level orchestrator
 disallowedTools: Write, Edit
 permissionMode: default
 memory: project
@@ -202,8 +204,8 @@ After completing a task: save what you learned to your memory.
 |------|---------|
 | `default` | Standard permission prompts |
 | `acceptEdits` | Auto-accept file edits in working directory |
-| `auto` | Background classifier reviews commands |
-| `dontAsk` | Auto-deny prompts (explicitly allowed tools still work) |
+| `auto` | Agent runs autonomously without per-tool prompts; standard permission model still applies |
+| `dontAsk` | Auto-proceed without prompting — no permission requests shown; agent does not pause to ask |
 | `bypassPermissions` | Skip all permission prompts (use with extreme caution) |
 | `plan` | Read-only plan mode |
 

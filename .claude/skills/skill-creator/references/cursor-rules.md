@@ -56,7 +56,7 @@ mode for language/framework-specific conventions.
 ---
 description: "Angular Components and Services. Load when Angular, Component, Signal,
   Directive, Injectable, NgModule appears in the conversation scope."
-alwaysApply: false
+# alwaysApply: false  ← optional; false is the default. Shown here for clarity only.
 ---
 ```
 No `globs`. No `alwaysApply`. The agent reads `description` and decides whether to load the
@@ -73,8 +73,9 @@ rule based on the current task. Most flexible mode; requires a high-quality desc
 ---
 ---
 ```
-Empty frontmatter. Loads only when user explicitly types `@rule-name` or the rule is
-referenced by another mechanism. Use for heavyweight rules you opt into deliberately.
+Empty frontmatter. Loads only when user explicitly types `@filename` (without `.mdc`) — rule
+identity comes from the **filename**, not a `name:` field. Use for heavyweight rules you opt
+into deliberately.
 
 ---
 

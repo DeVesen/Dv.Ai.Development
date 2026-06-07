@@ -265,7 +265,7 @@ Elements: keyword-first role + actions (delegation trigger) · output format · 
 |-------|--------|
 | `tools: Read, Grep` | Allowlist — only listed tools available |
 | `disallowedTools: Write` | Denylist — inherits all except these |
-| `permissionMode: acceptEdits` | Auto-accept file edits without prompt |
+| `permissionMode: acceptEdits` | 6 modes: `default` · `acceptEdits` · `auto` · `dontAsk` · `bypassPermissions` · `plan` — see references/agent-profiles.md |
 | `maxTurns: 8` | Cap agentic turns |
 | `skills: [my-skill]` | Preload full skill content at startup |
 | `memory: project` | Persist knowledge in `.claude/agent-memory/` |

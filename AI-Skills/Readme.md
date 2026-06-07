@@ -1011,6 +1011,37 @@ Nach der Installation alle `{parameter}`-Platzhalter in `agents/`, `rules/` und 
 | `references/verification-commands.md` | Build/Test-Befehle pro Stack eintragen |
 | `skills/ado/config.defaults.json` | `defaultProject` (GUID) + `defaultOrganization` setzen (nur ADO) |
 
+### Claude Code — Dual-Deployment
+
+Skills, Agents und References werden auch für Claude Code deployt, wenn `-TargetClaudePath` angegeben wird.
+Rules (`.mdc`) sind Cursor-only und werden nicht nach `.claude/` kopiert.
+
+```powershell
+# Installieren: Cursor + Claude Code gleichzeitig
+.\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
+
+# Alle Packages für beide Plattformen
+.\install-skill.ps1 all C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
+
+# Updaten: Cursor + Claude Code gleichzeitig
+.\update-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
+.\update-skill.ps1 all C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
+```
+
+**Was wohin deployt wird:**
+
+| Artifact | `.cursor/` | `.claude/` |
+|----------|-----------|-----------|
+| Rules (`.mdc`) | ✓ `rules/` | — |
+| Skills | ✓ `skills/<name>/` | ✓ `skills/<name>/` |
+| Agents (`.md`) | ✓ `agents/` | ✓ `agents/` |
+| References | ✓ `references/` | ✓ `references/` |
+| Docs (AGENTS.md) | ✓ root | — |
+
+Nach dem Deployment relative Pfade zwischen Skills und Agents bleiben identisch — `.cursor/skills/planning-workflow/` und `.claude/skills/planning-workflow/` haben die gleiche Ordnertiefe zum jeweiligen `agents/`-Verzeichnis.
+
+---
+
 ### Package-Abhängigkeiten
 
 ```
@@ -1024,3 +1055,18 @@ implementation-workflow   →  genericrtk-filter
 conversation-insights     →  (keine)
 planning-workflow         →  (keine)
 ```
+
+---
+
+### Package pflegen — immer zusammen ändern
+
+Wenn ein Skill, eine Rule, ein Agent oder ein Parameter neu hinzukommt oder geändert wird, müssen **immer** alle vier Artefakte konsistent gehalten werden:
+
+| Artefakt | Pfad | Was zu tun |
+|----------|------|-----------|
+| Inhalt | `skills/`, `agents/`, `rules/` | Datei anlegen / bearbeiten |
+| Package-Manifest | `packages/<name>.json` | Datei in `skills`, `agents`, `rules`, `references`, `params` eintragen |
+| Readme | `Readme.md` | Package-Abschnitt: Operations, Rules, Skills, Sub-Agents, Parameters aktualisieren |
+| Parameter | `{platzhalter}` im Inhalt | In `packages/<name>.json` → `"params"` listen; in Readme → Parameters-Tabelle pflegen |
+
+**Faustregel:** Wenn das Package-Manifest oder die Readme nicht mehr zum Inhalt passen, bricht der Deploy für andere Nutzer lautlos oder mit falschen Werten.

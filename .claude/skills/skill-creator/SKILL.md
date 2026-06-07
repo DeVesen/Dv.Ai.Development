@@ -1,161 +1,337 @@
 ---
 name: skill-creator
-description: Create new skills, modify and improve existing skills, and measure skill performance. Use when users want to create a skill from scratch, edit, or optimize an existing skill, run evals to test a skill, benchmark skill performance with variance analysis, or optimize a skill's description for better triggering accuracy.
+description: >
+  Create, edit, and optimize AI workflow artifacts for Cursor and Claude Code: SKILL.md skill
+  files, Cursor .mdc rules (Always/Auto-Attached/Agent-Requested/Manual), and agent profiles
+  (.claude/agents/, .cursor/agents/). Produces token-dense descriptions, dual-platform agent
+  files, correct rule→agent wiring. Use proactively when creating any skill, rule, or agent;
+  improving or reviewing existing ones; running evals; or optimizing description triggering.
+when_to_use: >
+  Trigger: "create skill", "new rule", "mdc erstellen", "agent profil", "sub-agent",
+  "cursorrules", "skill verbessern", "description optimieren", "rules schreiben",
+  "agent-datei", ".cursor/rules", ".claude/agents", SKILL.md pasted for review/improvement.
+  Aliases: /rule-creator, /agent-creator.
 ---
 
 # Skill Creator
 
-A skill for creating new skills and iteratively improving them.
+A meta-skill for creating and iterating on AI workflow artifacts. Three artifact types exist —
+know which one you need before writing anything.
 
-At a high level, the process of creating a skill goes like this:
-
-- Decide what you want the skill to do and roughly how it should do it
-- Write a draft of the skill
-- Create a few test prompts and run claude-with-access-to-the-skill on them
-- Help the user evaluate the results both qualitatively and quantitatively
-  - While the runs happen in the background, draft some quantitative evals if there aren't any (if there are some, you can either use as is or modify if you feel something needs to change about them). Then explain them to the user (or if they already existed, explain the ones that already exist)
-  - Use the `eval-viewer/generate_review.py` script to show the user the results for them to look at, and also let them look at the quantitative metrics
-- Rewrite the skill based on feedback from the user's evaluation of the results (and also if there are any glaring flaws that become apparent from the quantitative benchmarks)
-- Repeat until you're satisfied
-- Expand the test set and try again at larger scale
-
-Your job when using this skill is to figure out where the user is in this process and then jump in and help them progress through these stages. So for instance, maybe they're like "I want to make a skill for X". You can help narrow down what they mean, write a draft, write the test cases, figure out how they want to evaluate, run all the prompts, and repeat.
-
-On the other hand, maybe they already have a draft of the skill. In this case you can go straight to the eval/iterate part of the loop.
-
-Of course, you should always be flexible and if the user is like "I don't need to run a bunch of evaluations, just vibe with me", you can do that instead.
-
-Then after the skill is done (but again, the order is flexible), you can also run the skill description improver, which we have a whole separate script for, to optimize the triggering of the skill.
-
-Cool? Cool.
-
-## Communicating with the user
-
-The skill creator is liable to be used by people across a wide range of familiarity with coding jargon. If you haven't heard (and how could you, it's only very recently that it started), there's a trend now where the power of Claude is inspiring plumbers to open up their terminals, parents and grandparents to google "how to install npm". On the other hand, the bulk of users are probably fairly computer-literate.
-
-So please pay attention to context cues to understand how to phrase your communication! In the default case, just to give you some idea:
-
-- "evaluation" and "benchmark" are borderline, but OK
-- for "JSON" and "assertion" you want to see serious cues from the user that they know what those things are before using them without explaining them
-
-It's OK to briefly explain terms if you're in doubt, and feel free to clarify terms with a short definition if you're unsure if the user will get it.
+Calibrate communication to user familiarity: "evaluation" and "benchmark" are fine; explain
+"JSON" and "assertion" if the user seems non-technical.
 
 ---
 
-## Creating a skill
+## Which artifact?
+
+| Situation | Artifact | File |
+|-----------|----------|------|
+| Repeatable workflow / process (Claude-driven) | **Skill** (SKILL.md) | `.claude/skills/` or `skills/` |
+| Auto-inject context by file pattern or phrase (Cursor-only) | **Rule** (.mdc) | `.cursor/rules/` |
+| Specialized agent: own context window, model, tools | **Agent profile** (.md) | `.claude/agents/` / `agents/` |
+| Skill needs isolation from main conversation | Skill + `context: fork` + `agent:` | — |
+| Rule must delegate to defined agent behavior | Rule links agent profile | — |
+
+**Migration note:** existing skills in `.claude/skills/` continue to work unchanged. The new
+sections extend, not replace, the existing format.
+
+---
+
+## Creating / Editing a Skill
 
 ### Capture Intent
 
-Start by understanding the user's intent. The current conversation might already contain a workflow the user wants to capture (e.g., they say "turn this into a skill"). If so, extract answers from the conversation history first — the tools used, the sequence of steps, corrections the user made, input/output formats observed. The user may need to fill the gaps, and should confirm before proceeding to the next step.
+The current conversation may already contain a workflow to capture — extract steps, tools used,
+corrections, and input/output formats before asking. Then confirm:
 
 1. What should this skill enable Claude to do?
-2. When should this skill trigger? (what user phrases/contexts)
-3. What's the expected output format?
-4. Should we set up test cases to verify the skill works? Skills with objectively verifiable outputs (file transforms, data extraction, code generation, fixed workflow steps) benefit from test cases. Skills with subjective outputs (writing style, art) often don't need them. Suggest the appropriate default based on the skill type, but let the user decide.
+2. When should it trigger? (phrases, contexts)
+3. Expected output format?
+4. Does it need test cases? (yes for deterministic outputs; optional for subjective ones)
 
 ### Interview and Research
 
-Proactively ask questions about edge cases, input/output formats, example files, success criteria, and dependencies. Wait to write test prompts until you've got this part ironed out.
-
-Check available MCPs - if useful for research (searching docs, finding similar skills, looking up best practices), research in parallel via subagents if available, otherwise inline. Come prepared with context to reduce burden on the user.
+Ask about edge cases, input/output formats, example files, success criteria, dependencies. Check
+available MCPs for research. Come prepared with context to reduce burden on the user.
 
 ### Write the SKILL.md
 
-Based on the user interview, fill in these components:
+#### Frontmatter — all fields
 
-- **name**: Skill identifier
-- **description**: When to trigger, what it does. This is the primary triggering mechanism - include both what the skill does AND specific contexts for when to use it. All "when to use" info goes here, not in the body. Note: currently Claude has a tendency to "undertrigger" skills -- to not use them when they'd be useful. To combat this, please make the skill descriptions a little bit "pushy". So for instance, instead of "How to build a simple fast dashboard to display internal Anthropic data.", you might write "How to build a simple fast dashboard to display internal Anthropic data. Make sure to use this skill whenever the user mentions dashboards, data visualization, internal metrics, or wants to display any kind of company data, even if they don't explicitly ask for a 'dashboard.'"
-- **compatibility**: Required tools, dependencies (optional, rarely needed)
-- **the rest of the skill :)**
+| Field | Value / Notes |
+|-------|--------------|
+| `name` | Display name; directory name = the /command |
+| `description` | Primary trigger — key use case first; ≤ 1536 chars with `when_to_use` |
+| `when_to_use` | Extra trigger phrases (Claude Code only; Cursor ignores) |
+| `argument-hint` | Hint in autocomplete, e.g. `[issue-number]` |
+| `arguments` | Named positional args for `$name` substitution |
+| `disable-model-invocation: true` | Manual /skill-name only; removes from Claude's context |
+| `user-invocable: false` | Claude-only; hides from /menu |
+| `allowed-tools` | Auto-approved without per-use prompt, e.g. `"Read Grep Bash(git *)"` |
+| `disallowed-tools` | Removed from pool while skill active |
+| `model` | `sonnet\|opus\|haiku\|full-id\|inherit` |
+| `effort` | `low\|medium\|high\|xhigh\|max` |
+| `context: fork` | Run in isolated subagent (Claude Code only) |
+| `agent` | `Explore\|Plan\|general-purpose\|<custom-name>` |
+| `paths` | Glob — auto-activate only for matching files |
+| `hooks` | Skill lifecycle hooks (PreToolUse, PostToolUse, etc.) |
+| `shell` | `bash` (default) or `powershell` for `` !`cmd` `` blocks |
+
+**Naming:** Skill frontmatter uses kebab-case (`allowed-tools`, `disallowed-tools`). Agent profiles use camelCase (`tools`, `disallowedTools`). These are separate fields for separate systems.
+
+**Description quality**: keyword-first, imperative. To push: add `"Make sure to use whenever..."`.
+
+#### Dynamic Context Injection (Claude Code)
+
+```
+!`git diff HEAD`           # inline — only at line start or after whitespace
+```!
+node --version
+git log --oneline -5
+```                         # multi-line block
+```
+Executed before Claude sees the skill. Output replaces the placeholder — Claude sees real data.
+`disable-model-invocation: true` blocks this for skills users haven't opted into.
+
+#### String Substitution
+
+| Placeholder | Value |
+|-------------|-------|
+| `$ARGUMENTS` | All args after `/skill-name` |
+| `$0`, `$1` … | Positional args (0-based) |
+| `$name` | Named arg from `arguments:` frontmatter |
+| `${CLAUDE_SKILL_DIR}` | Skill's own directory (use for bundled scripts) |
+| `${CLAUDE_SESSION_ID}` | Current session ID |
+| `${CLAUDE_EFFORT}` | Active effort level |
+
+#### Skill lifecycle
+
+After invocation, SKILL.md content stays in context for the session. At compaction: 5,000 token
+budget per skill, 25,000 total — most recently invoked wins. With `skills:` in an agent profile,
+full content injects at startup instead of on-demand.
 
 ### Skill Writing Guide
 
-#### Anatomy of a Skill
-```
-skill-name/
-├── SKILL.md (required)
-│   ├── YAML frontmatter (name, description required)
-│   └── Markdown instructions
-└── Bundled Resources (optional)
-    ├── scripts/    - Executable code for deterministic/repetitive tasks
-    ├── references/ - Docs loaded into context as needed
-    └── assets/     - Files used in output (templates, icons, fonts)
-```
-#### Progressive Disclosure
+#### Anatomy
 
-Skills use a three-level loading system:
-1. **Metadata** (name + description) - Always in context (~100 words)
-2. **SKILL.md body** - In context whenever skill triggers (<500 lines ideal)
-3. **Bundled resources** - As needed (unlimited, scripts can execute without loading)
-
-These word counts are approximate and you can feel free to go longer if needed.
-
-**Key patterns:**
-- Keep SKILL.md under 500 lines; if you're approaching this limit, add an additional layer of hierarchy along with clear pointers about where the model using the skill should go next to follow up.
-- Reference files clearly from SKILL.md with guidance on when to read them
-- For large reference files (>300 lines), include a table of contents
-
-**Domain organization**: When a skill supports multiple domains/frameworks, organize by variant:
 ```
-cloud-deploy/
-├── SKILL.md (workflow + selection)
-└── references/
-    ├── aws.md
-    ├── gcp.md
-    └── azure.md
+my-skill/
+├── SKILL.md              required — overview and navigation
+├── agents/               sub-agent profiles referenced from this skill
+│   └── worker.md
+├── references/           large docs loaded on demand (link from SKILL.md)
+│   └── api-docs.md
+└── scripts/              executed, not loaded into context
+    └── validate.sh
 ```
-Claude reads only the relevant reference file.
+
+Keep SKILL.md under 500 lines. Push large reference material to `references/` with a note on
+when to read it. For files >300 lines, include a table of contents.
+
+**Sub-agent reference pattern** (Claude Code follows these links; Cursor agents use the same `.md` file directly via `.cursor/agents/` — no duplication needed):
+```markdown
+Subagent: [`agents/worker.md`](agents/worker.md)
+Read full profile before delegation. Do not repeat model slug or behavior here.
+```
+
+#### Writing patterns
+
+Use imperative form. Explain *why* behind requirements rather than heavy-handed MUSTs. Define
+output format with an exact template. Include 1–2 input→output examples. Generalize from
+feedback — avoid overfit to specific test cases.
 
 #### Principle of Lack of Surprise
 
-Skills must not contain malware, exploit code, or any content that could compromise system security. A skill's contents should not surprise the user in their intent if described.
-
-#### Writing Patterns
-
-Prefer using the imperative form in instructions.
-
-**Defining output formats** - You can do it like this:
-```markdown
-## Report structure
-ALWAYS use this exact template:
-# [Title]
-## Executive summary
-## Key findings
-## Recommendations
-```
-
-**Examples pattern** - It's useful to include examples. You can format them like this:
-
-```markdown
-## Commit message format
-**Example 1:**
-Input: Added user authentication with JWT tokens
-Output: feat(auth): implement JWT-based authentication
-```
-
-### Writing Style
-
-Try to explain to the model why things are important in lieu of heavy-handed musty MUSTs. Use theory of mind and try to make the skill general and not super-narrow to specific examples. Start by writing a draft and then look at it with fresh eyes and improve it.
+Skills must not contain malware, exploit code, or anything that would surprise the user if
+described plainly.
 
 ### Test Cases
 
-After writing the skill draft, come up with 2-3 realistic test prompts — the kind of thing a real user would actually say. Share them with the user: "Here are a few test cases I'd like to try. Do these look right, or do you want to add more?" Then run them.
-
-Save test cases to `evals/evals.json`. Don't write assertions yet — just the prompts. You'll draft assertions in the next step while the runs are in progress.
+Write 2–3 realistic test prompts. Share with user for confirmation. Save to `evals/evals.json`:
 
 ```json
 {
   "skill_name": "example-skill",
   "evals": [
-    {
-      "id": 1,
-      "prompt": "User's task prompt",
-      "expected_output": "Description of expected result",
-      "files": []
-    }
+    { "id": 1, "prompt": "User's task prompt", "expected_output": "Expected result", "files": [] }
   ]
 }
 ```
+
+---
+
+## Creating a Cursor Rule (.mdc)
+
+Use a rule when behavior must **auto-inject into Cursor** based on file context or recognized
+phrases — without the user invoking anything explicitly. Rules are **Cursor-only**; Claude Code
+has no equivalent (.mdc files are ignored there).
+
+### Four activation modes
+
+```yaml
+# 1. Always — every conversation (expensive; use only for foundational project-wide context)
+---
+alwaysApply: true
+---
+Keep always-rules short: every token costs in every request.
+
+# 2. Auto-Attached — loads when matching files are in context
+---
+globs: "src/**/*.ts, **/*.spec.ts"
+---
+Glob syntax: src/**/*.tsx matches subdirs; src/*.tsx matches src/ root only.
+
+# 3. Agent-Requested — agent reads description and decides (no globs, alwaysApply: false)
+---
+description: "EF Core Migrations. Load when dotnet migration, DbContext, Add-Migration in scope."
+alwaysApply: false
+---
+
+# 4. Manual — user explicitly requests via @rule-name (empty frontmatter, no globs)
+---
+---
+```
+
+### Agent-Requested description quality
+
+Keyword-first, imperative: `"Angular Components. Load when Angular, Component, Signal in scope."` — not `"Use for Angular stuff"`.
+
+### Rule → agent profile reference pattern
+
+Rule = *routing* (triggers, opt-out, priority). Agent profile = *behavior*. Never duplicate.
+
+```markdown
+## Mandatory activation
+
+Recognized intent → read full agent profile before responding:
+
+[`agents/plan-agent.md`](../agents/plan-agent.md)
+
+Phase model and workflow defined there only. Opt-out: `ohne plan-agent`
+```
+
+→ Full reference: [`references/cursor-rules.md`](references/cursor-rules.md)
+
+---
+
+## Creating an Agent Profile
+
+Use an agent profile when you need a **specialized context window** with its own model, tools,
+and system prompt — reusable across skills and rules without duplicating behavior.
+
+### Dual-use pattern (single source of truth)
+
+One `.md` file works for both Cursor and Claude Code. Both systems read the YAML frontmatter
+for configuration and the Markdown body as the system prompt. Claude Code-only fields are
+ignored by Cursor; Cursor-only fields are ignored by Claude Code:
+
+```markdown
+---
+name: agent-name               # required by both: unique identifier
+# model: omit for platform default (Claude Code → inherit; Cursor → auto)
+#        or use full model-id for explicit control (e.g. claude-sonnet-4-6)
+#        — no shared alias exists between platforms
+description: >                 # required by both: delegation trigger (keyword-first)
+  Senior code reviewer. Checks PR diff for security, correctness, style violations.
+  Returns numbered findings with file:line references. Does NOT implement fixes.
+  Use proactively after code changes or before merge. Alias: reviewer.
+
+# Claude Code-only fields (Cursor ignores these silently):
+tools: Read, Grep, Glob, Bash
+disallowedTools: Write, Edit
+permissionMode: acceptEdits
+memory: project
+skills:
+  - api-conventions
+---
+
+[Markdown body = system prompt for BOTH systems]
+```
+
+**Shared source:** `AI-Skills/agents/agent-name.md` — deployed via install script (no manual symlinks):
+
+```powershell
+# Deploy: Cursor + Claude Code gleichzeitig
+.\install-skill.ps1 <package> C:\Project\.cursor C:\Project\.claude
+.\update-skill.ps1  <package> C:\Project\.cursor C:\Project\.claude
+```
+
+| Deploy-Ziel | Cursor | Claude Code |
+|-------------|--------|-------------|
+| Rules (`.mdc`) | `.cursor/rules/` | — (Cursor-only) |
+| Skills | `.cursor/skills/<name>/` | `.claude/skills/<name>/` |
+| Agents | `.cursor/agents/` | `.claude/agents/` |
+| References | `.cursor/references/` | `.claude/references/` |
+
+**Cursor:** reads Markdown body as fresh subagent context (no parent conversation history). **Claude Code:** reads YAML + body.
+**Note:** Claude Code-only fields (`tools`, `disallowedTools`, `memory`, etc.) are not recognized by Cursor's YAML parser and are treated as unknown keys — standard YAML behavior, but verify with your Cursor version.
+
+#### Package-Manifest und Readme — immer zusammen pflegen
+
+Wenn ein Skill, eine Rule, ein Agent oder ein Parameter hinzukommt oder sich ändert:
+
+| Was | Wo |
+|-----|----|
+| Inhalt anlegen/ändern | `AI-Skills/skills/`, `agents/`, `rules/` |
+| Package-Manifest aktualisieren | `AI-Skills/packages/<name>.json` — Datei in `skills`, `agents`, `rules`, `references`, `params` eintragen |
+| Readme aktualisieren | `AI-Skills/Readme.md` — Abschnitt: Operations, Rules, Skills, Sub-Agents, Parameters |
+| Parameter pflegen | `{platzhalter}` im Inhalt → in `packages/<name>.json` → `"params"` und in Readme → Parameters-Tabelle |
+
+**Vergissene Manifest/Readme-Updates:** Deploy bricht für andere Nutzer lautlos oder liefert falsche Parameterwerte.
+
+### Agent description quality
+
+Formula: `[Role] — [Key actions]. [Output]. [Non-goals]. Use proactively [trigger]. Alias: [name].`
+
+Elements: keyword-first role + actions (delegation trigger) · output format · explicit non-goals · `Use proactively` · `Alias:` for `@mention`.
+
+### Key Claude Code frontmatter fields
+
+| Field | Effect |
+|-------|--------|
+| `tools: Read, Grep` | Allowlist — only listed tools available |
+| `disallowedTools: Write` | Denylist — inherits all except these |
+| `permissionMode: acceptEdits` | 6 modes: `default` · `acceptEdits` · `auto` · `dontAsk` · `bypassPermissions` · `plan` — see references/agent-profiles.md |
+| `maxTurns: 8` | Cap agentic turns |
+| `skills: [my-skill]` | Preload full skill content at startup |
+| `memory: project` | Persist knowledge in `.claude/agent-memory/` |
+| `isolation: worktree` | Isolated git worktree per invocation |
+| `background: true` | Always run as background task |
+| `color: blue` | UI display color |
+
+Note: subagents cannot spawn other subagents in Claude Code.
+
+→ Full reference: [`references/agent-profiles.md`](references/agent-profiles.md)
+
+---
+
+## Dual-Platform Quick Reference
+
+### Field compatibility table
+
+| Field | Claude Code (agents) | Cursor (agents) |
+|-------|---------------------|-----------------|
+| `name` | Unique identifier (required) | Agent name (required) |
+| `description` | Delegation trigger (required) | Delegation trigger (required) |
+| `model` | inherit/sonnet/opus/haiku/full-id | auto/model-id |
+| `tools` | Allowlist | Ignored |
+| `disallowedTools` | Denylist | Ignored |
+| `permissionMode` | Permission mode | Ignored |
+| `skills` | Preload skills at startup | Ignored |
+| `memory` | Persistent memory scope | Ignored |
+| `isolation` | Git worktree | Ignored |
+| `background` | Run as background task | Ignored |
+| `is_background` | Ignored | Run in background (Cursor-specific) |
+| `readonly` | Ignored | Read-only mode (Cursor-specific) |
+
+### Token-dense description formula
+
+`[Role] — [Key actions]. [Output]. [Non-goals]. Use proactively [trigger]. Alias: [name].`
+
+**Budget:** `description` + `when_to_use` ≤ 1,536 chars (Claude Code). No hard limit in Cursor, keep concise.
+
+---
 
 ## Running and evaluating test cases
 
@@ -346,23 +522,14 @@ Take `best_description` from the JSON output and update the skill's SKILL.md fro
 
 ## Reference files
 
-The agents/ directory contains instructions for specialized subagents. Read them when you need to spawn the relevant subagent.
+The `agents/` directory contains instructions for specialized subagents used in eval workflows:
 
-- `agents/grader.md` — How to evaluate assertions against outputs
-- `agents/comparator.md` — How to do blind A/B comparison between two outputs
-- `agents/analyzer.md` — How to analyze why one version beat another
+- `agents/grader.md` — Evaluate assertions against outputs
+- `agents/comparator.md` — Blind A/B comparison between two outputs
+- `agents/analyzer.md` — Analyze why one version beat another
 
-The references/ directory has additional documentation:
+The `references/` directory has additional documentation:
 
 - `references/schemas.md` — JSON structures for evals.json, grading.json, etc.
-
------
-
-Core loop summary:
-
-- Figure out what the skill is about
-- Draft or edit the skill
-- Run claude-with-access-to-the-skill on test prompts
-- With the user, evaluate the outputs (create benchmark.json, run eval-viewer)
-- Repeat until satisfied
-- Package the final skill and return it to the user
+- `references/cursor-rules.md` — Complete Cursor .mdc rule reference (modes, glob syntax, best practices, anti-patterns)
+- `references/agent-profiles.md` — Complete agent profile reference for Claude Code and Cursor (all fields, dual-use pattern, memory, permissions, agent teams)

@@ -15,14 +15,16 @@ AI-Skills/              Source library — do not edit deployed copies
 ├── references/         Shared references (subagent-model-before-task.md etc.)
 ├── install-skill.ps1   Deploy script (Windows/PowerShell)
 ├── install-skill.sh    Deploy script (Linux/macOS)
-├── update-skill.ps1    Update script (Windows/PowerShell)
+├── update-skill.ps1    Update script (Windows/PowerShell, handles params + MCP)
 └── Readme.md           Full package reference + install instructions (= AGENTS.md after deploy)
 
-.claude/
+.claude/                Claude Code config for this repo (skills used here)
 └── skills/
     ├── skill-creator/  Meta-skill: create/improve skills, rules, and agent profiles
     └── work-review/    Quality review: 4 parallel reviewer agents on any deliverable
 ```
+
+Note: `.claude/agents/` and `.cursor/` are populated in **target projects** after deployment — they do not exist in this source repo.
 
 ---
 
@@ -37,9 +39,14 @@ AI-Skills/              Source library — do not edit deployed copies
 
 ## Deploying to a Project
 
-AI-Skills artifacts must be deployed into a target project before they are active.
+AI-Skills artifacts must be deployed into a target project before they are active. The target project's `.cursor/` and `.claude/` directories must already exist.
 
-**Linux/macOS:**
+**Step 0 — browse available packages:**
+```bash
+./AI-Skills/install-skill.sh --list
+```
+
+**Linux/macOS — install:**
 ```bash
 # Cursor + Claude Code
 ./AI-Skills/install-skill.sh all /path/to/project/.cursor /path/to/project/.claude
@@ -47,12 +54,20 @@ AI-Skills artifacts must be deployed into a target project before they are activ
 # Cursor only
 ./AI-Skills/install-skill.sh all /path/to/project/.cursor
 
-# Preview without copying
+# Preview without copying (target dirs need not exist for dry-run)
 ./AI-Skills/install-skill.sh planning-workflow /path/to/project/.cursor /path/to/project/.claude --dry-run
+```
+
+**Linux/macOS — update (re-run install, replaces files, MCP not touched):**
+```bash
+./AI-Skills/install-skill.sh all /path/to/project/.cursor /path/to/project/.claude
 ```
 
 **Windows (PowerShell):**
 ```powershell
+# List packages
+.\AI-Skills\install-skill.ps1 -List
+
 # Cursor + Claude Code (also handles MCP config interactively)
 .\AI-Skills\install-skill.ps1 all C:\project\.cursor C:\project\.claude
 
@@ -60,7 +75,15 @@ AI-Skills artifacts must be deployed into a target project before they are activ
 .\AI-Skills\update-skill.ps1 all C:\project\.cursor C:\project\.claude
 ```
 
-**What goes where:**
+**Post-install — replace placeholders:**
+
+Neither `install-skill.sh` nor `install-skill.ps1` substitutes `{param}` placeholders. After installing, replace them manually (or use `update-skill.ps1` on Windows for interactive prompts):
+
+1. Check which params a package needs: `AI-Skills/packages/<name>.json` → `"params"` array
+2. Search deployed files: `grep -r '{frontend-path}' /path/to/project/.cursor/`
+3. Replace in all matched files
+
+**What goes where (in target projects):**
 
 | Artifact | `.cursor/` | `.claude/` |
 |----------|-----------|-----------|
@@ -91,6 +114,6 @@ Use `/skill-creator` to create new artifacts — it knows both Cursor and Claude
 
 **Cursor** activates skills via Rules (`.mdc`). Rules auto-inject context based on file patterns or keywords, and route to agent profiles in `.cursor/agents/`.
 
-**Claude Code** invokes skills directly (`/skill-name`) or via the `Skill` tool. Agent profiles in `.claude/agents/` are auto-discovered. Skills reference agents via relative paths — no `.claude/agents/` copy needed for skill-driven delegation.
+**Claude Code** invokes skills directly (`/skill-name`) or via the `Skill` tool. The harness uses the skill's `description` + `when_to_use` frontmatter for automatic selection. Agent profiles deployed to `.claude/agents/` are auto-discovered; skills can also reference agent files directly to delegate with full agent context.
 
 **Rules are Cursor-only.** Claude Code does not use `.mdc` files. The trigger equivalent in Claude Code is the skill's `description` + `when_to_use` frontmatter.

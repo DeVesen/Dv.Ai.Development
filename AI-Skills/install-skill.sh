@@ -7,8 +7,15 @@
 # NOTE: Interactive MCP configuration (Docker/simple) is not supported here.
 #       Use install-skill.ps1 on Windows for interactive MCP setup.
 #       After install, configure .cursor/mcp.json manually if needed.
+#
+#       Placeholder parameters ({frontend-path} etc.) are not substituted.
+#       After install, replace placeholders in agents/, rules/, and skills/ manually.
+#       install-skill.ps1 also does NOT substitute placeholders — only update-skill.ps1 does.
 
 set -euo pipefail
+
+# Pre-flight: python3 is required for JSON parsing
+command -v python3 >/dev/null 2>&1 || { echo "ERROR: python3 is required but not found." >&2; exit 1; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PACKAGES_DIR="$SCRIPT_DIR/packages"
@@ -20,29 +27,47 @@ PACKAGE_NAME=""
 INSTALLED_PACKAGES=""
 
 # ---------------------------------------------------------------------------
-# JSON helpers (python3 required)
+# JSON helpers (python3)
 # ---------------------------------------------------------------------------
-
-_py() { python3 -c "$1" 2>/dev/null; }
 
 json_array() {
     local file="$1" key="$2"
-    _py "
-import json
-d = json.load(open('$file'))
-for x in d.get('$key', []):
-    print(x)
-"
+    python3 - "$file" "$key" <<'PYEOF'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    for x in d.get(sys.argv[2], []):
+        print(x)
+except Exception as e:
+    print(f"ERROR: failed to parse {sys.argv[1]}: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
 }
 
 json_string() {
     local file="$1" key="$2"
-    _py "import json; d = json.load(open('$file')); print(d.get('$key', ''))"
+    python3 - "$file" "$key" <<'PYEOF'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    print(d.get(sys.argv[2], ''))
+except Exception as e:
+    print(f"ERROR: failed to parse {sys.argv[1]}: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
 }
 
 json_has_mcp() {
     local file="$1"
-    _py "import json; d = json.load(open('$file')); print('yes' if d.get('mcp') else '')"
+    python3 - "$file" <<'PYEOF'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    print('yes' if d.get('mcp') else '')
+except Exception as e:
+    print(f"ERROR: failed to parse {sys.argv[1]}: {e}", file=sys.stderr)
+    sys.exit(1)
+PYEOF
 }
 
 # ---------------------------------------------------------------------------
@@ -58,14 +83,14 @@ copy_asset() {
     mkdir -p "$(dirname "$dst")"
     if [[ -d "$src" ]]; then
         rm -rf "$dst"
-        cp -r "$src" "$dst"
+        cp -rP "$src" "$dst"
     else
         cp -f "$src" "$dst"
     fi
     echo "  + $dst"
 }
 
-is_installed() { echo " $INSTALLED_PACKAGES " | grep -qw " $1 "; }
+is_installed() { [[ " $INSTALLED_PACKAGES " == *" $1 "* ]]; }
 
 # ---------------------------------------------------------------------------
 # Install one package (recursively resolves dependsOn)
@@ -78,7 +103,7 @@ install_package() {
 
     local manifest="$PACKAGES_DIR/$name.json"
     if [[ ! -f "$manifest" ]]; then
-        local available; available=$(ls "$PACKAGES_DIR"/*.json 2>/dev/null | xargs -I{} basename {} .json | tr '\n' ' ')
+        local available; available=$(for f in "$PACKAGES_DIR"/*.json; do basename "$f" .json; done | sort | tr '\n' ' ')
         echo "ERROR: Package '$name' not found. Available: $available" >&2
         exit 1
     fi
@@ -145,7 +170,7 @@ list_packages() {
     echo
     echo "Available packages:"
     echo
-    for f in "$PACKAGES_DIR"/*.json; do
+    for f in $(ls "$PACKAGES_DIR"/*.json 2>/dev/null | sort); do
         local name; name=$(basename "$f" .json)
         local desc; desc=$(json_string "$f" description)
         local deps; deps=$(json_array "$f" dependsOn | tr '\n' ' ' | sed 's/[[:space:]]*$//')
@@ -174,15 +199,15 @@ USAGE: $(basename "$0") <PackageName|all> <TargetCursorPath> [TargetClaudePath] 
   --list           List all available packages and exit
 
 EXAMPLES:
+  $(basename "$0") --list
   $(basename "$0") planning-workflow /project/.cursor
   $(basename "$0") planning-workflow /project/.cursor /project/.claude
   $(basename "$0") all /project/.cursor /project/.claude
   $(basename "$0") all /project/.cursor /project/.claude --dry-run
-  $(basename "$0") --list
 
 NOTE: Placeholder parameters ({frontend-path} etc.) are not substituted automatically.
-      After install, replace placeholders in agents/, rules/, and skills/ manually
-      or use update-skill.ps1 on Windows for interactive parameter prompts.
+      After install, replace placeholders in agents/, rules/, and skills/ manually.
+      Only update-skill.ps1 (Windows) performs interactive parameter substitution.
 
       MCP configuration is Windows/PowerShell only — see install-skill.ps1.
 
@@ -224,7 +249,7 @@ TARGET_CLAUDE="${TARGET_CLAUDE%/}"
 
 if [[ "$PACKAGE_NAME" == "all" ]]; then
     echo "Installing all packages..."
-    for f in "$PACKAGES_DIR"/*.json; do
+    for f in $(ls "$PACKAGES_DIR"/*.json 2>/dev/null | sort); do
         install_package "$(basename "$f" .json)"
     done
 else

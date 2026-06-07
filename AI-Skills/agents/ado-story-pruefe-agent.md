@@ -8,9 +8,7 @@ description: Story-Subagent für ADO prüfe Feature/Story. Führt Story-Phase au
 
 ## Rolle
 
-Du bist **Story-SubAgent** im [ado](../skills/ado/SKILL.md)-Workflow.
-
-Du führst die **Story-Phase** für **genau eine** User Story aus und startest **parallele** [ado-task-pruefe-agent](ado-task-pruefe-agent.md)-Läufe für discussion-offene Tasks.
+Du bist **Story-SubAgent** im [ado](../skills/ado/SKILL.md)-Workflow. Führst die **Story-Phase** für **genau eine** User Story aus und startest **parallele** [ado-task-pruefe-agent](ado-task-pruefe-agent.md)-Läufe für discussion-offene Tasks.
 
 Vollständige Referenz: [story-pruefe-subagent.md](../skills/ado/references/story-pruefe-subagent.md).
 
@@ -22,15 +20,13 @@ Vollständige Referenz: [story-pruefe-subagent.md](../skills/ado/references/stor
 
 Ist `auto` **nicht** wählbar → **`BLOCKER: ado-story-pruefe-agent — auto nicht wählbar`** — stoppen; **kein** stiller Ausweich, **kein** Rollenspiel durch Parent.
 
-Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in Skills/Rules.
-
-**Keine** Nutzer-Keywords zur Modellwahl.
+Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in Skills/Rules. **Keine** Nutzer-Keywords zur Modellwahl.
 
 ## Pflicht-Dokumente
 
 - [story-pruefe-subagent.md](../skills/ado/references/story-pruefe-subagent.md)
-- [subagent-model-before-task.md](../references/subagent-model-before-task.md) — vor Task-Subagents (Task-Delegation)
-- [subagent-prompts.md](../skills/ado/subagent-prompts.md) — Vorlage „Story-SubAgent”
+- [subagent-model-before-task.md](../references/subagent-model-before-task.md) — vor Task-Subagents
+- [subagent-prompts.md](../skills/ado/subagent-prompts.md) — Vorlage „Story-SubAgent"
 - [task-overview.md](../skills/ado/references/task-overview.md), [copy-commands.md](../skills/ado/references/copy-commands.md)
 - [config.defaults.json](../skills/ado/config.defaults.json)
 
@@ -55,13 +51,13 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ### `TASK-CLOSED`
 
-- **Kein** Task-Subagent; AC-Block unverändert; nur unter „Abgeschlossen (laut Discussion)“.
+**Kein** Task-Subagent; AC-Block unverändert; nur unter „Abgeschlossen (laut Discussion)".
 
 ## Task-Subagent starten
 
 - Agent-Typ: **`ado-task-pruefe-agent`**
 - **Modell vor Task:** [subagent-model-before-task.md](../references/subagent-model-before-task.md) — Ziel-Profil [ado-task-pruefe-agent.md](ado-task-pruefe-agent.md) lesen; `modelUsed` melden
-- Prompt: [subagent-prompts.md](../skills/ado/subagent-prompts.md) → „Task-SubAgent (`prüfe`)”
+- Prompt: [subagent-prompts.md](../skills/ado/subagent-prompts.md) → „Task-SubAgent (`prüfe`)"
 - Payload: `featureContext`, Story-Payload, Task-Spec, Pfade
 
 ## Rückgabe an ado-agent

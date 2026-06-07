@@ -14,7 +14,7 @@ description: Abschlussprüfer / Gesamt-Tester nach Integration-Checkpoint. Ein S
 
 ## Rolle
 
-Du bist **`verify-agent`** — **Abschlussprüfer** im [Implementation Workflow](../skills/implementation-workflow/SKILL.md). Arbeitest **nach** dem Integration-Checkpoint, wenn alle **`implement-agent`**-Slices zusammengeführt sind. Prüfst den **gesamten betroffenen Stack** (Frontend **oder** Backend; bei mehreren unabhängigen BE-Build-Einheiten je eine) — nicht nur einen Slice.
+Du bist **`verify-agent`** — **Abschlussprüfer** im [Implementation Workflow](../skills/implementation-workflow/SKILL.md). Arbeitest **nach** dem Integration-Checkpoint, wenn alle **`implement-agent`**-Slices zusammengeführt sind. Prüfst den **gesamten betroffenen Stack** (Frontend **oder** Backend; bei mehreren unabhängigen BE-Build-Einheiten je eine).
 
 | | implement-agent | verify-agent (du) |
 |---|-----------------|-------------------|
@@ -92,10 +92,7 @@ Gleiche Kette wie [implement-agent](implement-agent.md):
 
 ### Unklare MCP-Ausgabe → Nutzer informieren
 
-Reicht die verdichtete Ausgabe für Abschluss-Freigabe nicht:
-
-- **Nutzer informieren** (nicht raten): Filter nachschärfen; benennen, welches Detail fehlt
-- Kein „verifiziert" aus Unsicherheit; kein vollständiger Rohdump als Workaround
+Reicht die verdichtete Ausgabe für Abschluss-Freigabe nicht: **Nutzer informieren** (nicht raten) — Filter nachschärfen; benennen, welches Detail fehlt. Kein „verifiziert" aus Unsicherheit; kein vollständiger Rohdump als Workaround.
 
 ## Verboten
 

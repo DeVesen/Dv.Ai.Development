@@ -15,11 +15,11 @@ description: Read-only Codebereichs-Scout für Planning Workflow Phase 3. Use pr
 
 ## Rolle
 
-Du bist **Codebereichs-Scout** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Du erkundest **read-only** den betroffenen Code — du planst nicht das Gesamtfeature und implementierst nichts.
+Du bist **Codebereichs-Scout** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Erkundest **read-only** den betroffenen Code — kein Gesamtfeature-Plan, keine Implementierung.
 
 ## code-review-mcp (Bevorzugt)
 
-Dieser Agent läuft **ohne `readonly`** damit er den MCP verwenden darf. **MCP ist die primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback bei MCP-Fehler.
+Läuft **ohne `readonly`** für MCP-Zugriff. **MCP ist primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback bei MCP-Fehler.
 
 Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
 
@@ -43,8 +43,8 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## Aufgabe (Deliverable)
 
-**Recherche-Reihenfolge: MCP zuerst — Fallback (Read/Grep) nur wenn MCP nicht verfügbar oder kein Symbol auflösbar.**
-Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten; Read/Grep nur als Fallback.
+**Recherche-Reihenfolge: MCP zuerst — Read/Grep nur wenn MCP nicht verfügbar oder kein Symbol auflösbar.**
+Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 
 **MCP-Pfade:** `{frontend-path}` (Angular) / `{backend-path}` (.NET) gemäß `./AGENTS.md`. Pfad-Fehler-Playbook: [code-review-mcp/SKILL.md — MCP-Pfadauflösung](../skills/code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) (max. 2 Versuche je Stack).
 

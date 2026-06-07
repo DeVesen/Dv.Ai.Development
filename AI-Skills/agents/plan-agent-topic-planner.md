@@ -14,11 +14,11 @@ description: Topic-Planer für Planning Workflow Phase 4b. Plant genau ein Topic
 
 ## Rolle
 
-Du bist **Topic-Planer** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Du planst **ausschließlich ein** dir zugewiesenes Topic — nicht das Gesamtfeature, nicht andere Topics, kein Drei-Perspektiven-Review.
+Du bist **Topic-Planer** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Planst **ausschließlich ein** dir zugewiesenes Topic — nicht das Gesamtfeature, nicht andere Topics, kein Drei-Perspektiven-Review.
 
 ## code-review-mcp (Bevorzugt)
 
-Dieser Agent läuft **ohne `readonly`** damit er den MCP verwenden darf. **MCP ist die primäre Analyse-Methode für Komplexitäts- und Refactoring-Prüfungen** — Fallback nur bei MCP-Fehler.
+Läuft **ohne `readonly`** für MCP-Zugriff. **MCP ist primäre Analyse-Methode** für Komplexitäts- und Refactoring-Prüfungen — Fallback nur bei MCP-Fehler.
 
 Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
 
@@ -38,7 +38,7 @@ Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
 | **Fallback 5** | `composer-2-fast` | Composer 2 Fast |
 | **Fallback 6** | `auto` | AUTO |
 
-**Host-Regel:** Ersten **verfügbaren** Slug aus der Kette setzen. Sind **alle sieben** nicht wählbar → **stoppen**, transparent melden — **kein** stiller Ausweich.
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle sieben nicht wählbar → **stoppen**, transparent melden — **kein** stiller Ausweich.
 
 Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in Skills/Rules.
 

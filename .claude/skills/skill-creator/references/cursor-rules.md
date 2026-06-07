@@ -16,7 +16,7 @@ alwaysApply: true     # Always mode: load in every conversation
 ---
 ```
 
-Only one "mode" is active per rule (see below). Combining fields is possible but unusual.
+Mode is determined by which frontmatter fields are set. Combining `globs` and `description` activates both triggers simultaneously (Auto-Attached AND Agent-Requested). `alwaysApply: true` overrides all other fields.
 
 ---
 

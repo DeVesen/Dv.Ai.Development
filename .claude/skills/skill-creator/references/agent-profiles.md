@@ -86,6 +86,11 @@ tools: Agent(worker, researcher), Read # restrict which subagents can be spawned
 tools: Bash(git add *), Bash(git commit *) # restrict specific Bash commands
 ```
 
+> **`Agent(worker, researcher)` context:** The `Agent` tool is only available to top-level
+> orchestrators — agents running as the main session (e.g. via `claude --agent`) or the root
+> Claude Code session. **Subagents cannot spawn other subagents.** The `Agent` tool is never
+> available inside a subagent regardless of what is listed in `tools`.
+
 ---
 
 ## Cursor — frontmatter fields

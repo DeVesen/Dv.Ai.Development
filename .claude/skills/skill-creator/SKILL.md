@@ -75,6 +75,10 @@ available MCPs for research. Come prepared with context to reduce burden on the 
 | `context: fork` | Run in isolated subagent (Claude Code only) |
 | `agent` | `Explore\|Plan\|general-purpose\|<custom-name>` |
 | `paths` | Glob — auto-activate only for matching files |
+| `hooks` | Skill lifecycle hooks (PreToolUse, PostToolUse, etc.) |
+| `shell` | `bash` (default) or `powershell` for `` !`cmd` `` blocks |
+
+**Naming:** Skill frontmatter uses kebab-case (`allowed-tools`, `disallowed-tools`). Agent profiles use camelCase (`tools`, `disallowedTools`). These are separate fields for separate systems.
 
 **Description quality**: keyword-first, imperative. To push: add `"Make sure to use whenever..."`.
 
@@ -127,7 +131,7 @@ when to read it. For files >300 lines, include a table of contents.
 
 **Sub-agent reference pattern** (works for both Cursor and Claude Code — no duplication):
 ```markdown
-Sub-agent: [`agents/worker.md`](agents/worker.md)
+Subagent: [`agents/worker.md`](agents/worker.md)
 Read full profile before delegation. Do not repeat model slug or behavior here.
 ```
 
@@ -225,8 +229,9 @@ ignored by Cursor; Cursor-only fields are ignored by Claude Code:
 ```markdown
 ---
 name: agent-name               # required by both: unique identifier
-model: inherit                 # Claude Code: inherit|sonnet|opus|haiku|full-model-id
-                               # Cursor: auto|model-id (same concept, different values)
+# model: omit for platform default (Claude Code → inherit; Cursor → auto)
+#        or use full model-id for explicit control (e.g. claude-sonnet-4-6)
+#        — no shared alias exists between platforms
 description: >                 # required by both: delegation trigger (keyword-first)
   Senior code reviewer. Checks PR diff for security, correctness, style violations.
   Returns numbered findings with file:line references. Does NOT implement fixes.
@@ -245,7 +250,8 @@ skills:
 ```
 
 **Shared source:** `Cursor-AI-Skills/agents/agent-name.md` → copy/symlink to `.cursor/agents/` and `.claude/agents/`.
-**Cursor:** reads Markdown body as fresh sub-agent context. **Claude Code:** reads YAML + body.
+**Cursor:** reads Markdown body as fresh subagent context (no parent conversation history). **Claude Code:** reads YAML + body.
+**Note:** Claude Code-only fields (`tools`, `disallowedTools`, `memory`, etc.) are not recognized by Cursor's YAML parser and are treated as unknown keys — standard YAML behavior, but verify with your Cursor version.
 
 ### Agent description quality
 

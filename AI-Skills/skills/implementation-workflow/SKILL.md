@@ -36,7 +36,7 @@ commands immediately. First decide whether the plan is truly
 criteria, risks, or host rules are unclear, **stop** and resolve with the user
 before any delegation or execution.
 
-During **Schritt 2**, **implement-agent** subagents may run **slice-scoped** builds and tests (see [implement-agent.md](../../agents/implement-agent.md)); **stack-wide Abschlussprüfung** runs **after** implementation via **verify-agent** per touched stack, as described under **Verifikations-Timing**.
+During **Schritt 2**, **implement-agent** subagents may run **slice-scoped** builds and tests (see [implement-agent](SKILL.md#orchestrator-konfiguration)); **stack-wide Abschlussprüfung** runs **after** implementation via **verify-agent** per touched stack, as described under **Verifikations-Timing**.
 
 Verbindliche Prompt-Vorlagen (Auftrags-Payloads): [references/subagent-prompts.md](references/subagent-prompts.md).
 
@@ -53,7 +53,7 @@ oder in Rules.
 | Rolle | Schritt | Agent-Typ | Profil |
 |-------|---------|-----------|--------|
 | **Orchestrator / Initial Agent** | 1, Integration, 3 Review | *(Nutzer-Chat / Parent)* | dieser Skill |
-| **Implementierer** | 2 (1–10 Slices) | `implement-agent` | [implement-agent.md](../../agents/implement-agent.md) |
+| **Implementierer** | 2 (1–10 Slices) | `implement-agent` | [implement-agent](SKILL.md#orchestrator-konfiguration) |
 | **Verifikation / Abschlussprüfung** | nach Integration-Checkpoint | `verify-agent` | [verify-agent.md](../../agents/verify-agent.md) |
 
 **Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; **primär** Abschnitt **`## Modell`**, sonst YAML; Slugs **nicht** hier duplizieren.
@@ -214,7 +214,7 @@ After implementation-ready status and **before** any edits or spawning subagents
 
 1. Confirm **exactly** **1–10** **implementation** subagents (never zero, never more than ten),
    each scoped from the **final plan** or agreed thread. **Agent-Typ:** **`implement-agent`**
-   ([implement-agent.md](../../agents/implement-agent.md)). Take slice boundaries, **Slice-IDs**, and **waves** from the plan section **Umsetzungs-Topologie
+   ([implement-agent](SKILL.md#orchestrator-konfiguration)). Take slice boundaries, **Slice-IDs**, and **waves** from the plan section **Umsetzungs-Topologie
    (Implementation Workflow)** when present — **do not** invent new splits.
 2. **Parallel bevorzugt (prüfen, dann wählen):** If the plan defines **≥2 independent**
    slices in a **parallel wave** and Hard Gate rows **10–13** are satisfied, set Ausführungsform
@@ -240,7 +240,7 @@ Enter Schritt 2 only once Ausführungsform aligns with Hard Gate commitments.
 
 **Initial agent (Orchestrator):** does **not** author product implementation during Schritt 2.
 All implementation edits are performed only by **1–10** **`implement-agent`** subagents
-(see [implement-agent.md](../../agents/implement-agent.md)). The initial agent may still coordinate, integrate at the
+(see [implement-agent](SKILL.md#orchestrator-konfiguration)). The initial agent may still coordinate, integrate at the
 checkpoint, and resolve trivial merge mechanics when in scope.
 
 1. With Ausführungsform aligned, execute via the documented **execution
@@ -267,9 +267,9 @@ checkpoint, and resolve trivial merge mechanics when in scope.
 
 2. **Implementierungs-Subagents — strikt:** each agent implements **only** its assigned slice from
    the plan; **no** scope expansion, **no** silent replanning, **no** product or design decisions beyond what the plan already fixes.
-   **Build/Test (slice-scoped):** **allowed** per [implement-agent.md](../../agents/implement-agent.md) — `dotnet build`, `dotnet test`, `ng build`, `npm run build`, `ng test`, `npm test` and unit tests **for the assigned slice**; **genericRTK** mandatory on every such run. **Not** stack-wide Abschlussprüfung (that is **verify-agent** after integration).
+   **Build/Test (slice-scoped):** **allowed** per [implement-agent](SKILL.md#orchestrator-konfiguration) — `dotnet build`, `dotnet test`, `ng build`, `npm run build`, `ng test`, `npm test` and unit tests **for the assigned slice**; **genericRTK** mandatory on every such run. **Not** stack-wide Abschlussprüfung (that is **verify-agent** after integration).
 
-3. **Agent-Typ (Implementierung):** **`implement-agent`** — Profil [implement-agent.md](../../agents/implement-agent.md); Modell gemäß [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
+3. **Agent-Typ (Implementierung):** **`implement-agent`** — Profil [implement-agent](SKILL.md#orchestrator-konfiguration); Modell gemäß [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
 
 4. **Mandatory:** Record the execution topology explicitly: state the **count** (1–10) of
    implementation subagents, boundaries taken **from the plan**, and whether execution is
@@ -312,7 +312,7 @@ After **all** implementation subagents finish and the **integration checkpoint**
 **Kanon (keine zweite Liste):** [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc) — **Ausführungs-Checkliste (pro Build-/Test-Lauf)** Schritte **1–8** und **[Interpretationspflicht (verbindlich)](../../rules/genericrtk-output-filter.mdc#interpretationspflicht-verbindlich)**. **Gilt** für **`implement-agent`** (slice build/test), **`verify-agent`** (Abschlussprüfung) und den **initialen Agenten** nur bei dokumentierter Host-Limitation.
 
 - Pro Lauf: Shell → vollständiges Capture → genericRTK → **intern lesen** → Kurzprosa + Shell-Exit (**kein** MCP-Body, **kein** Roh-Log ans LLM).
-- **Unklare verdichtete Ausgabe:** Agent **informiert den Nutzer**, dass genericRTK nachgeschärft werden soll — **nicht** aus Roh-Konsole raten ([implement-agent.md](../../agents/implement-agent.md), [verify-agent.md](../../agents/verify-agent.md)).
+- **Unklare verdichtete Ausgabe:** Agent **informiert den Nutzer**, dass genericRTK nachgeschärft werden soll — **nicht** aus Roh-Konsole raten ([implement-agent](SKILL.md#orchestrator-konfiguration), [verify-agent.md](../../agents/verify-agent.md)).
 - **Interpretationspflicht:** inhaltliche Diagnose/Freigabe **nur** aus intern gelesenem MCP; **OK/FAIL** aus Shell-Exit; **kein** Kurz-`raw`, **kein** Terminal-Datei-Ersatz (`terminals/*.txt`).
 - **Vor jedem** MCP: **`Rufe genericRTK …`** sichtbar; **Hard Stop** wenn MCP nicht erreichbar (in-scope).
 
@@ -400,7 +400,7 @@ The **initial agent** (not a subagent) must review all changes before closure:
 
 ## Operationale Regeln
 
-- **Implementation:** **1–10** **`implement-agent`** subagents; slice-scoped build/test and unit tests per [implement-agent.md](../../agents/implement-agent.md); **genericRTK** on every in-scope run.
+- **Implementation:** **1–10** **`implement-agent`** subagents; slice-scoped build/test and unit tests per [implement-agent](SKILL.md#orchestrator-konfiguration); **genericRTK** on every in-scope run.
 - **Verification (Abschlussprüfung):** after integration checkpoint, **one `verify-agent` per changed stack** (**no** orchestrator bypass); stack-wide build-fix then unit-test-fix (max. **8** turns each), per **[`{verification-commands}`]({verification-commands})** and [verify-agent.md](../../agents/verify-agent.md). **genericRTK** mandatory; **unclear MCP output → inform user** to sharpen genericRTK — do not guess from raw logs.
 - **Verification subagents** may apply **narrow fixes** required for green build/tests (**no** feature or
   scope expansion; **no** unrelated refactors). Escalate product/design ambiguity to the initial agent or user.
@@ -413,6 +413,93 @@ The **initial agent** (not a subagent) must review all changes before closure:
   edits only as defined in Schritt 2.
 - **Ask** when requirements, risks, or verification expectations are unclear—do
   not guess to keep momentum.
+
+## Orchestrator-Konfiguration
+
+Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt 2 (genau einen Plan-Slice). Der implement-agent orchestriert Build/Test/genericRTK innerhalb seines Scopes; der übergeordnete Orchestrator ist der Nutzer-Chat (Initial Agent).
+
+### Rolle
+
+**Implementierungs-Subagent** im Implementation Workflow **Schritt 2**. Setzt **genau einen** Plan-Slice um — Code **und** lokale Qualitätssicherung **innerhalb des Slice-Scopes**.
+
+**Kein** Stack-weiter Abschlussprüfer — das ist [verify-agent.md](../../agents/verify-agent.md) **nach** dem Integration-Checkpoint.
+
+### Pflicht: Rules prüfen und anwenden (erster Schritt, ohne Ausnahme)
+
+> **Bevor du deinen Slice startest — lade in dieser Reihenfolge:**
+>
+> 1. **[implementation-workflow-skill.mdc](../../rules/implementation-workflow-skill.mdc)** — immer; Subagent-Pflicht, genericRTK-Kette, Verifikations-Matrix.
+> 2. **[genericrtk-output-filter.mdc](../../rules/genericrtk-output-filter.mdc)** — immer; Ausführungs-Checkliste 1–8 für jeden Build-/Test-Lauf.
+> 3. **[code-review-mcp.mdc](../../rules/code-review-mcp.mdc)** — immer; MCP-First für Analyse vor und während Implementierung.
+> 4. **[angular-skills.mdc](../../rules/angular-skills.mdc)** — wenn FE-Slice im Scope.
+> 5. **[backend-ef-migrations-skill.mdc](../../rules/backend-ef-migrations-skill.mdc)** — wenn EF/Migrations im Slice-Scope.
+>
+> Kein Überspringen. Erst danach: Slice-Implementierung starten.
+
+### Modell
+
+| Feld | Wert |
+|------|------|
+| **Primär** | `auto` (AUTO — vom Host / Task-Modellauswahl) |
+
+Ist `auto` **nicht** wählbar → **stoppen**, transparent melden — **kein** stiller Ausweich.
+
+### code-review-mcp (Bevorzugt)
+
+| Aufgabe | MCP-Call |
+|---------|----------|
+| Symbole / Einstiegspunkte | `index_project` → `find_in_index` |
+| Komplexität prüfen | `analyze_complexity` |
+| Refactoring-Sicherheit | `analyze_refactoring_safety` |
+| Build-/Test-Fehler analysieren | `analyze_build_output` |
+
+### Mantra
+
+**Clean Code · SOLID · YAGNI · minimaler Diff** — nur was der Plan für **deinen Slice** vorsieht.
+
+### Erlaubt — nur im Slice-Scope
+
+- **Build:** `dotnet build`, `ng build`, `npm run build`
+- **Test:** `dotnet test`, `ng test`, `npm test` — **slice-relevant**
+- **Unit-Tests anlegen und ausführen**, die **deinen Slice** absichern
+- Minimale Fixes, damit **deine** Build-/Test-Läufe für den Slice grün werden
+
+### genericRTK (verbindlich)
+
+**Jeder** Build-/Test-Lauf im Scope:
+
+1. Shell → **vollständiges** stdout/stderr-Capture dieses Laufs
+2. **Sofort** `filter_output` / `filter_output_stream` (bei Exit ≠ 0 zusätzlich `analyze_build_output`)
+3. Vor jedem MCP: **`Rufe genericRTK …`** sichtbar
+4. **Inhaltliche Diagnose nur** aus **intern gelesenem** MCP-Ergebnis — **niemals** Roh-Konsole
+5. MCP-Body **nicht** in Berichte kopieren — nur **Kurzprosa** aus MCP
+
+**MCP nicht erreichbar:** **`BLOCKER: genericRTK nicht erreichbar`** — stoppen.
+
+### Parallelität
+
+Eigene `session_id` bei `filter_output_stream` — nicht mit anderen implement-agent-Läufen oder dem Orchestrator teilen.
+
+### Verboten
+
+- Scope über den Slice hinaus, stille Planänderung, unrequested Refactors
+- Stack-weite Release-/Integrations-Verifikation **statt** verify-agent
+- Diagnose aus Roh-Konsole ohne abgeschlossene genericRTK-Kette
+- `terminals/*.txt` als Capture-Ersatz
+
+### Rückgabe an Orchestrator
+
+```text
+- Summary: …
+- Touched paths: …
+- Build/Test (Slice): Kommandos, OK/FAIL, Verifikations-Matrix-Zeilen pro Lauf
+- Open risks / blockers: …
+- genericRTK-Lücken (falls): was am Filter unklar blieb → Nutzer-Hinweis
+```
+
+Auf Deutsch, kompakt.
+
+---
 
 ## Pflegehinweis
 
@@ -434,7 +521,7 @@ After changing this skill, verify host-facing guidance still matches—per host 
 
 **Prompt-Vorlagen:** Aenderungen an Subagent-Auftrags-Payloads **nur** in [references/subagent-prompts.md](references/subagent-prompts.md); danach Verweise in diesem Skill, [implementation-workflow-skill.mdc](../../rules/implementation-workflow-skill.mdc) und Agent-`.md` pruefen.
 
-**Agent-Profile:** Modell-Slugs und Ketten **nur** in [../../agents/](../../agents/) (Abschnitt **`## Modell`** primär, sonst YAML); Skills/Rules verweisen auf [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — keine Slug-Duplikate.
+**Agent-Profile:** Modell-Slugs und Ketten für den implement-agent **nur** in [## Orchestrator-Konfiguration](SKILL.md#orchestrator-konfiguration) dieses Skills; verify-agent: [../../agents/verify-agent.md](../../agents/verify-agent.md); Skills/Rules verweisen auf [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — keine Slug-Duplikate.
 
 ## Prompt-Vorlagen
 

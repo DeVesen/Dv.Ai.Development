@@ -14,8 +14,8 @@ Portable Skill: Interaktiver 5-Phasen-Klärungsworkflow für `tasks/task-*.md` �
 
 | Situation | Vorrang |
 |-----------|---------|
-| Task klären / Sparring / Plan-Prompt / `@buddy-agent` / *Task mit Buddy* / *Task durchsprechen* | **buddy-agent** — [`../../agents/buddy-agent.md`](../../agents/buddy-agent.md) |
-| Explizit `Task … verfeinern` oder Copy-Zeile `verfeinern` | **Legacy** — dieser Skill, [`task-verfeinern.md`](task-verfeinern.md), Orchestrator [`../../agents/ado-agent.md`](../../agents/ado-agent.md) |
+| Task klären / Sparring / Plan-Prompt / `@buddy-agent` / *Task mit Buddy* / *Task durchsprechen* | **buddy-agent** — [`../../buddy-agent/SKILL.md`](../../buddy-agent/SKILL.md) |
+| Explizit `Task … verfeinern` oder Copy-Zeile `verfeinern` | **Legacy** — dieser Skill, [`task-verfeinern.md`](task-verfeinern.md), Orchestrator [`../SKILL.md`](../SKILL.md) |
 | Unklar | **Eine** Rückfrage: Buddy (Plan-Prompt) oder klassisch verfeinern? |
 
 ## Operation §6: Task verfeinern (Legacy)
@@ -40,7 +40,7 @@ Portable Skill: Interaktiver 5-Phasen-Klärungsworkflow für `tasks/task-*.md` �
 
 | Situation | Skill |
 |-----------|--------|
-| Task klären / Plan-Prompt (Standard) | **buddy-agent** — [`../../agents/buddy-agent.md`](../../agents/buddy-agent.md) |
+| Task klären / Plan-Prompt (Standard) | **buddy-agent** — [`../../buddy-agent/SKILL.md`](../../buddy-agent/SKILL.md) |
 | `Task … verfeinern` (**Legacy**) | **dieser Skill** — [`task-verfeinern.md`](task-verfeinern.md) (interaktiv, Freigabe-Gate) |
 | `plane Task …` / Umsetzungsplan | [`planning-workflow`](../../planning-workflow/SKILL.md) |
 | Code umsetzen | [`implementation-workflow`](../../implementation-workflow/SKILL.md) |

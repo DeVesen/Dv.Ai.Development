@@ -24,7 +24,7 @@ Vorbehaltlich **Opt-out** unten: erkennbare Kombination aus **DevOps-Work-Item-B
 
 Explizite Imperative (sofort ladend), u. a.:
 
-- **`prüfe Story`**, **`prüfe Task`**, **`prüfe Feature`**, **`prüfe … 287638`**, **`ado-agent`**, **`@ado-agent`**
+- **`prüfe Story`**, **`prüfe Task`**, **`prüfe Feature`**, **`prüfe … 287638`**
 - **`markiere Task … als fertig`**, **`Task … erledigt`**, **`schließe Task`**
 - **`ToDo für Task`**, **`notiere im Task`**, **`dictiere ToDo`**
 - **`… auf active`**, **`… resolved`**, **`setze Story … active`**
@@ -64,11 +64,11 @@ Je nach erkanntem Intent **genau einen** Skill laden:
 
 | Situation | Vorrang |
 |-----------|---------|
-| Task klären / Sparring / Plan-Prompt / `@buddy-agent` | **buddy-agent** — [buddy-agent-skill.mdc](buddy-agent-skill.mdc), [buddy-agent.md](../agents/buddy-agent.md) |
+| Task klären / Sparring / Plan-Prompt / `@buddy-agent` | **buddy-agent** — [buddy-agent-skill.mdc](buddy-agent-skill.mdc), [buddy-agent/SKILL.md](../skills/buddy-agent/SKILL.md) |
 | `Task … verfeinern` (explizit, **Legacy**) | **ado** — [`../skills/ado/SKILL.md`](../skills/ado/SKILL.md) (interaktiv, Freigabe-Gate, schlankes Task-Schema; **kein** Vorgehen/Plan in MD) |
 | `plane Task …` / Umsetzungsplan | [Planning Workflow](planning-workflow-skill.mdc) — bevorzugte Eingabe: Plan-Prompt aus Buddy |
 | `implementiere …` nach Story | [Implementation Workflow](implementation-workflow-skill.mdc) |
-| ADO ↔ Markdown-Sync (`prüfe`, Task fertig, …) | **ado** + [ado-agent.md](../agents/ado-agent.md) |
+| ADO ↔ Markdown-Sync (`prüfe`, Task fertig, …) | **ado** + [ado/SKILL.md](../skills/ado/SKILL.md) |
 | Handoff-Prompt | [Describe-as-Prompt](describe-as-prompt-skill.mdc) |
 
 ## Ausdrücklicher Opt-out

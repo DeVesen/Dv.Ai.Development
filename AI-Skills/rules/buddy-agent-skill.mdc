@@ -9,7 +9,7 @@ alwaysApply: true
 
 Wenn der Nutzer ein Task oder eine Anforderung klären will — Sparring, Plan-Prompt, Durchsprechen **ohne** sofort `plane`/`implementiere`/`prüfe` — dann **vor der Antwort** das Agent-Profil vollständig lesen und befolgen:
 
-[`buddy-agent.md`](../agents/buddy-agent.md)
+[`buddy-agent/SKILL.md`](../skills/buddy-agent/SKILL.md)
 
 Phasen-Modell, Ausgabe-Formate und Gesprächsablauf stehen **nur** im Profil — diese Rule dupliziert sie nicht.
 

@@ -139,49 +139,6 @@ Nutzeranfragen können den Implementation Workflow auslösen, wenn **Umsetzungsa
 - **Meta / Workflow:** `Implementation Workflow`, `Hard Gate`, `Schritt 2`, `Umsetzungs-Topologie`, `IMP-*`, `Verifikations-Subagent`, `Subagent` zur **Implementierung**, `ad-hoc implement in Agent mode`, `schreibende Änderungen`, commit-relevante Edits.
 - **Implizit / Kontext:** siehe [Implizite Aktivierung](#implizite-aktivierung), [Plan-Freigabe](#plan-freigabe), [Fortsetzung & Thread-Kontext](#fortsetzung--thread-kontext).
 
-## Keine Abweichung (verbindlich)
-
-Diese Regeln sind **nicht optional** und dürfen während einer Umsetzung im Agent-Modus **nicht** umgangen werden:
-
-- **Implementierung** erfolgt **ausschließlich** über **1–10 Implementierungs-Subagents** — **verboten:** der Hauptagent schreibt Produktcode während „Implementierung“ ohne Subagents. Ist das Task-Tool nicht verfügbar: **`BLOCKER`** im Chat melden, **nicht** still im Single-Agent-Modus ersetzen.
-- **Verifikation** erfolgt **ausschließlich** über dedizierte **Verifikations-Subagents** pro geändertem Stack — **verboten:** der Hauptagent führt `ng build`, `npm test`, `dotnet build`, `dotnet test` oder gleichwertige Abschluss-Verifikation **selbst** aus — **auch** nach Subagent-**FAIL**, **auch** nach eigenem Integrations-Fix (Import entfernen, Merge, Konfiguration). Ist das Task-Tool nicht verfügbar: **`BLOCKER`** melden, **nicht** still ersetzen durch Orchestrator-Build/Test.
-- **Nach** Verifikations-Subagent **FAIL** oder **Orchestrator-Integrations-Edit:** **neuen** Verifikations-Subagent starten (Fix-Kontext im Prompt); **kein** Orchestrator-Fix-Schleife mit direktem Log-Lesen — siehe [Orchestrator-Nachlauf](genericrtk-output-filter.mdc#orchestrator-nachlauf-hauptagent).
-- **Vor** Start der Verifikationsphase und bei **jedem** Build-/Test-Lauf: [`genericrtk-output-filter.mdc`](genericrtk-output-filter.mdc) — bei anwendbarem Kommando im Scope **zwingend** genericRTK; bei nicht erreichbarem MCP: [Hard Stop](genericrtk-output-filter.mdc#hard-stop--mcp-nicht-erreichbar) — **Stopp**, Slice **nicht** als verifiziert abschließen.
-
-## Subagents und Modellwahl (Implementierung + Verifikation)
-
-**Agent-Profile (Pflicht):** [`.cursor/agents/`](../../agents/) — **Modellwahl nur in den `.md`-Dateien** (Abschnitt **`## Modell`** primär, sonst YAML), nicht in Rule/Skill duplizieren.
-
-**Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; `modelUsed` nennen.
-
-| Rolle | Agent-Typ | Profil |
-|-------|-----------|--------|
-| Implementierung Schritt 2 | `implement-agent` | [implement-agent.md](../agents/implement-agent.md) |
-| Verifikation / Abschlussprüfung pro Stack | `verify-agent` | [verify-agent.md](../agents/verify-agent.md) |
-
-**Implementierung (verbindlich):**
-
-- Umsetzung **ausschließlich** über **1–10** **`implement-agent`**-Läufe (kein Single-Agent-Implementierungsmodus).
-- **Task-Prompt:** Orchestrator übernimmt den passenden Abschnitt aus [implementation-workflow/references/subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — bei Build/Test **Implementierer (Slice — Build/Test + genericRTK)**; nicht frei formulieren ohne genericRTK-Pflicht.
-- **Build/Test slice-relevant** in Schritt 2 erlaubt (`dotnet`/`ng`/`npm` build & test, Unit-Tests im Slice) — siehe [implement-agent.md](../agents/implement-agent.md); **genericRTK** pro Lauf; bei unklarer MCP-Ausgabe **Nutzer informieren** (Filter nachschärfen).
-- **Stack-weite Abschlussprüfung** nur via **`verify-agent`** nach Integration-Checkpoint.
-- **Parallelität (Implementierung):** wenn Plan + Hard Gate parallele Wellen erlauben → parallel bevorzugt — [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md).
-
-**Verifikation (Abschlussprüfung, nach Integration-Checkpoint):**
-
-- Pro geändertem Stack **ein** **`verify-agent`** (Abschlussprüfer / Gesamt-Tester). Kein Agent für unveränderte Stacks.
-- **Task-Prompt:** Vorlage **Verifikation pro Stack** in [implementation-workflow/references/subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md).
-- Stack-weiter Build-Fix dann Unit-Test-Fix (max. 8 Turns); genericRTK Pflicht — [`genericrtk-output-filter.mdc`](genericrtk-output-filter.mdc); unklare MCP-Ausgabe → **Nutzer informieren**.
-
-### Pflicht-Checkliste (Verifikation, kurz)
-
-- Pro **geändertem** Stack ein **Verifikations-Subagent**; **Phase 1** (Build mit Fix-Schleife), dann **Phase 2** (Unit-Tests mit Fix-Schleife) — Details: **[`verification-commands.md`](.cursor/references/verification-commands.md)** und [`implementation-workflow/SKILL.md`](../skills/implementation-workflow/SKILL.md).
-- Nach **jedem** Build-/Test-Lauf: **[`genericrtk-output-filter.mdc`](genericrtk-output-filter.mdc)** inkl. **Ausführungs-Checkliste (Schritte 1, 1b, 2–8)** und **[Verifikations-Matrix](genericrtk-output-filter.mdc#verifikations-matrix)** (eine Zeile pro Shell-Lauf); vor jedem MCP **`Rufe genericRTK …`** in der **sichtbaren** Antwort; Schritt **1b**: kein Reasoning aus Shell-Return vor `filter_*`.
-- **Hauptagent/Orchestrator:** Verifikation **nur** via Verifikations-Subagents — **kein** eigenes `ng build`/`ng test` ohne Subagent; Abschluss nur mit **vollständiger Matrix** aller Läufe **nach letztem Code-Edit** (nicht Representative-Filter; kein Abschluss-MCP mit Kurz-`raw`).
-- **Verboten:** Abschluss „Build/Test OK“ / „verifiziert“ ohne nachweisliche genericRTK-Kette **pro** applicable Lauf (mehrfaches `ng test` = mehrfach MCP); inhaltliche Diagnose/Freigabe ohne intern gelesenes MCP-Ergebnis (in-scope); Orchestrator liest Capture/Shell-UI **vor** `filter_*` (Schritt **1b** in genericRTK-Regel).
-- **Verboten:** Subagent-Matrix als Abschluss, wenn der Orchestrator **danach** noch Repo-Dateien geändert hat — erneute Verifikation Pflicht.
-- MCP bei applicable Kommando **nicht** erreichbar: **`BLOCKER: genericRTK nicht erreichbar`** — **Stopp**, **keine** manuelle Fortsetzung; Orchestrator schließt **nicht** als verifiziert ab.
-
 ## Pflegehinweis / Skill-Discovery
 
 **Entscheidung `disable-model-invocation`:** **Option A (verbindlich)** — `true` beibehalten im Skill. Der Host invoked den Skill **nicht** automatisch; **diese Rule** (alwaysApply), vollständiges `read_file` des Skills bei erkanntem Umsetzungsintent und [./AGENTS.md](./AGENTS.md) tragen die Discovery. **Nicht** auf `false` wechseln ohne explizite Host-/Projektentscheidung (Risiko Doppel-Laden mit alwaysApply).

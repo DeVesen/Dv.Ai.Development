@@ -1,78 +1,42 @@
 ---
-
 name: planning-workflow
-
 description: >
-
   Beschreibt einen portablen Planungsworkflow fuer Coding-Agenten: zuerst
-
   reine Anforderungsarbeit ohne Code-Recherche, dann kurzer Zwischenstand
-
   (Phase 2), unmittelbar gefolgt von Codebereichs-Scouting (Phase 3) per
-
   einem bis zu zehn **plan-agent-scout**-Laeufen (Phase 3), anschliessend **Phase 4** in **4a** (Orchestrator
-
   **plan-agent**: Topic-Map und Schnittstellen-Vertrag), **4b** (bis zu zehn **plan-agent-topic-planner**,
-
   je ein Topic mit Tech-Mindset und Teilplan inkl. paralleler Implementierung) und **4c** (Merge zur
-
   **Arbeitsversion**), verpflichtendes Drei-Perspektiven-Review (**plan-agent-optimist**,
-
   **plan-agent-pessimist**, **plan-agent-normalo**), Synthese und finales Planpaket mit verbindlicher
-
   **Umsetzungs-Topologie** fuer den [Implementation Workflow](../implementation-workflow/SKILL.md)
-
   (1–10 Implementierungs-Slices, **Slice-ID-Konvention** IMP-FE-{Bereich}/IMP-BE-{ServiceKuerzel},
-
   Wellen, Integration); Phase 6 formuliert der Orchestrator **plan-agent**.
-
   Agent-Profile und **Modellwahl** zentral unter `.cursor/agents/plan-agent*.md`; Abschnitt
-
   **Subagent-Typen und Agent-Definitionen** in diesem Skill. Phase 6 umfasst Review-Digest,
-
   Synthese, Komplexitaets- und Executor-Empfehlung. Drei-Perspektiven-Review nicht optional.
-
   Trigger (vollstaendig: .cursor/rules/planning-workflow-skill.mdc): plane/plane bitte/,
-
   plane die Korrektur/Erweiterung/Anpassung, plane das; Plan/Roadmap/Umsetzungsplan;
-
   implizit Wie gehen wir vor, Vorgehen skizzieren,
-
   Optionen/Strategie/Trade-offs, Migration/Refactor/Architektur, lass uns planen,
-
   noch nicht umsetzen; @planning-workflow-skill, @.cursor/rules/planning-workflow-
-
   skill.mdc, @.cursor/skills/planning-workflow; Plan Mode mit Code-Bezug; Meta Phase
-
   3/Scout, Phase 4a/4b/4c, Topic-Planer, Schnittstellen-Design, Drei-Perspektiven-Review,
-
   Umsetzungs-Topologie; EN write a plan, how
-
   should we approach, outline/break down; Kombi plane und implementiere zuerst
-
   Planning. Nicht bei reiner Erklaerung, Plan umsetzen, Handoff describe-as-prompt.
-
   Opt-out ohne plan-skill/planning-workflow. Ausloesung: unklarer Scope, Architektur-,
-
   Refactor-, Feature- oder Umsetzungsplanung; nicht triviale Einzeiler.
-
+disable-model-invocation: true
 ---
 
-
-
 # Planning Workflow
-
-
 
 Portabler Ablauf fuer Planungsaufgaben. Verbindliche Prompt-Vorlagen und
 
 Review-Raster liegen in [references/subagent-prompts.md](references/subagent-prompts.md).
 
-
-
 ## Phasen-Gates (verbindlich)
-
-
 
 Der Orchestrator (**plan-agent** / Hauptagent) haelt **strikte Stufen-Reihenfolge** ein.
 
@@ -81,8 +45,6 @@ Der Orchestrator (**plan-agent** / Hauptagent) haelt **strikte Stufen-Reihenfolg
 zurueck, ggf. Merge durch Orchestrator). **Kein Ueberspringen**, kein „vorlaeufiger“
 
 Review auf unvollstaendigem Plan.
-
-
 
 | Stufe | Nutzer-Sicht | Skill-Phasen | Start erst nach … |
 
@@ -98,11 +60,7 @@ Review auf unvollstaendigem Plan.
 
 | **5** | Synthese & Freigabe | 6 | Stufe 4 |
 
-
-
 **Parallelitaet — nur innerhalb derselben Stufe:**
-
-
 
 - Stufe 2: mehrere **`plan-agent-scout`** parallel (je Teil-Scope), **nicht** parallel zu Stufe 3/4.
 
@@ -110,11 +68,7 @@ Review auf unvollstaendigem Plan.
 
 - Stufe 4: drei Review-Agenten parallel **untereinander**, **nicht** waehrend 4b laeuft.
 
-
-
 **Verboten (haeufiger Orchestrator-Fehler):**
-
-
 
 - Phase 5 (Review) starten, waehrend Phase 4b (Topic-Planer) noch laeuft.
 
@@ -124,11 +78,7 @@ Review auf unvollstaendigem Plan.
 
 - `run_in_background` oder parallele Task-Starts nutzen, um Phasen-Gates zu umgehen.
 
-
-
 ## Subagent-Typen und Agent-Definitionen (host-neutral)
-
-
 
 Dieser Abschnitt ist fuer **jeden** ausfuehrenden Agenten lesbar — Cursor, Claude Code,
 
@@ -136,11 +86,7 @@ GitHub Copilot, CLI oder andere Hosts. Er trennt **Rollen** (was zu tun ist) von
 
 Typen** (welche Agent-Definition den Auftrag ausfuehrt).
 
-
-
 ### Begriffe
-
-
 
 | Begriff | Bedeutung |
 
@@ -154,29 +100,21 @@ Typen** (welche Agent-Definition den Auftrag ausfuehrt).
 
 | **Delegation** | Orchestrator startet einen separaten Lauf mit Rolle + Scope; der Lauf liefert nur das Rollen-Deliverable zurueck. |
 
-
-
 **Regel in diesem Projekt (ohne Ausnahme):** Jede delegierte Planungs-Rolle (Phase 3, 4b, 5)
 
 wird von einem **spezialisierten Agent-Typ** aus [../../agents/](../../agents/) ausgefuehrt —
 
 **nicht** ueber `explore`, `generalPurpose`, `shell` oder Rollensimulation im Orchestrator-Turn.
 
-
-
 ### Rollen im Planning Workflow
 
-
-
 Diese Rollen sind **fest** — unabhaengig vom Host. Prompt-Vorlagen (Platzhalter): [references/subagent-prompts.md](references/subagent-prompts.md).
-
-
 
 | Rolle | Phase | Parallel? | Max. Laeufe | Orchestrator? | Agent-Typ |
 
 |-------|-------|-----------|-------------|---------------|-----------|
 
-| **Planer / Orchestrator** | 1, 2, 4a, 4c, 6 | — | 1 | ja | [`plan-agent`](../../agents/plan-agent.md) |
+| **Planer / Orchestrator** | 1, 2, 4a, 4c, 6 | — | 1 | ja | [`plan-agent`](SKILL.md#orchestrator-konfiguration) |
 
 | **Codebereichs-Scout** | 3 | bevorzugt | 10 | nein | [`plan-agent-scout`](../../agents/plan-agent-scout.md) |
 
@@ -188,30 +126,22 @@ Diese Rollen sind **fest** — unabhaengig vom Host. Prompt-Vorlagen (Platzhalte
 
 | **Normalo** | 5 | bevorzugt (×3) | 1 | nein | [`plan-agent-normalo`](../../agents/plan-agent-normalo.md) |
 
-
-
 **Verboten:** Rollensimulation im Orchestrator-Turn. **Verboten:** Implementierungs- oder
 
 Verifikations-Agenten fuer Planungs-Delegation.
 
-
-
 ### Agent-Definitionen (Mitarbeiterprofile)
-
-
 
 Vollstaendige Profile (Persona, Modell, Pflichten, Verbote) liegen unter **`.cursor/agents/`**.
 
 **Modellwahl** (Slugs, Ketten, Host-Regeln) ist **nur** in den Agent-Profilen — Abschnitt **`## Modell`**
 primär, sonst YAML-Frontmatter — **nicht** in diesem Skill oder in Rules duplizieren.
 
-
-
 | Agent-Typ | Datei |
 
 |-----------|-------|
 
-| `plan-agent` | [plan-agent.md](../../agents/plan-agent.md) |
+| `plan-agent` | [Orchestrator-Konfiguration](SKILL.md#orchestrator-konfiguration) |
 
 | `plan-agent-scout` | [plan-agent-scout.md](../../agents/plan-agent-scout.md) |
 
@@ -225,17 +155,11 @@ primär, sonst YAML-Frontmatter — **nicht** in diesem Skill oder in Rules dupl
 
 **Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; **primär** Abschnitt **`## Modell`**, sonst YAML; Slugs **nicht** hier duplizieren.
 
-
-
 Neue Planungs-Agenten: Markdown unter [../../agents/](../../agents/) anlegen und in dieser
 
 Tabelle eintragen.
 
-
-
 ### Ausfuehrung je Host
-
-
 
 | Host / Umgebung | Orchestrator | Delegierte Rollen |
 
@@ -247,11 +171,7 @@ Tabelle eintragen.
 
 | **Ohne Subagent-Faehigkeit** | Orchestrator | Limitation transparent; kein Pseudo-Scout/Review |
 
-
-
 ### Delegations-Ablauf (schematisch)
-
-
 
 ```text
 
@@ -271,11 +191,7 @@ plan-agent (Phase 1–2)
 
 ```
 
-
-
 ## Leitprinzipien
-
-
 
 - Keine stillen fachlichen Annahmen; konkurrierende Optionen dem Nutzer nennen.
 
@@ -439,19 +355,11 @@ plan-agent (Phase 1–2)
 
   Wirtsprojekts sind bei der Ausfuehrung zu beachten.
 
-
-
 ## Eingabe Buddy-Plan-Prompt (bevorzugt)
 
-
-
-**Bevorzugte Eingabe** fuer `plane …` / plan-agent: describe-as-Handoff aus [buddy-agent.md](../../agents/buddy-agent.md) (Phase **plan-prompt**), Section B.
-
-
+**Bevorzugte Eingabe** fuer `plane …` / plan-agent: describe-as-Handoff aus [buddy-agent/SKILL.md](../buddy-agent/SKILL.md) (Phase **plan-prompt**), Section B.
 
 Wenn der Nutzer einen Buddy-Handoff liefert (ganzer Prompt oder Section B eingebettet):
-
-
 
 | Handoff-Abschnitt | Planungs-Nutzung |
 |-------------------|------------------|
@@ -462,11 +370,7 @@ Wenn der Nutzer einen Buddy-Handoff liefert (ganzer Prompt oder Section B eingeb
 | `## Edge cases / open questions` | Einzige Quelle fuer verbleibende Nutzer-Fragen in Phase 1 |
 | `## Current vs desired behavior` | Ist/Soll fuer Phase 2 und 4a |
 
-
-
 **Phase 1 mit Buddy-Handoff:**
-
-
 
 - Handoff als **verbindliche Anforderungsbasis** behandeln — nicht von vorn aufrollen.
 
@@ -476,43 +380,27 @@ Wenn der Nutzer einen Buddy-Handoff liefert (ganzer Prompt oder Section B eingeb
 
 - **Ziel:** Idealerweise **null** Nutzer-Fragen in Phase 1–2, wenn Handoff vollstaendig ist — direkt Phase 2 und Phase 3.
 
-
-
 **Phase 2 mit Buddy-Handoff:** Zwischenstand aus Handoff-Abschnitten zusammenfassen (Goal, AC, Decisions, offene Edge cases) — kein paraphrasierendes Neuverhandeln.
 
-
-
 ## Phase 1 - Anforderung pruefen (ohne Code-Kontext)
-
-
 
 **Erlaubt:** Verstaendnis der Aufgabe, Zielbild, Randbedingungen,
 
 Akzeptanzkriterien, minimale Klaerungsfragen bei Mehrdeutigkeit — **nur** wo Buddy-Handoff fehlt oder Edge cases offen sind (siehe **Eingabe Buddy-Plan-Prompt**).
 
-
-
 **Verboten:** Code-Recherche, Dateisuche, Repo-Navigation, Architekturannahmen
 
 aus dem Kopf, Entwurf oder Finalisierung eines Umsetzungsplans; Rueckfragen zu bereits geklaerten Buddy-Entscheidungen.
-
-
 
 Bei Bedarf: grobe Einschaetzung von Komplexitaet und Unsicherheit, rein aus dem
 
 Gespraech/Handoff, nicht aus Code.
 
-
-
 ## Phase 2 - Zwischenstand (vor Scouting)
-
-
 
 Kurze Zusammenfassung dessen, was bisher vereinbart/gesichert ist (Ziel,
 
 Randbedingungen, Akzeptanzkriterien, offene Punkte). Bei Buddy-Handoff: aus Section B uebernehmen, nicht neu erfinden.
-
-
 
 **Unmittelbar im selben Durchlauf** setzt der ausfuehrende Agent mit **Phase 3**
 
@@ -520,17 +408,11 @@ Randbedingungen, Akzeptanzkriterien, offene Punkte). Bei Buddy-Handoff: aus Sect
 
 Scouting gestartet werden soll.
 
-
-
 ## Phase 3 - Codebereichs-Scouting
-
-
 
 **Direkt nach Phase 2** einen oder mehrere Laeufe mit Agent-Typ **`plan-agent-scout`**
 
 (Read-only). Siehe Abschnitt **Subagent-Typen und Agent-Definitionen**.
-
-
 
 **Code-Recherche (verbindlich) — MCP zuerst, Fallback (Read/Grep) nur wenn MCP nicht verfügbar:**
 Bei Bezug auf Klassen, Methoden, Properties, Services, Routen oder „von Stelle A nach Stelle B" —
@@ -562,8 +444,6 @@ Wenn **alle** Scouts `MCP: fallback` ohne dokumentierten Anker-Pfad zurückliefe
 **Plan 4a nicht starten** bis mindestens ein Stack-Pfad verifiziert oder als
 `MCP-BLOCKER` im Plan markiert und dem Nutzer kommuniziert ist.
 
-
-
 **Anzahl Scouts:**
 
 - **1 Scout** bei kleinem, zusammenhaengendem Scope oder wenn ein Bereich den Kontext traegt.
@@ -576,8 +456,6 @@ Wenn **alle** Scouts `MCP: fallback` ohne dokumentierten Anker-Pfad zurückliefe
 
   dieselben Dateien durch mehrere Scouts.
 
-
-
 **Ausfuehrung Multi- vs. Single-Scout:** Eine **Multi-Scout-**Aufteilung **oder** kurze
 
 Begruendung, warum **ein** Scout reicht (kleiner Scope, enge Kopplung, gemeinsamer
@@ -588,27 +466,19 @@ Einstiegspunkt). Bei Multi-Scout: **welche Scouts parallel** starten duerfen; be
 
 reduzieren.
 
-
-
 **Zusammenfuehrung:** Der **Hauptagent** fasst alle Scout-Rueckgaben **inhaltlich** zusammen
 
 (Widersprueche, Luecken, gesamtueberblick betroffener Dateien) — **vor** Phase 4a. Kein Scout
 
 liefert den finalen Plan.
 
-
-
 **Modell:** Ziel-Profil — [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
-
-
 
 **Wenn Subagents/Task-Tool nicht verfuegbar sind:** im Plan-Output einen **klaren
 
 Hinweis** ausgeben (Limitation), **kein** stiller Wechsel zum Hauptagenten als
 
 Pseudo-Scout.
-
-
 
 Scouting-Auftrag wortgetreu aus der Vorlage in
 
@@ -618,27 +488,17 @@ bauen; Agent-Typ **`plan-agent-scout`** ([plan-agent-scout.md](../../agents/plan
 
 **keine** Implementierung und **keinen** finalen Plan.
 
-
-
 ## Phase 4 - Umsetzungsplan (4a, 4b, 4c)
-
-
 
 Phase 4 ist in drei Teilschritte gegliedert. Die **Arbeitsversion** fuer Phase 5 entsteht
 
 erst in **Phase 4c** (Merge). **Kein** finales Nutzer-Paket vor Phase 6.
 
-
-
 ### Phase 4a - Schnittstellen-Design (Hauptagent)
-
-
 
 **Direkt nach** Scout-Zusammenfuehrung (Phase 3). Der **Hauptagent** (Modell = Nutzer-Chat)
 
 formuliert **ohne** Topic-Planer-Subagents zuerst:
-
-
 
 - **Topic-Map:** Liste der Topics (z. B. `TOPIC-FE-Search`, `TOPIC-BE-GW`,
 
@@ -658,19 +518,11 @@ formuliert **ohne** Topic-Planer-Subagents zuerst:
 
 - Scout-Ergebnisse und Anforderung (Phasen 1–2) einbeziehen; offene Punkte markieren.
 
-
-
 **Deliverable 4a:** Topic-Map + Schnittstellen-Vertrag — verbindliche Eingabe fuer Phase 4b.
-
-
 
 ### Phase 4b - Topic-Planer-Subagents (verpflichtend)
 
-
-
 **Mindestens ein**, bis **10** Laeufe mit Agent-Typ **`plan-agent-topic-planner`** — **auch bei nur einem Topic**. **Kein** Hauptagent-Ersatz fuer 4b.
-
-
 
 **Anzahl Planer:** Ein Planer pro Topic aus 4a. Bei Host-Limits **Batches** starten —
 
@@ -678,13 +530,9 @@ Planer-Anzahl im Auftrag **nicht** reduzieren. **Parallelitaet** **bevorzugt**, 
 
 es erlaubt.
 
-
-
 **Pro Topic-Planer im Prompt (Vorlage in** [references/subagent-prompts.md](references/subagent-prompts.md) **Abschnitt „Topic-Planer“;**
 
 **Agent-Typ:** [plan-agent-topic-planner.md](../../agents/plan-agent-topic-planner.md)**):**
-
-
 
 - Topic-ID und Topic-Scope (Pfade, Module, Service-Name)
 
@@ -698,33 +546,19 @@ es erlaubt.
 
   parallel moeglich, contract-first, Blocking zu anderen Topics)
 
-
-
 **Modell:** Ziel-Profil — [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
-
-
 
 **Wenn Subagents/Task-Tool nicht verfuegbar:** transparent melden, **kein** Pseudo-Planer
 
 durch den Hauptagenten; **kein** 4c ohne 4b.
 
-
-
 Topic-Planer liefern **nur** den Teilplan fuer **ein** Topic — **keinen** Gesamtplan, **kein** Review.
-
-
 
 ### Phase 4c - Merge zur Arbeitsversion (Hauptagent)
 
-
-
 **Voraussetzung:** alle Topic-Planer aus 4b abgeschlossen.
 
-
-
 Der **Hauptagent** fuehrt zusammen:
-
-
 
 - Teilplaene zu **einer** **Arbeitsversion** fuer Phase 5 (startfaehig ohne weitere Recherche)
 
@@ -756,15 +590,9 @@ Der **Hauptagent** fuehrt zusammen:
 
   in **Phase 6**
 
-
-
 **Ohne** 4b **kein** 4c. Bei **einem** Topic: ein Planer, Merge trotzdem in 4c.
 
-
-
 ## Phase 5 - Drei-Perspektiven-Review (verpflichtend)
-
-
 
 **Pflichtphase.** Darf nicht uebersprungen werden. Die **Arbeitsversion aus Phase 4c** wird
 
@@ -776,19 +604,13 @@ Subagent-Laeufen** und klar getrennten Rolleninhalten (siehe Leitprinzipien:
 
 **keine Rollensimulation** durch den Hauptagenten).
 
-
-
 **Ausfuehrung:** Je Rolle **genau ein** Lauf mit **`plan-agent-optimist`**, **`plan-agent-pessimist`**
 
 bzw. **`plan-agent-normalo`**; wenn die Plattform **parallel** erlaubt, alle drei parallel
 
 starten. Prompts aus [references/subagent-prompts.md](references/subagent-prompts.md); Profile unter [../../agents/](../../agents/).
 
-
-
 **Modell:** Ziel-Profil — [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
-
-
 
 **Fallback bei fehlender Parallelitaet:** ohne Nutzerabfrage **sequenziell** dieselben
 
@@ -799,8 +621,6 @@ Pessimist → Normalo oder wie im Team vereinbart — **konsequent dokumentieren
 **Verboten:** **Rollensimulation** durch den Hauptagenten in drei Rollenabschnitten
 
 als Ersatz fuer Subagents.
-
-
 
 **Wenn Task-Subagents / Task-Tool fehlen:** im Plan-Output **transparent**
 
@@ -814,11 +634,7 @@ ja/nein“ oder Wahl eines Ersatzverfahrens einholen, ausser der Nutzer steuert 
 
 ausdruecklich ausserhalb dieses Skills.
 
-
-
 ## Slice-ID-Konvention (IMP-*)
-
-
 
 Portable Benennung fuer Implementierungs-Slices in der **Umsetzungs-Topologie**. Keine
 
@@ -826,11 +642,7 @@ fest codierten Projektnamen — Bereich und ServiceKuerzel legt der Planer **im 
 
 Plan** fest.
 
-
-
 **Schema:**
-
-
 
 ```text
 
@@ -839,8 +651,6 @@ IMP-FE-{Bereich}[-{Teil}][-{Nr}]
 IMP-BE-{ServiceKuerzel}[-{Teil}][-{Nr}]
 
 ```
-
-
 
 | Segment | Bedeutung | Regeln |
 
@@ -856,11 +666,7 @@ IMP-BE-{ServiceKuerzel}[-{Teil}][-{Nr}]
 
 | `{Nr}` (optional) | Laufende Nummer bei mehreren Slices gleichen Prefix | z. B. `-1`, `-2` |
 
-
-
 **Beispiele (Illustration, projektneutral):**
-
-
 
 - `IMP-FE-Search-Rules` — Frontend, Search-Feature, Parser/Rules
 
@@ -872,11 +678,7 @@ IMP-BE-{ServiceKuerzel}[-{Teil}][-{Nr}]
 
 - `IMP-BE-ES-Repository` — Backend, beliebiger App-Service (Kuerzel `ES` = Beispiel)
 
-
-
 **Anti-Patterns (verboten):**
-
-
 
 - `IMP-FE` / `IMP-BE` **ohne** Bereich bzw. ServiceKuerzel (Ausnahme: Trivial-Kurzform `IMP-1`)
 
@@ -886,15 +688,11 @@ IMP-BE-{ServiceKuerzel}[-{Teil}][-{Nr}]
 
   (keine gleichen Dateien; geteilte Contracts nur mit contract-first/W0)
 
-
-
 **Trivial-Kurzform:** `Topologie: 1× IMP-1, sequentiell, keine Blocking-Deps`. Bei
 
 erkennbarem FE/BE-Scope stattdessen `IMP-FE-{Bereich}-1` oder `IMP-BE-{ServiceKuerzel}-1`
 
 **bevorzugen**.
-
-
 
 **Abgrenzung Verifikation:** Slice-IDs steuern **Implementierungs-Subagents** (`implement-agent`).
 
@@ -902,17 +700,11 @@ Verify-Stacks (Frontend / Backend; Backend ggf. per unabhängiger Build-Einheit)
 
 mehrere `IMP-BE-*`-Slices koennen denselben Backend-verify-Stack teilen.
 
-
-
 ## Phase 6 - Synthese und Freigabe
-
-
 
 **Voraussetzung:** abgeschlossenes Drei-Perspektiven-Review aus Phase 5 (alle drei
 
 Perspektiven vorhanden).
-
-
 
 - **Review-Digest (Pflicht, zuerst, Nutzer-Chat):** Liegen alle drei
 
@@ -1036,19 +828,115 @@ Perspektiven vorhanden).
 
   im Plan (wie Phase 4c).
 
-
-
 ## Abgrenzung ADO `Task … verfeinern` und buddy-agent
 
 Copy-Befehl **`Task … in Story … verfeinern`** im [ado](../ado/SKILL.md)-Skill ist **kein** Ersatz fuer diesen Planning Workflow (**Legacy**):
 
 - **Verfeinern (Legacy):** menschenlesbare Task-MD ([task-verfeinern.md](../ado/references/task-verfeinern.md)) — interaktiver 5-Phasen-Dialog im Orchestrator; **kein** finales Planpaket / keine Umsetzungs-Topologie in der Datei.
-- **buddy-agent (Standard):** read-only Sparring — End-Artefakt **Plan-Prompt** ([buddy-agent.md](../../agents/buddy-agent.md)) als describe-as-Handoff: **Wo** → `## Code & Fundstellen`, **Was** → `## Goal` + Fundstellen, **Achten** → offene `## Edge cases / open questions`, geklaerte Punkte → `## Decisions / already clarified` (Planer nicht erneut hinterfragen); **kein** finales Planpaket; **kein** IMP-Slice-Vorgehen im Prompt.
+- **buddy-agent (Standard):** read-only Sparring — End-Artefakt **Plan-Prompt** ([buddy-agent/SKILL.md](../buddy-agent/SKILL.md)) als describe-as-Handoff: **Wo** → `## Code & Fundstellen`, **Was** → `## Goal` + Fundstellen, **Achten** → offene `## Edge cases / open questions`, geklaerte Punkte → `## Decisions / already clarified` (Planer nicht erneut hinterfragen); **kein** finales Planpaket; **kein** IMP-Slice-Vorgehen im Prompt.
 - **`plane Task …`:** dieser Planning Workflow — **bevorzugte Eingabe** ist der **vollständige Plan-Prompt aus Buddy** (Section B inkl. `## Decisions / already clarified`, Fundstellen, AC; ggf. plus `task-*.md`); Phase 1–2 ideally ohne Rueckfragen zu geklaerten Punkten — siehe **Eingabe Buddy-Plan-Prompt**; finales Planpaket und **Umsetzungs-Topologie** zur Freigabe **im Chat**.
 
+## Orchestrator-Konfiguration
+
+Konfiguration des **plan-agent** — Senior-Architekt und Planungs-Orchestrator (Phasen 1, 2, 4a, 4c, 6).
+
+### Pflicht: Planning-Workflow-Skill laden (erster Schritt, ohne Ausnahme)
+
+> **Bevor du irgendeine Phase startest oder eine Antwort formulierst — lade in dieser Reihenfolge:**
+>
+> **Skills (immer):**
+> 1. **[planning-workflow/SKILL.md](SKILL.md)** — vollständig; definiert Phasen, Gates, Deliverables, Subagent-Prompts verbindlich.
+> 2. **[caveman/SKILL.md](../caveman/SKILL.md)** — Modus `lite`; gilt für alle Chat-Ausgaben dieses Agents.
+> 3. **[code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md)** — MCP-First für alle Analysen; Read/Grep nur als Fallback.
+>
+> **Rules (`.cursor/rules/` prüfen — relevante laden und befolgen):**
+> 4. **[planning-workflow-skill.mdc](../../rules/planning-workflow-skill.mdc)** — immer; Phasen-Gates, Subagent-Typen, Modellwahl.
+> 5. **[code-review-mcp.mdc](../../rules/code-review-mcp.mdc)** — immer; Symbol-Suche, Phasen-Mapping, MCP-Ausgabeformat.
+> 6. **[angular-skills.mdc](../../rules/angular-skills.mdc)** — wenn FE-Topics im Scope.
+> 7. **[backend-ef-migrations-skill.mdc](../../rules/backend-ef-migrations-skill.mdc)** — wenn EF/Migrations im Scope.
+>
+> Kein Überspringen, kein Zusammenfassen aus dem Gedächtnis. Erst danach: Phase 1 starten.
+
+### Rolle
+
+**Senior-Softwarearchitekt** und **Planungs-Orchestrator**. Planst gründlich und präzise — **implementierst nicht**. Lieferst ein **freigabefähiges Planpaket** (Phase 6).
+
+**Deine Phasen:** 1, 2, 4a, 4c, 6 — plus Delegation und Merge.
+
+**Nicht deine Phasen (delegieren):** 3 (Scout), 4b (Topic-Planer), 5 (Optimist, Pessimist, Normalo).
+
+### Modell
+
+| Feld | Wert |
+|------|------|
+| **Primär** | `inherit` (vom Nutzer-Chat / Parent) |
+
+Orchestrator-Modell ist **unabhängig** von delegierten Agenten — deren Modelle nur im jeweiligen Ziel-Profil (Abschnitt **`## Modell`** primär, sonst YAML).
+
+### Mantra
+
+**Clean Code · Clean Development · SOLID · YAGNI**
+
+- Nur das **Notwendigste** ändern — kein Over-Engineering.
+- Bestehende Konventionen im Repo respektieren.
+- Jede Empfehlung begründen: *Warum minimal? Warum hier?*
+
+### Delegation — Modell vor Task
+
+Vor **jedem** Subagent-Task: [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — Ziel-Profil lesen; Slugs **nicht** hier duplizieren.
+
+### Delegation — spezialisierte Planungs-Agenten (ohne Ausnahme)
+
+Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rollensimulation im eigenen Turn.
+
+| Phase | Agent-Typ | Profil |
+|-------|-----------|--------|
+| 3 | `plan-agent-scout` | [plan-agent-scout.md](../../agents/plan-agent-scout.md) |
+| 4b | `plan-agent-topic-planner` | [plan-agent-topic-planner.md](../../agents/plan-agent-topic-planner.md) |
+| 5 | `plan-agent-optimist` | [plan-agent-optimist.md](../../agents/plan-agent-optimist.md) |
+| 5 | `plan-agent-pessimist` | [plan-agent-pessimist.md](../../agents/plan-agent-pessimist.md) |
+| 5 | `plan-agent-normalo` | [plan-agent-normalo.md](../../agents/plan-agent-normalo.md) |
+
+### Delegations-Regeln
+
+1. **Immer** den passenden **Agent-Typ** starten — Modell gemäß [subagent-model-before-task.md](../../references/subagent-model-before-task.md) aus dem **Ziel-Profil**.
+2. Auftrag aus [references/subagent-prompts.md](references/subagent-prompts.md) (Platzhalter ersetzen) **plus** Kontext aus Phasen 1–2 bzw. 4a/4c.
+3. **Phasen-Gates (verbindlich):** Stufe N+1 **erst**, wenn Stufe N **vollständig** abgeschlossen — siehe Skill **Phasen-Gates**. Parallelität **nur innerhalb derselben Stufe**.
+4. Nur **kompakte Deliverables** zurückverlangen — du mergst und synthetisierst.
+
+### Code-Landkarte (Phase 2→3)
+
+**MCP zuerst — Fallback nur bei MCP-Fehler.**
+
+**Vor jeder Scout-Delegation** mit Symbolen:
+
+1. Orchestrator ruft **einmal pro Stack** `index_project` auf.
+2. Ergebnis: aufgelöste Symbole und **verifizierter `projectPath`** als feste Werte in den Scout-Auftrag.
+3. **Schlägt `index_project` fehl:** Pfad-Playbook aus [code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md) befolgen; danach `MCP-BLOCKER` im Scout-Auftrag — **kein** stilles Überspringen.
+
+### Projektstandards
+
+| Bereich | Planung |
+|---------|---------|
+| Repo | Code unter `./` |
+| Frontend | Kein Tailwind; Styleguide; Angular-Skills bei FE-Topics |
+| Backend | `./.skills/backend-*`; EF nur per CLI |
+| Danach | [Implementation Workflow](../implementation-workflow/SKILL.md) — du lieferst Slices/Wellen |
+
+### Verboten
+
+- Code implementieren oder Dateien ändern
+- Scout/Topic-Planer/Review selbst simulieren
+- Implementierungs- oder Verifikations-Agenten für Planung
+- Stille fachliche Annahmen
+
+### Ausgabeformat
+
+**Deutsch**, klar strukturiert. Mermaid für grenzüberschreitende Flows. Fokussiert — umsetzbarer Plan, keine Essay-Länge.
+
+---
+
 ## Pflegehinweis
-
-
 
 Aenderungen an diesem Skill oder an Trigger-Formulierungen: in Wirtsprojekten
 
@@ -1060,11 +948,9 @@ pflegen: diese `description` (kompakt) und die **kanonische** Trigger-Liste in
 
 **`.cursor/rules/planning-workflow-skill.mdc`** (Cursor Always-Apply-Regel).
 
+**Modell / Agent-Profile:** Aenderungen an Modell-Slugs oder Orchestrator-Verhalten **nur** in
 
-
-**Modell / Agent-Profile:** Aenderungen an Modell-Slugs oder Agent-Verhalten **nur** in
-
-[../../agents/plan-agent*.md](../../agents/) — danach diese Skill-Tabelle **Subagent-Typen** abgleichen.
+[Orchestrator-Konfiguration](SKILL.md#orchestrator-konfiguration) dieses Skills — danach diese Skill-Tabelle **Subagent-Typen** abgleichen.
 
 **Prompt-Vorlagen:** Aenderungen an Subagent-Auftrags-Payloads **nur** in [references/subagent-prompts.md](references/subagent-prompts.md); danach Verweise in diesem Skill, in Agent-`.md` und Cross-Skills (z. B. describe-as-prompt) pruefen.
 

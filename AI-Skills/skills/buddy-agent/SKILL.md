@@ -1,7 +1,12 @@
 ---
 name: buddy-agent
-model: auto
-description: Sparring-Partner vor der Planung. Phasen intake → compress → repo-check → diskussion → plan-prompt. Liefert describe-as-Handoff für plan-agent.
+description: >
+  Sparring-Partner vor der Planung. Phasen intake → compress → repo-check → diskussion → plan-prompt.
+  Liefert describe-as-Handoff für plan-agent. Trigger: @buddy-agent, buddy-agent, Task mit Buddy,
+  Plan-Prompt, vor plan-agent, Task durchsprechen, Sparring, Anforderung schärfen, compress,
+  repo-check, diskussion, plan-prompt, handoff, intake, zuhören.
+  Opt-out: ohne buddy-agent.
+disable-model-invocation: true
 ---
 
 ## Parameter
@@ -44,7 +49,7 @@ Phase: intake | compress | repo-check | diskussion | plan-prompt
 
 Buddy nimmt auf, was der Nutzer sagt. Keine Tool-Calls. Keine Einordnung, keine Rückfragen.
 
-**Ausgabe:** genau dieser Block (nur „OK verstanden“ darf leicht variieren):
+**Ausgabe:** genau dieser Block (nur „OK verstanden" darf leicht variieren):
 
 ```
 OK verstanden
@@ -53,7 +58,7 @@ compress — Zusammenfassung des aktuellen Stands
 repo-check — Datensammlung im Repo (Agent-Mode)
 ```
 
-Kein „weil/da“, keine Bullets außerhalb des Blocks, keine Prosa.
+Kein „weil/da", keine Bullets außerhalb des Blocks, keine Prosa.
 
 **Erneutes intake in diskussion:** Nutzer liefert Kontext/Reaktionen (z. B. mehrere Nachrichten hintereinander) — Buddy bleibt passiv bis `diskussion`, eine direkte Frage oder Phasenwechsel.
 
@@ -165,7 +170,7 @@ Nach erneutem **intake** (passives Zuhören): wieder aktiv mit `diskussion` oder
 **Trigger:** `plan-prompt`, `handoff`  
 **Cursor-Modus:** Ask
 
-Skill [describe-as/SKILL.md](../skills/describe-as/SKILL.md) + [op-describe-as-text.md](../skills/describe-as/references/op-describe-as-text.md) vollständig anwenden.
+Skill [describe-as/SKILL.md](../describe-as/SKILL.md) + [op-describe-as-text.md](../describe-as/references/op-describe-as-text.md) vollständig anwenden.
 
 **Ziel:** Section B so vollständig, dass plan-agent in Phase 1–2 **idealerweise keine** Klärungsfragen mehr stellen muss.
 
@@ -213,9 +218,9 @@ Wenn repo-check nie lief → Hinweis in Section B unter `## Edge cases / open qu
 
 | Phase | Laden |
 |-------|-------|
-| intake / compress / diskussion | [buddy-agent-skill.mdc](../rules/buddy-agent-skill.mdc) |
-| repo-check | [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md) + [code-review-mcp.mdc](../rules/code-review-mcp.mdc) |
-| plan-prompt | [describe-as/SKILL.md](../skills/describe-as/SKILL.md) |
+| intake / compress / diskussion | [buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) |
+| repo-check | [code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md) + [code-review-mcp.mdc](../../rules/code-review-mcp.mdc) |
+| plan-prompt | [describe-as/SKILL.md](../describe-as/SKILL.md) |
 
 ---
 
@@ -246,3 +251,32 @@ Ask:   plan-prompt              → Section A + B (vollständig)
 ```
 Ask:   intake → diskussion → compress → … → repo-check → diskussion → plan-prompt
 ```
+
+---
+
+## Orchestrator-Konfiguration
+
+### Modell
+
+| Feld | Wert |
+|------|------|
+| **Primär** | `auto` (vom Host / Nutzer-Chat) |
+
+### Pflicht-Dokumente
+
+- [buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) — Rule für Cursor-Aktivierung
+- [describe-as/SKILL.md](../describe-as/SKILL.md) — für Phase plan-prompt (Caveman full)
+- [describe-as/references/op-describe-as-text.md](../describe-as/references/op-describe-as-text.md) — op-Template für plan-prompt
+- [code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md) — für repo-check (Agent-Mode, MCP-Kette); wenn nicht deployed: repo-check fällt auf Default-Pipeline zurück (siehe Phase repo-check)
+
+**Opt-out:** `ohne buddy-agent` → Buddy-Profil nicht anwenden.
+
+---
+
+## Pflegehinweis
+
+Trigger-Keywords synchron halten an zwei Stellen:
+1. YAML `description` dieser Datei.
+2. [../../rules/buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) — Verbindliche Aktivierung und Trigger-Abschnitte.
+
+Pflicht-Dokumente in `## Orchestrator-Konfiguration` bei Skill-Umzügen aktualisieren (describe-as, code-review-mcp).

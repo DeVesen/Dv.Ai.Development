@@ -8,7 +8,6 @@
     "skills/ado"
   ],
   "agents": [
-    "agents/ado-agent.md",
     "agents/ado-story-pruefe-agent.md",
     "agents/ado-task-pruefe-agent.md"
   ],

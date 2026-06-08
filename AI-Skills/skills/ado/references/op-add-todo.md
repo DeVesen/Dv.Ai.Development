@@ -10,6 +10,7 @@ Portable Skill: Freitext-ToDo in `task-*.md` notieren und `TODO`-Marker in Story
 
 ## Konfiguration
 
+- Artefakt-Wurzel: `{workspace-root}/requests/stories/` — [`config.md`](config.md)
 - JSON: [`../config.defaults.json`](../config.defaults.json)
 - Marker: [`markers.md`](markers.md)
 - Copy-Befehle: [`copy-commands.md`](copy-commands.md)
@@ -28,7 +29,7 @@ Portable Skill: Freitext-ToDo in `task-*.md` notieren und `TODO`-Marker in Story
 ## Reporting (Pflicht)
 
 - Work-Item-ID und ADO-URL
-- Geänderte Pfade unter `requests/stories/`
+- Geänderte Pfade unter `{workspace-root}/requests/stories/`
 - Posted/skipped Discussion-Marker
 - Offene Punkte / MCP-Fehler
 

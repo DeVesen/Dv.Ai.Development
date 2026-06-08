@@ -9,6 +9,8 @@ Fertig ausgefüllte Zeilen zum Kopieren — **keine** Platzhalter `[Story-ID]` /
 | **Story-ID** | `System.Id` / Ordner `UserStory-{id}-*` | `287638` |
 | **Task-Dateistamm** | Dateiname in `tasks/` ohne `.md` | `task-maschinenfilter-suchwizard` |
 
+**Pfad-Basis:** `{workspace-root}/requests/stories/` — Cursor-Workspace-Root, nicht `.cursor/` oder Code-Unterverzeichnisse.
+
 ## Task: `## Möglichkeiten` (offen)
 
 Am **Ende** der `task-*.md`, nach `## AI Zusammenfassung` (und ggf. `## Nutzer-ToDos`):

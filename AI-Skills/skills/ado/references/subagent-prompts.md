@@ -2,7 +2,8 @@
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `{code-root}` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
+| `{workspace-root}` | Cursor-Workspace-Root; Story-/Task-MD unter `{workspace-root}/requests/stories/` |
+| `{code-root}` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) — **nicht** für Story-Artefakte |
 
 # Subagent-Prompts — ADO Phasen `load` / `analyse` / `save`
 
@@ -75,4 +76,4 @@ Bei analyse nach load story fuehrt der Hauptagent dieselben Schritte wie Story-S
 
 load: references/phase-load.md — nur MCP, Load-Bundle im Chat.
 
-save: references/phase-save.md — Analyse-Bundle → requests/stories/ persistieren.
+save: references/phase-save.md — Analyse-Bundle → {workspace-root}/requests/stories/ persistieren.

@@ -1,7 +1,7 @@
 ---
 name: ado
 description: >
-  Azure DevOps Work Items ↔ Markdown unter requests/stories/ (MCP ado). Phasen load → analyse → save
+  Azure DevOps Work Items ↔ Markdown unter {workspace-root}/requests/stories/ (MCP ado). Phasen load → analyse → save
   (schrittweise, kein prüfe). Weitere Ops: Task fertig, ToDo, active/resolved, Task verfeinern (Legacy).
   Orchestrator: ado-agent. Trigger: load story/feature/task, analyse, save, markiere Task fertig, ToDo,
   active, resolved, Task verfeinern (Legacy), schließe Task, @ado. Opt-out: ohne ado-story-skill.
@@ -45,11 +45,23 @@ Phase: load | analyse | save
 | `Story … auf active`, `… resolved` | ADO State-Update; resolved: Ordner löschen | [`references/op-set-state.md`](references/op-set-state.md) |
 | `Task … verfeinern` (explizit, Legacy) | Interaktiver Klärungsworkflow | [`references/op-refine-task.md`](references/op-refine-task.md) |
 
+## Artefakt-Wurzel (verbindlich)
+
+Alle Story- und Task-Markdown-Dateien liegen unter **`{workspace-root}/requests/stories/`**.
+
+| Platzhalter | Bedeutung |
+|-------------|-----------|
+| `{workspace-root}` | Cursor-Workspace-Root (`workspaceFolder`) — **nicht** `.cursor/`, **nicht** `AI-Skills/`, **nicht** `{frontend-path}` / `{backend-path}` / `{code-root}` |
+
+`storiesRoot` in [`config.defaults.json`](config.defaults.json) = `requests/stories` → auflösen als `{workspace-root}/requests/stories/`.
+
+**Verboten:** Artefakte unter Skill-Pfad, `.cursor/` oder Code-Unterverzeichnissen anlegen.
+
 ## Repo-Layout
 
 | Element | Muster |
 |---------|--------|
-| Story-Ordner | `requests/stories/UserStory-{id}-{titleSlug}/` |
+| Story-Ordner | `{workspace-root}/requests/stories/UserStory-{id}-{titleSlug}/` |
 | Story-MD | `UserStory-{id}-{titleSlug}.md` |
 | Tasks | `tasks/task-{kebab-slug}.md` |
 
@@ -109,7 +121,7 @@ Prompts: [`references/subagent-prompts.md`](references/subagent-prompts.md)
 
 ### Non-Goals
 
-- Kein HTML unter `requests/stories/`
+- Kein HTML unter `{workspace-root}/requests/stories/`
 - Kein Schreiben an ADO Description/AC
 - Kein Produktcode implementieren
 - **Kein** Buddy-Orchestrierung aus ADO

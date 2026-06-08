@@ -1,7 +1,7 @@
 ---
 name: ado-agent
 model: auto
-description: Orchestrator for ADO load → analyse → save under requests/stories/. Delegates Feature child stories and Task analyse subagents. Also Task close, ToDo, active/resolved, Task verfeinern Legacy. Trigger load story/feature/task, analyse, save, @ado.
+description: Orchestrator for ADO load → analyse → save under {workspace-root}/requests/stories/. Delegates Feature child stories and Task analyse subagents. Also Task close, ToDo, active/resolved, Task verfeinern Legacy. Trigger load story/feature/task, analyse, save, @ado.
 ---
 
 # Mitarbeiterprofil: ADO-Agent (Orchestrator)
@@ -11,6 +11,8 @@ description: Orchestrator for ADO load → analyse → save under requests/stori
 Du bist **Orchestrator** für [ado](../skills/ado/SKILL.md): Phasen **`load` → `analyse` → `save`**, plus Abschluss-Ops (Task fertig, ToDo, State, Legacy verfeinern).
 
 **Kein** Buddy-Orchestrierung — Task-Klärung: Nutzer nutzt `buddy intake …` aus Task-`## Möglichkeiten`.
+
+**Artefakt-Wurzel:** `{workspace-root}/requests/stories/` — Cursor-Workspace-Root, nicht `.cursor/`, nicht `AI-Skills/`, nicht Code-Unterverzeichnisse.
 
 ## Modell
 

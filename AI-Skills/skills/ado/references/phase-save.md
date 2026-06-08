@@ -1,6 +1,6 @@
 # Phase `save` — Markdown persistieren
 
-Schreibt **Analyse-Bundle** aus Phase [`analyse`](phase-analyse.md) nach `requests/stories/`.
+Schreibt **Analyse-Bundle** aus Phase [`analyse`](phase-analyse.md) nach `{workspace-root}/requests/stories/` — **nur dort**, nicht unter Skill-Pfad, `.cursor/` oder Code-Unterverzeichnissen.
 
 ## Trigger
 
@@ -19,7 +19,7 @@ Phase: save
 
 ## Story-Save (Orchestrator)
 
-1. Ordner `requests/stories/UserStory-{id}-*` suchen oder anlegen ([`field-mapping.md`](field-mapping.md)).
+1. Ordner `{workspace-root}/requests/stories/UserStory-{id}-*` suchen oder anlegen ([`field-mapping.md`](field-mapping.md)).
 2. **Story.md** aus `storyDraft` schreiben/aktualisieren ([`../templates/story.md.template`](../templates/story.md.template)):
    - Metatable, Blockquote (Description, AC, Discussions; **Anhänge:** nur wenn `attachmentNames` im Bundle — z. B. `Anhänge: foo.png, bar.pdf`)
    - `## Feature-Kontext` — Block ersetzen wenn gesetzt
@@ -49,7 +49,7 @@ Pro Child-Story im Feature-Analyse-Bundle: Story-Save wie oben (parallel erlaubt
 ## Reporting (Pflicht)
 
 - Work-Item-ID, ADO-URL
-- Geänderte/neu angelegte Pfade unter `requests/stories/`
+- Geänderte/neu angelegte Pfade unter `{workspace-root}/requests/stories/` (relativ ab Workspace-Root melden)
 - Anzahl geschriebener Task-MDs
 - Fehlende Drafts / `BLOCKER`
 - **Keine** Buddy-Copy-Zeilen — Nutzer nutzt `## Möglichkeiten` in Task.md

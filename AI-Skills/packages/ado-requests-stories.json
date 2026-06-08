@@ -1,6 +1,6 @@
 {
   "name": "ado-requests-stories",
-  "description": "Azure DevOps Work Items ↔ Markdown under requests/stories/. Phases load → analyse → save (no prüfe).",
+  "description": "Azure DevOps Work Items ↔ Markdown under {workspace-root}/requests/stories/. Phases load → analyse → save (no prüfe).",
   "rules": [
     "rules/ado-skill.mdc"
   ],

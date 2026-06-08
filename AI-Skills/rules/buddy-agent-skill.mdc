@@ -1,9 +1,15 @@
 ---
-description: Task-Klärung vor Planung — buddy-agent Phasen (intake → compress → repo-check → diskussion → plan-prompt). Task-Brücke buddy intake|repo-check {taskDateistamm} aus Story {id} lädt nur Task.md. Kein ADO-Sync.
+description: Task-Klärung vor Planung — buddy-agent Phasen (intake → compress → repo-check → diskussion → plan-prompt). Task-Brücke buddy intake|repo-check {taskDateistamm} aus Story {id} lädt nur Task.md unter {workspace-root}/requests/stories/. Kein ADO-Sync.
 alwaysApply: true
 ---
 
 # Buddy-Agent v3 (Cursor)
+
+## Parameter
+
+| Parameter | Beschreibung |
+|-----------|-------------|
+| `{workspace-root}` | Cursor-Workspace-Root; Task.md unter `{workspace-root}/requests/stories/UserStory-{id}-*/tasks/` |
 
 ## Pflicht bei Task-Klärung vor Planung
 
@@ -16,8 +22,8 @@ Wenn der Nutzer ein Task klären, durchsprechen oder einen Plan-Prompt erzeugen 
 Explizite Trigger:
 
 - **`@buddy-agent`**, **`buddy-agent`**
-- **`buddy intake {taskDateistamm} aus Story {storyId}`** — nur Task.md laden, Phase intake
-- **`buddy repo-check {taskDateistamm} aus Story {storyId}`** — Task.md + repo-check
+- **`buddy intake {taskDateistamm} aus Story {storyId}`** — nur Task.md unter `{workspace-root}/requests/stories/` laden, Phase intake
+- **`buddy repo-check {taskDateistamm} aus Story {storyId}`** — Task.md unter `{workspace-root}/requests/stories/` + repo-check
 - **`Plan-Prompt`**, **`vor plan-agent`**, **`Sparring`**, **`Anforderung schärfen`**
 - **`intake`**, **`zuhören`**, **`compress`**, **`repo-check`**, **`diskussion`**
 - **`plan-prompt`**, **`handoff`**

@@ -1,5 +1,5 @@
 ---
-description: Azure DevOps Work Items mit Markdown unter requests/stories synchronisieren (MCP ado). Phasen load → analyse → save (schrittweise, kein prüfe). Task fertig, ToDo, active, resolved. Task verfeinern Legacy. Kein HTML. Kein Buddy-Orchestrierung.
+description: Azure DevOps Work Items mit Markdown unter {workspace-root}/requests/stories synchronisieren (MCP ado). Phasen load → analyse → save (schrittweise, kein prüfe). Task fertig, ToDo, active, resolved. Task verfeinern Legacy. Kein HTML. Kein Buddy-Orchestrierung.
 alwaysApply: true
 ---
 
@@ -7,6 +7,7 @@ alwaysApply: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
+| `{workspace-root}` | Cursor-Workspace-Root; Story-/Task-MD unter `{workspace-root}/requests/stories/` |
 | `{devops-pipelines-path}` | Pfad zum DevOps-Pipelines-Verzeichnis |
 | `ADO.Organisation` | Azure DevOps Organisation (z. B. `MeineFirma`) |
 
@@ -14,7 +15,7 @@ alwaysApply: true
 
 ## Pflicht bei ADO-Story-/Task-Workflow
 
-Wenn der Nutzer ein **Azure DevOps Work Item** mit **lokalen Markdown-Artefakten** unter `requests/stories/` verknüpfen, laden, analysieren, speichern, Tasks schließen, ToDos notieren oder den Story-State ändern will, dann **vor der Antwort** den passenden Skill **vollständig lesen und befolgen**.
+Wenn der Nutzer ein **Azure DevOps Work Item** mit **lokalen Markdown-Artefakten** unter `{workspace-root}/requests/stories/` verknüpfen, laden, analysieren, speichern, Tasks schließen, ToDos notieren oder den Story-State ändern will, dann **vor der Antwort** den passenden Skill **vollständig lesen und befolgen**.
 
 **Discovery:** `disable-model-invocation: true` — Auslösung über diese Rule und `./AGENTS.md`.
 

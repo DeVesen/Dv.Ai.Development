@@ -10,6 +10,7 @@ Portable Skill: Story-State `active` oder `resolved` in ADO setzen, lokale Artef
 
 ## Konfiguration
 
+- Artefakt-Wurzel: `{workspace-root}/requests/stories/` — [`config.md`](config.md)
 - JSON: [`../config.defaults.json`](../config.defaults.json)
 - State-Mapping: [`state-mapping.md`](state-mapping.md)
 - Marker: [`markers.md`](markers.md)
@@ -31,7 +32,7 @@ Portable Skill: Story-State `active` oder `resolved` in ADO setzen, lokale Artef
 
 **Ablauf**
 
-1. Nutzer **warnen und bestätigen lassen**: Ordner `requests/stories/UserStory-{id}-*` wird gelöscht.
+1. Nutzer **warnen und bestätigen lassen**: Ordner `{workspace-root}/requests/stories/UserStory-{id}-*` wird gelöscht.
 2. `wit_update_work_item` → `Resolved`.
 3. Optional: `STORY-RESOLVED`-Kommentar in Discussion ([`markers.md`](markers.md)).
 4. Nach erfolgreichem ADO-Update: gesamten Story-Ordner inkl. `tasks/` löschen.
@@ -40,7 +41,7 @@ Portable Skill: Story-State `active` oder `resolved` in ADO setzen, lokale Artef
 ## Reporting (Pflicht)
 
 - Work-Item-ID und ADO-URL
-- Geänderte/gelöschte Pfade unter `requests/stories/`
+- Geänderte/gelöschte Pfade unter `{workspace-root}/requests/stories/`
 - Bei `resolved`: Bestätigung + gelöschter Pfad
 - Offene Punkte / MCP-Fehler
 

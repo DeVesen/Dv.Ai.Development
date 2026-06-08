@@ -2,7 +2,7 @@
 name: buddy-agent
 description: >
   Sparring-Partner vor der Planung. Phasen intake → compress → repo-check → diskussion → plan-prompt.
-  Task-Brücke: buddy intake|repo-check {taskDateistamm} aus Story {id} lädt nur tasks/task-*.md.
+  Task-Brücke: buddy intake|repo-check {taskDateistamm} aus Story {id} lädt nur tasks/task-*.md unter {workspace-root}/requests/stories/.
   Kein ADO-MCP, keine ado-Pipeline. Trigger: @buddy-agent, buddy-agent, buddy intake, buddy repo-check,
   Plan-Prompt, vor plan-agent, Sparring, Anforderung schärfen, compress, repo-check, diskussion,
   plan-prompt, handoff, intake, zuhören.
@@ -14,7 +14,8 @@ disable-model-invocation: true
 
 | Parameter | Beschreibung |
 |-----------|-------------|
-| `.` | Wurzelpfad des Code-Repositories |
+| `{workspace-root}` | Cursor-Workspace-Root; Story-/Task-MD unter `{workspace-root}/requests/stories/` |
+| `.` | Wurzelpfad des Code-Repositories (nur repo-check / Code-Scout — **nicht** für Task.md) |
 | `./buddy-repo-check.md` | Pipeline für repo-check (lesen falls vorhanden; projektspezifisch, nicht im Profil) |
 
 # Buddy v3 — Sparrings-Agent
@@ -37,9 +38,13 @@ Deutsch. Fachlich, kurz, direkt. Keine Code-Beispiele. Kein Consultant-Deutsch.
 
 ## Task.md-Brücke (Copy aus `## Möglichkeiten`)
 
-Pfad-Auflösung (verbindlich):
+**Artefakt-Wurzel (verbindlich):** `{workspace-root}/requests/stories/`
 
-`requests/stories/UserStory-{storyId}-*/tasks/{taskDateistamm}.md`
+- `{workspace-root}` = Cursor-Workspace-Root — **nicht** `.cursor/`, **nicht** `AI-Skills/`, **nicht** `{frontend-path}` / `{backend-path}` / `{code-root}`
+
+Pfad-Auflösung:
+
+`{workspace-root}/requests/stories/UserStory-{storyId}-*/tasks/{taskDateistamm}.md`
 
 - **Story-ID:** numerische ADO-ID (`287638`)
 - **Task-Dateistamm:** voller Dateiname ohne `.md` (z. B. `task-maschinenfilter-suchwizard`)
@@ -50,7 +55,7 @@ Pfad-Auflösung (verbindlich):
 | `buddy intake {taskDateistamm} aus Story {storyId}` | intake | Task.md (ein Read) | Passives intake — Navigations-Block |
 | `buddy repo-check {taskDateistamm} aus Story {storyId}` | repo-check | Task.md (ein Read) | repo-check mit Scope aus Task-Inhalt |
 
-Datei fehlt → **`BLOCKER: Task.md nicht gefunden — Pfad prüfen oder ado save`**.
+Datei fehlt → **`BLOCKER: Task.md nicht gefunden unter {workspace-root}/requests/stories/ — ado save oder Pfad prüfen`**.
 
 **Repo-Fragen aus Task.md** (für `buddy repo-check …`): ableiten aus `## Anforderung`, `## AI Zusammenfassung`, `## Offene Fragen`, `## Akzeptanzkriterien` — nichts erfinden.
 

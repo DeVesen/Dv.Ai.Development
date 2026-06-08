@@ -1,6 +1,6 @@
 {
   "name": "buddy-agent",
-  "description": "Task clarification via buddy intake/repo-check and plan-prompt before planning (no ADO sync)",
+  "description": "Task clarification via buddy intake/repo-check and plan-prompt before planning. Task.md under {workspace-root}/requests/stories/ (no ADO sync)",
   "rules": [
     "rules/buddy-agent-skill.mdc"
   ],

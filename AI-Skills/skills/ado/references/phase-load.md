@@ -81,7 +81,7 @@ analyse — Task-Inventar + Task-Drafts (nach load)
 
 ## Verboten in `load`
 
-- `requests/stories/` lesen/schreiben (Ausnahme: Nutzer verweist explizit auf bestehende Datei zum Vergleich — dann nur Read, kein Sync)
+- `{workspace-root}/requests/stories/` lesen/schreiben (Ausnahme: Nutzer verweist explizit auf bestehende Datei unter `{workspace-root}/requests/stories/` zum Vergleich — dann nur Read, kein Sync)
 - Task-Subagents, Story-Subagents
 - `(x)`-Slug-Mapping, Task-Übersicht, `## Möglichkeiten`
 - Repo-Scout / code-review-mcp

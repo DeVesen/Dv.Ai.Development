@@ -20,7 +20,7 @@ Main-Agents sind Agents aus `.cursor/agents/`, die **nicht** von einem anderen A
 
 ### ado-agent
 
-Orchestriert Azure DevOps Work Items ↔ lokale Markdown-Artefakte (`requests/stories/`). **Phasen:** `load` → `analyse` → `save` (schrittweise, kein `prüfe`). Weitere Ops: Task-Abschluss, ToDo, Story-State. **Keine** Buddy-Orchestrierung.
+Orchestriert Azure DevOps Work Items ↔ lokale Markdown-Artefakte (`{workspace-root}/requests/stories/`). **Phasen:** `load` → `analyse` → `save` (schrittweise, kein `prüfe`). Weitere Ops: Task-Abschluss, ToDo, Story-State. **Keine** Buddy-Orchestrierung.
 
 **Ausgelöst durch:** `rules/ado-skill.mdc` · Profil: `agents/ado-agent.md`
 
@@ -78,7 +78,7 @@ lass uns planen
 
 ### buddy-agent
 
-Phasen-basiertes Sparring **vor** der Planung. `intake → compress → repo-check → diskussion → plan-prompt`. **Task-Brücke:** `buddy intake {taskDateistamm} aus Story {id}` / `buddy repo-check …` lädt **nur** Task.md — kein ADO-MCP.
+Phasen-basiertes Sparring **vor** der Planung. `intake → compress → repo-check → diskussion → plan-prompt`. **Task-Brücke:** `buddy intake {taskDateistamm} aus Story {id}` / `buddy repo-check …` lädt **nur** Task.md unter `{workspace-root}/requests/stories/` — kein ADO-MCP.
 
 **Ausgelöst durch:** `rules/buddy-agent-skill.mdc`
 
@@ -186,7 +186,7 @@ _keine_
 
 ### ado-requests-stories
 
-Azure DevOps Work Items ↔ Markdown unter `requests/stories/`. Phasen **load → analyse → save**. Tasks schließen, State, ToDos. Anhänge in Story.md nur wenn MCP-List-Tool existiert.
+Azure DevOps Work Items ↔ Markdown unter `{workspace-root}/requests/stories/`. Phasen **load → analyse → save**. Tasks schließen, State, ToDos. Anhänge in Story.md nur wenn MCP-List-Tool existiert.
 
 #### Operations
 
@@ -240,6 +240,7 @@ Story 287638 resolved
 
 | Parameter | Beschreibung |
 |-----------|-------------|
+| `{workspace-root}` | Cursor-Workspace-Root; Story-/Task-MD unter `{workspace-root}/requests/stories/` |
 | `{devops-pipelines-path}` | Pfad zu Azure DevOps Pipeline-Definitionen (YAML-Dateien) |
 | `ADO.Organisation` | Azure DevOps Organisationsname (in `mcp.json` → `defaultOrganization`) |
 | `ADO.Project-GUID` | ADO Projekt-GUID (in `skills/ado/config.defaults.json` → `defaultProject`) |
@@ -248,7 +249,7 @@ Story 287638 resolved
 
 ### buddy-agent
 
-Phasen-Sparring vor Planung. Task-Brücke via `buddy intake` / `buddy repo-check` (nur Task.md). Kein ADO-Sync.
+Phasen-Sparring vor Planung. Task-Brücke via `buddy intake` / `buddy repo-check` (nur Task.md unter `{workspace-root}/requests/stories/`). Kein ADO-Sync.
 
 **Abhängigkeiten:** `describe-as`, `commit-message`
 
@@ -291,6 +292,7 @@ _keine_
 
 | Parameter | Beschreibung |
 |-----------|-------------|
+| `{workspace-root}` | Cursor-Workspace-Root; Task.md unter `{workspace-root}/requests/stories/UserStory-{id}-*/tasks/` |
 | `./buddy-repo-check.md` | Ressourcen-Pipeline im **Repo-Root** (nicht unter `.cursor/`). Template kopieren: `skills/buddy-agent/buddy-repo-check.md` → `./buddy-repo-check.md`. **Ohne Datei:** Default-Pipeline = `code-review-mcp` only. |
 
 **Optional (projektspezifisch, nicht im buddy-agent-Profil):** MCP-Schritte in `./buddy-repo-check.md` unter `## Pipeline` ergänzen — unbekannte Zeilen erscheinen in repo-check unter `### Pipeline-Warnungen`.

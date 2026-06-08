@@ -10,6 +10,7 @@ Portable Skill: Task abschließen — Akzeptanzkriterien prüfen, `TASK-CLOSED` 
 
 ## Konfiguration
 
+- Artefakt-Wurzel: `{workspace-root}/requests/stories/` — [`config.md`](config.md)
 - JSON: [`../config.defaults.json`](../config.defaults.json)
 - Marker: [`markers.md`](markers.md)
 - Task-Übersicht: [`task-overview.md`](task-overview.md)
@@ -33,7 +34,7 @@ Portable Skill: Task abschließen — Akzeptanzkriterien prüfen, `TASK-CLOSED` 
 ## Reporting (Pflicht)
 
 - Work-Item-ID und ADO-URL
-- Geänderte Pfade unter `requests/stories/`
+- Geänderte Pfade unter `{workspace-root}/requests/stories/`
 - Posted/skipped Discussion-Marker
 - Offene Punkte / MCP-Fehler
 

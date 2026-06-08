@@ -20,7 +20,7 @@ Nutzerbefehle sind **kleingeschrieben**; ADO-States sind **projektspezifisch**.
 | Befehl | ADO | Lokales Repo |
 |--------|-----|----------------|
 | `active` | State → Active | Story-MD Status aktualisieren; **Ordner bleibt** |
-| `resolved` | State → Resolved | Nach **Bestätigung** und erfolgreichem ADO-Update: Ordner `requests/stories/UserStory-{id}-*` **löschen** |
+| `resolved` | State → Resolved | Nach **Bestätigung** und erfolgreichem ADO-Update: Ordner `{workspace-root}/requests/stories/UserStory-{id}-*` **löschen** |
 
 ## `resolved` — Sicherheit
 

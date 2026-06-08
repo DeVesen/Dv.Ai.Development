@@ -32,5 +32,7 @@ Vor jedem Aufruf: Tool-Deskriptoren unter dem MCP-Server lesen.
 
 ## Repo-Pfade
 
-- Story-Artefakte: `requests/stories/`
+- **Artefakt-Wurzel:** `{workspace-root}/requests/stories/`
+- `{workspace-root}` = Cursor-Workspace-Root — **nicht** `.cursor/`, **nicht** `AI-Skills/`, **nicht** `{frontend-path}` / `{backend-path}` / `{code-root}`
+- `storiesRoot` in [`config.defaults.json`](../config.defaults.json) ist relativ zu `{workspace-root}` (`requests/stories`)
 - Kein Legacy-Pfad `.requests/` für neue Artefakte

@@ -210,7 +210,7 @@ function getHtml(): string {
           + '<span class="chars">' + fmtNum(it.outputChars) + ' chars</span>'
           + '<span class="dur">' + it.duration + 'ms</span>'
           + '<div class="spacer-h"></div>'
-          + '<button class="btn-remove" title="Entfernen" data-remove-id="' + esc(it.id) + '" onclick="removeItem(this.getAttribute(\'data-remove-id\'), event)">&#215;</button>'
+          + '<button class="btn-remove" title="Entfernen" data-remove-id="' + esc(it.id) + '" onclick="removeItem(this.getAttribute(&quot;data-remove-id&quot;), event)">&#215;</button>'
           + '</div>'
           + '<div class="item-body">'
           + '<div class="section"><div class="section-title">Meta</div><div class="meta-grid">'

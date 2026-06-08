@@ -47,3 +47,5 @@ disable-model-invocation: true
 ## Opt-out
 
 `ohne ef-migration-skill`, `ohne backend-ef-migrations-skill` → Skill **nicht** laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

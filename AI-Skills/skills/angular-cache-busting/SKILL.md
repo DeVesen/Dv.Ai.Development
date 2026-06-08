@@ -27,3 +27,5 @@ disable-model-invocation: true
 ## Opt-out
 
 `kein cache busting` → Skill nicht laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

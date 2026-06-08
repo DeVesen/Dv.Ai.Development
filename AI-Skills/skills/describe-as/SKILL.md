@@ -28,3 +28,5 @@ disable-model-invocation: true
 ## Opt-out
 
 `kein describe-as` / `no describe-as` → Skill nicht laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

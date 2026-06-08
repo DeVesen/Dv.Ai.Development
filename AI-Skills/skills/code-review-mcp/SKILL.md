@@ -174,3 +174,5 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 ## Opt-out
 
 `kein code-review-mcp` → Skill nicht laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

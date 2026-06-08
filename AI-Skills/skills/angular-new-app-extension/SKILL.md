@@ -42,3 +42,5 @@ disable-model-invocation: true
 ## Opt-out
 
 `no-angular-new-app-extension` → Skill nicht laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

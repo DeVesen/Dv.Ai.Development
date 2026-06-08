@@ -33,3 +33,5 @@ Portable skill: generate a commit-ready English title and body from current cont
 ## Opt-out
 
 `Commit-Vorschlag für Task … in Story …` → Skill nicht laden, stattdessen [ado/SKILL.md](../ado/SKILL.md) verwenden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

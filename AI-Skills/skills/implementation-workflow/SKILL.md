@@ -466,15 +466,7 @@ Ist `auto` **nicht** wählbar → **stoppen**, transparent melden — **kein** s
 
 ### genericRTK (verbindlich)
 
-**Jeder** Build-/Test-Lauf im Scope:
-
-1. Shell → **vollständiges** stdout/stderr-Capture dieses Laufs
-2. **Sofort** `filter_output` / `filter_output_stream` (bei Exit ≠ 0 zusätzlich `analyze_build_output`)
-3. Vor jedem MCP: **`Rufe genericRTK …`** sichtbar
-4. **Inhaltliche Diagnose nur** aus **intern gelesenem** MCP-Ergebnis — **niemals** Roh-Konsole
-5. MCP-Body **nicht** in Berichte kopieren — nur **Kurzprosa** aus MCP
-
-**MCP nicht erreichbar:** **`BLOCKER: genericRTK nicht erreichbar`** — stoppen.
+Kanon via Pflicht-Schritt 2: [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc) — Schritte 1–8 und **[Interpretationspflicht (verbindlich)](../../rules/genericrtk-output-filter.mdc#interpretationspflicht-verbindlich)** pro Build-/Test-Lauf. **MCP nicht erreichbar:** **`BLOCKER: genericRTK nicht erreichbar`** — stoppen.
 
 ### Parallelität
 
@@ -522,6 +514,10 @@ After changing this skill, verify host-facing guidance still matches—per host 
 **Prompt-Vorlagen:** Aenderungen an Subagent-Auftrags-Payloads **nur** in [references/subagent-prompts.md](references/subagent-prompts.md); danach Verweise in diesem Skill, [implementation-workflow-skill.mdc](../../rules/implementation-workflow-skill.mdc) und Agent-`.md` pruefen.
 
 **Agent-Profile:** Modell-Slugs und Ketten für den implement-agent **nur** in [## Orchestrator-Konfiguration](SKILL.md#orchestrator-konfiguration) dieses Skills; verify-agent: [../../agents/verify-agent.md](../../agents/verify-agent.md); Skills/Rules verweisen auf [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — keine Slug-Duplikate.
+
+## Antwortformat
+
+Keine Code-Beispiele ohne explizite Nachfrage.
 
 ## Prompt-Vorlagen
 

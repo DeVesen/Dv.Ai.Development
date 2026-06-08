@@ -38,3 +38,5 @@ disable-model-invocation: true
 ## Opt-out
 
 `no-angular-developer` → Skill nicht laden.
+
+Keine Code-Beispiele ohne explizite Nachfrage.

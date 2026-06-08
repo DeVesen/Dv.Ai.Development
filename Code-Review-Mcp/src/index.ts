@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { recordCall, startLogViewer } from "./logviewer.js";
 import { execSync } from "child_process";
 import { readFileSync, existsSync } from "fs";
 import { extname, resolve } from "path";
@@ -221,6 +222,21 @@ function performReview(
 // ─── MCP Server ───────────────────────────────────────────────────────────────
 
 const server = new McpServer({ name: "code-review-mcp", version: "2.2.0" });
+
+// Auto-track all tool calls for the log viewer
+{
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const srv = server as any;
+  const _orig = srv.tool.bind(server) as (...args: unknown[]) => unknown;
+  srv.tool = (name: string, desc: string, schema: unknown, handler: (p: unknown) => unknown) =>
+    _orig(name, desc, schema, async (p: unknown) => {
+      const t0 = Date.now();
+      const result = await (handler(p) as Promise<{ content: Array<{ type: string; text: string }> }>);
+      const text = result?.content?.find((c: { type: string }) => c.type === "text")?.text ?? "";
+      recordCall(name, p, text.length, Date.now() - t0, text.slice(0, 600));
+      return result;
+    });
+}
 
 const focusAreasSchema = z
   .array(z.enum(["solid", "security", "performance", "angular-best-practices", "api-validation"]))
@@ -1563,6 +1579,9 @@ function parseDiff(diff: string): { filename: string; content: string }[] {
 }
 
 // ─── Start ────────────────────────────────────────────────────────────────────
+
+const logViewerPort = parseInt(process.env.LOG_VIEWER_PORT ?? "8090", 10);
+startLogViewer(logViewerPort);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

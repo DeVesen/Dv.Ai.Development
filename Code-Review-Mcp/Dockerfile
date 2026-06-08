@@ -58,5 +58,6 @@ ENV HOME=/home/mcpuser
 ENV NUGET_PACKAGES=/app/nuget-cache
 ENV PATH="$PATH:/app/dotnet-tools"
 ENV NODE_ENV=production
+EXPOSE 8090
 
 CMD ["node", "dist/index.js"]

@@ -16,7 +16,7 @@
 Vorlage (anpassen nach Abruf):
 
 ```markdown
-> **Quellen in DevOps:** Description … · Acceptance Criteria … · Discussions: N Kommentare · Child-Tasks in ADO: …  
+> **Quellen in DevOps:** Description … · Acceptance Criteria … · Discussions: N Kommentare · Anhänge: name1, name2 *(nur wenn MCP geliefert — sonst weglassen)*
 > „Abgeschlossen (laut Code-Stand)" = nur bei explizitem Repo-Abgleich; nie für `TASK-CLOSED`-Tasks.  
 > Task „fertig" (Discussion): `TASK-CLOSED` — nur unter „Abgeschlossen (laut Discussion)"; siehe [task-overview.md](task-overview.md).
 ```
@@ -29,7 +29,7 @@ Vorlage (anpassen nach Abruf):
 - **`## Anforderung`:** erste knappe **Interpretation** der Anforderung (Agent-Verständnis); bei `verfeinern` nach Nutzer-Freigabe ausarbeiten — nicht Story-Rohzitat duplizieren.
 - **Nicht** per MCP zurückschreiben.
 - Bestehende Task-Dateien: `## Umsetzung`, `## Nutzer-ToDos` **nicht** überschreiben — nur Kopfzeile `**Status:**` und Story-Checkboxen bei Marker-Sync. Anforderung/ACs bei **`Task … verfeinern`** nach Nutzer-Freigabe — [task-verfeinern.md](task-verfeinern.md).
-- **`## Akzeptanzkriterien`** bei `prüfe` **pflegen** (Block ersetzen): `### Lesbar`, `### Planung`, `### Umsetzung`, `### Testabsicherung` — [acceptance-criteria.md](acceptance-criteria.md). Ersetzt älteres `## Akzeptanz (abgeleitet)` / `## Analyse (Agent)` schrittweise.
+- **`## Akzeptanzkriterien`** bei **analyse/save** pflegen (Block aus Task-Draft) — [acceptance-criteria.md](acceptance-criteria.md).
 
 ## Slug aus Titel
 
@@ -39,13 +39,13 @@ Vorlage (anpassen nach Abruf):
 
 Bestehenden Ordner per Glob `UserStory-{id}-*` finden; nicht zweimal anlegen.
 
-## `## Feature-Kontext` (nur bei Feature-`prüfe` oder optionalem Nachladen)
+## `## Feature-Kontext` (Feature-Load / save)
 
 Platzierung in der Story-MD: direkt **nach** `## Story-Zusammenfassung`, **vor** `## Task-Übersicht`.
 
 | Regel | Detail |
 |-------|--------|
-| Wann setzen | `prüfe Feature {featureId}`: für **jede** Child-Story mit gleichem `featureContext` |
+| Wann setzen | `load feature` + **save** für jede Child-Story mit gleichem `featureContext` |
 | Block-Grenzen | Von `## Feature-Kontext` bis vor nächstes `## …` oder EOF — bei Sync **gesamten Block ersetzen** (idempotent) |
 | Inhalt | Link zum Parent-Feature; verdichtete Zusammenfassung aus Feature-**Description**, **AC**, **Discussion** (kein vollständiger HTML-Rohdump) |
 | Geschützt | `## Umsetzung`, `## Nutzer-ToDos` in Tasks — **nicht** durch Feature-Kontext ersetzen |
@@ -84,5 +84,5 @@ Vollständige Regeln: [task-overview.md](task-overview.md), `(x)`: [description-
 
 ## Copy-Befehle (`## Möglichkeiten`)
 
-- Kanonische Vorlagen und `prüfe`-Sync-Regeln: [copy-commands.md](copy-commands.md).
+- Kanonische Vorlagen und **save**-Sync: [copy-commands.md](copy-commands.md).
 - **Task-Dateistamm** für Copy-Zeilen = Dateiname in `tasks/` ohne `.md` (z. B. `task-maschinenfilter-suchwizard`).

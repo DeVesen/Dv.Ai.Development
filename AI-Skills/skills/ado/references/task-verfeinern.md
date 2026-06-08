@@ -14,9 +14,10 @@ Interaktiver Klärungsworkflow in `tasks/task-*.md` — **nicht** dasselbe wie `
 
 | Copy-Befehl | Workflow | Chat | `task-*.md` |
 |-------------|----------|------|-------------|
-| `prüfe` | [task-pruefe-subagent.md](task-pruefe-subagent.md) | Story-/Task-Subagent-Berichte | Schlankes Initial-Schema + ACs; **ohne** interaktive Klärung |
-| `Task … verfeinern` | **dieser Ablauf** | Phasen 1–4 read-only; Phase 5 erst nach Nutzer-Freigabe | Nur freigegebene Inhalte; **kein** Vorgehen/Plan in der Datei |
-| `plane Task …` | [planning-workflow](../../planning-workflow/SKILL.md) | Finales Planpaket + Umsetzungs-Topologie zur Freigabe | optional `### Planung` / AC-P aus Plan; **nicht** Planpaket 1:1 in die Datei |
+| `load` / `analyse` / `save` | [phase-load/analyse/save](phase-load.md) | Load-/Analyse-Bundles | **save** schreibt schlankes Schema |
+| `buddy intake` / `buddy repo-check` | [buddy-agent](../../buddy-agent/SKILL.md) | Sparring | nur **Read** Task.md |
+| `Task … verfeinern` | **dieser Ablauf** | Phasen 1–4 read-only; Phase 5 erst nach Nutzer-Freigabe | Nur freigegebene Inhalte |
+| `plane Task …` | [planning-workflow](../../planning-workflow/SKILL.md) | Planpaket im Chat | optional `### Planung` |
 
 **Kein** ADO-MCP bei `verfeinern` (wie bei `plane Task`).
 
@@ -85,7 +86,7 @@ Reihenfolge in der Datei (nach Kopf/Status, vor geschützten Abschnitten) — **
 
 ### Entfallene Abschnitte (nicht mehr in Task.md)
 
-Diese Abschnitte **nicht** anlegen oder bei `verfeinern`/`prüfe` **entfernen** (Block ersetzen durch nichts — idempotent bereinigen):
+Diese Abschnitte **nicht** anlegen oder bei `verfeinern` **entfernen** (Block ersetzen durch nichts — idempotent bereinigen):
 
 - `## Original Text` → ersetzt durch `## Story-Bezug`
 - `## Zielsetzung` → in `## Anforderung` integrieren
@@ -100,7 +101,7 @@ Diese Abschnitte **nicht** anlegen oder bei `verfeinern`/`prüfe` **entfernen** 
 | | Story-Bezug | Anforderung |
 |---|-------------|-------------|
 | Quelle | Story-Description, ggf. `## Feature-Kontext` | Agent-Verständnis nach Klärung mit Nutzer |
-| Bei `prüfe` | Story-Auszüge für diesen Task | Erste knappe Interpretation |
+| Bei `analyse`/`save` | Story-Auszüge für diesen Task | Erste knappe Interpretation (Draft → save) |
 | Bei `verfeinern` | Beibehalten (nur aktualisieren wenn Story-Quelle geändert) | Block **ersetzen** nach Nutzer-Freigabe |
 
 ### Mermaid
@@ -138,7 +139,7 @@ sequenceDiagram
 
 **Bei `verfeinern` nicht blind überschreiben:** `## Story-Bezug` (Story-Quelle beibehalten; nur bei geänderter Story-Description/Feature-Kontext aktualisieren).
 
-**Bei `verfeinern`/`prüfe` entfernen** (falls vorhanden): alle entfallenen Abschnitte oben.
+**Bei `verfeinern` entfernen** (falls vorhanden): alle entfallenen Abschnitte oben.
 
 **Nie bei `verfeinern` überschreiben:** `## AI Zusammenfassung` (Scout-Findings beibehalten; nur bei neuem Code-Scout in Phase 1 ersetzen).
 
@@ -166,11 +167,12 @@ Eigener Abschnitt auf **Position 2** (nach Anforderung, vor Story-Bezug). Mindes
 
 Copy-Zeile nur wenn ≥1 echte Frage — [copy-commands.md](copy-commands.md). Ohne Fragen: Platzhalter oder leer lassen, **keine** Copy-Zeile.
 
-## Zusammenspiel `prüfe`
+## Zusammenspiel `analyse` / `save`
 
-- Bei `prüfe` schreibt der **[Task-SubAgent](task-pruefe-subagent.md)** das schlanke Initial-Schema und `## Akzeptanzkriterien` (discussion-offene Tasks) — **ohne** interaktive Klärung.
-- **`Task … verfeinern`** danach: interaktiver 5-Phasen-Ablauf; tiefere Anforderung + AC-Anpassung nach Nutzer-Freigabe.
-- Fehlen Pflichtabschnitte nach `prüfe`: in Story-Bericht **hinweisen** oder `Task … verfeinern` anbieten.
+- Bei **`analyse`:** [ado-task-pruefe-agent](../../../agents/ado-task-pruefe-agent.md) liefert **Task-Draft** (schlankes Schema + ACs) — **ohne** Datei-Schreiben.
+- Bei **`save`:** Drafts aus Analyse-Bundle persistieren — [`phase-save.md`](phase-save.md), [`task-analyse-subagent.md`](task-analyse-subagent.md).
+- **`Task … verfeinern` (Legacy):** interaktiver 5-Phasen-Ablauf; tiefere Anforderung nach Nutzer-Freigabe.
+- Task-Klärung (Standard): `buddy intake …` / `buddy repo-check …` aus Task-`## Möglichkeiten`.
 
 ## Reporting (Pflicht)
 

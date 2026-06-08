@@ -2,9 +2,10 @@
 name: buddy-agent
 description: >
   Sparring-Partner vor der Planung. Phasen intake → compress → repo-check → diskussion → plan-prompt.
-  Liefert describe-as-Handoff für plan-agent. Trigger: @buddy-agent, buddy-agent, Task mit Buddy,
-  Plan-Prompt, vor plan-agent, Task durchsprechen, Sparring, Anforderung schärfen, compress,
-  repo-check, diskussion, plan-prompt, handoff, intake, zuhören.
+  Task-Brücke: buddy intake|repo-check {taskDateistamm} aus Story {id} lädt nur tasks/task-*.md.
+  Kein ADO-MCP, keine ado-Pipeline. Trigger: @buddy-agent, buddy-agent, buddy intake, buddy repo-check,
+  Plan-Prompt, vor plan-agent, Sparring, Anforderung schärfen, compress, repo-check, diskussion,
+  plan-prompt, handoff, intake, zuhören.
   Opt-out: ohne buddy-agent.
 disable-model-invocation: true
 ---
@@ -30,6 +31,29 @@ Deutsch. Fachlich, kurz, direkt. Keine Code-Beispiele. Kein Consultant-Deutsch.
 
 **Leitgedanke:** Wenig intake ist besser — wenn der Wunsch schon vollständig ist, direkt `repo-check`. compress dokumentiert den Stand; repo-check beantwortet nur `## Repo-Fragen`. plan-prompt liefert **vollständigen** Handoff — Planer soll ideally **keine** Klärungsfragen mehr stellen müssen.
 
+**Abgrenzung ADO:** Buddy kennt **keine** ado-Phasen (`load`/`analyse`/`save`). Sync: Nutzer führt ado separat aus. Buddy liest höchstens eine **Task.md** (siehe Task-Brücke).
+
+---
+
+## Task.md-Brücke (Copy aus `## Möglichkeiten`)
+
+Pfad-Auflösung (verbindlich):
+
+`requests/stories/UserStory-{storyId}-*/tasks/{taskDateistamm}.md`
+
+- **Story-ID:** numerische ADO-ID (`287638`)
+- **Task-Dateistamm:** voller Dateiname ohne `.md` (z. B. `task-maschinenfilter-suchwizard`)
+- **Nur Task.md lesen** — **keine** Story.md, **kein** Feature-Kontext, **kein** ADO-MCP
+
+| Trigger | Phase | Lesen | Danach |
+|---------|-------|-------|--------|
+| `buddy intake {taskDateistamm} aus Story {storyId}` | intake | Task.md (ein Read) | Passives intake — Navigations-Block |
+| `buddy repo-check {taskDateistamm} aus Story {storyId}` | repo-check | Task.md (ein Read) | repo-check mit Scope aus Task-Inhalt |
+
+Datei fehlt → **`BLOCKER: Task.md nicht gefunden — Pfad prüfen oder ado save`**.
+
+**Repo-Fragen aus Task.md** (für `buddy repo-check …`): ableiten aus `## Anforderung`, `## AI Zusammenfassung`, `## Offene Fragen`, `## Akzeptanzkriterien` — nichts erfinden.
+
 ---
 
 ## Phasen
@@ -44,10 +68,12 @@ Phase: intake | compress | repo-check | diskussion | plan-prompt
 
 ### Phase: intake
 
-**Trigger:** default — alles ohne expliziten Phasen-Trigger; erneut `intake` oder `zuhören` mitten in diskussion  
+**Trigger:** default — alles ohne expliziten Phasen-Trigger; erneut `intake` oder `zuhören` mitten in diskussion; **`buddy intake {taskDateistamm} aus Story {storyId}`**  
 **Cursor-Modus:** Ask
 
-Buddy nimmt auf, was der Nutzer sagt. Keine Tool-Calls. Keine Einordnung, keine Rückfragen.
+Buddy nimmt auf, was der Nutzer sagt. **Keine Tool-Calls** — **Ausnahme:** Trigger `buddy intake …` → **ein** Read der Task.md (Task-Brücke), dann passiv.
+
+Keine Einordnung, keine Rückfragen.
 
 **Ausgabe:** genau dieser Block (nur „OK verstanden" darf leicht variieren):
 
@@ -106,7 +132,7 @@ Nutzer kann korrigieren → `intake` (passiv) oder `repo-check`.
 
 ### Phase: repo-check
 
-**Trigger:** `repo-check`  
+**Trigger:** `repo-check`; **`buddy repo-check {taskDateistamm} aus Story {storyId}`**  
 **Cursor-Modus:** Agent (Pflicht)
 
 Ohne Agent-Mode: `BLOCKER: repo-check braucht Agent-Mode (MCP).`
@@ -115,7 +141,7 @@ Scout-Verhalten: MCP-Kette gezielt einsetzen um Repo-Fragen zu beantworten. Kein
 
 **Ablauf:**
 
-1. `## Repo-Fragen` aus letztem compress (oder Thread-Stand, wenn compress übersprungen) laden
+1. Bei **`buddy repo-check …`:** Task.md lesen (Task-Brücke) → `## Repo-Fragen` aus Task-Abschnitten ableiten. Sonst: `## Repo-Fragen` aus letztem compress (oder Thread-Stand, wenn compress übersprungen) laden
 2. `./buddy-repo-check.md` lesen und Pipeline-Schritte top-down ausführen:
    - Datei fehlt → Default: `code-review-mcp` (`index_project` → `find_in_index`)
    - `code-review-mcp` → `index_project` → `find_in_index`
@@ -250,6 +276,14 @@ Ask:   plan-prompt              → Section A + B (vollständig)
 **C — Repo später:**
 ```
 Ask:   intake → diskussion → compress → … → repo-check → diskussion → plan-prompt
+```
+
+**D — Task.md aus ado save:**
+```
+Ask:   buddy intake task-foo aus Story 287638   → Task.md im Kontext, Navigations-Block
+Ask:   compress / diskussion …
+Agent: buddy repo-check task-foo aus Story 287638 → Scout aus Task-Inhalt
+Ask:   plan-prompt
 ```
 
 ---

@@ -2,6 +2,8 @@
 
 This repository is the **source library** for dual-platform AI workflow artifacts (skills, rules, agents) targeting both **Cursor** and **Claude Code**.
 
+**Cursor entry point:** [`AGENTS.md`](./AGENTS.md) — thin pointer to this file. Architecture, deploy workflow, and `.claude/` conventions are documented here only; do not duplicate them in `AGENTS.md` or elsewhere.
+
 ---
 
 ## Repository Structure

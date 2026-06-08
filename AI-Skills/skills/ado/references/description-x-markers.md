@@ -1,6 +1,6 @@
 # ADO-Description: `(x)`-Markierungen (Story-Analyse)
 
-Projektleitung markiert in `System.Description` erledigte nummerierte Punkte mit **`(x)`** am Anfang (Varianten: `(x)`, `(X)`, `( x )`). Diese Markierung ist **kein** MCP-Schreibvorgang und **kein** Ersatz für `TASK-CLOSED` in der Discussion — sie dient der **Story-Analyse** und der **Task-Übersicht-Synchronisation** bei `prüfe`.
+Projektleitung markiert in `System.Description` erledigte nummerierte Punkte mit **`(x)`** am Anfang (Varianten: `(x)`, `(X)`, `( x )`). Diese Markierung dient der **Story-Analyse** (Phase `analyse`) und **Task-Übersicht** (Phase `save`).
 
 ## Erkennung (Parsing)
 
@@ -14,7 +14,7 @@ Quelle: `System.Description` (HTML) der **Story** — nicht Feature-Description.
 
 ## Story-MD: `## Description-Analyse (ADO (x))`
 
-Bei **`prüfe Story`** und Story-Phase in **Feature-`prüfe`** den Abschnitt **nach** `## Story-Zusammenfassung` (und ggf. `## Feature-Kontext`) **vor** `## Task-Übersicht` pflegen — bei Sync **gesamten Block ersetzen** (idempotent).
+Bei **`analyse`** / **`save`** den Abschnitt **nach** `## Story-Zusammenfassung` (und ggf. `## Feature-Kontext`) **vor** `## Task-Übersicht` pflegen — bei **save** gesamten Block ersetzen (idempotent).
 
 Mindeststruktur:
 
@@ -38,12 +38,12 @@ Regeln:
 
 ## Task-Inventar und Mapping
 
-Bei Ableitung des Task-Inventars aus der Story-Description ([story-pruefe-subagent.md](story-pruefe-subagent.md), Schritt 5):
+Bei Ableitung des Task-Inventars ([`story-analyse-subagent.md`](story-analyse-subagent.md)):
 
 1. Zuerst `(x)`-Tabelle aus Description parsen.
 2. Bestehende lokale `task-*.md`-Slugs per Label/Originaltext zuordnen (keine Duplikate).
-3. Punkt **ohne `(x)`** und **ohne** passenden Task → neue `tasks/task-{kebab-slug}.md` aus [../templates/task-open.md.template](../templates/task-open.md.template) (minimal: Kopf, `## Story-Bezug`, `## Anforderung`, `## Möglichkeiten`).
-4. Punkt **mit `(x)`** und **ohne** Task → optional Stub anlegen und unter „Abgeschlossen (laut ADO-Description (x))" führen (selten).
+3. Punkt **ohne `(x)`** und **ohne** passenden Task → Eintrag in `taskDrafts[]` / Inventar; physische `tasks/task-{kebab-slug}.md` erst in [`phase-save.md`](phase-save.md) ([`task-open.md.template`](../templates/task-open.md.template)).
+4. Punkt **mit `(x)`** und **ohne** Task → optional Stub in **save**; unter „Abgeschlossen (laut ADO-Description (x))" führen (selten).
 
 ## Task-Übersicht: vierte Liste
 
@@ -56,7 +56,7 @@ Ergänzung zu [task-overview.md](task-overview.md) — **gegenseitig ausschließ
 | `### Abgeschlossen (laut Code-Stand)` | Nur nach explizitem Repo-Scout; Slug nicht unter `(x)` oder Discussion |
 | `### Offen (empfohlene Reihenfolge)` | Description-Punkt **ohne `(x)`** oder kein Abschluss-Signal |
 
-### Priorität bei `prüfe` / manuellem Sync (verbindlich)
+### Priorität bei `analyse` / `save` (verbindlich)
 
 1. Slug einem Description-Hauptpunkt **mit `(x)`** zugeordnet → nur unter **`(x)`**-Liste (`[x]`).
 2. Slug einem Description-Hauptpunkt **ohne `(x)`** zugeordnet → nur unter **Offen** (`[ ]`) — **auch** wenn früher `TASK-CLOSED` in Discussion (PM-Signal hat Vorrang für Description-Punkte).

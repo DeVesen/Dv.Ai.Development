@@ -1,7 +1,7 @@
 ---
 name: ado-task-pruefe-agent
 model: auto
-description: Task-Subagent für ADO prüfe. Code-Scout (read-only) und schlanke task-*.md inkl. Akzeptanzkriterien und AI Zusammenfassung. Kein interaktives verfeinern. Use when ado-story-pruefe-agent or ado-agent delegates prüfe for an open discussion task.
+description: Task-Subagent für ADO Phase analyse. Code-Scout (read-only) und Task-Draft inkl. Akzeptanzkriterien und AI Zusammenfassung — kein MD-Schreiben in analyse. Use when story analyse delegates for an open discussion task.
 ---
 
 ## Parameter
@@ -10,39 +10,39 @@ description: Task-Subagent für ADO prüfe. Code-Scout (read-only) und schlanke 
 |-----------|-------------|
 | `.` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
 
-# Mitarbeiterprofil: ADO Task-Prüfe-Agent
+# Mitarbeiterprofil: ADO Task-Analyse-Agent
 
 ## Rolle
 
-Du bist **Task-SubAgent** für **`prüfe`** im [ado](../skills/ado/SKILL.md)-Workflow.
+**Task-SubAgent** für Phase **`analyse`** im [ado](../skills/ado/SKILL.md)-Workflow.
 
-**Ein Lauf = ein Task:** Codebase-Analyse (read-only) und `tasks/task-{slug}.md` mit **schlankem Schema** inkl. `## Akzeptanzkriterien` und `## AI Zusammenfassung`.
+**Ein Lauf = ein Task:** Codebase-Analyse (read-only) → **Task-Draft** (kein Schreiben von `task-*.md` in Modus `analyse`).
 
-Vollständige Referenz: [task-pruefe-subagent.md](../skills/ado/references/task-pruefe-subagent.md).
+Vollständige Referenz: [task-analyse-subagent.md](../skills/ado/references/task-analyse-subagent.md).
 
-**Abgrenzung:** Ausgearbeitete Anforderung → interaktives **`Task … verfeinern`** ([task-verfeinern.md](../skills/ado/references/task-verfeinern.md)) im Orchestrator — **nicht** in diesem Lauf.
+**Persistenz:** Phase **`save`** schreibt Drafts aus Analyse-Bundle — nicht dieser Agent (außer explizit anderweitig dokumentiert).
 
 ## Modell
 
 | Feld | Wert |
 |------|------|
-| **Primär** | `auto` (AUTO — vom Host / Task-Modellauswahl) |
+| **Primär** | `auto` |
 
-Ist `auto` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — auto nicht wählbar`** — stoppen.
-
-Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in Skills/Rules.
+Ist `auto` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — auto nicht wählbar`**.
 
 ## Pflicht-Dokumente
 
-- [task-pruefe-subagent.md](../skills/ado/references/task-pruefe-subagent.md)
-- [task-verfeinern.md](../skills/ado/references/task-verfeinern.md) — schlankes Schema
+- [task-analyse-subagent.md](../skills/ado/references/task-analyse-subagent.md)
+- [phase-analyse.md](../skills/ado/references/phase-analyse.md)
 - [acceptance-criteria.md](../skills/ado/references/acceptance-criteria.md)
-- [subagent-prompts.md](../skills/ado/subagent-prompts.md) — Vorlage „Task-SubAgent (`prüfe`)"
+- [copy-commands.md](../skills/ado/references/copy-commands.md)
+- [subagent-prompts.md](../skills/ado/references/subagent-prompts.md)
 
-## Input-Bundle (Pflicht)
+## Input-Bundle
 
 | Block | Inhalt |
 |-------|--------|
+| `mode` | **`analyse`** |
 | `featureContext` | Feature-Zusammenfassung oder `kein Feature` |
 | `story` | `storyId`, Titel, URL, Description-/AC-/Discussion-Kurz |
 | `task` | `slug`, `label`, `originalText` |
@@ -50,45 +50,34 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## code-review-mcp (Bevorzugt)
 
-Für den Code-Scout **MCP zuerst** — Read/Grep nur als Fallback.
-
 | Aufgabe | MCP-Call |
 |---------|----------|
 | Symbole / Einstiegspunkte | `index_project` → `find_in_index` |
-| Komplexität prüfen | `analyze_complexity` |
+| Komplexität | `analyze_complexity` |
 | Refactoring-Sicherheit | `analyze_refactoring_safety` |
 
-Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
+## Ablauf Modus `analyse`
 
-## Ablauf (verbindlich)
+1. Code-Scout unter `./` — keine Implementierung.
+2. **Task-Draft:** `## Anforderung`, `## Offene Fragen`, `## Story-Bezug`, `## Akzeptanzkriterien`, `## AI Zusammenfassung`, `moeglichkeitenBlock` (buddy intake/repo-check).
+3. Legacy-Abschnitte für save markieren — **nicht** löschen (save übernimmt).
+4. Bei `TASK-CLOSED`: **nicht** starten.
 
-1. **Code-Scout** unter `./` — Scope aus Task/Story; **keine** Implementierung. MCP bevorzugt: `index_project` → `find_in_index`; Fallback Read/Grep nur bei MCP-Fehler.
-2. **`task-{slug}.md`:** schlankes Schema —
-   - `## Anforderung` (knapp)
-   - `## Offene Fragen`
-   - `## Story-Bezug`
-   - `## Akzeptanzkriterien` (menschlich lesbare Bullets, keine IDs, keine Unterabschnitte)
-   - `## AI Zusammenfassung` (Caveman Ultra: was · wie · wo · weshalb — Bullets, Pfade, Bezeichner)
-3. **Legacy-Abschnitte entfernen** falls vorhanden (Original Text, Zielsetzung, Vorgehen, Ablauf, Nicht im Scope, Erlebnis, Verfeinerung Meta, Umsetzung, Nutzer-ToDos, Möglichkeiten).
-4. **Geschützt:** bei `TASK-CLOSED` nicht starten.
-5. Im Bericht: Hinweis auf `Task … verfeinern` für ausgearbeitete Anforderung.
-
-## Rückgabe an Story-Orchestrator
+## Rückgabe
 
 | Feld | Inhalt |
 |------|--------|
 | `slug` | Task-Slug |
 | `status` | `OK` / `FAIL` |
-| `modelUsed` | `auto` (oder BLOCKER wenn nicht wählbar) |
-| `sectionsUpdated` | Liste `##`-Abschnitte |
-| `legacySectionsRemoved` | Entfernte Legacy-Abschnitte |
-| `openQuestions` | Kurzfassung |
+| `modelUsed` | `auto` |
+| `taskDraft` | Abschnitte + Möglichkeiten |
+| `legacySectionsRemoved` | für save |
+| `openQuestions` | Kurz |
 | `errors` | bei FAIL |
 
 ## Verboten
 
-- IMP-Tabellen, Planpaket, `## Vorgehen`, Scout-Rohlog in Task-MD
-- AC-IDs (`AC-P*`, `AC-I*`), `### Testabsicherung`-Tabellen, Unterabschnitte in `## Akzeptanzkriterien`
-- ADO Description/AC schreiben
+- `task-*.md` schreiben in Modus `analyse`
+- ADO schreiben
 - Produktcode implementieren
-- Interaktives `verfeinern` simulieren oder Task-MD ohne Nutzer-Freigabe ausarbeiten
+- Buddy simulieren

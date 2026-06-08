@@ -1,6 +1,6 @@
 {
   "name": "ado-requests-stories",
-  "description": "Synchronizes Azure DevOps Work Items with Markdown artifacts under requests/stories/",
+  "description": "Azure DevOps Work Items ↔ Markdown under requests/stories/. Phases load → analyse → save (no prüfe).",
   "rules": [
     "rules/ado-skill.mdc"
   ],
@@ -8,6 +8,7 @@
     "skills/ado"
   ],
   "agents": [
+    "agents/ado-agent.md",
     "agents/ado-story-pruefe-agent.md",
     "agents/ado-task-pruefe-agent.md"
   ],
@@ -17,9 +18,7 @@
   "params": [
     "{devops-pipelines-path}"
   ],
-  "dependsOn": [
-    "buddy-agent"
-  ],
+  "dependsOn": [],
   "mcp": [
     {
       "serverName": "ado",

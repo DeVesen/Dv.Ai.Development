@@ -2,7 +2,7 @@ Der konkrete Wert von {markerVersion} wird aus [../config.defaults.json](../conf
 
 # Discussion-Marker `[{markerVersion}]`
 
-Alle Agent-Kommentare in der **Story-Discussion** (nicht Feature-Discussion) beginnen mit dieser Zeile (eine Zeile, maschinenlesbar). Bei **`prüfe Feature`:** Feature-Discussion nur für **`## Feature-Kontext`** zusammenfassen; `TASK-CLOSED`/`TODO` weiter nur an der **jeweiligen Story** auswerten.
+Alle Agent-Kommentare in der **Story-Discussion** (nicht Feature-Discussion) beginnen mit dieser Zeile. Bei **`load feature`:** Feature-Discussion nur für **`## Feature-Kontext`**; `TASK-CLOSED`/`TODO` weiter nur an der **jeweiligen Story** auswerten.
 
 ## Formate
 
@@ -21,7 +21,7 @@ Alle Agent-Kommentare in der **Story-Discussion** (nicht Feature-Discussion) beg
 
 - **Task „fertig" (Discussion):** Gültig nur, wenn der **neueste** relevante Marker für diesen `task-slug` ein `TASK-CLOSED` ist und **kein** späterer `TASK-REOPENED` für denselben Slug existiert.
 - **Nicht** aus Description oder Acceptance Criteria ableiten.
-- Discussion-geschlossene Tasks: **nur** unter `### Abgeschlossen (laut Discussion / TASK-CLOSED)` — **nicht** unter Code-Stand; bei `prüfe` **kein** Repo-/Code-Abgleich ([task-overview.md](task-overview.md)).
+- Discussion-geschlossene Tasks: **nur** unter `### Abgeschlossen (laut Discussion / TASK-CLOSED)` — bei `analyse` **kein** Repo-/Code-Abgleich ([task-overview.md](task-overview.md)).
 - „Code-Stand" in der Story-MD gilt **nur** für discussion-offene Tasks und **nur** nach explizitem Repo-Scout durch den Nutzer.
 
 ## Idempotenz
@@ -31,7 +31,7 @@ Vor `TASK-CLOSED` oder `TODO`: `wit_list_work_item_comments` auswerten.
 - Gleicher `TASK-CLOSED`-Slug wie letzter CLOSED-Eintrag → **nicht** erneut posten.
 - Gleicher `TODO`-Text wie letzter TODO für denselben Slug → **nicht** erneut posten.
 
-## Parser (bei `prüfe`)
+## Parser (bei `analyse` / `save`)
 
 1. Kommentare chronologisch sortieren (API-Reihenfolge bzw. Zeitstempel falls vorhanden).
 2. Pro `task-slug` letzten Status aus CLOSED/REOPENED bestimmen.

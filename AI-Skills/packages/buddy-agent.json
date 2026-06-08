@@ -1,6 +1,6 @@
 {
   "name": "buddy-agent",
-  "description": "Task clarification and Plan-Prompt generation before planning (read-only sparring agent)",
+  "description": "Task clarification via buddy intake/repo-check and plan-prompt before planning (no ADO sync)",
   "rules": [
     "rules/buddy-agent-skill.mdc"
   ],
@@ -11,7 +11,7 @@
   "references": [],
   "params": [],
   "dependsOn": [
-    "caveman",
+    "describe-as",
     "commit-message"
   ],
   "docs": [

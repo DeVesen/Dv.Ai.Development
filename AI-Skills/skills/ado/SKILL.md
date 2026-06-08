@@ -1,20 +1,49 @@
 ---
 name: ado
 description: >
-  Azure DevOps Work Items ↔ Markdown-Artefakte unter requests/stories/ (MCP ado).
-  Operationen: prüfe Story/Task, prüfe Feature, Task fertig, ToDo, active/resolved, Task verfeinern (Legacy).
-  Orchestrator: ado-agent. Trigger: prüfe Story/Task/Feature, markiere Task fertig, ToDo für Task,
-  active, resolved, Task verfeinern, @ado. Opt-out: ohne ado-story-skill.
+  Azure DevOps Work Items ↔ Markdown unter requests/stories/ (MCP ado). Phasen load → analyse → save
+  (schrittweise, kein prüfe). Weitere Ops: Task fertig, ToDo, active/resolved, Task verfeinern (Legacy).
+  Orchestrator: ado-agent. Trigger: load story/feature/task, analyse, save, markiere Task fertig, ToDo,
+  active, resolved, Task verfeinern (Legacy), schließe Task, @ado. Opt-out: ohne ado-story-skill.
 disable-model-invocation: true
 ---
 
 ## Voraussetzungen
 
 - MCP-Server **`ado`** erreichbar — [`../../mcp.json`](../../mcp.json)
-- Config lesen: [`config.defaults.json`](config.defaults.json) — Organisation ≠ Projekt-GUID
+- Config: [`config.defaults.json`](config.defaults.json)
 - Tool-Schema vor jedem MCP-Aufruf: [`references/mcp-tools.md`](references/mcp-tools.md)
 
-**MCP nicht erreichbar:** Abbrechen, Nutzer informieren — keine halben lokalen Dateien.
+**MCP nicht erreichbar:** Abbrechen — keine halben lokalen Dateien.
+
+## Phasen (Pflicht-Workflow)
+
+Statuszeile in **jeder** Antwort:
+
+```
+Phase: load | analyse | save
+```
+
+| Phase | Trigger | Detail |
+|-------|---------|--------|
+| **load** | `load story {id}`, `load feature {id}`, `load task {id}` | Nur MCP — [`references/phase-load.md`](references/phase-load.md) |
+| **analyse** | `analyse`, `analyse story {id}` | Inventar + Task-Drafts — [`references/phase-analyse.md`](references/phase-analyse.md) |
+| **save** | `save`, `save story {id}` | Story.md + task-*.md — [`references/phase-save.md`](references/phase-save.md) |
+
+**Breaking:** `prüfe Story`, `prüfe Task`, `prüfe Feature` sind **entfernt**. Immer load → analyse → save **in derselben Session** (Load-/Analyse-Bundle im Thread).
+
+**Quickstart:** `load story {id}` → `analyse` → `save` → Copy aus Task-`## Möglichkeiten` (`buddy intake …`).
+
+**Vor Ausführung:** relevante `phase-*.md` vollständig lesen.
+
+## Weitere Operationen (ohne Phasen)
+
+| Trigger | Operation | Detail |
+|---------|-----------|--------|
+| `markiere Task … fertig`, `Task … erledigt`, `schließe Task` | TASK-CLOSED + task-*.md + Story-Checkbox | [`references/op-close-task.md`](references/op-close-task.md) |
+| `ToDo für Task …`, `notiere im Task`, `dictiere ToDo` | Offene Fragen + TODO-Marker | [`references/op-add-todo.md`](references/op-add-todo.md) |
+| `Story … auf active`, `… resolved` | ADO State-Update; resolved: Ordner löschen | [`references/op-set-state.md`](references/op-set-state.md) |
+| `Task … verfeinern` (explizit, Legacy) | Interaktiver Klärungsworkflow | [`references/op-refine-task.md`](references/op-refine-task.md) |
 
 ## Repo-Layout
 
@@ -26,111 +55,82 @@ disable-model-invocation: true
 
 Feld-Mapping: [`references/field-mapping.md`](references/field-mapping.md) · Templates: [`templates/`](templates/)
 
-## Operationen
-
-| Trigger | Operation | Detail |
-|---------|-----------|--------|
-| `prüfe Story {id}`, `prüfe Task {id}` | Story-Sync + Task-Inventar + Task-SubAgents | [`references/op-load-story.md`](references/op-load-story.md) |
-| `prüfe Feature {id}` | Feature-Kaskade + parallele Story-SubAgents | [`references/op-load-feature.md`](references/op-load-feature.md) |
-| `markiere Task … fertig`, `Task … erledigt`, `schließe Task` | TASK-CLOSED + task-*.md + Story-Checkbox | [`references/op-close-task.md`](references/op-close-task.md) |
-| `ToDo für Task …`, `notiere im Task`, `dictiere ToDo` | Offene Fragen + TODO-Marker in Discussion | [`references/op-add-todo.md`](references/op-add-todo.md) |
-| `Story … auf active`, `… resolved` | ADO State-Update; resolved: Ordner löschen | [`references/op-set-state.md`](references/op-set-state.md) |
-| `Task … verfeinern` (explizit, Legacy) | Interaktiver 5-Phasen-Klärungsworkflow | [`references/op-refine-task.md`](references/op-refine-task.md) |
-
-**Vor Ausführung:** relevante `op-*.md` vollständig lesen.
-
 ## Geteilte Referenzen
 
 | Thema | Datei |
 |-------|-------|
 | MCP-Tools | [`references/mcp-tools.md`](references/mcp-tools.md) |
-| Marker-Format (`TASK-CLOSED`, `TODO`, …) | [`references/markers.md`](references/markers.md) |
+| Marker | [`references/markers.md`](references/markers.md) |
 | Akzeptanzkriterien | [`references/acceptance-criteria.md`](references/acceptance-criteria.md) |
-| Task-Übersicht (4 Listen) | [`references/task-overview.md`](references/task-overview.md) |
-| Copy-Befehle (`## Möglichkeiten`) | [`references/copy-commands.md`](references/copy-commands.md) |
+| Task-Übersicht | [`references/task-overview.md`](references/task-overview.md) |
+| Copy-Befehle | [`references/copy-commands.md`](references/copy-commands.md) |
 | State-Mapping | [`references/state-mapping.md`](references/state-mapping.md) |
 
-## Orchestrator-Konfiguration
-
-Konfiguration des **ado-agent** — Orchestrator für ADO ↔ requests/stories.
+## Orchestrator (ado-agent)
 
 ### Modell
 
 | Feld | Wert |
 |------|------|
-| **Primär** | `auto` (vom Host / Nutzer-Chat) |
+| **Primär** | `auto` |
 
-Subagent-Modelle stehen **ausschließlich** in den jeweiligen Ziel-Profilen — nicht hier überschreiben.
+Subagent-Modelle nur in Agent-Profilen. [`references/subagent-model-before-task.md`](../../references/subagent-model-before-task.md).
 
-**Subagent — Modell vor Task (Pflicht):** [`references/subagent-model-before-task.md`](../../references/subagent-model-before-task.md).
+### Phasen-Navigation
 
-### Standard-Workflow mit buddy-agent (Nutzer-Pipeline)
+| Von | Trigger | Nach |
+|-----|---------|------|
+| — | `load story\|feature\|task …` | load |
+| load | `analyse` | analyse |
+| analyse | `save` | save |
+| überall | `load …` (neu) | load (Bundle ersetzen) |
 
-| Phase | Agent | Aufgabe |
-|-------|--------|---------|
-| **1 — Sync** | **ado-agent** | `prüfe Feature` / `prüfe Story` / `prüfe Task` → ADO ↔ `requests/stories/`, Task-Inventar, schlanke `task-*.md` via Subagents |
-| **2 — Task klären** | **buddy-agent** | Interaktives Sparring; End-Artefakt: **Plan-Prompt** für `plan-agent` — **nicht** `Task … verfeinern` |
-| **3 — Planen** | **plan-agent** / Planning Workflow | Nutzer: `plane bitte` + Plan-Prompt aus Buddy |
-| **4 — Umsetzen** | **implement-agent** | Nach Plan-Freigabe |
-| **5 — Abschluss** | **ado-agent** | Task fertig (`TASK-CLOSED`), ToDo, `active`/`resolved` |
+**Task-Klärung / Planung:** **nicht** ADO — Nutzer nutzt [`buddy-agent`](../buddy-agent/SKILL.md) mit `buddy intake …` / `buddy repo-check …` (Copy aus Task-`## Möglichkeiten`).
 
-**Nach `prüfe`:** Abschlussbericht enthält **empfohlene nächste Copy-Zeile** für Buddy aus [`references/copy-commands.md`](references/copy-commands.md).
+### Delegation
 
-### Delegation — Subagents (ohne Ausnahme)
+| Auftrag | Agent | Profil |
+|---------|-------|--------|
+| `load feature` → Child-Stories | — | Orchestrator + [`phase-load.md`](references/phase-load.md) |
+| `analyse` Feature-Kaskade | `ado-story-pruefe-agent` (parallel, max. 10) | [`ado-story-pruefe-agent.md`](../../agents/ado-story-pruefe-agent.md) |
+| `analyse story` (direkt) | Orchestrator selbst | [`story-analyse-subagent.md`](references/story-analyse-subagent.md) |
+| Task-Drafts je offenem Task | `ado-task-pruefe-agent` Modus `analyse` | [`ado-task-pruefe-agent.md`](../../agents/ado-task-pruefe-agent.md) |
 
-**Verboten:** Story-/Task-`prüfe` im eigenen Turn als Rollensimulation statt dedizierter Agenten.
+**Verboten:** Story-/Task-Analyse als Rollensimulation statt dedizierter Agenten.
 
-| Nutzer-Auftrag | Agent-Typ | Profil |
-|----------------|-----------|--------|
-| `prüfe Feature` | `ado-story-pruefe-agent` (parallel, max. 10/Welle) | [`ado-story-pruefe-agent.md`](../../agents/ado-story-pruefe-agent.md) |
-| `prüfe Story` / `prüfe Task` | `ado-story-pruefe-agent` (ein Lauf) | [`ado-story-pruefe-agent.md`](../../agents/ado-story-pruefe-agent.md) |
-| Task-MD + Code je discussion-offenem Task | `ado-task-pruefe-agent` (vom Story-Agent gestartet) | [`ado-task-pruefe-agent.md`](../../agents/ado-task-pruefe-agent.md) |
-| Task klären (Standard) | **Nutzer** wechselt zu `@buddy-agent` — Organisator startet Buddy **nicht** als Subagent | [`buddy-agent/SKILL.md`](../buddy-agent/SKILL.md) |
-| `Task … verfeinern` (**Legacy**) | **Orchestrator selbst** (interaktiv, 5 Phasen) | [`references/task-verfeinern.md`](references/task-verfeinern.md) |
-| `plane Task …` | `plan-agent` / Planning Workflow | Kein ADO-MCP; Planpaket **im Chat** |
-
-### `Task … verfeinern` — Routing (Legacy vs. Standard)
+### `Task … verfeinern` (Legacy)
 
 | Situation | Aktion |
 |-----------|--------|
-| Nutzer: Buddy/Sparring/Plan-Prompt/durchsprechen/ohne Code | **Nicht** `verfeinern` starten → Nutzer an `@buddy-agent` verweisen |
-| Nutzer: explizit `Task … verfeinern` oder Copy aus MD | Legacy-5-Phasen ([`references/task-verfeinern.md`](references/task-verfeinern.md)) |
-| Unklar | **Eine** Rückfrage: Buddy oder klassisch verfeinern? |
+| Buddy / Sparring / Plan-Prompt | → [`buddy-agent`](../buddy-agent/SKILL.md), Copy `buddy intake …` |
+| Explizit `Task … verfeinern` | Legacy — [`task-verfeinern.md`](references/task-verfeinern.md) |
 
-### Delegations-Prompts
-
-Subagent-Prompts: [`references/subagent-prompts.md`](references/subagent-prompts.md) · Modell vor Task: [`../../references/subagent-model-before-task.md`](../../references/subagent-model-before-task.md)
+Prompts: [`references/subagent-prompts.md`](references/subagent-prompts.md)
 
 ### Non-Goals
 
-- **Kein HTML** unter `requests/stories/`
-- **Kein** Schreiben an `System.Description`/AC in ADO
-- **Kein** describe-as-html-prompt
-- **Kein** Implementieren von Produktcode (→ Implementation Workflow)
-- **Kein** interaktives Task-Sparring im Orchestrator-Turn — Standard Klärung: **buddy-agent**
+- Kein HTML unter `requests/stories/`
+- Kein Schreiben an ADO Description/AC
+- Kein Produktcode implementieren
+- **Kein** Buddy-Orchestrierung aus ADO
+- Anhänge in Story.md **nur** wenn MCP-List-Tool existiert — sonst weglassen
 
-### Reporting (Pflicht)
+### Reporting
 
-Jede Operation endet mit: Work-Item-ID und ADO-URL · Geänderte Pfade unter `requests/stories/` · Bei `prüfe`: Anzahl Subagents, je Task `slug` → OK/FAIL + `modelUsed` + **empfohlene Buddy-Copy-Zeile** · `BLOCKER` bei fehlendem Task-Tool, MCP oder nicht wählbarem Modell.
+Jede Phase/Operation: Work-Item-ID, ADO-URL · Bei **save:** geänderte Pfade · Bei **analyse:** Subagent-Zählung, slug → OK/FAIL · **`BLOCKER`** bei fehlendem Task-Tool, MCP, fehlendem vorherigen Bundle
 
 ### Topologie
 
 ```mermaid
-flowchart TB
-  DO[ado-agent]
-  DO -->|prüfe Feature| SSA[ado-story-pruefe-agent parallel]
-  DO -->|prüfe Story| SSA1[ado-story-pruefe-agent]
-  DO -->|nach prüfe| BUDDY[buddy-agent Phase 2]
-  BUDDY -->|Plan-Prompt| PLAN[plan-agent Phase 3]
-  DO -->|Task verfeinern Legacy| CHAT[Phasen 1-4 Chat]
-  CHAT -->|Freigabe| MD[Phase 5 Task.md]
-  SSA --> TPA[ado-task-pruefe-agent parallel]
-  SSA1 --> TPA
-  DO -->|Phase 5 Abschluss| CLOSE[TASK-CLOSED / resolved]
+flowchart LR
+  L[load MCP]
+  A[analyse Drafts]
+  S[save MD]
+  L --> A --> S
+  A --> TSA[ado-task-pruefe-agent analyse]
+  A --> SSA[ado-story-pruefe-agent Feature]
 ```
 
 ## Opt-out
 
-`ohne ado-story-skill` · `ohne ado-requests-skill` · `no ado requests skill` → Skill nicht laden.
-
-Keine Code-Beispiele ohne explizite Nachfrage.
+`ohne ado-story-skill` · `ohne ado-requests-skill` · `no ado requests skill`

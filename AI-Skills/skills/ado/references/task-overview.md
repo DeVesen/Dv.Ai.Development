@@ -18,9 +18,9 @@ Vier Listen unter `## Task-Übersicht` — **gegenseitig ausschließend** pro `t
 5. Derselbe Wikilink darf **nicht** in zwei der vier Abschnitte gleichzeitig vorkommen.
 6. Description-Punkt **ohne `(x)`** → Slug unter **Offen**, auch bei historischem `TASK-CLOSED`.
 
-## `prüfe` — kein Code-Abgleich für discussion-geschlossene Tasks
+## `analyse` / `save` — kein Code-Abgleich für discussion-geschlossene Tasks
 
-Für jeden Task mit effektivem `TASK-CLOSED` gilt bei **Story-`prüfe`** und **Feature-`prüfe`** (Kaskade):
+Für jeden Task mit effektivem `TASK-CLOSED` gilt bei **analyse** und Feature-Kaskade:
 
 | Aktion | Erlaubt? |
 |--------|----------|
@@ -32,7 +32,7 @@ Für jeden Task mit effektivem `TASK-CLOSED` gilt bei **Story-`prüfe`** und **F
 
 **Repo-Abgleich (Code-Stand)** nur, wenn der Nutzer das **explizit** verlangt (z. B. „Code-Stand prüfen", „Repo-Abgleich für Story …") — und dann **nur** für Tasks **ohne** effektives `TASK-CLOSED`.
 
-## Marker-Sync (Schritt bei `prüfe` / Task schließen)
+## Marker-Sync (Schritt bei `analyse` / `save` / Task schließen)
 
 1. Description `(x)` parsen → Tabelle + Zuordnung `xClosedSlugs` / `xOpenSlugs` ([description-x-markers.md](description-x-markers.md)).
 2. Discussion-Kommentare parsen → Menge `discussionClosedSlugs`.
@@ -48,7 +48,7 @@ Für jeden Task mit effektivem `TASK-CLOSED` gilt bei **Story-`prüfe`** und **F
 Empfohlener Zusatz in der Blockquote unter `## Story-Zusammenfassung`:
 
 ```markdown
-> Tasks mit `TASK-CLOSED` stehen nur unter „Abgeschlossen (laut Discussion)" — kein Code-Stand-Abgleich bei `prüfe`.
+> Tasks mit `TASK-CLOSED` stehen nur unter „Abgeschlossen (laut Discussion)" — kein Code-Stand-Abgleich bei `analyse`.
 ```
 
 ## TASK-REOPENED

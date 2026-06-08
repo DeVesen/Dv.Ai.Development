@@ -4,92 +4,75 @@
 |-----------|-------------|
 | `{code-root}` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
 
-# Subagent-Prompts — ADO `prüfe`
+# Subagent-Prompts — ADO Phasen `load` / `analyse` / `save`
 
-Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen. Prompt-Regeln: [SKILL.md](SKILL.md) (Delegation, [subagent-model-before-task.md](../../references/subagent-model-before-task.md), Parallelität).
+Vorlagen zum Kopieren. Regeln: [SKILL.md](../SKILL.md), [subagent-model-before-task.md](../../../references/subagent-model-before-task.md).
 
 ---
 
-## Story-SubAgent (`prüfe Feature`)
+## Story-SubAgent (`analyse` — Feature-Kaskade)
 
 ```text
-Rolle: Du bist Story-SubAgent im ADO-requests-stories-Workflow. Du fuehrst die
-Story-Phase fuer genau eine User Story aus und startest parallele Task-Subagents.
-Kein Drei-Perspektiven-Review. Kein ADO-Schreiben an Description/AC.
+Rolle: Story-SubAgent — Phase analyse. Load-Bundle → Analyse-Bundle. Kein MD-Schreiben.
 
-Agent-Typ: ado-story-pruefe-agent. Modell: Abschnitt Modell in ado-story-pruefe-agent.md lesen und anwenden.
-Regeln: [references/story-pruefe-subagent.md](references/story-pruefe-subagent.md)
+Agent-Typ: ado-story-pruefe-agent. Modell: ado-story-pruefe-agent.md Abschnitt Modell.
+
+Regeln: references/story-analyse-subagent.md, references/phase-analyse.md
 
 storyId: [ID]
-featureContext (JSON/Kurzprosa):
-[featureId, featureTitle, featureAdoUrl, descriptionSummary, acSummary, discussionSummary]
-
-defaultProject: [GUID aus config.defaults.json]
+loadBundle: [Story-Teil aus Feature-Load]
+featureContext: [featureId, title, url, summaries…]
+defaultProject: [GUID]
 
 Aufgabe:
-1. MCP ado: Story + Discussion lesen (nur diese storyId).
-2. Ordner requests/stories/UserStory-{storyId}-*/ anlegen oder aktualisieren.
-3. Story.md: Zusammenfassung, ## Feature-Kontext (Block ersetzen), Task-Inventar aus
-   **Story-Description** ableiten (slug, label, originalText je Task).
-4. ## Task-Uebersicht + Marker-Sync (TASK-CLOSED/TODO) — kein Code-Stand-Scout.
-5. ## Moeglichkeiten an Story-MD.
-6. Pro discussion-offenem Task: Task-Subagent starten (parallel, max. 10/Welle) gemaess
-   Vorlage „Task-SubAgent (pruefe)" unten — Modell gemaess Task-Agent-Profil (Abschnitt Modell).
-7. Task-Uebersicht finalisieren (Wikilinks).
+1. Task-Inventar aus Story-Description im Load-Bundle ((x)-Parsing).
+2. Drafts: Story-Zusammenfassung, Feature-Kontext, Description-Analyse, Task-Uebersicht, Story-Moeglichkeiten.
+3. Pro discussion-offenem Task ohne (x) und ohne effektives TASK-CLOSED: Task-SubAgent Modus analyse (parallel, max. 10/Welle).
+4. Analyse-Bundle zurueck an Orchestrator.
 
-Deliverable an Hauptagenten: Story-Bericht (storyId, OK/FAIL, Pfade, taskSubagentResults,
-Modell je Task, Fehler). Kein Planpaket, keine IMP-Tabellen.
+Deliverable: storyId, OK/FAIL, analyseBundle, taskSubagentResults, errors.
 ```
 
 ---
 
-## Task-SubAgent (`prüfe`)
+## Task-SubAgent (`analyse`)
 
 ```text
-Rolle: Du bist Task-SubAgent im ADO-requests-stories-Workflow. Du analysierst die
-Codebasis (read-only) und schreibst/aktualisierst tasks/task-{slug}.md inkl.
-Akzeptanzkriterien. Interaktives verfeinern separat (Orchestrator).
+Rolle: Task-SubAgent — Phase analyse. Code-Scout + Task-Draft. Kein task-*.md schreiben.
 
-Agent-Typ: ado-task-pruefe-agent. Modell: Abschnitt Modell in ado-task-pruefe-agent.md lesen und anwenden.
-Regeln: [references/task-pruefe-subagent.md](references/task-pruefe-subagent.md)
+Agent-Typ: ado-task-pruefe-agent. Modell: ado-task-pruefe-agent.md Abschnitt Modell.
 
-featureContext:
-[Zusammenfassung oder „kein Feature"]
+Regeln: references/task-analyse-subagent.md
 
-story:
-- storyId: [ID]
-- title: [Titel]
-- adoUrl: [URL]
-- descriptionExcerpt: […]
-- acSummary: […]
-- discussionSummary: […]
+mode: analyse
 
-task:
-- slug: [kebab-slug]
-- label: [Anzeige]
-- originalText: [Story-Auszug fuer diesen Task]
+featureContext: [Zusammenfassung oder kein Feature]
 
-paths:
-- storyFolder: [requests/stories/UserStory-…/]
-- taskFilePath: […/tasks/task-{slug}.md]
+story: storyId, title, adoUrl, excerpts…
+
+task: slug, label, originalText
+
+paths: storyFolder, taskFilePath
 
 Aufgabe:
-1. Code-Scout unter {code-root}/ (Frontend/Backend/Gateway je Scope).
-2. task-*.md: schlankes Schema gemaess task-verfeinern.md:
-   ## Anforderung (knapp), ## Offene Fragen, ## Story-Bezug, ## Akzeptanzkriterien.
-3. Legacy-Abschnitte entfernen falls vorhanden (Original Text, Zielsetzung, Vorgehen,
-   Ablauf, Nicht im Scope, Erlebnis, Verfeinerung Meta).
-4. ## Moeglichkeiten Block ersetzen.
-5. Nicht ueberschreiben: ## Umsetzung, ## Nutzer-ToDos.
-6. Im Bericht: Hinweis auf interaktives Task … verfeinern fuer ausgearbeitete Anforderung.
+1. Code-Scout unter {code-root}/ (MCP code-review-mcp bevorzugt).
+2. taskDraft: Anforderung, Offene Fragen, Story-Bezug, Akzeptanzkriterien, AI Zusammenfassung.
+3. moeglichkeitenBlock: buddy intake/repo-check, markiere fertig, ToDo, plane Task.
 
-Deliverable an Story-Orchestrator: slug, OK/FAIL, modelUsed, sectionsUpdated,
-legacySectionsRemoved, codeTouchpoints (kurz), openQuestions, errors.
+Deliverable: slug, OK/FAIL, modelUsed, taskDraft, legacySectionsRemoved, openQuestions, errors.
 ```
 
 ---
 
-## Hauptagent — Story-Phase (`prüfe Story`)
+## Hauptagent — Story-Analyse (`analyse story`)
 
-Bei **`prüfe Story {id}`** den Story-SubAgent-Prompt **ohne** „Story-SubAgent"-Rolle nutzen:
-Hauptagent fuehrt dieselben Schritte 1–7 selbst aus und startet Task-Subagents wie oben.
+Bei analyse nach load story fuehrt der Hauptagent dieselben Schritte wie Story-SubAgent selbst aus
+(siehe story-analyse-subagent.md) und startet Task-Subagents wie oben.
+
+---
+
+## Hauptagent — Phasen load / save
+
+load: references/phase-load.md — nur MCP, Load-Bundle im Chat.
+
+save: references/phase-save.md — Analyse-Bundle → requests/stories/ persistieren.

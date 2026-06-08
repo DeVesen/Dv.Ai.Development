@@ -808,13 +808,12 @@ Perspektiven vorhanden).
 
   im Plan (wie Phase 4c).
 
-## Abgrenzung ADO `Task … verfeinern` und buddy-agent
+## Abgrenzung ADO und buddy-agent
 
-Copy-Befehl **`Task … in Story … verfeinern`** im [ado](../ado/SKILL.md)-Skill ist **kein** Ersatz fuer diesen Planning Workflow (**Legacy**):
-
-- **Verfeinern (Legacy):** menschenlesbare Task-MD ([task-verfeinern.md](../ado/references/task-verfeinern.md)) — interaktiver 5-Phasen-Dialog im Orchestrator; **kein** finales Planpaket / keine Umsetzungs-Topologie in der Datei.
-- **buddy-agent (Standard):** read-only Sparring — End-Artefakt **Plan-Prompt** ([buddy-agent/SKILL.md](../buddy-agent/SKILL.md)) als describe-as-Handoff: **Wo** → `## Code & Fundstellen`, **Was** → `## Goal` + Fundstellen, **Achten** → offene `## Edge cases / open questions`, geklaerte Punkte → `## Decisions / already clarified` (Planer nicht erneut hinterfragen); **kein** finales Planpaket; **kein** IMP-Slice-Vorgehen im Prompt.
-- **`plane Task …`:** dieser Planning Workflow — **bevorzugte Eingabe** ist der **vollständige Plan-Prompt aus Buddy** (Section B inkl. `## Decisions / already clarified`, Fundstellen, AC; ggf. plus `task-*.md`); Phase 1–2 ideally ohne Rueckfragen zu geklaerten Punkten — siehe **Eingabe Buddy-Plan-Prompt**; finales Planpaket und **Umsetzungs-Topologie** zur Freigabe **im Chat**.
+- **ado:** `load` → `analyse` → `save` — ADO ↔ Markdown ([ado/SKILL.md](../ado/SKILL.md)); **kein** Planpaket.
+- **buddy-agent:** `buddy intake …` / `buddy repo-check …` — nur Task.md, Sparring, End-Artefakt **Plan-Prompt** ([buddy-agent/SKILL.md](../buddy-agent/SKILL.md)).
+- **Verfeinern (Legacy):** `Task … verfeinern` — [task-verfeinern.md](../ado/references/task-verfeinern.md); interaktiver Dialog; kein Planpaket in MD.
+- **`plane Task …`:** dieser Planning Workflow — bevorzugte Eingabe: Plan-Prompt aus Buddy (Section B); finales Planpaket **im Chat**.
 
 ## Orchestrator-Konfiguration
 

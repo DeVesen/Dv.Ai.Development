@@ -2,6 +2,14 @@
 
 Portable Agenten-Infrastruktur: Rules, Skills, Agent-Profile und Referenzen — übertragbar in beliebige Repositories.
 
+### Typischer Workflow (ADO → Buddy → Plan)
+
+1. `load story {id}` → `analyse` → `save` (**dieselbe Session**)
+2. Copy aus Task-`## Möglichkeiten`: `buddy intake {taskDateistamm} aus Story {id}`
+3. `compress` / `diskussion` optional
+4. `buddy repo-check …` (**Agent-Mode**, MCP)
+5. `plan-prompt` → `plane Task …`
+
 ---
 
 ## Main-Agents
@@ -12,28 +20,28 @@ Main-Agents sind Agents aus `.cursor/agents/`, die **nicht** von einem anderen A
 
 ### ado-agent
 
-Orchestriert Azure DevOps Work Items ↔ lokale Markdown-Artefakte (`requests/stories/`). Koordiniert prüfe-Vorgänge, Task-Abschlüsse, Story-State-Übergänge und leitet bei Bedarf an `buddy-agent` oder `planning-workflow` weiter.
+Orchestriert Azure DevOps Work Items ↔ lokale Markdown-Artefakte (`requests/stories/`). **Phasen:** `load` → `analyse` → `save` (schrittweise, kein `prüfe`). Weitere Ops: Task-Abschluss, ToDo, Story-State. **Keine** Buddy-Orchestrierung.
 
-**Ausgelöst durch:** `rules/ado-skill.mdc`
+**Ausgelöst durch:** `rules/ado-skill.mdc` · Profil: `agents/ado-agent.md`
 
 #### Operations
 
 | Operation | Beschreibung | Direkte Sub-Agents |
 |-----------|-------------|-------------------|
-| Story prüfen | ADO-Story mit Tasks laden, `story-*.md` anlegen/aktualisieren | `ado-story-pruefe-agent` |
-| Task prüfen | ADO-Task laden, `task-*.md` anlegen/aktualisieren | `ado-task-pruefe-agent` |
-| Feature prüfen | ADO-Feature mit parallelen Story-Subagents prüfen | `ado-story-pruefe-agent` (parallel) |
-| Task fertig markieren | Task in ADO und `task-*.md` als erledigt markieren | — |
-| ToDo notieren | Kommentar / ToDo in Task eintragen | — |
-| Story auf active setzen | Story-State in ADO auf `active` setzen | — |
-| Story resolved setzen | Story-State in ADO auf `resolved` setzen | — |
+| load story/feature/task | ADO MCP only — Load-Bundle | — |
+| analyse | Task-Inventar + Task-Drafts | `ado-story-pruefe-agent` (Feature), `ado-task-pruefe-agent` |
+| save | Story.md + task-*.md persistieren | — |
+| Task fertig markieren | TASK-CLOSED + task-*.md | — |
+| ToDo notieren | Kommentar / ToDo in Task | — |
+| Story auf active / resolved | ADO State | — |
 
 ```
-prüfe Story 287638
-prüfe Task 123456
-prüfe Feature 98765
-markiere Task 123456 als fertig
-ToDo für Task 123456: Validierung fehlt noch
+load story 287638
+load feature 98765
+analyse
+save
+markiere Task task-foo in Story 287638 als fertig
+ToDo für Task task-foo in Story 287638: Validierung fehlt noch
 Story 287638 auf active
 Story 287638 resolved
 @ado-agent
@@ -70,7 +78,7 @@ lass uns planen
 
 ### buddy-agent
 
-Phasen-basiertes Sparring **vor** der Planung. Führt durch `intake → compress → repo-check → diskussion → plan-prompt`. Liefert einen **vollständigen** describe-as-Handoff für `plan-agent` (Wo/Was/Achten, geklärte Entscheidungen, offene Edge cases). Kommuniziert in normalem Deutsch — kein Caveman im Chat.
+Phasen-basiertes Sparring **vor** der Planung. `intake → compress → repo-check → diskussion → plan-prompt`. **Task-Brücke:** `buddy intake {taskDateistamm} aus Story {id}` / `buddy repo-check …` lädt **nur** Task.md — kein ADO-MCP.
 
 **Ausgelöst durch:** `rules/buddy-agent-skill.mdc`
 
@@ -78,20 +86,18 @@ Phasen-basiertes Sparring **vor** der Planung. Führt durch `intake → compress
 
 | Operation | Beschreibung | Cursor-Modus |
 |-----------|-------------|-------------|
-| intake | Kontext aufnehmen — Navigations-Block, kein Scouting; Re-intake in diskussion = passiv | Ask |
-| compress | Thread-Stand verdichten (Wunsch, Entscheidungen, Repo-Kurz, Repo-Fragen) | Ask |
-| repo-check | MCP-gestützte Beantwortung von `## Repo-Fragen` inkl. Pipeline-Warnungen | Agent (Pflicht) |
-| diskussion | Q&A aus intake + repo-check; implizit nach repo-check | Ask |
-| plan-prompt | Vollständiger describe-as-Handoff (Section A + B) für plan-agent | Ask |
+| buddy intake … | Task.md laden, Phase intake | Ask (+ ein Read) |
+| buddy repo-check … | Task.md + Repo-Scout | Agent |
+| intake / compress / diskussion / plan-prompt | wie Profil | Ask |
+| repo-check | MCP zu Repo-Fragen | Agent |
 
 ```
+buddy intake task-foo aus Story 287638
+buddy repo-check task-foo aus Story 287638
 @buddy-agent
-Task mit Buddy
-Sparring
 compress
 repo-check
 plan-prompt
-Plan-Prompt für plan-agent
 ```
 
 ---
@@ -180,30 +186,25 @@ _keine_
 
 ### ado-requests-stories
 
-Azure DevOps Work Items ↔ Markdown-Sync unter `requests/stories/`. Story, Task und Feature prüfen, Tasks schließen, State-Übergänge verwalten, ToDos erfassen.
-
-**Abhängigkeiten:** `buddy-agent`
+Azure DevOps Work Items ↔ Markdown unter `requests/stories/`. Phasen **load → analyse → save**. Tasks schließen, State, ToDos. Anhänge in Story.md nur wenn MCP-List-Tool existiert.
 
 #### Operations
 
 | Operation | Trigger |
 |-----------|---------|
-| Story prüfen | `prüfe Story [ID]` |
-| Task prüfen | `prüfe Task [ID]` |
-| Feature prüfen | `prüfe Feature [ID]` |
-| Task fertig markieren | `markiere Task [ID] als fertig` / `Task [ID] erledigt` |
-| ToDo notieren | `ToDo für Task [ID]` / `notiere im Task [ID]` |
-| Story active setzen | `Story [ID] auf active` / `setze Story [ID] active` |
-| Story resolved setzen | `Story [ID] resolved` / `schließe Story [ID] resolved` |
+| ADO laden | `load story [ID]` / `load feature [ID]` / `load task [ID]` |
+| Analysieren | `analyse` / `analyse story [ID]` |
+| Speichern | `save` / `save story [ID]` |
+| Task fertig | `markiere Task {dateistamm} in Story [ID] als fertig` |
+| ToDo | `ToDo für Task {dateistamm} in Story [ID]` |
+| Story active / resolved | `Story [ID] auf active` / `Story [ID] resolved` |
 
 ```
-prüfe Story 287638
-prüfe Task 123456
-prüfe Feature 98765
-markiere Task 123456 als fertig
-Task 123456 erledigt
-ToDo für Task 123456: Validierung fehlt noch
-Story 287638 auf active
+load story 287638
+analyse
+save
+load feature 98765
+markiere Task task-foo in Story 287638 als fertig
 Story 287638 resolved
 ```
 
@@ -211,26 +212,29 @@ Story 287638 resolved
 
 | Datei | Trigger |
 |-------|---------|
-| `rules/ado-skill.mdc` | `prüfe Story/Task/Feature`, `markiere Task … als fertig`, `ToDo für Task`, `Story … active/resolved`, Work-Item-IDs mit requests/stories-Kontext |
+| `rules/ado-skill.mdc` | `load`, `analyse`, `save`, Task fertig, ToDo, active/resolved, `Task … verfeinern` (Legacy) |
 
 #### Skills
 
 | Datei | Inhalt |
 |-------|--------|
-| `skills/ado/SKILL.md` | Story/Task/Feature prüfen, Task fertig, ToDo, active/resolved, Task verfeinern (Legacy) |
+| `skills/ado/SKILL.md` | Phasen load/analyse/save, Task fertig, ToDo, active/resolved, verfeinern (Legacy) |
 
-#### References
+#### References (Phasen)
 
 | Datei | Inhalt |
 |-------|--------|
-| `references/subagent-model-before-task.md` | Pflicht: Modell aus Agent-Profil vor Task |
+| `skills/ado/references/phase-load.md` | MCP only |
+| `skills/ado/references/phase-analyse.md` | Drafts + Subagents |
+| `skills/ado/references/phase-save.md` | Markdown persistieren |
 
 #### Sub-Agents
 
 | Agent | Aufgabe |
 |-------|---------|
-| `agents/ado-story-pruefe-agent.md` | Story-Phase: read-only Code-Review + Task-Inventur, `story-*.md` generieren |
-| `agents/ado-task-pruefe-agent.md` | Task-Phase: schlanke `task-*.md` Generierung |
+| `agents/ado-agent.md` | Orchestrator load/analyse/save |
+| `agents/ado-story-pruefe-agent.md` | Feature-Kaskade: Story-Analyse (kein MD-Schreiben) |
+| `agents/ado-task-pruefe-agent.md` | Task-Draft + Code-Scout (Modus analyse) |
 
 #### Parameters
 
@@ -244,44 +248,36 @@ Story 287638 resolved
 
 ### buddy-agent
 
-Phasen-basiertes Sparring vor dem Planning Workflow (`intake → compress → repo-check → diskussion → plan-prompt`). Liefert **vollständigen** describe-as-Handoff für `plan-agent` — Ziel: Planer stellt ideally keine Klärungsfragen zu bereits geklärten Punkten. Chat in normalem Deutsch — kein Caveman.
+Phasen-Sparring vor Planung. Task-Brücke via `buddy intake` / `buddy repo-check` (nur Task.md). Kein ADO-Sync.
 
-**Abhängigkeiten:** `describe-as-prompt`, `commit-message`
+**Abhängigkeiten:** `describe-as`, `commit-message`
 
 #### Operations
 
 | Operation | Trigger | Modus |
 |-----------|---------|-------|
-| intake | default; `intake`, `zuhören` (erneut = passiv zuhören) | Ask |
-| compress | `compress` — Snapshot inkl. Entscheidungen, Repo-Kurz, Repo-Fragen | Ask |
-| repo-check | `repo-check` | Agent |
-| diskussion | implizit nach repo-check; `diskussion`; direkte Frage | Ask |
-| plan-prompt | `plan-prompt`, `handoff` — Section B mit Decisions + Fundstellen + offenen Edge cases | Ask |
-| Anforderung schärfen | `Task durchsprechen`, `Anforderung schärfen`, `Sparring` | Ask |
+| buddy intake | `buddy intake {taskDateistamm} aus Story {id}` | Ask |
+| buddy repo-check | `buddy repo-check {taskDateistamm} aus Story {id}` | Agent |
+| intake / compress / repo-check / diskussion / plan-prompt | siehe Profil | Ask / Agent |
 
 ```
-@buddy-agent
-Task mit Buddy
-Sparring
-compress
-repo-check
+buddy intake task-foo aus Story 287638
+buddy repo-check task-foo aus Story 287638
 plan-prompt
-Plan-Prompt für plan-agent
 ```
-
-**Trigger-Hinweis:** `ich möchte …` / `ich hätte gerne …` nur mit Klärungs-Signal (z. B. `durchsprechen`, `Sparring`, `Plan-Prompt`) — nicht bei Umsetzungs-Imperativen wie `implementiere` oder `plane`.
 
 #### Rules
 
 | Datei | Trigger |
 |-------|---------|
-| `rules/buddy-agent-skill.mdc` | `@buddy-agent`, `buddy-agent`, `Task mit Buddy`, `Plan-Prompt`, `Sparring`, `intake`, `compress`, `repo-check`, `plan-prompt` |
+| `rules/buddy-agent-skill.mdc` | `@buddy-agent`, `buddy intake`, `buddy repo-check`, `intake`, `compress`, `repo-check`, `plan-prompt` |
 
 #### Skills
 
 | Datei | Inhalt |
 |-------|--------|
-| `skills/buddy-agent/buddy-repo-check.md` | Template für `./buddy-repo-check.md` — konfiguriert die MCP-Pipeline für repo-check |
+| `skills/buddy-agent/SKILL.md` | Phasen, Task-Brücke intake/repo-check |
+| `skills/buddy-agent/buddy-repo-check.md` | Template für `./buddy-repo-check.md` — MCP-Pipeline |
 
 #### References
 
@@ -299,7 +295,7 @@ _keine_
 
 **Optional (projektspezifisch, nicht im buddy-agent-Profil):** MCP-Schritte in `./buddy-repo-check.md` unter `## Pipeline` ergänzen — unbekannte Zeilen erscheinen in repo-check unter `### Pipeline-Warnungen`.
 
-**Teams ohne describe-as / Planning Workflow:** nur `buddy-agent.md` + Rule portieren; Planning-Integration optional nachziehen.
+**Teams ohne describe-as / Planning Workflow:** nur `buddy-agent/SKILL.md` + Rule portieren; Planning-Integration optional nachziehen.
 
 ---
 
@@ -1045,8 +1041,8 @@ Nach dem Deployment relative Pfade zwischen Skills und Agents bleiben identisch 
 ### Package-Abhängigkeiten
 
 ```
-ado-requests-stories      →  buddy-agent
-buddy-agent               →  describe-as-prompt, commit-message
+ado-requests-stories      →  (keine — Buddy optional separat)
+buddy-agent               →  describe-as, commit-message
 angular-refactor          →  angular-bundle
 angular-material          →  angular-bundle
 angular-material-*        →  angular-bundle

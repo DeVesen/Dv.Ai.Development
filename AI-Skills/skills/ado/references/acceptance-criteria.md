@@ -15,11 +15,11 @@ Jede `tasks/task-*.md` führt **`## Akzeptanzkriterien`** als menschlich lesbare
 - Formulierung: Was soll sichtbar / messbar funktionieren? (kein technisches Vorgehen).
 - Mindestinhalt: ≥1 Bullet sobald `## Anforderung` substanziell ist.
 
-**Block-Sync bei `prüfe`:** Den **gesamten** `## Akzeptanzkriterien`-Block schreibt der **[Task-SubAgent](task-pruefe-subagent.md)** (idempotent), abgeleitet aus `## Anforderung` und `## Story-Bezug`. Die **Story-Phase** schreibt **keine** ACs. Discussion-closed: Block **unverändert** ([task-overview.md](task-overview.md)).
+**Block-Sync bei analyse/save:** Den **gesamten** `## Akzeptanzkriterien`-Block kommt aus **Task-Draft** ([`task-analyse-subagent.md`](task-analyse-subagent.md)) und wird in **save** geschrieben. Story-Analyse schreibt **keine** ACs. Discussion-closed: Block **unverändert** ([task-overview.md](task-overview.md)).
 
 **Block-Sync bei `Task … verfeinern`:** Gesamten `## Akzeptanzkriterien`-Block aus freigegebener Anforderung schreiben — **nur Phase 5 nach Nutzer-Freigabe** — siehe [task-verfeinern.md](task-verfeinern.md).
 
-**Ausnahme — effektives `TASK-CLOSED`:** Bei `prüfe` den Block **nicht** ersetzen; bestehenden Inhalt beibehalten ([task-overview.md](task-overview.md)).
+**Ausnahme — effektives `TASK-CLOSED`:** Bei **analyse/save** den Block **nicht** ersetzen; bestehenden Inhalt beibehalten ([task-overview.md](task-overview.md)).
 
 ## Erledigte Tasks (`task-done`)
 
@@ -40,7 +40,7 @@ Vor `TASK-CLOSED`:
 | `Task … verfeinern` | [task-verfeinern.md](task-verfeinern.md): interaktiver 5-Phasen-Ablauf; `## Akzeptanzkriterien` in der MD **nach Nutzer-Freigabe**; **kein** Vorgehen/Planpaket in die Datei |
 | `plane Task …` | [planning-workflow](../../planning-workflow/SKILL.md): Planpaket **im Chat** referenziert Kriterien aus der Task-MD |
 | Implementierung | DoD an `## Akzeptanzkriterien`; Abschluss mit `### Lösung` und `TASK-CLOSED` |
-| `prüfe` | [task-pruefe-subagent.md](task-pruefe-subagent.md) schreibt AC-Block für **offene** Tasks; discussion-geschlossene: unverändert (kein Task-SubAgent) |
+| `analyse` / `save` | [task-analyse-subagent.md](task-analyse-subagent.md) Draft → save schreibt AC für **offene** Tasks |
 
 ## Platzhalter (neue Task-Datei)
 

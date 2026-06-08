@@ -23,3 +23,11 @@
 ## AI Zusammenfassung
 
 {{aiSummary}}
+
+## Möglichkeiten
+
+- `buddy intake {{taskDateistamm}} aus Story {{workItemId}}`
+- `buddy repo-check {{taskDateistamm}} aus Story {{workItemId}}`
+- `markiere Task {{taskDateistamm}} in Story {{workItemId}} als fertig`
+- `ToDo für Task {{taskDateistamm}} in Story {{workItemId}}: `
+- `plane Task {{taskDateistamm}} in Story {{workItemId}}`

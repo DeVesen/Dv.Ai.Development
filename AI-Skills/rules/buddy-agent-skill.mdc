@@ -1,5 +1,5 @@
 ---
-description: Task-Klärung vor Planung — buddy-agent Phasen-basiertes Sparring (intake → compress → repo-check → diskussion → plan-prompt). Fachlich, kurz, direkt. End-Artefakt describe-as-Handoff für plan-agent.
+description: Task-Klärung vor Planung — buddy-agent Phasen (intake → compress → repo-check → diskussion → plan-prompt). Task-Brücke buddy intake|repo-check {taskDateistamm} aus Story {id} lädt nur Task.md. Kein ADO-Sync.
 alwaysApply: true
 ---
 
@@ -7,59 +7,43 @@ alwaysApply: true
 
 ## Pflicht bei Task-Klärung vor Planung
 
-Wenn der Nutzer ein Task oder eine Anforderung klären will — Sparring, Plan-Prompt, Durchsprechen **ohne** sofort `plane`/`implementiere`/`prüfe` — dann **vor der Antwort** das Agent-Profil vollständig lesen und befolgen:
+Wenn der Nutzer ein Task klären, durchsprechen oder einen Plan-Prompt erzeugen will — **ohne** sofort `plane`/`implementiere`/ado-`load` — dann **vor der Antwort** das Agent-Profil vollständig lesen:
 
 [`buddy-agent/SKILL.md`](../skills/buddy-agent/SKILL.md)
 
-Phasen-Modell, Ausgabe-Formate und Gesprächsablauf stehen **nur** im Profil — diese Rule dupliziert sie nicht.
-
 ## Verbindliche Aktivierung
 
-Vorbehaltlich Opt-out unten: erkennbarer Intent **Task klären / Sparring / Plan-Prompt** im Repo- oder Story-Kontext.
+Explizite Trigger:
 
-Explizite Trigger (sofort ladend):
+- **`@buddy-agent`**, **`buddy-agent`**
+- **`buddy intake {taskDateistamm} aus Story {storyId}`** — nur Task.md laden, Phase intake
+- **`buddy repo-check {taskDateistamm} aus Story {storyId}`** — Task.md + repo-check
+- **`Plan-Prompt`**, **`vor plan-agent`**, **`Sparring`**, **`Anforderung schärfen`**
+- **`intake`**, **`zuhören`**, **`compress`**, **`repo-check`**, **`diskussion`**
+- **`plan-prompt`**, **`handoff`**
 
-- **`@buddy-agent`**, **`buddy-agent`**, **`Task mit Buddy`**, **`Buddy Task`**
-- **`Plan-Prompt`**, **`vor plan-agent`**
-- **`Task durchsprechen`**, **`durchsprechen`**, **`Sparring`**, **`Anforderung schärfen`**
-- **`ich möchte …`**, **`ich hätte gerne …`** — **nur zusätzlich** Klärungs-Signal: `durchsprechen`, `klären`, `Sparring`, `Plan-Prompt`, `noch nicht implementieren`, `@buddy-agent`, Fragezeichen, Story-/Task-Kontext ohne Umsetzungs-Imperativ
-- **`intake`**, **`zuhören`** — Phasen-Trigger
-- **`compress`**, **`repo-check`**, **`diskussion`** — Phasen-Trigger
-- **`plan-prompt`**, **`handoff`** — Handoff-Trigger
+## Vorrang (kein Buddy)
 
-**Vorrang vor Buddy (kein Laden):** im selben Intent **`implementiere`**, **`plane`**, **`fix`**, **`setze um`**, **`prüfe`**, **`erledige`**, **`schließe Task`** → Planning Workflow, Implementation Workflow oder ADO-Skill.
+Im selben Intent: **`load`**, **`analyse`**, **`save`**, **`implementiere`**, **`plane`**, **`fix`**, **`markiere Task`**, **`schließe Task`** → ADO, Planning oder Implementation — **nicht** Buddy.
+
+**Entfernt als ADO-Trigger:** `prüfe Story/Task/Feature`.
 
 ## Priorität
 
 | Situation | Vorrang |
 |-----------|---------|
-| Task klären / Sparring / Plan-Prompt | **buddy-agent** (dieses Profil) |
-| `plane` / `plane Task` / `plan-agent` | Planning Workflow — **nach** Buddy-Plan-Prompt bevorzugt |
+| Task klären / buddy intake / buddy repo-check / Plan-Prompt | **buddy-agent** |
+| `plane Task …` | Planning Workflow — nach Buddy-Handoff bevorzugt |
 
 ## Nicht auslösen
 
-- Reine Erklärung: „Was ist buddy-agent?" ohne Klärungsauftrag
-- Direkt `implementiere` / `prüfe` / ADO-Sync (siehe Vorrang oben)
-- `ich möchte …` / `ich hätte gerne …` **ohne** Klärungs-Signal und **mit** Umsetzungs-Imperativ
-- Kalender/Alltag ohne Code-/Repo-Bezug
-
-## Persönlichkeit (Chat)
-
-Chat-Antworten in **normalem Deutsch** — fachlich, kurz, direkt:
-
-- Kurze Sätze; Bullets ab 3+ Punkten
-- Keine Code-Beispiele
-- Kein Consultant-Deutsch, keine Wall-of-Text
-- **Kein Caveman** im Chat
-
-**Ausnahme:** plan-prompt Section A und B folgen describe-as-Skill (Caveman full — für Handoff-Kompatibilität mit plan-agent). Diese Ausnahme ist bewusst; nicht ändern.
+- ado `load` / `analyse` / `save` ohne Buddy-Intent
+- Reine Skill-Erklärung
 
 ## Default-Phase
 
-**Ohne expliziten Phasen-Trigger** startet Buddy immer in Phase **intake** und bleibt dort bis zum expliziten Wechsel.
+Ohne Phasen-Trigger → **intake** (Navigations-Block). Ausnahme: **`buddy repo-check …`** → direkt **repo-check** (Agent-Mode).
 
-In **intake** antwortet Buddy absichtlich nur mit dem Navigations-Block — Struktur kommt mit **`compress`**, Repo-Fakten mit **`repo-check`** (Agent-Mode).
+## Opt-out
 
-## Ausdrücklicher Opt-out
-
-`ohne buddy-agent` → Buddy-Profil nicht anwenden.
+`ohne buddy-agent` → Profil nicht anwenden.

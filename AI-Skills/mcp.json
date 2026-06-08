@@ -18,6 +18,8 @@
         "run",
         "-i",
         "--rm",
+        "-p",
+        "127.0.0.1:8090:8090",
         "-v",
         "${workspaceFolder}:/workspace:ro",
         "devesen/dv.code-review.mcp:latest"

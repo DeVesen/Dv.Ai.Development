@@ -1,1211 +1,213 @@
-# .cursor — Portable Agent Infrastructure
+# AI-Skills
 
-Portable Agenten-Infrastruktur: Rules, Skills, Agent-Profile und Referenzen — übertragbar in beliebige Repositories.
-
-### Typischer Workflow (ADO → Buddy → Plan)
-
-1. `load story {id}` → `analyse` → `save` (**dieselbe Session**)
-2. Copy aus Task-`## Möglichkeiten`: `buddy intake {taskDateistamm} aus Story {id}`
-3. `compress` / `diskussion` optional
-4. `buddy repo-check …` (**Agent-Mode**, MCP)
-5. `plan-prompt` → `plane Task …`
-
----
-
-## Main-Agents
-
-Main-Agents sind Agents aus `.cursor/agents/`, die **nicht** von einem anderen Agent, einer Rule oder einem Skill delegiert werden — sie werden direkt durch den Nutzer ausgelöst.
-
----
-
-### ado-agent
-
-Orchestriert Azure DevOps Work Items ↔ lokale Markdown-Artefakte (`{workspace-root}/requests/stories/`). **Phasen:** `load` → `analyse` → `save` (schrittweise, kein `prüfe`). Weitere Ops: Task-Abschluss, ToDo, Story-State. **Keine** Buddy-Orchestrierung.
-
-**Ausgelöst durch:** `rules/ado-skill.mdc` · Profil: `agents/ado-agent.md`
-
-#### Operations
-
-| Operation | Beschreibung | Direkte Sub-Agents |
-|-----------|-------------|-------------------|
-| load story/feature/task | ADO MCP only — Load-Bundle | — |
-| analyse | Task-Inventar + Task-Drafts | `ado-story-pruefe-agent` (Feature), `ado-task-pruefe-agent` |
-| save | Story.md + task-*.md persistieren | — |
-| Task fertig markieren | TASK-CLOSED + task-*.md | — |
-| ToDo notieren | Kommentar / ToDo in Task | — |
-| Story auf active / resolved | ADO State | — |
+Quellbibliothek für dual-platform AI-Workflow-Artefakte — deploybar in **Cursor** und **Claude Code**.
 
 ```
-load story 287638
-load feature 98765
-analyse
-save
-markiere Task task-foo in Story 287638 als fertig
-ToDo für Task task-foo in Story 287638: Validierung fehlt noch
-Story 287638 auf active
-Story 287638 resolved
-@ado-agent
+AI-Skills/
+├── agents/                   Sub-Agent-Profile (.md)
+├── skills/                   Skill-Pakete (SKILL.md + references/)
+├── rules/                    Cursor-Rules (.mdc) — nur Cursor
+├── packages/                 Package-Manifeste (JSON)
+├── references/               Geteilte Referenz-Dateien
+├── mcp.json                  MCP-Server-Konfiguration
+├── install-cursor-skills.ps1 Deploy-Skript (Windows/PowerShell)
+├── install-skill.sh          Deploy-Skript (Linux/macOS)
+└── update-cursor-skills.ps1  Update-Skript (Windows, manifest-basiert)
 ```
 
 ---
 
-### plan-agent
+## Verzeichnisse
 
-Orchestriert den 6-Phasen Planning Workflow. Koordiniert Scouts (Phase 3), Topic-Planer (Phase 4b) und Fuenf-Perspektiven-Review (Phase 5). Liefert ein finales Planpaket mit Umsetzungs-Topologie (IMP-FE-*/IMP-BE-*-Slices).
+### `agents/` — Sub-Agent-Profile
 
-**Ausgelöst durch:** `rules/planning-workflow-skill.mdc`
+Spezialisierte Agent-Profile, die von Skills als Sub-Agents aufgerufen werden. Jede Datei definiert Rolle, Modell, Fähigkeiten und Aufgaben eines Agents.
 
-#### Operations
-
-| Operation | Beschreibung | Direkte Sub-Agents |
-|-----------|-------------|-------------------|
-| Planning starten | Vollständiger 6-Phasen-Workflow | `plan-agent-scout`, `plan-agent-topic-planner`, `plan-review-optimist-agent`, `plan-review-pessimist-agent`, `plan-review-normalo-agent`, `plan-review-oberlehrer-agent`, `plan-review-professor-agent` |
-| Vorgehen klären | Implizites Planning bei Strategie-/Architektur-Fragen | (wie oben) |
-| Optionen vergleichen | Trade-off-Analyse mit Planungs-Output | (wie oben) |
-
-```
-plane bitte die Erweiterung des UserService
-plane die Korrektur des Login-Bugs
-plane die Migration von REST auf GraphQL
-Wie gehen wir hier am besten vor?
-Optionen vergleichen für die neue Auth-Strategie
-Skizziere die Strategie für den Umbau
-plane die Anpassung am Dialog
-lass uns planen
-```
-
----
-
-### buddy-agent
-
-Phasen-basiertes Sparring **vor** der Planung. `intake → compress → repo-check → diskussion → plan-prompt`. **Task-Brücke:** `buddy intake {taskDateistamm} aus Story {id}` / `buddy repo-check …` lädt **nur** Task.md unter `{workspace-root}/requests/stories/` — kein ADO-MCP.
-
-**Ausgelöst durch:** `rules/buddy-agent-skill.mdc`
-
-#### Operations
-
-| Operation | Beschreibung | Cursor-Modus |
-|-----------|-------------|-------------|
-| buddy intake … | Task.md laden, Phase intake | Ask (+ ein Read) |
-| buddy repo-check … | Task.md + Repo-Scout | Agent |
-| intake / compress / diskussion / plan-prompt | wie Profil | Ask |
-| repo-check | MCP zu Repo-Fragen | Agent |
-
-```
-buddy intake task-foo aus Story 287638
-buddy repo-check task-foo aus Story 287638
-@buddy-agent
-compress
-repo-check
-plan-prompt
-```
-
----
-
-### conversation-insights-agent
-
-Erfasst entscheidende Erkenntnisse aus der laufenden Session in `{insights-path}/log.md`. Unterstützt Verfeinerung (refined) und Promotion von Einträgen zu Rules oder Skill-Updates (promoted).
-
-**Ausgelöst durch:** `rules/conversation-insights-skill.mdc`
-
-#### Operations
-
-| Operation | Beschreibung | Direkte Sub-Agents |
-|-----------|-------------|-------------------|
-| Insights erfassen | Entscheidende Learnings in `log.md` schreiben | — |
-| Eintrag verfeinern | Rohein­trag zu refiniertem Eintrag ausarbeiten | — |
-| Zu Rule fördern | Eintrag in eine `.mdc`-Rule oder `SKILL.md` überführen | — |
-
-```
-capture insights
-log what we learned
-session insights
-what did we learn
-refine insight 2026-06-03 login-token-fix
-make rule from insight 2026-06-03 login-token-fix
-@conversation-insights-agent
-```
-
----
-
-## Packages
-
-Ein Package besteht aus mindestens einer Rule oder einem Skill, plus optionalen Sub-Agents, References und Parametern.
-
----
-
-### build-log-filter
-
-Pflicht-Output-Filter für Build- und Test-Läufe via MCP. Verdichtet Konsolen-Ausgaben **vor** inhaltlichem Reasoning — ein Shell-Lauf = eine MCP-Kette.
-
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Build-Output filtern | Automatisch bei `ng build` / `dotnet build` |
-| Test-Output filtern | Automatisch bei `ng test` / `dotnet test` |
-| Fehleranalyse | Automatisch bei Exit ≠ 0 via `analyze_build_output` |
-
-```
-ng build --configuration production
-ng test --no-watch --browsers=ChromeHeadless
-dotnet build
-dotnet test
-```
-
-_Kein direkter Nutzer-Trigger — greift automatisch bei jedem in-scope Shell-Lauf._
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/build-log-filter.mdc` | Jeder `ng build/test`, `dotnet build/test` im Scope; Hard Stop wenn MCP nicht erreichbar |
-
-#### Skills
-
-_keine_
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-| Parameter | Beschreibung |
-|-----------|-------------|
-| `{frontend-path}` | Angular-App-Pfad (CWD für Frontend-Kommandos) |
-| `{backend-path}` | Backend-Pfad (CWD für Backend-Kommandos) |
-
----
-
-### ado-requests-stories
-
-Azure DevOps Work Items ↔ Markdown unter `{workspace-root}/requests/stories/`. Phasen **load → analyse → save**. Tasks schließen, State, ToDos. Anhänge in Story.md nur wenn MCP-List-Tool existiert.
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| ADO laden | `load story [ID]` / `load feature [ID]` / `load task [ID]` |
-| Analysieren | `analyse` / `analyse story [ID]` |
-| Speichern | `save` / `save story [ID]` |
-| Task fertig | `markiere Task {dateistamm} in Story [ID] als fertig` |
-| ToDo | `ToDo für Task {dateistamm} in Story [ID]` |
-| Story active / resolved | `Story [ID] auf active` / `Story [ID] resolved` |
-
-```
-load story 287638
-analyse
-save
-load feature 98765
-markiere Task task-foo in Story 287638 als fertig
-Story 287638 resolved
-```
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/ado-skill.mdc` | `load`, `analyse`, `save`, Task fertig, ToDo, active/resolved, `Task … verfeinern` (Legacy) |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/ado/SKILL.md` | Phasen load/analyse/save, Task fertig, ToDo, active/resolved, verfeinern (Legacy) |
-
-#### References (Phasen)
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/ado/references/phase-load.md` | MCP only |
-| `skills/ado/references/phase-analyse.md` | Drafts + Subagents |
-| `skills/ado/references/phase-save.md` | Markdown persistieren |
-
-#### Sub-Agents
+**Planungs-Agents:**
 
 | Agent | Aufgabe |
 |-------|---------|
-| `agents/ado-agent.md` | Orchestrator load/analyse/save |
-| `agents/ado-story-pruefe-agent.md` | Feature-Kaskade: Story-Analyse (kein MD-Schreiben) |
-| `agents/ado-task-pruefe-agent.md` | Task-Draft + Code-Scout (Modus analyse) |
+| `plan-agent-scout.md` | Phase 3: Codebase-Scouting |
+| `plan-agent-topic-planner.md` | Phase 4b: IMP-\*-Slices planen |
+| `plan-review-pessimist-agent.md` | Risiko-Review (skeptisch) |
+| `plan-review-optimist-agent.md` | Risiko-Review (konstruktiv) |
+| `plan-review-normalo-agent.md` | Risiko-Review (pragmatisch) |
+| `plan-review-professor-agent.md` | Tiefenanalyse mit Priorisierung |
+| `plan-review-oberlehrer-agent.md` | Pedantischer Qualitäts-Review |
 
-#### Parameters
+**Implementierungs-Agents:**
 
-| Parameter | Beschreibung |
-|-----------|-------------|
-| `{workspace-root}` | Cursor-Workspace-Root; Story-/Task-MD unter `{workspace-root}/requests/stories/` |
-| `{devops-pipelines-path}` | Pfad zu Azure DevOps Pipeline-Definitionen (YAML-Dateien) |
-| `ADO.Organisation` | Azure DevOps Organisationsname (in `mcp.json` → `defaultOrganization`) |
-| `ADO.Project-GUID` | ADO Projekt-GUID (in `skills/ado/config.defaults.json` → `defaultProject`) |
-
----
-
-### buddy-agent
-
-Phasen-Sparring vor Planung. Task-Brücke via `buddy intake` / `buddy repo-check` (nur Task.md unter `{workspace-root}/requests/stories/`). Kein ADO-Sync.
-
-**Abhängigkeiten:** `describe-as`, `commit-message`
-
-#### Operations
-
-| Operation | Trigger | Modus |
-|-----------|---------|-------|
-| buddy intake | `buddy intake {taskDateistamm} aus Story {id}` | Ask |
-| buddy repo-check | `buddy repo-check {taskDateistamm} aus Story {id}` | Agent |
-| intake / compress / repo-check / diskussion / plan-prompt | siehe Profil | Ask / Agent |
-
-```
-buddy intake task-foo aus Story 287638
-buddy repo-check task-foo aus Story 287638
-plan-prompt
-```
-
-#### Rules
-
-| Datei | Trigger |
+| Agent | Aufgabe |
 |-------|---------|
-| `rules/buddy-agent-skill.mdc` | `@buddy-agent`, `buddy intake`, `buddy repo-check`, `intake`, `compress`, `repo-check`, `plan-prompt` |
+| `implement-agent.md` | IMP-\*-Slices ausführen (Build + Test) |
+| `implement-fix-planner-agent.md` | Evidenzbasierter Fix-Plan |
+| `implement-review-*.md` | 5 Review-Perspektiven (Pessimist, Lehrer, Normalo, Oberlehrer, Professor) |
 
-#### Skills
+**ADO-Agents:**
 
-| Datei | Inhalt |
-|-------|--------|
-| `skills/buddy-agent/SKILL.md` | Phasen, Task-Brücke intake/repo-check |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-| Parameter | Beschreibung |
-|-----------|-------------|
-| `{workspace-root}` | Cursor-Workspace-Root; Task.md unter `{workspace-root}/requests/stories/UserStory-{id}-*/tasks/` |
-| `./mcps.md` | Verfügbare MCPs im **Repo-Root** — wird automatisch durch das Install-Skript befüllt wenn MCPs installiert werden. Agents lesen diese Datei und wählen situativ. **Ohne Datei:** Default: `codebase-analyzer`. |
-
-**Optional (projektspezifisch):** Weitere MCPs in `./mcps.md` unter `## MCPs` eintragen. Alle Agents (Buddy, Planer, Review-Agents) berücksichtigen die Liste bei der MCP-Auswahl.
-
-**Teams ohne describe-as / Planning Workflow:** nur `buddy-agent/SKILL.md` + Rule portieren; Planning-Integration optional nachziehen.
-
----
-
-### codebase-analyzer
-
-Statische Code-Analyse über MCP (AST, Index, Refactoring-Safety, Nullability, Auto-Fixes) für Angular und .NET — je nach Phase: Planung, Implementierung oder Nach-Implementierung.
-
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Phase | Trigger / MCP-Tool |
-|-----------|-------|-------------------|
-| Projekt indexieren | Planung | Automatisch bei Symbol-Bezug → `index_project` (Einzelprojekt) |
-| Solution indexieren | Planung | .NET Multi-Projekt → `index_solution` (`.sln` im Root oder nach `projectReferences` in `index_project`) |
-| Symbol suchen | Planung | Bei Klassen-/Methoden-Bezug → `find_in_index` |
-| Klassen-Split prüfen | Planung | `suggest_class_splits` bei Erweiterung bestehender Klasse |
-| God-Class-Ranking | Planung | `detect_god_classes` — projektweit, kein Datei-Input; Folgeschritt `suggest_class_splits` |
-| Refactoring-Safety | Planung | `analyze_refactoring_safety` bei API-Änderungen |
-| Aufrufstellen auflisten | Planung | `find_symbol_references` — konkrete Call-Sites (Datei/Zeile/Methode) nach `analyze_refactoring_safety` |
-| Vererbungs-Scope ermitteln | Planung | `find_type_hierarchy` — `up`/`down` für Interface- oder Basisklassen-Änderungen (Implementor-Scope) |
-| Datei reviewen | Implementierung | `review_file` / `review_code` |
-| Diff reviewen | Implementierung | `review_git_diff` — vor Commit |
-| Komplexität prüfen | Implementierung | `analyze_complexity` |
-| Extraktionskandidaten (Refactoring) | Implementierung / BoyScout | `analyze_method_extraction_candidates` |
-| BoyScout-Orchestrator | Nach-Impl. / Slice-Ende | `suggest_boyscout_actions` — ein Call auf geänderte `filePaths`; Compiler-Gate + Top-5 pro Datei |
-| Compiler-Diagnostics | Planung / Nach-Impl. | `analyze_compiler_diagnostics` — echter Compiler, kein Shell-Build; in `suggest_boyscout_actions` integriert |
-| Ungetestete public API | Nach-Impl. | `detect_untested_public_api` — Heuristik, kein Test-Run; nach Compiler-Check |
-| Test-Qualität prüfen | Nach-Impl. | `analyze_test_quality` |
-| Coverage auswerten | Nach-Impl. | `analyze_coverage` — nach Test-Run |
-| Vollständiger Bericht | Nach-Impl. | `analyze_advanced_all` — Sprint-End/Release |
-
-```
-schau dir den UserService an
-review meinen Code vor dem Commit
-ist das okay so?
-wie gut sind meine Tests?
-vor dem Merge alles prüfen
-```
-
-#### Rules
-
-| Datei | Trigger |
+| Agent | Aufgabe |
 |-------|---------|
-| `rules/codebase-analyzer.mdc` | Code-Review-Anfragen in allen Phasen; Symbol-First (Index vor Grep) bei Klassen-/Methoden-Bezug |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/codebase-analyzer/SKILL.md` | Tool-Auswahl je Phase, Code-Landkarte Recherche-Reihenfolge, MCP-Pfadauflösung |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-_keine — `{frontend-path}` / `{backend-path}` werden aus `./AGENTS.md` gelesen_
+| `ado-agent.md` | Orchestrator für ADO-Work-Items |
+| `ado-story-pruefe-agent.md` | Feature-Cascade-Analyse |
+| `ado-task-pruefe-agent.md` | Task-Draft + Code-Scout |
 
 ---
 
-### dev-filesystem-mcp
+### `skills/` — Skill-Pakete
 
-Token-effizientes Lesen und Suchen in `.cs` / `.ts` — Datei-Glob, Content-Regex, Roslyn/Regex-Reads ohne Vollfile-Dumps.
+Jedes Verzeichnis enthält eine `SKILL.md` mit dem Workflow und optional einen `references/`-Unterordner mit Hilfsdokumenten.
 
-**Abhängigkeiten:** _keine_
+**Kern-Workflows:**
 
-#### Operations
+| Skill | Beschreibung |
+|-------|-------------|
+| `planning-workflow/` | 6-Phasen-Planung: Anforderung → Scouts → Interface → Topics → Review → Synthese |
+| `implementation-workflow/` | Agent-Mode: 1–10 Slices, Hard Gate, max. 3 Review-Iterationen |
+| `buddy-agent/` | Pre-Planning Sparring: intake → compress → repo-check → diskussion → plan-prompt |
 
-| Operation | Trigger / MCP-Tool |
-|-----------|-------------------|
-| Datei finden | `find_file` |
-| Inhalt suchen | `find_by_content` |
-| Interface-Implementierungen | `find_implementations` |
-| Signaturen lesen | `read_signatures_only` |
-| Einzelne Methode | `read_method` |
-| Klassen-Übersicht | `read_class_summary` |
+**ADO-Integration:**
 
-```
-finde UserService.ts
-was macht diese Klasse
-zeig mir die Signaturen
-```
+| Skill | Beschreibung |
+|-------|-------------|
+| `ado/` | Work Items laden, analysieren, speichern; Todos, Status, Task-Completion |
 
-#### Rules
+**Code-Analyse:**
 
-| Datei | Trigger |
-|-------|---------|
-| `rules/dev-tooling-mcp.mdc` | `*.cs`, `*.ts` — Lesen/Suchen |
+| Skill | Beschreibung |
+|-------|-------------|
+| `codebase-analyzer/` | AST, Index, Refactoring-Safety, Nullability, Auto-Fixes |
+| `dev-tooling-mcp/` | Token-effiziente Reads/Search + Angular/dotnet-Scaffolding |
 
-#### Skills
+**Angular-Ökosystem (v20+):**
 
-| Datei | Inhalt |
-|-------|--------|
-| `skills/dev-tooling-mcp/SKILL.md` | 8 Tools, Pfadkonvention `/project`, Abgrenzung codebase-analyzer |
+| Skill | Beschreibung |
+|-------|-------------|
+| `angular-developer/` | Signals, DI, Routing, Forms, Testing |
+| `angular-developer-extension/` | Migrations, Signal-Architektur, Testing-Extensions |
+| `angular-new-app/` | Greenfield-Setup (`ng new`) |
+| `angular-new-app-extension/` | Decision Gates, Docs-Checks, Planung |
+| `angular-cache-busting/` | outputHashing, Meta-Tags, stale index.html |
+| `angular-material/` | 35 Komponenten, 23 CDK-Module, Theming (v22.0.0) |
+| `angular-material-custom-input/` | Custom Material Form Controls (ControlValueAccessor) |
+| `angular-refactor/` | Refactoring-Workflow mit Test-Policy |
 
-#### References
+**Backend:**
 
-_keine_
+| Skill | Beschreibung |
+|-------|-------------|
+| `backend-ef-migrations/` | EF Core Migrations CLI, Triplet-Enforcement, SQL-Views |
 
-#### Sub-Agents
+**Kommunikation & Session:**
 
-_keine_
-
-#### Parameters
-
-_keine_
-
----
-
-### dev-angular-mcp
-
-Angular-Scaffolding via `ng generate` mit Projekt-Conventions — Komponenten und Services.
-
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Trigger / MCP-Tool |
-|-----------|-------------------|
-| Komponente scaffolden | `scaffold_angular_component` |
-| Service scaffolden | `scaffold_angular_service` |
-
-```
-neue Komponente user-profile
-ng generate service für den Warenkorb
-```
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/dev-tooling-mcp.mdc` | `*.ts` — Scaffolding |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/dev-tooling-mcp/SKILL.md` | Tool-Parameter, Output-Format |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-_keine_
+| Skill | Beschreibung |
+|-------|-------------|
+| `describe-as/` | Gespräch zu kopierbarem Markdown-Handoff-Prompt verdichten |
+| `describe-as-html-prompt/` | HTML-Handoff mit Mermaid-Diagrammen |
+| `caveman/` | Knowledgeable-Caveman-Kommunikationsmodus |
+| `commit-message/` | Git-Commit-Messages generieren |
+| `conversation-insights/` | Session-Erkenntnisse als log.md festhalten |
 
 ---
 
-### dev-dotnet-mcp
+### `rules/` — Cursor-Rules
 
-.NET-Scaffolding via `dotnet new` und Verzeichnisstrukturen aus JSON.
+`.mdc`-Dateien, die **nur in Cursor** aktiv sind. Sie injizieren automatisch Kontext basierend auf Dateimustern oder Keywords und leiten bei Bedarf an Agent-Profile weiter.
 
-**Abhängigkeiten:** _keine_
+> Claude Code verwendet keine `.mdc`-Dateien. Das Äquivalent dort ist das `description`-Frontmatter einer Skill-Datei.
 
-#### Operations
-
-| Operation | Trigger / MCP-Tool |
-|-----------|-------------------|
-| Projekt scaffolden | `scaffold_dotnet_project` |
-| Verzeichnisbaum | `create_directory_structure` |
-
-```
-dotnet new classlib für Domain
-Ordnerstruktur für Clean Architecture
-```
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/dev-tooling-mcp.mdc` | `*.cs` — Scaffolding |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/dev-tooling-mcp/SKILL.md` | Tool-Parameter, Output-Format |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-_keine_
+| Rule | Trigger (Beispiele) |
+|------|---------------------|
+| `planning-workflow-skill.mdc` | `plane`, `Wie gehen wir vor?`, Roadmap |
+| `implementation-workflow-skill.mdc` | `implementiere`, `setze um`, `fix`, `leg los` |
+| `angular-skills.mdc` | Angular-Dateien, `ng`, Signals, Routing |
+| `ado-skill.mdc` | `load`, `analyse`, `save`, Task-Status |
+| `build-log-filter.mdc` | Automatisch bei `ng build/test`, `dotnet build/test` |
+| `codebase-analyzer.mdc` | Code-Review-Fragen, Symbol-Suche |
+| `dev-tooling-mcp.mdc` | `.cs`/`.ts`-Reads, Scaffolding |
+| `buddy-agent-skill.mdc` | `@buddy-agent`, `buddy intake` |
 
 ---
 
-### angular-bundle
+### `packages/` — Package-Manifeste
 
-Kern-Angular-Skills für v20+: Patterns, Signals, DI, Routing, Forms, neue App-Einrichtung, Cache-Busting.
+JSON-Manifeste definieren, welche Artefakte ein Paket enthält und wohin sie deployed werden.
 
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Angular-Arbeit | Automatisch bei Angular-Bezug (`ng`, Komponenten, Signals, Routing, Forms) |
-| Neue App einrichten | `ng new` / Greenfield-Kontext |
-| Cache-Busting | `outputHashing`, veraltete App nach Deploy, `stale index.html` |
-
-```
-erstelle eine neue Angular-Komponente für den Login
-wie implementiere ich Signals für den Warenkorb-State?
-ng new meine-app — Setup und Konfiguration
-die App lädt nach Deploy immer noch alte Dateien
-erzwungenes Neuladen nach Deploy konfigurieren
+```jsonc
+// Beispiel: packages/planning-workflow.json
+{
+  "name": "planning-workflow",
+  "skills": ["skills/planning-workflow/"],
+  "agents": ["agents/plan-agent-scout.md", "..."],
+  "rules": ["rules/planning-workflow-skill.mdc"],
+  "references": ["references/subagent-model-before-task.md"],
+  "params": ["frontend-path", "backend-path"]
+}
 ```
 
-#### Rules
+**Verfügbare Pakete:**
 
-| Datei | Trigger |
-|-------|---------|
-| `rules/angular-skills.mdc` | Angular-Arbeit unter `{frontend-path}`, `ng`, Komponenten, Routing, Signals, Angular-CLI |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/angular-developer/SKILL.md` | Angular v20+ Patterns, Signals, DI, Routing, Forms, Testing |
-| `skills/angular-developer-extension/SKILL.md` | Migrations-Patterns, Signal-Architektur, Testing-Extensions |
-| `skills/angular-new-app/SKILL.md` | Greenfield Angular-Setup (`ng new`) |
-| `skills/angular-new-app-extension/SKILL.md` | Decision Gates, Docs-Checks, Implementierungsplanung |
-| `skills/angular-cache-busting/SKILL.md` | Cache-Busting-Strategie (`outputHashing`, Meta-Tags) |
-
-#### References
-
-| Datei | Inhalt |
-|-------|--------|
-| `references/verification-commands.md` | Projektspezifische Build/Test-Befehle |
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-| Parameter | Beschreibung |
-|-----------|-------------|
-| `{frontend-path}` | Angular-App-Pfad (CWD für `ng build`, `ng test`) |
+`ado-requests-stories` · `angular-bundle` · `angular-material-custom-input` · `angular-refactor` · `backend-ef-migrations` · `buddy-agent` · `build-log-filter` · `caveman` · `codebase-analyzer` · `commit-message` · `conversation-insights` · `describe-as` · `describe-as-html-prompt` · `dev-angular-mcp` · `dev-dotnet-mcp` · `dev-filesystem-mcp` · `implementation-workflow` · `planning-workflow`
 
 ---
 
-### angular-refactor
+### `references/` — Geteilte Referenzen
 
-Angular-Refactoring-Workflow mit Test-Policy. Setzt `angular-bundle` voraus.
-
-**Abhängigkeiten:** `angular-bundle`
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Refactoring durchführen | `refactor`, `schreib um`, `portiere` mit Angular-Bezug |
-
-```
-refactor den AuthService auf Signals um
-schreib den UserComponent auf standalone um
-portiere die alte Klassen-API auf inject()
-```
-
-#### Rules
-
-_keine eigene Rule — verwendet `angular-bundle`_
-
-#### Skills
+Dateien, die von mehreren Paketen gemeinsam genutzt werden:
 
 | Datei | Inhalt |
 |-------|--------|
-| `skills/angular-refactor/SKILL.md` | Refactoring-Workflow mit Test-Policy |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-_keine — verwendet `{frontend-path}` aus `angular-bundle`_
+| `mcps.md` | Situative MCP-Auswahlhilfe (codebase-analyzer vs. dev-filesystem-mcp) |
+| `subagent-model-before-task.md` | Vorgabe: Model-Sektion des Agent-Profils vor jeder Aufgabe lesen |
+| `verification-commands.md` | Projekt-spezifische Build/Test-Befehle pro Stack |
 
 ---
 
-### angular-material
+### `mcp.json` — MCP-Konfiguration
 
-Vollständige Angular Material v22.0.0 Referenz — alle 35 Komponenten, 23 CDK-Module und 8 Guides.
-
-**Abhängigkeiten:** `angular-bundle`
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Material Komponenten | Automatisch bei `mat-`-Selektoren, `MatDialog`, `MatTable`, `mat-form-field` etc. |
-| CDK-Arbeit | `CdkDrag`, `Overlay`, `FocusMonitor`, Virtual Scrolling, `BreakpointObserver` |
-| Theming | `mat.theme()`, M3-Paletten, Token Overrides, `--mat-sys-` |
-| Installation | `ng add @angular/material`, `provideAnimationsAsync()` |
+Definiert alle MCP-Server für das deployte Projekt. Wird beim Install in `.cursor/mcp.json` (Cursor) bzw. in die Claude-Code-Konfiguration eingebunden.
 
 ```
-mat-button, mat-form-field, mat-table, MatDialog, matSort, MatSnackBar
-mat-datepicker, mat-chips, mat-select, mat-sidenav, mat-stepper
-cdkDrag, cdkDropList, Overlay, FocusMonitor, BreakpointObserver
-mat.theme(), --mat-sys-primary, ng add @angular/material
+Ports:
+  8089  build-log-filter
+  8090  codebase-analyzer      ← Volume-Mount erforderlich
+  8091  dev-filesystem-mcp     ← Volume-Mount erforderlich
+  8092  dev-angular-mcp
+  8093  dev-dotnet-mcp
 ```
 
-#### Rules
-
-_keine eigene Rule — wird durch `angular-bundle` → `angular-skills.mdc` getriggert_
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/angular-material/skill.md` | Operationen-Tabelle: 35 Komponenten, 23 CDK-Module, 8 Guides + Theming-Schnellreferenz |
-
-#### References
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/angular-material/references/components/` | 35 Komponenten-Referenzen (autocomplete … table) |
-| `skills/angular-material/references/cdk/` | 23 CDK-Modul-Referenzen (a11y … tree) |
-| `skills/angular-material/references/guides/` | 8 Guides (Installation, Theming, Schematics u. a.) |
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-_keine_
+Alle Server haben eine `autoApprove`-Liste der Tools, die ohne Bestätigungs-Prompt aufgerufen werden dürfen.
 
 ---
 
-### angular-material-custom-input
+## Installation & Update
 
-Implementierung von Custom Angular Material Form Controls (`ControlValueAccessor`). Setzt `angular-bundle` voraus.
+➡️ Vollständige Anleitung: **[`docs/InstallUpdate.md`](../docs/InstallUpdate.md)**
 
-**Abhängigkeiten:** `angular-bundle`
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Custom Form Control erstellen | Anfragen zu Custom Material Input / `ControlValueAccessor` |
-
-```
-erstelle ein Custom Material Form Control für Datumsauswahl
-implementiere einen eigenen MatInput für Währungseingabe
-```
-
-#### Rules
-
-_keine eigene Rule — verwendet `angular-bundle`_
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/angular-material-custom-input/SKILL.md` | Custom Material Form Control Implementierung |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-| Parameter | Beschreibung |
-|-----------|-------------|
-| `{component-prefix}` | Angular Selektor-Präfix (kebab-case, z. B. `app`) |
-| `{ComponentPrefix}` | Angular Klassen-Präfix (PascalCase, z. B. `App`) |
-
----
-
-### backend-ef-migrations
-
-EF Core Migrations-Workflow: CLI-only `dotnet ef migrations add`, Triplet-Enforcement (`.cs`, `.Designer.cs`, `ModelSnapshot.cs`), View-SQL in `Up()`/`Down()`.
-
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Migration anlegen | `dotnet ef migrations add [Name]` / Schema-Änderung |
-| Schema-Fehler beheben | Postgres-Fehler `42703` / `column … does not exist` |
-| Pending Changes prüfen | `dotnet ef migrations has-pending-model-changes` |
-
-```
-lege eine EF Migration für die neue User-Tabelle an
-dotnet ef migrations add AddUserTable
-neue Spalte IsActive in der Order-Tabelle hinzufügen
-Postgres meldet column "is_active" does not exist
-```
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/backend-ef-migrations-skill.mdc` | `EF migration`, `dotnet ef migrations add`, Schema-Änderungen, `MigrationBuilder`, `AddColumn`, DB-Fehler `42703` |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/backend-ef-migrations/SKILL.md` | CLI-Workflow, Triplet-Pflicht, View-SQL-Pattern |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-| Parameter | Beschreibung |
-|-----------|-------------|
-| `{backend-path}` | Backend-Projektpfad (CWD für `dotnet ef migrations`) |
-| `{database-project-name}` | EF-Projekt-Name (für `--project`-Argument) |
-| `{startup-project-name}` | Startup-Projekt mit Connection-String (für `--startup-project`) |
-| `{DbContext}` | DbContext-Basisname ohne `DbContext`-Suffix (z. B. `Atlas` → `AtlasDbContext`) |
-
----
-
-### describe-as-prompt
-
-Verdichtet Unterhaltungen zu kopierbaren Markdown-Handoff-Prompts für Folge-Agents. Wasserdicht-Modus und Planning-Obligation gemäß Skill.
-
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Handoff-Prompt erstellen | `Prompt für neuen Agent`, `wasserdicht`, `describe-as-prompt` |
-| Unterhaltung zusammenfassen | `als Prompt zusammenfassen`, `Handoff-Prompt` |
-
-```
-Prompt für neuen Agent erstellen
-wasserdicht
-als Prompt zusammenfassen
-describe-as-prompt
-Handoff-Prompt
-```
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/describe-as-prompt-skill.mdc` | `describe-as-prompt`, `Prompt für neuen Agent`, `wasserdicht`, `als Prompt zusammenfassen`, `Handoff-Prompt` |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/describe-as/SKILL.md` | Handoff-Format, Wasserdicht-Modus, Planning-Obligation |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-_keine_
-
----
-
-### describe-as-html-prompt
-
-Verdichtet Unterhaltungen zu HTML-Handoff-Prompts mit Mermaid-Sequence- und Klassen-Diagrammen. Setzt `describe-as-prompt` voraus.
-
-**Abhängigkeiten:** `describe-as-prompt`
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| HTML-Handoff erstellen | `describe-as-html-prompt`, `als HTML zusammenfassen` |
-| Mit Diagrammen | `sequenceDiagram`, `Mermaid`, `Ablauf als Diagramm` |
-
-```
-describe-as-html-prompt
-als HTML zusammenfassen
-Handoff als HTML
-Ablauf als Diagramm darstellen
-Frontend zu Backend diagrammieren
-```
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/describe-as-html-prompt-skill.mdc` | `describe-as-html-prompt`, `als HTML`, `HTML-Prompt`, `Mermaid`, `sequenceDiagram` |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/describe-as-html-prompt/SKILL.md` | HTML-Format, Mermaid `sequenceDiagram` (Flows), `classDiagram` (Modelle/Methoden) |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-_keine_
-
----
-
-### caveman
-
-Kommunikationsmodus: antwortet knapp wie ein kluger Höhlenmensch — technischer Inhalt vollständig, alle Füllwörter entfallen. Manuell per `caveman full` aktivierbar.
-
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Caveman-Modus aktivieren | `caveman full` |
-| Modus beenden | `stop caveman`, `normal mode` |
-
-```
-caveman full
-stop caveman
-normal mode
-```
-
-#### Rules
-
-_keine_
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/caveman/SKILL.md` | Caveman-Modus-Spezifikation, Auto-Clarity-Ausnahmen |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-_keine_
-
----
-
-### commit-message
-
-Generiert Git-Commit-Messages mit Titel, Beschreibung und kopierbarem CLI-Befehl.
-
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Commit-Message generieren | `commit-message`, `erstelle eine Commit-Message` |
-
-```
-commit-message
-erstelle eine Commit-Message für diese Änderung
-```
-
-#### Rules
-
-_keine_
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/commit-message/SKILL.md` | Commit-Message-Format: Titel, Description, CLI-Command |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-_keine_
-
----
-
-### conversation-insights
-
-Erfasst entscheidende Session-Erkenntnisse in `{insights-path}/log.md`. Lifecycle: `raw` → `refined` → `promoted` (zu `.mdc`-Rule oder `SKILL.md`).
-
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Insights erfassen | `capture insights`, `log what we learned`, `session insights` |
-| Eintrag verfeinern | `refine insight YYYY-MM-DD slug` |
-| Zu Rule fördern | `make rule from insight YYYY-MM-DD slug` |
-
-```
-capture insights
-log what we learned
-session insights
-refine insight 2026-06-03 api-timeout-fix
-make rule from insight 2026-06-03 api-timeout-fix
-```
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/conversation-insights-skill.mdc` | `capture insights`, `log what we learned`, `refine insight`, `make rule from insight`, `session insights` |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/conversation-insights/SKILL.md` | Eintrag-Format, Lifecycle raw→refined→promoted, Kategorien |
-
-#### References
-
-_keine_
-
-#### Sub-Agents
-
-_keine_
-
-#### Parameters
-
-| Parameter | Beschreibung |
-|-----------|-------------|
-| `{insights-path}` | Pfad zu `log.md` (Standard: `.cursor/insights`) |
-
----
-
-## Workflows
-
-Workflows sind Packages mit mehrphasigem Ablauf, dedizierten Sub-Agents und strikten Phasen-Gates. Sie unterscheiden sich von einfachen Packages durch ihren orchestrierten, sequenziellen Charakter.
-
----
-
-### planning-workflow
-
-6-Phasen Planungsworkflow: Anforderung -> Scouts -> Schnittstellen-Design -> Topic-Planer -> Fuenf-Perspektiven-Review -> Synthese + Umsetzungs-Topologie.
-
-**Abhängigkeiten:** _keine_
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Planning starten | `plane`, `plane bitte`, `plane die Korrektur/Erweiterung/Anpassung` |
-| Implizites Planning | `Wie gehen wir vor?`, `Optionen vergleichen`, `Vorgehen skizzieren` |
-| Plan + Implementierung | `plane … und implementiere` → erst Planning bis Freigabe |
-
-```
-plane bitte die Erweiterung des UserService
-plane die Korrektur des Login-Bugs
-Wie gehen wir hier am besten vor?
-Welche Optionen haben wir für die Migration?
-plane die Anpassung am Bestell-Dialog
-lass uns planen
-```
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/planning-workflow-skill.mdc` | `plane`, `plane bitte`, `plane die/das …`, `Wie gehen wir vor?`, `Optionen`, `Roadmap`, `Umsetzungsplan`, Cursor Plan Mode mit Code-Bezug |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/planning-workflow/SKILL.md` | 6-Phasen-Ablauf, Phasen-Gates, Slice-ID-Konvention (`IMP-FE-*` / `IMP-BE-*`), Parallelitätsregeln |
-
-#### References
-
-| Datei | Inhalt |
-|-------|--------|
-| `references/subagent-model-before-task.md` | Pflicht: Modell aus Agent-Profil (`## Modell`) lesen vor jedem Task |
-
-#### Sub-Agents
-
-| Agent | Phase | Aufgabe |
-|-------|-------|---------|
-| `agents/plan-agent-scout.md` | Phase 3 | Codebereichs-Scouting (read-only, MCP-first, YAGNI) |
-| `agents/plan-agent-topic-planner.md` | Phase 4b | Einzelnes Topic planen mit IMP-* Slices und Parallelisierungs-Hinweisen |
-| `agents/plan-review-optimist-agent.md` | Phase 5 | Risiko-Review aus konstruktiver Perspektive |
-| `agents/plan-review-pessimist-agent.md` | Phase 5 | Risiko-Review aus skeptischer Perspektive |
-| `agents/plan-review-normalo-agent.md` | Phase 5 | Risiko-Review aus pragmatischer Perspektive (Ausführbarkeit) |
-| `agents/plan-review-oberlehrer-agent.md` | Phase 5 | Pedantischer Qualitäts-Review |
-| `agents/plan-review-professor-agent.md` | Phase 5 | Tiefenanalyse mit Priorisierung |
-
-#### Parameters
-
-_keine_
-
----
-
-### implementation-workflow
-
-Agent-Mode Umsetzung in 1–10 Slices mit Hard Gate und Implement-Review-Loop (max. 3 Iterationen: Technik-Gate, 6 Reviews, Fix-Planer, Fix-Slices; Rest-Findings-Bericht wenn nach Iteration 3 noch offen) bei Pflicht-build-log-filter.
-
-**Abhängigkeiten:** `build-log-filter`
-
-#### Operations
-
-| Operation | Trigger |
-|-----------|---------|
-| Umsetzung starten | `implementiere`, `setze um`, `starte die Umsetzung` |
-| Bug fixen | `fix`, `behebe`, `korrigiere` |
-| Plan ausführen | `leg los`, `go ahead`, `führe den Plan aus` (nach Freigabe) |
-| Slice fortsetzen | `nächster Slice`, `weiter`, `mach weiter` |
-
-```
-implementiere bitte den Plan
-setze den Plan um
-fix den Login-Bug
-leg los
-go ahead
-nächster Slice
-implementiere die Erweiterung laut Plan
-```
-
-#### Rules
-
-| Datei | Trigger |
-|-------|---------|
-| `rules/implementation-workflow-skill.mdc` | `implementiere`, `setze um`, `fix`, `leg los`, `go ahead`, Plan-Freigabe im Thread, `IMP-*`, `Hard Gate` |
-
-#### Skills
-
-| Datei | Inhalt |
-|-------|--------|
-| `skills/implementation-workflow/SKILL.md` | Hard Gate (Schritt 1), Slice-Implementierung (Schritt 2), Implement-Review-Loop max. 3× (Schritt 3) |
-
-#### References
-
-| Datei | Inhalt |
-|-------|--------|
-| `references/subagent-model-before-task.md` | Pflicht: Modell aus Agent-Profil vor Task |
-| `references/verification-commands.md` | Projektspezifische Build/Test-Befehle pro Stack |
-
-#### Sub-Agents
-
-| Agent | Schritt | Aufgabe |
-|-------|---------|---------|
-| `agents/implement-agent.md` | Schritt 2 | Implementiert einen IMP-* Slice inkl. Build/Test + build-log-filter |
-| `agents/implement-review-pessimist-agent.md` | Schritt 3 | Risiko-Review mit MCP-Evidenz |
-| `agents/implement-review-lehrer-agent.md` | Schritt 3 | Fachlich-strenger Review |
-| `agents/implement-review-normalo-agent.md` | Schritt 3 | Pragmatischer Ausführbarkeits-Review |
-| `agents/implement-review-oberlehrer-agent.md` | Schritt 3 | Pedantischer Form-/Qualitäts-Review |
-| `agents/implement-review-professor-agent.md` | Schritt 3 | Tiefenreview mit Priorisierung |
-| `agents/implement-review-optimist-agent.md` | Schritt 3 | Stärken- und Chancen-Review |
-| `agents/implement-fix-planner-agent.md` | Schritt 3 | Evidenzbasierte Fix-Teilplanung |
-
-#### Parameters
-
-| Parameter | Beschreibung |
-|-----------|-------------|
-| `{frontend-path}` | Angular-App-Pfad (CWD für `ng build`, `ng test`) |
-| `{backend-path}` | Backend-Pfad (CWD für `dotnet build`, `dotnet test`) |
-
----
-
-## Install & Update
-
-### Packages installieren / aktualisieren
-
+**Windows (PowerShell):**
 ```powershell
-# Alle Packages installieren (ADO wird separat abgefragt)
-.\AI-Skills\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor
-
-# Cursor + Claude Code gleichzeitig
-.\AI-Skills\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
-
-# Vorschau ohne Dateikopie
-.\AI-Skills\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor -DryRun
-
-# Verfügbare Packages anzeigen
+# Verfügbare Pakete anzeigen
 .\AI-Skills\install-cursor-skills.ps1 -List
+
+# Deployen (Cursor + Claude Code)
+.\AI-Skills\install-cursor-skills.ps1 C:\project\.cursor C:\project\.claude
+
+# Update (manifest-basiert, entfernt veraltete Dateien)
+.\AI-Skills\update-cursor-skills.ps1 C:\project\.cursor C:\project\.claude
 ```
 
-### Packages updaten
-
-Aktualisiert alle bereits installierten Packages (laut `installed-manifest.json`). Packages die nicht mehr in `packages/` existieren werden entfernt. User-eigene Skills/Agents bleiben unangetastet.
-
-```powershell
-# Alle installierten Packages aktualisieren
-.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor
-
-# Cursor + Claude Code gleichzeitig
-.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
-
-# Vorschau ohne Änderungen
-.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor -DryRun
+**Linux/macOS:**
+```bash
+./AI-Skills/install-skill.sh all /path/to/project/.cursor /path/to/project/.claude
 ```
 
-### Parameter befüllen
+---
 
-Nach der Installation alle `{parameter}`-Platzhalter in `agents/`, `rules/` und `skills/` ersetzen:
+## Was wohin deployed wird
 
-```powershell
-# Interaktiv — speichert Werte in .cursor/skill-params.json
-.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor
-```
-
-### Host-spezifische Konfiguration
-
-| Datei | Was zu tun ist |
-|-------|---------------|
-| `mcp.json` | MCP-Server konfigurieren (ADO-Organisation, Docker-Images). Dev-Tooling-Ports: **8091** (filesystem), **8092** (angular), **8093** (dotnet) |
-| `AGENTS.md` (Repo-Root) | Verfügbare Agent-Typen, Trigger, Stack-Konventionen, Styleguide |
-| `references/verification-commands.md` | Build/Test-Befehle pro Stack eintragen |
-| `skills/ado/config.defaults.json` | `defaultProject` (GUID) + `defaultOrganization` setzen (nur ADO) |
-
-### Claude Code — Dual-Deployment
-
-Skills, Agents und References werden auch für Claude Code deployt, wenn `-TargetClaudePath` angegeben wird.
-Rules (`.mdc`) sind Cursor-only und werden nicht nach `.claude/` kopiert.
-
-```powershell
-# Installieren: Cursor + Claude Code gleichzeitig
-.\AI-Skills\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
-
-# Updaten: Cursor + Claude Code gleichzeitig
-.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
-```
-
-**Was wohin deployt wird:**
-
-| Artifact | `.cursor/` | `.claude/` |
+| Artefakt | `.cursor/` | `.claude/` |
 |----------|-----------|-----------|
-| Rules (`.mdc`) | ✓ `rules/` | — |
-| Skills | ✓ `skills/<name>/` | ✓ `skills/<name>/` |
-| Agents (`.md`) | ✓ `agents/` | ✓ `agents/` |
-| References | ✓ `references/` | ✓ `references/` |
-| Docs (AGENTS.md) | ✓ root | — |
-
-Nach dem Deployment relative Pfade zwischen Skills und Agents bleiben identisch — `.cursor/skills/planning-workflow/` und `.claude/skills/planning-workflow/` haben die gleiche Ordnertiefe zum jeweiligen `agents/`-Verzeichnis.
-
----
-
-### Package-Abhängigkeiten
-
-```
-ado-requests-stories      →  (keine — Buddy optional separat)
-buddy-agent               →  describe-as, commit-message
-angular-refactor          →  angular-bundle
-angular-material          →  angular-bundle
-angular-material-*        →  angular-bundle
-describe-as-html-prompt   →  describe-as-prompt
-implementation-workflow   →  build-log-filter
-conversation-insights     →  (keine)
-planning-workflow         →  (keine)
-```
-
----
-
-### Package pflegen — immer zusammen ändern
-
-Wenn ein Skill, eine Rule, ein Agent oder ein Parameter neu hinzukommt oder geändert wird, müssen **immer** alle vier Artefakte konsistent gehalten werden:
-
-| Artefakt | Pfad | Was zu tun |
-|----------|------|-----------|
-| Inhalt | `skills/`, `agents/`, `rules/` | Datei anlegen / bearbeiten |
-| Package-Manifest | `packages/<name>.json` | Datei in `skills`, `agents`, `rules`, `references`, `params` eintragen |
-| Readme | `Readme.md` | Package-Abschnitt: Operations, Rules, Skills, Sub-Agents, Parameters aktualisieren |
-| Parameter | `{platzhalter}` im Inhalt | In `packages/<name>.json` → `"params"` listen; in Readme → Parameters-Tabelle pflegen |
-
-**Faustregel:** Wenn das Package-Manifest oder die Readme nicht mehr zum Inhalt passen, bricht der Deploy für andere Nutzer lautlos oder mit falschen Werten.
+| Rules (`.mdc`) | ✅ `rules/` | — nur Cursor |
+| Skills | ✅ `skills/<name>/` | ✅ `skills/<name>/` |
+| Agents | ✅ `agents/` | ✅ `agents/` |
+| References | ✅ `references/` | ✅ `references/` |
+| Docs (AGENTS.md) | ✅ root | — |

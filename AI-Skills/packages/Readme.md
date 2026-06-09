@@ -84,7 +84,7 @@ Statische Code-Analyse über MCP (AST, Index, Refactoring-Safety, Nullability, A
 |-----|---------|
 | Rule | `rules/codebase-analyzer.mdc` |
 | Skill | `skills/codebase-analyzer/` |
-| MCP | Docker-Image `devesen/dv.codebase-analyzer-mcp:latest` (lokal: `dv-codebase-analyzer-mcp:local`) |
+| MCP | Docker-Image `devesen/codebase-analyzer-mcp:latest` (lokal: `dv-codebase-analyzer-mcp:local`) |
 
 Keine Parameter — `{frontend-path}` / `{backend-path}` werden aus `./AGENTS.md` gelesen.
 

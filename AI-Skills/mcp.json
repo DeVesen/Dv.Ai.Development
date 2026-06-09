@@ -8,7 +8,7 @@
         "--rm",
         "-p",
         "127.0.0.1:8089:8089",
-        "devesen/dv.build-log-filter-mcp:latest"
+        "devesen/build-log-filter-mcp:latest"
       ],
       "transport": "stdio"
     },
@@ -22,7 +22,7 @@
         "127.0.0.1:8090:8090",
         "-v",
         "${workspaceFolder}:/workspace:ro",
-        "devesen/dv.codebase-analyzer-mcp:latest"
+        "devesen/codebase-analyzer-mcp:latest"
       ],
       "transport": "stdio",
       "autoApprove": [
@@ -83,7 +83,7 @@
         "${workspaceFolder}:/project:ro",
         "-e",
         "PROJECT_ROOT=/project",
-        "devesen/dv.dev-filesystem-mcp:latest"
+        "devesen/dev-filesystem-mcp:latest"
       ],
       "transport": "stdio",
       "autoApprove": [
@@ -103,7 +103,7 @@
         "--rm",
         "-p",
         "127.0.0.1:8092:8092",
-        "devesen/dv.dev-angular-mcp:latest"
+        "devesen/dev-angular-mcp:latest"
       ],
       "transport": "stdio",
       "autoApprove": [
@@ -119,7 +119,7 @@
         "--rm",
         "-p",
         "127.0.0.1:8093:8093",
-        "devesen/dv.dev-dotnet-mcp:latest"
+        "devesen/dev-dotnet-mcp:latest"
       ],
       "transport": "stdio",
       "autoApprove": [

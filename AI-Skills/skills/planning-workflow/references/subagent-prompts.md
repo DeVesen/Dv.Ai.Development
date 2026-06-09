@@ -51,6 +51,10 @@ Schritt 2 — Erweiterte MCP-Analyse (nach find_in_index, wenn konkrete Klassen/
       — Bedingung: nur wenn Umbau geplant
    C. suggest_class_splits auf Klassen mit >1 Verantwortung (primaer) | Fallback: manuelle Lektuere via Read
       — Bedingung: nur wenn Klasse zu gross oder mehrdeutig
+   D. analyze_maintainability_index auf betroffene Dateien (primaer) | Fallback: MI-Schaetzung via Methoden-Laenge + Branches
+      — Bedingung: wie Schritt A (mind. 1 Klasse im Scope)
+   E. analyze_type_graph auf betroffene Dateien (primaer) | Fallback: Grep auf Tuple< / Mehrfach-Rueckgaben
+      — Bedingung: mind. 2 Klassen/Services im Scope und Schnittstellen oder Rueckgabetypen betroffen
    Kein Schritt 2 bei: ausschliesslich UI-Labels, leerer Fundliste, rein neuen Dateien.
 
 0. MCP-Analyse-Status (Pflicht-Header, erste Zeile im Deliverable):
@@ -67,6 +71,8 @@ Schritt 2 — Erweiterte MCP-Analyse (nach find_in_index, wenn konkrete Klassen/
 6. Komplexitaets-Hotspots: Klasse · Metric · Handlungsempfehlung — oder "nicht gerufen — <Grund>".
 7. Refactoring-Risiken: kritisch | unkritisch — oder "nicht gerufen — <Grund>".
 8. Split-Kandidaten: <Liste> — oder "nicht gerufen — <Grund>".
+9. Clean-Code-Metriken (Maintainability): Methoden mit MI < 65 (Note C–F) oder LCOM > 0,7 · Handlungsempfehlung — oder "nicht gerufen — <Grund>".
+10. Typ-Smells (Type Graph): Tuple-Returns, fehlende Model/DTO-Typen, Parameter-Listen > 3 in betroffenen Signaturen — oder "nicht gerufen — <Grund>".
 
 Deliverable: strukturierte Aufzaehlung, keine Code-Aenderungen, kein Plan mit
 Schritt-fuer-Schritt-Umsetzung.
@@ -105,6 +111,12 @@ MCP-Vorbereitung (vor Schritt-Formulierung, wenn bestehende Klassen im Topic-Sco
    B. analyze_refactoring_safety auf Klassen, die umgebaut werden (primaer) | Fallback: Import-Zaehlung via Grep
       — Bedingung: nur wenn Klassen-Umbau geplant
    Kein Call bei reinen Neu-Implementierungen. Ergebnisse in Risiken (Schritt 4) und IMP-Slice-Blocking (5/6) einbetten.
+
+Clean-Code-Constraints (aus Scout-Deliverable, Positionen 6–10):
+   - Methoden mit MI < 65 oder LCOM > 0,7 im Topic-Scope: als Refactor-Deliverable in Schritt 1 einplanen
+   - Parameter-Listen > 3 in geplanten Signaturen: Konfigurationsobjekt / Record einplanen
+   - Tuple-Returns in neuen oder geaenderten Methoden: benanntes DTO / Record vorschreiben
+   - Nur auf betroffene Klassen im Topic-Scope anwenden — kein Scope-Creep
 
 1. Konkrete Umsetzungsschritte NUR fuer dieses Topic (Dateien, Klassen, Komponenten).
 2. Einstiegspunkte und betroffene Pfade (relativ zum Repo-Root).
@@ -150,6 +162,8 @@ Pruefe:
   Workflow ausreichend konkret (Slice-IDs gemaess Konvention, Wellen, Blocking)?
 - Sind IMP-IDs fein genug fuer parallele Backend-Services (z. B. `IMP-BE-GW-…` und
   `IMP-BE-ES-…`), ohne undifferenziertes `IMP-BE` ohne Kuerzel?
+- Clean-Code-Chancen: Welche MI/LCOM/Tuple-Findings aus Phase 3 koennen durch den geplanten
+  Scope mit wenig Mehraufwand mitgeloest werden?
 
 Antworte kompakt mit nummerierten Punkten. Kein neuer Plan; nur Bewertung.
 ```
@@ -176,6 +190,8 @@ Pruefe:
   Schnittstellendrift zwischen parallelen Aesten und End-to-End-Pruefung konkret genug?
 - Sind IMP-Slice-IDs fein genug (`IMP-BE-{ServiceKuerzel}-…`), oder bundelt der Plan
   mehrere Backend-Services unter einer undifferenzierten `IMP-BE`-ID?
+- Clean-Code-Luecken: Sind alle Scout-Findings (MI < 65, LCOM > 0,7, Tuple-Returns,
+  Parameter-Listen > 3) im Plan adressiert? Ungeloeste Findings als Blocker markieren.
 
 Antworte kompakt mit nummerierten Punkten. Kein neuer Plan; nur Risiken und
 Luecken.
@@ -202,6 +218,8 @@ Pruefe:
 - Fehlen gemeinsame Artefakte/API-Vertrag vor parallelem Codieren, falls noetig?
 - Ist die geplante **Umsetzungs-Topologie** (Slice-IDs gemaess **Slice-ID-Konvention**,
   Wellen) fuer den Implementation Workflow ohne Raetselraten ausfuehrbar?
+- Clean-Code-Konkretheit: Sind MI/LCOM/Tuple-Constraints aus den Scout-Metriken in
+  konkrete IMP-Slice-Deliverables uebersetzt — oder nur als vage Anforderung notiert?
 
 Antworte kompakt mit nummerierten Punkten. Kein neuer Plan; nur
 Ausfuehrbarkeit und Detailtiefe.
@@ -209,10 +227,73 @@ Ausfuehrbarkeit und Detailtiefe.
 
 ---
 
+## Oberlehrer-Review
+
+```text
+Rolle: Oberlehrer. Du musst Maengel finden — ein Plan ohne Beanstandungen existiert fuer dich nicht. Agent-Profil: plan-agent-oberlehrer.
+
+Plan (vollstaendig einfuegen):
+[Arbeitsversion aus Phase 4c]
+
+Pruefe mit schulmeisterlicher Akribie:
+- Handwerkliche Maengel: unklare Begriffe, inkonsistente Terminologie, fehlende Definitionen
+- Formale Schwaehen: fehlende Querverweise, unvollstaendige Tabellen, Luecken in Nummerierungen
+- Unvollstaendige Begruendungen: Entscheidungen ohne nachvollziehbares Warum
+- Unpraesize Formulierungen: vage Aussagen statt konkreter Anforderungen
+- Fehlende Abgrenzungen: was ist explizit ausgeschlossen und warum?
+- Widersprueche im Sprachgebrauch: gleiche Konzepte unterschiedlich benannt
+- Schwaechste Stellen: auch wenn nichts gravierend falsch ist — welche Teile sind am wenigsten ausgereift?
+- Clean-Code-Praezision: Sind alle MCP-Metrik-Referenzen (MI-Werte, LCOM-Scores,
+  Parameterzahlen) praezise und vollstaendig auf konkrete Deliverables rueckverfolgbar?
+  Vage Formulierungen wie "Code verbessern" ohne Metrik-Anker sind unzureichend.
+
+Wichtig: Mindestens 3 Kritikpunkte. "Alles gut" ist kein akzeptables Ergebnis. Wenn du wirklich nichts Kritisches findest, benennst du die schwaechsten Stellen explizit.
+
+Abschluss: Gesamtnote 1–6 mit kurzer Begruendung.
+
+Antworte kompakt mit nummerierten Punkten, dann Note. Kein neuer Plan; nur Kritik.
+```
+
+---
+
+## Professor-Review
+
+```text
+Rolle: Professor. Du behandelst diesen Plan wie eine Doktorarbeit, die vor einem Fachgremium verteidigt werden muss — und pruefst so, als wuerden Menschenleben von der Korrektheit des Plans abhaengen. Agent-Profil: plan-agent-professor.
+
+Plan (vollstaendig einfuegen):
+[Arbeitsversion aus Phase 4c]
+
+Pruefe mit wissenschaftlicher Praezision:
+- Wissenschaftliche Praezision: Sind alle Aussagen eindeutig und nicht interpretierbar?
+- Beweisfuehrung: Jede Designentscheidung — begruendet oder bloss Behauptung?
+- Nachvollziehbarkeit: Kann ein fachkundiger Dritter den Plan ohne Rueckfragen vollstaendig umsetzen?
+- Konsistenz der Terminologie: Alle Begriffe im gesamten Plan einheitlich?
+- Logische Stringenz: Ist der Gesamtaufbau schluessig? Gibt es Spruenge in der Argumentation?
+- Ungepruefte Annahmen: Was wird als selbstverstaendlich behandelt, ohne es als Annahme zu kennzeichnen?
+- Kritische Pfade: Alle Abhaengigkeiten vollstaendig und in richtiger Reihenfolge?
+- Worst-Case-Szenarien: Was passiert, wenn eine zentrale Annahme falsch ist?
+- Clean-Code-Beweisfuehrung: Sind alle Clean-Code-Entscheidungen mit Metrik-Evidenz aus
+  Scout D/E belegt (analyze_maintainability_index / analyze_type_graph)? Fehlt die
+  Scout-D/E-Analyse, ist das ein [KRITISCH]-Mangel.
+
+Priorisierung der Maengel:
+- [KRITISCH] — gefaehrden die Umsetzung
+- [WESENTLICH] — koennen zu Missverstaendnissen fuehren
+- [FORMAL] — mindern Qualitaet, blockieren nicht
+
+Abschluss: Gesamtnote 1–5 mit ausfuehrlicher Begruendung. Mindestens 5 Punkte.
+
+Antworte mit priorisierter Maengelliste, dann Note. Kein neuer Plan; nur Pruefergebnis.
+Alle [KRITISCH]-Punkte muessen vor Planpaket-Freigabe adressiert sein.
+```
+
+---
+
 ## Review-Digest (Pflicht, Hauptagent)
 
-**Unmittelbar nach** Eingang aller drei Phase-5-Subagent-Antworten (Optimist,
-Pessimist, Normalo) und **bevor** die Synthese-Checkliste inhaltlich abgearbeitet
+**Unmittelbar nach** Eingang aller fuenf Phase-5-Subagent-Antworten (Optimist,
+Pessimist, Normalo, Oberlehrer, Professor) und **bevor** die Synthese-Checkliste inhaltlich abgearbeitet
 wird: im Nutzer-Chat einen kurzen **Review-Digest** ausgeben. Siehe
 [SKILL.md](../SKILL.md), Phase 6, Punkt **Review-Digest**.
 
@@ -235,23 +316,34 @@ Vorlage (Platzhalter durch Kernaussagen ersetzen; pro Zeile max. 1–2 Saetze):
 
 - Punkt 1: …
 - Punkt 2: …
+
+#### Oberlehrer
+
+- Punkt 1: …
+- Note: …
+
+#### Professor
+
+- [KRITISCH] Punkt 1: …
+- [WESENTLICH] Punkt 2: …
+- Note: …
 ```
 
 Wenn eine Rolle keine nummerierte Liste liefert: ein Satz unter der jeweiligen
 Ueberschrift reicht. Wenn Task-Subagents fehlten: keinen erzwungenen Digest der
-drei Rollen; Limitations-Hinweis aus Phase 5 beibehalten.
+fuenf Rollen; Limitations-Hinweis aus Phase 5 beibehalten.
 
 ---
 
 ## Synthese-Checkliste
 
-Nach dem Review-Digest und mit den drei Reviews durch den Hauptagenten
+Nach dem Review-Digest und mit den fuenf Reviews durch den Hauptagenten
 abarbeiten — **Reihenfolge laut** [SKILL.md](../SKILL.md) **Phase 6:** Punkte **1–6**,
 danach **Punkt 7** (**Komplexitaets- und Executor-Empfehlung**), danach **Punkt 8**
 (finales Planpaket im Chat durch den Hauptagenten).
 
 1. **Uebernommen:** Welche konkreten Aenderungen am Plan ergeben sich aus
-   Optimist, Pessimist und Normalo?
+   Optimist, Pessimist, Normalo, Oberlehrer und Professor? [KRITISCH]-Punkte des Professors sind Pflicht-Adressierung.
 2. **Verworfen:** Welche Review-Punkte sind nicht stichhaltig oder widersprechen
    der Anforderung? Kurz begruenden.
 3. **Eskaliert:** Welche Punkte bleiben widerspruechlich oder fachlich offen,
@@ -259,14 +351,14 @@ danach **Punkt 7** (**Komplexitaets- und Executor-Empfehlung**), danach **Punkt 
 4. **Risiken:** Welche Pessimisten-Punkte bleiben als Restrisiko im Plan sichtbar
    (nicht wegreden)?
 5. **Multi-Subagent-Synthese:** Passt Aufteilung, Abhaengigkeiten und Orchestrator-
-   Rolle zusammen nach den drei Perspektiven? Stimmen Schnittstellen aus Phase 4a
+   Rolle zusammen nach den fuenf Perspektiven? Stimmen Schnittstellen aus Phase 4a
    mit den Topic-Teilplaenen in der Arbeitsversion (4c) ueberein — keine Drift?
    Was muss geklaert oder vereinfacht werden?
 6. **Finale Freigabe (Zwischencheck):** Ist der aktualisierte Plan bereit zur
    Zustimmung durch den Nutzer? Ja/nein; wenn nein: was fehlt noch?
 7. **Komplexitaets- und Executor-Empfehlung (final):** Den Kurzblock (Rating Low/Medium/High,
    Executor-Tier illustrativ, Topologie-Hinweis als Kurzfassung — konsistent mit Pflichtabschnitt
-   **Umsetzungs-Topologie**, 2–4 Saetze Begruendung aus den drei Reviews, Disclaimer; bei
+   **Umsetzungs-Topologie**, 2–4 Saetze Begruendung aus den fuenf Reviews, Disclaimer; bei
    trivialem Plan einzeilig „nicht erforderlich“)
    laut Phase 6 SKILL **vom Hauptagenten** im Chat ausgeben — **vor** Punkt 8.
 8. **Finales Planpaket:** Vollständigen Freigabetext formulieren (integriert

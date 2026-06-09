@@ -7,21 +7,21 @@ description: >
   einem bis zu zehn **plan-agent-scout**-Laeufen (Phase 3), anschliessend **Phase 4** in **4a** (Orchestrator
   **plan-agent**: Topic-Map und Schnittstellen-Vertrag), **4b** (bis zu zehn **plan-agent-topic-planner**,
   je ein Topic mit Tech-Mindset und Teilplan inkl. paralleler Implementierung) und **4c** (Merge zur
-  **Arbeitsversion**), verpflichtendes Drei-Perspektiven-Review (**plan-agent-optimist**,
-  **plan-agent-pessimist**, **plan-agent-normalo**), Synthese und finales Planpaket mit verbindlicher
+  **Arbeitsversion**), verpflichtendes Fuenf-Perspektiven-Review (**plan-agent-optimist**,
+  **plan-agent-pessimist**, **plan-agent-normalo**, **plan-agent-oberlehrer**, **plan-agent-professor**), Synthese und finales Planpaket mit verbindlicher
   **Umsetzungs-Topologie** fuer den [Implementation Workflow](../implementation-workflow/SKILL.md)
   (1–10 Implementierungs-Slices, **Slice-ID-Konvention** IMP-FE-{Bereich}/IMP-BE-{ServiceKuerzel},
   Wellen, Integration); Phase 6 formuliert der Orchestrator **plan-agent**.
   Agent-Profile und **Modellwahl** zentral unter `.cursor/agents/plan-agent*.md`; Abschnitt
   **Subagent-Typen und Agent-Definitionen** in diesem Skill. Phase 6 umfasst Review-Digest,
-  Synthese, Komplexitaets- und Executor-Empfehlung. Drei-Perspektiven-Review nicht optional.
+  Synthese, Komplexitaets- und Executor-Empfehlung. Fuenf-Perspektiven-Review nicht optional.
   Trigger (vollstaendig: .cursor/rules/planning-workflow-skill.mdc): plane/plane bitte/,
   plane die Korrektur/Erweiterung/Anpassung, plane das; Plan/Roadmap/Umsetzungsplan;
   implizit Wie gehen wir vor, Vorgehen skizzieren,
   Optionen/Strategie/Trade-offs, Migration/Refactor/Architektur, lass uns planen,
   noch nicht umsetzen; @planning-workflow-skill, @.cursor/rules/planning-workflow-
   skill.mdc, @.cursor/skills/planning-workflow; Plan Mode mit Code-Bezug; Meta Phase
-  3/Scout, Phase 4a/4b/4c, Topic-Planer, Schnittstellen-Design, Drei-Perspektiven-Review,
+  3/Scout, Phase 4a/4b/4c, Topic-Planer, Schnittstellen-Design, Fuenf-Perspektiven-Review,
   Umsetzungs-Topologie; EN write a plan, how
   should we approach, outline/break down; Kombi plane und implementiere zuerst
   Planning. Nicht bei reiner Erklaerung, Plan umsetzen, Handoff describe-as-prompt.
@@ -56,7 +56,7 @@ Review auf unvollstaendigem Plan.
 
 | **3** | Plan erstellen | 4a → 4b → 4c (Arbeitsversion) | Stufe 2 (+ Scout-Merge) |
 
-| **4** | Plan reviewen lassen | 5 (Optimist, Pessimist, Normalo) | Stufe 3 (**fertige 4c-Arbeitsversion**) |
+| **4** | Plan reviewen lassen | 5 (Optimist, Pessimist, Normalo, Oberlehrer, Professor) | Stufe 3 (**fertige 4c-Arbeitsversion**) |
 
 | **5** | Synthese & Freigabe | 6 | Stufe 4 |
 
@@ -66,7 +66,7 @@ Review auf unvollstaendigem Plan.
 
 - Stufe 3: mehrere **`plan-agent-topic-planner`** parallel (je Topic), **nicht** parallel zu 4c-Merge oder Stufe 4.
 
-- Stufe 4: drei Review-Agenten parallel **untereinander**, **nicht** waehrend 4b laeuft.
+- Stufe 4: fuenf Review-Agenten parallel **untereinander**, **nicht** waehrend 4b laeuft.
 
 **Verboten (haeufiger Orchestrator-Fehler):**
 
@@ -120,11 +120,15 @@ Diese Rollen sind **fest** — unabhaengig vom Host. Prompt-Vorlagen (Platzhalte
 
 | **Topic-Planer** | 4b | bevorzugt | 10 | nein | [`plan-agent-topic-planner`](../../agents/plan-agent-topic-planner.md) |
 
-| **Optimist** | 5 | bevorzugt (×3) | 1 | nein | [`plan-agent-optimist`](../../agents/plan-agent-optimist.md) |
+| **Optimist** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-optimist`](../../agents/plan-agent-optimist.md) |
 
-| **Pessimist** | 5 | bevorzugt (×3) | 1 | nein | [`plan-agent-pessimist`](../../agents/plan-agent-pessimist.md) |
+| **Pessimist** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-pessimist`](../../agents/plan-agent-pessimist.md) |
 
-| **Normalo** | 5 | bevorzugt (×3) | 1 | nein | [`plan-agent-normalo`](../../agents/plan-agent-normalo.md) |
+| **Normalo** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-normalo`](../../agents/plan-agent-normalo.md) |
+
+| **Oberlehrer** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-oberlehrer`](../../agents/plan-agent-oberlehrer.md) |
+
+| **Professor** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-professor`](../../agents/plan-agent-professor.md) |
 
 **Verboten:** Rollensimulation im Orchestrator-Turn. **Verboten:** Implementierungs- oder
 
@@ -152,6 +156,10 @@ primär, sonst YAML-Frontmatter — **nicht** in diesem Skill oder in Rules dupl
 | `plan-agent-pessimist` | [plan-agent-pessimist.md](../../agents/plan-agent-pessimist.md) |
 
 | `plan-agent-normalo` | [plan-agent-normalo.md](../../agents/plan-agent-normalo.md) |
+
+| `plan-agent-oberlehrer` | [plan-agent-oberlehrer.md](../../agents/plan-agent-oberlehrer.md) |
+
+| `plan-agent-professor` | [plan-agent-professor.md](../../agents/plan-agent-professor.md) |
 
 **Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; **primär** Abschnitt **`## Modell`**, sonst YAML; Slugs **nicht** hier duplizieren.
 
@@ -185,7 +193,7 @@ plan-agent (Phase 1–2)
 
   → plan-agent: Phase 4c Merge
 
-  → plan-agent-optimist | pessimist | normalo  (Phase 5, parallel bevorzugt)
+  → plan-agent-optimist | pessimist | normalo | oberlehrer | professor  (Phase 5, parallel bevorzugt)
 
   → plan-agent: Phase 6 Synthese + finales Planpaket
 
@@ -261,7 +269,7 @@ plan-agent (Phase 1–2)
 
   als Nutzerfrage markieren. **Ohne** abgeschlossene 4b **kein** 4c.
 
-- **Drei-Perspektiven-Review (Phase 5):** verpflichtend, ohne Nutzer-Opt-in. Gate: erst nach vollstaendiger 4c-Arbeitsversion (nicht Scout-Notizen/4a-Schnittstellen). Je ein Lauf `plan-agent-optimist`/`pessimist`/`normalo` — parallel bevorzugt; sonst sequenziell drei Task-Subagent-Laeufe. **Verboten:** Rollensimulation statt Subagents. → Phase 5 (vollstaendige Ausfuehrungsregeln).
+- **Fuenf-Perspektiven-Review (Phase 5):** verpflichtend, ohne Nutzer-Opt-in. Gate: erst nach vollstaendiger 4c-Arbeitsversion (nicht Scout-Notizen/4a-Schnittstellen). Je ein Lauf `plan-agent-optimist`/`pessimist`/`normalo`/`oberlehrer`/`professor` — parallel bevorzugt; sonst sequenziell fuenf Task-Subagent-Laeufe. **Verboten:** Rollensimulation statt Subagents. → Phase 5 (vollstaendige Ausfuehrungsregeln).
 
 - Parallele Subagenten **nur innerhalb derselben Stufe** (siehe **Phasen-Gates**); **keine**
 
@@ -408,8 +416,10 @@ Scouts rufen zusätzlich (MCP primär, Fallback nur bei MCP-Fehler):
 | A | `analyze_complexity` auf betroffene Dateien | Methoden-Länge via Grep | mind. 1 Klasse im Scope |
 | B | `analyze_refactoring_safety` auf Klassen mit geplantem Umbau | Abhängigkeiten via `find_in_index` | nur bei Umbau |
 | C | `suggest_class_splits` bei Klassen mit >1 Verantwortung | Manuelle Lektüre via Read | nur wenn relevant |
+| D | `analyze_maintainability_index` auf betroffene Dateien | MI-Schätzung via Methoden-Länge + Branches | wie Schritt A (mind. 1 Klasse im Scope) |
+| E | `analyze_type_graph` auf betroffene Dateien | Grep auf `Tuple<` / Mehrfach-Rückgaben | mind. 2 Klassen/Services im Scope **und** Schnittstellen oder Rückgabetypen betroffen |
 
-Scouts dokumentieren im Deliverable: MCP-Analyse-Status + Positionen 6–8 (Hotspots, Risiken, Split-Kandidaten).
+Scouts dokumentieren im Deliverable: MCP-Analyse-Status + Positionen 6–10 (Hotspots, Risiken, Split-Kandidaten, Maintainability-Findings, Typ-Smells).
 
 **Orchestrator-Vorindizierung (empfohlen, bei Multi-Scout mit Symbolen):** Orchestrator
 ruft **vor** Scout-Delegation einmal pro betroffenen Stack `index_project` auf und gibt
@@ -572,39 +582,45 @@ Der **Hauptagent** fuehrt zusammen:
 
 **Ohne** 4b **kein** 4c. Bei **einem** Topic: ein Planer, Merge trotzdem in 4c.
 
-## Phase 5 - Drei-Perspektiven-Review (verpflichtend)
+## Phase 5 - Fuenf-Perspektiven-Review (verpflichtend)
 
 **Pflichtphase.** Darf nicht uebersprungen werden. Die **Arbeitsversion aus Phase 4c** wird
 
-immer durch **drei** getrennte Review-Rollen geprueft: **Optimist**, **Pessimist**,
+immer durch **fuenf** getrennte Review-Rollen geprueft: **Optimist**, **Pessimist**,
 
-**Normalo**. Ziel ist ein echtes Drei-Perspektiven-Review mit **drei Task-
+**Normalo**, **Oberlehrer**, **Professor**. Ziel ist ein echtes Fuenf-Perspektiven-Review mit **fuenf Task-
 
 Subagent-Laeufen** und klar getrennten Rolleninhalten (siehe Leitprinzipien:
 
 **keine Rollensimulation** durch den Hauptagenten).
 
-**Ausfuehrung:** Je Rolle **genau ein** Lauf mit **`plan-agent-optimist`**, **`plan-agent-pessimist`**
+**Ausfuehrung:** Je Rolle **genau ein** Lauf mit dem passenden Agent-Typ; wenn die Plattform **parallel** erlaubt, alle fuenf parallel
 
-bzw. **`plan-agent-normalo`**; wenn die Plattform **parallel** erlaubt, alle drei parallel
+starten.
 
-starten. Prompts aus [references/subagent-prompts.md](references/subagent-prompts.md); Profile unter [../../agents/](../../agents/).
+| Rolle | Agent-Typ |
+|-------|-----------|
+| Optimist | `plan-agent-optimist` |
+| Pessimist | `plan-agent-pessimist` |
+| Normalo | `plan-agent-normalo` |
+| Oberlehrer | `plan-agent-oberlehrer` |
+| Professor | `plan-agent-professor` |
+
+Prompts aus [references/subagent-prompts.md](references/subagent-prompts.md); Profile unter [../../agents/](../../agents/).
 
 **Modell:** Ziel-Profil — [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
 
 **Fallback bei fehlender Parallelitaet:** ohne Nutzerabfrage **sequenziell** dieselben
 
-drei **Task-Subagent**-Laeufe nacheinander (Reihenfolge optional z. B. Optimist →
+fuenf **Task-Subagent**-Laeufe nacheinander (Reihenfolge optional z. B. Optimist →
 
-Pessimist → Normalo oder wie im Team vereinbart — **konsequent dokumentieren**).
+Pessimist → Normalo → Oberlehrer → Professor oder wie im Team vereinbart — **konsequent dokumentieren**).
 
-**Verboten:** **Rollensimulation** durch den Hauptagenten in drei Rollenabschnitten
-
-als Ersatz fuer Subagents.
+**Verboten:** **Rollensimulation** durch den Hauptagenten als Ersatz fuer Subagents.
 
 **Wenn Task-Subagents / Task-Tool fehlen:** im Plan-Output **transparent**
 
-melden (z. B. „Drei-Perspektiven-Review mit Task-Subagents nicht ausfuehrbar“),
+melden (z. B. „Fuenf-Perspektiven-Review mit Task-Subagents nicht ausfuehrbar“),
 
 **kein** verdeckter Ersatz durch Rollenspiel; ggf. Arbeitsversion mit
 
@@ -682,13 +698,13 @@ mehrere `IMP-BE-*`-Slices koennen denselben Backend-verify-Stack teilen.
 
 ## Phase 6 - Synthese und Freigabe
 
-**Voraussetzung:** abgeschlossenes Drei-Perspektiven-Review aus Phase 5 (alle drei
+**Voraussetzung:** abgeschlossenes Fuenf-Perspektiven-Review aus Phase 5 (alle fuenf
 
 Perspektiven vorhanden).
 
-- **Review-Digest (Pflicht, zuerst, Nutzer-Chat):** Liegen alle drei
+- **Review-Digest (Pflicht, zuerst, Nutzer-Chat):** Liegen alle fuenf
 
-  Task-Subagent-Rueckgaben aus Phase 5 vor **und** wurde das Drei-Perspektiven-
+  Task-Subagent-Rueckgaben aus Phase 5 vor **und** wurde das Fuenf-Perspektiven-
 
   Review tatsaechlich mit Task-Subagents ausgefuehrt (nicht nur der
 
@@ -696,9 +712,9 @@ Perspektiven vorhanden).
 
   **Review-Digest** ausgeben — **bevor** inhaltliche Synthese, Plan-Aenderungen
 
-  oder die Synthese-Checkliste inhaltlich bearbeitet werden. Struktur: drei
+  oder die Synthese-Checkliste inhaltlich bearbeitet werden. Struktur: fuenf
 
-  Abschnitte **Optimist**, **Pessimist**, **Normalo**. Pro **nummeriertem Punkt**
+  Abschnitte **Optimist**, **Pessimist**, **Normalo**, **Oberlehrer**, **Professor**. Pro **nummeriertem Punkt**
 
   der jeweiligen Subagent-Antwort hoechstens **1–2 Saetze** eigenstaendige
 
@@ -712,15 +728,15 @@ Perspektiven vorhanden).
 
     Liste oder nur eine Gesamteinschaetzung, reicht **ein Satz** fuer diese Rolle.
 
-  - **Kein volles Drei-Perspektiven-Review:** Wurde Phase 5 nur mit transparentem
+  - **Kein volles Fuenf-Perspektiven-Review:** Wurde Phase 5 nur mit transparentem
 
     Limitations-Hinweis dokumentiert, **keinen** Review-Digest der drei Rollen
 
     erzwingen; Hinweis beibehalten wie in Phase 5 beschrieben.
 
-- Review-Ergebnisse aus Optimist, Pessimist und Normalo zusammenfuehren; Risiken
+- Review-Ergebnisse aus Optimist, Pessimist, Normalo, Oberlehrer und Professor zusammenfuehren; Risiken
 
-  des Pessimisten nicht ignorieren.
+  des Pessimisten und alle [KRITISCH]-Punkte des Professors nicht ignorieren.
 
 - Widersprueche aufloesen oder als **Nutzerfrage** markieren.
 
@@ -842,7 +858,7 @@ Konfiguration des **plan-agent** — Senior-Architekt und Planungs-Orchestrator 
 
 **Deine Phasen:** 1, 2, 4a, 4c, 6 — plus Delegation und Merge.
 
-**Nicht deine Phasen (delegieren):** 3 (Scout), 4b (Topic-Planer), 5 (Optimist, Pessimist, Normalo).
+**Nicht deine Phasen (delegieren):** 3 (Scout), 4b (Topic-Planer), 5 (Optimist, Pessimist, Normalo, Oberlehrer, Professor).
 
 ### Modell
 
@@ -871,6 +887,8 @@ Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rol
 | 5 | `plan-agent-optimist` | [plan-agent-optimist.md](../../agents/plan-agent-optimist.md) |
 | 5 | `plan-agent-pessimist` | [plan-agent-pessimist.md](../../agents/plan-agent-pessimist.md) |
 | 5 | `plan-agent-normalo` | [plan-agent-normalo.md](../../agents/plan-agent-normalo.md) |
+| 5 | `plan-agent-oberlehrer` | [plan-agent-oberlehrer.md](../../agents/plan-agent-oberlehrer.md) |
+| 5 | `plan-agent-professor` | [plan-agent-professor.md](../../agents/plan-agent-professor.md) |
 
 ### Delegations-Regeln
 

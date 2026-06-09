@@ -21,8 +21,8 @@ AI-Skills/              Source library — do not edit deployed copies
 └── Readme.md           Full package reference + install instructions (= AGENTS.md after deploy)
 
 Mcp-Servers/            MCP server implementations (Docker images referenced in AI-Skills/mcp.json)
-├── Build.Log.Filter/   build-log-filter — Build/Test output compression
-├── Codebase.Analyzer/  codebase-analyzer — static analysis, index, review
+├── Build.Log.Filter.Mcp/   build-log-filter — Build/Test output compression
+├── Codebase.Analyzer.Mcp/  codebase-analyzer — static analysis, index, review
 ├── Dev.Filesystem.Mcp/ dev-filesystem-mcp — token-efficient read/search
 ├── Dev.Angular.Mcp/    dev-angular-mcp — Angular scaffolding
 └── Dev.Dotnet.Mcp/     dev-dotnet-mcp — .NET scaffolding
@@ -125,8 +125,8 @@ MCP implementations live under `Mcp-Servers/`. Each subfolder maps to a server k
 
 | Folder | MCP key (`mcp.json`) | Package (AI-Skills) |
 |--------|----------------------|---------------------|
-| `Mcp-Servers/Build.Log.Filter/` | `build-log-filter` | `build-log-filter` |
-| `Mcp-Servers/Codebase.Analyzer/` | `codebase-analyzer` | `codebase-analyzer` |
+| `Mcp-Servers/Build.Log.Filter.Mcp/` | `build-log-filter` | `build-log-filter` |
+| `Mcp-Servers/Codebase.Analyzer.Mcp/` | `codebase-analyzer` | `codebase-analyzer` |
 | `Mcp-Servers/Dev.Filesystem.Mcp/` | `dev-filesystem-mcp` | (dev-tooling-mcp) |
 | `Mcp-Servers/Dev.Angular.Mcp/` | `dev-angular-mcp` | (dev-tooling-mcp) |
 | `Mcp-Servers/Dev.Dotnet.Mcp/` | `dev-dotnet-mcp` | (dev-tooling-mcp) |

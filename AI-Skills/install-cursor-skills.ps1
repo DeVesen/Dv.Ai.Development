@@ -191,6 +191,28 @@ function Update-McpsMd {
     Write-Host "  + mcps.md → $ServerName" -ForegroundColor Green
 }
 
+function Initialize-McpsMd {
+    $projectRoot  = Split-Path $script:TargetCursorPath -Parent
+    $mcpsMdFile   = Join-Path $projectRoot "mcps.md"
+    $templateFile = Join-Path $PSScriptRoot "references\mcps.md"
+
+    if (Test-Path $mcpsMdFile) { return }
+
+    if ($script:DryRun) {
+        Write-Host "  [DRY] mcps.md anlegen (Projekt-Root)" -ForegroundColor Yellow
+        return
+    }
+
+    if (Test-Path $templateFile) {
+        Copy-Item $templateFile $mcpsMdFile -Force
+    } else {
+        $header = "# Projekt MCPs`n`nVerfügbare MCP-Server in diesem Projekt.`nAgents wählen situativ — kein festes Ablaufschema.`nFallback wenn kein MCP verfügbar oder Fehler: Read/Grep mit Begründung.`n`n## MCPs`n`n"
+        Set-Content $mcpsMdFile $header -Encoding UTF8 -NoNewline
+    }
+
+    Write-Host "  + mcps.md angelegt (Projekt-Root)" -ForegroundColor Green
+}
+
 function Invoke-McpConfig {
     param([array] $McpEntries)
 
@@ -498,6 +520,8 @@ Read-ParamsStore
 Read-Manifest
 
 if ($DryRun) { Write-Host "[DRY RUN — no files will be copied]" -ForegroundColor Yellow }
+
+Initialize-McpsMd
 
 Write-Host "Installing all packages..." -ForegroundColor Cyan
 

@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -17,7 +18,8 @@ public sealed class LogWebServer : IHostedService, IDisposable
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
+        WriteIndented = false,
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
     };
 
     public LogWebServer(ToolCallHistory history, ILogger<LogWebServer> logger)

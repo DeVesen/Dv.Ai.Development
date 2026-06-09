@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Dev.Angular.Mcp.Models;
 using Dev.Angular.Mcp.Services;
 using Dev.Angular.Mcp.Web;
@@ -19,7 +20,8 @@ public sealed class AngularTools
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = false
+        WriteIndented = false,
+        TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
     };
 
     public AngularTools(AngularScaffolder scaffolder, ToolCallHistory history, ILogger<AngularTools> logger)

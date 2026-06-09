@@ -30,8 +30,14 @@ Rückgabe: `[{ file, line, surroundingMethod, snippet }]` — geordnet nach Date
 Implementierung in `src/analyzers/ts-morph-analyzer.ts` als neue Methode `findSymbolReferences`.
 
 **dotnet (Roslyn):**  
-`SymbolFinder.FindReferencesAsync(symbol, solution)` — benötigt geladene Solution (siehe `index_solution`-Feature).  
-Fallback auf Projekt-Scope wenn keine Solution: `SymbolFinder.FindReferencesAsync(symbol, project.Solution)`.  
+Gleicher Ansatz wie `dotnet-indexer.csx` — kein Workspaces-Paket nötig, nur das bereits vorhandene `Microsoft.CodeAnalysis.CSharp`:
+
+1. Alle `.cs`-Dateien des Projektverzeichnisses in eine `CSharpCompilation` laden (identisch zu `dotnet-indexer.csx`)
+2. Zielsymbol in einem SyntaxTree über `SemanticModel.GetSymbolInfo()` + Namensabgleich auflösen
+3. Alle anderen SyntaxTrees iterieren, jede Referenz auf dasselbe Symbol sammeln
+4. Rückgabe: Datei, Zeile, umgebende Methode
+
+Scope: einzelnes Projektverzeichnis. Cross-Projekt erfordert `index_solution` (separates Feature) — dort dann Upgrade auf `SymbolFinder.FindReferencesAsync` sinnvoll.  
 Neues Script `roslyn-analyzer/roslyn-references.csx`, aufgerufen über bestehenden `roslyn-runner.ts`.
 
 **Neues Tool in `src/index.ts`:**

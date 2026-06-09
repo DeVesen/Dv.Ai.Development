@@ -134,7 +134,7 @@ Ein Package besteht aus mindestens einer Rule oder einem Skill, plus optionalen 
 
 ---
 
-### genericrtk-filter
+### build-log-filter
 
 Pflicht-Output-Filter für Build- und Test-Läufe via MCP. Verdichtet Konsolen-Ausgaben **vor** inhaltlichem Reasoning — ein Shell-Lauf = eine MCP-Kette.
 
@@ -161,7 +161,7 @@ _Kein direkter Nutzer-Trigger — greift automatisch bei jedem in-scope Shell-La
 
 | Datei | Trigger |
 |-------|---------|
-| `rules/genericrtk-output-filter.mdc` | Jeder `ng build/test`, `dotnet build/test` im Scope; Hard Stop wenn MCP nicht erreichbar |
+| `rules/build-log-filter.mdc` | Jeder `ng build/test`, `dotnet build/test` im Scope; Hard Stop wenn MCP nicht erreichbar |
 
 #### Skills
 
@@ -1040,9 +1040,9 @@ _keine_
 
 ### implementation-workflow
 
-Agent-Mode Umsetzung in 1–10 Slices mit Hard Gate und Implement-Review-Loop (max. 3 Iterationen: Technik-Gate, 6 Reviews, Fix-Planer, Fix-Slices; Rest-Findings-Bericht wenn nach Iteration 3 noch offen) bei Pflicht-genericRTK.
+Agent-Mode Umsetzung in 1–10 Slices mit Hard Gate und Implement-Review-Loop (max. 3 Iterationen: Technik-Gate, 6 Reviews, Fix-Planer, Fix-Slices; Rest-Findings-Bericht wenn nach Iteration 3 noch offen) bei Pflicht-build-log-filter.
 
-**Abhängigkeiten:** `genericrtk-filter`
+**Abhängigkeiten:** `build-log-filter`
 
 #### Operations
 
@@ -1086,7 +1086,7 @@ implementiere die Erweiterung laut Plan
 
 | Agent | Schritt | Aufgabe |
 |-------|---------|---------|
-| `agents/implement-agent.md` | Schritt 2 | Implementiert einen IMP-* Slice inkl. Build/Test + genericRTK |
+| `agents/implement-agent.md` | Schritt 2 | Implementiert einen IMP-* Slice inkl. Build/Test + build-log-filter |
 | `agents/implement-review-pessimist-agent.md` | Schritt 3 | Risiko-Review mit MCP-Evidenz |
 | `agents/implement-review-lehrer-agent.md` | Schritt 3 | Fachlich-strenger Review |
 | `agents/implement-review-normalo-agent.md` | Schritt 3 | Pragmatischer Ausführbarkeits-Review |
@@ -1191,7 +1191,7 @@ angular-refactor          →  angular-bundle
 angular-material          →  angular-bundle
 angular-material-*        →  angular-bundle
 describe-as-html-prompt   →  describe-as-prompt
-implementation-workflow   →  genericrtk-filter
+implementation-workflow   →  build-log-filter
 conversation-insights     →  (keine)
 planning-workflow         →  (keine)
 ```

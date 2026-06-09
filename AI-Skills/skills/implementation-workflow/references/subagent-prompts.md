@@ -10,9 +10,9 @@ Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen.
 
 **Agent-Typ (Pflicht):** Je Rolle passendes Profil unter [../../agents/](../../agents/). **Modell:** [subagent-model-before-task.md](../../references/subagent-model-before-task.md) lesen; Slugs nicht im Prompt duplizieren.
 
-**Workflow:** [SKILL.md](../SKILL.md) · **genericRTK-Regel:** [genericrtk-output-filter.mdc](../../rules/genericrtk-output-filter.mdc)
+**Workflow:** [SKILL.md](../SKILL.md) · **build-log-filter-Regel:** [build-log-filter.mdc](../../rules/build-log-filter.mdc)
 
-**Orchestrator-Empfehlung (Schritt 2):** Für Task-Prompts mit Build/Test den Abschnitt **Implementierer (Slice — Build/Test + genericRTK)** bevorzugen; **Implementierer (Slice — compact)** nur bei trivialen Slices ohne Build/Test.
+**Orchestrator-Empfehlung (Schritt 2):** Für Task-Prompts mit Build/Test den Abschnitt **Implementierer (Slice — Build/Test + build-log-filter)** bevorzugen; **Implementierer (Slice — compact)** nur bei trivialen Slices ohne Build/Test.
 
 ---
 
@@ -33,7 +33,7 @@ Required when the plan section **Umsetzungs-Topologie** is present:
 
 Rules:
 - **Agent:** `implement-agent` — [implement-agent.md](../../agents/implement-agent.md).
-- **Build/Test:** slice-scoped allowed; **genericRTK** on every run.
+- **Build/Test:** slice-scoped allowed; **build-log-filter** on every run.
 - **Not allowed:** stack-wide Technik-Gate (Schritt 3 after integration).
 - **Plan adherence:** Implement only this slice — no silent plan drift.
 
@@ -42,9 +42,9 @@ Reply with: summary, touched paths, open risks/blockers.
 
 ---
 
-## Implementierer (Slice — Build/Test + genericRTK)
+## Implementierer (Slice — Build/Test + build-log-filter)
 
-**Standard-Vorlage** für Schritt-2-Task-Prompts mit slice-scoped Build/Test. genericRTK-Checkliste: [genericrtk-output-filter.mdc](../../rules/genericrtk-output-filter.mdc).
+**Standard-Vorlage** für Schritt-2-Task-Prompts mit slice-scoped Build/Test. build-log-filter-Checkliste: [build-log-filter.mdc](../../rules/build-log-filter.mdc).
 
 ```text
 You are an implementation subagent for ONE plan slice (IMP-*) only.
@@ -56,7 +56,7 @@ Hard rules:
 - **Agent:** `implement-agent`. **Slice scope only** — not stack-wide Technik-Gate (Schritt 3).
 - **Pre-Coding (wenn dev-tooling-mcp verfügbar):** Vor erstem Code-Edit in bestehenden Dateien — `read_class_summary` oder `read_signatures_only` auf Scope-Dateien (`/project/...`); `read_method` nur für die konkrete Änderungsmethode. Kein voller `Read` als Ersatz wenn MCP ok. Skill: [dev-tooling-mcp/SKILL.md](../../dev-tooling-mcp/SKILL.md).
 - **Build/Test (slice-scoped):** dotnet/ng/npm build/test for this slice only.
-- **Every** run: genericRTK checklist 1–8; diagnose only from internally read MCP.
+- **Every** run: build-log-filter checklist 1–8; diagnose only from internally read MCP.
 - **Forbidden:** stack-wide Technik-Gate; raw console without MCP chain.
 
 Pre-Coding (wenn dev-tooling-mcp verfuegbar):
@@ -88,13 +88,13 @@ Phase 1 (Build-Fix, max 8 Turns):
 1) Build ausfuehren.
 2) Vollstaendiges Capture.
 3) In-scope: filter_output/filter_output_stream immer (auch Exit 0), bei FAIL analyze_build_output.
-4) Vor jedem MCP: "Rufe genericRTK ...".
-5) MCP down => BLOCKER: genericRTK nicht erreichbar.
+4) Vor jedem MCP: "Rufe build-log-filter ...".
+5) MCP down => BLOCKER: build-log-filter nicht erreichbar.
 6) Bei FAIL minimale Fixes, wiederholen.
 
 Phase 2 (Test-Fix, max 8 Turns, nur wenn Phase 1 OK):
 1) Unit-Test-Command ausfuehren.
-2) gleiche genericRTK-Kette wie Phase 1.
+2) gleiche build-log-filter-Kette wie Phase 1.
 3) Bei FAIL minimale Fixes, wiederholen.
 
 Rueckgabe:
@@ -237,7 +237,7 @@ Du erstellst einen Fix-Teilplan, implementierst NICHT.
 
 Pflicht-Rules (1-5):
 1) implementation-workflow-skill.mdc
-2) genericrtk-output-filter.mdc
+2) build-log-filter.mdc
 3) code-review-mcp.mdc
 4) code-review-mcp/SKILL.md
 5) angular-skills.mdc / backend-ef-migrations-skill.mdc (falls Scope passt)
@@ -259,11 +259,11 @@ F analyze_test_quality
 G find_symbol_references
 H compare_validation_rules
 
-genericRTK:
+build-log-filter:
 - Technik-Gate nur ueber MCP-/Kurzdiagnosen interpretieren.
 - Optionale Diagnose-Laeufe erlaubt, aber nicht stack-weite Abschlusspruefung.
-- Vor jedem MCP: "Rufe genericRTK ...".
-- MCP down => BLOCKER: genericRTK nicht erreichbar (kein Fix-Plan ausgeben).
+- Vor jedem MCP: "Rufe build-log-filter ...".
+- MCP down => BLOCKER: build-log-filter nicht erreichbar (kein Fix-Plan ausgeben).
 
 Liefern:
 1) Konkrete Fix-Schritte (Datei/Symbol/Reihenfolge)
@@ -291,7 +291,7 @@ Input:
 Regeln:
 - Nur dieser Slice.
 - Build/Test slice-scoped.
-- genericRTK pro Lauf.
+- build-log-filter pro Lauf.
 - keine stille Scope-Erweiterung.
 
 Rueckgabe:

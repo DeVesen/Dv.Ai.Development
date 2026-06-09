@@ -1,0 +1,289 @@
+---
+description: Pro in-scope Shell-Lauf (ng build/test, dotnet …) zwingend build-log-filter filter_* vor Reasoning/Freigabe — auch Exit 0; Mehrfach-ng-test = mehrfach MCP; Shell-Tool-Return kein Analyse-Input bis filter_* gelesen; Verifikations-Matrix pro Lauf; Temp-Capture für raw erlaubt, terminals/*.txt verboten; Hard Stop wenn MCP fehlt; kein MCP-Body/Rohlog in Nutzerantwort.
+alwaysApply: true
+---
+
+## Parameter
+
+| Parameter | Beschreibung |
+|-----------|-------------|
+| `{frontend-path}` | Pfad zum Frontend-Projekt |
+| `{backend-path}` | Pfad zum Backend-Projekt |
+
+# build-log-filter — Build-, Test- und Serve-Ausgaben verdichten
+
+## Geltung
+
+Gilt, wenn du **Build-/Test-Verifikation** (z. B. gemäß [`verification-commands.md`](.cursor/references/verification-commands.md)) ausführst oder Konsolen-Output zu **`.NET`** oder **Angular** im Repo anfällt, insbesondere:
+
+**Backend (`{backend-path}` typisch):**
+
+- `dotnet build` (inkl. einzelne `.csproj` / Solution, je nach Kommando)
+- `dotnet test`
+
+**Frontend (`{frontend-path}` typisch):**
+
+- `ng build`, `ng build --configuration production` und gleichwertige Production-Builds
+- `ng test`, `npm test`
+- `ng serve`, `npm start` (Dev-Server, ggf. lange/streamende Logs)
+
+**npm im Frontend:** `npm run build`, `npm run …` nur dann mit dem Angular-Mapping unten, wenn Arbeitsverzeichnis oder Script eindeutig das Frontend (`{frontend-path}`) ist.
+
+Diese Regel **ersetzt niemals** das eigentliche Kommando: zuerst Shell ausführen, **Exit-Code von der Shell** erfassen, **dann** die **gesamte** stdout/stderr zur Verarbeitung durch build-log-filter schleusen.
+
+## Verbindliche Kernpflicht
+
+Jeder Build-/Test-/Serve-Lauf, dessen Kommando im **Scope** dieser Regel liegt (siehe [Geltung](#geltung) und [`tool_type` / `format`-Mapping](#tool_type--format-mapping)):
+
+1. Shell ausführen → **Exit-Code** festhalten.
+2. **Zwingend** die **gesamte** stdout/stderr über build-log-filter verarbeiten: **`filter_output`** oder bei langen/streamenden Logs **`filter_output_stream`**; bei Shell-Exit **≠ 0** zusätzlich **`analyze_build_output`**.
+3. Inhaltliche Diagnose und Verifikations-Freigabe **nur** gemäß [Interpretationspflicht (verbindlich)](#interpretationspflicht-verbindlich); **nicht** „Build grün, daher kein `filter_output`“.
+
+**Gilt für:** Verifikations-**Subagents**, **Hauptagent/Orchestrator** bei manueller Verifikation und **jeden** Lauf in einer Build-/Test-Fix-Schleife (nicht nur den letzten erfolgreichen Lauf).
+
+**Verboten:** MCP überspringen, wenn das Kommando im Mapping liegt; Abschluss „verifiziert“ ohne nachweisliche build-log-filter-Kette pro applicable Lauf (sichtbare **`Rufe build-log-filter …`**-Zeilen + interne Verarbeitung); Diagnose oder Freigabe ohne intern gelesenes MCP-Ergebnis (in-scope); **ein** `filter_output` für mehrere Shell-Läufe (Representative-Filter); Integrations-Checkpoint mit „einmal build-log-filter nach allen Tests“.
+
+## Zweck und Kontextökonomie
+
+build-log-filter verdichtet Build-/Test-Logs **für die Agent-Auswertung**, nicht nur für die Nutzerantwort. Ziel: Rohausgabe **vor** inhaltlichem Reasoning, Fix-Entscheidungen und Verifikations-Freigabe verdichten — nicht erst in der öffentlichen Chat-Antwort.
+
+Bei in-scope Kommandos gilt zusätzlich zur [Interpretationspflicht](#interpretationspflicht-verbindlich):
+
+- Der **Shell-Tool-Return** (Cursor Tool-UI) ist **kein** zulässiger Analyse-Input für Reasoning, Warnungsbewertung oder „verifiziert“, **bis** `filter_output` / `filter_output_stream` (bei Exit ≠ 0 zusätzlich `analyze_build_output`) für **diesen** Lauf erfolgreich war und die Response **intern vollständig gelesen** wurde.
+- Technisch kann Shell-Output bereits im Kontext erscheinen — **inhaltlich** gilt: keine Schlussfolgerung daraus; nächster Schritt nach Shell ist [Schritt 1b](#ausführungs-checkliste-pro-buildtest-lauf) bzw. `filter_*`.
+
+## Ein Shell-Lauf = eine MCP-Kette
+
+**Jede** eigene Shell-Ausführung eines in-scope Kommandos = **eine** vollständige build-log-filter-Kette (eigener `filter_*`-Aufruf; bei Exit ≠ 0 zusätzlich `analyze_build_output`). Nicht „ein MCP für die ganze Session“.
+
+| Situation | Pflicht |
+|-----------|---------|
+| 3× `ng test` mit verschiedenen `--include` | 3× `filter_output` (`NgTest`) |
+| `ng build` + 1× oder mehr× `ng test` | 1× `NgBuild` **plus** je Test-Lauf `NgTest` |
+| Fix-Schleife (max. 8 Turns) | **Jeder** Retry erneut `filter_*` |
+| Nur letzter Lauf / nur Build / nur FAIL-Läufe | **Verboten** |
+| Integrations-Checkpoint nach mehreren Tests | **Kein** Sammel-MCP; Matrix mit **einer Zeile pro Lauf** ([Verifikations-Matrix](#verifikations-matrix)) |
+
+## Interpretationspflicht (verbindlich)
+
+Für Kommandos im **Scope** ([Geltung](#geltung), [`tool_type` / `format`-Mapping](#tool_type--format-mapping)) gilt:
+
+### Erlaubte Wissensquellen (inhaltliche Einordnung)
+
+**Inhaltliche Einordnung** umfasst: Fehlerursache, relevante Warnungen, welche Datei/Zeile zu fixen ist, ob ein Verifikations-Slice inhaltlich „grün“ ist, Escalation an Orchestrator/Nutzer.
+
+- **Pflicht:** Text aus **erfolgreichem** MCP-Aufruf `filter_output` / `filter_output_stream` (Lauf abgeschlossen; bei Stream `is_final: true`) — Response **intern vollständig lesen**, bevor du daraus schließt.
+- **Bei Shell-Exit ≠ 0:** zusätzlich intern gelesenes Ergebnis von `analyze_build_output` (`text` = vollständiges Shell-Capture **desselben** Laufs).
+- **OK / FAIL / Exit-Code:** weiterhin **ausschließlich** Shell-Exit-Code — **nicht** aus MCP-Rückgabe ableiten.
+
+### Verbote
+
+1. **Interpretation vor build-log-filter:** Keine Fehler-/Erfolgs-Einordnung, keine Fix-Entscheidung und keine Verifikations-Freigabe aus Rohkonsole, Shell-Tool-UI, Terminal-Ordner (`terminals/`), Chat-Erinnerung oder „sieht grün aus“ — **bevor** die MCP-Kette für **diesen** Lauf abgeschlossen ist.
+2. **Ungültiges `raw` / `text` / `chunk`:** Kein paraphrasierter, manuell zusammengefasster, gekürzter, rekonstruierter oder aus Terminal-Datei/Tool-UI abgeschriebener Text statt des **vollständigen** stdout/stderr-Captures **dieses** Shell-Laufs.
+3. **Terminal-Datei als Ersatz-Capture:** Inhalt aus `terminals/*.txt` (Cursor-Terminal-Ordner) **darf nicht** als `raw`/`text` an build-log-filter oder als alleinige Diagnosequelle dienen. **Erlaubt** dagegen: eine **frisch** für **diesen** Lauf geschriebene **Temp-Capture-Datei** (z. B. via `Tee-Object`), deren Inhalt **unverändert** als `raw`/`text` an MCP geht — siehe [Empfohlenes Capture-Muster](#empfohlenes-capture-muster-shell--mcp). Terminal-Dateien höchstens für Metadaten (z. B. ob ein Prozess läuft).
+4. **Tool-UI / Shell-Return ersetzt nicht MCP:** Sichtbarer Shell-Output in der Cursor-Tool-UI **ersetzt nicht** die Pflicht, das **vollständige Capture** an build-log-filter zu senden und die Response **intern** zu lesen — und ist **vor** abgeschlossenem `filter_*` **kein** Reasoning-Input ([Zweck und Kontextökonomie](#zweck-und-kontextökonomie)).
+5. **Reasoning vor MCP:** Kein „alle Tests grün“, keine Warnungsliste und keine Verifikations-Freigabe aus dem Shell-Tool-Return, bevor Schritt **1b** und `filter_*` für **diesen** Lauf abgeschlossen sind.
+
+### Verifikations-Freigabe
+
+Ein Stack/Slice gilt inhaltlich nur dann als verifiziert, wenn pro applicable Lauf die [Ausführungs-Checkliste](#ausführungs-checkliste-pro-buildtest-lauf) (Schritte **1–8**) **nachweislich** lief, die [Verifikations-Matrix](#verifikations-matrix) für **alle** in-scope-Läufe vollständig ist (`filter_output` = ja je Zeile) **und** die öffentliche Kurzdiagnose aus **intern gelesenem** MCP abgeleitet ist — **nicht** aus Rohquellen.
+
+### Ausnahmen
+
+- [Außerhalb des Scopes](#außerhalb-des-scopes)
+- [Gezielte Originalauszüge auf Nutzerwunsch](#gezielte-originalauszüge-auf-nutzerwunsch) — nur **nach** vollständiger MCP-Kette, nie alleinige Grundlage
+
+### Beispiele
+
+| | |
+|---|---|
+| **Falsch** | `filter_output` mit `raw: "ng test: TOTAL 21 SUCCESS"` statt vollständiger Konsolen-Ausgabe |
+| **Falsch** | „Build grün“ aus Terminal-UI oder `terminals/1.txt` ohne abgeschlossene MCP-Kette für diesen Lauf |
+| **Falsch** | 3× `ng test` grün, nur 1× `filter_output` nach `ng build` (Representative-Filter) |
+| **Falsch** | Abschlussbericht mit Chunk-Tabelle aus Shell-Tool-Return statt Kurzprosa aus MCP |
+| **Falsch** | Integrations-Checkpoint: „build-log-filter“ einmal erwähnt, Matrix ohne Zeilen für jeden Test-Lauf |
+| **Falsch** | Verifikations-Subagent hatte build-log-filter; Orchestrator liest danach Capture/`Read` oder Shell-UI und fixt ohne eigene MCP-Kette |
+| **Falsch** | Abschluss-`filter_output` mit Kurz-`raw` („34 SUCCESS“, Warnungsliste) statt vollständigem Capture **dieses** Laufs |
+| **Falsch** | Orchestrator-`ng test` nach Subagent-FAIL ohne `filter_output` — „schnell grün“ aus Temp-Datei |
+| **Richtig** | Shell → Capture → **sofort** `filter_output` → intern lesen → `Rufe build-log-filter …` + Kurzprosa (aus MCP) + Shell-Exit-Code |
+| **Richtig** | 3× `NgTest` + 1× `NgBuild` = 4× `filter_output`; [Verifikations-Matrix](#verifikations-matrix) mit 4 Zeilen |
+| **Richtig** | Nach Orchestrator-Integrations-Fix: **neuer** Verifikations-Subagent; Matrix **fortsetzen** (nicht alte Zeilen als Abschluss) |
+
+## Ausführungs-Checkliste (pro Build-/Test-Lauf)
+
+**Gilt für:** Verifikations-**Subagents**; **Hauptagent/Orchestrator**, wenn dieser selbst Build/Test fährt (z. B. kein Subagent möglich); und **jeden einzelnen Lauf** in einer Build-/Test-Fix-Schleife (nicht nur den letzten erfolgreichen Lauf).
+
+**Kanonische Reihenfolge** — nach jedem Lauf der Shell in dieser Nummerierung abarbeiten:
+
+1. Kommando im **richtigen Arbeitsverzeichnis** ausführen; **Exit-Code** der Shell festhalten (**OK**/**FAIL** unabhängig von MCP). Empfohlen: [Capture-Muster](#empfohlenes-capture-muster-shell--mcp) (vollständiges `raw` für MCP).
+1b. **Sofort nach Shell (in-scope):** **Kein** inhaltliches Urteil, keine Zusammenfassung, kein „alle Tests grün“ / keine Warnungsliste aus Shell-Tool-UI; **kein** Zwischenschritt „Ergebnisse der drei Tests zusammenfassen“. Der **nächste** Tool-Call **muss** `filter_output` oder `filter_output_stream` sein — außer [Hard Stop](#hard-stop--mcp-nicht-erreichbar) oder [Außerhalb des Scopes](#außerhalb-des-scopes). **Verboten** zwischen Schritt 1 und `filter_*`: `Read`/`Grep` auf die Capture-Datei oder Shell-Return zur **Diagnose**; Code-/Spec-Fix aus Rohlog; paraphrasiertes `raw` an MCP.
+2. **Scope und MCP prüfen** (zwei getrennte Fälle — **kein** vereintes „Fallback und weiter“):
+   - **2a. Außerhalb des Scopes:** Kommando **nicht** im [`tool_type` / `format`-Mapping](#tool_type--format-mapping) → Abschnitt [Außerhalb des Scopes](#außerhalb-des-scopes); **keine** erzwungene `filter_output`; danach mit Schritt **7** und **8** fortfahren.
+   - **2b. Im Scope:** Kommando liegt im Mapping → **build-log-filter**-MCP erreichbar?
+     - **Nein** → Abschnitt [Hard Stop — MCP nicht erreichbar](#hard-stop--mcp-nicht-erreichbar); **Stopp** (keine Fix-Schleife fortsetzen, keine Verifikations-Freigabe).
+     - **Ja** → Schritte **3–8** wie unten.
+3. MCP-**Tool-Deskriptoren** lesen, dann **`filter_output`** mit **`raw`** = **ausschließlich** vollständiges stdout/stderr **dieses** Shell-Laufs (kein Kurz-`raw`, kein `terminals/*.txt` — Temp-Capture dieses Laufs erlaubt; siehe [Interpretationspflicht](#interpretationspflicht-verbindlich)) und passendem **`tool_type`** — **auch bei Exit 0**. Bei sehr langem stdout (z. B. Production-`ng build` mit Chunk-Tabelle, ausführliches `ng test`) **`filter_output_stream`** bevorzugen **oder** Capture-Datei + ein `filter_output` mit vollständigem `raw` — **`session_id`**, Chunking, Parallelität und **`is_final: true`** wie in [session_id (filter_output_stream)](#session_id-filter_output_stream).
+4. Wenn Shell-Exit-Code **≠ 0**: zusätzlich **`analyze_build_output`** mit **`text`** (= vollständige Rohausgabe des Laufs) und passendem optional **`format`** gemäß Mapping.
+5. **Vor jedem** MCP-Aufruf (`filter_*`, `analyze_build_output`): in der **Nutzer- bzw. Orchestrator-sichtbaren** Antwort eine kurze Zeile **`Rufe build-log-filter …`** (konkretes Tool + kurz warum) — **nicht** nur in internen Tool-Spuren.
+6. MCP-Response **intern vollständig lesen**; inhaltliche Diagnose **nur danach** ([Interpretationspflicht](#interpretationspflicht-verbindlich)). In die **öffentliche** Antwort **keinen** MCP-Body, **keine** Filterstatistik ([Chat-Kommunikation](#chat-kommunikation)); Kurzprosa **aus intern gelesenem MCP** plus bekannter Shell-Exit-Code. Ohne erfolgreichen `filter_*` für diesen Lauf: **keine** inhaltliche Diagnose (in-scope).
+7. **Abschlussbericht** gemäß Abschnitt **Reporting** inkl. [Verifikations-Matrix](#verifikations-matrix)-Zeile für **diesen** Lauf (Kommando, CWD, Exit, `filter_output` ja/nein, ggf. `analyze_build_output`).
+8. Nächster Turn in derselben Fix-Schleife: wieder bei **Schritt 1** beginnen — **kein** „nur noch schnell neu bauen“ ohne diese Kette.
+
+Ausführliche Regeln, Ausnahmen (z. B. gezielte Originalauszüge) und Tool-Details stehen in den Abschnitten unten.
+
+## Orchestrator-Nachlauf (Hauptagent)
+
+Gilt zusätzlich zur [Interpretationspflicht](#interpretationspflicht-verbindlich) und zum [Implementation Workflow](../skills/implementation-workflow/SKILL.md) (**Verifikation nur per Subagent**).
+
+| Situation | Pflicht |
+|-----------|---------|
+| Verifikations-Subagent **FAIL** | Orchestrator **startet kein** eigenes `ng build` / `ng test` / `dotnet build` / `dotnet test` zur Nachverifikation → **neuen** Verifikations-Subagent mit Fix-Kontext |
+| Orchestrator **Integrations-Fix** (Merge, Import, Konfiguration nach Subagents) | **Pflicht:** erneuter Verifikations-Subagent pro betroffenem Stack; bisherige Matrix **ersetzt** diese Läufe **nicht** |
+| Orchestrator führt in-scope Build/Test **ausnahmsweise** selbst aus | Nur bei dokumentiertem **`BLOCKER: Task-Tool nicht verfügbar`** — dann **dieselbe** [Ausführungs-Checkliste](#ausführungs-checkliste-pro-buildtest-lauf) Schritte **1–8** wie Subagents |
+| Subagent-Bericht mit Matrix, danach Orchestrator-Code-Edit | Matrix des Subagents **veraltet** — Abschluss „verifiziert“ erst nach **neuen** Läufen mit `filter_output` = **ja** je Zeile |
+
+**Verboten (typische Lücke):** Subagent FAIL → Orchestrator liest Temp-Capture oder Shell-UI → patcht Spec/Code → `ng test` ohne sofortiges `filter_output` → am Ende ein Kurz-`filter_output` als Ersatz für fehlende Läufe.
+
+**Erlaubt:** Orchestrator wendet **minimalen** Integrations-Fix an (ohne Build/Test), dokumentiert kurz, startet **unmittelbar** Verifikations-Subagent(en).
+
+## Hard Stop — MCP nicht erreichbar
+
+Wenn ein Kommando **im Scope** liegt (Schritt **2b**, Mapping zutrifft), der **build-log-filter**-MCP-Server oder die benötigten Tools aber **nicht** nutzbar sind (Server down, Docker, Auth, Tool-Fehler, Server nicht in der Tool-Liste):
+
+- **Sofort stoppen** — keine weitere Build-/Test-Fix-Schleife, **keine** Umsetzungs- oder Verifikations-Freigabe als „erfolgreich verifiziert“.
+- **Kein** Ersatz durch manuelle Log-Zusammenfassung, Terminal-Datei-Lesen oder Interpretation aus Shell-Tool-UI; **keine** inhaltliche Diagnose und **keine** Fix-Schleife — siehe [Interpretationspflicht](#interpretationspflicht-verbindlich).
+- **Kein** Weiterarbeiten im [Implementation Workflow](../skills/implementation-workflow/SKILL.md) mit Ersatz-Interpretation.
+- **Sichtbarer Nutzer-Block** mit fester Überschrift **`BLOCKER: build-log-filter nicht erreichbar`**, mindestens:
+  - Kurzursache (MCP-Aufruf fehlgeschlagen / Server nicht verfügbar / Tools nicht in der Tool-Liste)
+  - Betroffenes Kommando und Arbeitsverzeichnis
+  - Hinweis auf [`.cursor/mcp.json`](.cursor/mcp.json) — Server-Key **`build-log-filter`** (typisch Docker-Image `build-log-filter-mcp:local`; Host-Tool-ID kann z. B. `project-0-…-build-log-filter` heißen — **erreichbar** = in der Tool-Liste aufrufbar)
+  - Konkrete Nutzeraktion (Docker läuft? Image gebaut? MCP in Cursor aktiv?)
+- Im Reporting: **`Verifikation: BLOCKIERT (build-log-filter)`**.
+
+## Außerhalb des Scopes
+
+Nur wenn das Kommando **nicht** im [`tool_type` / `format`-Mapping](#tool_type--format-mapping) liegt (z. B. sonstige Verifikations-Kommandos außerhalb des Mappings):
+
+- Kurz begründen, warum build-log-filter **nicht** anwendbar ist.
+- Fehler/Warnungen in **eigener Kurzprosa** — **kein** vollständiger Rohlog in die Nutzerantwort.
+- **Kein** Hard Stop allein wegen fehlendem Mapping — nur dokumentieren und mit der Aufgabe fortfahren, soweit der Workflow es erlaubt.
+
+## Empfohlenes Capture-Muster (Shell → MCP)
+
+Ziel: vollständiges `raw` für MCP, minimaler Chat-Footprint, **kein** `terminals/*.txt`.
+
+```powershell
+# Arbeitsverzeichnis: {frontend-path}
+$capture = Join-Path $env:TEMP "capture.txt"
+npx ng test --no-watch --browsers=ChromeHeadless --include="**/{feature}/**/*.spec.ts" 2>&1 | Tee-Object -FilePath $capture
+# Exit-Code der Pipeline festhalten ($LASTEXITCODE)
+# Unmittelbar danach: filter_output mit raw = Get-Content $capture -Raw (tool_type NgTest)
+```
+
+| | |
+|---|---|
+| **Erlaubt** | Temp-Capture-Datei **nur** für MCP-`raw`/`text` **desselben** Laufs |
+| **Verboten** | `terminals/*.txt` als `raw`/`text` |
+| **Verboten** | Shell-Output in der Assistant-Nachricht tabellarisch wiederholen, **bevor** MCP für diesen Lauf lief |
+| **Verboten** | `raw` aus paraphrasiertem Shell-Tool-UI-Text oder `raw: "TOTAL: N SUCCESS"` |
+| **Pflicht** | `raw`/`text` = `Get-Content $capture -Raw` (unverändert, vollständig) — nicht manuell gekürzt |
+
+In der **öffentlichen** Antwort nach dem Lauf: Exit-Code, `Rufe build-log-filter …`, Kurzprosa aus MCP — **nicht** den Shell-Tool-Body (Chunk-Liste, Karma-Zeilen) erneut ausgeben.
+
+## Pflicht vor LLM-/Chat-Antwort
+
+Sobald ein Lauf **im Scope** liegt und `build-log-filter` **erreichbar** ist — vollständige [Interpretationspflicht](#interpretationspflicht-verbindlich):
+
+1. Rohkonsole **nicht** ungekürzt in die Nutzerantwort übernehmen und **nicht** als Grundlage für **inhaltliche** Diagnose oder Verifikations-Freigabe verwenden (**OK**/**FAIL** weiterhin nur Shell-Exit-Code). **Ausnahme:** [Gezielte Originalauszüge auf Nutzerwunsch](#gezielte-originalauszüge-auf-nutzerwunsch) — dort nur **ergänzend** (weiterhin **niemals** alleinige Grundlage).
+2. Die **komplette** stdout/stderr **dieses** Laufs durch **`filter_output`** (oder bei langen/streamenden Logs **`filter_output_stream`**) an build-log-filter senden — **kein** Kurz-`raw`. Den zurückgegebenen Text **intern vollständig lesen** vor jeder Schlussfolgerung. In die **Nutzerantwort darfst du diesen MCP-Text nicht kopieren oder als Block wiedergeben** (kein früheres **`Ergebnis vom build-log-filter:`** aus **`filter_*`**). **Keine** Ersparnis- oder Zeichenstatistik, **kein** Aufruf von **`get_filter_savings`** zu Reporting-Zwecken.
+3. Bei Exit-Code **≠ 0** zusätzlich **`analyze_build_output`** mit vollständigem Capture desselben Laufs (siehe unten).
+
+### Gezielte Originalauszüge auf Nutzerwunsch
+
+Nur wenn **alle** folgenden Bedingungen erfüllt sind, darf der Agent die **Originalausgabe/Rohoutput desselben Kommandos** ergänzend im LLM auswerten und in der Nutzerantwort wiedergeben:
+
+1. Der Nutzer fordert **ausdrücklich** Originalausgabe/Rohoutput für **dieses konkrete** Kommando an (z. B. „bitte schau in den originalen“, gleichbedeutende Formulierungen).
+2. **`filter_output`** bzw. **`filter_output_stream`** wurde für diese Ausgabe **vollständig** ausgeführt; bei Exit-Code **≠ 0** zusätzlich **`analyze_build_output`** wie oben vorgeschrieben.
+3. Die **intern** ausgewertete MCP-Ausgabe nennt einen **konkreten verdächtigen Befund** (kein bloß diffuses „noch mehr Details“ ohne belastbare Grundlage aus der Verarbeitung).
+4. Ein für die Klärung **dieses** Befunds **notwendiges Detail** fehlt ohne Originalauszug (z. B. relevante **Callstack**-Zeilen).
+
+Dann gilt zusätzlich:
+
+- Die **öffentliche Berichtspflicht** bleibt: **keine** Wiedergabe des MCP-Klartexts aus **`filter_*`** / **`analyze_build_output`**; Diagnose weiter in **eigener Kurzfassung**. Originalauszüge **getrennt** als **`Gezielter Originalauszug (nicht build-log-filter):`** — **nicht** als Ersatz für diese Kurzfassung.
+- **Kein vollständiger Rohdump:** nur **gezielte, minimale** Auszüge; wo sinnvoll **redigieren** (Pfade, Tokens, personenbezogene Daten, Secrets).
+- Auswertung darf **nicht allein** auf dem Originalauszug beruhen; dieser dient nur als **Ergänzung** zur zuvor intern gewonnenen Einschätzung.
+
+**Hinweis:** Technisch kann Shell-Output im Tool-UI erscheinen; inhaltlich gilt: weder in der **Nutzerantwort** noch für **inhaltliche Diagnose** (in-scope) Rohkonsole/Tool-UI/Terminal-Datei statt intern gelesenem MCP — außer [Gezielte Originalauszüge](#gezielte-originalauszüge-auf-nutzerwunsch) nach abgeschlossener MCP-Kette.
+
+## MCP-Server und Tools
+
+- Server: **`build-log-filter`** (siehe [`.cursor/mcp.json`](.cursor/mcp.json)).
+- Zuerst Tool-Deskriptor lesen, dann aufrufen.
+- **Standard (ein Kommando, vollständige Ausgabe verfügbar):** `filter_output` mit **`raw`** = gesamte stdout/stderr **dieses** Shell-Laufs (MCP-Deskriptor: „Full raw console output“) — **kein** Kurz-`raw`, keine Terminal-Datei, keine Zusammenfassung ([Interpretationspflicht](#interpretationspflicht-verbindlich)); **`tool_type`** (siehe [Mapping](#tool_type--format-mapping)). Rückgabe laut MCP: **nur verdichteter Text** (ohne eingebettete Statistik) — **intern lesen**, nicht in die Nutzerantwort.
+- **Sehr lange oder streamende Logs** (z. B. `ng serve`, ausführliche Builds): **`filter_output_stream`** — Details zu **`chunk`**, **`tool_type`**, **`session_id`**, **`is_final`** und Parallelität: [session_id (filter_output_stream)](#session_id-filter_output_stream).
+- **`analyze_build_output`:** Parameter **`text`** (vollständige Rohausgabe des Laufs), optional **`format`** nach [Mapping](#tool_type--format-mapping) oder `null`/weglassen zur Auto-Erkennung gemäß Deskriptor. Kein dokumentierter `exitCode`-Parameter — der Exit-Code stammt weiterhin nur von der **Shell**. Den Rückgabetext wie bei **`filter_*`** **intern** nutzen; **nicht** in die Nutzerantwort als MCP-Zitat übernehmen. **`analyze_build_output`** erfolgt **unabhängig** von `filter_output_stream` weiter mit dem **vollständigen** Shell-Capture (`text`), nicht nur mit verarbeiteten Stream-Schnipseln.
+- Falls der Server weiterhin Hilfstools wie **`get_filter_savings`** anbietet: für dieses Repo-Reporting **nicht verwenden**.
+
+### session_id (filter_output_stream)
+
+MCP-Deskriptor: **`session_id`** = stabile ID **pro logischem Stream**; **„Reuse session_id“** bedeutet: **alle Chunks ein und desselben** Shell-/Log-Laufs teilen **dieselbe** `session_id`, bis abschließend **`is_final: true`** gesetzt wird.
+
+- **Innerhalb eines Laufs:** dieselbe `session_id` für jede `chunk`-Übergabe; zuletzt **`is_final: true`**, wenn keine weiteren Chunks folgen (auch wenn der Prozess abgebrochen oder beendet wurde — sobald die Ausgabeerfassung für diesen Stream endet, den Stream sauber abschließen).
+- **Neuer logischer Lauf:** neues Shell-Kommando, **neuer** Versuch in der Build-/Test-Fix-Schleife oder Wechsel des Stacks/Ziels → **neue** `session_id` (kein Recycling über Grenzen hinweg).
+- **Parallelität:** **Orchestrator/Hauptagent** und **Verifikations-Subagent(en)** oder **mehrere** Subagents, die **gleichzeitig** `filter_output_stream` nutzen, **dürfen dieselbe `session_id` nicht teilen** — sonst vermischen sich Chunks. Jeder parallele Agent pro eigenem Lauf **eigene** ID.
+- **Eindeutigkeit (Empfehlung, ein Zeilenbeispiel):** z. B. `lac-verify-{stack|rolle}-{kurzlabel}-{datum oder UUID-Kurzform}` — konkret: `lac-verify-frontend-ng-build-20260512-a3f9c1`.
+
+## Chat-Kommunikation
+
+Pflicht für die Nutzerantwort, sobald **build-log-filter** über MCP aufgerufen wird:
+
+1. **Vor** **jedem** MCP-Aufruf eine kurze Zeile ausgeben: **`Rufe build-log-filter …`** — mit Kontext (konkretes Tool: `filter_output`, `filter_output_stream` oder `analyze_build_output`, kurz warum).
+2. **Nach** erfolgreichem Aufruf: **keinen** Inhalt aus der Tool-Antwort (weder gefilterten Text noch Analyse-Volltext) in die Nutzerantwort übernehmen. **Keinen** Block **`Ergebnis vom build-log-filter:`** und **keinen** Block **`Filterstatistik:`**.
+3. **Diagnose/Fehlerbild:** in **Kurzprosa** formulieren — **ausschließlich** aus dem **intern gelesenen** MCP-Ergebnis ([Interpretationspflicht](#interpretationspflicht-verbindlich)) plus **bekanntem Shell-Exit-Code**; ohne MCP-Rückgabetext zu zitieren oder abzudrucken. Bei nicht erreichbarem MCP (in-scope): [Hard Stop](#hard-stop--mcp-nicht-erreichbar) — **keine** Diagnose.
+4. Greift [Gezielte Originalauszüge auf Nutzerwunsch](#gezielte-originalauszüge-auf-nutzerwunsch): Originalauszüge **getrennt** unter **`Gezielter Originalauszug (nicht build-log-filter):`** mit kurzer Begründung (konkreter Befund, welches Detail fehlt).
+
+Bei **mehreren** MCP-Aufrufen nacheinander (z. B. `filter_output` und `analyze_build_output`): zu **jedem** Aufruf **`Rufe build-log-filter …`**; die **gesamte** Nutzer-sichtbare Auswertung bleibt bei **Kurzprosa** ohne MCP-Body.
+
+## tool_type / format-Mapping
+
+| Kommando-Kontext | `tool_type` (`filter_*`) | `format` (`analyze_build_output`) |
+|------------------|--------------------------|-----------------------------------|
+| `dotnet build` | `DotnetBuild` | `dotnet-build` |
+| `dotnet test` | `DotnetTest` | `dotnet-test` |
+| `ng build`, `ng build --configuration production`, `npm run build` in `{frontend-path}` | `NgBuild` | `ng-build` |
+| `ng test`, `npm test` in `{frontend-path}` | `NgTest` | `ng-test` |
+| `ng serve`, `npm start` in `{frontend-path}` (Dev-Server, fortlaufende Logs) | `NodeGeneric` | `null` (Auto) oder `node-generic`, falls passend |
+
+Bei **unklarem** `npm`-Script nur das Angular-/Frontend-Mapping verwenden, wenn Arbeitsverzeichnis oder Script eindeutig `{frontend-path}` ist.
+
+## Reporting (Pflicht, kompatibel mit Verifikations-Reporting aus [`verification-commands.md`](.cursor/references/verification-commands.md))
+
+Im Abschlussbericht **immer** angeben:
+
+- Exakt ausgeführtes Kommando und Arbeitsverzeichnis
+- **OK** / **FAIL** und Exit-Code (Shell, sofern ermittelbar)
+- Ob/welche build-log-filter-Tools bei anwendbarem Kommando aufgerufen wurden (kurz, z. B. `filter_output` / `analyze_build_output`)
+- Wesentliche Warnungen/Fehler als **eigene knappe Prosa** — abgeleitet aus **intern gelesenem** build-log-filter (in-scope), **nicht** als Wiedergabe des MCP-Rückgabetexts
+- Wenn nach [Gezielte Originalauszüge auf Nutzerwunsch](#gezielte-originalauszüge-auf-nutzerwunsch) ein **`Gezielter Originalauszug`** genutzt wurde: **Grund**, **Bezug** zum Befund, **Umfang/Art** des Auszugs; bestätigen, dass die **öffentliche Kurzdiagnose** dennoch berichtet wurde
+- Bei [Hard Stop — MCP nicht erreichbar](#hard-stop--mcp-nicht-erreichbar): **`Verifikation: BLOCKIERT (build-log-filter)`**
+- Die **[Verifikations-Matrix](#verifikations-matrix)** für **alle** Shell-Läufe der Session (nicht nur den letzten)
+
+**Nicht** die vollständige Rohkonsole ungefiltert in den Chat geben, wenn das Kommando **im Scope** liegt und `build-log-filter` **erreichbar** ist — **außer** [Gezielte Originalauszüge auf Nutzerwunsch](#gezielte-originalauszüge-auf-nutzerwunsch), und dort nur als **minimaler**, klar gekennzeichneter Auszug.
+
+**Abgrenzung:** [Gezielte Originalauszüge auf Nutzerwunsch](#gezielte-originalauszüge-auf-nutzerwunsch) setzt erreichbare build-log-filter-Verarbeitung **vor** der optionalen Roh-Auszugsprüfung voraus — **kein** Ersatz für [Hard Stop](#hard-stop--mcp-nicht-erreichbar).
+
+### Verifikations-Matrix
+
+Pflicht bei jeder Verifikations-Session mit einem oder mehreren in-scope Shell-Läufen — **eine Zeile pro Shell-Lauf** (auch bei Exit 0):
+
+| # | Kommando (kurz) | CWD | Exit | `filter_output` | `analyze_build_output` |
+|---|-----------------|-----|------|-----------------|------------------------|
+| 1 | `ng test … {feature}` | `{frontend-path}` | 0 | ja | nein |
+| 2 | `ng test … {spec-filter}` | `{frontend-path}` | 0 | ja | nein |
+| 3 | `ng build --configuration production` | `{frontend-path}` | 0 | ja | nein |
+
+**Schließregel:** Formulierungen wie „verifiziert“, „Production-Build OK“, „alle Tests grün“ nur, wenn **jede** Zeile für in-scope-Läufe `filter_output` = **ja** hat (bei Exit ≠ 0 zusätzlich `analyze_build_output` = **ja**). Fehlt eine Zeile oder steht **nein** → **nicht verifiziert** (kein stilles Abnicken). Orchestrator lehnt Subagent-Berichte ohne vollständige Matrix ab.
+
+**Nach Orchestrator-Code-Änderung:** Nur Läufe **nach** dem letzten Integrations-/Orchestrator-Edit zählen für den Abschluss. Subagent-Zeilen **vor** diesem Edit dürfen **nicht** allein „verifiziert“ tragen — Matrix **fortsetzen** (neue Zeilen) via **neuem** Verifikations-Subagent-Lauf, nicht durch Orchestrator-Schnelltest ohne MCP.
+
+**Spalte „Ausführender“ (empfohlen in Berichten):** `Verifikations-Subagent` | `Orchestrator (BLOCKER-Ausnahme)` — erleichtert Review, ob [Orchestrator-Nachlauf](#orchestrator-nachlauf-hauptagent) eingehalten wurde.

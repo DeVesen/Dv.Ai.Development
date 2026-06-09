@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="Generic.Rtk/Generic.Rtk.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="Generic.Rtk.Tests/Generic.Rtk.Tests.csproj" />
-  </Folder>
-</Solution>

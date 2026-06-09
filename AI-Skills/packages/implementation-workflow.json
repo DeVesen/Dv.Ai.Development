@@ -25,7 +25,7 @@
     "{backend-path}"
   ],
   "dependsOn": [
-    "genericrtk-filter"
+    "build-log-filter"
   ],
   "docs": [
     "Readme.md"

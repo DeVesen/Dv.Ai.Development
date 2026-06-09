@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="Build.Log.Filter/Build.Log.Filter.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="Build.Log.Filter.Tests/Build.Log.Filter.Tests.csproj" />
+  </Folder>
+</Solution>

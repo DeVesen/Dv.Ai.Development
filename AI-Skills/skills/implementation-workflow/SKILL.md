@@ -1,7 +1,7 @@
 ---
 name: implementation-workflow
 description: >
-  Repo-Umsetzung: Hard Gate, 1–10 implement-agent (Slice inkl. Build/Test), iterativer Implement-Review-Loop max. 3× (Technik-Gate, 6 Reviews, implement-fix-planner-agent, Fix-Slices). genericRTK + code-review-mcp Pflicht.
+  Repo-Umsetzung: Hard Gate, 1–10 implement-agent (Slice inkl. Build/Test), iterativer Implement-Review-Loop max. 3× (Technik-Gate, 6 Reviews, implement-fix-planner-agent, Fix-Slices). build-log-filter + code-review-mcp Pflicht.
   Trigger (kanonisch in Rule): implementiere/setze um/fix/einbauen/leg los, Plan ausführen,
   impliziter Repo-Code-Intent, @implementation-workflow-skill, Hard Gate, Schritt 2/IMP-*,
   engl. apply changes/go ahead/ship it; Opt-out ohne implement-skill. Discovery via alwaysApply-Rule
@@ -60,10 +60,10 @@ oder in Rules.
 
 **Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; **primär** Abschnitt **`## Modell`**, sonst YAML; Slugs **nicht** hier duplizieren.
 
-- **implement-agent:** genau **ein** Plan- oder Fix-Slice (IMP-*); Build/Test **slice-relevant**; Unit-Tests im Slice; genericRTK Pflicht.
+- **implement-agent:** genau **ein** Plan- oder Fix-Slice (IMP-*); Build/Test **slice-relevant**; Unit-Tests im Slice; build-log-filter Pflicht.
 - **implement-review-*:** **readonly** — je **eine** Rolle pro Lauf; **6** parallele Läufe pro Iteration; MCP-Pflicht je Profil.
-- **implement-fix-planner-agent:** Fix-Teilplan aus Review-Digest; MCP A–H + genericRTK + **Evidenz-Basis**; **keine** Code-Implementierung.
-- **Technik-Gate:** stack-weiter Build + Unit-Tests (max. **8** Turns je Phase); genericRTK Pflicht; enge Gate-Fixes erlaubt.
+- **implement-fix-planner-agent:** Fix-Teilplan aus Review-Digest; MCP A–H + build-log-filter + **Evidenz-Basis**; **keine** Code-Implementierung.
+- **Technik-Gate:** stack-weiter Build + Unit-Tests (max. **8** Turns je Phase); build-log-filter Pflicht; enge Gate-Fixes erlaubt.
 - **Verboten:** `explore`/`generalPurpose` statt dedizierter Agent-Profile; Orchestrator-Build/Test bypass; Review-Fixes ohne Fix-Planer.
 
 ### Ausfuehrung je Host
@@ -270,7 +270,7 @@ checkpoint, and resolve trivial merge mechanics when in scope.
 
 2. **Implementierungs-Subagents — strikt:** each agent implements **only** its assigned slice from
    the plan; **no** scope expansion, **no** silent replanning, **no** product or design decisions beyond what the plan already fixes.
-   **Build/Test (slice-scoped):** **allowed** per [implement-agent](SKILL.md#orchestrator-konfiguration) — `dotnet build`, `dotnet test`, `ng build`, `npm run build`, `ng test`, `npm test` and unit tests **for the assigned slice**; **genericRTK** mandatory on every such run. **Not** stack-wide Technik-Gate (that is **Schritt 3** after integration).
+   **Build/Test (slice-scoped):** **allowed** per [implement-agent](SKILL.md#orchestrator-konfiguration) — `dotnet build`, `dotnet test`, `ng build`, `npm run build`, `ng test`, `npm test` and unit tests **for the assigned slice**; **build-log-filter** mandatory on every such run. **Not** stack-wide Technik-Gate (that is **Schritt 3** after integration).
 
 3. **Agent-Typ (Implementierung):** **`implement-agent`** — Profil [implement-agent](SKILL.md#orchestrator-konfiguration); Modell gemäß [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
 
@@ -286,7 +286,7 @@ checkpoint, and resolve trivial merge mechanics when in scope.
      plan; escalate conflicts to the initial agent or user.
    - **When the plan provides Umsetzungs-Topologie:** **Slice-ID**, **wave**, topology
      context, parallelism/blocking, shared contracts, integration handoff (see [references/subagent-prompts.md](references/subagent-prompts.md)).
-   - **Pflicht:** Den passenden Abschnitt aus [references/subagent-prompts.md](references/subagent-prompts.md) in den Task-Prompt übernehmen — bei Build/Test **Implementierer (Slice — Build/Test + genericRTK)**; genericRTK-Checkliste kanonisch in [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc) (**keine** zweite 1–8-Liste im Brief duplizieren).
+   - **Pflicht:** Den passenden Abschnitt aus [references/subagent-prompts.md](references/subagent-prompts.md) in den Task-Prompt übernehmen — bei Build/Test **Implementierer (Slice — Build/Test + build-log-filter)**; build-log-filter-Checkliste kanonisch in [`.cursor/rules/build-log-filter.mdc`](../../rules/build-log-filter.mdc) (**keine** zweite 1–8-Liste im Brief duplizieren).
 
 6. **Plan deviations:** No deliberate deviation from the final plan without
    **user approval**. If implementation reveals the plan is wrong or incomplete,
@@ -297,16 +297,16 @@ checkpoint, and resolve trivial merge mechanics when in scope.
 7. The initial agent remains orchestrator: subagent output is **not** done until
    the **integration checkpoint** (below) and **Schritt 3** pass.
 
-### Build/Test + genericRTK (kurz — gilt überall)
+### Build/Test + build-log-filter (kurz — gilt überall)
 
-**Kanon (keine zweite Liste):** [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc) — **Ausführungs-Checkliste (pro Build-/Test-Lauf)** Schritte **1–8** und **[Interpretationspflicht (verbindlich)](../../rules/genericrtk-output-filter.mdc#interpretationspflicht-verbindlich)**. **Gilt** für **`implement-agent`** (slice build/test), **Technik-Gate** (Schritt 3), **`implement-fix-planner-agent`** (Diagnose-Läufe) und den **initialen Agenten** nur bei dokumentierter Host-Limitation.
+**Kanon (keine zweite Liste):** [`.cursor/rules/build-log-filter.mdc`](../../rules/build-log-filter.mdc) — **Ausführungs-Checkliste (pro Build-/Test-Lauf)** Schritte **1–8** und **[Interpretationspflicht (verbindlich)](../../rules/build-log-filter.mdc#interpretationspflicht-verbindlich)**. **Gilt** für **`implement-agent`** (slice build/test), **Technik-Gate** (Schritt 3), **`implement-fix-planner-agent`** (Diagnose-Läufe) und den **initialen Agenten** nur bei dokumentierter Host-Limitation.
 
-- Pro Lauf: Shell → vollständiges Capture → genericRTK → **intern lesen** → Kurzprosa + Shell-Exit (**kein** MCP-Body, **kein** Roh-Log ans LLM).
-- **Unklare verdichtete Ausgabe:** Agent **informiert den Nutzer**, dass genericRTK nachgeschärft werden soll — **nicht** aus Roh-Konsole raten.
+- Pro Lauf: Shell → vollständiges Capture → build-log-filter → **intern lesen** → Kurzprosa + Shell-Exit (**kein** MCP-Body, **kein** Roh-Log ans LLM).
+- **Unklare verdichtete Ausgabe:** Agent **informiert den Nutzer**, dass build-log-filter nachgeschärft werden soll — **nicht** aus Roh-Konsole raten.
 - **Interpretationspflicht:** inhaltliche Diagnose/Freigabe **nur** aus intern gelesenem MCP; **OK/FAIL** aus Shell-Exit; **kein** Kurz-`raw`, **kein** Terminal-Datei-Ersatz (`terminals/*.txt`).
-- **Vor jedem** MCP: **`Rufe genericRTK …`** sichtbar; **Hard Stop** wenn MCP nicht erreichbar (in-scope).
+- **Vor jedem** MCP: **`Rufe build-log-filter …`** sichtbar; **Hard Stop** wenn MCP nicht erreichbar (in-scope).
 
-**Vor Technik-Gate (Orchestrator):** Beim ersten applicable Lauf oder vor Start einer Review-Iteration — wenn MCP bei applicable Kommando **nicht** erreichbar ist, sofort **Hard Stop** (`BLOCKER: genericRTK nicht erreichbar`), **keine** Technik-Gate-/Review-Subagents starten.
+**Vor Technik-Gate (Orchestrator):** Beim ersten applicable Lauf oder vor Start einer Review-Iteration — wenn MCP bei applicable Kommando **nicht** erreichbar ist, sofort **Hard Stop** (`BLOCKER: build-log-filter nicht erreichbar`), **keine** Technik-Gate-/Review-Subagents starten.
 
 **Implementation subagents (Schritt 2):** **must not** perform **stack-wide Technik-Gate** during Schritt 2 — that is **Schritt 3** after the integration checkpoint. Slice-scoped build/test per **implement-agent** is allowed.
 
@@ -338,7 +338,7 @@ repo files **after** a Technik-Gate run (integration fix, import cleanup, merge
 resolution, config tweak), treat prior Technik-Gate as **stale**. **Do not** run
 `ng build` / `ng test` / `dotnet build` / `dotnet test` yourself to “confirm green”.
 **Must** re-run **Technik-Gate** for affected stacks in the **next** Review-Iteration and collect a **continued**
-[Verifikations-Matrix](../../rules/genericrtk-output-filter.mdc#verifikations-matrix). See [Orchestrator-Nachlauf](../../rules/genericrtk-output-filter.mdc#orchestrator-nachlauf-hauptagent).
+[Verifikations-Matrix](../../rules/build-log-filter.mdc#verifikations-matrix). See [Orchestrator-Nachlauf](../../rules/build-log-filter.mdc#orchestrator-nachlauf-hauptagent).
 
 ## Schritt 3 — Iterativer Implement-Review-Loop
 
@@ -392,13 +392,13 @@ If any **klärungsbedürftig** findings exist, ask **one bundled question** (tem
 
 Exactly **one** `implement-fix-planner-agent` run per iteration. Input: plan, ACs, Review-Digest, classified findings, Technik-Gate status, diff list, user clarifications (if any).
 
-**Mandatory:** Rules 1–5 + MCP order **A–H** + genericRTK + **Evidenz-Basis** in deliverable — see [implement-fix-planner-agent.md](../../agents/implement-fix-planner-agent.md) and prompt **Fix-Planer (nach Review)**.
+**Mandatory:** Rules 1–5 + MCP order **A–H** + build-log-filter + **Evidenz-Basis** in deliverable — see [implement-fix-planner-agent.md](../../agents/implement-fix-planner-agent.md) and prompt **Fix-Planer (nach Review)**.
 
 **Forbidden:** orchestrator-authored fix plans; Fix-Slices without Fix-Planer output.
 
 **3.7 Fix-Slices umsetzen**
 
-Spawn **`implement-agent`** per Fix-Slice from the Fix-Teilplan (IMP-* IDs, waves/blocking as planned). **Task-Prompt:** **Implementierer (Fix-Slice)**. Slice-scoped build/test only; genericRTK per run.
+Spawn **`implement-agent`** per Fix-Slice from the Fix-Teilplan (IMP-* IDs, waves/blocking as planned). **Task-Prompt:** **Implementierer (Fix-Slice)**. Slice-scoped build/test only; build-log-filter per run.
 
 **3.8 Iterations-Zusammenfassung**
 
@@ -435,13 +435,13 @@ Wenn nach abgeschlossener **Iteration 3** (Review + Fix-Planer + Fix-Slices) aus
 2. **Loop evidence**: iterations count (max. 3); Technik-Gate matrix per stack/iteration; six reviews per iteration; Fix-Planer with Evidenz-Basis; Fix-Slices executed; **Rest-Findings-Bericht** if loop ended at maximum with open findings.
 3. **Operational hygiene**: no unrequested refactors, secrets, or scope creep.
 4. **Topology**: sequential/parallel adherence; contract drift resolved or escalated.
-5. **Closure format**: **Abschlussformat** in [references/subagent-prompts.md](references/subagent-prompts.md). Technik-Gate **green** only with completed runs + genericRTK per applicable command; otherwise **`BLOCKIERT (genericRTK)`** or FAIL — **no** false closure.
+5. **Closure format**: **Abschlussformat** in [references/subagent-prompts.md](references/subagent-prompts.md). Technik-Gate **green** only with completed runs + build-log-filter per applicable command; otherwise **`BLOCKIERT (build-log-filter)`** or FAIL — **no** false closure.
 6. Optional **Clean-Code review** over current Git changes — **only** after user confirmation.
 
 ## Operationale Regeln
 
-- **Implementation (Schritt 2):** **1–10** **`implement-agent`** subagents; slice-scoped build/test and unit tests per [implement-agent](SKILL.md#orchestrator-konfiguration); **genericRTK** on every in-scope run.
-- **Review-Loop (Schritt 3):** max. **3** Iterationen (früher Abbruch wenn sauber); **Technik-Gate** pro Stack/Iteration; **6× implement-review-***; **implement-fix-planner-agent** mit MCP A–H + genericRTK + Evidenz-Basis; **implement-agent** Fix-Slices only; nach Iteration 3 mit Rest-Findings → **Rest-Findings-Bericht**, **kein** weiterer Loop.
+- **Implementation (Schritt 2):** **1–10** **`implement-agent`** subagents; slice-scoped build/test and unit tests per [implement-agent](SKILL.md#orchestrator-konfiguration); **build-log-filter** on every in-scope run.
+- **Review-Loop (Schritt 3):** max. **3** Iterationen (früher Abbruch wenn sauber); **Technik-Gate** pro Stack/Iteration; **6× implement-review-***; **implement-fix-planner-agent** mit MCP A–H + build-log-filter + Evidenz-Basis; **implement-agent** Fix-Slices only; nach Iteration 3 mit Rest-Findings → **Rest-Findings-Bericht**, **kein** weiterer Loop.
 - **Do not** run **stack-wide Technik-Gate** during Schritt 2; Schritt 3 owns stack-wide checks unless user chose opt-out **C** or **D** in the thread.
 - **Orchestrator** fixt keine Review-Findings ohne Fix-Planer + implement-agent.
 - **Technik-Gate** may apply **narrow fixes** for green build/tests (**no** feature or scope expansion).
@@ -452,7 +452,7 @@ Wenn nach abgeschlossener **Iteration 3** (Review + Fix-Planer + Fix-Slices) aus
 
 ## Orchestrator-Konfiguration
 
-Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt 2 (genau einen Plan-Slice). Der implement-agent orchestriert Build/Test/genericRTK innerhalb seines Scopes; der übergeordnete Orchestrator ist der Nutzer-Chat (Initial Agent).
+Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt 2 (genau einen Plan-Slice). Der implement-agent orchestriert Build/Test/build-log-filter innerhalb seines Scopes; der übergeordnete Orchestrator ist der Nutzer-Chat (Initial Agent).
 
 ### Rolle
 
@@ -464,8 +464,8 @@ Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt
 
 > **Bevor du deinen Slice startest — lade in dieser Reihenfolge:**
 >
-> 1. **[implementation-workflow-skill.mdc](../../rules/implementation-workflow-skill.mdc)** — immer; Subagent-Pflicht, genericRTK-Kette, Verifikations-Matrix.
-> 2. **[genericrtk-output-filter.mdc](../../rules/genericrtk-output-filter.mdc)** — immer; Ausführungs-Checkliste 1–8 für jeden Build-/Test-Lauf.
+> 1. **[implementation-workflow-skill.mdc](../../rules/implementation-workflow-skill.mdc)** — immer; Subagent-Pflicht, build-log-filter-Kette, Verifikations-Matrix.
+> 2. **[build-log-filter.mdc](../../rules/build-log-filter.mdc)** — immer; Ausführungs-Checkliste 1–8 für jeden Build-/Test-Lauf.
 > 3. **[code-review-mcp.mdc](../../rules/code-review-mcp.mdc)** — immer; MCP-First für Analyse vor und während Implementierung.
 > 4. **[angular-skills.mdc](../../rules/angular-skills.mdc)** — wenn FE-Slice im Scope.
 > 5. **[backend-ef-migrations-skill.mdc](../../rules/backend-ef-migrations-skill.mdc)** — wenn EF/Migrations im Slice-Scope.
@@ -500,9 +500,9 @@ Ist `auto` **nicht** wählbar → **stoppen**, transparent melden — **kein** s
 - **Unit-Tests anlegen und ausführen**, die **deinen Slice** absichern
 - Minimale Fixes, damit **deine** Build-/Test-Läufe für den Slice grün werden
 
-### genericRTK (verbindlich)
+### build-log-filter (verbindlich)
 
-Kanon via Pflicht-Schritt 2: [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc) — Schritte 1–8 und **[Interpretationspflicht (verbindlich)](../../rules/genericrtk-output-filter.mdc#interpretationspflicht-verbindlich)** pro Build-/Test-Lauf. **MCP nicht erreichbar:** **`BLOCKER: genericRTK nicht erreichbar`** — stoppen.
+Kanon via Pflicht-Schritt 2: [`.cursor/rules/build-log-filter.mdc`](../../rules/build-log-filter.mdc) — Schritte 1–8 und **[Interpretationspflicht (verbindlich)](../../rules/build-log-filter.mdc#interpretationspflicht-verbindlich)** pro Build-/Test-Lauf. **MCP nicht erreichbar:** **`BLOCKER: build-log-filter nicht erreichbar`** — stoppen.
 
 ### Parallelität
 
@@ -512,7 +512,7 @@ Eigene `session_id` bei `filter_output_stream` — nicht mit anderen implement-a
 
 - Scope über den Slice hinaus, stille Planänderung, unrequested Refactors
 - Stack-weites Technik-Gate in Schritt 2
-- Diagnose aus Roh-Konsole ohne abgeschlossene genericRTK-Kette
+- Diagnose aus Roh-Konsole ohne abgeschlossene build-log-filter-Kette
 - `terminals/*.txt` als Capture-Ersatz
 
 ### Rückgabe an Orchestrator
@@ -522,7 +522,7 @@ Eigene `session_id` bei `filter_output_stream` — nicht mit anderen implement-a
 - Touched paths: …
 - Build/Test (Slice): Kommandos, OK/FAIL, Verifikations-Matrix-Zeilen pro Lauf
 - Open risks / blockers: …
-- genericRTK-Lücken (falls): was am Filter unklar blieb → Nutzer-Hinweis
+- build-log-filter-Lücken (falls): was am Filter unklar blieb → Nutzer-Hinweis
 ```
 
 Auf Deutsch, kompakt.
@@ -531,7 +531,7 @@ Auf Deutsch, kompakt.
 
 ## Pflegehinweis
 
-After changing this skill, verify host-facing guidance still matches—per host policy when the project requires it—especially **Cursor**: [`.cursor/rules/implementation-workflow-skill.mdc`](../../rules/implementation-workflow-skill.mdc) (triggers, opt-outs, skill path, **parallel implementation preferred** summary). For verification commands and repo-wide policy, align with **[`{verification-commands}`]({verification-commands})** (*Agents — mandatory verification after changes*). For build/test console reporting, align with **[.cursor/rules/genericrtk-output-filter.mdc](../../rules/genericrtk-output-filter.mdc)** (mandatory genericRTK for in-scope runs; **[Interpretationspflicht](../../rules/genericrtk-output-filter.mdc#interpretationspflicht-verbindlich)**; **Hard Stop** if MCP unreachable; **Rufe genericRTK** visible; **no** MCP body in reports; **Außerhalb des Scopes** for out-of-mapping commands).
+After changing this skill, verify host-facing guidance still matches—per host policy when the project requires it—especially **Cursor**: [`.cursor/rules/implementation-workflow-skill.mdc`](../../rules/implementation-workflow-skill.mdc) (triggers, opt-outs, skill path, **parallel implementation preferred** summary). For verification commands and repo-wide policy, align with **[`{verification-commands}`]({verification-commands})** (*Agents — mandatory verification after changes*). For build/test console reporting, align with **[.cursor/rules/build-log-filter.mdc](../../rules/build-log-filter.mdc)** (mandatory build-log-filter for in-scope runs; **[Interpretationspflicht](../../rules/build-log-filter.mdc#interpretationspflicht-verbindlich)**; **Hard Stop** if MCP unreachable; **Rufe build-log-filter** visible; **no** MCP body in reports; **Außerhalb des Scopes** for out-of-mapping commands).
 
 **Trigger doppelt pflegen (Checkliste):**
 
@@ -545,7 +545,7 @@ After changing this skill, verify host-facing guidance still matches—per host 
 
 **`disable-model-invocation`:** **Option A (verbindlich)** — `true` beibehalten; Discovery über alwaysApply-Rule + explizites Skill-Lesen. Siehe Rule-Abschnitt **Pflegehinweis / Skill-Discovery**. **Nicht** auf `false` ohne explizite Projektentscheidung.
 
-**Ausführungs-Checkliste / Interpretationspflicht:** Änderungen zuerst in **[`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc)**, anschließend **Build/Test + genericRTK (kurz)** und Prompt-Vorlagen in [references/subagent-prompts.md](references/subagent-prompts.md) abgleichen — **keine** zweite vollständige 1–8-Liste hier pflegen.
+**Ausführungs-Checkliste / Interpretationspflicht:** Änderungen zuerst in **[`.cursor/rules/build-log-filter.mdc`](../../rules/build-log-filter.mdc)**, anschließend **Build/Test + build-log-filter (kurz)** und Prompt-Vorlagen in [references/subagent-prompts.md](references/subagent-prompts.md) abgleichen — **keine** zweite vollständige 1–8-Liste hier pflegen.
 
 **Prompt-Vorlagen:** Aenderungen an Subagent-Auftrags-Payloads **nur** in [references/subagent-prompts.md](references/subagent-prompts.md); danach Verweise in diesem Skill, [implementation-workflow-skill.mdc](../../rules/implementation-workflow-skill.mdc) und Agent-`.md` pruefen.
 
@@ -562,7 +562,7 @@ Kopierbare Auftrags-Payloads (Platzhalter) — **nicht** Ersatz für Agent-Profi
 | Abschnitt | Datei | Wann |
 |-----------|-------|------|
 | Implementierer (compact) | [references/subagent-prompts.md](references/subagent-prompts.md) | Slice ohne Build/Test |
-| Implementierer (Build/Test + genericRTK) | [references/subagent-prompts.md](references/subagent-prompts.md) | **Standard** Schritt 2 mit slice-scoped Build/Test |
+| Implementierer (Build/Test + build-log-filter) | [references/subagent-prompts.md](references/subagent-prompts.md) | **Standard** Schritt 2 mit slice-scoped Build/Test |
 | Technik-Gate pro Stack | [references/subagent-prompts.md](references/subagent-prompts.md) | Pro Review-Iteration |
 | Implement-Review (×6) | [references/subagent-prompts.md](references/subagent-prompts.md) | Pro Review-Iteration |
 | Fix-Planer (nach Review) | [references/subagent-prompts.md](references/subagent-prompts.md) | Nach Review-Digest |

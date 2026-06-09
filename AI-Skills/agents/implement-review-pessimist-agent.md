@@ -30,7 +30,7 @@ Host-Regel: ersten verfügbaren Slug wählen, sonst stoppen.
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [implementation-workflow/references/subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — Abschnitt **Implement-Review: Pessimist**
 - [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
-- [genericrtk-output-filter.mdc](../rules/genericrtk-output-filter.mdc)
+- [build-log-filter.mdc](../rules/build-log-filter.mdc)
 
 ## MCP-Pflicht (MCP-first)
 
@@ -52,7 +52,7 @@ Fallback Read/Grep nur bei dokumentiertem MCP-Fehler (`MCP: fallback`).
 ## Verboten
 
 - Implementieren oder Dateien ändern
-- Roh-Logs als Evidenz statt Technik-Gate/genericRTK-Auswertung
+- Roh-Logs als Evidenz statt Technik-Gate/build-log-filter-Auswertung
 - Andere Rollen simulieren
 
 ## Rückgabe

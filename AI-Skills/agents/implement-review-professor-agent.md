@@ -30,7 +30,7 @@ Du bist der **Professor** im iterativen Implement-Review-Loop. Du behandelst die
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Professor**
 - [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
-- [genericrtk-output-filter.mdc](../rules/genericrtk-output-filter.mdc)
+- [build-log-filter.mdc](../rules/build-log-filter.mdc)
 
 ## MCP-Pflicht
 

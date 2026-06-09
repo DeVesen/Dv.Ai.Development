@@ -54,7 +54,7 @@ Agent-Modus Umsetzungs-Workflow: Implementierungs-Subagents (Slices), Hard Gate,
 | Skill | `skills/implementation-workflow/` |
 | Agents | `implement-agent`, `verify-agent` |
 | Referenz | `references/subagent-model-before-task.md` |
-| Abhängigkeit | `genericrtk-filter` |
+| Abhängigkeit | `build-log-filter` |
 
 | Parameter | Bedeutung | Beispiel |
 |-----------|-----------|---------|
@@ -63,14 +63,14 @@ Agent-Modus Umsetzungs-Workflow: Implementierungs-Subagents (Slices), Hard Gate,
 
 ---
 
-### `genericrtk-filter`
+### `build-log-filter`
 
-Output-Filter für genericRTK MCP. Pflicht bei jedem Build/Test-Shell-Lauf im Agent-Modus.
+Output-Filter für build-log-filter MCP. Pflicht bei jedem Build/Test-Shell-Lauf im Agent-Modus.
 Wird automatisch als Abhängigkeit von `implementation-workflow` installiert.
 
 | Was | Dateien |
 |-----|---------|
-| Rule | `rules/genericrtk-output-filter.mdc` |
+| Rule | `rules/build-log-filter.mdc` |
 
 Keine Parameter.
 
@@ -224,7 +224,7 @@ buddy-agent           →  caveman, commit-message
 angular-refactor      →  angular-bundle
 angular-material-*    →  angular-bundle
 describe-as-html-*    →  describe-as-prompt
-implementation-*      →  genericrtk-filter
+implementation-*      →  build-log-filter
 ```
 
 ## Parameter-Persistenz

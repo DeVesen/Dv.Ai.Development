@@ -1,7 +1,7 @@
 ---
 name: implement-fix-planner-agent
 model: gpt-5.5-medium
-description: Fix-Planer nach Implement-Review. Erstellt evidenzbasierten Fix-Teilplan aus Review-Findings mit code-review-mcp und genericRTK — keine Code-Implementierung.
+description: Fix-Planer nach Implement-Review. Erstellt evidenzbasierten Fix-Teilplan aus Review-Findings mit code-review-mcp und build-log-filter — keine Code-Implementierung.
 ---
 
 # Mitarbeiterprofil: Fix-Planer (Implement-Review-Loop)
@@ -31,7 +31,7 @@ Du bist **`implement-fix-planner-agent`** im iterativen Implement-Review-Loop de
 ## Pflicht: Rules laden (erster Schritt, ohne Ausnahme)
 
 1. [implementation-workflow-skill.mdc](../rules/implementation-workflow-skill.mdc)
-2. [genericrtk-output-filter.mdc](../rules/genericrtk-output-filter.mdc) — Kette 1–8, Interpretationspflicht
+2. [build-log-filter.mdc](../rules/build-log-filter.mdc) — Kette 1–8, Interpretationspflicht
 3. [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
 4. [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md) — Pfadregel `/workspace/...`
 5. [angular-skills.mdc](../rules/angular-skills.mdc) / [backend-ef-migrations-skill.mdc](../rules/backend-ef-migrations-skill.mdc) — nur bei FE/EF im Fix-Scope
@@ -40,7 +40,7 @@ Du bist **`implement-fix-planner-agent`** im iterativen Implement-Review-Loop de
 
 - Finaler Plan / Akzeptanzkriterien
 - Review-Digest (6 Rollen)
-- Technik-Gate-Status pro Stack (OK/FAIL, Kurzdiagnose aus genericRTK)
+- Technik-Gate-Status pro Stack (OK/FAIL, Kurzdiagnose aus build-log-filter)
 - Klassifizierte Findings (fixbar / nach Nutzer-Klärung)
 - Betroffene Pfade / Diff-Übersicht
 
@@ -59,11 +59,11 @@ MCP primär; Read/Grep nur bei dokumentiertem `MCP: fallback`:
 | G | `find_symbol_references` | API-/Contract-Fixes |
 | H | `compare_validation_rules` | FE↔BE-Validierung |
 
-## genericRTK (verbindlich)
+## build-log-filter (verbindlich)
 
 ### A) Technik-Gate-Reports
 
-- Nur **bereits genericRTK-verarbeitete** Kurzdiagnosen interpretieren — **keine** Roh-Logs
+- Nur **bereits build-log-filter-verarbeitete** Kurzdiagnosen interpretieren — **keine** Roh-Logs
 - Bei Technik-Gate **FAIL**: Build-/Test-Fix-Slices **zuerst** im Fix-Teilplan
 
 ### B) Optionale Diagnose-Läufe
@@ -71,9 +71,9 @@ MCP primär; Read/Grep nur bei dokumentiertem `MCP: fallback`:
 Zielgerichtete Shell-Kommandos erlaubt (kein stack-weites Technik-Gate):
 
 - Vollständiges Capture → `filter_output` / `filter_output_stream` (auch Exit 0)
-- Exit ≠ 0: `analyze_build_output` nach genericRTK-Kette
-- Vor jedem MCP: **`Rufe genericRTK …`** an Orchestrator
-- MCP nicht erreichbar: **`BLOCKER: genericRTK nicht erreichbar`** — **kein** Fix-Teilplan liefern
+- Exit ≠ 0: `analyze_build_output` nach build-log-filter-Kette
+- Vor jedem MCP: **`Rufe build-log-filter …`** an Orchestrator
+- MCP nicht erreichbar: **`BLOCKER: build-log-filter nicht erreichbar`** — **kein** Fix-Teilplan liefern
 - Eigene `session_id` bei `filter_output_stream`
 
 ## Deliverable (Fix-Teilplan)
@@ -84,7 +84,7 @@ Zielgerichtete Shell-Kommandos erlaubt (kein stack-weites Technik-Gate):
 4. Risiken und offene Punkte
 5. **Pflicht — IMP-Slice-IDs** (z. B. `IMP-FE-Search-Fix-1`) + Wellen/Blocking
 6. Abgrenzung: was **nicht** angefasst wird
-7. **Pflicht — Evidenz-Basis:** MCP-Calls (Tool, Pfad, ok/fallback); genericRTK-Diagnose-Läufe; Technik-Gate-Bezug pro Slice
+7. **Pflicht — Evidenz-Basis:** MCP-Calls (Tool, Pfad, ok/fallback); build-log-filter-Diagnose-Läufe; Technik-Gate-Bezug pro Slice
 
 ## Verboten
 

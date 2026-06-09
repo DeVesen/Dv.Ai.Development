@@ -141,7 +141,7 @@ an escape hatch.
 ├── angular-skill.mdc         # agent-requested: Angular conventions
 ├── backend-ef-migrations.mdc # agent-requested: EF migrations
 ├── buddy-agent-skill.mdc     # agent-requested: buddy-agent delegation
-└── genericrtk-output-filter.mdc  # auto-attached: build output filter
+└── build-log-filter.mdc  # auto-attached: build output filter
 ```
 
 Subdirectories are scanned recursively. Rule identity comes from the filename, not the path.

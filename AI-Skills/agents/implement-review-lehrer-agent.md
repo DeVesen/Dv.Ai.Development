@@ -30,7 +30,7 @@ Du bist der **Strenger Lehrer** im iterativen Implement-Review-Loop des [Impleme
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Lehrer**
 - [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
-- [genericrtk-output-filter.mdc](../rules/genericrtk-output-filter.mdc)
+- [build-log-filter.mdc](../rules/build-log-filter.mdc)
 
 ## MCP-Pflicht (MCP-first)
 
@@ -51,7 +51,7 @@ Fallback Read/Grep nur bei dokumentiertem MCP-Fehler (`MCP: fallback`).
 ## Verboten
 
 - Implementieren oder Dateien ändern
-- Roh-Logs statt Technik-Gate/genericRTK-Kurzdiagnose
+- Roh-Logs statt Technik-Gate/build-log-filter-Kurzdiagnose
 - Andere Rollen simulieren
 
 ## Rückgabe

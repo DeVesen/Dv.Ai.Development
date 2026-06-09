@@ -956,39 +956,32 @@ implementiere die Erweiterung laut Plan
 ### Packages installieren / aktualisieren
 
 ```powershell
-# Einzelnes Package (Abhängigkeiten automatisch)
-.\.cursor\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor
+# Alle Packages installieren (ADO wird separat abgefragt)
+.\AI-Skills\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor
 
-# Mehrere Packages
-.\.cursor\install-skill.ps1 implementation-workflow C:\Projects\MyApp\.cursor
-.\.cursor\install-skill.ps1 ado-requests-stories C:\Projects\MyApp\.cursor
-
-# Alle Packages auf einmal
-.\.cursor\install-skill.ps1 all C:\Projects\MyApp\.cursor
+# Cursor + Claude Code gleichzeitig
+.\AI-Skills\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
 
 # Vorschau ohne Dateikopie
-.\.cursor\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor -DryRun
+.\AI-Skills\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor -DryRun
 
 # Verfügbare Packages anzeigen
-.\.cursor\install-skill.ps1 -List
+.\AI-Skills\install-cursor-skills.ps1 -List
 ```
 
 ### Packages updaten
 
-Aktualisiert Dateien eines installierten Packages (Abhängigkeiten automatisch). Bereits konfigurierte Parameter und MCP-Einstellungen bleiben erhalten — nur neue Parameter werden abgefragt.
+Aktualisiert alle bereits installierten Packages (laut `installed-manifest.json`). Packages die nicht mehr in `packages/` existieren werden entfernt. User-eigene Skills/Agents bleiben unangetastet.
 
 ```powershell
-# Einzelnes Package aktualisieren
-.\.cursor\update-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor
+# Alle installierten Packages aktualisieren
+.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor
 
-# Alle Packages aktualisieren
-.\.cursor\update-skill.ps1 all C:\Projects\MyApp\.cursor
+# Cursor + Claude Code gleichzeitig
+.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
 
 # Vorschau ohne Änderungen
-.\.cursor\update-skill.ps1 genericrtk-filter C:\Projects\MyApp\.cursor -DryRun
-
-# Verfügbare Packages anzeigen
-.\.cursor\update-skill.ps1 -List
+.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor -DryRun
 ```
 
 ### Parameter befüllen
@@ -997,7 +990,7 @@ Nach der Installation alle `{parameter}`-Platzhalter in `agents/`, `rules/` und 
 
 ```powershell
 # Interaktiv — speichert Werte in .cursor/skill-params.json
-.\.cursor\update-skill.ps1 all C:\Projects\MyApp\.cursor
+.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor
 ```
 
 ### Host-spezifische Konfiguration
@@ -1016,14 +1009,10 @@ Rules (`.mdc`) sind Cursor-only und werden nicht nach `.claude/` kopiert.
 
 ```powershell
 # Installieren: Cursor + Claude Code gleichzeitig
-.\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
-
-# Alle Packages für beide Plattformen
-.\install-skill.ps1 all C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
+.\AI-Skills\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
 
 # Updaten: Cursor + Claude Code gleichzeitig
-.\update-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
-.\update-skill.ps1 all C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
+.\AI-Skills\update-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
 ```
 
 **Was wohin deployt wird:**

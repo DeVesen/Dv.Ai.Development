@@ -56,7 +56,7 @@ task: slug, label, originalText
 paths: storyFolder, taskFilePath
 
 Aufgabe:
-1. Code-Scout unter {code-root}/ (MCP code-review-mcp bevorzugt).
+1. Code-Scout unter {code-root}/ (MCP codebase-analyzer bevorzugt).
 2. taskDraft: Anforderung, Offene Fragen, Story-Bezug, Akzeptanzkriterien, AI Zusammenfassung.
 3. moeglichkeitenBlock: buddy intake/repo-check, markiere fertig, ToDo, plane Task.
 

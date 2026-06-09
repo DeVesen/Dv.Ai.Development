@@ -293,7 +293,7 @@ _keine_
 | Parameter | Beschreibung |
 |-----------|-------------|
 | `{workspace-root}` | Cursor-Workspace-Root; Task.md unter `{workspace-root}/requests/stories/UserStory-{id}-*/tasks/` |
-| `./buddy-repo-check.md` | Ressourcen-Pipeline im **Repo-Root** (nicht unter `.cursor/`). Template kopieren: `skills/buddy-agent/buddy-repo-check.md` → `./buddy-repo-check.md`. **Ohne Datei:** Default-Pipeline = `code-review-mcp` only. |
+| `./buddy-repo-check.md` | Ressourcen-Pipeline im **Repo-Root** (nicht unter `.cursor/`). Template kopieren: `skills/buddy-agent/buddy-repo-check.md` → `./buddy-repo-check.md`. **Ohne Datei:** Default-Pipeline = `codebase-analyzer` only. |
 
 **Optional (projektspezifisch, nicht im buddy-agent-Profil):** MCP-Schritte in `./buddy-repo-check.md` unter `## Pipeline` ergänzen — unbekannte Zeilen erscheinen in repo-check unter `### Pipeline-Warnungen`.
 
@@ -301,7 +301,7 @@ _keine_
 
 ---
 
-### code-review-mcp
+### codebase-analyzer
 
 Statische Code-Analyse über MCP (AST, Index, Refactoring-Safety, Nullability, Auto-Fixes) für Angular und .NET — je nach Phase: Planung, Implementierung oder Nach-Implementierung.
 
@@ -342,13 +342,13 @@ vor dem Merge alles prüfen
 
 | Datei | Trigger |
 |-------|---------|
-| `rules/code-review-mcp.mdc` | Code-Review-Anfragen in allen Phasen; Symbol-First (Index vor Grep) bei Klassen-/Methoden-Bezug |
+| `rules/codebase-analyzer.mdc` | Code-Review-Anfragen in allen Phasen; Symbol-First (Index vor Grep) bei Klassen-/Methoden-Bezug |
 
 #### Skills
 
 | Datei | Inhalt |
 |-------|--------|
-| `skills/code-review-mcp/SKILL.md` | Tool-Auswahl je Phase, Code-Landkarte Recherche-Reihenfolge, MCP-Pfadauflösung |
+| `skills/codebase-analyzer/SKILL.md` | Tool-Auswahl je Phase, Code-Landkarte Recherche-Reihenfolge, MCP-Pfadauflösung |
 
 #### References
 
@@ -397,7 +397,7 @@ zeig mir die Signaturen
 
 | Datei | Inhalt |
 |-------|--------|
-| `skills/dev-tooling-mcp/SKILL.md` | 8 Tools, Pfadkonvention `/project`, Abgrenzung code-review-mcp |
+| `skills/dev-tooling-mcp/SKILL.md` | 8 Tools, Pfadkonvention `/project`, Abgrenzung codebase-analyzer |
 
 #### References
 

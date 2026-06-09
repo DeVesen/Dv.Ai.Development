@@ -2,7 +2,7 @@ import { writeFileSync, readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { indexAngularProject, AngularProjectIndex } from "./angular-indexer.js";
 
-const CACHE_FILENAME = ".code-review-index-angular.json";
+const CACHE_FILENAME = ".codebase-analyzer-index-angular.json";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 export function indexAngularProjectCached(rootPath: string, useCache = true): AngularProjectIndex {

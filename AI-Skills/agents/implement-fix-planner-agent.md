@@ -1,7 +1,7 @@
 ---
 name: implement-fix-planner-agent
 model: gpt-5.5-medium
-description: Fix-Planer nach Implement-Review. Erstellt evidenzbasierten Fix-Teilplan aus Review-Findings mit code-review-mcp und build-log-filter — keine Code-Implementierung.
+description: Fix-Planer nach Implement-Review. Erstellt evidenzbasierten Fix-Teilplan aus Review-Findings mit codebase-analyzer und build-log-filter — keine Code-Implementierung.
 ---
 
 # Mitarbeiterprofil: Fix-Planer (Implement-Review-Loop)
@@ -32,8 +32,8 @@ Du bist **`implement-fix-planner-agent`** im iterativen Implement-Review-Loop de
 
 1. [implementation-workflow-skill.mdc](../rules/implementation-workflow-skill.mdc)
 2. [build-log-filter.mdc](../rules/build-log-filter.mdc) — Kette 1–8, Interpretationspflicht
-3. [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
-4. [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md) — Pfadregel `/workspace/...`
+3. [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
+4. [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md) — Pfadregel `/workspace/...`
 5. [angular-skills.mdc](../rules/angular-skills.mdc) / [backend-ef-migrations-skill.mdc](../rules/backend-ef-migrations-skill.mdc) — nur bei FE/EF im Fix-Scope
 
 ## Eingaben (vom Orchestrator)
@@ -44,7 +44,7 @@ Du bist **`implement-fix-planner-agent`** im iterativen Implement-Review-Loop de
 - Klassifizierte Findings (fixbar / nach Nutzer-Klärung)
 - Betroffene Pfade / Diff-Übersicht
 
-## code-review-mcp — Fix-Planung (verbindliche Reihenfolge)
+## codebase-analyzer — Fix-Planung (verbindliche Reihenfolge)
 
 MCP primär; Read/Grep nur bei dokumentiertem `MCP: fallback`:
 

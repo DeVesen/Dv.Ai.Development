@@ -405,7 +405,7 @@ Scouting gestartet werden soll.
 **Code-Recherche (verbindlich) — MCP zuerst, Fallback (Read/Grep) nur wenn MCP nicht verfügbar:**
 Bei Bezug auf Klassen, Methoden, Properties, Services, Routen oder „von Stelle A nach Stelle B" —
 Basis-Landkarte (`index_project` + `find_in_index`) gemäß
-[code-review-mcp — Code-Landkarte](../code-review-mcp/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
+[codebase-analyzer — Code-Landkarte](../codebase-analyzer/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
 UI-Elemente ohne Symbol (Button-Label, Feld ohne Klassenname) sind davon ausgenommen.
 
 **Erweiterte MCP-Analyse in Phase 3** (nach `find_in_index`, wenn konkrete Klassen/Methoden aufgelöst):
@@ -426,7 +426,7 @@ ruft **vor** Scout-Delegation einmal pro betroffenen Stack `index_project` auf u
 den verifizierten `projectPath` als festen Wert in den Scout-Auftrag. Pfade gemäß
 `./AGENTS.md` (`{frontend-path}` / `{backend-path}`).
 Schlägt `index_project` fehl: BLOCKER dokumentieren; Fallback-Playbook in
-[code-review-mcp/SKILL.md — MCP-Pfadauflösung](../code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook)
+[codebase-analyzer/SKILL.md — MCP-Pfadauflösung](../codebase-analyzer/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook)
 befolgen — **kein** stilles Überspringen.
 
 **Scout-Merge — MCP-Status-Gate:** Beim Zusammenführen aller Scout-Deliverables prüfen:
@@ -845,11 +845,11 @@ Konfiguration des **plan-agent** — Senior-Architekt und Planungs-Orchestrator 
 > **Skills (immer):**
 > 1. **[planning-workflow/SKILL.md](SKILL.md)** — vollständig; definiert Phasen, Gates, Deliverables, Subagent-Prompts verbindlich.
 > 2. **[caveman/SKILL.md](../caveman/SKILL.md)** — Modus `lite`; gilt für alle Chat-Ausgaben dieses Agents.
-> 3. **[code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md)** — MCP-First für alle Analysen; Read/Grep nur als Fallback.
+> 3. **[codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md)** — MCP-First für alle Analysen; Read/Grep nur als Fallback.
 >
 > **Rules (`.cursor/rules/` prüfen — relevante laden und befolgen):**
 > 4. **[planning-workflow-skill.mdc](../../rules/planning-workflow-skill.mdc)** — immer; Phasen-Gates, Subagent-Typen, Modellwahl.
-> 5. **[code-review-mcp.mdc](../../rules/code-review-mcp.mdc)** — immer; Symbol-Suche, Phasen-Mapping, MCP-Ausgabeformat.
+> 5. **[codebase-analyzer.mdc](../../rules/codebase-analyzer.mdc)** — immer; Symbol-Suche, Phasen-Mapping, MCP-Ausgabeformat.
 > 6. **[angular-skills.mdc](../../rules/angular-skills.mdc)** — wenn FE-Topics im Scope.
 > 7. **[backend-ef-migrations-skill.mdc](../../rules/backend-ef-migrations-skill.mdc)** — wenn EF/Migrations im Scope.
 >
@@ -908,7 +908,7 @@ Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rol
 
 1. Orchestrator ruft **einmal pro Stack** `index_project` auf.
 2. Ergebnis: aufgelöste Symbole und **verifizierter `projectPath`** als feste Werte in den Scout-Auftrag.
-3. **Schlägt `index_project` fehl:** Pfad-Playbook aus [code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md) befolgen; danach `MCP-BLOCKER` im Scout-Auftrag — **kein** stilles Überspringen.
+3. **Schlägt `index_project` fehl:** Pfad-Playbook aus [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) befolgen; danach `MCP-BLOCKER` im Scout-Auftrag — **kein** stilles Überspringen.
 
 ### Projektstandards
 

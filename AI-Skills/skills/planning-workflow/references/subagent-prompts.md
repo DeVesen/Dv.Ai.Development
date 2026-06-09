@@ -44,7 +44,7 @@ Schritt 1 — Basis-Landkarte (Pflicht):
    Bei Fehler: max. 2 Versuche je Stack dokumentieren, dann MCP-Fallback erklaeren.
    UI-only-Begriffe ohne Symbol ausnehmen.
 
-Schritt 1b — Dev-Filesystem-MCP (optional, ergaenzend zu code-review-mcp):
+Schritt 1b — Dev-Filesystem-MCP (optional, ergaenzend zu codebase-analyzer):
    Nach find_in_index, wenn konkrete Dateipfade bekannt:
    - read_class_summary: Klassen-Uebersicht ohne Body
    - read_signatures_only: Public-API fuer Interface-Verstaendnis

@@ -1,5 +1,5 @@
 ---
-description: Schreibende Umsetzung im Agent-Modus. Skill laden bei implementiere/setze um/fix/einbauen/leg los, Plan ausführen, IMP-* Umsetzung. Verbindlich mit Hard Gate, Implement-Review-Loop max. 3× (Technik-Gate + 6 Reviews + Fix-Planer) und build-log-filter/code-review-mcp Pflicht. Nicht bei reiner Planung oder Erklärung.
+description: Schreibende Umsetzung im Agent-Modus. Skill laden bei implementiere/setze um/fix/einbauen/leg los, Plan ausführen, IMP-* Umsetzung. Verbindlich mit Hard Gate, Implement-Review-Loop max. 3× (Technik-Gate + 6 Reviews + Fix-Planer) und build-log-filter/codebase-analyzer Pflicht. Nicht bei reiner Planung oder Erklärung.
 alwaysApply: true
 ---
 

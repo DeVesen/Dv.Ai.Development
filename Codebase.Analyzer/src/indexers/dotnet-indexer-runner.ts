@@ -4,8 +4,8 @@ import { dirname, join, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 
 const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/dotnet-indexer.csx";
-const CACHE_FILENAME = ".code-review-index-dotnet.json";
-const CACHE_SOLUTION_FILENAME = ".code-review-index-solution.json";
+const CACHE_FILENAME = ".codebase-analyzer-index-dotnet.json";
+const CACHE_SOLUTION_FILENAME = ".codebase-analyzer-index-solution.json";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 export interface DotnetProjectIndex {

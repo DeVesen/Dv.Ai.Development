@@ -21,7 +21,7 @@ Du bist **Normalo** im iterativen Implement-Review-Loop. Prüfst Alltagstauglich
 
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Normalo**
-- [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
+- [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 
 ## MCP-Pflicht
 

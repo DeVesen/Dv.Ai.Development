@@ -1,9 +1,9 @@
 ---
-description: Code-Review-MCP — Planung (index_project, index_solution, find_in_index, suggest_class_splits, analyze_refactoring_safety, analyze_type_graph, analyze_maintainability_index, analyze_dataflow), Implementierung (review_file, review_code, review_git_diff, review_files_batch, analyze_nullability, analyze_complexity, analyze_method_extraction_candidates, generate_auto_fixes, analyze_control_flow, analyze_dead_code, analyze_ast_only) oder Nach-Implementierung (detect_untested_public_api, analyze_coverage, analyze_test_quality, analyze_test_health, analyze_duplicates, review_with_index, analyze_advanced_all) je nach Phase; Ausgabe strukturiert mit Score, Kritisch/Warnung/Gut/Sofortmaßnahmen. Symbol-Bezug (Klasse, Methode, Property, Service, Route): Grep nicht zuerst — zuerst index_project/index_solution, dann find_in_index. Kein Index bei reinem UI-Wortschatz (Button-Label, sichtbares Feld) ohne Symbol.
+description: Codebase-Analyzer — Planung (index_project, index_solution, find_in_index, suggest_class_splits, analyze_refactoring_safety, analyze_type_graph, analyze_maintainability_index, analyze_dataflow), Implementierung (review_file, review_code, review_git_diff, review_files_batch, analyze_nullability, analyze_complexity, analyze_method_extraction_candidates, generate_auto_fixes, analyze_control_flow, analyze_dead_code, analyze_ast_only) oder Nach-Implementierung (detect_untested_public_api, analyze_coverage, analyze_test_quality, analyze_test_health, analyze_duplicates, review_with_index, analyze_advanced_all) je nach Phase; Ausgabe strukturiert mit Score, Kritisch/Warnung/Gut/Sofortmaßnahmen. Symbol-Bezug (Klasse, Methode, Property, Service, Route): Grep nicht zuerst — zuerst index_project/index_solution, dann find_in_index. Kein Index bei reinem UI-Wortschatz (Button-Label, sichtbares Feld) ohne Symbol.
 alwaysApply: true
 ---
 
-# Code-Review-MCP
+# Codebase-Analyzer
 
 Wenn ein User über Code spricht, erkenne die Phase und handle entsprechend.
 
@@ -25,7 +25,7 @@ Schlüsselwörter: "Tests laufen", "Feature fertig", "vor dem Merge", "Sprint-En
 **Symbol-Bezug (Klasse, Methode, Property, Service, Route):** Grep nicht zuerst —
 zuerst `index_project` (Einzelprojekt) oder `index_solution` (.NET Multi-Projekt / `.sln` im Root), dann `find_in_index`. Grep nur für Caller, String-Literale, Routes.
 **Kein Index** bei reinem UI-Wortschatz (Button-Label, sichtbares Feld) ohne genanntes Symbol.
-Vollständige Recherche-Reihenfolge: [code-review-mcp SKILL.md](../skills/code-review-mcp/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
+Vollständige Recherche-Reihenfolge: [codebase-analyzer SKILL.md](../skills/codebase-analyzer/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
 
 **Schritt 1** — Immer zuerst (`projectPath` = `{frontend-path}` / `{backend-path}` aus `./AGENTS.md`):
 ```
@@ -36,7 +36,7 @@ index_project(projectPath: "{backend-path}", type: "dotnet")
 // .NET Multi-Projekt (.sln im Root oder projectReferences im index_project-Output):
 index_solution(solutionPath: "/workspace/<name>.sln")
 ```
-Bei Fehler: Pfad-Playbook in [code-review-mcp SKILL.md — MCP-Pfadauflösung](../skills/code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) befolgen (max. 2 Versuche je Stack, dann MCP-Fallback dokumentieren).
+Bei Fehler: Pfad-Playbook in [codebase-analyzer SKILL.md — MCP-Pfadauflösung](../skills/codebase-analyzer/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) befolgen (max. 2 Versuche je Stack, dann MCP-Fallback dokumentieren).
 Zeige kompakt: was gibt es, was sind die größten Abhängigkeiten, gibt es Warnungen? Bei `projectReferences` / `externalDependencies` → `index_solution` nachladen.
 
 **Schritt 2** — Bei konkreter Klasse/Service:

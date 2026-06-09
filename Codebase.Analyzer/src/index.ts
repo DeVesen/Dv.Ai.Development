@@ -242,7 +242,7 @@ function performReview(
 
 // ─── MCP Server ───────────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: "code-review-mcp", version: "2.3.0" });
+const server = new McpServer({ name: "codebase-analyzer", version: "2.3.0" });
 
 // Auto-track all tool calls for the log viewer
 {
@@ -2205,4 +2205,4 @@ startLogViewer(logViewerPort);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("code-review-mcp v2.6 running (index_solution, suggest_boyscout_actions, detect_god_classes, analyze_compiler_diagnostics, detect_untested_public_api, find_symbol_references, find_type_hierarchy)");
+console.error("codebase-analyzer v2.6 running (index_solution, suggest_boyscout_actions, detect_god_classes, analyze_compiler_diagnostics, detect_untested_public_api, find_symbol_references, find_type_hierarchy)");

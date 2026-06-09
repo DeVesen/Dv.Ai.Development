@@ -1,8 +1,8 @@
 services:
-  code-review-mcp:
+  codebase-analyzer:
     build: .
-    image: code-review-mcp:latest
-    container_name: code-review-mcp
+    image: dv-codebase-analyzer-mcp:local
+    container_name: codebase-analyzer
     stdin_open: true   # Required for stdio MCP transport
     tty: false
     environment:

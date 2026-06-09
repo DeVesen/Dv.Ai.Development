@@ -48,7 +48,7 @@ Ist `auto` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — auto nic
 | `task` | `slug`, `label`, `originalText` |
 | `paths` | `storyFolder`, `taskFilePath` |
 
-## code-review-mcp (Bevorzugt)
+## codebase-analyzer (Bevorzugt)
 
 | Aufgabe | MCP-Call |
 |---------|----------|

@@ -29,7 +29,7 @@ Host-Regel: ersten verfügbaren Slug wählen, sonst stoppen.
 
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [implementation-workflow/references/subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — Abschnitt **Implement-Review: Pessimist**
-- [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
+- [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 - [build-log-filter.mdc](../rules/build-log-filter.mdc)
 
 ## MCP-Pflicht (MCP-first)

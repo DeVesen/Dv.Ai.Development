@@ -29,7 +29,7 @@ Du bist der **Strenger Lehrer** im iterativen Implement-Review-Loop des [Impleme
 
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Lehrer**
-- [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
+- [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 - [build-log-filter.mdc](../rules/build-log-filter.mdc)
 
 ## MCP-Pflicht (MCP-first)

@@ -148,8 +148,8 @@ Scout-Verhalten: MCP-Kette gezielt einsetzen um Repo-Fragen zu beantworten. Kein
 
 1. Bei **`buddy repo-check …`:** Task.md lesen (Task-Brücke) → `## Repo-Fragen` aus Task-Abschnitten ableiten. Sonst: `## Repo-Fragen` aus letztem compress (oder Thread-Stand, wenn compress übersprungen) laden
 2. `./buddy-repo-check.md` lesen und Pipeline-Schritte top-down ausführen:
-   - Datei fehlt → Default: `code-review-mcp` (`index_project` → `find_in_index`)
-   - `code-review-mcp` → `index_project` → `find_in_index`
+   - Datei fehlt → Default: `codebase-analyzer` (`index_project` → `find_in_index`)
+   - `codebase-analyzer` → `index_project` → `find_in_index`
    - `dev-filesystem-mcp` → optional nach Index: `read_class_summary`, `read_signatures_only`, `find_implementations` (Pfade `/project/...`)
    - Pfad zu `.md`-Datei → Read, als Referenz verwenden
    - Unbekannte Zeile → in `### Pipeline-Warnungen` melden, überspringen
@@ -251,7 +251,7 @@ Wenn repo-check nie lief → Hinweis in Section B unter `## Edge cases / open qu
 | Phase | Laden |
 |-------|-------|
 | intake / compress / diskussion | [buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) |
-| repo-check | [code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md) + [code-review-mcp.mdc](../../rules/code-review-mcp.mdc); optional [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) wenn Pipeline `dev-filesystem-mcp` enthält |
+| repo-check | [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) + [codebase-analyzer.mdc](../../rules/codebase-analyzer.mdc); optional [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) wenn Pipeline `dev-filesystem-mcp` enthält |
 | plan-prompt | [describe-as/SKILL.md](../describe-as/SKILL.md) |
 
 ---
@@ -307,7 +307,7 @@ Ask:   plan-prompt
 - [buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) — Rule für Cursor-Aktivierung
 - [describe-as/SKILL.md](../describe-as/SKILL.md) — für Phase plan-prompt (Caveman full)
 - [describe-as/references/op-describe-as-text.md](../describe-as/references/op-describe-as-text.md) — op-Template für plan-prompt
-- [code-review-mcp/SKILL.md](../code-review-mcp/SKILL.md) — für repo-check (Agent-Mode, MCP-Kette); wenn nicht deployed: repo-check fällt auf Default-Pipeline zurück (siehe Phase repo-check)
+- [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) — für repo-check (Agent-Mode, MCP-Kette); wenn nicht deployed: repo-check fällt auf Default-Pipeline zurück (siehe Phase repo-check)
 - [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) — optional für repo-check wenn `dev-filesystem-mcp` in `./buddy-repo-check.md` Pipeline steht
 
 **Opt-out:** `ohne buddy-agent` → Buddy-Profil nicht anwenden.
@@ -320,4 +320,4 @@ Trigger-Keywords synchron halten an zwei Stellen:
 1. YAML `description` dieser Datei.
 2. [../../rules/buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) — Verbindliche Aktivierung und Trigger-Abschnitte.
 
-Pflicht-Dokumente in `## Orchestrator-Konfiguration` bei Skill-Umzügen aktualisieren (describe-as, code-review-mcp, dev-tooling-mcp).
+Pflicht-Dokumente in `## Orchestrator-Konfiguration` bei Skill-Umzügen aktualisieren (describe-as, codebase-analyzer, dev-tooling-mcp).

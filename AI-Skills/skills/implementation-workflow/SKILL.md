@@ -1,7 +1,7 @@
 ---
 name: implementation-workflow
 description: >
-  Repo-Umsetzung: Hard Gate, 1–10 implement-agent (Slice inkl. Build/Test), iterativer Implement-Review-Loop max. 3× (Technik-Gate, 6 Reviews, implement-fix-planner-agent, Fix-Slices). build-log-filter + code-review-mcp Pflicht.
+  Repo-Umsetzung: Hard Gate, 1–10 implement-agent (Slice inkl. Build/Test), iterativer Implement-Review-Loop max. 3× (Technik-Gate, 6 Reviews, implement-fix-planner-agent, Fix-Slices). build-log-filter + codebase-analyzer Pflicht.
   Trigger (kanonisch in Rule): implementiere/setze um/fix/einbauen/leg los, Plan ausführen,
   impliziter Repo-Code-Intent, @implementation-workflow-skill, Hard Gate, Schritt 2/IMP-*,
   engl. apply changes/go ahead/ship it; Opt-out ohne implement-skill. Discovery via alwaysApply-Rule
@@ -466,7 +466,7 @@ Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt
 >
 > 1. **[implementation-workflow-skill.mdc](../../rules/implementation-workflow-skill.mdc)** — immer; Subagent-Pflicht, build-log-filter-Kette, Verifikations-Matrix.
 > 2. **[build-log-filter.mdc](../../rules/build-log-filter.mdc)** — immer; Ausführungs-Checkliste 1–8 für jeden Build-/Test-Lauf.
-> 3. **[code-review-mcp.mdc](../../rules/code-review-mcp.mdc)** — immer; MCP-First für Analyse vor und während Implementierung.
+> 3. **[codebase-analyzer.mdc](../../rules/codebase-analyzer.mdc)** — immer; MCP-First für Analyse vor und während Implementierung.
 > 4. **[angular-skills.mdc](../../rules/angular-skills.mdc)** — wenn FE-Slice im Scope.
 > 5. **[backend-ef-migrations-skill.mdc](../../rules/backend-ef-migrations-skill.mdc)** — wenn EF/Migrations im Slice-Scope.
 >
@@ -480,7 +480,7 @@ Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt
 
 Ist `auto` **nicht** wählbar → **stoppen**, transparent melden — **kein** stiller Ausweich.
 
-### code-review-mcp (Bevorzugt)
+### codebase-analyzer (Bevorzugt)
 
 | Aufgabe | MCP-Call |
 |---------|----------|

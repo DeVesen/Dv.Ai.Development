@@ -1,5 +1,5 @@
 ---
-description: Dev Tooling MCP — token-effizientes Lesen/Suchen (dev-filesystem-mcp, /project) und Scaffolding (dev-angular-mcp, dev-dotnet-mcp). Bei *.cs/*.ts und Bedarf an Signaturen, Methoden-Body oder Glob-Suche vor vollem Read/Grep. Nicht für Index, Review oder AST-Analyse (code-review-mcp).
+description: Dev Tooling MCP — token-effizientes Lesen/Suchen (dev-filesystem-mcp, /project) und Scaffolding (dev-angular-mcp, dev-dotnet-mcp). Bei *.cs/*.ts und Bedarf an Signaturen, Methoden-Body oder Glob-Suche vor vollem Read/Grep. Nicht für Index, Review oder AST-Analyse (codebase-analyzer).
 globs: *.cs,*.ts
 alwaysApply: false
 ---
@@ -17,7 +17,7 @@ Skill: [dev-tooling-mcp/SKILL.md](../skills/dev-tooling-mcp/SKILL.md)
 | Nur Signaturen / eine Methode / Klassen-Überblick | dev-filesystem-mcp (`read_*`, `find_*`) |
 | Angular scaffold | dev-angular-mcp |
 | .NET-Projekt / Ordner | dev-dotnet-mcp |
-| Review, Index, Komplexität, Refactoring-Safety | **code-review-mcp** — nicht dev-filesystem |
+| Review, Index, Komplexität, Refactoring-Safety | **codebase-analyzer** — nicht dev-filesystem |
 
 ## Kurzreferenz — dev-filesystem-mcp
 

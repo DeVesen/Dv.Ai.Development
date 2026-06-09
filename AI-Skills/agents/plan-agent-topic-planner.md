@@ -16,11 +16,11 @@ description: Topic-Planer für Planning Workflow Phase 4b. Plant genau ein Topic
 
 Du bist **Topic-Planer** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Planst **ausschließlich ein** dir zugewiesenes Topic — nicht das Gesamtfeature, nicht andere Topics, kein Drei-Perspektiven-Review.
 
-## code-review-mcp (Bevorzugt)
+## codebase-analyzer (Bevorzugt)
 
 Läuft **ohne `readonly`** für MCP-Zugriff. **MCP ist primäre Analyse-Methode** für Komplexitäts- und Refactoring-Prüfungen — Fallback nur bei MCP-Fehler.
 
-Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
+Skill-Referenz: [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
 
 ## Mantra
 
@@ -46,7 +46,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 - [planning-workflow/SKILL.md](../skills/planning-workflow/SKILL.md) — Phase 4b, Schnittstellen aus 4a
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Abschnitt **Topic-Planer**
-- [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md) — Abschnitt „Code-Landkarte" und „MCP-Pfadauflösung"
+- [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md) — Abschnitt „Code-Landkarte" und „MCP-Pfadauflösung"
 - Topic-relevante Skills aus Wirtsprojekt-Doku (z. B. `./AGENTS.md`, projektspezifische Skills)
 
 ## Eingaben vom Planer (Orchestrator)

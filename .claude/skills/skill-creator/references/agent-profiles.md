@@ -138,7 +138,7 @@ memory: project
 skills:
   - planning-workflow
   - caveman
-  - code-review-mcp
+  - codebase-analyzer
 ---
 
 ## Rolle

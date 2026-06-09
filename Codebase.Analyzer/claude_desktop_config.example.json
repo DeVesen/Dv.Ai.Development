@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "code-review-mcp": {
+    "codebase-analyzer": {
       "command": "docker",
       "args": [
         "run",
@@ -9,7 +9,7 @@
         "--env", "ANTHROPIC_API_KEY",
         "-v", "/path/to/your/project:/workspace:ro",
         "-w", "/workspace",
-        "code-review-mcp:latest"
+        "dv-codebase-analyzer-mcp:local"
       ],
       "env": {
         "ANTHROPIC_API_KEY": "sk-ant-..."

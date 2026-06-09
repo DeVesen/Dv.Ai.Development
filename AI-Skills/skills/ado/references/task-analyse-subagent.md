@@ -38,7 +38,7 @@ Profil [`ado-task-pruefe-agent.md`](../../../agents/ado-task-pruefe-agent.md). [
 
 ## Ablauf Modus `analyse`
 
-1. **Codebase-Scout** read-only unter `{code-root}/` — MCP-Kette [`code-review-mcp`](../../code-review-mcp/SKILL.md): `index_project` → `find_in_index`; Read/Grep nur Fallback.
+1. **Codebase-Scout** read-only unter `{code-root}/` — MCP-Kette [`codebase-analyzer`](../../codebase-analyzer/SKILL.md): `index_project` → `find_in_index`; Read/Grep nur Fallback.
 2. **Task-Draft** (strukturiert, **nicht** als Datei):
    - `## Anforderung` (knapp)
    - `## Offene Fragen`

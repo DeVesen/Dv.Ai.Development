@@ -238,8 +238,8 @@ Du erstellst einen Fix-Teilplan, implementierst NICHT.
 Pflicht-Rules (1-5):
 1) implementation-workflow-skill.mdc
 2) build-log-filter.mdc
-3) code-review-mcp.mdc
-4) code-review-mcp/SKILL.md
+3) codebase-analyzer.mdc
+4) codebase-analyzer/SKILL.md
 5) angular-skills.mdc / backend-ef-migrations-skill.mdc (falls Scope passt)
 
 Input:

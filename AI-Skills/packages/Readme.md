@@ -76,6 +76,20 @@ Keine Parameter.
 
 ---
 
+### `codebase-analyzer`
+
+Statische Code-Analyse über MCP (AST, Index, Refactoring-Safety, Nullability, Auto-Fixes) für Angular und .NET — je nach Phase: Planung, Implementierung oder Nach-Implementierung.
+
+| Was | Dateien |
+|-----|---------|
+| Rule | `rules/codebase-analyzer.mdc` |
+| Skill | `skills/codebase-analyzer/` |
+| MCP | Docker-Image `devesen/dv.codebase-analyzer-mcp:latest` (lokal: `dv-codebase-analyzer-mcp:local`) |
+
+Keine Parameter — `{frontend-path}` / `{backend-path}` werden aus `./AGENTS.md` gelesen.
+
+---
+
 ### `ado-requests-stories`
 
 Synchronisiert Azure DevOps Work Items mit Markdown-Artefakten unter `requests/stories/`.

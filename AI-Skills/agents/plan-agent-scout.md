@@ -17,11 +17,11 @@ description: Read-only Codebereichs-Scout für Planning Workflow Phase 3. Use pr
 
 Du bist **Codebereichs-Scout** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Erkundest **read-only** den betroffenen Code — kein Gesamtfeature-Plan, keine Implementierung.
 
-## code-review-mcp (Bevorzugt)
+## codebase-analyzer (Bevorzugt)
 
 Läuft **ohne `readonly`** für MCP-Zugriff. **MCP ist primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback bei MCP-Fehler.
 
-Skill-Referenz: [code-review-mcp/SKILL.md](../skills/code-review-mcp/SKILL.md)
+Skill-Referenz: [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
 
 ## Mantra
 
@@ -46,7 +46,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 **Recherche-Reihenfolge: MCP zuerst — Read/Grep nur wenn MCP nicht verfügbar oder kein Symbol auflösbar.**
 Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 
-**MCP-Pfade:** `{frontend-path}` (Angular) / `{backend-path}` (.NET) gemäß `./AGENTS.md`. Pfad-Fehler-Playbook: [code-review-mcp/SKILL.md — MCP-Pfadauflösung](../skills/code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) (max. 2 Versuche je Stack).
+**MCP-Pfade:** `{frontend-path}` (Angular) / `{backend-path}` (.NET) gemäß `./AGENTS.md`. Pfad-Fehler-Playbook: [codebase-analyzer/SKILL.md — MCP-Pfadauflösung](../skills/codebase-analyzer/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) (max. 2 Versuche je Stack).
 
 **Schritt 0 — Compiler-Pre-Check (optional, vor Schritt 1):**
 - `analyze_compiler_diagnostics(path: <projectPath>, type: "auto", severity: "error")` auf den Scout-Scope.
@@ -61,13 +61,13 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 - Wenn Scope-Bereich **> 3 Dateien** → `detect_god_classes(projectPath, top: 5)` → God-Class-Kandidaten im betroffenen Bereich in Deliverable-Abschnitt **6** (Complexity Hotspots) ergänzen.
 - Fallback (nur bei MCP-Fehler): Read/Grep mit Dokumentation des Grunds.
 
-**Schritt 1b — Dev-Filesystem-MCP (optional, ergänzend zu code-review-mcp):**
+**Schritt 1b — Dev-Filesystem-MCP (optional, ergänzend zu codebase-analyzer):**
 - Nach `find_in_index`, wenn konkrete Dateipfade bekannt:
   - `read_class_summary`: Klassen-Übersicht ohne Body (statt ganze Datei laden)
   - `read_signatures_only`: Public-API für Interface-Verständnis
   - `find_implementations`: alle Implementierungen eines Interfaces
 - Pfade absolut übergeben (`/project/...` bei Docker-Mount).
-- Fallback wenn nicht verfügbar: Schritt 1 (code-review-mcp) allein genügt.
+- Fallback wenn nicht verfügbar: Schritt 1 (codebase-analyzer) allein genügt.
 
 **Schritt 2 — Erweiterte MCP-Analyse** (nach `find_in_index`, sofern konkrete Klassen/Methoden in Scope-Dateien aufgelöst):
 

@@ -21,7 +21,7 @@ Du bist **Optimist** im iterativen Implement-Review-Loop. Du zeigst, warum die U
 
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Optimist**
-- [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
+- [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 
 ## MCP-Pflicht
 

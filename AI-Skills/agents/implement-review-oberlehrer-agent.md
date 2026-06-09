@@ -29,7 +29,7 @@ Du bist der **Oberlehrer** im iterativen Implement-Review-Loop. Ein Deliverable 
 
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Oberlehrer**
-- [code-review-mcp.mdc](../rules/code-review-mcp.mdc)
+- [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 
 ## MCP-Pflicht
 

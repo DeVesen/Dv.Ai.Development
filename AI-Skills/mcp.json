@@ -12,7 +12,7 @@
       ],
       "transport": "stdio"
     },
-    "code-review-mcp": {
+    "codebase-analyzer": {
       "command": "docker",
       "args": [
         "run",
@@ -22,7 +22,7 @@
         "127.0.0.1:8090:8090",
         "-v",
         "${workspaceFolder}:/workspace:ro",
-        "devesen/dv.code-review.mcp:latest"
+        "devesen/dv.codebase-analyzer-mcp:latest"
       ],
       "transport": "stdio",
       "autoApprove": [

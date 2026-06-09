@@ -2,8 +2,8 @@ $ErrorActionPreference = 'Stop'
 
 $SrcDir = Split-Path $PSScriptRoot -Parent
 
-$Tag = Read-Host "Local image tag (default: code-review-mcp:local)"
-if (-not $Tag) { $Tag = 'code-review-mcp:local' }
+$Tag = Read-Host "Local image tag (default: dv-codebase-analyzer-mcp:local)"
+if (-not $Tag) { $Tag = 'dv-codebase-analyzer-mcp:local' }
 
 Write-Host "Building $Tag ..."
 

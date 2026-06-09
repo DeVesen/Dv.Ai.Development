@@ -1,5 +1,5 @@
 ---
-name: code-review-mcp
+name: codebase-analyzer
 description: >
   Aktiviere diesen Skill sobald der User über Code spricht — egal ob er plant,
   gerade schreibt oder fertig ist. Der MCP hat 31 Tools für Angular und .NET.
@@ -16,11 +16,11 @@ description: >
 disable-model-invocation: true
 ---
 
-# Code-Review-MCP
+# Codebase-Analyzer
 
 ## Voraussetzungen
 
-- MCP `code-review-mcp` muss in `.cursor/mcp.json` konfiguriert sein (Docker-Image).
+- MCP `codebase-analyzer` muss in `.cursor/mcp.json` konfiguriert sein (Docker-Image).
 - **Volume-Mount ist Pflicht** für alle dateibasierten Tools: `-v ${workspaceFolder}:/workspace:ro`
   - Host-Workspace → `/workspace` im Container (read-only)
   - Kein `-w`-Flag setzen — MCP-Server läuft in `/app`, nicht im gemounteten Verzeichnis
@@ -304,13 +304,13 @@ Nach Implementierung eines Slices: `detect_god_classes(projectPath, top: 3)` auf
 
 ## Recap nach Verwendung (Pflicht)
 
-Nach **jeder** Verwendung dieses Skills — egal wie klein oder groß — **muss** der Agent am Ende seiner Antwort einen kurzen Recap ausgeben. Dieser dient als Feedback für das Entwicklerteam des `code-review-mcp`-Umfelds (MCP-Server, Skills, Rules).
+Nach **jeder** Verwendung dieses Skills — egal wie klein oder groß — **muss** der Agent am Ende seiner Antwort einen kurzen Recap ausgeben. Dieser dient als Feedback für das Entwicklerteam des `codebase-analyzer`-Umfelds (MCP-Server, Skills, Rules).
 
 **Format (im Chat, kein Datei-Write):**
 
 ```
 ---
-## code-review-mcp Recap
+## codebase-analyzer Recap
 
 ### Was hat gut funktioniert
 - …
@@ -336,15 +336,15 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 | Eine Methode / eine Klasse lesen | dev-filesystem-mcp |
 | Datei nach Name oder Inhalt suchen | dev-filesystem-mcp |
 | Interface-Implementierungen finden | dev-filesystem-mcp |
-| Komplexität, Refactoring-Safety | code-review-mcp |
-| Symbol-Index über ganzen Stack | code-review-mcp |
-| Build-Output analysieren | code-review-mcp / build-log-filter |
-| Nullability, Duplikate, Coverage | code-review-mcp |
+| Komplexität, Refactoring-Safety | codebase-analyzer |
+| Symbol-Index über ganzen Stack | codebase-analyzer |
+| Build-Output analysieren | codebase-analyzer / build-log-filter |
+| Nullability, Duplikate, Coverage | codebase-analyzer |
 
-**Faustregel: Lesen → dev-filesystem-mcp (`/project`). Analysieren → code-review-mcp (`/workspace`).**
+**Faustregel: Lesen → dev-filesystem-mcp (`/project`). Analysieren → codebase-analyzer (`/workspace`).**
 
 ## Opt-out
 
-`kein code-review-mcp` → Skill nicht laden.
+`kein codebase-analyzer` → Skill nicht laden.
 
 Keine Code-Beispiele ohne explizite Nachfrage.

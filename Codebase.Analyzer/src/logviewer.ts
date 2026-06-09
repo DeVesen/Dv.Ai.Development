@@ -58,7 +58,7 @@ export function startLogViewer(port: number): void {
   });
 
   srv.listen(port, () => {
-    console.error(`code-review-mcp log viewer: http://localhost:${port}/`);
+    console.error(`codebase-analyzer log viewer: http://localhost:${port}/`);
   });
   srv.on('error', (err: NodeJS.ErrnoException) => {
     console.error(`Log viewer could not bind to port ${port}: ${err.message}`);
@@ -81,7 +81,7 @@ function getHtml(): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>code-review-mcp — Log</title>
+  <title>codebase-analyzer — Log</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0c10; color: #e2e8f0; min-height: 100vh; }
@@ -158,7 +158,7 @@ function getHtml(): string {
 </head>
 <body>
   <header>
-    <h1>&#x25CF; code-review-mcp Log</h1>
+    <h1>&#x25CF; codebase-analyzer Log</h1>
     <span class="badge" id="count">0 Calls</span>
     <div class="spacer"></div>
     <label class="refresh-toggle">

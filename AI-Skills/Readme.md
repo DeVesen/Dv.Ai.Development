@@ -278,7 +278,6 @@ plan-prompt
 | Datei | Inhalt |
 |-------|--------|
 | `skills/buddy-agent/SKILL.md` | Phasen, Task-Brücke intake/repo-check |
-| `skills/buddy-agent/buddy-repo-check.md` | Template für `./buddy-repo-check.md` — MCP-Pipeline |
 
 #### References
 
@@ -293,9 +292,9 @@ _keine_
 | Parameter | Beschreibung |
 |-----------|-------------|
 | `{workspace-root}` | Cursor-Workspace-Root; Task.md unter `{workspace-root}/requests/stories/UserStory-{id}-*/tasks/` |
-| `./buddy-repo-check.md` | Ressourcen-Pipeline im **Repo-Root** (nicht unter `.cursor/`). Template kopieren: `skills/buddy-agent/buddy-repo-check.md` → `./buddy-repo-check.md`. **Ohne Datei:** Default-Pipeline = `codebase-analyzer` only. |
+| `./mcps.md` | Verfügbare MCPs im **Repo-Root** — wird automatisch durch das Install-Skript befüllt wenn MCPs installiert werden. Agents lesen diese Datei und wählen situativ. **Ohne Datei:** Default: `codebase-analyzer`. |
 
-**Optional (projektspezifisch, nicht im buddy-agent-Profil):** MCP-Schritte in `./buddy-repo-check.md` unter `## Pipeline` ergänzen — unbekannte Zeilen erscheinen in repo-check unter `### Pipeline-Warnungen`.
+**Optional (projektspezifisch):** Weitere MCPs in `./mcps.md` unter `## MCPs` eintragen. Alle Agents (Buddy, Planer, Review-Agents) berücksichtigen die Liste bei der MCP-Auswahl.
 
 **Teams ohne describe-as / Planning Workflow:** nur `buddy-agent/SKILL.md` + Rule portieren; Planning-Integration optional nachziehen.
 

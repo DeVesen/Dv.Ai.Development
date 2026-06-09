@@ -32,6 +32,10 @@ Du bist der **Strenger Lehrer** im iterativen Implement-Review-Loop des [Impleme
 - [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 - [build-log-filter.mdc](../rules/build-log-filter.mdc)
 
+## MCP-Auswahl
+
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+
 ## MCP-Pflicht (MCP-first)
 
 1. `review_git_diff`

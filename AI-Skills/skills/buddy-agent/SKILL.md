@@ -16,7 +16,7 @@ disable-model-invocation: true
 |-----------|-------------|
 | `{workspace-root}` | Cursor-Workspace-Root; Story-/Task-MD unter `{workspace-root}/requests/stories/` |
 | `.` | Wurzelpfad des Code-Repositories (nur repo-check / Code-Scout — **nicht** für Task.md) |
-| `./buddy-repo-check.md` | Pipeline für repo-check (lesen falls vorhanden; projektspezifisch, nicht im Profil) |
+| `./mcps.md` | Verfügbare MCPs für repo-check — lesen und situativ wählen (projektspezifisch, nicht im Profil) |
 
 # Buddy v3 — Sparrings-Agent
 
@@ -147,13 +147,10 @@ Scout-Verhalten: MCP-Kette gezielt einsetzen um Repo-Fragen zu beantworten. Kein
 **Ablauf:**
 
 1. Bei **`buddy repo-check …`:** Task.md lesen (Task-Brücke) → `## Repo-Fragen` aus Task-Abschnitten ableiten. Sonst: `## Repo-Fragen` aus letztem compress (oder Thread-Stand, wenn compress übersprungen) laden
-2. `./buddy-repo-check.md` lesen und Pipeline-Schritte top-down ausführen:
-   - Datei fehlt → Default: `codebase-analyzer` (`index_project` → `find_in_index`)
-   - `codebase-analyzer` → `index_project` → `find_in_index`
-   - `dev-filesystem-mcp` → optional nach Index: `read_class_summary`, `read_signatures_only`, `find_implementations` (Pfade `/project/...`)
-   - Pfad zu `.md`-Datei → Read, als Referenz verwenden
-   - Unbekannte Zeile → in `### Pipeline-Warnungen` melden, überspringen
-   - Parsing: nicht-leere Zeilen unter `## Pipeline` bis EOF / nächste `##`; Zeilen mit `#` (außer `##`) ignorieren
+2. `./mcps.md` lesen (Datei fehlt → Default: `codebase-analyzer`). Verfügbaren MCP situativ wählen — kein festes Ablaufschema:
+   - `codebase-analyzer` → `index_project` → `find_in_index` — wenn Bereich/Symbol unbekannt
+   - `dev-filesystem-mcp` → `read_class_summary`, `read_signatures_only`, `find_implementations` (Pfade `/project/...`) — wenn Klasse/Datei bereits bekannt
+   - Weitere MCPs aus `./mcps.md`: Stärken lesen, passenden für die jeweilige Repo-Frage wählen
 3. Pro Repo-Frage: nur gezielte MCP-Calls — kein Repo-Rundgang
 
 **Scout-Ausgabe:**
@@ -167,15 +164,14 @@ Scout-Verhalten: MCP-Kette gezielt einsetzen um Repo-Fragen zu beantworten. Kein
 ### Offen / unklar
 - <Frage>: <warum unklar>
 
-### Pipeline-Warnungen
-- unbekannter Schritt: "<Zeile>" — übersprungen
-- _(leer, wenn keine Warnungen)_
+### Warnungen
+- _(leer, wenn keine MCP-Fehler)_
 
 ### Empfehlung
 - Weiterer repo-check nötig: ja / nein — <kurzer Grund>
 ```
 
-Wenn `### Pipeline-Warnungen` Einträge hat → `Weiterer repo-check nötig: ja` (Pipeline-Konfiguration prüfen).
+Wenn `### Warnungen` MCP-Fehler enthält → `Weiterer repo-check nötig: ja` (MCP-Konfiguration prüfen).
 
 Nach repo-check: implizit weiter in Phase **diskussion**.
 
@@ -308,7 +304,7 @@ Ask:   plan-prompt
 - [describe-as/SKILL.md](../describe-as/SKILL.md) — für Phase plan-prompt (Caveman full)
 - [describe-as/references/op-describe-as-text.md](../describe-as/references/op-describe-as-text.md) — op-Template für plan-prompt
 - [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) — für repo-check (Agent-Mode, MCP-Kette); wenn nicht deployed: repo-check fällt auf Default-Pipeline zurück (siehe Phase repo-check)
-- [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) — optional für repo-check wenn `dev-filesystem-mcp` in `./buddy-repo-check.md` Pipeline steht
+- [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) — optional für repo-check wenn `dev-filesystem-mcp` in `./mcps.md` verfügbar
 
 **Opt-out:** `ohne buddy-agent` → Buddy-Profil nicht anwenden.
 

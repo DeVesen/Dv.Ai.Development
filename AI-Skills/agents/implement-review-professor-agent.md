@@ -32,6 +32,10 @@ Du bist der **Professor** im iterativen Implement-Review-Loop. Du behandelst die
 - [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 - [build-log-filter.mdc](../rules/build-log-filter.mdc)
 
+## MCP-Auswahl
+
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+
 ## MCP-Pflicht
 
 1. `analyze_advanced_all`

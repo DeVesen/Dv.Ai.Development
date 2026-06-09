@@ -31,6 +31,10 @@ Du bist der **Oberlehrer** im iterativen Implement-Review-Loop. Ein Deliverable 
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Oberlehrer**
 - [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 
+## MCP-Auswahl
+
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+
 ## MCP-Pflicht
 
 1. `review_file` (Struktur/Style)

@@ -184,6 +184,71 @@ function Request-ParamValue {
 # MCP configuration
 # ---------------------------------------------------------------------------
 
+$script:McpHints = @{
+    'codebase-analyzer'  = @(
+        'Stärken: Indexierung, Symbol-Suche, Komplexitätsanalyse, Architektur-Überblick, Refactoring-Safety, Code-Review',
+        'Bevorzugt wenn: Bereich/Symbol unbekannt · Abhängigkeiten analysieren · Code reviewen · Komplexität messen'
+    )
+    'dev-filesystem-mcp' = @(
+        'Stärken: Gezieltes Klassen-Lesen, Signaturen, Interface-Implementierungen — token-effizient',
+        'Bevorzugt wenn: konkrete Datei/Klasse bekannt · Public API prüfen · alle Implementierungen eines Interfaces finden'
+    )
+    'dev-angular-mcp'    = @(
+        'Stärken: Angular-Komponenten und Services scaffolden',
+        'Bevorzugt wenn: neue Komponente oder Service erstellen'
+    )
+    'dev-dotnet-mcp'     = @(
+        'Stärken: .NET Projekte und Verzeichnisstrukturen scaffolden',
+        'Bevorzugt wenn: neues .NET-Projekt erstellen · Verzeichnisstruktur anlegen'
+    )
+    'build-log-filter'   = @(
+        'Stärken: Build- und Test-Output komprimieren und filtern',
+        'Bevorzugt wenn: Build-Log analysieren · Test-Ergebnis auswerten'
+    )
+    'ado'                = @(
+        'Stärken: Azure DevOps Work Items, Stories, Tasks lesen und schreiben',
+        'Bevorzugt wenn: ADO-Integration · Work Items verwalten'
+    )
+}
+
+function Update-McpsMd {
+    param([string] $McpsMdFile, [string] $ServerName, [object] $McpEntry)
+
+    $hintLines = if ($McpEntry -and $McpEntry.PSObject.Properties['llmHint']) {
+        @($McpEntry.llmHint)
+    } elseif ($script:McpHints.ContainsKey($ServerName)) {
+        $script:McpHints[$ServerName]
+    } else {
+        @()
+    }
+
+    if ($script:DryRun) {
+        Write-Host "  [DRY] mcps.md → $ServerName" -ForegroundColor Yellow
+        return
+    }
+
+    $mdHeader = "# Projekt MCPs`n`nVerfügbare MCP-Server in diesem Projekt.`nAgents wählen situativ — kein festes Ablaufschema.`nFallback wenn kein MCP verfügbar oder Fehler: Read/Grep mit Begründung.`n`n## MCPs`n`n"
+
+    if (-not (Test-Path $McpsMdFile)) {
+        Set-Content $McpsMdFile $mdHeader -Encoding UTF8 -NoNewline
+    }
+
+    $content = Get-Content $McpsMdFile -Raw -ErrorAction SilentlyContinue
+    if (-not $content) { $content = $mdHeader }
+
+    if ($content -match "(?m)^$([regex]::Escape($ServerName))\s*$") {
+        Write-Host "  ~ mcps.md → $ServerName (bereits vorhanden)" -ForegroundColor DarkGray
+        return
+    }
+
+    $entry = $ServerName
+    foreach ($line in $hintLines) { $entry += "`n  $line" }
+
+    $newContent = $content.TrimEnd("`r", "`n") + "`n`n" + $entry + "`n"
+    Set-Content $McpsMdFile $newContent -Encoding UTF8 -NoNewline
+    Write-Host "  + mcps.md → $ServerName" -ForegroundColor Green
+}
+
 function Invoke-McpConfig {
     param([array] $McpEntries)
 
@@ -285,6 +350,10 @@ function Invoke-McpConfig {
         }
 
         $mcpFile = Join-Path $script:TargetCursorPath "mcp.json"
+
+        # Update mcps.md in project root
+        $projectRoot = Split-Path $script:TargetCursorPath -Parent
+        Update-McpsMd -McpsMdFile (Join-Path $projectRoot "mcps.md") -ServerName $serverName -McpEntry $mcp
 
         if ($script:DryRun) {
             Write-Host "  [DRY] mcp.json → $serverName : $infoLine" -ForegroundColor Yellow

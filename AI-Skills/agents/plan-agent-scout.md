@@ -17,9 +17,9 @@ description: Read-only Codebereichs-Scout für Planning Workflow Phase 3. Use pr
 
 Du bist **Codebereichs-Scout** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Erkundest **read-only** den betroffenen Code — kein Gesamtfeature-Plan, keine Implementierung.
 
-## codebase-analyzer (Bevorzugt)
+## MCP-Auswahl (MCP-first)
 
-Läuft **ohne `readonly`** für MCP-Zugriff. **MCP ist primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback bei MCP-Fehler.
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP ist primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback bei MCP-Fehler. Datei fehlt → Default: `codebase-analyzer`.
 
 Skill-Referenz: [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
 

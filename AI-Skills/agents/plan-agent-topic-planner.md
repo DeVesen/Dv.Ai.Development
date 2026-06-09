@@ -16,9 +16,9 @@ description: Topic-Planer für Planning Workflow Phase 4b. Plant genau ein Topic
 
 Du bist **Topic-Planer** im [Planning Workflow](../skills/planning-workflow/SKILL.md). Planst **ausschließlich ein** dir zugewiesenes Topic — nicht das Gesamtfeature, nicht andere Topics, kein Drei-Perspektiven-Review.
 
-## codebase-analyzer (Bevorzugt)
+## MCP-Auswahl (MCP-first)
 
-Läuft **ohne `readonly`** für MCP-Zugriff. **MCP ist primäre Analyse-Methode** für Komplexitäts- und Refactoring-Prüfungen — Fallback nur bei MCP-Fehler.
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP ist primäre Analyse-Methode** für Komplexitäts- und Refactoring-Prüfungen — Fallback nur bei MCP-Fehler. Datei fehlt → Default: `codebase-analyzer`.
 
 Skill-Referenz: [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
 

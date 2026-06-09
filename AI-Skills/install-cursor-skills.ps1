@@ -1,10 +1,8 @@
 <#
 .SYNOPSIS
-    Installs a skill package into a target project's .cursor and optionally .claude directory.
-
-.PARAMETER PackageName
-    Name of the package to install (without .json extension).
-    Use -List to see all available packages.
+    Installs all skill packages into a target project's .cursor and optionally .claude directory.
+    ADO package is optional and will prompt for confirmation.
+    Writes installed-manifest.json to track managed files (used by update-cursor-skills.ps1).
 
 .PARAMETER TargetCursorPath
     Absolute path to the target project's .cursor directory.
@@ -21,21 +19,17 @@
     List all available packages and exit.
 
 .EXAMPLE
-    .\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor
-    .\install-skill.ps1 planning-workflow C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
-    .\install-skill.ps1 genericrtk-filter C:\Projects\MyApp\.cursor -DryRun
-    .\install-skill.ps1 all C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
-    .\install-skill.ps1 -List
+    .\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor
+    .\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude
+    .\install-cursor-skills.ps1 C:\Projects\MyApp\.cursor C:\Projects\MyApp\.claude -DryRun
+    .\install-cursor-skills.ps1 -List
 #>
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [string] $PackageName,
-
-    [Parameter(Position = 1)]
     [string] $TargetCursorPath,
 
-    [Parameter(Position = 2)]
+    [Parameter(Position = 1)]
     [string] $TargetClaudePath,
 
     [switch] $DryRun,
@@ -48,6 +42,66 @@ $script:DryRun           = $DryRun.IsPresent
 $script:TargetClaudePath = $null
 $script:ParamsFile       = $null
 $script:ParamsStore      = @{}
+$script:ManifestFile     = $null
+
+# Packages whose name matches this pattern will ask for confirmation before installing
+$ADO_PATTERN = '^ado-'
+
+# ---------------------------------------------------------------------------
+# Manifest — tracks which files were installed per package
+# Format: { "version": 1, "packages": { "<name>": { "cursorFiles": [...], "claudeFiles": [...] } } }
+# ---------------------------------------------------------------------------
+
+$script:Manifest = @{ version = 1; packages = @{} }
+
+function Read-Manifest {
+    if ($script:ManifestFile -and (Test-Path $script:ManifestFile)) {
+        $json = Get-Content $script:ManifestFile -Raw | ConvertFrom-Json
+        $ht   = @{ version = 1; packages = @{} }
+        if ($json.PSObject.Properties['packages']) {
+            $json.packages.PSObject.Properties | ForEach-Object {
+                $pkg = @{ cursorFiles = @(); claudeFiles = @() }
+                if ($_.Value.PSObject.Properties['cursorFiles']) { $pkg.cursorFiles = @($_.Value.cursorFiles) }
+                if ($_.Value.PSObject.Properties['claudeFiles']) { $pkg.claudeFiles = @($_.Value.claudeFiles) }
+                $ht.packages[$_.Name] = $pkg
+            }
+        }
+        $script:Manifest = $ht
+    }
+}
+
+function Save-Manifest {
+    if ($script:DryRun -or -not $script:ManifestFile) { return }
+    $out = [ordered]@{ version = 1; packages = [ordered]@{} }
+    foreach ($name in ($script:Manifest.packages.Keys | Sort-Object)) {
+        $pkg = $script:Manifest.packages[$name]
+        $out.packages[$name] = [ordered]@{
+            cursorFiles = @($pkg.cursorFiles | Sort-Object)
+            claudeFiles = @($pkg.claudeFiles | Sort-Object)
+        }
+    }
+    $out | ConvertTo-Json -Depth 5 | Set-Content $script:ManifestFile -Encoding UTF8
+}
+
+function Register-CursorFile {
+    param([string] $PackageName, [string] $RelPath)
+    if (-not $script:Manifest.packages.ContainsKey($PackageName)) {
+        $script:Manifest.packages[$PackageName] = @{ cursorFiles = @(); claudeFiles = @() }
+    }
+    $list = [System.Collections.Generic.List[string]]$script:Manifest.packages[$PackageName].cursorFiles
+    if (-not $list.Contains($RelPath)) { $list.Add($RelPath) }
+    $script:Manifest.packages[$PackageName].cursorFiles = $list.ToArray()
+}
+
+function Register-ClaudeFile {
+    param([string] $PackageName, [string] $RelPath)
+    if (-not $script:Manifest.packages.ContainsKey($PackageName)) {
+        $script:Manifest.packages[$PackageName] = @{ cursorFiles = @(); claudeFiles = @() }
+    }
+    $list = [System.Collections.Generic.List[string]]$script:Manifest.packages[$PackageName].claudeFiles
+    if (-not $list.Contains($RelPath)) { $list.Add($RelPath) }
+    $script:Manifest.packages[$PackageName].claudeFiles = $list.ToArray()
+}
 
 # ---------------------------------------------------------------------------
 # Params store (skill-params.json) — used only when MCP entries are present
@@ -159,9 +213,8 @@ function Invoke-McpConfig {
                 }
             }
 
-            $entry    = $entryJson | ConvertFrom-Json
+            $entry = $entryJson | ConvertFrom-Json
 
-            # Remove env keys whose placeholder was not substituted (optional params skipped)
             if ($entry.PSObject.Properties['env']) {
                 $toRemove = $entry.env.PSObject.Properties |
                     Where-Object { $_.Value -is [string] -and $_.Value -match '^__[A-Z_]+__$' } |
@@ -194,7 +247,6 @@ function Invoke-McpConfig {
         }
 
         if ($mcpDoc.mcpServers.PSObject.Properties[$serverName]) {
-            # Merge: keep existing fields not in template (e.g. autoApprove)
             $existing = $mcpDoc.mcpServers.PSObject.Properties[$serverName].Value
             foreach ($prop in $entry.PSObject.Properties) {
                 if ($existing.PSObject.Properties[$prop.Name]) {
@@ -214,14 +266,21 @@ function Invoke-McpConfig {
 }
 
 # ---------------------------------------------------------------------------
-# Copy a file or directory to target
+# Copy a file or directory to target and register in manifest
 # ---------------------------------------------------------------------------
 
 function Copy-Asset {
-    param([string] $Src, [string] $Dst)
+    param(
+        [string] $Src,
+        [string] $Dst,
+        [string] $PackageName,
+        [string] $Platform   # 'cursor' or 'claude'
+    )
+
+    $baseDir = if ($Platform -eq 'claude') { $script:TargetClaudePath } else { $script:TargetCursorPath }
+    $rel     = ($Dst -replace [regex]::Escape($baseDir), '').TrimStart('\', '/')
 
     if ($script:DryRun) {
-        $rel = ($Dst -replace [regex]::Escape($script:TargetCursorPath), '').TrimStart('\', '/')
         Write-Host "  [DRY] $rel" -ForegroundColor Yellow
         return
     }
@@ -234,8 +293,13 @@ function Copy-Asset {
         Copy-Item $Src $Dst -Force
     }
 
-    $rel = ($Dst -replace [regex]::Escape($script:TargetCursorPath), '').TrimStart('\', '/')
     Write-Host "  + $rel" -ForegroundColor Green
+
+    if ($Platform -eq 'claude') {
+        Register-ClaudeFile $PackageName $rel
+    } else {
+        Register-CursorFile $PackageName $rel
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -251,9 +315,8 @@ function Install-Package {
 
     $manifestFile = Join-Path $script:PackagesDir "$Name.json"
     if (-not (Test-Path $manifestFile)) {
-        $available = (Get-ChildItem $script:PackagesDir -Filter "*.json").BaseName -join ", "
-        Write-Error "Package '$Name' not found. Available: $available"
-        exit 1
+        Write-Error "Package '$Name' not found."
+        return
     }
 
     $m = Get-Content $manifestFile -Raw | ConvertFrom-Json
@@ -262,30 +325,61 @@ function Install-Package {
     Write-Host "-> $Name" -ForegroundColor Cyan
     if ($m.description) { Write-Host "   $($m.description)" -ForegroundColor DarkGray }
 
+    # Initialize package entry in manifest (clear previous file list for fresh install)
+    if (-not $script:DryRun) {
+        $script:Manifest.packages[$Name] = @{ cursorFiles = @(); claudeFiles = @() }
+    }
+
     foreach ($dep in $m.dependsOn) { Install-Package $dep }
 
-    # Rules → Cursor only (.mdc rules have no equivalent in Claude Code)
+    # Rules → Cursor only
     foreach ($r in $m.rules) {
-        Copy-Asset (Join-Path $script:SourceCursorPath $r) (Join-Path $script:TargetCursorPath "rules\$(Split-Path $r -Leaf)")
+        Copy-Asset (Join-Path $script:SourceCursorPath $r) `
+                   (Join-Path $script:TargetCursorPath "rules\$(Split-Path $r -Leaf)") `
+                   $Name 'cursor'
     }
-    # Skills, Agents, References → Cursor + Claude Code (when TargetClaudePath provided)
+    # Skills → Cursor + Claude
     foreach ($s in $m.skills) {
         $leaf = Split-Path $s -Leaf
-        Copy-Asset (Join-Path $script:SourceCursorPath $s) (Join-Path $script:TargetCursorPath "skills\$leaf")
-        if ($script:TargetClaudePath) { Copy-Asset (Join-Path $script:SourceCursorPath $s) (Join-Path $script:TargetClaudePath "skills\$leaf") }
+        Copy-Asset (Join-Path $script:SourceCursorPath $s) `
+                   (Join-Path $script:TargetCursorPath "skills\$leaf") `
+                   $Name 'cursor'
+        if ($script:TargetClaudePath) {
+            Copy-Asset (Join-Path $script:SourceCursorPath $s) `
+                       (Join-Path $script:TargetClaudePath "skills\$leaf") `
+                       $Name 'claude'
+        }
     }
+    # Agents → Cursor + Claude
     foreach ($a in $m.agents) {
         $leaf = Split-Path $a -Leaf
-        Copy-Asset (Join-Path $script:SourceCursorPath $a) (Join-Path $script:TargetCursorPath "agents\$leaf")
-        if ($script:TargetClaudePath) { Copy-Asset (Join-Path $script:SourceCursorPath $a) (Join-Path $script:TargetClaudePath "agents\$leaf") }
+        Copy-Asset (Join-Path $script:SourceCursorPath $a) `
+                   (Join-Path $script:TargetCursorPath "agents\$leaf") `
+                   $Name 'cursor'
+        if ($script:TargetClaudePath) {
+            Copy-Asset (Join-Path $script:SourceCursorPath $a) `
+                       (Join-Path $script:TargetClaudePath "agents\$leaf") `
+                       $Name 'claude'
+        }
     }
+    # References → Cursor + Claude
     foreach ($ref in $m.references) {
         $leaf = Split-Path $ref -Leaf
-        Copy-Asset (Join-Path $script:SourceCursorPath $ref) (Join-Path $script:TargetCursorPath "references\$leaf")
-        if ($script:TargetClaudePath) { Copy-Asset (Join-Path $script:SourceCursorPath $ref) (Join-Path $script:TargetClaudePath "references\$leaf") }
+        Copy-Asset (Join-Path $script:SourceCursorPath $ref) `
+                   (Join-Path $script:TargetCursorPath "references\$leaf") `
+                   $Name 'cursor'
+        if ($script:TargetClaudePath) {
+            Copy-Asset (Join-Path $script:SourceCursorPath $ref) `
+                       (Join-Path $script:TargetClaudePath "references\$leaf") `
+                       $Name 'claude'
+        }
     }
-    # Docs (AGENTS.md etc.) → Cursor only
-    foreach ($doc in $m.docs) { Copy-Asset (Join-Path $script:SourceCursorPath $doc) (Join-Path $script:TargetCursorPath "$(Split-Path $doc -Leaf)") }
+    # Docs → Cursor only
+    foreach ($doc in $m.docs) {
+        Copy-Asset (Join-Path $script:SourceCursorPath $doc) `
+                   (Join-Path $script:TargetCursorPath "$(Split-Path $doc -Leaf)") `
+                   $Name 'cursor'
+    }
 
     if ($m.PSObject.Properties['mcp'] -and $m.mcp.Count -gt 0) {
         Invoke-McpConfig $m.mcp
@@ -303,16 +397,12 @@ if ($List) {
     Get-ChildItem $script:PackagesDir -Filter "*.json" | Sort-Object Name | ForEach-Object {
         $m    = Get-Content $_.FullName -Raw | ConvertFrom-Json
         $deps = if ($m.dependsOn.Count -gt 0) { " [needs: $($m.dependsOn -join ', ')]" } else { "" }
-        Write-Host "  $($_.BaseName)$deps" -ForegroundColor White
+        $ado  = if ($_.BaseName -match $ADO_PATTERN) { " [optional — ADO]" } else { "" }
+        Write-Host "  $($_.BaseName)$deps$ado" -ForegroundColor White
         if ($m.description) { Write-Host "    $($m.description)" -ForegroundColor DarkGray }
     }
     Write-Host ""
     exit 0
-}
-
-if (-not $PackageName) {
-    Write-Error "PackageName is required. Use 'all' to install all packages, or -List to see available packages."
-    exit 1
 }
 
 if (-not $TargetCursorPath) {
@@ -333,21 +423,38 @@ if ($TargetClaudePath -and -not (Test-Path $TargetClaudePath) -and -not $DryRun)
 $script:TargetCursorPath = $TargetCursorPath.TrimEnd('\', '/')
 $script:TargetClaudePath = if ($TargetClaudePath) { $TargetClaudePath.TrimEnd('\', '/') } else { $null }
 $script:ParamsFile       = Join-Path $script:TargetCursorPath "skill-params.json"
+$script:ManifestFile     = Join-Path $script:TargetCursorPath "installed-manifest.json"
 
 Read-ParamsStore
+Read-Manifest
 
 if ($DryRun) { Write-Host "[DRY RUN — no files will be copied]" -ForegroundColor Yellow }
 
-if ($PackageName -eq 'all') {
-    Write-Host "Installing all packages..." -ForegroundColor Cyan
-    Get-ChildItem $script:PackagesDir -Filter "*.json" | Sort-Object Name | ForEach-Object {
-        Install-Package $_.BaseName
+Write-Host "Installing all packages..." -ForegroundColor Cyan
+
+$allPackages = Get-ChildItem $script:PackagesDir -Filter "*.json" | Sort-Object Name
+
+foreach ($pkgFile in $allPackages) {
+    $pkgName = $pkgFile.BaseName
+
+    if ($pkgName -match $ADO_PATTERN) {
+        Write-Host ""
+        Write-Host "Package '$pkgName' ist optional (ADO-Integration)." -ForegroundColor Yellow
+        $ans = Read-Host "  Installieren? [j/N]"
+        if ($ans -notmatch '^[jJyY]') {
+            Write-Host "  Uebersprungen." -ForegroundColor DarkGray
+            continue
+        }
     }
-} else {
-    Install-Package $PackageName
+
+    Install-Package $pkgName
 }
 
 Save-ParamsStore
+Save-Manifest
 
 Write-Host ""
 Write-Host "Done." -ForegroundColor Green
+if (-not $DryRun) {
+    Write-Host "  Manifest: $script:ManifestFile" -ForegroundColor DarkGray
+}

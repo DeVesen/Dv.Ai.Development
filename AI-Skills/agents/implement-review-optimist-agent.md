@@ -23,6 +23,10 @@ Du bist **Optimist** im iterativen Implement-Review-Loop. Du zeigst, warum die U
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Optimist**
 - [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 
+## MCP-Auswahl
+
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+
 ## MCP-Pflicht
 
 1. `review_with_index` — positive Befunde und gut umgesetzte Bereiche

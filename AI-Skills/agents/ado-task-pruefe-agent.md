@@ -48,13 +48,16 @@ Ist `auto` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — auto nic
 | `task` | `slug`, `label`, `originalText` |
 | `paths` | `storyFolder`, `taskFilePath` |
 
-## codebase-analyzer (Bevorzugt)
+## MCP-Auswahl (MCP-first)
+
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
 
 | Aufgabe | MCP-Call |
 |---------|----------|
-| Symbole / Einstiegspunkte | `index_project` → `find_in_index` |
-| Komplexität | `analyze_complexity` |
-| Refactoring-Sicherheit | `analyze_refactoring_safety` |
+| Symbole / Einstiegspunkte | `codebase-analyzer`: `index_project` → `find_in_index` |
+| Komplexität | `codebase-analyzer`: `analyze_complexity` |
+| Refactoring-Sicherheit | `codebase-analyzer`: `analyze_refactoring_safety` |
+| Klasse/Signatur gezielt lesen | `dev-filesystem-mcp`: `read_class_summary`, `read_signatures_only` |
 
 ## Ablauf Modus `analyse`
 

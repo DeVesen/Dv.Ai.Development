@@ -44,9 +44,9 @@ Du bist **`implement-fix-planner-agent`** im iterativen Implement-Review-Loop de
 - Klassifizierte Findings (fixbar / nach Nutzer-Klärung)
 - Betroffene Pfade / Diff-Übersicht
 
-## codebase-analyzer — Fix-Planung (verbindliche Reihenfolge)
+## MCP-Auswahl — Fix-Planung
 
-MCP primär; Read/Grep nur bei dokumentiertem `MCP: fallback`:
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`. MCP primär; Read/Grep nur bei dokumentiertem `MCP: fallback`:
 
 | Schritt | MCP-Call | Bedingung |
 |---------|----------|-----------|

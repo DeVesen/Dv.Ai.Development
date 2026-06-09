@@ -32,6 +32,10 @@ Host-Regel: ersten verfügbaren Slug wählen, sonst stoppen.
 - [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 - [build-log-filter.mdc](../rules/build-log-filter.mdc)
 
+## MCP-Auswahl
+
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+
 ## MCP-Pflicht (MCP-first)
 
 1. `analyze_compiler_diagnostics` — `severity: "error"` auf geänderten Scope; Compiler-Fehler = **harter Blocker**

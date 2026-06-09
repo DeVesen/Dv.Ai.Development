@@ -23,6 +23,10 @@ Du bist **Normalo** im iterativen Implement-Review-Loop. Prüfst Alltagstauglich
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Normalo**
 - [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
 
+## MCP-Auswahl
+
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+
 ## MCP-Pflicht
 
 1. `review_with_index`

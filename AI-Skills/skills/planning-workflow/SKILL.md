@@ -817,6 +817,10 @@ Perspektiven vorhanden).
   - **Implement-Review-Loop:** Verweis auf Implementation Workflow
     (Technik-Gate + 6 Reviewer + Fix-Planer + Fix-Slices)
 
+  - **BoyScout pro Slice:** Der [Implementation Workflow](../implementation-workflow/SKILL.md)
+    sollte `suggest_boyscout_actions` als letzten Schritt **jedes** Implementierungs-Slices
+    einplanen (geänderte `filePaths`, kein Opt-out).
+
   Der Orchestrator **operationalisiert** diese Topologie; er erfindet in der
 
   Umsetzung **keine** neuen Splits. **Single-Slice** nur mit **expliziter Begruendung**

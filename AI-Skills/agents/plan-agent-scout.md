@@ -48,8 +48,17 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 
 **MCP-Pfade:** `{frontend-path}` (Angular) / `{backend-path}` (.NET) gemäß `./AGENTS.md`. Pfad-Fehler-Playbook: [code-review-mcp/SKILL.md — MCP-Pfadauflösung](../skills/code-review-mcp/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) (max. 2 Versuche je Stack).
 
+**Schritt 0 — Compiler-Pre-Check (optional, vor Schritt 1):**
+- `analyze_compiler_diagnostics(path: <projectPath>, type: "auto", severity: "error")` auf den Scout-Scope.
+- Wenn Fehler vorhanden → im Deliverable **Abschnitt 5 (Risiken)** als „Build-Fehler im Scope" melden (Datei, Code, Zeile) — kein Blocker, aber explizit sichtbar.
+
+**Schritt 0 — Projektwurzel / Solution wählen (vor Schritt 1):**
+- Wenn im `/workspace/`-Root (oder `{backend-path}`) eine **`.sln`-Datei** liegt und der Stack .NET ist → **`index_solution(solutionPath)`** statt `index_project` für den Backend-Stack.
+- Sonst: `{frontend-path}` / `{backend-path}` wie bisher.
+
 **Schritt 1 — Basis-Landkarte (Pflicht):**
-- `index_project` + `find_in_index` für alle genannten Symbole — kein stilles Überspringen.
+- `index_project` (Einzelprojekt) **oder** `index_solution` (.NET Multi-Projekt) + `find_in_index` für alle genannten Symbole — kein stilles Überspringen.
+- Wenn Scope-Bereich **> 3 Dateien** → `detect_god_classes(projectPath, top: 5)` → God-Class-Kandidaten im betroffenen Bereich in Deliverable-Abschnitt **6** (Complexity Hotspots) ergänzen.
 - Fallback (nur bei MCP-Fehler): Read/Grep mit Dokumentation des Grunds.
 
 **Schritt 2 — Erweiterte MCP-Analyse** (nach `find_in_index`, sofern konkrete Klassen/Methoden in Scope-Dateien aufgelöst):
@@ -57,7 +66,10 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 | Schritt | MCP-Call (primär) | Fallback (nur bei MCP-Fehler) | Bedingung |
 |---------|-------------------|-------------------------------|-----------|
 | A | `analyze_complexity` auf betroffene Dateien | Methoden-Länge manuell via Grep abschätzen | mind. 1 Klasse/Methode im Scope |
+| A2 | `analyze_method_extraction_candidates` auf Scope-Dateien mit CC≥10 oder Method-LOC≥30 → Kandidaten in Deliverable-Abschnitt 6 (Complexity Hotspots) ergänzen | nur Metrik aus Schritt A | mind. 1 Hotspot-Methode über Schwelle |
+| A3 | `suggest_boyscout_actions(filePaths: [Scout-Scope-Dateien], type)` als schneller Qualitäts-Puls — ergänzt gezieltes `analyze_coverage` / `analyze_nullability` in Phase 5 optional | Einzelchecks A/A2 | Scout-Scope mit konkreten Dateipfaden |
 | B | `analyze_refactoring_safety` auf Klassen, die strukturell geändert werden → bei Urgency ≥ medium `find_symbol_references` auf das betroffene Symbol (Call-Site-Liste → Deliverable-Abschnitt 7) | Abhängigkeiten per `find_in_index` manuell zählen | nur wenn Umbau geplant |
+| B2 | `find_type_hierarchy(direction: "down")` wenn `find_in_index`-Treffer ein **Interface** oder eine **abstrakte Basisklasse** ist → Ableitungen/Implementierungen in Deliverable-Abschnitt 2 (Entry Points) | manuelle `extends`/`implements`-Suche via Grep | Interface oder abstrakte Klasse im Scope |
 | C | `suggest_class_splits` auf Klassen mit >1 Verantwortung | Manuelle Lektüre via Read | nur wenn Klasse zu groß/mehrdeutig |
 
 Kein Schritt 2 bei: ausschließlich UI-Labels, leerer Fundliste, rein neuen Dateien ohne bestehende Klassen.

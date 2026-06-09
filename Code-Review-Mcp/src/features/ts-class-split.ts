@@ -85,6 +85,37 @@ function loadProject(rootPath: string): SourceFile[] {
   return project.getSourceFiles();
 }
 
+// ─── God-Class Metrics (lightweight, no split overhead) ─────────────────────
+
+export interface ClassMetricsSnapshot {
+  methodCount: number;
+  fieldCount: number;
+  lcom: number;
+  dependencies: number;
+  linesOfCode: number;
+}
+
+/** Collects LCOM and dependency metrics without cluster/split analysis. */
+export function computeClassMetrics(cls: ClassDeclaration): ClassMetricsSnapshot {
+  const methods = cls.getMethods().filter((m) => m.getName() !== "constructor");
+  const fields = collectFields(cls);
+  const fieldAccessMap = buildFieldAccessMap(cls, fields, methods);
+  const injectedDeps = collectInjectedDeps(cls);
+  const lcom = computeLcom(methods, fieldAccessMap);
+
+  const startLine = cls.getStartLineNumber();
+  const endLine = cls.getEndLineNumber();
+  const linesOfCode = Math.max(1, endLine - startLine + 1);
+
+  return {
+    methodCount: lcom.methodCount,
+    fieldCount: lcom.fieldCount,
+    lcom: lcom.score,
+    dependencies: injectedDeps.size,
+    linesOfCode,
+  };
+}
+
 // ─── Main Entry Point ─────────────────────────────────────────────────────────
 
 export function analyzeClassSplits(rootPath: string, targetClass?: string): ClassSplitAnalysis[] {

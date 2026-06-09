@@ -85,4 +85,5 @@ Hinweis: nach Umsetzungs-Topologie „Implementation Workflow sollte `suggest_bo
 ## Abhängigkeiten
 
 Setzt `detect_untested_public_api` und `analyze_method_extraction_candidates` voraus (separate Features).  
-Kann mit Stubs für diese beiden starten und schrittweise vollständig werden.
+Optional bei `depth: "project"`: `detect_god_classes` (Top-1 pro Stack) für kompakten God-Class-Hinweis.  
+Kann mit Stubs für diese Tools starten und schrittweise vollständig werden.

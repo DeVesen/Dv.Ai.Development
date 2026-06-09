@@ -311,15 +311,21 @@ Statische Code-Analyse über MCP (AST, Index, Refactoring-Safety, Nullability, A
 
 | Operation | Phase | Trigger / MCP-Tool |
 |-----------|-------|-------------------|
-| Projekt indexieren | Planung | Automatisch bei Symbol-Bezug → `index_project` |
+| Projekt indexieren | Planung | Automatisch bei Symbol-Bezug → `index_project` (Einzelprojekt) |
+| Solution indexieren | Planung | .NET Multi-Projekt → `index_solution` (`.sln` im Root oder nach `projectReferences` in `index_project`) |
 | Symbol suchen | Planung | Bei Klassen-/Methoden-Bezug → `find_in_index` |
 | Klassen-Split prüfen | Planung | `suggest_class_splits` bei Erweiterung bestehender Klasse |
+| God-Class-Ranking | Planung | `detect_god_classes` — projektweit, kein Datei-Input; Folgeschritt `suggest_class_splits` |
 | Refactoring-Safety | Planung | `analyze_refactoring_safety` bei API-Änderungen |
 | Aufrufstellen auflisten | Planung | `find_symbol_references` — konkrete Call-Sites (Datei/Zeile/Methode) nach `analyze_refactoring_safety` |
+| Vererbungs-Scope ermitteln | Planung | `find_type_hierarchy` — `up`/`down` für Interface- oder Basisklassen-Änderungen (Implementor-Scope) |
 | Datei reviewen | Implementierung | `review_file` / `review_code` |
 | Diff reviewen | Implementierung | `review_git_diff` — vor Commit |
 | Komplexität prüfen | Implementierung | `analyze_complexity` |
-| Ungetestete public API | Nach-Impl. | `detect_untested_public_api` — Heuristik, kein Test-Run; erster Check |
+| Extraktionskandidaten (Refactoring) | Implementierung / BoyScout | `analyze_method_extraction_candidates` |
+| BoyScout-Orchestrator | Nach-Impl. / Slice-Ende | `suggest_boyscout_actions` — ein Call auf geänderte `filePaths`; Compiler-Gate + Top-5 pro Datei |
+| Compiler-Diagnostics | Planung / Nach-Impl. | `analyze_compiler_diagnostics` — echter Compiler, kein Shell-Build; in `suggest_boyscout_actions` integriert |
+| Ungetestete public API | Nach-Impl. | `detect_untested_public_api` — Heuristik, kein Test-Run; nach Compiler-Check |
 | Test-Qualität prüfen | Nach-Impl. | `analyze_test_quality` |
 | Coverage auswerten | Nach-Impl. | `analyze_coverage` — nach Test-Run |
 | Vollständiger Bericht | Nach-Impl. | `analyze_advanced_all` — Sprint-End/Release |
@@ -897,7 +903,7 @@ _keine_
 
 ### implementation-workflow
 
-Agent-Mode Umsetzung in 1–10 Slices mit Hard Gate und iterativem Implement-Review-Loop (Technik-Gate, 6 Reviews, Fix-Planer, Fix-Slices) bei Pflicht-genericRTK.
+Agent-Mode Umsetzung in 1–10 Slices mit Hard Gate und Implement-Review-Loop (max. 3 Iterationen: Technik-Gate, 6 Reviews, Fix-Planer, Fix-Slices; Rest-Findings-Bericht wenn nach Iteration 3 noch offen) bei Pflicht-genericRTK.
 
 **Abhängigkeiten:** `genericrtk-filter`
 
@@ -930,7 +936,7 @@ implementiere die Erweiterung laut Plan
 
 | Datei | Inhalt |
 |-------|--------|
-| `skills/implementation-workflow/SKILL.md` | Hard Gate (Schritt 1), Slice-Implementierung (Schritt 2), iterativer Implement-Review-Loop (Schritt 3) |
+| `skills/implementation-workflow/SKILL.md` | Hard Gate (Schritt 1), Slice-Implementierung (Schritt 2), Implement-Review-Loop max. 3× (Schritt 3) |
 
 #### References
 

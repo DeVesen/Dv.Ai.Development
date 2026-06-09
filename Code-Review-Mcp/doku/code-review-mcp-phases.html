@@ -337,8 +337,9 @@
     <div class="phase phase-post">
       <div class="phase-badge"><span class="dot"></span>Nach Implementierung</div>
       <h2>Nach Fertigstellung</h2>
-      <p>Nach Tests, Build und Merge. <code>detect_untested_public_api</code> läuft als erster Nach-Implementierungs-Check rein statisch <strong>ohne Test-Run</strong>; nur die Coverage-Tools (<code>analyze_coverage</code>, <code>analyze_test_health</code>) brauchen einen vorherigen Test-Run.</p>
+      <p>Nach Tests, Build und Merge. <code>suggest_boyscout_actions</code> aggregiert Compiler-Gate + Top-5-Findings pro geänderter Datei in einem Call. <code>detect_untested_public_api</code> läuft rein statisch <strong>ohne Test-Run</strong>; nur die Coverage-Tools (<code>analyze_coverage</code>, <code>analyze_test_health</code>) brauchen einen vorherigen Test-Run.</p>
       <div class="phase-tools">
+        <span class="pill">suggest_boyscout_actions</span>
         <span class="pill">detect_untested_public_api</span>
         <span class="pill">analyze_coverage</span>
         <span class="pill">analyze_test_health</span>
@@ -699,6 +700,12 @@
           <td class="tool-col">find_symbol_references</td>
           <td><span class="phase-badge-sm pb-plan">Planung</span></td>
           <td class="why-col">Konkrete Aufrufstellen nach analyze_refactoring_safety</td>
+          <td class="limit-col">Kein Build nötig. Datei-Cap 400</td>
+        </tr>
+        <tr>
+          <td class="tool-col">find_type_hierarchy</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Vererbungs-Scope bei Interface-/Basisklassen-Änderung (down = Implementor-Liste)</td>
           <td class="limit-col">Kein Build nötig. Datei-Cap 400</td>
         </tr>
         <tr>

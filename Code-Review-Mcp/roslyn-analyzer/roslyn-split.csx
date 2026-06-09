@@ -1,6 +1,7 @@
 #!/usr/bin/env dotnet-script
 // roslyn-split.csx
-// Usage: dotnet script roslyn-split.csx -- <rootPath> [targetClass]
+// Usage: dotnet script roslyn-split.csx -- <rootPath> [targetClass] [mode]
+// mode: split-scan (default) | project-scan
 
 #r "nuget: Microsoft.CodeAnalysis.CSharp, 5.0.0-2.final"
 #nullable enable
@@ -11,20 +12,73 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-var rootPath    = Args.ElementAtOrDefault(0) ?? Directory.GetCurrentDirectory();
-var targetClass = Args.ElementAtOrDefault(1);
+const int ProjectFileCap = 400;
 
-var csFiles = Directory.GetFiles(rootPath, "*.cs", SearchOption.AllDirectories)
+var rootPath    = Args.ElementAtOrDefault(0) ?? Directory.GetCurrentDirectory();
+var targetClass = string.IsNullOrWhiteSpace(Args.ElementAtOrDefault(1)) ? null : Args.ElementAtOrDefault(1);
+var mode        = Args.ElementAtOrDefault(2) ?? "split-scan";
+
+var allCsFiles = Directory.GetFiles(rootPath, "*.cs", SearchOption.AllDirectories)
     .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
              && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
              && !f.Contains($"{Path.DirectorySeparatorChar}Migrations{Path.DirectorySeparatorChar}")
-             && !f.EndsWith(".g.cs"))
-    .Take(300).ToList();
+             && !f.EndsWith(".g.cs")
+             && !f.EndsWith(".Designer.cs")
+             && !IsTestFile(f))
+    .ToList();
+
+var capReached = allCsFiles.Count > ProjectFileCap;
+var csFiles = allCsFiles.Take(ProjectFileCap).ToList();
 
 var parsedFiles = csFiles.Select(f =>
     (Path: f, RelPath: Path.GetRelativePath(rootPath, f),
      Code: File.ReadAllText(f), Tree: CSharpSyntaxTree.ParseText(File.ReadAllText(f), path: f)))
     .ToList();
+
+var opts = new JsonSerializerOptions { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
+
+if (mode == "project-scan")
+{
+    var scanResults = new List<GodClassMetricsResult>();
+    var scannedClassCount = 0;
+
+    foreach (var (_, relPath, code, tree) in parsedFiles)
+    {
+        var root = tree.GetRoot();
+        foreach (var cls in root.DescendantNodes().OfType<ClassDeclarationSyntax>())
+        {
+            var methods = cls.Members.OfType<MethodDeclarationSyntax>()
+                .Where(m => !new[] { "Dispose", "Finalize" }.Contains(m.Identifier.Text))
+                .ToList();
+
+            if (methods.Count < 3) continue;
+
+            scannedClassCount++;
+            var analysis = AnalyzeClass(cls, methods, relPath, code);
+            var deps = CollectDeps(cls);
+            var span = cls.GetLocation().GetLineSpan();
+            scanResults.Add(new GodClassMetricsResult
+            {
+                File = relPath,
+                ClassName = cls.Identifier.Text,
+                Line = span.StartLinePosition.Line + 1,
+                MethodCount = analysis.Lcom.MethodCount,
+                FieldCount = analysis.Lcom.FieldCount,
+                Lcom = analysis.Lcom.Score,
+                Dependencies = deps.Count,
+                LinesOfCode = Math.Max(1, span.EndLinePosition.Line - span.StartLinePosition.Line + 1),
+            });
+        }
+    }
+
+    Console.WriteLine(JsonSerializer.Serialize(new GodClassScanPayload
+    {
+        CapReached = capReached ? true : null,
+        ScannedClassCount = scannedClassCount,
+        Classes = scanResults,
+    }, opts));
+    return;
+}
 
 var results = new List<ClassSplitResult>();
 
@@ -51,8 +105,14 @@ foreach (var (_, relPath, code, tree) in parsedFiles)
 results = results.OrderBy(r => new[] { "critical","high","medium","low","none" }
     .ToList().IndexOf(r.SplitUrgency)).ToList();
 
-var opts = new JsonSerializerOptions { WriteIndented = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };
 Console.WriteLine(JsonSerializer.Serialize(results, opts));
+
+static bool IsTestFile(string f)
+{
+    var name = Path.GetFileName(f);
+    return name.Contains("Test") || name.Contains("Spec")
+        || name.EndsWith("Tests.cs") || name.EndsWith("Test.cs") || name.EndsWith("Spec.cs");
+}
 
 // ── Analysis ──────────────────────────────────────────────────────────────────
 
@@ -361,3 +421,5 @@ class FieldAccessEntry { public string FieldName{get;set;}=""; public string Typ
 class DependencyGroup { public string Dependency{get;set;}=""; public List<string> UsedByMethods{get;set;}=new(); public string SuggestedOwner{get;set;}=""; }
 class SplitSuggestion { public string NewClassName{get;set;}=""; public string Responsibility{get;set;}=""; public List<string> Methods{get;set;}=new(); public List<string> Fields{get;set;}=new(); public List<string> Dependencies{get;set;}=new(); public string Reasoning{get;set;}=""; public int EstimatedLines{get;set;} }
 class FieldInfo { public string Name{get;set;}=""; public string TypeName{get;set;}=""; public bool IsInjected{get;set;} }
+class GodClassMetricsResult { public string File{get;set;}=""; public string ClassName{get;set;}=""; public int Line{get;set;} public int MethodCount{get;set;} public int FieldCount{get;set;} public double Lcom{get;set;} public int Dependencies{get;set;} public int LinesOfCode{get;set;} }
+class GodClassScanPayload { public bool? CapReached{get;set;} public int ScannedClassCount{get;set;} public List<GodClassMetricsResult> Classes{get;set;}=new(); }

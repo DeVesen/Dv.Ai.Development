@@ -3,24 +3,36 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { recordCall, startLogViewer } from "./logviewer.js";
 import { execSync } from "child_process";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, statSync } from "fs";
 import { extname, resolve } from "path";
 import { analyzeTypeScript, extractAngularValidators, extractHttpCalls, TsMorphMetadata, AngularFormField, HttpCallEntry } from "./analyzers/ts-morph-analyzer.js";
 import { analyzeCSharp, RoslynMetadata, RoslynPropertyAnnotation } from "./analyzers/roslyn-runner.js";
 import { indexAngularProjectCached, AngularProjectIndex } from "./indexers/angular-indexer-runner.js";
-import { indexDotnetProject, DotnetProjectIndex } from "./indexers/dotnet-indexer-runner.js";
+import {
+  indexDotnetProject, indexDotnetSolution, resolveDotnetIndex, resolveDotnetScopeRoot,
+  resolveDotnetSolutionPath, isDotnetSolutionIndex, isDotnetSolutionPath,
+  DotnetProjectIndex, DotnetSolutionIndex,
+} from "./indexers/dotnet-indexer-runner.js";
 import {
   analyzeCyclomaticComplexity, analyzeDeadCode, analyzeNullability,
   analyzeDuplicates, analyzeRefactoringSafety, generateAutoFixes, analyzeCrossFileDataflow,
-  detectUntestedPublicApi, untestedApiScanState, findSymbolReferences, symbolReferencesScanState
+  detectUntestedPublicApi, untestedApiScanState, findSymbolReferences, symbolReferencesScanState,
+  detectGodClasses, godClassScanState,
 } from "./features/ts-advanced-features.js";
+import { findTypeHierarchy, typeHierarchyScanState } from "./features/ts-type-hierarchy.js";
+import { findExtractionCandidates } from "./features/ts-method-extraction.js";
+import { runDotnetExtraction } from "./features/dotnet-extraction-runner.js";
+import { MethodExtractionReport } from "./features/extraction-types.js";
 import { runDotnetTestCoverageStatic, dotnetUntestedApiScanState } from "./features/dotnet-test-coverage-static-runner.js";
 import { UntestedApiFinding } from "./features/untested-api-types.js";
 import { runDotnetAdvancedAnalysis } from "./features/dotnet-advanced-runner.js";
 import { runDotnetReferences } from "./features/dotnet-references-runner.js";
+import { runDotnetHierarchy } from "./features/dotnet-hierarchy-runner.js";
 import { SymbolReference } from "./features/symbol-reference-types.js";
+import { TypeHierarchyInfo, TypeHierarchyResult } from "./features/type-hierarchy-types.js";
 import { analyzeClassSplits } from "./features/ts-class-split.js";
-import { runDotnetSplitAnalysis } from "./features/dotnet-split-runner.js";
+import { runDotnetSplitAnalysis, runDotnetGodClassScan } from "./features/dotnet-split-runner.js";
+import { GodClassScanResult } from "./features/god-class-types.js";
 import {
   analyzeMaintainability, analyzeTypeGraph, analyzeControlFlow,
 } from "./features/ts-code-intelligence.js";
@@ -28,6 +40,10 @@ import { runDotnetIntelligence } from "./features/dotnet-intelligence-runner.js"
 import { parseLcov, parseCobertura } from "./features/coverage-parser.js";
 import { analyzeAngularTestQuality } from "./features/test-quality-analyzer.js";
 import { runDotnetTestQuality } from "./features/dotnet-test-quality-runner.js";
+import { runDotnetDiagnostics } from "./features/dotnet-diagnostics-runner.js";
+import { getCompilerDiagnostics } from "./features/ts-compiler-diagnostics.js";
+import { CompilerDiagnostic } from "./features/diagnostics-types.js";
+import { runBoyscoutActions, formatBoyscoutMarkdown } from "./features/boyscout-runner.js";
 
 // ─── Language Detection ───────────────────────────────────────────────────────
 
@@ -658,14 +674,35 @@ function formatAngularIndexForLLM(index: AngularProjectIndex): string {
   return lines.join("\n");
 }
 
-function formatDotnetIndexForLLM(index: DotnetProjectIndex): string {
-  if (index.error) return `# .NET Project Index\n⚠️ ${index.error}`;
+function projectSuffix(entry: { project?: string }): string {
+  return entry.project ? ` [${entry.project}]` : "";
+}
+
+function formatDotnetIndexForLLM(index: DotnetProjectIndex | DotnetSolutionIndex): string {
+  if (index.error) {
+    const title = isDotnetSolutionIndex(index) ? ".NET Solution Index" : ".NET Project Index";
+    return `# ${title}\n⚠️ ${index.error}`;
+  }
 
   const s = index.summary;
   const lines: string[] = [];
+  const isSolution = isDotnetSolutionIndex(index);
 
-  lines.push(`# .NET Project Index`);
+  lines.push(isSolution ? `# .NET Solution Index` : `# .NET Project Index`);
+  if (isSolution) {
+    lines.push(`Solution: ${index.solutionPath}`);
+    lines.push(`Projects: ${index.projects.join(", ")}`);
+  }
   lines.push(`Generated: ${index.generatedAt} | Root: ${index.projectRoot}\n`);
+
+  if (index.projectReferences?.length) {
+    lines.push(`## Project References`);
+    lines.push(index.projectReferences.map((r) => `- ${r}`).join("\n") + "\n");
+  }
+  if (index.externalDependencies?.length) {
+    lines.push(`## External Dependencies (cross-project)`);
+    lines.push(index.externalDependencies.map((d) => `- ${d}`).join("\n") + "\n");
+  }
 
   lines.push(`## Summary`);
   lines.push(`- ${s.totalClasses} classes | ${s.totalInterfaces} interfaces | ${s.totalEnums} enums | ${s.totalRecords} records`);
@@ -689,7 +726,7 @@ function formatDotnetIndexForLLM(index: DotnetProjectIndex): string {
       if (cls.longMethods.length) flags.push(`⚠️ LongMethods(${cls.longMethods.length})`);
       if (cls.switchCount >= 2) flags.push(`⚠️ OCP(${cls.switchCount} switches)`);
 
-      lines.push(`- **${cls.name}** (${cls.file}:${cls.line}) ${flags.join(" ")}`);
+      lines.push(`- **${cls.name}**${projectSuffix(cls)} (${cls.file}:${cls.line}) ${flags.join(" ")}`);
       lines.push(`  Deps: ${cls.constructorDeps.join(", ") || "none"} | Implements: ${cls.implementedInterfaces.join(", ") || "none"}`);
       if (cls.publicMethods.length)
         lines.push(`  Methods: ${cls.publicMethods.slice(0, 8).map((m) => `${m.name}${m.isAsync ? "(async)" : ""}`).join(", ")}`);
@@ -699,7 +736,7 @@ function formatDotnetIndexForLLM(index: DotnetProjectIndex): string {
   lines.push(`\n## Interfaces`);
   for (const i of index.interfaces) {
     const noImpl = i.implementedBy.length === 0 ? " ⚠️ no implementation" : "";
-    lines.push(`- **${i.name}** (${i.file}:${i.line}) | ${i.methodCount} methods | ImplementedBy: ${i.implementedBy.join(", ") || "none"}${noImpl}`);
+    lines.push(`- **${i.name}**${projectSuffix(i)} (${i.file}:${i.line}) | ${i.methodCount} methods | ImplementedBy: ${i.implementedBy.join(", ") || "none"}${noImpl}`);
   }
 
   lines.push(`\n## Enums`);
@@ -748,6 +785,19 @@ server.tool(
     if (!existsSync(absPath))
       return { content: [{ type: "text", text: `Path not found: ${absPath}` }], isError: true };
 
+    if (absPath.toLowerCase().endsWith(".sln") || (existsSync(absPath) && isDotnetSolutionPath(absPath) && !existsSync(resolve(absPath, "angular.json")))) {
+      const sln = resolveDotnetSolutionPath(absPath);
+      if (sln && type !== "angular") {
+        return {
+          content: [{
+            type: "text",
+            text: `Path points to a .NET solution (${sln}). Use \`index_solution\` instead of \`index_project\` for multi-project indexing.`,
+          }],
+          isError: true,
+        };
+      }
+    }
+
     // Auto-detect type
     let detectedType = type;
     if (type === "auto") {
@@ -755,8 +805,13 @@ server.tool(
       const { join: pjoin } = await import("path");
       if (existsSync(pjoin(absPath, "angular.json")) || existsSync(pjoin(absPath, "project.json")))
         detectedType = "angular";
-      else if (rd(absPath).some((f: string) => f.endsWith(".csproj") || f.endsWith(".sln")))
+      else if (rd(absPath).some((f: string) => f.endsWith(".csproj")))
         detectedType = "dotnet";
+      else if (rd(absPath).some((f: string) => f.endsWith(".sln")))
+        return {
+          content: [{ type: "text", text: `Directory contains a .sln file. Use \`index_solution\` for .NET multi-project solutions.` }],
+          isError: true,
+        };
       else
         return { content: [{ type: "text", text: `Could not auto-detect project type in: ${absPath}\nPlease specify type: "angular" or "dotnet"` }], isError: true };
     }
@@ -770,6 +825,28 @@ server.tool(
       const output = format === "json" ? JSON.stringify(index, null, 2) : formatDotnetIndexForLLM(index);
       return { content: [{ type: "text", text: output }] };
     }
+  }
+);
+
+server.tool(
+  "index_solution",
+  "Generate a combined structural index of all projects in a .NET solution (.sln). Use for multi-project backends where index_project misses cross-project dependencies. Each symbol includes a project field. .NET only.",
+  {
+    solutionPath: z.string().describe("Path to the .sln file (e.g. /workspace/MyApp.sln)"),
+    format: z.enum(["llm", "json"]).default("llm").describe("'llm' = readable text for LLM context, 'json' = raw structured data"),
+    useCache: z.boolean().default(true).describe("Use cached index if < 5 minutes old and .sln unchanged"),
+    projectFilter: z.array(z.string()).optional().describe("Optional: only index these project names (for large solutions)"),
+  },
+  async ({ solutionPath, format, useCache, projectFilter }) => {
+    const absPath = resolve(solutionPath);
+    if (!existsSync(absPath))
+      return { content: [{ type: "text", text: `Path not found: ${absPath}` }], isError: true };
+    if (!absPath.toLowerCase().endsWith(".sln"))
+      return { content: [{ type: "text", text: `Not a .sln file: ${absPath}` }], isError: true };
+
+    const index = indexDotnetSolution(absPath, useCache, projectFilter);
+    const output = format === "json" ? JSON.stringify(index, null, 2) : formatDotnetIndexForLLM(index);
+    return { content: [{ type: "text", text: output }] };
   }
 );
 
@@ -796,7 +873,7 @@ server.tool(
       index.enums.filter((e) => match(e.name)).forEach((e) => results.push({ kind: "Enum", ...e }));
       index.pipes.filter((p) => match(p.name)).forEach((p) => results.push({ kind: "Pipe", ...p }));
     } else {
-      const index = indexDotnetProject(absPath, true);
+      const index = resolveDotnetIndex(absPath, true);
       const match = (name: string) => name.toLowerCase().includes(q);
 
       index.classes.filter((c) => match(c.name)).forEach((c) => results.push({ kind: "Class", ...c }));
@@ -832,7 +909,7 @@ server.tool(
 
     const indexContext = type === "angular"
       ? formatAngularIndexForLLM(indexAngularProjectCached(absProject, true))
-      : formatDotnetIndexForLLM(indexDotnetProject(absProject, true));
+      : formatDotnetIndexForLLM(resolveDotnetIndex(absProject, true));
 
     const fileAnalysis = performReview(code, filePath, focusAreas);
 
@@ -966,7 +1043,8 @@ server.tool(
         ).join("\n");
       return { content: [{ type: "text", text: summary + "\n\n" + JSON.stringify(results.slice(0, 20), null, 2) }] };
     } else {
-      const res = runDotnetAdvancedAnalysis(abs, "refactoring");
+      const scopeRoot = resolveDotnetScopeRoot(abs);
+      const res = runDotnetAdvancedAnalysis(scopeRoot, "refactoring");
       if (res.error) return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
       const items = res.refactoringSafety ?? [];
       const risky = items.filter((r) => !r.safeToRename);
@@ -1025,7 +1103,8 @@ server.tool(
       refs = findSymbolReferences(abs, symbolName, filePath);
       capReached = symbolReferencesScanState.capReached;
     } else {
-      const res = runDotnetReferences(abs, symbolName, filePath);
+      const scopeRoot = resolveDotnetScopeRoot(abs);
+      const res = runDotnetReferences(scopeRoot, symbolName, filePath);
       if (res.error)
         return { content: [{ type: "text", text: `⚠️ .NET references analyzer error: ${res.error}` }], isError: true };
       refs = res.references;
@@ -1058,6 +1137,100 @@ server.tool(
     return { content: [{ type: "text", text }] };
   }
 );
+
+// Tool: Type Hierarchy — inheritance / implementation detail after analyze_type_graph
+server.tool(
+  "find_type_hierarchy",
+  "Answer focused inheritance questions for a single type: what does it extend/implement (up) and what extends/implements it (down). Targeted alternative to analyze_type_graph when you know the type name. Works for Angular (ts-morph) and .NET (Roslyn). Pass filePath to disambiguate same-named types.",
+  {
+    projectPath: projectPathSchema,
+    typeName: z.string().min(1).describe("Class or interface name to inspect"),
+    type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Project type"),
+    filePath: z.string().optional().describe("Optional: anchor the type to this file"),
+    direction: z.enum(["up", "down", "both"]).default("both").describe("up = base chain, down = derived classes and interface implementations"),
+  },
+  async ({ projectPath, typeName, type, filePath, direction }) => {
+    const abs = resolve(projectPath);
+    if (!existsSync(abs))
+      return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
+
+    let detectedType: "angular" | "dotnet";
+    if (type === "auto") {
+      if (filePath) {
+        const absFile = resolve(abs, filePath);
+        const content = existsSync(absFile) ? readFileSync(absFile, "utf-8") : "";
+        const lang = detectLanguage(filePath, content);
+        if (lang === "unknown")
+          return { content: [{ type: "text", text: `Could not detect language for file: ${filePath}\nPlease specify type: "angular" or "dotnet".` }], isError: true };
+        detectedType = lang;
+      } else {
+        const { readdirSync: rd } = await import("fs");
+        const { join: pjoin } = await import("path");
+        if (existsSync(pjoin(abs, "angular.json")) || existsSync(pjoin(abs, "project.json")))
+          detectedType = "angular";
+        else if (rd(abs).some((f: string) => f.endsWith(".csproj") || f.endsWith(".sln")))
+          detectedType = "dotnet";
+        else
+          return { content: [{ type: "text", text: `Could not auto-detect project type in: ${abs}\nPlease specify type: "angular" or "dotnet".` }], isError: true };
+      }
+    } else {
+      detectedType = type;
+    }
+
+    let result: TypeHierarchyResult;
+    if (detectedType === "angular") {
+      result = findTypeHierarchy(abs, typeName, filePath, direction);
+    } else {
+      result = runDotnetHierarchy(abs, typeName, filePath, direction);
+      if (result.error)
+        return { content: [{ type: "text", text: `⚠️ .NET hierarchy analyzer error: ${result.error}` }], isError: true };
+    }
+
+    const capReached = detectedType === "angular"
+      ? typeHierarchyScanState.capReached
+      : (result.capReached ?? false);
+    const capNote = capReached ? "\n\n⚠️ Datei-Limit (400) erreicht — Liste evtl. unvollständig." : "";
+
+    if (result.up.length === 0 && result.down.length === 0)
+      return { content: [{ type: "text", text: `No hierarchy entries for \`${typeName}\` in ${projectPath} (${detectedType}, direction: ${direction}).${capNote}` }] };
+
+    const text = formatTypeHierarchyMarkdown(typeName, detectedType, direction, result, capReached);
+    return { content: [{ type: "text", text: text + capNote }] };
+  }
+);
+
+function formatTypeHierarchyMarkdown(
+  typeName: string,
+  stack: string,
+  direction: string,
+  result: TypeHierarchyResult,
+  capReached: boolean,
+): string {
+  const escapeCell = (s: string) => s.replace(/\|/g, "\\|").replace(/`/g, "\\`");
+  const lines: string[] = [
+    `# Type hierarchy for \`${typeName}\` (${stack}, direction: ${direction})`,
+    ...(capReached ? ["", "⚠️ Datei-Limit (400) erreicht — Liste evtl. unvollständig."] : []),
+  ];
+
+  const table = (title: string, items: TypeHierarchyInfo[]) => {
+    lines.push("", `## ${title}`, "");
+    if (items.length === 0) {
+      lines.push("_None._");
+      return;
+    }
+    lines.push("| Name | Kind | File | Line |", "|------|------|------|------|");
+    for (const t of items.slice(0, 50)) {
+      lines.push(`| \`${escapeCell(t.name)}\` | ${t.kind} | \`${escapeCell(t.file || "—")}\` | ${t.line || "—"} |`);
+    }
+    if (items.length > 50) lines.push(`\n_Showing first 50 of ${items.length} entries._`);
+  };
+
+  if (direction === "up" || direction === "both") table("Up (base chain & interfaces)", result.up);
+  if (direction === "down" || direction === "both") table("Down (derived & implementations)", result.down);
+
+  lines.push("", "## Raw JSON", "```json", JSON.stringify(result, null, 2), "```");
+  return lines.join("\n");
+}
 
 // Tool: Auto-Fix
 server.tool(
@@ -1220,6 +1393,94 @@ server.tool(
     }
   }
 );
+
+// Tool: Detect God Classes — project-wide SRP ranking
+server.tool(
+  "detect_god_classes",
+  "Scans an entire project and returns a prioritized ranking of classes violating the Single-Responsibility Principle: too large, too many responsibilities, too many dependencies. No file input required. Follow up with suggest_class_splits on candidates. Works for Angular (ts-morph) and .NET (Roslyn).",
+  {
+    projectPath: projectPathSchema,
+    type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Project type"),
+    top: z.number().int().min(1).max(100).default(10).describe("Number of worst offenders to return (default: 10)"),
+  },
+  async ({ projectPath, type, top }) => {
+    const abs = resolve(projectPath);
+    if (!existsSync(abs))
+      return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
+
+    let detectedType: "angular" | "dotnet";
+    if (type === "auto") {
+      const { readdirSync: rd } = await import("fs");
+      const { join: pjoin } = await import("path");
+      if (existsSync(pjoin(abs, "angular.json")) || existsSync(pjoin(abs, "project.json")))
+        detectedType = "angular";
+      else if (rd(abs).some((f: string) => f.endsWith(".csproj") || f.endsWith(".sln")))
+        detectedType = "dotnet";
+      else
+        return { content: [{ type: "text", text: `Could not auto-detect project type in: ${abs}\nPlease specify type: "angular" or "dotnet".` }], isError: true };
+    } else {
+      detectedType = type;
+    }
+
+    let scanResult: GodClassScanResult;
+    if (detectedType === "angular") {
+      scanResult = detectGodClasses(abs, top);
+    } else {
+      try {
+        scanResult = runDotnetGodClassScan(abs, top);
+      } catch (e) {
+        return { content: [{ type: "text", text: `⚠️ .NET god-class scan error: ${(e as Error).message}` }], isError: true };
+      }
+    }
+
+    const capReached = detectedType === "angular"
+      ? godClassScanState.capReached
+      : (scanResult.capReached ?? false);
+
+    if (scanResult.candidates.length === 0) {
+      const capNote = capReached ? "\n\n⚠️ Datei-Limit (400) erreicht — Scan evtl. unvollständig." : "";
+      return {
+        content: [{
+          type: "text",
+          text: `No god-class candidates found in ${projectPath} (${detectedType}, scanned ${scanResult.scannedClassCount} classes).${capNote}`,
+        }],
+      };
+    }
+
+    const text = formatGodClassMarkdown(detectedType, scanResult, top, capReached);
+    return { content: [{ type: "text", text }] };
+  }
+);
+
+function formatGodClassMarkdown(
+  stack: string,
+  result: GodClassScanResult,
+  top: number,
+  capReached: boolean,
+): string {
+  const escapeCell = (s: string) => s.replace(/\|/g, "\\|").replace(/`/g, "\\`");
+  const urgencyIcon: Record<string, string> = { critical: "🔴", high: "🟠", medium: "🟡", low: "🟢" };
+
+  const lines: string[] = [
+    `# God Class Ranking (${stack}, top ${top})`,
+    `_Scanned ${result.scannedClassCount} classes — ${result.candidates.length} SRP violation(s) ranked._`,
+    ...(capReached ? ["", "⚠️ Datei-Limit (400) erreicht — Ranking evtl. unvollständig."] : []),
+    "",
+    "| # | Urgency | Class | File | LOC | Methods | LCOM | Deps | Reasons |",
+    "|---|---------|-------|------|-----|---------|------|------|---------|",
+  ];
+
+  result.candidates.forEach((c, i) => {
+    const icon = urgencyIcon[c.urgency] ?? "";
+    lines.push(
+      `| ${i + 1} | ${icon} ${c.urgency} | \`${escapeCell(c.class)}\` | \`${escapeCell(c.file)}:${c.line}\` | ${c.metrics.linesOfCode} | ${c.metrics.methodCount} | ${c.metrics.lcom} | ${c.metrics.dependencies} | ${escapeCell(c.reasons.slice(0, 3).join("; "))} |`,
+    );
+  });
+
+  lines.push("", "_Follow up with `suggest_class_splits` on a candidate for concrete split proposals._");
+  lines.push("", "## Raw JSON", "```json", JSON.stringify(result.candidates, null, 2), "```");
+  return lines.join("\n");
+}
 
 // ─── Split Report Formatters ──────────────────────────────────────────────────
 
@@ -1585,6 +1846,73 @@ server.tool(
   }
 );
 
+// Tool: Method Extraction Candidates (file-scoped refactoring hints)
+server.tool(
+  "analyze_method_extraction_candidates",
+  "For methods above complexity/length thresholds, suggests concrete extract-method candidates: line ranges, inferred parameters, and camelCase name hints from comments or first statement. Angular (ts-morph) and .NET (Roslyn). Heuristic only — verify before refactoring.",
+  {
+    filePath: z.string().describe("Path to a single source file (.ts or .cs) to analyze."),
+    type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Stack. 'auto' detects from file extension."),
+    thresholds: z.object({
+      minLines: z.number().optional().describe("Minimum method LOC to qualify (default 20)."),
+      minCC: z.number().optional().describe("Minimum cyclomatic complexity to qualify (default 8)."),
+    }).optional(),
+  },
+  async ({ filePath, type, thresholds }) => {
+    const abs = resolve(filePath);
+    if (!existsSync(abs))
+      return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
+
+    let stack: "angular" | "dotnet";
+    if (type === "auto") {
+      const content = (() => { try { return readFileSync(abs, "utf-8"); } catch { return ""; } })();
+      const lang = detectLanguage(abs, content);
+      if (lang === "unknown")
+        return { content: [{ type: "text", text: `Could not auto-detect stack for file: ${abs}\nSupported: .ts, .cs — please specify type: "angular" or "dotnet".` }], isError: true };
+      stack = lang === "dotnet" ? "dotnet" : "angular";
+    } else {
+      stack = type;
+    }
+
+    let reports: MethodExtractionReport[];
+    try {
+      if (stack === "dotnet") {
+        const res = runDotnetExtraction(abs, thresholds);
+        if (res.error)
+          return { content: [{ type: "text", text: `⚠️ .NET analyzer error: ${res.error}` }], isError: true };
+        reports = res.reports;
+      } else {
+        reports = findExtractionCandidates(abs, thresholds);
+      }
+    } catch (e) {
+      return { content: [{ type: "text", text: `⚠️ ${(e as Error).message}` }], isError: true };
+    }
+
+    const totalCandidates = reports.reduce((n, r) => n + r.candidates.length, 0);
+    const lines = [
+      `## Method Extraction Candidates (${stack})`,
+      ``,
+      `Found ${reports.length} method(s) with ${totalCandidates} extraction candidate(s) in \`${abs}\`.`,
+      ``,
+    ];
+
+    const ROW_CAP = 50;
+    let rowCount = 0;
+    for (const r of reports) {
+      for (const c of r.candidates) {
+        if (rowCount >= ROW_CAP) break;
+        lines.push(`- **${r.method}** L${c.startLine}–${c.endLine} → \`${c.suggestedName}(${c.parameters.join(", ")})\` [CC=${r.cyclomaticComplexity}, LOC=${r.lines}]`);
+        rowCount++;
+      }
+      if (rowCount >= ROW_CAP) break;
+    }
+    if (totalCandidates > ROW_CAP)
+      lines.push(`\n… and ${totalCandidates - ROW_CAP} more (full list in JSON below).`);
+
+    return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(reports, null, 2) }] };
+  }
+);
+
 // Tool: Untested Public API (static coverage proxy, heuristic — no test run)
 server.tool(
   "detect_untested_public_api",
@@ -1671,6 +1999,99 @@ server.tool(
   }
 );
 
+// Tool: Compiler Diagnostics (real Roslyn / TypeScript compiler — not heuristics)
+server.tool(
+  "analyze_compiler_diagnostics",
+  "Runs the real compiler against a file or project and returns actual build errors and warnings — not estimated, but compiler-verified. .NET: MSBuildWorkspace + Roslyn GetDiagnostics (no shell build). Angular: ts-morph getPreEmitDiagnostics (no emit). Default severity: error. LIMITATION: .NET requires a resolvable .csproj and NuGet restore; Angular requires a discoverable tsconfig (tsconfig.json or tsconfig.app.json, with parent walk).",
+  {
+    path: z.string().describe("File or directory path. File scope filters diagnostics to that file; directory scope analyzes the whole project."),
+    type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Stack. 'auto' detects by file extension or project markers."),
+    severity: z.enum(["error", "warning", "all"]).default("error").describe("Filter: 'error' (default), 'warning' (errors+warnings), or 'all'."),
+  },
+  async ({ path, type, severity }) => {
+    const abs = resolve(path);
+    if (!existsSync(abs))
+      return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
+
+    const isFile = statSync(abs).isFile();
+
+    let stack: "angular" | "dotnet";
+    if (type === "auto") {
+      if (isFile) {
+        const content = (() => { try { return readFileSync(abs, "utf-8"); } catch { return ""; } })();
+        const lang = detectLanguage(abs, content);
+        if (lang === "unknown")
+          return { content: [{ type: "text", text: `Could not auto-detect stack for file: ${abs}\nPlease specify type: "angular" or "dotnet"` }], isError: true };
+        stack = lang === "dotnet" ? "dotnet" : "angular";
+      } else {
+        const { readdirSync: rd } = await import("fs");
+        const { join: pjoin, dirname: pdir } = await import("path");
+        const detectAt = (dir: string): "angular" | "dotnet" | null => {
+          if (existsSync(pjoin(dir, "angular.json")) || existsSync(pjoin(dir, "project.json"))) return "angular";
+          try { if (rd(dir).some((f: string) => f.endsWith(".csproj") || f.endsWith(".sln"))) return "dotnet"; } catch {}
+          if (existsSync(pjoin(dir, "tsconfig.json")) || existsSync(pjoin(dir, "tsconfig.app.json"))) return "angular";
+          return null;
+        };
+        let dir = abs, prev = "", detected: "angular" | "dotnet" | null = null;
+        while (dir && dir !== prev && !detected) {
+          detected = detectAt(dir);
+          prev = dir;
+          dir = pdir(dir);
+        }
+        if (detected) stack = detected;
+        else
+          return { content: [{ type: "text", text: `Could not auto-detect stack in ${abs} or any parent directory.\nPlease specify type: "angular" or "dotnet"` }], isError: true };
+      }
+    } else {
+      stack = type;
+    }
+
+    let diagnostics: CompilerDiagnostic[];
+    let error: string | undefined;
+    try {
+      if (stack === "dotnet") {
+        const result = runDotnetDiagnostics(abs, severity);
+        if (result.error) {
+          return { content: [{ type: "text", text: `⚠️ .NET compiler diagnostics error: ${result.error}` }], isError: true };
+        }
+        diagnostics = result.diagnostics;
+      } else {
+        const result = getCompilerDiagnostics(abs, severity);
+        if (result.error) {
+          return { content: [{ type: "text", text: `⚠️ Angular compiler diagnostics error: ${result.error}` }], isError: true };
+        }
+        diagnostics = result.diagnostics;
+      }
+    } catch (e) {
+      return { content: [{ type: "text", text: `⚠️ ${(e as Error).message}` }], isError: true };
+    }
+
+    const scope = isFile ? "file" : "project";
+    const lines = [
+      `## Compiler Diagnostics (${stack}, scope=${scope}, severity=${severity})`,
+      `_Real compiler output — not heuristics._`,
+      ``,
+    ];
+
+    const ROW_CAP = 50;
+    if (diagnostics.length === 0) {
+      lines.push(`No diagnostics matching severity filter "${severity}".`);
+    } else {
+      lines.push(`Found ${diagnostics.length} diagnostic(s):\n`);
+      lines.push(`| code | severity | file | line | message |`);
+      lines.push(`|------|----------|------|------|---------|`);
+      for (const d of diagnostics.slice(0, ROW_CAP)) {
+        const msg = d.message.replace(/\|/g, "\\|").slice(0, 80);
+        lines.push(`| ${d.code} | ${d.severity} | ${d.file} | ${d.line} | ${msg} |`);
+      }
+      if (diagnostics.length > ROW_CAP)
+        lines.push(`\n… and ${diagnostics.length - ROW_CAP} more (full list in the JSON below).`);
+    }
+
+    return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(diagnostics, null, 2) }] };
+  }
+);
+
 // Tool: Combined Coverage + Quality
 server.tool(
   "analyze_test_health",
@@ -1734,6 +2155,34 @@ server.tool(
   }
 );
 
+// Tool: BoyScout Actions — lightweight post-implementation quality pulse
+server.tool(
+  "suggest_boyscout_actions",
+  "BoyScoutRule orchestrator: given changed file paths, returns a prioritized top-N list of improvement actions (compiler gate first, then nullability, dead code, complexity, untested API, extraction). Compact markdown output. Angular + .NET.",
+  {
+    filePaths: z.array(z.string()).min(1).describe("Changed source files to analyze (.ts or .cs)."),
+    type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Stack. 'auto' detects from file extensions."),
+    maxPerFile: z.number().int().min(1).max(50).default(5).describe("Max prioritized actions per file (default 5)."),
+  },
+  async ({ filePaths, type, maxPerFile }) => {
+    try {
+      const result = runBoyscoutActions({ filePaths, type, maxPerFile });
+      const md = formatBoyscoutMarkdown(result);
+      return {
+        content: [{
+          type: "text",
+          text: md + "\n\n" + JSON.stringify(result, null, 2),
+        }],
+      };
+    } catch (e) {
+      return {
+        content: [{ type: "text", text: `⚠️ ${(e as Error).message}` }],
+        isError: true,
+      };
+    }
+  }
+);
+
 // ─── Git Diff Parser ──────────────────────────────────────────────────────────
 
 function parseDiff(diff: string): { filename: string; content: string }[] {
@@ -1756,4 +2205,4 @@ startLogViewer(logViewerPort);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("code-review-mcp v2.3 running (compact format, find_api_callers, detect_untested_public_api, find_symbol_references)");
+console.error("code-review-mcp v2.6 running (index_solution, suggest_boyscout_actions, detect_god_classes, analyze_compiler_diagnostics, detect_untested_public_api, find_symbol_references, find_type_hierarchy)");

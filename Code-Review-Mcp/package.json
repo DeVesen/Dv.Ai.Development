@@ -1,6 +1,6 @@
 {
   "name": "code-review-mcp",
-  "version": "2.3.0",
+  "version": "2.6.0",
   "description": "MCP Server for Angular & .NET code reviews",
   "type": "module",
   "main": "dist/index.js",
@@ -8,7 +8,13 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "test:untested-api": "npm run build && node test-fixtures/untested-api/run-assertions.mjs"
+    "test:untested-api": "npm run build && node test-fixtures/untested-api/run-assertions.mjs",
+    "test:type-hierarchy": "npm run build && node test-fixtures/type-hierarchy/run-assertions.mjs",
+    "test:method-extraction": "npm run build && node test-fixtures/method-extraction/run-assertions.mjs",
+    "test:god-classes": "npm run build && node test-fixtures/god-classes/run-assertions.mjs",
+    "test:compiler-diagnostics": "npm run build && node test-fixtures/compiler-diagnostics/run-assertions.mjs",
+    "test:index-solution": "npm run build && node test-fixtures/index-solution/run-assertions.mjs",
+    "test:boyscout-actions": "npm run build && node test-fixtures/boyscout-actions/run-assertions.mjs"
   },
   "dependencies": {
 "@modelcontextprotocol/sdk": "^1.12.0",

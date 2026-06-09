@@ -538,3 +538,5 @@ function computeMetrics(
     concernCount: domains.size,
   };
 }
+
+export { getCompilerDiagnostics } from "../features/ts-compiler-diagnostics.js";

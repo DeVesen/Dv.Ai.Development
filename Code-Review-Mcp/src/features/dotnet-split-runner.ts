@@ -1,4 +1,9 @@
 import { spawnSync } from "child_process";
+import {
+  GodClassScanResult,
+  filterAndRank,
+  toGodClassCandidate,
+} from "./god-class-types.js";
 
 const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-split.csx";
 
@@ -34,6 +39,60 @@ export function runDotnetSplitAnalysis(rootPath: string, targetClass?: string): 
     return normalizePascalToCamel(parsed) as DotnetClassSplitAnalysis[];
   } catch {
     return [];
+  }
+}
+
+interface DotnetGodClassMetricsRow {
+  file: string;
+  className: string;
+  line: number;
+  methodCount: number;
+  fieldCount: number;
+  lcom: number;
+  dependencies: number;
+  linesOfCode: number;
+}
+
+interface DotnetGodClassScanPayload {
+  capReached?: boolean;
+  scannedClassCount: number;
+  classes: DotnetGodClassMetricsRow[];
+}
+
+export function runDotnetGodClassScan(rootPath: string, top = 10): GodClassScanResult {
+  const args = ["script", "--no-cache", SCRIPT_PATH, "--", rootPath, "", "project-scan"];
+
+  const result = spawnSync("dotnet", args, {
+    encoding: "utf-8",
+    timeout: 120_000,
+    maxBuffer: 20 * 1024 * 1024,
+  });
+
+  if (result.error || result.status !== 0) {
+    throw new Error(result.error?.message ?? result.stderr ?? "roslyn-split project-scan failed");
+  }
+
+  try {
+    const parsed = normalizePascalToCamel(JSON.parse(result.stdout)) as DotnetGodClassScanPayload;
+    const candidates = (parsed.classes ?? [])
+      .map((row) =>
+        toGodClassCandidate(row.className, row.file, row.line, {
+          methodCount: row.methodCount,
+          fieldCount: row.fieldCount,
+          lcom: row.lcom,
+          dependencies: row.dependencies,
+          linesOfCode: row.linesOfCode,
+        }),
+      )
+      .filter((c): c is NonNullable<typeof c> => c !== null);
+
+    return {
+      candidates: filterAndRank(candidates, top),
+      capReached: parsed.capReached,
+      scannedClassCount: parsed.scannedClassCount ?? candidates.length,
+    };
+  } catch {
+    return { candidates: [], scannedClassCount: 0 };
   }
 }
 

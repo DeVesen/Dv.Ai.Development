@@ -63,8 +63,9 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 |---------|-------------------|-------------------------------|-----------|
 | A | `analyze_complexity` auf Topic-relevante Dateien | Manuelle Zeilenzahl / Methoden-Zählung via Read | mind. 1 bestehende Klasse im Topic-Scope |
 | B | `analyze_refactoring_safety` auf Klassen, die umgebaut werden | Import-Zählung via Grep als Proxy | nur wenn Klassen-Umbau geplant |
+| C | `find_type_hierarchy` auf Interfaces/abstrakte Basisklassen im Topic-Scope (`direction: "down"`) | Grep auf `implements`/`extends` als Proxy | Interface oder abstrakte Basisklasse wird im Topic geändert |
 
-Kein Call bei reinen Neu-Implementierungen ohne Berührung bestehender Klassen. Ergebnisse in Risiken (Schritt 4) und IMP-Slice-Blocking (Schritt 5/6) einbetten.
+Kein Call bei reinen Neu-Implementierungen ohne Berührung bestehender Klassen. Ergebnis von Schritt C in IMP-Slice-Scope und Risiken (Schritt 4) einbetten. Ergebnisse in Risiken (Schritt 4) und IMP-Slice-Blocking (Schritt 5/6) einbetten.
 
 1. Konkrete Umsetzungsschritte **nur** für dieses Topic (Dateien, Klassen, Komponenten).
 2. Einstiegspunkte und Pfade (relativ zum Repo-Root).

@@ -34,10 +34,11 @@ Host-Regel: ersten verfügbaren Slug wählen, sonst stoppen.
 
 ## MCP-Pflicht (MCP-first)
 
-1. `detect_untested_public_api`
-2. `analyze_refactoring_safety`
-3. `find_symbol_references`
-4. `review_git_diff` bei Bedarf
+1. `analyze_compiler_diagnostics` — `severity: "error"` auf geänderten Scope; Compiler-Fehler = **harter Blocker**
+2. `detect_untested_public_api`
+3. `analyze_refactoring_safety`
+4. `find_symbol_references`
+5. `review_git_diff` bei Bedarf
 
 Fallback Read/Grep nur bei dokumentiertem MCP-Fehler (`MCP: fallback`).
 

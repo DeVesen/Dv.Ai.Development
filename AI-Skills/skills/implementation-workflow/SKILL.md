@@ -1,7 +1,7 @@
 ---
 name: implementation-workflow
 description: >
-  Repo-Umsetzung: Hard Gate, 1–10 implement-agent (Slice inkl. Build/Test), iterativer Implement-Review-Loop (Technik-Gate, 6 Reviews, implement-fix-planner-agent, Fix-Slices). genericRTK + code-review-mcp Pflicht.
+  Repo-Umsetzung: Hard Gate, 1–10 implement-agent (Slice inkl. Build/Test), iterativer Implement-Review-Loop max. 3× (Technik-Gate, 6 Reviews, implement-fix-planner-agent, Fix-Slices). genericRTK + code-review-mcp Pflicht.
   Trigger (kanonisch in Rule): implementiere/setze um/fix/einbauen/leg los, Plan ausführen,
   impliziter Repo-Code-Intent, @implementation-workflow-skill, Hard Gate, Schritt 2/IMP-*,
   engl. apply changes/go ahead/ship it; Opt-out ohne implement-skill. Discovery via alwaysApply-Rule
@@ -94,7 +94,7 @@ If the user provides clear scope (typically a **final plan**, approved thread br
 This document is **the complete host execution playbook**: readiness (Hard Gate),
 brief execution-form recommendation plus user/thread alignment **when ambiguous**,
 mandatory **1–10** implementation subagents (topology: sequential or parallel),
-integration checkpoint, iterative Implement-Review-Loop (Technik-Gate, 6 Reviews, Fix-Planer, Fix-Slices), and orchestrator closure—all in **one** place. Older split workflows are **obsolete** here.
+integration checkpoint, Implement-Review-Loop (max. 3 Iterationen: Technik-Gate, 6 Reviews, Fix-Planer, Fix-Slices), and orchestrator closure—all in **one** place. Older split workflows are **obsolete** here.
 
 Orchestrator slices and dependencies come from the **final plan or agreed thread**
 (use [planning-workflow/SKILL.md](../planning-workflow/SKILL.md) where planning is
@@ -141,9 +141,9 @@ before any edit or spawned subagents.
                |
                v
 +-------------------------------------------------------------------+
-| Schritt 3: Iterativer Implement-Review-Loop (bis keine behebbaren |
-| Findings): Technik-Gate → 6× Review → Digest → Fix-Planer →     |
-| Fix-Slices; [`{verification-commands}`]({verification-commands}) |
+| Schritt 3: Implement-Review-Loop (max. 3 Iterationen):            |
+| Technik-Gate → 6× Review → Fix-Planer → Fix-Slices; früh stoppen |
+| wenn sauber; sonst Rest-Findings-Bericht nach Iteration 3        |
 +-------------------------------------------------------------------+
                                  |
                                  v
@@ -202,7 +202,7 @@ implementation subagent is used, questions **10–13** are **N/A** → **YES**.
 | 3 | Are **affected areas** clear (concrete paths, modules, or an explicit discovery strategy)? |
 | 4 | Have required **host rules** and **relevant skills** been identified and loaded per host policy? |
 | 5 | Are **risks** (security, data, irreversible steps, migrations) addressed or escalated? For **EF migrations** or **`parameter_search_view`**: load [backend-ef-migrations](../backend-ef-migrations/SKILL.md); verify Triplet, View SQL in `Up`/`Down`, and DB application — not build/tests alone. |
-| 6 | Is the **iterative Implement-Review-Loop** (Technik-Gate + 6 Reviews + Fix-Planer + Fix-Slices) accepted as mandatory post-integration verification, unless the user explicitly chose opt-out variants **B/C/D** in the thread? |
+| 6 | Is the **iterative Implement-Review-Loop** (max. **3** Iterationen: Technik-Gate + 6 Reviews + Fix-Planer + Fix-Slices; früher Abbruch wenn sauber) accepted as mandatory post-integration verification, unless the user explicitly chose opt-out variants **B/C/D** in the thread? |
 | 7 | Is it clear **which stacks** are touched (**Frontend** / **Backend**; Backend may be split per independent build unit when the backend contains multiple distinct build targets) so Schritt 3 can run **Technik-Gate per touched stack or build unit**, per host docs? |
 | 8 | Is **implementation** explicitly split into **1–10** implementation subagents with boundaries from the **final plan** (or thread), and is **Technik-Gate per changed stack** in Schritt 3 (no gate for unchanged stacks) agreed? |
 | 9 | **For the 1–10 implementation subagents:** Are slice boundaries taken from the **final plan** (or explicitly confirmed in the thread) so execution does **not** invent new splits? |
@@ -312,6 +312,12 @@ checkpoint, and resolve trivial merge mechanics when in scope.
 
 **Host opt-outs:** **B** (tests only), **C** (build only), **D** (no automated verification) apply **only** with explicit user text in the thread, per **[`{verification-commands}`]({verification-commands})**.
 
+### BoyScout pro Slice (Orchestrator, vor Integration-Checkpoint)
+
+**When:** Nach Rückkehr **jedes** `implement-agent`-Slices (Schritt 2), sofern der Thread/Plan kein Opt-out (`kein boyscout`, `skip boyscout`) enthält.
+
+**Pflicht-MCP:** `suggest_boyscout_actions(filePaths: [alle vom Slice geänderten Dateien], type)` — Top-Findings kompakt im Slice-Report des Subagents bzw. Orchestrator-Zusammenfassung. Ersetzt nicht den stack-weiten Technik-Gate in Schritt 3.
+
 ### Integration checkpoint (Orchestrator)
 
 **When:** After all **implementation** subagent work for this pass is back. **Before** starting **Schritt 3** (first Review-Iteration).
@@ -336,7 +342,13 @@ resolution, config tweak), treat prior Technik-Gate as **stale**. **Do not** run
 
 ## Schritt 3 — Iterativer Implement-Review-Loop
 
-Nach dem Integration-Checkpoint läuft ein **iterativer Review-Fix-Loop** (eingebettetes Muster aus work-review-iterative, angepasst auf Code-Umsetzung) **bis keine behebbaren Findings** mehr übrig sind. Der **initial agent** orchestriert; **keine** Rollensimulation statt Subagents.
+Nach dem Integration-Checkpoint läuft ein **iterativer Review-Fix-Loop** (eingebettetes Muster aus work-review-iterative, angepasst auf Code-Umsetzung) mit **höchstens 3 Iterationen**. Der **initial agent** orchestriert; **keine** Rollensimulation statt Subagents.
+
+**Iterationslimit (verbindlich):** Pro Iteration: **Technik-Gate → 6× Review → Digest → Fix-Planer → Fix-Slices**. **Maximal 3** volle Iterationen — **kein** vierter Durchlauf.
+
+**Früher Abbruch:** Wenn eine abgeschlossene Iteration **keine behebbaren Findings** mehr liefert **und** Technik-Gate **OK** ist (opt-out **B**/**C**/**D** beachten), endet der Loop **sofort** — auch nach Iteration 1 oder 2.
+
+**Nach Iteration 3 mit offenen Findings:** Kein weiterer Fix-Zyklus. Stattdessen **Rest-Findings-Bericht** (wer bemängelt was noch) — Vorlage in [references/subagent-prompts.md](references/subagent-prompts.md) (**Rest-Findings nach Maximum**). Anschließend Schritt-3-Closure.
 
 **Review-Rollen (6, je Iteration parallel bevorzugt):**
 
@@ -392,23 +404,35 @@ Spawn **`implement-agent`** per Fix-Slice from the Fix-Teilplan (IMP-* IDs, wave
 
 Report briefly:
 
+- Iteration number (**1**, **2**, or **3** of max. 3)
 - Finding count per reviewer role
 - What was fixed (and what after user clarification)
 - Technik-Gate OK/FAIL per stack
-- Whether next iteration starts or loop ends
+- Whether the **next** iteration starts, the loop **ends cleanly**, or **Rest-Findings** follow (after iteration 3 only)
 
 **3.9 Abbruchbedingung**
 
-Loop ends when the completed iteration yields **no behebbare Findings** (reviewers report only marginal or no actionable points) **and** Technik-Gate is **OK** for all changed stacks (unless user opt-out **B**/**C**/**D**).
+Der Loop endet in **einem** dieser Fälle:
 
-**Abschlussmeldung:**
+1. **Sauber (früher oder spät):** Eine abgeschlossene Iteration liefert **keine behebbaren Findings** (Reviewer melden nur marginale oder keine handlungsrelevanten Punkte) **und** Technik-Gate ist **OK** für alle geänderten Stacks (außer User-Opt-out **B**/**C**/**D**).
+2. **Maximum erreicht:** Nach **Iteration 3** (Review + ggf. Fix-Planer + Fix-Slices abgeschlossen) — unabhängig davon, ob noch Findings offen sind. **Keine** Iteration 4.
 
-> **Review-Loop abgeschlossen** nach [N] Iteration(en). Das Deliverable hat alle sechs Reviewer-Perspektiven ohne offene behebbare Findings bestanden.
+**Abschlussmeldung bei sauberem Ende:**
+
+> **Review-Loop abgeschlossen** nach [N] von max. 3 Iteration(en). Das Deliverable hat alle sechs Reviewer-Perspektiven ohne offene behebbare Findings bestanden.
+
+**3.10 Rest-Findings nach Maximum (nur wenn Fall 2 und noch Bemängelungen)**
+
+Wenn nach abgeschlossener **Iteration 3** (Review + Fix-Planer + Fix-Slices) aus dem **Review-Digest Iteration 3** noch **behebbare oder wesentliche** Findings offen sind (nicht durch Iteration-3-Fix-Slices adressiert), **vor** Schritt-3-Closure einen **Rest-Findings-Bericht** erstellen — Vorlage **Rest-Findings nach Maximum** in [references/subagent-prompts.md](references/subagent-prompts.md). Pro Reviewer-Rolle: was noch bemängelt wird; umgesetzte Punkte aus Iteration 3 als erledigt markieren; Rollen ohne offene Punkte explizit „—“.
+
+**Abschlussmeldung bei Maximum mit Rest-Findings:**
+
+> **Review-Loop beendet** nach 3 Iterationen (Maximum). Offene Bemängelungen — siehe Rest-Findings-Bericht unten.
 
 ### Schritt-3-Closure (Orchestrator)
 
 1. **Plan alignment**: every plan step and AC **checked** or explained (with user agreement if deliberately deviated).
-2. **Loop evidence**: iterations count; Technik-Gate matrix per stack/iteration; six reviews per iteration; Fix-Planer with Evidenz-Basis; Fix-Slices executed.
+2. **Loop evidence**: iterations count (max. 3); Technik-Gate matrix per stack/iteration; six reviews per iteration; Fix-Planer with Evidenz-Basis; Fix-Slices executed; **Rest-Findings-Bericht** if loop ended at maximum with open findings.
 3. **Operational hygiene**: no unrequested refactors, secrets, or scope creep.
 4. **Topology**: sequential/parallel adherence; contract drift resolved or escalated.
 5. **Closure format**: **Abschlussformat** in [references/subagent-prompts.md](references/subagent-prompts.md). Technik-Gate **green** only with completed runs + genericRTK per applicable command; otherwise **`BLOCKIERT (genericRTK)`** or FAIL — **no** false closure.
@@ -417,7 +441,7 @@ Loop ends when the completed iteration yields **no behebbare Findings** (reviewe
 ## Operationale Regeln
 
 - **Implementation (Schritt 2):** **1–10** **`implement-agent`** subagents; slice-scoped build/test and unit tests per [implement-agent](SKILL.md#orchestrator-konfiguration); **genericRTK** on every in-scope run.
-- **Review-Loop (Schritt 3):** iterativ bis keine behebbaren Findings; **Technik-Gate** pro Stack/Iteration; **6× implement-review-***; **implement-fix-planner-agent** mit MCP A–H + genericRTK + Evidenz-Basis; **implement-agent** Fix-Slices only.
+- **Review-Loop (Schritt 3):** max. **3** Iterationen (früher Abbruch wenn sauber); **Technik-Gate** pro Stack/Iteration; **6× implement-review-***; **implement-fix-planner-agent** mit MCP A–H + genericRTK + Evidenz-Basis; **implement-agent** Fix-Slices only; nach Iteration 3 mit Rest-Findings → **Rest-Findings-Bericht**, **kein** weiterer Loop.
 - **Do not** run **stack-wide Technik-Gate** during Schritt 2; Schritt 3 owns stack-wide checks unless user chose opt-out **C** or **D** in the thread.
 - **Orchestrator** fixt keine Review-Findings ohne Fix-Planer + implement-agent.
 - **Technik-Gate** may apply **narrow fixes** for green build/tests (**no** feature or scope expansion).
@@ -542,4 +566,5 @@ Kopierbare Auftrags-Payloads (Platzhalter) — **nicht** Ersatz für Agent-Profi
 | Technik-Gate pro Stack | [references/subagent-prompts.md](references/subagent-prompts.md) | Pro Review-Iteration |
 | Implement-Review (×6) | [references/subagent-prompts.md](references/subagent-prompts.md) | Pro Review-Iteration |
 | Fix-Planer (nach Review) | [references/subagent-prompts.md](references/subagent-prompts.md) | Nach Review-Digest |
+| Rest-Findings nach Maximum | [references/subagent-prompts.md](references/subagent-prompts.md) | Nach Iteration 3 mit offenen Findings |
 | Abschlussformat (Orchestrator) | [references/subagent-prompts.md](references/subagent-prompts.md) | Nach Review-Loop |

@@ -11,6 +11,8 @@ import { readdirSync, statSync, readFileSync, existsSync } from "fs";
 import { join, extname, relative, dirname, resolve } from "path";
 import { UntestedApiFinding } from "./untested-api-types.js";
 import { SymbolReference } from "./symbol-reference-types.js";
+import { GodClassScanResult, filterAndRank, toGodClassCandidate } from "./god-class-types.js";
+import { computeClassMetrics } from "./ts-class-split.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1281,4 +1283,59 @@ function surroundingMethodName(node: Node): string | null {
 
 function sortByFileLine(a: SymbolReference, b: SymbolReference): number {
   return a.file === b.file ? a.line - b.line : a.file.localeCompare(b.file);
+}
+
+// ─── God Class Detection ──────────────────────────────────────────────────────
+
+export const godClassScanState: { capReached: boolean } = { capReached: false };
+
+function loadGodClassSourceFiles(rootPath: string): { sourceFiles: SourceFile[]; capReached: boolean } {
+  const tsConfigPath = join(rootPath, "tsconfig.json");
+  if (existsSync(tsConfigPath)) {
+    try {
+      const project = new Project({ tsConfigFilePath: tsConfigPath });
+      const projectFiles = project.getSourceFiles().filter((sf) => {
+        const p = sf.getFilePath().replace(/\\/g, "/");
+        return !p.includes("/node_modules/") && !p.endsWith(".d.ts") && !p.endsWith(".spec.ts");
+      });
+      const capReached = projectFiles.length > PROJECT_FILE_CAP;
+      return {
+        sourceFiles: capReached ? projectFiles.slice(0, PROJECT_FILE_CAP) : projectFiles,
+        capReached,
+      };
+    } catch {
+      return loadProject(rootPath);
+    }
+  }
+  return loadProject(rootPath);
+}
+
+export function detectGodClasses(rootPath: string, top = 10): GodClassScanResult {
+  godClassScanState.capReached = false;
+  const { sourceFiles, capReached } = loadGodClassSourceFiles(rootPath);
+  godClassScanState.capReached = capReached;
+
+  const candidates = [];
+  let scannedClassCount = 0;
+
+  for (const sf of sourceFiles) {
+    const relFile = relative(rootPath, sf.getFilePath());
+    for (const cls of sf.getClasses()) {
+      const name = cls.getName() ?? "";
+      if (!name) continue;
+      const methods = cls.getMethods().filter((m) => m.getName() !== "constructor");
+      if (methods.length < 3) continue;
+
+      scannedClassCount++;
+      const metrics = computeClassMetrics(cls);
+      const candidate = toGodClassCandidate(name, relFile, cls.getStartLineNumber(), metrics);
+      if (candidate) candidates.push(candidate);
+    }
+  }
+
+  return {
+    candidates: filterAndRank(candidates, top),
+    capReached: capReached || undefined,
+    scannedClassCount,
+  };
 }

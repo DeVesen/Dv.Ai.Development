@@ -93,6 +93,15 @@ Wenn Scope-Bereich > 3 Dateien → `detect_god_classes(projectPath, top: 5)` →
 
 ---
 
+## Limitationen
+
+- **Datei-Cap (400):** Angular (tsconfig- und Walk-Pfad) und .NET (`.Take(400)`) verarbeiten höchstens 400 Dateien. Bei Cap: `capReached` + Warnung `⚠️ Datei-Limit (400) erreicht` im Tool-Output.
+- **`.spec.ts` / Test-CS ausgeschlossen:** Konsistent mit `find_symbol_references` — Test-Dateien erscheinen nicht im Scan.
+- **Mindest-Methodenanzahl:** Klassen mit < 3 Methoden werden übersprungen (wie `suggest_class_splits`).
+- **Kein Split-Plan:** Nur Ranking + Urgency — konkrete Splits via `suggest_class_splits`.
+- **.NET nur im Container:** `dotnet-split-runner.ts` nutzt `/app/roslyn-analyzer/roslyn-split.csx` — läuft im Docker-Image, lokal nur via `dotnet script` (Test-Harness).
+- **BE-Tests lokal:** Ohne `dotnet-script` werden BE-Assertions übersprungen; `SKIP_BE_ASSERTIONS=1` für reine FE-Läufe.
+
 ## Abgrenzung zu `suggest_class_splits`
 
 | | `suggest_class_splits` | `detect_god_classes` |

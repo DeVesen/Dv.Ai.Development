@@ -1,0 +1,12 @@
+{
+  "AnimalBase": {
+    "down": ["Dog", "Cat"]
+  },
+  "Dog": {
+    "up": ["AnimalBase"]
+  },
+  "Named": {
+    "up": ["Speakable"],
+    "down": ["Speaker"]
+  }
+}

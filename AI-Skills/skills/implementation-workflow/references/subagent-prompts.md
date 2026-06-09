@@ -297,7 +297,8 @@ Rueckgabe:
 ```markdown
 ## Summary
 - Ergebnis vs. Plan: [complete | partial]
-- Iterationen: [Anzahl]
+- Iterationen: [Anzahl] von max. 3
+- Loop-Ende: [sauber | Maximum mit Rest-Findings]
 
 ## Iterativer Review-Loop
 - Technik-Gate je Iteration/Stack: [OK/FAIL/SKIPPED]
@@ -306,6 +307,47 @@ Rueckgabe:
 - Umgesetzte Fix-Slices: [Liste]
 - Letzte Iteration ohne behebbares Finding: [ja/nein]
 
+## Rest-Findings (nur bei Maximum mit offenen Punkten)
+- Pessimist: [Punkte oder —]
+- Lehrer: [Punkte oder —]
+- Normalo: [Punkte oder —]
+- Oberlehrer: [Punkte oder —]
+- Professor: [Punkte oder —]
+- Optimist: [Punkte oder —]
+- Technik-Gate letzte Iteration: [OK/FAIL/SKIPPED]
+
 ## Offene Punkte
-- [falls vorhanden]
+- [falls vorhanden; bei Rest-Findings hier Empfehlung: manuell / User-Entscheidung / akzeptiertes Rest-Risiko]
+```
+
+---
+
+## Rest-Findings nach Maximum (Orchestrator)
+
+Nur wenn nach **Iteration 3** noch behebbare oder wesentliche Findings offen sind — **kein** vierter Review-Zyklus.
+
+```markdown
+## Rest-Findings nach 3 Iterationen
+
+Technik-Gate (Iteration 3): [OK/FAIL/SKIPPED je Stack]
+
+### Pessimist
+- [noch offen] ...
+
+### Lehrer
+- ...
+
+### Normalo
+- ...
+
+### Oberlehrer
+- ...
+
+### Professor
+- [KRITISCH/WESENTLICH/FORMAL] ...
+
+### Optimist
+- ...
+
+**Hinweis:** Review-Loop-Maximum erreicht — keine weitere automatische Fix-Runde. User-Entscheidung oder manuelle Nacharbeit empfohlen fuer offene Punkte.
 ```

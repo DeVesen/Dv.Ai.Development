@@ -2,15 +2,17 @@
 name: code-review-mcp
 description: >
   Aktiviere diesen Skill sobald der User über Code spricht — egal ob er plant,
-  gerade schreibt oder fertig ist. Der MCP hat 27 Tools für Angular und .NET.
+  gerade schreibt oder fertig ist. Der MCP hat 31 Tools für Angular und .NET.
   Bei Code-Symbolen (Klasse, Methode, Property, Service, Route): zuerst
-  index_project/find_in_index, Grep nur ergänzend. UI-Labels ohne Symbol:
+  index_project/index_solution/find_in_index, Grep nur ergänzend. UI-Labels ohne Symbol:
   keine Landkarte. Trigger: Review, Analyse, Planung, Implementierung, Merge,
-  index_project, find_in_index, Code-Landkarte, Validierung, API-Contract,
+  index_project, index_solution, find_in_index, Code-Landkarte, Validierung, API-Contract,
   compare_validation_rules, api-validation, DTO, DataAnnotations,
-  find_api_callers, HTTP-Calls, format:compact, detect_untested_public_api,
+  find_api_callers, HTTP-Calls, format:compact, analyze_compiler_diagnostics,
+  Compiler-Fehler, Build-Fehler, detect_untested_public_api,
   ungetestete API, Test-Coverage-Proxy, find_symbol_references, Aufrufstellen,
-  Call-Sites.
+  Call-Sites, analyze_method_extraction_candidates, Extract-Method, Refactoring-Hotspot,
+  detect_god_classes, God Class, SRP, Single-Responsibility.
 disable-model-invocation: true
 ---
 
@@ -40,7 +42,7 @@ Alle dateibezogenen Parameter (`filePath`, `filePaths`, `projectPath`) verwenden
 
 | Trigger | Operation | Detail |
 |---------|-----------|--------|
-| Tool-Liste, welches Tool, 27 Tools | Alle verfügbaren Tools (Übersicht & Parameter) | [references/op-tool-overview.md](references/op-tool-overview.md) |
+| Tool-Liste, welches Tool, 31 Tools | Alle verfügbaren Tools (Übersicht & Parameter) | [references/op-tool-overview.md](references/op-tool-overview.md) |
 | Code-Landkarte, Symbol suchen, index_project, find_in_index, Recherche-Reihenfolge | Code-Landkarte & verbindliche Recherche-Reihenfolge | [references/op-code-map.md](references/op-code-map.md) |
 | Planung, Implementierung, Merge, Review-Phase, Sprint-End, Release | Die drei Review-Phasen (Planung / Implementierung / Nach-Implementierung) | [references/op-phasen.md](references/op-phasen.md) |
 | Validierung, API-Contract, DTO, DataAnnotations, FE↔BE-Abgleich | Validierungs- & Contract-Reviews | Abschnitt unten |
@@ -146,9 +148,43 @@ Scannt eine Angular `.ts`-Datei nach allen HttpClient-Aufrufen und zeigt welche 
 
 **Hinweis zu `[FromQuery]`/`[FromRoute]`:** Ab v2.2 werden Parameter mit diesen Binding-Attributen nicht mehr als "unvalidated-parameter" gemeldet (kein false positive für POST-Endpunkte die nur Query-String-Parameter erwarten).
 
+## BoyScoutRule — Post-Implementation (Orchestrator: `suggest_boyscout_actions`)
+
+Nach jeder abgeschlossenen Implementierung (nach jedem Slice-Abschluss im [Implementation Workflow](../implementation-workflow/SKILL.md)) — **ein** MCP-Call statt fünf Einzelchecks:
+
+**Tool:** `suggest_boyscout_actions`
+
+**Parameter:**
+- `filePaths` — alle geänderten Quelldateien (`.ts` / `.cs`)
+- `type` — `"angular"` \| `"dotnet"` \| `"auto"` (Default `auto`)
+- `maxPerFile` — Max. priorisierte Findings pro Datei (Default `5`)
+
+**Ablauf intern:** Compiler-Gate (`analyze_compiler_diagnostics`) zuerst → bei Errors nur `critical`-Compiler-Findings, Rest übersprungen → sonst Nullability, Dead Code, Complexity (CC≥10), ungetestete public API, Extraktionskandidaten (CC≥10).
+
+**Output:** Kompakte Markdown-Liste pro Datei (`critical` → `warning` → `suggestion`). Top-Findings direkt ausgeben — keine Schwelle nötig.
+
+**Opt-out:** `kein boyscout`, `skip boyscout`
+
+Einzel-Tools unten bleiben für gezielte Tiefe (Symbol-Referenzen, Vererbungs-Scope, God-Class-Scan).
+
+## Boy-Scout-Rule (Nach-Implementierung): Compiler-Check zuerst (`analyze_compiler_diagnostics`)
+
+Nach jeder abgeschlossenen Implementierung — **als allerersten** Nach-Implementierungs-Check `analyze_compiler_diagnostics` auf alle geänderten Dateien bzw. den Feature-Scope ausführen. Echter Compiler (Roslyn / TypeScript) — keine Heuristik.
+
+**Tool:** `analyze_compiler_diagnostics`
+
+**Parameter:**
+- `path` — geänderte Datei oder Projekt-/Modul-Wurzel
+- `type` — `"angular"` \| `"dotnet"` \| `"auto"` (Default `auto`)
+- `severity` — `"error"` (Default) \| `"warning"` \| `"all"`
+
+**Bei Compiler-Errors:** Ausgabe als **`critical`** markieren — **keine weiteren** BoyScout-Checks (`detect_untested_public_api`, `analyze_method_extraction_candidates` usw.) bis der Scope fehlerfrei kompiliert.
+
+**Bei 0 Errors:** Weiter mit den übrigen BoyScout-Checks (ungetestete API, Extraktionskandidaten, …).
+
 ## Boy-Scout-Rule (Nach-Implementierung): ungetestete public API
 
-Nach jeder abgeschlossenen Implementierung — bevor das Feature als „fertig" gilt — als **ersten** Nach-Implementierungs-Check `detect_untested_public_api` ausführen (Heuristik, **kein** Test-Run). Es deckt neu hinzugekommene oder geänderte public-Symbole (Methoden, Properties, Get/Set-Accessoren) auf, für die keine Test-Referenz erkennbar ist.
+Nach erfolgreichem Compiler-Check — bevor das Feature als „fertig" gilt — `detect_untested_public_api` ausführen (Heuristik, **kein** Test-Run). Es deckt neu hinzugekommene oder geänderte public-Symbole (Methoden, Properties, Get/Set-Accessoren) auf, für die keine Test-Referenz erkennbar ist.
 
 **Tool:** `detect_untested_public_api`
 
@@ -213,6 +249,58 @@ Wenn beim Durchgehen oder Review einer Datei eine **public** Methode/Property/Fu
 ```
 
 > **Hinweis:** Der reale Output enthält zusätzlich zur Tabelle einen `## Raw JSON`-Block (bis 500 Einträge) mit den vollständigen Referenz-Objekten — für programmatische Weiterverarbeitung.
+
+## Boy-Scout-Rule: Extract-Method-Hinweise nach Implementierung (`analyze_method_extraction_candidates`)
+
+Nach Implementierung oder beim Anfassen einer Datei: auf **alle geänderten** `.ts`/`.cs`-Dateien `analyze_method_extraction_candidates` aufrufen. Liefert für lange/komplexe Methoden konkrete Extraktionskandidaten (Zeilenbereich, Parameter-Heuristik, Namensvorschlag) — direkt umsetzbarer Refactoring-Hinweis ohne separaten Review.
+
+**Tool:** `analyze_method_extraction_candidates`
+
+**Parameter:**
+- `filePath` — einzelne Quelldatei (`/workspace/...`)
+- `type` — `"angular"` \| `"dotnet"` \| `"auto"` (Default `auto`, erkennt an Endung)
+- `thresholds` (optional) — `{ minLines?: number, minCC?: number }` (Defaults 20 / 8)
+
+**Wann:** Post-Implementation auf geänderte Dateien; Scout-Hotspots bei CC≥10; Follow-up wenn `review_file` CC-Warnungen meldet.
+
+## Boy-Scout-Rule: Vererbungs-Scope vor Interface-/Basisklassen-Änderung (`find_type_hierarchy`)
+
+Wenn eine **Basisklasse** (insbesondere `abstract`) oder ein **Interface** geändert wird: `find_type_hierarchy` mit `direction: "down"` nachschalten, um sofort alle **Ableitungen und Implementierungen** als Scope-Liste zu sehen — statt den Gesamtgraphen via `analyze_type_graph` zu durchsuchen.
+
+**Tool:** `find_type_hierarchy`
+
+**Parameter:**
+- `projectPath` — Projekt-Wurzel (`/workspace/...`)
+- `typeName` — Klassen- oder Interface-Name
+- `type` — `"angular"` \| `"dotnet"` \| `"auto"` (Default `auto`)
+- `filePath` (optional) — verankert den Typ und disambiguiert gleichnamige Deklarationen
+- `direction` — `"up"` (Basiskette) \| `"down"` (Ableitungen/Implementierungen) \| `"both"` (Default)
+
+**Output:** Markdown-Abschnitte `## Up (base chain & interfaces)` / `## Down (derived & implementations)` mit Tabelle `| Name | Kind | File | Line |` + Raw JSON. Cap-Warnung bei >400 Dateien.
+
+**Beispiel-Aufruf:**
+```json
+{
+  "tool": "find_type_hierarchy",
+  "projectPath": "/workspace/src/backend",
+  "typeName": "IOrderService",
+  "type": "dotnet",
+  "direction": "down"
+}
+```
+
+## Boy-Scout-Rule: God-Class-Wachstum nach Implementierung (`detect_god_classes`)
+
+Nach Implementierung eines Slices: `detect_god_classes(projectPath, top: 3)` auf dem betroffenen Stack aufrufen. Wenn eine **neu erstellte oder stark erweiterte Klasse** in den Top-3 erscheint → als **`warning`** ausgeben und `suggest_class_splits` auf die betroffene Klasse empfehlen.
+
+**Tool:** `detect_god_classes`
+
+**Parameter:**
+- `projectPath` — Projekt-Wurzel (`/workspace/...`)
+- `type` — `"angular"` \| `"dotnet"` \| `"auto"` (Default `auto`)
+- `top` — Anzahl der schlimmsten Kandidaten (Default `10`; Post-Implementation: `3`)
+
+**Wann:** Nach Implementierung; Scout Phase 3 bei Scope > 3 Dateien (`top: 5`).
 
 ## Recap nach Verwendung (Pflicht)
 

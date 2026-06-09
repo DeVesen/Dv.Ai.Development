@@ -20,8 +20,11 @@ Komponenten-Namen wenn der Nutzer sie nennt) — **ohne** `index_project` nur we
 |------------------------------|--------------|--------|
 | **Klasse, Interface, Service, Component, Record, Enum, Namespace** | `index_project` (falls Session/Cache fehlt) → `find_in_index` | `Read` der genannten Datei; Grep nur für fehlende Details |
 | **Methode, Funktion, Property, Feld, Route, Endpoint, DI-Token** (Name bekannt) | wie oben mit `query` = Typ- oder Container-Name; Methode per `Read` + ggf. `analyze_ast_only` | `find_symbol_references` für konkrete Aufrufstellen (statt Grep); Grep nur wenn Index/Datei nicht reicht |
+| **Interface oder Basisklasse wird geändert** (Vererbungs-Scope) | `find_in_index` → betroffenen Typ lokalisieren | `find_type_hierarchy(direction: "down")` — alle Ableitungen/Implementierungen als Scope-Liste |
 | **„Von hier nach dort"** (zwei Code-Anker: Datei+Zeile oder zwei Symbole) | `find_in_index` für beide Anker-Typen; optional `analyze_type_graph` / `analyze_dataflow` für Klassen-/Service-Grenzen | Grep für konkrete Aufrufzeilen; keine Spekulation ohne Fundstelle |
 | **Ordner, Feature, Modul** („im FileService", „Search-Grid") | `index_project` → `find_in_index` mit Teilstring | gezieltes `Read` |
+| **„Baut der Scope?" / Compiler-Fehler im Scope** | `analyze_compiler_diagnostics(path, severity: "error")` | Bei Fehlern: Blocker vor Umbau; Scout meldet in Risiken |
+| **Post-Implementation / geänderte Dateien nach Slice** | `suggest_boyscout_actions(filePaths, type)` | Ein Call: Compiler-Gate + Top-5-Findings; Opt-out: `kein boyscout` |
 | **UI-Element, Label, Flow in der Oberfläche** (ohne Klassenname) | **Kein** Index-Zwang | Suche nach Komponente/Template/Übersetzung; erst bei genanntem `@Component`/`selector` → Landkarte |
 | **Unklar** (Code vs. UI?) | **Eine** Klärungsfrage | dann Entscheidungsbaum |
 
@@ -29,14 +32,15 @@ Komponenten-Namen wenn der Nutzer sie nennt) — **ohne** `index_project` nur we
 
 **Schritt 0 — Projektwurzel wählen:**
 
-| Stack | `projectPath` | `type` |
-|-------|---------------|--------|
-| Angular FE | `/workspace/{frontend-path}` aus `./AGENTS.md` | `angular` |
-| .NET Backend | `/workspace/{backend-path}` aus `./AGENTS.md` | `dotnet` |
+| Stack | `projectPath` / `solutionPath` | `type` | Wann |
+|-------|-------------------------------|--------|------|
+| Angular FE | `/workspace/{frontend-path}` aus `./AGENTS.md` | `angular` | Standard FE-Stack |
+| .NET Backend (Einzelprojekt) | `/workspace/{backend-path}` aus `./AGENTS.md` | `dotnet` | Ein `.csproj`-Root |
+| .NET Multi-Projekt | `/workspace/<name>.sln` (Solution-Datei oder Verzeichnis mit `.sln`) | — (Tool: `index_solution`) | Wenn `.sln` im `/workspace/`-Root **oder** `index_project`-Output `projectReferences` / `externalDependencies` zeigt |
 
 `{frontend-path}` und `{backend-path}` sind Platzhalter — die konkreten Werte stehen in `./AGENTS.md` des jeweiligen Projekts. Präfix immer `/workspace/` voranstellen (Container-Pfad, kein Windows-Pfad, kein IDE-relativer Pfad).
 
-Bei Multi-Stack-Aufgaben: **pro Stack einmal** `index_project` (Cache ~5 min, `useCache: true`).
+Bei Multi-Stack-Aufgaben: **pro Stack einmal** `index_project` (Angular + Einzel-.NET) bzw. **`index_solution`** wenn das Backend eine `.sln` mit mehreren Projekten ist (Cache ~5 min, `useCache: true`).
 
 **Volume-Mount-Voraussetzung:** Die `.cursor/mcp.json` muss `-v ${workspaceFolder}:/workspace:ro` enthalten. Ohne Mount schlagen alle dateibasierten Tools fehl — dann MCP-Fallback deklarieren und auf Read/Grep ausweichen.
 
@@ -64,6 +68,8 @@ MCP-Fallback: <Grund>; Anker via Read/Grep: <Liste der Einstiegspunkte>
 
 `index_project` mit `projectPath`, `type` (`angular` | `dotnet` | `auto`), `format: llm`.
 
+**Entscheidungspunkt .NET Multi-Projekt:** Wenn der `index_project`-Output `projectReferences` oder `externalDependencies` enthält → **`index_solution(solutionPath)`** als Folgeaufruf (gleiche Session, Cache ~5 min). Danach `find_in_index` / `find_symbol_references` / `analyze_refactoring_safety` mit dem **Solution-Pfad** (`.sln` oder Solution-Verzeichnis) statt nur `{backend-path}`.
+
 Kurz im Agent-Log: 2–3 Sätze — welche Bereiche/Services betroffen, auffällige Abhängigkeiten/Warnungen.
 
 **Schritt 2 — Symbol lokalisieren (bei jedem genannten Typ/Service/Component):**
@@ -77,6 +83,7 @@ Ergebnis nutzen für: Dateipfad, Zeile, Methodenliste, Abhängigkeiten — **bev
 | Situation | Tool |
 |-----------|------|
 | Architektur / Layer / Zyklen | `analyze_type_graph` |
+| Vererbung eines bekannten Typs (Scope vor Interface-/Basisklassen-Änderung) | `find_type_hierarchy` (`direction: down` für Implementor-Scope, `up` für Basiskette) |
 | Datenfluss zwischen Services | `analyze_dataflow` |
 | Umbau an bestehender API | `analyze_refactoring_safety` mit `targetName` |
 | Nur Struktur einer Datei, schnell | `analyze_ast_only` auf `filePath` |

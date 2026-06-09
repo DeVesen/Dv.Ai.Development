@@ -241,7 +241,7 @@
     <p class="subtitle">Angular (ts-morph) + .NET (Roslyn) — vollständige Tool-Übersicht v7</p>
 
     <div class="stats-row">
-      <div class="stat"><span class="stat-number">27</span><span class="stat-label">MCP Tools</span></div>
+      <div class="stat"><span class="stat-number">28</span><span class="stat-label">MCP Tools</span></div>
       <div class="stat"><span class="stat-number">2</span><span class="stat-label">Stacks</span></div>
       <div class="stat"><span class="stat-number">6</span><span class="stat-label">Kategorien</span></div>
       <div class="stat"><span class="stat-number">AST</span><span class="stat-label">+ LLM + Runtime</span></div>
@@ -331,7 +331,7 @@
     <div class="section-header">
       <div class="section-dot" style="background:var(--accent-purple)"></div>
       <span class="section-title">② Projekt-Index & Navigation</span>
-      <span class="section-count">4 Tools</span>
+      <span class="section-count">5 Tools</span>
     </div>
     <table class="tool-table">
       <colgroup><col style="width:185px"><col><col style="width:160px"><col style="width:160px"><col style="width:85px"><col style="width:170px"></colgroup>
@@ -359,6 +359,14 @@
         <td><div class="tool-plain">Wo überall wird diese Methode aufgerufen?</div></td>
         <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
         <td><div class="tool-checked">An welchen konkreten Stellen (Datei/Zeile) wird dieses Symbol verwendet?</div></td>
+      </tr>
+      <tr class="tool-row index-row">
+        <td><div class="tool-name">find_type_hierarchy</div></td>
+        <td><div class="tool-desc">Gezielte Vererbungsabfrage für einen Typ: Basiskette (up) und Ableitungen/Implementierungen (down)</div></td>
+        <td><div class="tool-what">Fokussierte Alternative zu <b>analyze_type_graph</b> bei bekanntem Typnamen. Tabellen Up/Down mit <b>kind</b>, Datei, Zeile. <b>projectPath</b> + optional <b>filePath</b>. Cap 400</div></td>
+        <td><div class="tool-plain">Was erbt von dieser Klasse — und wer erbt von ihr?</div></td>
+        <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
+        <td><div class="tool-checked">Welche Typen hängen in der Vererbungskette an diesem Symbol?</div></td>
       </tr>
       <tr class="tool-row index-row">
         <td><div class="tool-name">review_with_index</div></td>
@@ -528,6 +536,13 @@
         <td><div class="tool-desc">Statische Test-Analyse ohne Test-Run</div></td>
         <td><div class="tool-what">no-assertions, tautology, weak-assertions, mock-heavy, happy-path-only, unhandled-async, real-timers, console-in-test. <b>.NET:</b> blocking-async, no-AAA-structure. Fehlende Test-Dateien</div></td>
         <td><div class="tool-plain">Sind meine Tests wirklich gut — oder prüfen sie eigentlich nichts?</div></td>
+        <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
+      </tr>
+      <tr class="tool-row test-row">
+        <td><div class="tool-name">suggest_boyscout_actions</div></td>
+        <td><div class="tool-desc">BoyScout-Orchestrator: priorisierte Top-N-Verbesserungen pro geänderter Datei</div></td>
+        <td><div class="tool-what">Compiler-Gate zuerst; bei 0 Errors: Nullability, Dead Code, CC≥10, ungetestete public API, Extraktionskandidaten. Dedup + Score. Params: filePaths[] / type / maxPerFile (default 5)</div></td>
+        <td><div class="tool-plain">Was soll ich nach dem Slice noch schnell verbessern?</div></td>
         <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
       </tr>
       <tr class="tool-row test-row">

@@ -1,6 +1,6 @@
 # Dv.Ai.Development — Claude Code Guide
 
-This repository is the **source library** for dual-platform AI workflow artifacts (skills, rules, agents) targeting both **Cursor** and **Claude Code**.
+This repository is the **source library** for dual-platform AI workflow artifacts (skills, rules, agents) and **MCP server implementations** targeting both **Cursor** and **Claude Code**.
 
 **Cursor entry point:** [`AGENTS.md`](./AGENTS.md) — thin pointer to this file. Architecture, deploy workflow, and `.claude/` conventions are documented here only; do not duplicate them in `AGENTS.md` or elsewhere.
 
@@ -19,6 +19,13 @@ AI-Skills/              Source library — do not edit deployed copies
 ├── install-skill.sh            Deploy script (Linux/macOS)
 ├── update-cursor-skills.ps1    Update script (Windows/PowerShell, handles params + MCP)
 └── Readme.md           Full package reference + install instructions (= AGENTS.md after deploy)
+
+Mcp-Servers/            MCP server implementations (Docker images referenced in AI-Skills/mcp.json)
+├── Build.Log.Filter/   build-log-filter — Build/Test output compression
+├── Codebase.Analyzer/  codebase-analyzer — static analysis, index, review
+├── Dev.Filesystem.Mcp/ dev-filesystem-mcp — token-efficient read/search
+├── Dev.Angular.Mcp/    dev-angular-mcp — Angular scaffolding
+└── Dev.Dotnet.Mcp/     dev-dotnet-mcp — .NET scaffolding
 
 .claude/                Claude Code config for this repo (skills used here)
 └── skills/
@@ -109,6 +116,22 @@ Always update all four artifacts together — missing any one breaks the deploy 
 | 4. Sync parameters | `{platzhalter}` in content → list in `packages/<name>.json` `"params"` array + Readme Parameters table |
 
 Use `/skill-creator` to create new artifacts — it knows both Cursor and Claude Code conventions.
+
+---
+
+## Adding or Changing an MCP Server
+
+MCP implementations live under `Mcp-Servers/`. Each subfolder maps to a server key in `AI-Skills/mcp.json`:
+
+| Folder | MCP key (`mcp.json`) | Package (AI-Skills) |
+|--------|----------------------|---------------------|
+| `Mcp-Servers/Build.Log.Filter/` | `build-log-filter` | `build-log-filter` |
+| `Mcp-Servers/Codebase.Analyzer/` | `codebase-analyzer` | `codebase-analyzer` |
+| `Mcp-Servers/Dev.Filesystem.Mcp/` | `dev-filesystem-mcp` | (dev-tooling-mcp) |
+| `Mcp-Servers/Dev.Angular.Mcp/` | `dev-angular-mcp` | (dev-tooling-mcp) |
+| `Mcp-Servers/Dev.Dotnet.Mcp/` | `dev-dotnet-mcp` | (dev-tooling-mcp) |
+
+When changing an MCP: update the server code in `Mcp-Servers/<name>/`, sync `AI-Skills/mcp.json` / package manifests if Docker tags or tools change, and update the matching skill or rule in `AI-Skills/`.
 
 ---
 

@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-06-09T21:24:37.7195513Z",
-  "projectRoot": "C:\\Develop\\Dv.Ai.Development\\Codebase.Analyzer\\test-fixtures\\index-solution\\Api",
-  "projectReferences": [
-    "../Domain/Domain.csproj"
-  ],
-  "externalDependencies": [
-    "ICalcService"
+  "generatedAt": "2026-06-09T21:24:41.3422584Z",
+  "projectRoot": "C:\\Develop\\Dv.Ai.Development\\Mcp-Servers\\Codebase.Analyzer\\test-fixtures\\index-solution",
+  "solutionPath": "C:\\Develop\\Dv.Ai.Development\\Mcp-Servers\\Codebase.Analyzer\\test-fixtures\\index-solution\\App.sln",
+  "solutionMtime": "2026-06-09T21:23:24.754Z",
+  "projects": [
+    "Api",
+    "Domain"
   ],
   "summary": {
     "totalFiles": 1,
     "totalClasses": 1,
-    "totalInterfaces": 0,
+    "totalInterfaces": 1,
     "totalEnums": 0,
     "totalRecords": 0,
     "controllerCount": 1,
@@ -22,16 +22,17 @@
     "classesWithResultWait": 0,
     "classesWithDipViolations": 0,
     "totalSwitchStatements": 0,
-    "interfacesWithoutImplementation": 0,
-    "uniqueNamespaces": 1
+    "interfacesWithoutImplementation": 1,
+    "uniqueNamespaces": 2
   },
   "namespaces": [
-    "IndexSolution.Api"
+    "IndexSolution.Api",
+    "IndexSolution.Domain"
   ],
   "classes": [
     {
       "name": "CalcController",
-      "file": "CalcController.cs",
+      "file": "Api/CalcController.cs",
       "line": 6,
       "namespace": "IndexSolution.Api",
       "layer": "Controller",
@@ -65,31 +66,47 @@
       "longMethods": [],
       "methodCount": 1,
       "propertyCount": 0,
-      "switchCount": 0
+      "switchCount": 0,
+      "project": "Api"
     }
   ],
-  "interfaces": [],
+  "interfaces": [
+    {
+      "name": "ICalcService",
+      "file": "Domain/ICalcService.cs",
+      "line": 3,
+      "namespace": "IndexSolution.Domain",
+      "methods": [
+        "int Add(2 params)"
+      ],
+      "properties": [],
+      "extendedInterfaces": [],
+      "implementedBy": [],
+      "methodCount": 1,
+      "project": "Domain"
+    }
+  ],
   "enums": [],
   "records": [],
   "dependencyGraph": {
-    "calcController": {
+    "api.CalcController": {
       "dependsOn": [
         "ICalcService"
       ],
       "usedBy": [],
-      "file": "CalcController.cs"
+      "file": "Api/CalcController.cs"
     }
   },
   "couplingReport": {
     "mostDepended": [
       {
-        "name": "CalcController",
+        "name": "Api.CalcController",
         "count": 0
       }
     ],
     "mostDepending": [
       {
-        "name": "CalcController",
+        "name": "Api.CalcController",
         "count": 1
       }
     ],
@@ -97,7 +114,9 @@
   },
   "architectureReport": {
     "layerViolations": [],
-    "orphanInterfaces": [],
+    "orphanInterfaces": [
+      "ICalcService"
+    ],
     "godClassCandidates": [],
     "interfaceWithSingleImpl": []
   }

@@ -13,6 +13,7 @@ Read and follow `CLAUDE.md` for all project context. Do not duplicate its conten
 | Directory structure, deploy flow, dual-platform behavior | `CLAUDE.md` only |
 | `.claude/` conventions (what deploys where, how Claude Code loads skills/agents) | `CLAUDE.md` only |
 | Skills, rules, agents (actual artifacts) | `AI-Skills/` — see [Adding or Changing a Skill / Rule / Agent](./CLAUDE.md#adding-or-changing-a-skill--rule--agent) in `CLAUDE.md` |
+| MCP server implementations | `Mcp-Servers/` — see [Repository Structure](./CLAUDE.md#repository-structure) in `CLAUDE.md` |
 | Cursor rules (source) | `AI-Skills/rules/*.mdc` → deploy to `.cursor/rules/` in target projects |
 
 Do not document architecture or `.claude/` layout in this file or elsewhere — keep `CLAUDE.md` canonical.

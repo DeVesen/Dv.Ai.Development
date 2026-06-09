@@ -2,13 +2,15 @@
 name: code-review-mcp
 description: >
   Aktiviere diesen Skill sobald der User über Code spricht — egal ob er plant,
-  gerade schreibt oder fertig ist. Der MCP hat 25 Tools für Angular und .NET.
+  gerade schreibt oder fertig ist. Der MCP hat 27 Tools für Angular und .NET.
   Bei Code-Symbolen (Klasse, Methode, Property, Service, Route): zuerst
   index_project/find_in_index, Grep nur ergänzend. UI-Labels ohne Symbol:
   keine Landkarte. Trigger: Review, Analyse, Planung, Implementierung, Merge,
   index_project, find_in_index, Code-Landkarte, Validierung, API-Contract,
   compare_validation_rules, api-validation, DTO, DataAnnotations,
-  find_api_callers, HTTP-Calls, format:compact.
+  find_api_callers, HTTP-Calls, format:compact, detect_untested_public_api,
+  ungetestete API, Test-Coverage-Proxy, find_symbol_references, Aufrufstellen,
+  Call-Sites.
 disable-model-invocation: true
 ---
 
@@ -38,7 +40,7 @@ Alle dateibezogenen Parameter (`filePath`, `filePaths`, `projectPath`) verwenden
 
 | Trigger | Operation | Detail |
 |---------|-----------|--------|
-| Tool-Liste, welches Tool, 25 Tools | Alle verfügbaren Tools (Übersicht & Parameter) | [references/op-tool-overview.md](references/op-tool-overview.md) |
+| Tool-Liste, welches Tool, 27 Tools | Alle verfügbaren Tools (Übersicht & Parameter) | [references/op-tool-overview.md](references/op-tool-overview.md) |
 | Code-Landkarte, Symbol suchen, index_project, find_in_index, Recherche-Reihenfolge | Code-Landkarte & verbindliche Recherche-Reihenfolge | [references/op-code-map.md](references/op-code-map.md) |
 | Planung, Implementierung, Merge, Review-Phase, Sprint-End, Release | Die drei Review-Phasen (Planung / Implementierung / Nach-Implementierung) | [references/op-phasen.md](references/op-phasen.md) |
 | Validierung, API-Contract, DTO, DataAnnotations, FE↔BE-Abgleich | Validierungs- & Contract-Reviews | Abschnitt unten |
@@ -143,6 +145,74 @@ Scannt eine Angular `.ts`-Datei nach allen HttpClient-Aufrufen und zeigt welche 
 5. **Optional:** `analyze_type_graph` um zu sehen ob Gateway-Controller nur Proxy ist (dann Validierung im eigentlichen Service prüfen)
 
 **Hinweis zu `[FromQuery]`/`[FromRoute]`:** Ab v2.2 werden Parameter mit diesen Binding-Attributen nicht mehr als "unvalidated-parameter" gemeldet (kein false positive für POST-Endpunkte die nur Query-String-Parameter erwarten).
+
+## Boy-Scout-Rule (Nach-Implementierung): ungetestete public API
+
+Nach jeder abgeschlossenen Implementierung — bevor das Feature als „fertig" gilt — als **ersten** Nach-Implementierungs-Check `detect_untested_public_api` ausführen (Heuristik, **kein** Test-Run). Es deckt neu hinzugekommene oder geänderte public-Symbole (Methoden, Properties, Get/Set-Accessoren) auf, für die keine Test-Referenz erkennbar ist.
+
+**Tool:** `detect_untested_public_api`
+
+**Parameter:**
+- `path` — Datei (`depth: "file"`) oder Verzeichnis-Root (`depth: "project"`)
+- `type` — `"angular"` \| `"dotnet"` \| `"auto"` (Default `auto`)
+- `depth` — `"file"` (nur die übergebene Datei) \| `"project"` (Verzeichnis, mit Datei-Cap)
+
+**`reason` ist stack-spezifisch:**
+| reason | Angular | .NET |
+|--------|---------|------|
+| `no_test_file` | keine `*.spec.ts`/`*.test.ts` im gleichen oder einem übergeordneten Verzeichnis importiert die Klasse | keine zugeordnete Test-Datei für die Klasse |
+| `no_reference_found` | Spec existiert, Symbol aber weder per Import noch als Call/String referenziert | Test-Datei existiert, Symbol aber nicht referenziert |
+
+**Summary-Format (verbindlich):** Nach dem Lauf ein kompaktes Summary ausgeben — zuerst die Gesamtzahl fett, dann eine Zeile pro Fund:
+
+```
+**X ungetestete public API-Punkte**
+- Datei:Zeile — symbol (reason)
+- Datei:Zeile — symbol (reason)
+```
+
+Bei `0` Funden: „**0 ungetestete public API-Punkte** — alle neuen/geänderten public-Symbole haben eine erkennbare Test-Referenz." Bei vielen Funden auf die geänderten Dateien fokussieren.
+
+**Einordnung:** Reiner statischer Proxy. Ersetzt **keinen** echten Coverage-Report (`analyze_coverage`) und keine Test-Qualitätsbewertung (`analyze_test_quality`) — er zeigt nur Lücken auf, die anschließend gezielt geschlossen oder mit echten Tests/Coverage verifiziert werden.
+
+## Boy-Scout-Rule: Aufrufstellen vor Änderung (`find_symbol_references`)
+
+Wenn beim Durchgehen oder Review einer Datei eine **public** Methode/Property/Funktion geändert oder umbenannt werden soll: `find_symbol_references` auf das Symbol nachschalten, um sofort **alle konkreten Aufrufstellen** (Datei/Zeile/umgebende Methode) zu sehen, die die Änderung zieht — statt nur die Zahl aus `analyze_refactoring_safety`. Detailstufe **nach** der Risikoabschätzung: dort der Score, hier die exakten Stellen.
+
+**Tool:** `find_symbol_references`
+
+**Parameter:**
+- `projectPath` — Projekt-Wurzel (`/workspace/...`)
+- `symbolName` — Name des Symbols (Methode, Funktion, Property, Klasse …)
+- `type` — `"angular"` \| `"dotnet"` \| `"auto"` (Default `auto`)
+- `filePath` (optional) — verankert die Deklaration und disambiguiert gleichnamige Symbole
+
+**Output:** Markdown-Tabelle `| File | Line | Method | Snippet |` (gruppiert nach Datei, bis 50 Zeilen) + Raw JSON (bis 500 Einträge). Leere Treffermenge → Klartext-Hinweis. Angular via ts-morph, .NET via Roslyn-Compilation. Bei >400 Dateien greift der Datei-Cap und der Output erhält einen `⚠️ Datei-Limit (400) erreicht`-Hinweis.
+
+**Beispiel-Aufruf:**
+```json
+{
+  "tool": "find_symbol_references",
+  "projectPath": "/workspace/src/frontend",
+  "symbolName": "loadExperiments",
+  "type": "angular",
+  "filePath": "/workspace/src/frontend/experiments/experiment.service.ts"
+}
+```
+
+**Beispiel-Output:**
+```
+# References to `loadExperiments` (angular)
+**3 reference(s)** across 2 file(s)
+
+| File | Line | Method | Snippet |
+|------|------|--------|---------|
+| `experiments/experiment-list.component.ts` | 42 | `ngOnInit` | this.service.loadExperiments(); |
+| `experiments/experiment-list.component.ts` | 88 | `refresh` | this.service.loadExperiments(); |
+| `experiments/experiment.facade.ts` | 17 | `init` | return this.service.loadExperiments(); |
+```
+
+> **Hinweis:** Der reale Output enthält zusätzlich zur Tabelle einen `## Raw JSON`-Block (bis 500 Einträge) mit den vollständigen Referenz-Objekten — für programmatische Weiterverarbeitung.
 
 ## Recap nach Verwendung (Pflicht)
 

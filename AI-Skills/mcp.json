@@ -32,8 +32,11 @@
         "review_files_batch",
         "review_with_index",
         "analyze_ast_only",
+        "compare_validation_rules",
+        "find_api_callers",
         "index_project",
         "find_in_index",
+        "find_symbol_references",
         "analyze_complexity",
         "analyze_dead_code",
         "analyze_nullability",
@@ -48,6 +51,7 @@
         "analyze_control_flow",
         "analyze_coverage",
         "analyze_test_quality",
+        "detect_untested_public_api",
         "analyze_test_health"
       ]
     },

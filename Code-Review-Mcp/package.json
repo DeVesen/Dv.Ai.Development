@@ -1,13 +1,14 @@
 {
   "name": "code-review-mcp",
-  "version": "1.0.0",
+  "version": "2.3.0",
   "description": "MCP Server for Angular & .NET code reviews",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "test:untested-api": "npm run build && node test-fixtures/untested-api/run-assertions.mjs"
   },
   "dependencies": {
 "@modelcontextprotocol/sdk": "^1.12.0",

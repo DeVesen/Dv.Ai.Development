@@ -57,7 +57,7 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 | Schritt | MCP-Call (primär) | Fallback (nur bei MCP-Fehler) | Bedingung |
 |---------|-------------------|-------------------------------|-----------|
 | A | `analyze_complexity` auf betroffene Dateien | Methoden-Länge manuell via Grep abschätzen | mind. 1 Klasse/Methode im Scope |
-| B | `analyze_refactoring_safety` auf Klassen, die strukturell geändert werden | Abhängigkeiten per `find_in_index` manuell zählen | nur wenn Umbau geplant |
+| B | `analyze_refactoring_safety` auf Klassen, die strukturell geändert werden → bei Urgency ≥ medium `find_symbol_references` auf das betroffene Symbol (Call-Site-Liste → Deliverable-Abschnitt 7) | Abhängigkeiten per `find_in_index` manuell zählen | nur wenn Umbau geplant |
 | C | `suggest_class_splits` auf Klassen mit >1 Verantwortung | Manuelle Lektüre via Read | nur wenn Klasse zu groß/mehrdeutig |
 
 Kein Schritt 2 bei: ausschließlich UI-Labels, leerer Fundliste, rein neuen Dateien ohne bestehende Klassen.
@@ -71,7 +71,7 @@ Kein Schritt 2 bei: ausschließlich UI-Labels, leerer Fundliste, rein neuen Date
 4. Risiken und Annahmen, die noch verifiziert werden müssen.
 5. Offene Lücken aus dem Scouting.
 6. Komplexitäts-Hotspots: `Klasse · Metric · Handlungsempfehlung` — oder `nicht gerufen — <Grund>`.
-7. Refactoring-Risiken: `kritisch | unkritisch` — oder `nicht gerufen — <Grund>`.
+7. Refactoring-Risiken: `kritisch | unkritisch` — oder `nicht gerufen — <Grund>`; bei Urgency ≥ medium konkrete Aufrufstellen aus `find_symbol_references` als Call-Site-Liste (`Datei:Zeile · Methode`).
 8. Split-Kandidaten: `<Liste>` — oder `nicht gerufen — <Grund>`.
 
 **Ausgabe:** strukturierte Aufzählung — **kein** Schritt-für-Schritt-Umsetzungsplan.

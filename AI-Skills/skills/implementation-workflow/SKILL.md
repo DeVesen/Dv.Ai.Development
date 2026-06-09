@@ -1,7 +1,7 @@
 ---
 name: implementation-workflow
 description: >
-  Repo-Umsetzung: Hard Gate, 1–10 implement-agent (Slice inkl. Build/Test), verify-agent Abschlussprüfer pro Stack. genericRTK Pflicht.
+  Repo-Umsetzung: Hard Gate, 1–10 implement-agent (Slice inkl. Build/Test), iterativer Implement-Review-Loop (Technik-Gate, 6 Reviews, implement-fix-planner-agent, Fix-Slices). genericRTK + code-review-mcp Pflicht.
   Trigger (kanonisch in Rule): implementiere/setze um/fix/einbauen/leg los, Plan ausführen,
   impliziter Repo-Code-Intent, @implementation-workflow-skill, Hard Gate, Schritt 2/IMP-*,
   engl. apply changes/go ahead/ship it; Opt-out ohne implement-skill. Discovery via alwaysApply-Rule
@@ -36,7 +36,7 @@ commands immediately. First decide whether the plan is truly
 criteria, risks, or host rules are unclear, **stop** and resolve with the user
 before any delegation or execution.
 
-During **Schritt 2**, **implement-agent** subagents may run **slice-scoped** builds and tests (see [implement-agent](SKILL.md#orchestrator-konfiguration)); **stack-wide Abschlussprüfung** runs **after** implementation via **verify-agent** per touched stack, as described under **Verifikations-Timing**.
+During **Schritt 2**, **implement-agent** subagents may run **slice-scoped** builds and tests (see [implement-agent](SKILL.md#orchestrator-konfiguration)); **stack-wide Technik-Gate** runs in **Schritt 3** per Review-Iteration, as described under **Schritt 3 — Iterativer Implement-Review-Loop**.
 
 Verbindliche Prompt-Vorlagen (Auftrags-Payloads): [references/subagent-prompts.md](references/subagent-prompts.md).
 
@@ -52,22 +52,26 @@ oder in Rules.
 
 | Rolle | Schritt | Agent-Typ | Profil |
 |-------|---------|-----------|--------|
-| **Orchestrator / Initial Agent** | 1, Integration, 3 Review | *(Nutzer-Chat / Parent)* | dieser Skill |
-| **Implementierer** | 2 (1–10 Slices) | `implement-agent` | [implement-agent](SKILL.md#orchestrator-konfiguration) |
-| **Verifikation / Abschlussprüfung** | nach Integration-Checkpoint | `verify-agent` | [verify-agent.md](../../agents/verify-agent.md) |
+| **Orchestrator / Initial Agent** | 1, Integration, 3 Loop | *(Nutzer-Chat / Parent)* | dieser Skill |
+| **Implementierer** | 2 (1–10 Slices), 3 (Fix-Slices) | `implement-agent` | [implement-agent](SKILL.md#orchestrator-konfiguration) |
+| **Technik-Gate** | 3.1 (pro Iteration) | Orchestrator-Subagent / Host-Task | Vorlage **Technik-Gate pro Stack** |
+| **Implement-Review ×6** | 3.2 (pro Iteration) | `implement-review-*-agent` | [../../agents/](../../agents/) |
+| **Fix-Planung** | 3.6 (pro Iteration) | `implement-fix-planner-agent` | [implement-fix-planner-agent.md](../../agents/implement-fix-planner-agent.md) |
 
 **Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; **primär** Abschnitt **`## Modell`**, sonst YAML; Slugs **nicht** hier duplizieren.
 
-- **implement-agent:** genau **ein** Plan-Slice (IMP-*); Build/Test **slice-relevant**; Unit-Tests im Slice; genericRTK Pflicht.
-- **verify-agent:** **Abschlussprüfer** — **ein** Stack (Frontend / Backend; Backend kann bei mehreren unabhängigen Build-Einheiten — unterschiedliche eigenständige Projekte/Module — je Build-Einheit aufgeteilt werden); stack-weiter Build + Unit-Tests; genericRTK Pflicht.
-- **Verboten:** `explore`/`generalPurpose` statt **implement-agent**/**verify-agent**; Orchestrator-Build/Test bypass.
+- **implement-agent:** genau **ein** Plan- oder Fix-Slice (IMP-*); Build/Test **slice-relevant**; Unit-Tests im Slice; genericRTK Pflicht.
+- **implement-review-*:** **readonly** — je **eine** Rolle pro Lauf; **6** parallele Läufe pro Iteration; MCP-Pflicht je Profil.
+- **implement-fix-planner-agent:** Fix-Teilplan aus Review-Digest; MCP A–H + genericRTK + **Evidenz-Basis**; **keine** Code-Implementierung.
+- **Technik-Gate:** stack-weiter Build + Unit-Tests (max. **8** Turns je Phase); genericRTK Pflicht; enge Gate-Fixes erlaubt.
+- **Verboten:** `explore`/`generalPurpose` statt dedizierter Agent-Profile; Orchestrator-Build/Test bypass; Review-Fixes ohne Fix-Planer.
 
 ### Ausfuehrung je Host
 
-| Host | Implementierung | Verifikation |
-|------|-----------------|--------------|
-| **Cursor** | Task-Subagent `implement-agent` | Task-Subagent `verify-agent` pro Stack |
-| **Andere** | Sub-Lauf mit `implement-agent.md` als System-Prompt | Sub-Lauf mit `verify-agent.md` |
+| Host | Implementierung | Review-Loop (Schritt 3) |
+|------|-----------------|-------------------------|
+| **Cursor** | Task-Subagent `implement-agent` | Technik-Gate + 6× `implement-review-*` + `implement-fix-planner-agent` + Fix-`implement-agent` |
+| **Andere** | Sub-Lauf mit `implement-agent.md` als System-Prompt | Sub-Läufe mit jeweiligem Agent-`.md` als System-Prompt |
 
 Neue Implementation-Agenten: unter [../../agents/](../../agents/) anlegen und hier eintragen.
 
@@ -90,8 +94,7 @@ If the user provides clear scope (typically a **final plan**, approved thread br
 This document is **the complete host execution playbook**: readiness (Hard Gate),
 brief execution-form recommendation plus user/thread alignment **when ambiguous**,
 mandatory **1–10** implementation subagents (topology: sequential or parallel),
-integration checkpoint, dedicated per-stack verification agents, and initial-agent
-review—all in **one** place. Older split workflows are **obsolete** here.
+integration checkpoint, iterative Implement-Review-Loop (Technik-Gate, 6 Reviews, Fix-Planer, Fix-Slices), and orchestrator closure—all in **one** place. Older split workflows are **obsolete** here.
 
 Orchestrator slices and dependencies come from the **final plan or agreed thread**
 (use [planning-workflow/SKILL.md](../planning-workflow/SKILL.md) where planning is
@@ -138,9 +141,9 @@ before any edit or spawned subagents.
                |
                v
 +-------------------------------------------------------------------+
-| Schritt 3: initial agent review + per-stack verification agents   |
-| (build-fix then test-fix; host [`{verification-commands}`]({verification-commands})) |
-| Closure report; optional Clean-Code review only after user OK   |
+| Schritt 3: Iterativer Implement-Review-Loop (bis keine behebbaren |
+| Findings): Technik-Gate → 6× Review → Digest → Fix-Planer →     |
+| Fix-Slices; [`{verification-commands}`]({verification-commands}) |
 +-------------------------------------------------------------------+
                                  |
                                  v
@@ -199,9 +202,9 @@ implementation subagent is used, questions **10–13** are **N/A** → **YES**.
 | 3 | Are **affected areas** clear (concrete paths, modules, or an explicit discovery strategy)? |
 | 4 | Have required **host rules** and **relevant skills** been identified and loaded per host policy? |
 | 5 | Are **risks** (security, data, irreversible steps, migrations) addressed or escalated? For **EF migrations** or **`parameter_search_view`**: load [backend-ef-migrations](../backend-ef-migrations/SKILL.md); verify Triplet, View SQL in `Up`/`Down`, and DB application — not build/tests alone. |
-| 6 | Is **post-implementation verification** clear and compatible with host policy (**per-stack verification agents**: build-fix loop then unit-test-fix loop, unless the user explicitly chose opt-out variants **B/C/D** in the thread)? |
-| 7 | Is it clear **which stacks** are touched (**Frontend** / **Backend**; Backend may be split per independent build unit when the backend contains multiple distinct build targets) so the initial agent can spawn **one `verify-agent` per touched stack or build unit**, per host docs? |
-| 8 | Is **implementation** explicitly split into **1–10** implementation subagents with boundaries from the **final plan** (or thread), and is **per-stack verification** (one agent per changed stack; **no** agent for unchanged stacks) agreed? |
+| 6 | Is the **iterative Implement-Review-Loop** (Technik-Gate + 6 Reviews + Fix-Planer + Fix-Slices) accepted as mandatory post-integration verification, unless the user explicitly chose opt-out variants **B/C/D** in the thread? |
+| 7 | Is it clear **which stacks** are touched (**Frontend** / **Backend**; Backend may be split per independent build unit when the backend contains multiple distinct build targets) so Schritt 3 can run **Technik-Gate per touched stack or build unit**, per host docs? |
+| 8 | Is **implementation** explicitly split into **1–10** implementation subagents with boundaries from the **final plan** (or thread), and is **Technik-Gate per changed stack** in Schritt 3 (no gate for unchanged stacks) agreed? |
 | 9 | **For the 1–10 implementation subagents:** Are slice boundaries taken from the **final plan** (or explicitly confirmed in the thread) so execution does **not** invent new splits? |
 | 10 | **If two or more implementation subagents are used:** Is **execution topology** explicit (**sequential** pipeline vs **parallel**), including **order** for sequential runs? If the final plan’s **Umsetzungs-Topologie** mode is `parallel` (or equivalent waves), Ausführungsform must be **parallel** for those slices unless a documented downgrade (independence failure, host limits) with user/plan reason. |
 | 11 | **If two or more implementation subagents are used:** Are **slice independence rules** explicit (typically: **no parallel edits to the same files**; shared contracts/interfaces only with **contract-/interface-first** or another gate **defined in the plan**)? |
@@ -267,7 +270,7 @@ checkpoint, and resolve trivial merge mechanics when in scope.
 
 2. **Implementierungs-Subagents — strikt:** each agent implements **only** its assigned slice from
    the plan; **no** scope expansion, **no** silent replanning, **no** product or design decisions beyond what the plan already fixes.
-   **Build/Test (slice-scoped):** **allowed** per [implement-agent](SKILL.md#orchestrator-konfiguration) — `dotnet build`, `dotnet test`, `ng build`, `npm run build`, `ng test`, `npm test` and unit tests **for the assigned slice**; **genericRTK** mandatory on every such run. **Not** stack-wide Abschlussprüfung (that is **verify-agent** after integration).
+   **Build/Test (slice-scoped):** **allowed** per [implement-agent](SKILL.md#orchestrator-konfiguration) — `dotnet build`, `dotnet test`, `ng build`, `npm run build`, `ng test`, `npm test` and unit tests **for the assigned slice**; **genericRTK** mandatory on every such run. **Not** stack-wide Technik-Gate (that is **Schritt 3** after integration).
 
 3. **Agent-Typ (Implementierung):** **`implement-agent`** — Profil [implement-agent](SKILL.md#orchestrator-konfiguration); Modell gemäß [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
 
@@ -294,125 +297,134 @@ checkpoint, and resolve trivial merge mechanics when in scope.
 7. The initial agent remains orchestrator: subagent output is **not** done until
    the **integration checkpoint** (below) and **Schritt 3** pass.
 
-### Verifikations-Timing
+### Build/Test + genericRTK (kurz — gilt überall)
 
-After **all** implementation subagents finish and the **integration checkpoint** passes
-**(before closure)**:
-
-1. **Scope verification agents by actual diffs:** start **one `verify-agent` per stack
-   that changed** in this pass (**Frontend** `{frontend-path}`, **Backend**
-   `{backend-path}`; if the backend contains multiple independent build units — distinct
-   projects/modules with their own build target — start one agent per changed unit).
-   **Do not** start a verification agent for a stack with **no** changes. Derive concrete commands from
-   **[`{verification-commands}`]({verification-commands})** (*Agents — mandatory verification after changes*) and repo docs—do **not** guess.
-2. **Agent-Typ (Verifikation):** **`verify-agent`** — Profil [verify-agent.md](../../agents/verify-agent.md); Modell gemäß [subagent-model-before-task.md](../../references/subagent-model-before-task.md). Bei mehreren betroffenen Stacks **parallel** starten, sofern unabhängig. **Task-Prompt:** Vorlage **Verifikation pro Stack** in [references/subagent-prompts.md](references/subagent-prompts.md).
-
-#### Checkliste Build/Test + genericRTK (kurz)
-
-**Kanon (keine zweite Liste):** [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc) — **Ausführungs-Checkliste (pro Build-/Test-Lauf)** Schritte **1–8** und **[Interpretationspflicht (verbindlich)](../../rules/genericrtk-output-filter.mdc#interpretationspflicht-verbindlich)**. **Gilt** für **`implement-agent`** (slice build/test), **`verify-agent`** (Abschlussprüfung) und den **initialen Agenten** nur bei dokumentierter Host-Limitation.
+**Kanon (keine zweite Liste):** [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc) — **Ausführungs-Checkliste (pro Build-/Test-Lauf)** Schritte **1–8** und **[Interpretationspflicht (verbindlich)](../../rules/genericrtk-output-filter.mdc#interpretationspflicht-verbindlich)**. **Gilt** für **`implement-agent`** (slice build/test), **Technik-Gate** (Schritt 3), **`implement-fix-planner-agent`** (Diagnose-Läufe) und den **initialen Agenten** nur bei dokumentierter Host-Limitation.
 
 - Pro Lauf: Shell → vollständiges Capture → genericRTK → **intern lesen** → Kurzprosa + Shell-Exit (**kein** MCP-Body, **kein** Roh-Log ans LLM).
-- **Unklare verdichtete Ausgabe:** Agent **informiert den Nutzer**, dass genericRTK nachgeschärft werden soll — **nicht** aus Roh-Konsole raten ([implement-agent](SKILL.md#orchestrator-konfiguration), [verify-agent.md](../../agents/verify-agent.md)).
+- **Unklare verdichtete Ausgabe:** Agent **informiert den Nutzer**, dass genericRTK nachgeschärft werden soll — **nicht** aus Roh-Konsole raten.
 - **Interpretationspflicht:** inhaltliche Diagnose/Freigabe **nur** aus intern gelesenem MCP; **OK/FAIL** aus Shell-Exit; **kein** Kurz-`raw`, **kein** Terminal-Datei-Ersatz (`terminals/*.txt`).
 - **Vor jedem** MCP: **`Rufe genericRTK …`** sichtbar; **Hard Stop** wenn MCP nicht erreichbar (in-scope).
 
-**Vor Verifikation (Orchestrator):** Beim ersten applicable Lauf oder vor Start der Verifikations-Subagents — wenn MCP bei applicable Kommando **nicht** erreichbar ist, sofort **Hard Stop** (`BLOCKER: genericRTK nicht erreichbar`), **keine** Verifikations-Subagents starten bzw. **Stopp** der laufenden Verifikation.
+**Vor Technik-Gate (Orchestrator):** Beim ersten applicable Lauf oder vor Start einer Review-Iteration — wenn MCP bei applicable Kommando **nicht** erreichbar ist, sofort **Hard Stop** (`BLOCKER: genericRTK nicht erreichbar`), **keine** Technik-Gate-/Review-Subagents starten.
 
-3. **Verification agent phases (per stack):**
-   - **Phase 1 — Build-fix loop (max. 8 turns):** run the stack’s **check / release-style build**
-     command. **After every run**, capture exit code and **complete** stdout/stderr, then apply **Console output and genericRTK** (bullet below). On failure, the agent **fixes** and rebuilds until **exit 0** or **8 turns** are
-     exhausted. If still failing after 8 turns, **stop** and escalate to the **initial agent**
-     / user with **kurzer eigener Kurzfassung** zur Diagnose (intern aus genericRTK verarbeitet, wenn applicable; siehe [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc)) — **kein** ungefiltertes Rohkonsole-Paste.
-   - **Phase 2 — Unit-test-fix loop (max. 8 turns, only if Phase 1 succeeded):** run the stack’s
-     **unit test** command. **After every run**, same **Console output and genericRTK** handling as in Phase 1. On failure, the agent **fixes** and re-runs tests until **exit 0** or
-     **8 turns** are exhausted. If still failing after 8 turns, **stop** and escalate with the same reporting rules as Phase 1.
-   - **Console output and genericRTK (every build/test run in Phase 1 and Phase 2):**
-     - **Im Scope** (command in `tool_type` / `format` mapping): **must** process **full** stdout/stderr of **this run** through genericRTK on **every** run — including **exit 0** — per [`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc) and **[Interpretationspflicht](../../rules/genericrtk-output-filter.mdc#interpretationspflicht-verbindlich)**. Read MCP tool descriptors, then `filter_output` (or `filter_output_stream` when long/streaming); if shell exit ≠ 0, also `analyze_build_output`. **Forbidden:** skip `filter_output` because the build succeeded; **summary-as-`raw`**; diagnose or sign off from raw console, Tool-UI, or terminal files without completed MCP chain.
-     - **Out of scope** (command **not** in mapping): [Außerhalb des Scopes](../../rules/genericrtk-output-filter.mdc#außerhalb-des-scopes) — brief note, concise manual summary, **no** full raw log; **no** forced `filter_output`.
-     - **MCP unreachable** for an **in-scope** command: [Hard Stop](../../rules/genericrtk-output-filter.mdc#hard-stop--mcp-nicht-erreichbar) — **stop immediately**; emit **`BLOCKER: genericRTK nicht erreichbar`** to orchestrator/user; **no** manual summary and continue; **no** verification sign-off.
-     - **Parent visibility:** before each `filter_*` / `analyze_build_output` call, emit **`Rufe genericRTK …`** in the **message back to the orchestrator** (**kein** MCP-Body danach).
-     - **Checkliste:** **Checkliste Build/Test + genericRTK (kurz)** oben = kanonische **Ausführungs-Checkliste** in the rule — **no** second parallel list.
-   Phase 2 **must not** start until Phase 1 has completed with **OK**.
-4. **Host opt-outs:** **B** (tests only — skip Phase 1 build loop / only run tests per host text),
-   **C** (build only — skip Phase 2), **D** (no automated verification) apply **only** with explicit
-   user text in the thread, per **[`{verification-commands}`]({verification-commands})**.
-5. **Implementation subagents** must **not** perform **stack-wide Abschlussprüfung** during Schritt 2 — that is **verify-agent** after the integration checkpoint. Slice-scoped build/test per **implement-agent** is allowed.
+**Implementation subagents (Schritt 2):** **must not** perform **stack-wide Technik-Gate** during Schritt 2 — that is **Schritt 3** after the integration checkpoint. Slice-scoped build/test per **implement-agent** is allowed.
+
+**Host opt-outs:** **B** (tests only), **C** (build only), **D** (no automated verification) apply **only** with explicit user text in the thread, per **[`{verification-commands}`]({verification-commands})**.
 
 ### Integration checkpoint (Orchestrator)
 
-**When:** After all **implementation** subagent work for this pass is back. **Before**
-starting **per-stack verification agents** and **Schritt 3** review.
+**When:** After all **implementation** subagent work for this pass is back. **Before** starting **Schritt 3** (first Review-Iteration).
 
 **Do at minimum:**
 - Collect subagent outputs (summaries, touched paths, diffs / artifacts).
-- Classify **which stacks** changed (Frontend / Backend; split Backend per independent build unit when applicable) to size **verification** agents.
+- Classify **which stacks** changed (Frontend / Backend; split Backend per independent build unit when applicable) to size **Technik-Gate** runs in Schritt 3.
 - Check for **interface / contract drift** between slices; on meaningful drift,
   **stop** and escalate to the user (or resolve with a minimal plan patch)—do
   not “review away” incompatible contracts.
 - Assess merge/conflict risk. Resolve what is in scope for the initial agent;
   escalate unclear ownership per the plan.
 
-Only after this checkpoint is the work **ready for** per-stack verification and Schritt 3
-(final review), which should focus on quality and plan alignment—not first-contact integration.
+Only after this checkpoint is the work **ready for** Schritt 3 (iterative review loop), which should focus on quality, plan alignment, and stack-wide green state—not first-contact integration.
 
-**Orchestrator edits after verification (verbindlich):** If the **initial agent** changes
-repo files **after** a verification subagent run (integration fix, import cleanup, merge
-resolution, config tweak), treat prior verification as **stale**. **Do not** run
+**Orchestrator edits after Technik-Gate (verbindlich):** If the **initial agent** changes
+repo files **after** a Technik-Gate run (integration fix, import cleanup, merge
+resolution, config tweak), treat prior Technik-Gate as **stale**. **Do not** run
 `ng build` / `ng test` / `dotnet build` / `dotnet test` yourself to “confirm green”.
-**Must** start a **new** verification subagent per affected stack and collect a **continued**
-[Verifikations-Matrix](../../rules/genericrtk-output-filter.mdc#verifikations-matrix) for runs
-**after** that edit. See [Orchestrator-Nachlauf](../../rules/genericrtk-output-filter.mdc#orchestrator-nachlauf-hauptagent).
+**Must** re-run **Technik-Gate** for affected stacks in the **next** Review-Iteration and collect a **continued**
+[Verifikations-Matrix](../../rules/genericrtk-output-filter.mdc#verifikations-matrix). See [Orchestrator-Nachlauf](../../rules/genericrtk-output-filter.mdc#orchestrator-nachlauf-hauptagent).
 
-## Schritt 3 - Review durch initialen Agenten
+## Schritt 3 — Iterativer Implement-Review-Loop
 
-The **initial agent** (not a subagent) must review all changes before closure:
+Nach dem Integration-Checkpoint läuft ein **iterativer Review-Fix-Loop** (eingebettetes Muster aus work-review-iterative, angepasst auf Code-Umsetzung) **bis keine behebbaren Findings** mehr übrig sind. Der **initial agent** orchestriert; **keine** Rollensimulation statt Subagents.
 
-1. **Plan alignment**: every plan step and acceptance criterion **checked** or
-   explained (with **user agreement** if deliberately deviated).
+**Review-Rollen (6, je Iteration parallel bevorzugt):**
 
-2. **Quality**: correctness, edge cases, unintended side effects, consistency
-   with host rules.
+- `implement-review-pessimist-agent`
+- `implement-review-lehrer-agent`
+- `implement-review-normalo-agent`
+- `implement-review-oberlehrer-agent`
+- `implement-review-professor-agent`
+- `implement-review-optimist-agent`
 
-3. **Verification**: confirm **per-stack verification subagents** ran per **Verifikations-Timing**
-   (build-fix loop, then unit-test-fix loop, max. **8 turns** each), **only** for stacks that actually
-   changed—unless the user explicitly chose **B**, **C**, or **D** in the thread per
-   **[`{verification-commands}`]({verification-commands})**. Collect each agent’s **turn counts**, **OK/FAIL** per phase, exact commands, and touched paths
-   (verification fixes). Per **in-scope** run: confirm **`filter_*`** (and on FAIL **`analyze_build_output`**) ran on **every** run including success, plus **kurze Diagnose** derived from **internally read** MCP (**no** MCP body, **no** raw-log paste). Reject subagent reports that diagnose from console/terminal files without MCP chain. **Out of scope:** [Außerhalb des Scopes](../../rules/genericrtk-output-filter.mdc#außerhalb-des-scopes) noted explicitly. **MCP unreachable:** status **`Verifikation: BLOCKIERT (genericRTK)`** — **not** acceptable closure. **Do not** accept unfiltered raw logs when genericRTK was required. If the host **cannot** spawn subagents: **`BLOCKER`** to user — **do not** replace with orchestrator-run build/test unless the user explicitly overrides in the thread.
+### Jede Iteration
 
-4. **Operational hygiene**: confirm no unrequested refactors, secrets, or scope
-   creep; list changed areas at a high level.
+**3.1 Technik-Gate pro Stack**
 
-5. **Integration and execution topology** (1–10 implementation subagents; sequential or parallel):
-   - Was the planned topology (**sequential / parallel**) adhered to?
-   - Are integration risks (merge, **contract drift**) resolved or **explicitly**
-     escalated with user/agent agreement?
-   - Does **verification** cover every touched stack (Frontend / Backend) per policy?
+Scope by actual diffs: **one Technik-Gate run per changed stack** (**Frontend** `{frontend-path}`, **Backend** `{backend-path}`; split Backend per independent build unit when applicable). **Do not** run for unchanged stacks. Commands from **[`{verification-commands}`]({verification-commands})** and repo docs—**do not** guess.
 
-6. **Closure**:
-   - Summarize outcomes against acceptance criteria.
-   - Use the **Abschlussformat** in [references/subagent-prompts.md](references/subagent-prompts.md).
-   - Report **verification actually run** (per stack: Phase 1 / Phase 2 commands, turns used, OK/FAIL)—not
-     an optional “should we build?” prompt—unless the user explicitly chose opt-out **D**
-     or narrowed scope (**B**/ **C**) in writing in the thread. Verification is **green** only if subagents completed and genericRTK ran per applicable run; otherwise report **`BLOCKIERT (genericRTK)`** or FAIL — **no** false “verified” closure.
-   - Offer an optional **separate review agent** over **current Git changes**
-     for **Clean Code** and **Clean Development** principles—**only** after user
-     confirmation; do **not** start that review automatically.
+**Task-Prompt:** Vorlage **Technik-Gate pro Stack** in [references/subagent-prompts.md](references/subagent-prompts.md). Phases: Build-fix loop (max. **8** turns), then unit-test-fix loop (max. **8** turns, only if build OK). Narrow gate fixes allowed; escalate after turn exhaustion.
+
+**3.2 Sechs Implement-Reviews (parallel, readonly)**
+
+Spawn **six** dedicated subagents—one per role above. **Forbidden:** simulating roles in the orchestrator thread.
+
+Each reviewer receives: final plan + ACs, current diff / touched paths, Technik-Gate status per stack. **Task-Prompts:** respective sections in [references/subagent-prompts.md](references/subagent-prompts.md). **MCP mandatory** per agent profile.
+
+**3.3 Review-Digest**
+
+Merge all six reports into **Review-Digest (Iteration N)** using the template in [references/subagent-prompts.md](references/subagent-prompts.md).
+
+**3.4 Findings klassifizieren**
+
+Merge digest findings and categorize:
+
+- **Eindeutig fixbar** — correctness gaps, missing tests, rule violations, Technik-Gate follow-ups clearly derivable from plan + diff + MCP evidence.
+- **Klärungsbedürftig** — product/design ambiguity, conflicting AC interpretation, scope decisions not in the plan.
+
+**3.5 Gebündelte Nutzer-Rückfragen (wenn nötig)**
+
+If any **klärungsbedürftig** findings exist, ask **one bundled question** (template **Gebündelte Rückfragen** in [references/subagent-prompts.md](references/subagent-prompts.md)). **Wait** for answers before Fix-Planer / Fix-Slices.
+
+**3.6 Fix-Planer**
+
+Exactly **one** `implement-fix-planner-agent` run per iteration. Input: plan, ACs, Review-Digest, classified findings, Technik-Gate status, diff list, user clarifications (if any).
+
+**Mandatory:** Rules 1–5 + MCP order **A–H** + genericRTK + **Evidenz-Basis** in deliverable — see [implement-fix-planner-agent.md](../../agents/implement-fix-planner-agent.md) and prompt **Fix-Planer (nach Review)**.
+
+**Forbidden:** orchestrator-authored fix plans; Fix-Slices without Fix-Planer output.
+
+**3.7 Fix-Slices umsetzen**
+
+Spawn **`implement-agent`** per Fix-Slice from the Fix-Teilplan (IMP-* IDs, waves/blocking as planned). **Task-Prompt:** **Implementierer (Fix-Slice)**. Slice-scoped build/test only; genericRTK per run.
+
+**3.8 Iterations-Zusammenfassung**
+
+Report briefly:
+
+- Finding count per reviewer role
+- What was fixed (and what after user clarification)
+- Technik-Gate OK/FAIL per stack
+- Whether next iteration starts or loop ends
+
+**3.9 Abbruchbedingung**
+
+Loop ends when the completed iteration yields **no behebbare Findings** (reviewers report only marginal or no actionable points) **and** Technik-Gate is **OK** for all changed stacks (unless user opt-out **B**/**C**/**D**).
+
+**Abschlussmeldung:**
+
+> **Review-Loop abgeschlossen** nach [N] Iteration(en). Das Deliverable hat alle sechs Reviewer-Perspektiven ohne offene behebbare Findings bestanden.
+
+### Schritt-3-Closure (Orchestrator)
+
+1. **Plan alignment**: every plan step and AC **checked** or explained (with user agreement if deliberately deviated).
+2. **Loop evidence**: iterations count; Technik-Gate matrix per stack/iteration; six reviews per iteration; Fix-Planer with Evidenz-Basis; Fix-Slices executed.
+3. **Operational hygiene**: no unrequested refactors, secrets, or scope creep.
+4. **Topology**: sequential/parallel adherence; contract drift resolved or escalated.
+5. **Closure format**: **Abschlussformat** in [references/subagent-prompts.md](references/subagent-prompts.md). Technik-Gate **green** only with completed runs + genericRTK per applicable command; otherwise **`BLOCKIERT (genericRTK)`** or FAIL — **no** false closure.
+6. Optional **Clean-Code review** over current Git changes — **only** after user confirmation.
 
 ## Operationale Regeln
 
-- **Implementation:** **1–10** **`implement-agent`** subagents; slice-scoped build/test and unit tests per [implement-agent](SKILL.md#orchestrator-konfiguration); **genericRTK** on every in-scope run.
-- **Verification (Abschlussprüfung):** after integration checkpoint, **one `verify-agent` per changed stack** (**no** orchestrator bypass); stack-wide build-fix then unit-test-fix (max. **8** turns each), per **[`{verification-commands}`]({verification-commands})** and [verify-agent.md](../../agents/verify-agent.md). **genericRTK** mandatory; **unclear MCP output → inform user** to sharpen genericRTK — do not guess from raw logs.
-- **Verification subagents** may apply **narrow fixes** required for green build/tests (**no** feature or
-  scope expansion; **no** unrelated refactors). Escalate product/design ambiguity to the initial agent or user.
-- **Do not** run **stack-wide** release verification during Schritt 2; **verify-agent** owns Abschlussprüfung unless user chose opt-out **C** or **D** in the thread.
-- **Follow host repository instructions** (for example the repository’s agent or
-  contributor guide) when present; they override generic habits.
-- **No unnecessary refactors** or scope expansion; every change should trace to
-  the plan (implementation) or to **unblocking** build/tests (verification agents only).
-- **No deliberate plan deviations** without user approval; trivial mechanical
-  edits only as defined in Schritt 2.
-- **Ask** when requirements, risks, or verification expectations are unclear—do
-  not guess to keep momentum.
+- **Implementation (Schritt 2):** **1–10** **`implement-agent`** subagents; slice-scoped build/test and unit tests per [implement-agent](SKILL.md#orchestrator-konfiguration); **genericRTK** on every in-scope run.
+- **Review-Loop (Schritt 3):** iterativ bis keine behebbaren Findings; **Technik-Gate** pro Stack/Iteration; **6× implement-review-***; **implement-fix-planner-agent** mit MCP A–H + genericRTK + Evidenz-Basis; **implement-agent** Fix-Slices only.
+- **Do not** run **stack-wide Technik-Gate** during Schritt 2; Schritt 3 owns stack-wide checks unless user chose opt-out **C** or **D** in the thread.
+- **Orchestrator** fixt keine Review-Findings ohne Fix-Planer + implement-agent.
+- **Technik-Gate** may apply **narrow fixes** for green build/tests (**no** feature or scope expansion).
+- **Follow host repository instructions** when present; they override generic habits.
+- **No unnecessary refactors** or scope expansion; every change traces to the plan (implementation), Fix-Teilplan (loop), or Technik-Gate unblocking only.
+- **No deliberate plan deviations** without user approval; trivial mechanical edits only as defined in Schritt 2.
+- **Ask** when requirements, risks, or verification expectations are unclear—do not guess to keep momentum.
 
 ## Orchestrator-Konfiguration
 
@@ -422,7 +434,7 @@ Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt
 
 **Implementierungs-Subagent** im Implementation Workflow **Schritt 2**. Setzt **genau einen** Plan-Slice um — Code **und** lokale Qualitätssicherung **innerhalb des Slice-Scopes**.
 
-**Kein** Stack-weiter Abschlussprüfer — das ist [verify-agent.md](../../agents/verify-agent.md) **nach** dem Integration-Checkpoint.
+**Kein** stack-weites Technik-Gate — das ist **Schritt 3** (Orchestrator).
 
 ### Pflicht: Rules prüfen und anwenden (erster Schritt, ohne Ausnahme)
 
@@ -475,7 +487,7 @@ Eigene `session_id` bei `filter_output_stream` — nicht mit anderen implement-a
 ### Verboten
 
 - Scope über den Slice hinaus, stille Planänderung, unrequested Refactors
-- Stack-weite Release-/Integrations-Verifikation **statt** verify-agent
+- Stack-weites Technik-Gate in Schritt 2
 - Diagnose aus Roh-Konsole ohne abgeschlossene genericRTK-Kette
 - `terminals/*.txt` als Capture-Ersatz
 
@@ -509,11 +521,11 @@ After changing this skill, verify host-facing guidance still matches—per host 
 
 **`disable-model-invocation`:** **Option A (verbindlich)** — `true` beibehalten; Discovery über alwaysApply-Rule + explizites Skill-Lesen. Siehe Rule-Abschnitt **Pflegehinweis / Skill-Discovery**. **Nicht** auf `false` ohne explizite Projektentscheidung.
 
-**Ausführungs-Checkliste / Interpretationspflicht:** Änderungen zuerst in **[`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc)** (Abschnitte **Ausführungs-Checkliste** und **Interpretationspflicht**), anschließend **Verifikations-Timing → Checkliste Build/Test + genericRTK (kurz)** und Prompt-Vorlagen in [references/subagent-prompts.md](references/subagent-prompts.md) abgleichen — **keine** zweite vollständige 1–8-Liste hier pflegen.
+**Ausführungs-Checkliste / Interpretationspflicht:** Änderungen zuerst in **[`.cursor/rules/genericrtk-output-filter.mdc`](../../rules/genericrtk-output-filter.mdc)**, anschließend **Build/Test + genericRTK (kurz)** und Prompt-Vorlagen in [references/subagent-prompts.md](references/subagent-prompts.md) abgleichen — **keine** zweite vollständige 1–8-Liste hier pflegen.
 
 **Prompt-Vorlagen:** Aenderungen an Subagent-Auftrags-Payloads **nur** in [references/subagent-prompts.md](references/subagent-prompts.md); danach Verweise in diesem Skill, [implementation-workflow-skill.mdc](../../rules/implementation-workflow-skill.mdc) und Agent-`.md` pruefen.
 
-**Agent-Profile:** Modell-Slugs und Ketten für den implement-agent **nur** in [## Orchestrator-Konfiguration](SKILL.md#orchestrator-konfiguration) dieses Skills; verify-agent: [../../agents/verify-agent.md](../../agents/verify-agent.md); Skills/Rules verweisen auf [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — keine Slug-Duplikate.
+**Agent-Profile:** Modell-Slugs nur in Agent-`.md` und [## Orchestrator-Konfiguration](SKILL.md#orchestrator-konfiguration); implement-review-* und implement-fix-planner-agent unter [../../agents/](../../agents/).
 
 ## Antwortformat
 
@@ -527,5 +539,7 @@ Kopierbare Auftrags-Payloads (Platzhalter) — **nicht** Ersatz für Agent-Profi
 |-----------|-------|------|
 | Implementierer (compact) | [references/subagent-prompts.md](references/subagent-prompts.md) | Slice ohne Build/Test |
 | Implementierer (Build/Test + genericRTK) | [references/subagent-prompts.md](references/subagent-prompts.md) | **Standard** Schritt 2 mit slice-scoped Build/Test |
-| Verifikation pro Stack | [references/subagent-prompts.md](references/subagent-prompts.md) | Nach Integration-Checkpoint |
-| Abschlussformat (Orchestrator) | [references/subagent-prompts.md](references/subagent-prompts.md) | Schritt 3 Closure |
+| Technik-Gate pro Stack | [references/subagent-prompts.md](references/subagent-prompts.md) | Pro Review-Iteration |
+| Implement-Review (×6) | [references/subagent-prompts.md](references/subagent-prompts.md) | Pro Review-Iteration |
+| Fix-Planer (nach Review) | [references/subagent-prompts.md](references/subagent-prompts.md) | Nach Review-Digest |
+| Abschlussformat (Orchestrator) | [references/subagent-prompts.md](references/subagent-prompts.md) | Nach Review-Loop |

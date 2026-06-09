@@ -11,9 +11,14 @@ import { indexAngularProjectCached, AngularProjectIndex } from "./indexers/angul
 import { indexDotnetProject, DotnetProjectIndex } from "./indexers/dotnet-indexer-runner.js";
 import {
   analyzeCyclomaticComplexity, analyzeDeadCode, analyzeNullability,
-  analyzeDuplicates, analyzeRefactoringSafety, generateAutoFixes, analyzeCrossFileDataflow
+  analyzeDuplicates, analyzeRefactoringSafety, generateAutoFixes, analyzeCrossFileDataflow,
+  detectUntestedPublicApi, untestedApiScanState, findSymbolReferences, symbolReferencesScanState
 } from "./features/ts-advanced-features.js";
+import { runDotnetTestCoverageStatic, dotnetUntestedApiScanState } from "./features/dotnet-test-coverage-static-runner.js";
+import { UntestedApiFinding } from "./features/untested-api-types.js";
 import { runDotnetAdvancedAnalysis } from "./features/dotnet-advanced-runner.js";
+import { runDotnetReferences } from "./features/dotnet-references-runner.js";
+import { SymbolReference } from "./features/symbol-reference-types.js";
 import { analyzeClassSplits } from "./features/ts-class-split.js";
 import { runDotnetSplitAnalysis } from "./features/dotnet-split-runner.js";
 import {
@@ -221,7 +226,7 @@ function performReview(
 
 // ─── MCP Server ───────────────────────────────────────────────────────────────
 
-const server = new McpServer({ name: "code-review-mcp", version: "2.2.0" });
+const server = new McpServer({ name: "code-review-mcp", version: "2.3.0" });
 
 // Auto-track all tool calls for the log viewer
 {
@@ -944,7 +949,7 @@ server.tool(
 // Tool: Refactoring Safety
 server.tool(
   "analyze_refactoring_safety",
-  "Before renaming or modifying a method/class, check how many files use it, whether it's part of an interface contract, used in templates, or virtual/override. Returns full usage map and risk assessment.",
+  "Before renaming or modifying a method/class, check how many files use it, whether it's part of an interface contract, used in templates, or virtual/override. Returns full usage map and risk assessment. Afterwards run find_symbol_references on the symbol to get the concrete call-sites (file/line).",
   {
     projectPath: projectPathSchema,
     type: projectTypeSchema,
@@ -971,6 +976,86 @@ server.tool(
         ).join("\n");
       return { content: [{ type: "text", text: summary + "\n\n" + JSON.stringify(items.slice(0, 20), null, 2) }] };
     }
+  }
+);
+
+// Tool: Symbol References — call-site detail after analyze_refactoring_safety
+server.tool(
+  "find_symbol_references",
+  "List every call-site of a named symbol (method, function, property, class, interface, enum) as a table of file / line / surrounding-method / snippet. This is the detail level after analyze_refactoring_safety: instead of just a usage count, you get the concrete locations. Works for Angular (ts-morph) and .NET (Roslyn). Pass filePath to disambiguate when the same name is declared in several files.",
+  {
+    projectPath: projectPathSchema,
+    symbolName: z.string().min(1).describe("Name of the symbol to find references for (e.g. a method, class, or property name)"),
+    type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Project type. 'auto' detects from filePath, or project-wide by angular.json/project.json (Angular) vs .csproj/.sln (.NET)"),
+    filePath: z.string().optional().describe("Optional: anchor the declaration to this file and disambiguate same-named symbols"),
+  },
+  async ({ projectPath, symbolName, type, filePath }) => {
+    const abs = resolve(projectPath);
+    if (!existsSync(abs))
+      return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
+
+    // Resolve project type
+    let detectedType: "angular" | "dotnet";
+    if (type === "auto") {
+      if (filePath) {
+        const absFile = resolve(abs, filePath);
+        const content = existsSync(absFile) ? readFileSync(absFile, "utf-8") : "";
+        const lang = detectLanguage(filePath, content);
+        if (lang === "unknown")
+          return { content: [{ type: "text", text: `Could not detect language for file: ${filePath}\nPlease specify type: "angular" or "dotnet".` }], isError: true };
+        detectedType = lang;
+      } else {
+        const { readdirSync: rd } = await import("fs");
+        const { join: pjoin } = await import("path");
+        if (existsSync(pjoin(abs, "angular.json")) || existsSync(pjoin(abs, "project.json")))
+          detectedType = "angular";
+        else if (rd(abs).some((f: string) => f.endsWith(".csproj") || f.endsWith(".sln")))
+          detectedType = "dotnet";
+        else
+          return { content: [{ type: "text", text: `Could not auto-detect project type in: ${abs}\nPlease specify type: "angular" or "dotnet".` }], isError: true };
+      }
+    } else {
+      detectedType = type;
+    }
+
+    // Gather references
+    let refs: SymbolReference[];
+    let capReached = false;
+    if (detectedType === "angular") {
+      refs = findSymbolReferences(abs, symbolName, filePath);
+      capReached = symbolReferencesScanState.capReached;
+    } else {
+      const res = runDotnetReferences(abs, symbolName, filePath);
+      if (res.error)
+        return { content: [{ type: "text", text: `⚠️ .NET references analyzer error: ${res.error}` }], isError: true };
+      refs = res.references;
+      capReached = res.capReached ?? false;
+    }
+
+    const capNote = capReached ? "\n\n⚠️ Datei-Limit (400) erreicht — Liste evtl. unvollständig." : "";
+
+    if (refs.length === 0)
+      return { content: [{ type: "text", text: `No references to \`${symbolName}\` found in ${projectPath} (${detectedType})${filePath ? ` for declaration in ${filePath}` : ""}.${capNote}` }] };
+
+    const escapeCell = (s: string) => s.replace(/\|/g, "\\|").replace(/`/g, "\\`").replace(/\r?\n/g, " ");
+    const fileCount = new Set(refs.map((r) => r.file)).size;
+    const lines: string[] = [
+      `# References to \`${symbolName}\` (${detectedType})`,
+      `**${refs.length} reference(s)** across ${fileCount} file(s)`,
+      ...(capReached ? ["", "⚠️ Datei-Limit (400) erreicht — Liste evtl. unvollständig."] : []),
+      "",
+      "| File | Line | Method | Snippet |",
+      "|------|------|--------|---------|",
+    ];
+    for (const r of refs.slice(0, 50)) {
+      lines.push(`| \`${escapeCell(r.file)}\` | ${r.line} | ${r.surroundingMethod ? `\`${escapeCell(r.surroundingMethod)}\`` : "—"} | ${escapeCell(r.snippet)} |`);
+    }
+    if (refs.length > 50) lines.push(`\n_Showing first 50 of ${refs.length} references in the table._`);
+
+    let text = lines.join("\n") + "\n\n## Raw JSON\n```json\n" + JSON.stringify(refs.slice(0, 500), null, 2) + "\n```";
+    if (refs.length > 500) text += `\n\n_Raw JSON truncated to first 500 of ${refs.length} references._`;
+
+    return { content: [{ type: "text", text }] };
   }
 );
 
@@ -1500,6 +1585,92 @@ server.tool(
   }
 );
 
+// Tool: Untested Public API (static coverage proxy, heuristic — no test run)
+server.tool(
+  "detect_untested_public_api",
+  "Lists public API symbols (methods, properties, get/set accessors; .NET also records/structs incl. positional properties) that have no detectable test reference — purely static, a heuristic, NO test run. Both stacks scope the member check per class. Angular: scans .ts and matches against spec files in the same or any parent directory via a real import gate (only specs that actually import the class), then member call/string match. .NET: parses public members with Roslyn (syntactic only — Roslyn is used solely to parse, NO semantic reference resolution / SymbolFinder); associates a test file with a class by filename stem (<Class>Tests/Test/Spec) or a word-boundary code reference, then word-boundary member match within those associated tests. LIMITATION: the per-class scoping is necessarily looser on .NET (no real import system like TS imports). reason is stack-specific: 'no_test_file' = no associated test file references the class at all; 'no_reference_found' = a test file exists but the symbol is never referenced. Complements analyze_test_quality; run it first as a post-implementation coverage check.",
+  {
+    path: z.string().describe("File or directory path to analyze. With depth='file' a single file; with depth='project' a directory root."),
+    type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Stack. 'auto' detects by file extension (depth=file) or angular.json/project.json vs .csproj/.sln (depth=project)."),
+    depth: z.enum(["file", "project"]).default("file").describe("'file' analyzes only the given file; 'project' walks the directory (capped)."),
+  },
+  async ({ path, type, depth }) => {
+    const abs = resolve(path);
+    if (!existsSync(abs))
+      return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
+
+    // Resolve effective stack.
+    let stack: "angular" | "dotnet" = "angular";
+    if (type === "auto") {
+      if (depth === "file") {
+        const content = (() => { try { return readFileSync(abs, "utf-8"); } catch { return ""; } })();
+        const lang = detectLanguage(abs, content);
+        if (lang === "unknown")
+          return { content: [{ type: "text", text: `Could not auto-detect stack for file: ${abs}\nPlease specify type: "angular" or "dotnet"` }], isError: true };
+        stack = lang === "dotnet" ? "dotnet" : "angular";
+      } else {
+        const { readdirSync: rd } = await import("fs");
+        const { join: pjoin, dirname: pdir } = await import("path");
+        // Detect by marker in the given directory; if none, walk upward (covers
+        // type:auto/depth:project on a sub-folder of an Angular/.NET project).
+        const detectAt = (dir: string): "angular" | "dotnet" | null => {
+          if (existsSync(pjoin(dir, "angular.json")) || existsSync(pjoin(dir, "project.json"))) return "angular";
+          try { if (rd(dir).some((f: string) => f.endsWith(".csproj") || f.endsWith(".sln"))) return "dotnet"; } catch {}
+          return null;
+        };
+        let dir = abs, prev = "", detected: "angular" | "dotnet" | null = null;
+        while (dir && dir !== prev && !detected) {
+          detected = detectAt(dir);
+          prev = dir;
+          dir = pdir(dir);
+        }
+        if (detected) stack = detected;
+        else
+          return { content: [{ type: "text", text: `Could not auto-detect stack in ${abs} or any parent directory.\nPlease specify type: "angular" or "dotnet"` }], isError: true };
+      }
+    } else {
+      stack = type;
+    }
+
+    let findings: UntestedApiFinding[];
+    let capReached = false;
+    try {
+      if (stack === "dotnet") {
+        findings = runDotnetTestCoverageStatic(abs, depth);
+        capReached = dotnetUntestedApiScanState.capReached;
+      } else {
+        findings = detectUntestedPublicApi(abs, depth);
+        capReached = untestedApiScanState.capReached;
+      }
+    } catch (e) {
+      return { content: [{ type: "text", text: `⚠️ ${(e as Error).message}` }], isError: true };
+    }
+
+    const lines = [
+      `## Untested Public API (${stack}, depth=${depth})`,
+      `_Heuristic, no test run._`,
+      ``,
+    ];
+    if (capReached)
+      lines.push(`⚠️ File cap reached (${depth === "project" ? "project scan truncated" : "partial"}) — results may be incomplete.\n`);
+
+    const ROW_CAP = 50;
+    if (findings.length === 0) {
+      lines.push(`No untested public symbols detected.`);
+    } else {
+      lines.push(`Found ${findings.length} untested public symbol(s):\n`);
+      lines.push(`| symbol | file | line | reason |`);
+      lines.push(`|--------|------|------|--------|`);
+      for (const f of findings.slice(0, ROW_CAP))
+        lines.push(`| ${f.symbol} | ${f.file} | ${f.line} | ${f.reason} |`);
+      if (findings.length > ROW_CAP)
+        lines.push(`\n… and ${findings.length - ROW_CAP} more (full list in the JSON below).`);
+    }
+
+    return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(findings, null, 2) }] };
+  }
+);
+
 // Tool: Combined Coverage + Quality
 server.tool(
   "analyze_test_health",
@@ -1585,4 +1756,4 @@ startLogViewer(logViewerPort);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("code-review-mcp v2.2 running (compact format, find_api_callers, FromQuery-fix)");
+console.error("code-review-mcp v2.3 running (compact format, find_api_callers, detect_untested_public_api, find_symbol_references)");

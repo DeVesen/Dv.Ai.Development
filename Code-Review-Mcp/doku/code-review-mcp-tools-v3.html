@@ -241,7 +241,7 @@
     <p class="subtitle">Angular (ts-morph) + .NET (Roslyn) — vollständige Tool-Übersicht v7</p>
 
     <div class="stats-row">
-      <div class="stat"><span class="stat-number">23</span><span class="stat-label">MCP Tools</span></div>
+      <div class="stat"><span class="stat-number">27</span><span class="stat-label">MCP Tools</span></div>
       <div class="stat"><span class="stat-number">2</span><span class="stat-label">Stacks</span></div>
       <div class="stat"><span class="stat-number">6</span><span class="stat-label">Kategorien</span></div>
       <div class="stat"><span class="stat-number">AST</span><span class="stat-label">+ LLM + Runtime</span></div>
@@ -253,7 +253,7 @@
     <div class="section-header">
       <div class="section-dot" style="background:var(--accent-blue)"></div>
       <span class="section-title">① Code Review</span>
-      <span class="section-count">5 Tools</span>
+      <span class="section-count">7 Tools</span>
     </div>
     <table class="tool-table">
       <colgroup>
@@ -307,6 +307,22 @@
         <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
         <td><div class="tool-checked">Wie ist die Datei aufgebaut — welche Teile existieren und wie hängen sie zusammen?</div></td>
       </tr>
+      <tr class="tool-row review-row">
+        <td><div class="tool-name">compare_validation_rules</div></td>
+        <td><div class="tool-desc">Vergleicht Angular Reactive Form Validators mit .NET DTO DataAnnotations</div></td>
+        <td><div class="tool-what">Delta-Matrix: aligned / missing-be / missing-fe / conflict. Erkennt required, maxLength, minLength, email, pattern, min/max ↔ [Required], [StringLength], [Range], [EmailAddress] …</div></td>
+        <td><div class="tool-plain">Prüfen FE-Formular und BE-DTO dieselben Regeln?</div></td>
+        <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
+        <td><div class="tool-checked">Erzwingt das Backend dieselbe Validierung wie das Frontend — oder klafft eine Lücke?</div></td>
+      </tr>
+      <tr class="tool-row review-row">
+        <td><div class="tool-name">find_api_callers</div></td>
+        <td><div class="tool-desc">Scannt Angular .ts nach HttpClient-Aufrufen (GET/POST/PUT/PATCH/DELETE …)</div></td>
+        <td><div class="tool-what">Klasse/Methode → HTTP-Verb → URL-Pattern → Zeile. Optional nach URL-Pattern filtern</div></td>
+        <td><div class="tool-plain">Welche Komponente ruft Endpoint X auf?</div></td>
+        <td><div class="tags"><span class="tag tag-angular">Angular</span><span class="tag tag-ast">AST</span></div></td>
+        <td><div class="tool-checked">Welcher Service/welche Komponente spricht welchen Endpoint an?</div></td>
+      </tr>
     </table>
   </div>
 
@@ -315,7 +331,7 @@
     <div class="section-header">
       <div class="section-dot" style="background:var(--accent-purple)"></div>
       <span class="section-title">② Projekt-Index & Navigation</span>
-      <span class="section-count">3 Tools</span>
+      <span class="section-count">4 Tools</span>
     </div>
     <table class="tool-table">
       <colgroup><col style="width:185px"><col><col style="width:160px"><col style="width:160px"><col style="width:85px"><col style="width:170px"></colgroup>
@@ -335,6 +351,14 @@
         <td><div class="tool-plain">Wo ist die Klasse UserService und was hängt daran?</div></td>
         <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
         <td><div class="tool-checked">Wo genau lebt dieser Baustein im Projekt und wer nutzt ihn?</div></td>
+      </tr>
+      <tr class="tool-row index-row">
+        <td><div class="tool-name">find_symbol_references</div></td>
+        <td><div class="tool-desc">Listet alle konkreten Aufrufstellen eines benannten Symbols (Methode/Funktion/Property/Klasse)</div></td>
+        <td><div class="tool-what">Tabelle Datei/Zeile/umgebende Methode/Snippet. Detailstufe nach <b>analyze_refactoring_safety</b> (statt nur einer Zahl). <b>filePath</b> disambiguiert gleichnamige Symbole. Datei-Cap 400 mit Warnhinweis</div></td>
+        <td><div class="tool-plain">Wo überall wird diese Methode aufgerufen?</div></td>
+        <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
+        <td><div class="tool-checked">An welchen konkreten Stellen (Datei/Zeile) wird dieses Symbol verwendet?</div></td>
       </tr>
       <tr class="tool-row index-row">
         <td><div class="tool-name">review_with_index</div></td>
@@ -487,7 +511,7 @@
     <div class="section-header">
       <div class="section-dot" style="background:var(--accent-red)"></div>
       <span class="section-title">⑥ Test-Qualität & Coverage</span>
-      <span class="section-count">3 Tools</span>
+      <span class="section-count">4 Tools</span>
     </div>
     <table class="tool-table">
       <colgroup><col style="width:200px"><col><col style="width:190px"><col style="width:190px"><col style="width:100px"></colgroup>
@@ -504,6 +528,13 @@
         <td><div class="tool-desc">Statische Test-Analyse ohne Test-Run</div></td>
         <td><div class="tool-what">no-assertions, tautology, weak-assertions, mock-heavy, happy-path-only, unhandled-async, real-timers, console-in-test. <b>.NET:</b> blocking-async, no-AAA-structure. Fehlende Test-Dateien</div></td>
         <td><div class="tool-plain">Sind meine Tests wirklich gut — oder prüfen sie eigentlich nichts?</div></td>
+        <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
+      </tr>
+      <tr class="tool-row test-row">
+        <td><div class="tool-name">detect_untested_public_api</div></td>
+        <td><div class="tool-desc">Listet public-Symbole ohne erkennbare Test-Referenz — Heuristik, kein Test-Run</div></td>
+        <td><div class="tool-what">Methods + Properties + Get/Set-Accessoren. <b>Angular:</b> Abgleich gegen *.spec.ts im gleichen oder beliebigen übergeordneten Verzeichnis (Import-Gate + Member-Match). <b>.NET:</b> Roslyn public-Member gegen Test-Projekt — auch record/struct (inkl. positionaler Properties); die pro-Klasse-Zuordnung ist mangels echtem Import-System „looser"/heuristischer als das TS-Import-Gate (bewusste Limitation). reason: no_test_file / no_reference_found. Params: path / type / depth</div></td>
+        <td><div class="tool-plain">Welche public-Methoden hat noch gar keinen Test?</div></td>
         <td><div class="tags"><span class="tag tag-both">Beide</span><span class="tag tag-ast">AST</span></div></td>
       </tr>
       <tr class="tool-row test-row">

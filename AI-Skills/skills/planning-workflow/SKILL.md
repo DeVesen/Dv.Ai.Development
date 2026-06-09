@@ -7,8 +7,8 @@ description: >
   einem bis zu zehn **plan-agent-scout**-Laeufen (Phase 3), anschliessend **Phase 4** in **4a** (Orchestrator
   **plan-agent**: Topic-Map und Schnittstellen-Vertrag), **4b** (bis zu zehn **plan-agent-topic-planner**,
   je ein Topic mit Tech-Mindset und Teilplan inkl. paralleler Implementierung) und **4c** (Merge zur
-  **Arbeitsversion**), verpflichtendes Fuenf-Perspektiven-Review (**plan-agent-optimist**,
-  **plan-agent-pessimist**, **plan-agent-normalo**, **plan-agent-oberlehrer**, **plan-agent-professor**), Synthese und finales Planpaket mit verbindlicher
+  **Arbeitsversion**), verpflichtendes Fuenf-Perspektiven-Review (**plan-review-optimist-agent**,
+  **plan-review-pessimist-agent**, **plan-review-normalo-agent**, **plan-review-oberlehrer-agent**, **plan-review-professor-agent**), Synthese und finales Planpaket mit verbindlicher
   **Umsetzungs-Topologie** fuer den [Implementation Workflow](../implementation-workflow/SKILL.md)
   (1–10 Implementierungs-Slices, **Slice-ID-Konvention** IMP-FE-{Bereich}/IMP-BE-{ServiceKuerzel},
   Wellen, Integration); Phase 6 formuliert der Orchestrator **plan-agent**.
@@ -120,15 +120,15 @@ Diese Rollen sind **fest** — unabhaengig vom Host. Prompt-Vorlagen (Platzhalte
 
 | **Topic-Planer** | 4b | bevorzugt | 10 | nein | [`plan-agent-topic-planner`](../../agents/plan-agent-topic-planner.md) |
 
-| **Optimist** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-optimist`](../../agents/plan-agent-optimist.md) |
+| **Optimist** | 5 | bevorzugt (×5) | 1 | nein | [`plan-review-optimist-agent`](../../agents/plan-review-optimist-agent.md) |
 
-| **Pessimist** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-pessimist`](../../agents/plan-agent-pessimist.md) |
+| **Pessimist** | 5 | bevorzugt (×5) | 1 | nein | [`plan-review-pessimist-agent`](../../agents/plan-review-pessimist-agent.md) |
 
-| **Normalo** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-normalo`](../../agents/plan-agent-normalo.md) |
+| **Normalo** | 5 | bevorzugt (×5) | 1 | nein | [`plan-review-normalo-agent`](../../agents/plan-review-normalo-agent.md) |
 
-| **Oberlehrer** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-oberlehrer`](../../agents/plan-agent-oberlehrer.md) |
+| **Oberlehrer** | 5 | bevorzugt (×5) | 1 | nein | [`plan-review-oberlehrer-agent`](../../agents/plan-review-oberlehrer-agent.md) |
 
-| **Professor** | 5 | bevorzugt (×5) | 1 | nein | [`plan-agent-professor`](../../agents/plan-agent-professor.md) |
+| **Professor** | 5 | bevorzugt (×5) | 1 | nein | [`plan-review-professor-agent`](../../agents/plan-review-professor-agent.md) |
 
 **Verboten:** Rollensimulation im Orchestrator-Turn. **Verboten:** Implementierungs- oder
 
@@ -151,15 +151,15 @@ primär, sonst YAML-Frontmatter — **nicht** in diesem Skill oder in Rules dupl
 
 | `plan-agent-topic-planner` | [plan-agent-topic-planner.md](../../agents/plan-agent-topic-planner.md) |
 
-| `plan-agent-optimist` | [plan-agent-optimist.md](../../agents/plan-agent-optimist.md) |
+| `plan-review-optimist-agent` | [plan-review-optimist-agent.md](../../agents/plan-review-optimist-agent.md) |
 
-| `plan-agent-pessimist` | [plan-agent-pessimist.md](../../agents/plan-agent-pessimist.md) |
+| `plan-review-pessimist-agent` | [plan-review-pessimist-agent.md](../../agents/plan-review-pessimist-agent.md) |
 
-| `plan-agent-normalo` | [plan-agent-normalo.md](../../agents/plan-agent-normalo.md) |
+| `plan-review-normalo-agent` | [plan-review-normalo-agent.md](../../agents/plan-review-normalo-agent.md) |
 
-| `plan-agent-oberlehrer` | [plan-agent-oberlehrer.md](../../agents/plan-agent-oberlehrer.md) |
+| `plan-review-oberlehrer-agent` | [plan-review-oberlehrer-agent.md](../../agents/plan-review-oberlehrer-agent.md) |
 
-| `plan-agent-professor` | [plan-agent-professor.md](../../agents/plan-agent-professor.md) |
+| `plan-review-professor-agent` | [plan-review-professor-agent.md](../../agents/plan-review-professor-agent.md) |
 
 **Subagent — Modell vor Task (Pflicht):** [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — vor jedem Task Ziel-Profil lesen; **primär** Abschnitt **`## Modell`**, sonst YAML; Slugs **nicht** hier duplizieren.
 
@@ -193,7 +193,7 @@ plan-agent (Phase 1–2)
 
   → plan-agent: Phase 4c Merge
 
-  → plan-agent-optimist | pessimist | normalo | oberlehrer | professor  (Phase 5, parallel bevorzugt)
+  → plan-review-optimist-agent | plan-review-pessimist-agent | plan-review-normalo-agent | plan-review-oberlehrer-agent | plan-review-professor-agent  (Phase 5, parallel bevorzugt)
 
   → plan-agent: Phase 6 Synthese + finales Planpaket
 
@@ -269,7 +269,7 @@ plan-agent (Phase 1–2)
 
   als Nutzerfrage markieren. **Ohne** abgeschlossene 4b **kein** 4c.
 
-- **Fuenf-Perspektiven-Review (Phase 5):** verpflichtend, ohne Nutzer-Opt-in. Gate: erst nach vollstaendiger 4c-Arbeitsversion (nicht Scout-Notizen/4a-Schnittstellen). Je ein Lauf `plan-agent-optimist`/`pessimist`/`normalo`/`oberlehrer`/`professor` — parallel bevorzugt; sonst sequenziell fuenf Task-Subagent-Laeufe. **Verboten:** Rollensimulation statt Subagents. → Phase 5 (vollstaendige Ausfuehrungsregeln).
+- **Fuenf-Perspektiven-Review (Phase 5):** verpflichtend, ohne Nutzer-Opt-in. Gate: erst nach vollstaendiger 4c-Arbeitsversion (nicht Scout-Notizen/4a-Schnittstellen). Je ein Lauf `plan-review-optimist-agent`/`plan-review-pessimist-agent`/`plan-review-normalo-agent`/`plan-review-oberlehrer-agent`/`plan-review-professor-agent` — parallel bevorzugt; sonst sequenziell fuenf Task-Subagent-Laeufe. **Verboten:** Rollensimulation statt Subagents. → Phase 5 (vollstaendige Ausfuehrungsregeln).
 
 - Parallele Subagenten **nur innerhalb derselben Stufe** (siehe **Phasen-Gates**); **keine**
 
@@ -600,11 +600,11 @@ starten.
 
 | Rolle | Agent-Typ |
 |-------|-----------|
-| Optimist | `plan-agent-optimist` |
-| Pessimist | `plan-agent-pessimist` |
-| Normalo | `plan-agent-normalo` |
-| Oberlehrer | `plan-agent-oberlehrer` |
-| Professor | `plan-agent-professor` |
+| Optimist | `plan-review-optimist-agent` |
+| Pessimist | `plan-review-pessimist-agent` |
+| Normalo | `plan-review-normalo-agent` |
+| Oberlehrer | `plan-review-oberlehrer-agent` |
+| Professor | `plan-review-professor-agent` |
 
 Prompts aus [references/subagent-prompts.md](references/subagent-prompts.md); Profile unter [../../agents/](../../agents/).
 
@@ -814,9 +814,8 @@ Perspektiven vorhanden).
 
   - **Integration:** wer merged, Schnittstellencheck, E2E-Akzeptanz gegen Plan
 
-  - **Verifikation:** betroffene Stacks (Frontend / Backend) — Verweis
-
-    Implementation Workflow (Verifikation pro Stack)
+  - **Implement-Review-Loop:** Verweis auf Implementation Workflow
+    (Technik-Gate + 6 Reviewer + Fix-Planer + Fix-Slices)
 
   Der Orchestrator **operationalisiert** diese Topologie; er erfindet in der
 
@@ -884,11 +883,11 @@ Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rol
 |-------|-----------|--------|
 | 3 | `plan-agent-scout` | [plan-agent-scout.md](../../agents/plan-agent-scout.md) |
 | 4b | `plan-agent-topic-planner` | [plan-agent-topic-planner.md](../../agents/plan-agent-topic-planner.md) |
-| 5 | `plan-agent-optimist` | [plan-agent-optimist.md](../../agents/plan-agent-optimist.md) |
-| 5 | `plan-agent-pessimist` | [plan-agent-pessimist.md](../../agents/plan-agent-pessimist.md) |
-| 5 | `plan-agent-normalo` | [plan-agent-normalo.md](../../agents/plan-agent-normalo.md) |
-| 5 | `plan-agent-oberlehrer` | [plan-agent-oberlehrer.md](../../agents/plan-agent-oberlehrer.md) |
-| 5 | `plan-agent-professor` | [plan-agent-professor.md](../../agents/plan-agent-professor.md) |
+| 5 | `plan-review-optimist-agent` | [plan-review-optimist-agent.md](../../agents/plan-review-optimist-agent.md) |
+| 5 | `plan-review-pessimist-agent` | [plan-review-pessimist-agent.md](../../agents/plan-review-pessimist-agent.md) |
+| 5 | `plan-review-normalo-agent` | [plan-review-normalo-agent.md](../../agents/plan-review-normalo-agent.md) |
+| 5 | `plan-review-oberlehrer-agent` | [plan-review-oberlehrer-agent.md](../../agents/plan-review-oberlehrer-agent.md) |
+| 5 | `plan-review-professor-agent` | [plan-review-professor-agent.md](../../agents/plan-review-professor-agent.md) |
 
 ### Delegations-Regeln
 

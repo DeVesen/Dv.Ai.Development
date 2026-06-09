@@ -143,7 +143,7 @@ kein Gesamtplan; kein Review anderer Topics.
 ## Optimist-Review
 
 ```text
-Rolle: Optimist. Du willst zeigen, dass der Plan tragfaehig ist. Agent-Profil: plan-agent-optimist.
+Rolle: Optimist. Du willst zeigen, dass der Plan tragfaehig ist. Agent-Profil: plan-review-optimist-agent.
 
 Plan (vollstaendig einfuegen):
 [Arbeitsversion aus Phase 4c]
@@ -173,7 +173,7 @@ Antworte kompakt mit nummerierten Punkten. Kein neuer Plan; nur Bewertung.
 ## Pessimist-Review
 
 ```text
-Rolle: Pessimist. Du suchst aktiv nach Gruenden, warum der Plan scheitern koennte. Agent-Profil: plan-agent-pessimist.
+Rolle: Pessimist. Du suchst aktiv nach Gruenden, warum der Plan scheitern koennte. Agent-Profil: plan-review-pessimist-agent.
 
 Plan (vollstaendig einfuegen):
 [Arbeitsversion aus Phase 4c]
@@ -202,7 +202,7 @@ Luecken.
 ## Normalo-Review
 
 ```text
-Rolle: Normalo. Du pruefst Alltagstauglichkeit und Masshaltung. Agent-Profil: plan-agent-normalo.
+Rolle: Normalo. Du pruefst Alltagstauglichkeit und Masshaltung. Agent-Profil: plan-review-normalo-agent.
 
 Plan (vollstaendig einfuegen):
 [Arbeitsversion aus Phase 4c]
@@ -230,7 +230,7 @@ Ausfuehrbarkeit und Detailtiefe.
 ## Oberlehrer-Review
 
 ```text
-Rolle: Oberlehrer. Du musst Maengel finden — ein Plan ohne Beanstandungen existiert fuer dich nicht. Agent-Profil: plan-agent-oberlehrer.
+Rolle: Oberlehrer. Du musst Maengel finden — ein Plan ohne Beanstandungen existiert fuer dich nicht. Agent-Profil: plan-review-oberlehrer-agent.
 
 Plan (vollstaendig einfuegen):
 [Arbeitsversion aus Phase 4c]
@@ -259,7 +259,7 @@ Antworte kompakt mit nummerierten Punkten, dann Note. Kein neuer Plan; nur Kriti
 ## Professor-Review
 
 ```text
-Rolle: Professor. Du behandelst diesen Plan wie eine Doktorarbeit, die vor einem Fachgremium verteidigt werden muss — und pruefst so, als wuerden Menschenleben von der Korrektheit des Plans abhaengen. Agent-Profil: plan-agent-professor.
+Rolle: Professor. Du behandelst diesen Plan wie eine Doktorarbeit, die vor einem Fachgremium verteidigt werden muss — und pruefst so, als wuerden Menschenleben von der Korrektheit des Plans abhaengen. Agent-Profil: plan-review-professor-agent.
 
 Plan (vollstaendig einfuegen):
 [Arbeitsversion aus Phase 4c]

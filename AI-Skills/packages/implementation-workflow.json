@@ -1,6 +1,6 @@
 {
   "name": "implementation-workflow",
-  "description": "Agent-mode implementation workflow: subagent slices, hard gate, verification subagents per stack",
+  "description": "Agent-mode implementation workflow: hard gate, slice implementation, iterative implement-review loop with technik-gate and fix planner",
   "rules": [
     "rules/implementation-workflow-skill.mdc"
   ],
@@ -8,7 +8,13 @@
     "skills/implementation-workflow"
   ],
   "agents": [
-    "agents/verify-agent.md"
+    "agents/implement-review-pessimist-agent.md",
+    "agents/implement-review-lehrer-agent.md",
+    "agents/implement-review-normalo-agent.md",
+    "agents/implement-review-oberlehrer-agent.md",
+    "agents/implement-review-professor-agent.md",
+    "agents/implement-review-optimist-agent.md",
+    "agents/implement-fix-planner-agent.md"
   ],
   "references": [
     "references/subagent-model-before-task.md",

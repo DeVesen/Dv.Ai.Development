@@ -7,8 +7,10 @@ import {
   SyntaxKind,
   ts,
 } from "ts-morph";
-import { readdirSync, statSync, readFileSync } from "fs";
-import { join, extname, relative } from "path";
+import { readdirSync, statSync, readFileSync, existsSync } from "fs";
+import { join, extname, relative, dirname, resolve } from "path";
+import { UntestedApiFinding } from "./untested-api-types.js";
+import { SymbolReference } from "./symbol-reference-types.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -107,19 +109,25 @@ export interface DataflowIssue {
 
 // ─── Project Loader ───────────────────────────────────────────────────────────
 
-function loadProject(rootPath: string): { project: Project; sourceFiles: SourceFile[] } {
+// Hard file cap shared by loadProject and findSymbolReferences so every scan
+// path truncates at the same boundary and can surface a cap-reached warning.
+const PROJECT_FILE_CAP = 400;
+
+function loadProject(rootPath: string): { project: Project; sourceFiles: SourceFile[]; capReached: boolean } {
   const ignored = ["node_modules", ".git", "dist", "coverage", ".angular"];
   const files: string[] = [];
+  let capReached = false;
 
   function walk(dir: string) {
-    if (files.length > 400) return;
     try {
       for (const entry of readdirSync(dir)) {
         if (ignored.includes(entry)) continue;
         const full = join(dir, entry);
-        if (statSync(full).isDirectory()) walk(full);
-        else if (extname(full) === ".ts" && !full.endsWith(".spec.ts") && !full.endsWith(".d.ts"))
+        if (statSync(full).isDirectory()) { walk(full); continue; }
+        if (extname(full) === ".ts" && !full.endsWith(".spec.ts") && !full.endsWith(".d.ts")) {
+          if (files.length >= PROJECT_FILE_CAP) { capReached = true; continue; }
           files.push(full);
+        }
       }
     } catch {}
   }
@@ -127,7 +135,7 @@ function loadProject(rootPath: string): { project: Project; sourceFiles: SourceF
 
   const project = new Project({ useInMemoryFileSystem: false, skipAddingFilesFromTsConfig: true });
   for (const f of files) { try { project.addSourceFileAtPath(f); } catch {} }
-  return { project, sourceFiles: project.getSourceFiles() };
+  return { project, sourceFiles: project.getSourceFiles(), capReached };
 }
 
 // ─── 1. Cyclomatic Complexity ─────────────────────────────────────────────────
@@ -921,4 +929,356 @@ export function analyzeCrossFileDataflow(rootPath: string): DataflowIssue[] {
   }
 
   return issues;
+}
+
+// ─── 8. Untested Public API (static coverage proxy, heuristic) ───────────────
+// Own spec-aware walk — does NOT reuse loadProject (which filters out .spec.ts).
+// findCoverageGaps / analyzeAngularTestQuality stay untouched (reuse by copy).
+//
+// Known limitations (intentional — heuristic, no type resolution):
+//   • Inheritance: members inherited from a base class are NOT attributed to the
+//     subclass; only members declared on the class itself are scanned.
+//   • Standalone exported functions (no enclosing class) are out of scope — the
+//     scan is class-anchored. Both would require full symbol resolution.
+//   • ES #private fields/methods carry no scope modifier (getScope() === "public"),
+//     so they are excluded explicitly by their leading "#" to avoid false positives.
+
+const UNTESTED_API_FILE_CAP = 400;
+
+// Set by detectUntestedPublicApi; read by the index.ts handler to surface a cap warning.
+export const untestedApiScanState: { capReached: boolean } = { capReached: false };
+
+const NG_LIFECYCLE_HOOKS = new Set([
+  "ngOnInit", "ngOnDestroy", "ngOnChanges", "ngDoCheck",
+  "ngAfterContentInit", "ngAfterContentChecked",
+  "ngAfterViewInit", "ngAfterViewChecked", "constructor",
+]);
+
+export function detectUntestedPublicApi(path: string, depth: "file" | "project"): UntestedApiFinding[] {
+  untestedApiScanState.capReached = false;
+  const findings: UntestedApiFinding[] = [];
+
+  const ignored = ["node_modules", ".git", "dist", "coverage", ".angular"];
+  const isSpec = (f: string) => f.endsWith(".spec.ts") || f.endsWith(".test.ts");
+
+  const sourceFiles: string[] = [];
+  const testFiles: string[] = [];
+
+  if (depth === "file") {
+    if (isSpec(path) || path.endsWith(".d.ts") || extname(path) !== ".ts") return findings;
+    sourceFiles.push(path);
+    // Spec-conform: consider spec files in the SAME or any PARENT directory; the
+    // import gate below decides which of them actually exercise a given class.
+    for (const cand of specCandidatesUpward(path)) testFiles.push(cand);
+  } else {
+    const walk = (dir: string) => {
+      try {
+        for (const entry of readdirSync(dir)) {
+          if (ignored.includes(entry)) continue;
+          const full = join(dir, entry);
+          if (statSync(full).isDirectory()) { walk(full); continue; }
+          if (extname(full) !== ".ts") continue;
+          if (isSpec(full)) { testFiles.push(full); continue; }
+          if (full.endsWith(".d.ts")) continue;
+          if (sourceFiles.length >= UNTESTED_API_FILE_CAP) { untestedApiScanState.capReached = true; continue; }
+          sourceFiles.push(full);
+        }
+      } catch {}
+    };
+    walk(path);
+  }
+
+  const project = new Project({ useInMemoryFileSystem: false, skipAddingFilesFromTsConfig: true });
+  for (const f of [...sourceFiles, ...testFiles]) { try { project.addSourceFileAtPath(f); } catch {} }
+
+  // Read each spec's text once for the import gate + member matching.
+  const specTexts = new Map<string, string>();
+  for (const t of testFiles) {
+    const sf = project.getSourceFile(t);
+    specTexts.set(t, sf?.getFullText() ?? safeRead(t));
+  }
+
+  const base = depth === "project" ? path : dirname(path);
+
+  for (const srcPath of sourceFiles) {
+    const sf = project.getSourceFile(srcPath);
+    if (!sf) continue;
+    const relFile = relative(base, srcPath) || srcPath;
+
+    for (const cls of sf.getClasses()) {
+      const clsName = cls.getName() ?? "";
+      // A class counts as tested when ANY spec file IMPORTS it (real import gate).
+      // reason "no_test_file" is reserved for classes no spec references at all.
+      const importingSpecs = clsName
+        ? testFiles.filter((t) => importsClass(specTexts.get(t) ?? "", clsName))
+        : [];
+      const classHasTest = importingSpecs.length > 0;
+
+      for (const member of collectPublicMembers(cls)) {
+        if (!classHasTest) {
+          findings.push({ symbol: `${clsName}.${member.name}`, file: relFile, line: member.line, reason: "no_test_file" });
+          continue;
+        }
+        const referenced = importingSpecs.some((t) => referencesMember(specTexts.get(t) ?? "", member.name));
+        if (!referenced) {
+          findings.push({ symbol: `${clsName}.${member.name}`, file: relFile, line: member.line, reason: "no_reference_found" });
+        }
+      }
+    }
+  }
+
+  return findings;
+}
+
+// Public methods, properties and accessors of a class. get+set accessors of the
+// same name are deduplicated so a single symbol yields a single finding.
+function collectPublicMembers(cls: ClassDeclaration): { name: string; line: number }[] {
+  const seen = new Set<string>();
+  const members: { name: string; line: number }[] = [];
+  const add = (name: string, line: number) => {
+    // ES #private members have no scope modifier — exclude by their leading "#".
+    if (name.startsWith("#") || NG_LIFECYCLE_HOOKS.has(name) || seen.has(name)) return;
+    seen.add(name);
+    members.push({ name, line });
+  };
+  for (const m of cls.getMethods()) { if (!isNonPublicScope(m.getScope())) add(m.getName(), m.getStartLineNumber()); }
+  for (const p of cls.getProperties()) { if (!isNonPublicScope(p.getScope())) add(p.getName(), p.getStartLineNumber()); }
+  for (const a of [...cls.getGetAccessors(), ...cls.getSetAccessors()]) {
+    if (!isNonPublicScope(a.getScope())) add(a.getName(), a.getStartLineNumber());
+  }
+  return members;
+}
+
+function isNonPublicScope(scope: string | undefined): boolean {
+  return scope === "private" || scope === "protected";
+}
+
+// Collect *.spec.ts / *.test.ts in the file's directory and every ancestor
+// directory (non-recursive per level). Cheap readdir per level; bounded by depth.
+function specCandidatesUpward(srcPath: string): string[] {
+  const specs: string[] = [];
+  let dir = dirname(srcPath);
+  let prev = "";
+  while (dir && dir !== prev) {
+    try {
+      for (const entry of readdirSync(dir)) {
+        if (entry.endsWith(".spec.ts") || entry.endsWith(".test.ts")) specs.push(join(dir, entry));
+      }
+    } catch {}
+    prev = dir;
+    dir = dirname(dir);
+  }
+  return specs;
+}
+
+function safeRead(file: string): string {
+  try { return readFileSync(file, "utf-8"); } catch { return ""; }
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Import-statement gate (regex-based, heuristic — NOT a semantically resolved
+// import): the class name must appear inside an import statement of the spec. A
+// bare textual mention is intentionally NOT enough (no weak fallback).
+function importsClass(specText: string, clsName: string): boolean {
+  if (!clsName) return false;
+  const esc = escapeRegExp(clsName);
+  return new RegExp(`import[^;]*\\b${esc}\\b[^;]*from`, "m").test(specText);
+}
+
+function referencesMember(specText: string, name: string): boolean {
+  if (!name) return false;
+  const esc = escapeRegExp(name);
+  if (new RegExp(`\\.${esc}\\b`).test(specText)) return true;            // property / method access
+  if (new RegExp(`\\b${esc}\\s*\\(`).test(specText)) return true;        // call
+  if (new RegExp(`['"\`][^'"\`]*\\b${esc}\\b[^'"\`]*['"\`]`).test(specText)) return true; // string literal
+  return false;
+}
+
+// ─── 9. Symbol References (call-site detail level after refactoring safety) ───
+// Anchors on real declarations (class/function/var/interface/enum + member
+// methods/properties/accessors). Uses ts-morph findReferences() only when a
+// tsconfig.json exists at the root (type-aware), otherwise an identifier
+// text-match fallback in the spirit of analyzeRefactoringSafety.
+
+// Set by findSymbolReferences; read by the index.ts handler to surface a cap warning.
+export const symbolReferencesScanState: { capReached: boolean } = { capReached: false };
+
+export function findSymbolReferences(rootPath: string, symbolName: string, filePath?: string): SymbolReference[] {
+  symbolReferencesScanState.capReached = false;
+  const tsConfigPath = join(rootPath, "tsconfig.json");
+
+  if (existsSync(tsConfigPath)) {
+    try {
+      const project = new Project({ tsConfigFilePath: tsConfigPath });
+      // getSourceFiles() includes node_modules/*.d.ts/lib files; restrict to
+      // project sources before counting so the cap and the slice operate on the
+      // same population that loadProject would yield (no false-positive cap, no
+      // accidental truncation of source/anchor files).
+      const projectFiles = filterProjectSourceFiles(project.getSourceFiles());
+      const capped = projectFiles.length > PROJECT_FILE_CAP;
+      const sourceFiles = capped ? projectFiles.slice(0, PROJECT_FILE_CAP) : projectFiles;
+      symbolReferencesScanState.capReached = capped;
+      const viaRefs = findViaReferences(rootPath, sourceFiles, symbolName, filePath);
+      // Reuse the already-loaded source set for the fallback when no anchor
+      // declaration resolved, instead of reloading the project via loadProject.
+      return viaRefs ?? findViaTextMatch(rootPath, sourceFiles, symbolName, filePath);
+    } catch {
+      // fall through to the text-match fallback below
+    }
+  }
+
+  const { sourceFiles, capReached } = loadProject(rootPath);
+  symbolReferencesScanState.capReached = capReached;
+  return findViaTextMatch(rootPath, sourceFiles, symbolName, filePath);
+}
+
+// Project-source predicate, mirroring the loadProject filters (node_modules,
+// *.d.ts and *.spec.ts are excluded). Shared by the source-file pre-filter and
+// the findReferences pass so both report the same population.
+function isProjectSourceFile(filePath: string): boolean {
+  const p = filePath.replace(/\\/g, "/");
+  if (p.includes("/node_modules/")) return false;
+  if (p.endsWith(".d.ts")) return false;
+  if (p.endsWith(".spec.ts")) return false;
+  return true;
+}
+
+// Restrict a tsconfig-loaded project to its own source files.
+function filterProjectSourceFiles(sourceFiles: SourceFile[]): SourceFile[] {
+  return sourceFiles.filter((sf) => isProjectSourceFile(sf.getFilePath()));
+}
+
+function filterAnchorFiles(sourceFiles: SourceFile[], rootPath: string, filePath?: string): SourceFile[] {
+  if (!filePath) return sourceFiles;
+  const norm = filePath.replace(/\\/g, "/");
+  const abs = resolve(rootPath, filePath).replace(/\\/g, "/");
+  // Suffix match must respect a path boundary so user.ts does not match superuser.ts.
+  return sourceFiles.filter((sf) => {
+    const p = sf.getFilePath().replace(/\\/g, "/");
+    return p === abs || p === norm || p.endsWith("/" + norm);
+  });
+}
+
+function collectAnchors(sourceFiles: SourceFile[], symbolName: string): Node[] {
+  const anchors: Node[] = [];
+  for (const sf of sourceFiles) {
+    const cls = sf.getClass(symbolName); if (cls) anchors.push(cls);
+    const fn = sf.getFunction(symbolName); if (fn) anchors.push(fn);
+    const vr = sf.getVariableDeclaration(symbolName); if (vr) anchors.push(vr);
+    const iface = sf.getInterface(symbolName); if (iface) anchors.push(iface);
+    const en = sf.getEnum(symbolName); if (en) anchors.push(en);
+    for (const c of sf.getClasses()) {
+      const m = c.getMethod(symbolName); if (m) anchors.push(m);
+      const p = c.getProperty(symbolName); if (p) anchors.push(p);
+      const g = c.getGetAccessor(symbolName); if (g) anchors.push(g);
+      const s = c.getSetAccessor(symbolName); if (s) anchors.push(s);
+    }
+  }
+  return anchors;
+}
+
+function declarationPositions(anchors: Node[]): Set<string> {
+  const positions = new Set<string>();
+  for (const a of anchors) {
+    const nameNode = (a as { getNameNode?: () => Node | undefined }).getNameNode?.();
+    if (nameNode) positions.add(`${a.getSourceFile().getFilePath()}:${nameNode.getStart()}`);
+  }
+  return positions;
+}
+
+// Returns null when there are no anchors in the type-aware pass, so the caller
+// can decide whether the fallback applies. An empty array means "no references".
+function findViaReferences(rootPath: string, sourceFiles: SourceFile[], symbolName: string, filePath?: string): SymbolReference[] | null {
+  const anchors = collectAnchors(filterAnchorFiles(sourceFiles, rootPath, filePath), symbolName);
+  if (anchors.length === 0) return null;
+
+  const declPositions = declarationPositions(anchors);
+  const results: SymbolReference[] = [];
+  const seen = new Set<string>();
+
+  for (const anchor of anchors) {
+    let refSymbols;
+    try { refSymbols = (anchor as unknown as { findReferences: () => ReturnType<MethodDeclaration["findReferences"]> }).findReferences(); }
+    catch { continue; }
+    for (const rs of refSymbols) {
+      for (const ref of rs.getReferences()) {
+        if (ref.isDefinition()) continue;
+        const node = ref.getNode();
+        // findReferences() searches the whole project (incl. .spec.ts/.d.ts/
+        // node_modules); keep only project sources so the type-aware path and
+        // the text-match fallback report the same population.
+        if (!isProjectSourceFile(node.getSourceFile().getFilePath())) continue;
+        if (declPositions.has(`${node.getSourceFile().getFilePath()}:${node.getStart()}`)) continue;
+        pushReference(results, seen, rootPath, node);
+      }
+    }
+  }
+
+  return results.sort(sortByFileLine);
+}
+
+function findViaTextMatch(rootPath: string, sourceFiles: SourceFile[], symbolName: string, filePath?: string): SymbolReference[] {
+  // Even with no resolvable declaration we still report the name/text matches:
+  // the purpose is to surface usages, including external/non-declared symbols.
+  // declPositions is then empty, so nothing is excluded as a declaration.
+  const anchors = collectAnchors(filterAnchorFiles(sourceFiles, rootPath, filePath), symbolName);
+  const declPositions = declarationPositions(anchors);
+  const results: SymbolReference[] = [];
+  const seen = new Set<string>();
+
+  for (const sf of sourceFiles) {
+    sf.forEachDescendant((node) => {
+      if (!Node.isIdentifier(node) || node.getText() !== symbolName) return;
+      if (declPositions.has(`${sf.getFilePath()}:${node.getStart()}`)) return;
+      pushReference(results, seen, rootPath, node);
+    });
+  }
+
+  return results.sort(sortByFileLine);
+}
+
+function pushReference(results: SymbolReference[], seen: Set<string>, rootPath: string, node: Node): void {
+  const sf = node.getSourceFile();
+  const { line, column } = sf.getLineAndColumnAtPos(node.getStart());
+  const relFile = relative(rootPath, sf.getFilePath()).replace(/\\/g, "/");
+  const key = `${relFile}:${line}:${column}`;
+  if (seen.has(key)) return;
+  seen.add(key);
+  const lineText = sf.getFullText().split("\n")[line - 1] ?? "";
+  results.push({
+    file: relFile,
+    line,
+    surroundingMethod: surroundingMethodName(node),
+    snippet: lineText.trim().slice(0, 80),
+  });
+}
+
+function surroundingMethodName(node: Node): string | null {
+  // Climb to the nearest *named* enclosing unit (method, function, constructor,
+  // accessor, property — matching the .NET path). Anonymous arrow/function
+  // expressions are skipped, so a reference inside a property initializer such as
+  // `data = computed(() => this.foo())` reports the property as the unit.
+  const ancestor = node.getFirstAncestor((a) => {
+    if (
+      Node.isMethodDeclaration(a) ||
+      Node.isFunctionDeclaration(a) ||
+      Node.isConstructorDeclaration(a) ||
+      Node.isGetAccessorDeclaration(a) ||
+      Node.isSetAccessorDeclaration(a) ||
+      Node.isPropertyDeclaration(a)
+    ) return true;
+    if (Node.isArrowFunction(a) || Node.isFunctionExpression(a))
+      return !!(a as { getName?: () => string | undefined }).getName?.();
+    return false;
+  });
+  if (!ancestor) return null;
+  if (Node.isConstructorDeclaration(ancestor)) return "constructor";
+  return (ancestor as { getName?: () => string | undefined }).getName?.() ?? null;
+}
+
+function sortByFileLine(a: SymbolReference, b: SymbolReference): number {
+  return a.file === b.file ? a.line - b.line : a.file.localeCompare(b.file);
 }

@@ -67,7 +67,7 @@ Beispiele: `Nutze @.cursor/skills/planning-workflow für …`, `@file + plane di
 
 Folgende Meta-Formulierungen aktivieren den Workflow bei **planungsbezogenem** Kontext (nicht isoliert ohne Planungsbezug):
 
-`Phase 1`–`Phase 6`, `Phase 4a`, `Phase 4b`, `Phase 4c`, `Scout`, `Codebereichs-Scouting`, `Topic-Planer`, `Topic-Map`, `Schnittstellen-Design`, `Drei-Perspektiven-Review`, `Optimist`, `Pessimist`, `Normalo`, `Review-Digest`, `Synthese`, `Umsetzungs-Topologie`, `Implementation Slices`, `Orchestrator-Plan`, `Executor-Empfehlung`, `Komplexitätsbewertung`, `Starte Planning Workflow`, `Planning Workflow anwenden`.
+`Phase 1`–`Phase 6`, `Phase 4a`, `Phase 4b`, `Phase 4c`, `Scout`, `Codebereichs-Scouting`, `Topic-Planer`, `Topic-Map`, `Schnittstellen-Design`, `Fuenf-Perspektiven-Review`, `Optimist`, `Pessimist`, `Normalo`, `Oberlehrer`, `Professor`, `Review-Digest`, `Synthese`, `Umsetzungs-Topologie`, `Implementation Slices`, `Orchestrator-Plan`, `Executor-Empfehlung`, `Komplexitätsbewertung`, `Starte Planning Workflow`, `Planning Workflow anwenden`.
 
 **Orchestrator** / **Subagent** nur mit Planungskontext (`im Planungsworkflow`, `für den Plan`, `Slice-Topologie`) — nicht allein bei Implementierungs-Subagents.
 
@@ -99,7 +99,7 @@ Nutzeranfragen können den Planning Workflow auslösen, wenn der Planungsintent 
 - **Englisch:** `create plan`, `setup plan`, `auto-plan`, `quick plan`, `write a plan`, `draft a plan`, `how should we approach`, `outline the steps`, `break down into phases`, `approach`, `migration path`, `design the`, `planning session`.
 - **@-Referenz / Skill-Pfad:** `@planning-workflow-skill`, `@.cursor/rules/planning-workflow-skill.mdc`, `@.cursor/skills/planning-workflow`, `Nutze den Skill planning-workflow`.
 - **Plan Mode:** siehe Abschnitt [Plan Mode / Cursor-Kontext](#plan-mode--cursor-kontext).
-- **Workflow / Rollen / Meta:** `Planungsworkflow`, `Planning Workflow`, `parallel planen`, `Phase 3`, `Phase 4a`, `Phase 4b`, `Phase 4c`, `Scout`, `Topic-Planer`, `Schnittstellen-Design`, `Drei-Perspektiven-Review`, `Umsetzungs-Topologie`, `Review-Digest`; `Optimist` / `Pessimist` / `Normalo` / `Orchestrator` / `Subagent` nur im Planungskontext.
+- **Workflow / Rollen / Meta:** `Planungsworkflow`, `Planning Workflow`, `parallel planen`, `Phase 3`, `Phase 4a`, `Phase 4b`, `Phase 4c`, `Scout`, `Topic-Planer`, `Schnittstellen-Design`, `Fuenf-Perspektiven-Review`, `Umsetzungs-Topologie`, `Review-Digest`; `Optimist` / `Pessimist` / `Normalo` / `Oberlehrer` / `Professor` / `Orchestrator` / `Subagent` nur im Planungskontext.
 - **Weiche Verben (nur bei erkennbarem Planungsziel):** `strukturiere`, `organisiere`, `konzipiere`, `bereite … vor` — wenn Plan, Planung, Roadmap oder Umsetzungsvorgehen gemeint ist.
 - **Kombi Planung + Umsetzung:** `plane … und implementiere` → zuerst Planning bis Freigabe.
 

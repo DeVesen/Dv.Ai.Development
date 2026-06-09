@@ -28,10 +28,12 @@ COPY roslyn-analyzer/ ./roslyn-analyzer/
 RUN echo 'public class Dummy {}' > /tmp/warm.cs && mkdir -p /tmp/warmdir \
     && dotnet script roslyn-analyzer/roslyn-analyzer.csx -- /tmp/warm.cs > /dev/null \
     && dotnet script roslyn-analyzer/dotnet-indexer.csx -- /tmp/warmdir > /dev/null 2>&1 || true \
+    && dotnet script roslyn-analyzer/roslyn-references.csx -- /tmp/warmdir Dummy > /dev/null 2>&1 || true \
     && dotnet script roslyn-analyzer/roslyn-advanced.csx -- /tmp/warmdir all > /dev/null 2>&1 || true \
     && dotnet script roslyn-analyzer/roslyn-split.csx -- /tmp/warmdir > /dev/null 2>&1 || true \
     && dotnet script roslyn-analyzer/roslyn-intelligence.csx -- /tmp/warmdir maintainability > /dev/null 2>&1 || true \
     && dotnet script roslyn-analyzer/roslyn-test-quality.csx -- /tmp/warmdir > /dev/null 2>&1 || true \
+    && dotnet script roslyn-analyzer/roslyn-test-coverage-static.csx -- /tmp/warmdir project > /dev/null 2>&1 || true \
     && rm -rf /tmp/warm.cs /tmp/warmdir
 
 # Verify critical packages are cached

@@ -337,8 +337,9 @@
     <div class="phase phase-post">
       <div class="phase-badge"><span class="dot"></span>Nach Implementierung</div>
       <h2>Nach Fertigstellung</h2>
-      <p>Nach Tests, Build und Merge. Einige Tools brauchen einen Test-Run.</p>
+      <p>Nach Tests, Build und Merge. <code>detect_untested_public_api</code> läuft als erster Nach-Implementierungs-Check rein statisch <strong>ohne Test-Run</strong>; nur die Coverage-Tools (<code>analyze_coverage</code>, <code>analyze_test_health</code>) brauchen einen vorherigen Test-Run.</p>
       <div class="phase-tools">
+        <span class="pill">detect_untested_public_api</span>
         <span class="pill">analyze_coverage</span>
         <span class="pill">analyze_test_health</span>
         <span class="pill">analyze_test_quality</span>
@@ -564,6 +565,18 @@
 
       <div class="card card-post">
         <div class="card-header">
+          <div class="card-tool">detect_untested_public_api</div>
+          <div class="phase-dot dot-post"></div>
+        </div>
+        <p class="card-what">Listet public-Symbole (Methoden, Properties, Get/Set-Accessoren) ohne erkennbare Test-Referenz — Heuristik, kein Test-Run. reason: no_test_file / no_reference_found.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum erst danach?</div>
+          <p>Erster Check nach der Implementierung: zeigt neu hinzugekommene API ohne Test, bevor mit analyze_test_quality die Güte der vorhandenen Tests bewertet wird. Statischer Proxy, ersetzt keinen echten Coverage-Report.</p>
+        </div>
+      </div>
+
+      <div class="card card-post">
+        <div class="card-header">
           <div class="card-tool">analyze_test_quality</div>
           <div class="phase-dot dot-post"></div>
         </div>
@@ -641,7 +654,7 @@
   <!-- Decision Matrix -->
   <div class="section">
     <div class="section-label">
-      <span class="section-title-text" style="color:var(--muted2)">Entscheidungsmatrix — alle 23 Tools auf einen Blick</span>
+      <span class="section-title-text" style="color:var(--muted2)">Entscheidungsmatrix — alle 27 Tools auf einen Blick</span>
       <div class="section-bar mixed-bar"></div>
     </div>
     <div class="matrix">
@@ -681,6 +694,12 @@
           <td><span class="phase-badge-sm pb-plan">Planung</span></td>
           <td class="why-col">Impact bestehender API-Änderungen</td>
           <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">find_symbol_references</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Konkrete Aufrufstellen nach analyze_refactoring_safety</td>
+          <td class="limit-col">Kein Build nötig. Datei-Cap 400</td>
         </tr>
         <tr>
           <td class="tool-col">analyze_maintainability_index</td>
@@ -749,6 +768,24 @@
           <td class="limit-col">Kein Build nötig</td>
         </tr>
         <tr>
+          <td class="tool-col">compare_validation_rules</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">FE↔BE-Validierung abgleichen</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">find_api_callers</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">HttpClient-Aufrufe je Endpoint finden</td>
+          <td class="limit-col">Kein Build nötig, nur Angular</td>
+        </tr>
+        <tr>
+          <td class="tool-col">detect_untested_public_api</td>
+          <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
+          <td class="why-col">Ungetestete public-Symbole aufdecken (erster Check)</td>
+          <td class="limit-col">Heuristik, kein Test-Run nötig</td>
+        </tr>
+        <tr>
           <td class="tool-col">analyze_coverage</td>
           <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
           <td class="why-col">Coverage nach Test-Run messen</td>
@@ -799,7 +836,7 @@
     <div>
       <div class="callout-title">Die wichtigste Erkenntnis</div>
       <div class="callout-body">
-        15 von 23 Tools brauchen <strong>keinen Build und keinen Test-Run</strong> — sie arbeiten rein auf dem Quellcode (AST). Nur die Coverage-Tools benötigen einen vorherigen Test-Run. Das bedeutet: der grösste Teil der Qualitätssicherung kann ohne CI/CD-Pipeline, ohne Build-Umgebung und ohne Wartezeit direkt im Editor oder Pre-Commit stattfinden.
+        25 von 27 Tools brauchen <strong>keinen Build und keinen Test-Run</strong> — sie arbeiten rein auf dem Quellcode (AST). Nur die beiden Coverage-Tools benötigen einen vorherigen Test-Run. Das bedeutet: der grösste Teil der Qualitätssicherung kann ohne CI/CD-Pipeline, ohne Build-Umgebung und ohne Wartezeit direkt im Editor oder Pre-Commit stattfinden.
       </div>
     </div>
   </div>

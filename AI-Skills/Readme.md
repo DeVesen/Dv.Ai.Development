@@ -51,7 +51,7 @@ Story 287638 resolved
 
 ### plan-agent
 
-Orchestriert den 6-Phasen Planning Workflow. Koordiniert Scouts (Phase 3), Topic-Planer (Phase 4b) und Drei-Perspektiven-Review (Phase 5). Liefert ein finales Planpaket mit Umsetzungs-Topologie (IMP-FE-*/IMP-BE-*-Slices).
+Orchestriert den 6-Phasen Planning Workflow. Koordiniert Scouts (Phase 3), Topic-Planer (Phase 4b) und Fuenf-Perspektiven-Review (Phase 5). Liefert ein finales Planpaket mit Umsetzungs-Topologie (IMP-FE-*/IMP-BE-*-Slices).
 
 **Ausgelöst durch:** `rules/planning-workflow-skill.mdc`
 
@@ -59,7 +59,7 @@ Orchestriert den 6-Phasen Planning Workflow. Koordiniert Scouts (Phase 3), Topic
 
 | Operation | Beschreibung | Direkte Sub-Agents |
 |-----------|-------------|-------------------|
-| Planning starten | Vollständiger 6-Phasen-Workflow | `plan-agent-scout`, `plan-agent-topic-planner`, `plan-agent-optimist`, `plan-agent-pessimist`, `plan-agent-normalo` |
+| Planning starten | Vollständiger 6-Phasen-Workflow | `plan-agent-scout`, `plan-agent-topic-planner`, `plan-review-optimist-agent`, `plan-review-pessimist-agent`, `plan-review-normalo-agent`, `plan-review-oberlehrer-agent`, `plan-review-professor-agent` |
 | Vorgehen klären | Implizites Planning bei Strategie-/Architektur-Fragen | (wie oben) |
 | Optionen vergleichen | Trade-off-Analyse mit Planungs-Output | (wie oben) |
 
@@ -315,9 +315,11 @@ Statische Code-Analyse über MCP (AST, Index, Refactoring-Safety, Nullability, A
 | Symbol suchen | Planung | Bei Klassen-/Methoden-Bezug → `find_in_index` |
 | Klassen-Split prüfen | Planung | `suggest_class_splits` bei Erweiterung bestehender Klasse |
 | Refactoring-Safety | Planung | `analyze_refactoring_safety` bei API-Änderungen |
+| Aufrufstellen auflisten | Planung | `find_symbol_references` — konkrete Call-Sites (Datei/Zeile/Methode) nach `analyze_refactoring_safety` |
 | Datei reviewen | Implementierung | `review_file` / `review_code` |
 | Diff reviewen | Implementierung | `review_git_diff` — vor Commit |
 | Komplexität prüfen | Implementierung | `analyze_complexity` |
+| Ungetestete public API | Nach-Impl. | `detect_untested_public_api` — Heuristik, kein Test-Run; erster Check |
 | Test-Qualität prüfen | Nach-Impl. | `analyze_test_quality` |
 | Coverage auswerten | Nach-Impl. | `analyze_coverage` — nach Test-Run |
 | Vollständiger Bericht | Nach-Impl. | `analyze_advanced_all` — Sprint-End/Release |
@@ -836,7 +838,7 @@ Workflows sind Packages mit mehrphasigem Ablauf, dedizierten Sub-Agents und stri
 
 ### planning-workflow
 
-6-Phasen Planungsworkflow: Anforderung → Scouts → Schnittstellen-Design → Topic-Planer → Drei-Perspektiven-Review → Synthese + Umsetzungs-Topologie.
+6-Phasen Planungsworkflow: Anforderung -> Scouts -> Schnittstellen-Design -> Topic-Planer -> Fuenf-Perspektiven-Review -> Synthese + Umsetzungs-Topologie.
 
 **Abhängigkeiten:** _keine_
 
@@ -881,9 +883,11 @@ lass uns planen
 |-------|-------|---------|
 | `agents/plan-agent-scout.md` | Phase 3 | Codebereichs-Scouting (read-only, MCP-first, YAGNI) |
 | `agents/plan-agent-topic-planner.md` | Phase 4b | Einzelnes Topic planen mit IMP-* Slices und Parallelisierungs-Hinweisen |
-| `agents/plan-agent-optimist.md` | Phase 5 | Risiko-Review aus konstruktiver Perspektive |
-| `agents/plan-agent-pessimist.md` | Phase 5 | Risiko-Review aus skeptischer Perspektive + MCP Coverage/Nullability |
-| `agents/plan-agent-normalo.md` | Phase 5 | Risiko-Review aus pragmatischer Perspektive (Ausführbarkeit) |
+| `agents/plan-review-optimist-agent.md` | Phase 5 | Risiko-Review aus konstruktiver Perspektive |
+| `agents/plan-review-pessimist-agent.md` | Phase 5 | Risiko-Review aus skeptischer Perspektive |
+| `agents/plan-review-normalo-agent.md` | Phase 5 | Risiko-Review aus pragmatischer Perspektive (Ausführbarkeit) |
+| `agents/plan-review-oberlehrer-agent.md` | Phase 5 | Pedantischer Qualitäts-Review |
+| `agents/plan-review-professor-agent.md` | Phase 5 | Tiefenanalyse mit Priorisierung |
 
 #### Parameters
 
@@ -893,7 +897,7 @@ _keine_
 
 ### implementation-workflow
 
-Agent-Mode Umsetzung in 1–10 Slices mit Hard Gate, Verifikations-Subagents pro Stack und Pflicht-genericRTK nach jedem Build-/Test-Lauf.
+Agent-Mode Umsetzung in 1–10 Slices mit Hard Gate und iterativem Implement-Review-Loop (Technik-Gate, 6 Reviews, Fix-Planer, Fix-Slices) bei Pflicht-genericRTK.
 
 **Abhängigkeiten:** `genericrtk-filter`
 
@@ -926,7 +930,7 @@ implementiere die Erweiterung laut Plan
 
 | Datei | Inhalt |
 |-------|--------|
-| `skills/implementation-workflow/SKILL.md` | Hard Gate (Schritt 1), Slice-Implementierung (Schritt 2), Stack-Verifikation (Schritt 3) |
+| `skills/implementation-workflow/SKILL.md` | Hard Gate (Schritt 1), Slice-Implementierung (Schritt 2), iterativer Implement-Review-Loop (Schritt 3) |
 
 #### References
 
@@ -940,7 +944,13 @@ implementiere die Erweiterung laut Plan
 | Agent | Schritt | Aufgabe |
 |-------|---------|---------|
 | `agents/implement-agent.md` | Schritt 2 | Implementiert einen IMP-* Slice inkl. Build/Test + genericRTK |
-| `agents/verify-agent.md` | Schritt 3 | Stack-weite Verifikation nach Integration-Checkpoint (Release-Build + Unit-Tests) |
+| `agents/implement-review-pessimist-agent.md` | Schritt 3 | Risiko-Review mit MCP-Evidenz |
+| `agents/implement-review-lehrer-agent.md` | Schritt 3 | Fachlich-strenger Review |
+| `agents/implement-review-normalo-agent.md` | Schritt 3 | Pragmatischer Ausführbarkeits-Review |
+| `agents/implement-review-oberlehrer-agent.md` | Schritt 3 | Pedantischer Form-/Qualitäts-Review |
+| `agents/implement-review-professor-agent.md` | Schritt 3 | Tiefenreview mit Priorisierung |
+| `agents/implement-review-optimist-agent.md` | Schritt 3 | Stärken- und Chancen-Review |
+| `agents/implement-fix-planner-agent.md` | Schritt 3 | Evidenzbasierte Fix-Teilplanung |
 
 #### Parameters
 

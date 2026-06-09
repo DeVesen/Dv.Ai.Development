@@ -1,6 +1,6 @@
 {
   "name": "planning-workflow",
-  "description": "6-phase planning workflow: scouts, topic planners, three-perspective review, implementation topology",
+  "description": "6-phase planning workflow: scouts, topic planners, five-perspective review, implementation topology",
   "rules": [
     "rules/planning-workflow-skill.mdc"
   ],
@@ -10,9 +10,11 @@
   "agents": [
     "agents/plan-agent-scout.md",
     "agents/plan-agent-topic-planner.md",
-    "agents/plan-agent-optimist.md",
-    "agents/plan-agent-pessimist.md",
-    "agents/plan-agent-normalo.md"
+    "agents/plan-review-optimist-agent.md",
+    "agents/plan-review-pessimist-agent.md",
+    "agents/plan-review-normalo-agent.md",
+    "agents/plan-review-oberlehrer-agent.md",
+    "agents/plan-review-professor-agent.md"
   ],
   "references": [
     "references/subagent-model-before-task.md"

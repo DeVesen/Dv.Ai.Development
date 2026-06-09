@@ -1,4 +1,4 @@
-# Tool-Übersicht: Alle verfügbaren Tools (26)
+# Tool-Übersicht: Alle verfügbaren Tools (27)
 
 ## ① Code Review
 
@@ -18,6 +18,7 @@
 |------|------------|
 | `index_project` | Vollständige Landkarte des Projekts: alle Klassen, Services, Components, Routes, Abhängigkeitsgraph, Architektur-Warnungen. Wird gecacht (5 min). |
 | `find_in_index` | Gezielt nach einer Klasse, einem Service oder Interface suchen — gibt Datei, Zeile, Methoden und Abhängigkeiten zurück. |
+| `find_symbol_references` | **NEU v2.3** — Listet alle konkreten Aufrufstellen eines benannten Symbols (Methode/Funktion/Property/Klasse) als Tabelle Datei/Zeile/Methode/Snippet. Die Detailstufe nach `analyze_refactoring_safety`: statt nur einer Zahl die exakten Stellen. Angular (ts-morph) + .NET (Roslyn). `filePath` disambiguiert gleichnamige Symbole. |
 | `review_with_index` | Review einer Datei mit vollem Projektkontext — das LLM sieht den ganzen Abhängigkeitsgraphen bevor es die Datei liest. |
 
 ## ③ Erweiterte Code-Analyse
@@ -28,7 +29,7 @@
 | `analyze_dead_code` | Findet Code der nicht mehr genutzt wird: private Methoden/Felder die nie aufgerufen werden, unused Imports, nie verwendete Interfaces. |
 | `analyze_nullability` | Stellen wo das Programm abstürzen kann weil ein Wert unerwartet leer ist: !, .Result, FirstOrDefault().Property ohne Check, subscribe ohne error-Handler. |
 | `analyze_duplicates` | Findet Methoden mit identischer Logik an verschiedenen Stellen — via normalisiertem AST-Hash (erkennt Duplikate trotz anderer Variablennamen). |
-| `analyze_refactoring_safety` | Zeigt wie viele Stellen im Projekt eine Methode oder Klasse verwenden, ob sie Teil eines Interface-Kontrakts ist, ob Templates betroffen sind. Risikoabschätzung vor dem Umbau. |
+| `analyze_refactoring_safety` | Zeigt wie viele Stellen im Projekt eine Methode oder Klasse verwenden, ob sie Teil eines Interface-Kontrakts ist, ob Templates betroffen sind. Risikoabschätzung vor dem Umbau. Danach `find_symbol_references` für die konkreten Aufrufstellen (Datei/Zeile). |
 | `generate_auto_fixes` | Erstellt konkrete Before/After-Fixes: Angular (@Input→input(), *ngIf→@if, \| async→toSignal(), OnPush), .NET (.Result→await, fehlende CancellationToken, null-Guards). |
 | `analyze_dataflow` | Verfolgt wie Daten zwischen Klassen fließen — findet nullable Rückgabewerte die ohne Null-Check weiterverwendet werden, nicht-awaitete Tasks, unsubscribed Observables. |
 | `analyze_advanced_all` | Führt alle 7 obigen Analysen in einem Aufruf aus und liefert einen Gesamtbericht. |
@@ -53,6 +54,7 @@
 |------|------------|
 | `analyze_coverage` | Liest lcov.info (Angular) oder coverage.cobertura.xml (.NET) und zeigt Line/Branch/Function-Coverage pro Datei, Grade A–F, nicht-gecoverte Methoden namentlich. Kein eigener Test-Run — braucht vorhandenen Report. |
 | `analyze_test_quality` | Analysiert Testdateien statisch ohne sie auszuführen: findet Tests ohne Assertions, Tautologien (expect(true).toBe(true)), Mock-Heavy-Tests, fehlende Fehler-Szenarien, blockierendes async. |
+| `detect_untested_public_api` | **NEU v2.3** — Listet public-Symbole (Methoden, Properties, Get/Set-Accessoren) ohne erkennbare Test-Referenz — rein statisch, Heuristik, kein Test-Run. Angular: Abgleich gegen `*.spec.ts` im **gleichen oder beliebigen übergeordneten** Verzeichnis (Import-Gate + Member-Match). .NET: Roslyn-Scan public-Member gegen Test-Projekt — deckt auch `record`/`struct` (inkl. positionaler Properties) ab; die .NET-pro-Klasse-Zuordnung ist mangels echtem Import-System „looser"/heuristischer als das TS-Import-Gate (bewusste Limitation). `reason`: `no_test_file` (kein Spec/Test) oder `no_reference_found` (Test existiert, Symbol nie referenziert). `path` / `type` (auto) / `depth` (file\|project). |
 | `analyze_test_health` | Kombiniert Coverage-Report und Test-Qualität in einem Dashboard — zeigt priorisiert was zuerst angegangen werden sollte. |
 
 ## Wichtige Parameter
@@ -61,14 +63,14 @@
 
 | Parameter | Verwendet von | Format |
 |-----------|--------------|--------|
-| `projectPath` | `index_project`, `review_with_index` | `/workspace/<relativer/pfad>` z.B. `/workspace/src/frontend` |
-| `filePath` | `review_file`, `analyze_ast_only`, `analyze_complexity` u.a. | `/workspace/<relativer/pfad/datei.ts>` |
+| `projectPath` | `index_project`, `review_with_index`, `find_symbol_references` | `/workspace/<relativer/pfad>` z.B. `/workspace/src/frontend` |
+| `filePath` | `review_file`, `analyze_ast_only`, `analyze_complexity`, `find_symbol_references` (optional) u.a. | `/workspace/<relativer/pfad/datei.ts>` |
 | `filePaths` | `review_files_batch` | Array von `/workspace/...`-Pfaden |
 | `type` | alle dateibasierten Tools | `"angular"` \| `"dotnet"` \| `"auto"` |
 
 **Niemals** Windows-Pfade (`C:\...`) oder nur IDE-relative Pfade (`src/...`) übergeben — der Container kennt nur `/workspace/`.
 
-Kein Build nötig für 23 der 25 Tools — nur die Coverage-Tools brauchen einen vorherigen Test-Run.
+Kein Tool benötigt einen Build. 25 der 27 Tools brauchen zusätzlich **keinen vorherigen Test-Run** — nur die beiden Coverage-Tools (`analyze_coverage`, `analyze_test_health`) setzen einen Test-Run voraus.
 
 ## Parameter: `format` (v2.2+)
 

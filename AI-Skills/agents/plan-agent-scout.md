@@ -61,6 +61,14 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 - Wenn Scope-Bereich **> 3 Dateien** → `detect_god_classes(projectPath, top: 5)` → God-Class-Kandidaten im betroffenen Bereich in Deliverable-Abschnitt **6** (Complexity Hotspots) ergänzen.
 - Fallback (nur bei MCP-Fehler): Read/Grep mit Dokumentation des Grunds.
 
+**Schritt 1b — Dev-Filesystem-MCP (optional, ergänzend zu code-review-mcp):**
+- Nach `find_in_index`, wenn konkrete Dateipfade bekannt:
+  - `read_class_summary`: Klassen-Übersicht ohne Body (statt ganze Datei laden)
+  - `read_signatures_only`: Public-API für Interface-Verständnis
+  - `find_implementations`: alle Implementierungen eines Interfaces
+- Pfade absolut übergeben (`/project/...` bei Docker-Mount).
+- Fallback wenn nicht verfügbar: Schritt 1 (code-review-mcp) allein genügt.
+
 **Schritt 2 — Erweiterte MCP-Analyse** (nach `find_in_index`, sofern konkrete Klassen/Methoden in Scope-Dateien aufgelöst):
 
 | Schritt | MCP-Call (primär) | Fallback (nur bei MCP-Fehler) | Bedingung |

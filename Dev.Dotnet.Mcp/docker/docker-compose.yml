@@ -1,0 +1,14 @@
+services:
+  dv-dev-dotnet-mcp:
+    build:
+      context: ..
+      dockerfile: Dev.Dotnet.Mcp/Dockerfile
+      args:
+        BUILD_NUMBER: ${BUILD_NUMBER:-0}
+    image: dv-dev-dotnet-mcp:local
+    stdin_open: true
+    tty: false
+    ports:
+      - "127.0.0.1:8093:8093"
+    environment:
+      LOG_VIEWER_PORT: "8093"

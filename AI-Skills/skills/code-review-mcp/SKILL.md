@@ -329,6 +329,20 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 - **Kurz:** max. 10 Bullets gesamt; Fokus auf Auffälligkeiten, nicht auf Selbstverständliches.
 - **Immer ausgeben** — auch wenn alles reibungslos lief (dann kurz „keine Auffälligkeiten" + Bestätigung).
 
+## Abgrenzung zu dev-filesystem-mcp
+
+| Aufgabe | Empfohlener MCP |
+|---------|----------------|
+| Eine Methode / eine Klasse lesen | dev-filesystem-mcp |
+| Datei nach Name oder Inhalt suchen | dev-filesystem-mcp |
+| Interface-Implementierungen finden | dev-filesystem-mcp |
+| Komplexität, Refactoring-Safety | code-review-mcp |
+| Symbol-Index über ganzen Stack | code-review-mcp |
+| Build-Output analysieren | code-review-mcp / genericRTK |
+| Nullability, Duplikate, Coverage | code-review-mcp |
+
+**Faustregel: Lesen → dev-filesystem-mcp (`/project`). Analysieren → code-review-mcp (`/workspace`).**
+
 ## Opt-out
 
 `kein code-review-mcp` → Skill nicht laden.

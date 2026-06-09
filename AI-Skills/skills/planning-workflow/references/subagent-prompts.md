@@ -44,6 +44,14 @@ Schritt 1 — Basis-Landkarte (Pflicht):
    Bei Fehler: max. 2 Versuche je Stack dokumentieren, dann MCP-Fallback erklaeren.
    UI-only-Begriffe ohne Symbol ausnehmen.
 
+Schritt 1b — Dev-Filesystem-MCP (optional, ergaenzend zu code-review-mcp):
+   Nach find_in_index, wenn konkrete Dateipfade bekannt:
+   - read_class_summary: Klassen-Uebersicht ohne Body
+   - read_signatures_only: Public-API fuer Interface-Verstaendnis
+   - find_implementations: alle Implementierungen eines Interfaces
+   Pfade absolut (/project/... bei Docker-Mount).
+   Fallback wenn nicht verfuegbar: Schritt 1 allein genuegt.
+
 Schritt 2 — Erweiterte MCP-Analyse (nach find_in_index, wenn konkrete Klassen/Methoden aufgeloest):
    A. analyze_complexity auf betroffene Dateien (primaer) | Fallback: Methoden-Laenge via Grep
       — Bedingung: mind. 1 Klasse/Methode im Scope aufgeloest

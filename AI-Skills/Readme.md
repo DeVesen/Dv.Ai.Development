@@ -364,6 +364,143 @@ _keine — `{frontend-path}` / `{backend-path}` werden aus `./AGENTS.md` gelesen
 
 ---
 
+### dev-filesystem-mcp
+
+Token-effizientes Lesen und Suchen in `.cs` / `.ts` — Datei-Glob, Content-Regex, Roslyn/Regex-Reads ohne Vollfile-Dumps.
+
+**Abhängigkeiten:** _keine_
+
+#### Operations
+
+| Operation | Trigger / MCP-Tool |
+|-----------|-------------------|
+| Datei finden | `find_file` |
+| Inhalt suchen | `find_by_content` |
+| Interface-Implementierungen | `find_implementations` |
+| Signaturen lesen | `read_signatures_only` |
+| Einzelne Methode | `read_method` |
+| Klassen-Übersicht | `read_class_summary` |
+
+```
+finde UserService.ts
+was macht diese Klasse
+zeig mir die Signaturen
+```
+
+#### Rules
+
+| Datei | Trigger |
+|-------|---------|
+| `rules/dev-tooling-mcp.mdc` | `*.cs`, `*.ts` — Lesen/Suchen |
+
+#### Skills
+
+| Datei | Inhalt |
+|-------|--------|
+| `skills/dev-tooling-mcp/SKILL.md` | 8 Tools, Pfadkonvention `/project`, Abgrenzung code-review-mcp |
+
+#### References
+
+_keine_
+
+#### Sub-Agents
+
+_keine_
+
+#### Parameters
+
+_keine_
+
+---
+
+### dev-angular-mcp
+
+Angular-Scaffolding via `ng generate` mit Projekt-Conventions — Komponenten und Services.
+
+**Abhängigkeiten:** _keine_
+
+#### Operations
+
+| Operation | Trigger / MCP-Tool |
+|-----------|-------------------|
+| Komponente scaffolden | `scaffold_angular_component` |
+| Service scaffolden | `scaffold_angular_service` |
+
+```
+neue Komponente user-profile
+ng generate service für den Warenkorb
+```
+
+#### Rules
+
+| Datei | Trigger |
+|-------|---------|
+| `rules/dev-tooling-mcp.mdc` | `*.ts` — Scaffolding |
+
+#### Skills
+
+| Datei | Inhalt |
+|-------|--------|
+| `skills/dev-tooling-mcp/SKILL.md` | Tool-Parameter, Output-Format |
+
+#### References
+
+_keine_
+
+#### Sub-Agents
+
+_keine_
+
+#### Parameters
+
+_keine_
+
+---
+
+### dev-dotnet-mcp
+
+.NET-Scaffolding via `dotnet new` und Verzeichnisstrukturen aus JSON.
+
+**Abhängigkeiten:** _keine_
+
+#### Operations
+
+| Operation | Trigger / MCP-Tool |
+|-----------|-------------------|
+| Projekt scaffolden | `scaffold_dotnet_project` |
+| Verzeichnisbaum | `create_directory_structure` |
+
+```
+dotnet new classlib für Domain
+Ordnerstruktur für Clean Architecture
+```
+
+#### Rules
+
+| Datei | Trigger |
+|-------|---------|
+| `rules/dev-tooling-mcp.mdc` | `*.cs` — Scaffolding |
+
+#### Skills
+
+| Datei | Inhalt |
+|-------|--------|
+| `skills/dev-tooling-mcp/SKILL.md` | Tool-Parameter, Output-Format |
+
+#### References
+
+_keine_
+
+#### Sub-Agents
+
+_keine_
+
+#### Parameters
+
+_keine_
+
+---
+
 ### angular-bundle
 
 Kern-Angular-Skills für v20+: Patterns, Signals, DI, Routing, Forms, neue App-Einrichtung, Cache-Busting.
@@ -1013,7 +1150,7 @@ Nach der Installation alle `{parameter}`-Platzhalter in `agents/`, `rules/` und 
 
 | Datei | Was zu tun ist |
 |-------|---------------|
-| `mcp.json` | MCP-Server konfigurieren (ADO-Organisation, Docker-Images) |
+| `mcp.json` | MCP-Server konfigurieren (ADO-Organisation, Docker-Images). Dev-Tooling-Ports: **8091** (filesystem), **8092** (angular), **8093** (dotnet) |
 | `AGENTS.md` (Repo-Root) | Verfügbare Agent-Typen, Trigger, Stack-Konventionen, Styleguide |
 | `references/verification-commands.md` | Build/Test-Befehle pro Stack eintragen |
 | `skills/ado/config.defaults.json` | `defaultProject` (GUID) + `defaultOrganization` setzen (nur ADO) |

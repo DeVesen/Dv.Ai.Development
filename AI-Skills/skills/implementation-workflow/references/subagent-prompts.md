@@ -54,9 +54,20 @@ Working directory: [absolute path]
 
 Hard rules:
 - **Agent:** `implement-agent`. **Slice scope only** — not stack-wide Technik-Gate (Schritt 3).
+- **Pre-Coding (wenn dev-tooling-mcp verfügbar):** Vor erstem Code-Edit in bestehenden Dateien — `read_class_summary` oder `read_signatures_only` auf Scope-Dateien (`/project/...`); `read_method` nur für die konkrete Änderungsmethode. Kein voller `Read` als Ersatz wenn MCP ok. Skill: [dev-tooling-mcp/SKILL.md](../../dev-tooling-mcp/SKILL.md).
 - **Build/Test (slice-scoped):** dotnet/ng/npm build/test for this slice only.
 - **Every** run: genericRTK checklist 1–8; diagnose only from internally read MCP.
 - **Forbidden:** stack-wide Technik-Gate; raw console without MCP chain.
+
+Pre-Coding (wenn dev-tooling-mcp verfuegbar):
+  Vor Bearbeitung bestehender Dateien:
+    read_method / read_class_summary statt ganze Datei laden (dev-filesystem-mcp)
+    read_signatures_only fuer Kontext zu angrenzenden Klassen
+  Beim Erstellen neuer Dateien:
+    scaffold_angular_component / scaffold_angular_service via dev-angular-mcp
+    scaffold_dotnet_project via dev-dotnet-mcp
+    create_directory_structure fuer Verzeichnisstrukturen
+  Alle Pfade absolut uebergeben.
 
 Reply with: summary, touched paths, Verifikations-Matrix per run, blockers.
 ```

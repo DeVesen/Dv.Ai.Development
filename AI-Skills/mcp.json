@@ -70,6 +70,62 @@
         "work",
         "work-items"
       ]
+    },
+    "dev-filesystem-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-p",
+        "127.0.0.1:8091:8091",
+        "-v",
+        "${workspaceFolder}:/project:ro",
+        "-e",
+        "PROJECT_ROOT=/project",
+        "devesen/dv.dev-filesystem-mcp:latest"
+      ],
+      "transport": "stdio",
+      "autoApprove": [
+        "find_file",
+        "find_by_content",
+        "find_implementations",
+        "read_signatures_only",
+        "read_method",
+        "read_class_summary"
+      ]
+    },
+    "dev-angular-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-p",
+        "127.0.0.1:8092:8092",
+        "devesen/dv.dev-angular-mcp:latest"
+      ],
+      "transport": "stdio",
+      "autoApprove": [
+        "scaffold_angular_component",
+        "scaffold_angular_service"
+      ]
+    },
+    "dev-dotnet-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-p",
+        "127.0.0.1:8093:8093",
+        "devesen/dv.dev-dotnet-mcp:latest"
+      ],
+      "transport": "stdio",
+      "autoApprove": [
+        "scaffold_dotnet_project",
+        "create_directory_structure"
+      ]
     }
   }
 }

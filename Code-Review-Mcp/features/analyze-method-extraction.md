@@ -7,7 +7,7 @@ Dieses Feature sagt: „Methode X hat CC 14 — hier sind die 3 logischen Blöck
 
 Nicht nur Messung — sondern direkt umsetzbarer Refactoring-Hinweis.  
 **BoyScoutRule**: beim Anfassen einer Datei sofort handhabbare Extraktionskandidaten sehen.  
-**Scout Phase 3**: Hotspot-Sektion (Abschnitt 7) erhält konkrete Extraktionsvorschläge statt bloßer Metriken.
+**Scout Phase 3**: Hotspot-Sektion (Abschnitt 6) erhält konkrete Extraktionsvorschläge statt bloßer Metriken.
 
 ## Gilt für
 
@@ -72,7 +72,7 @@ Aufgerufen über `src/analyzers/roslyn-runner.ts`.
 Neuer Eintrag nach `analyze_complexity`.
 
 **plan-agent-scout.md** — Schritt 2A (Komplexitäts-Check):  
-Bei CC ≥ 10 oder Method-LOC ≥ 30 in Scope-Dateien → `analyze_method_extraction_candidates` nachschalten → Kandidaten in Abschnitt 7 (Complexity Hotspots) ergänzen.
+Bei CC ≥ 10 oder Method-LOC ≥ 30 in Scope-Dateien → `analyze_method_extraction_candidates` nachschalten → Kandidaten in Abschnitt 6 (Komplexitäts-Hotspots) ergänzen.
 
 **SKILL.md (code-review-mcp)** — BoyScoutRule Post-Implementation:  
 `analyze_method_extraction_candidates` auf alle geänderten Dateien → wenn Kandidaten vorhanden: als Sofort-Vorschlag ausgeben (kein separater Review nötig).

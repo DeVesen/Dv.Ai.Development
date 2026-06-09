@@ -83,7 +83,7 @@ Neuer Modus `project-scan` in `roslyn-split.csx` statt neuem Script.
 Neuer Eintrag `detect_god_classes` — „projektweit, kein Datei-Input nötig".
 
 **plan-agent-scout.md** — Schritt 1 (nach index_project):  
-Wenn Scope-Bereich > 3 Dateien → `detect_god_classes(projectPath, top: 5)` → God-Class-Kandidaten im Scope-Bereich in Abschnitt 7 (Complexity Hotspots) ergänzen.
+Wenn Scope-Bereich > 3 Dateien → `detect_god_classes(projectPath, top: 5)` → God-Class-Kandidaten im Scope-Bereich in Abschnitt 6 (Komplexitäts-Hotspots) ergänzen.
 
 **SKILL.md (code-review-mcp)** — BoyScoutRule Post-Implementation:  
 `detect_god_classes(projectPath, top: 3)` nach Implementierung — wenn neue Klasse unter Top-3 auftaucht: als `warning` ausgeben.

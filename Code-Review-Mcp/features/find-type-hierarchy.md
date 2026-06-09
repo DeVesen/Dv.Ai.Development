@@ -58,7 +58,7 @@ Neuer Eintrag `find_type_hierarchy`.
 | „Interface oder Basisklasse wird geändert" | `find_type_hierarchy(direction: "down")` | alle Implementierungen als Scope-Liste |
 
 **plan-agent-scout.md** — Schritt 2:  
-Wenn `find_in_index`-Treffer ein Interface oder eine abstrakte Klasse ist → `find_type_hierarchy(direction: "down")` → alle Ableitungen in Abschnitt 2 (Entry Points) ergänzen.
+Wenn `find_in_index`-Treffer ein Interface oder eine abstrakte Klasse ist → `find_type_hierarchy(direction: "down")` → alle Ableitungen in Abschnitt 2 (Konkrete Einstiegspunkte) ergänzen.
 
 **plan-agent-topic-planner.md** — Mandatory MCP steps:  
 Wenn Interface im Topic-Scope → `find_type_hierarchy` vor Schritt-Planung um vollständigen Implementor-Scope zu kennen.

@@ -58,10 +58,10 @@ Implementierung in `src/analyzers/ts-morph-analyzer.ts` als neue Methode `getCom
 **op-tool-overview.md** — neue Kategorie ⑦ Compiler & Build (oder Ergänzung zu ③):  
 Eintrag `analyze_compiler_diagnostics` mit Hinweis „echter Compiler, keine Heuristik".
 
-**plan-agent-scout.md** — Schritt 0 (vor index_project):  
-Optionaler Pre-Check: `analyze_compiler_diagnostics(projectPath, severity: "error")` — wenn Fehler vorhanden → in Deliverable Abschnitt 5 (Risiken) als „Build-Fehler im Scope" melden, kein Blocker aber explizit sichtbar.
+**plan-agent-scout.md** — vor Schritt 1 (optionaler Pre-Check):  
+`analyze_compiler_diagnostics(projectPath, severity: "error")` vor `index_project` — wenn Fehler vorhanden → in Deliverable Abschnitt 4 (Risiken und Annahmen) als „Build-Fehler im Scope" melden, kein Blocker aber explizit sichtbar.
 
-**plan-agent-pessimist.md** — Mandatory checks:  
+**plan-agent-pessimist.md** — Optionale MCP-Checks (neuer Schritt C):  
 `analyze_compiler_diagnostics` auf Scout-Scope mit `severity: "error"` — Compiler-Fehler = harter Blocker im Pessimist-Report.
 
 **SKILL.md (code-review-mcp)** — BoyScoutRule Post-Implementation:  

@@ -108,7 +108,9 @@
       "transport": "stdio",
       "autoApprove": [
         "scaffold_angular_component",
-        "scaffold_angular_service"
+        "scaffold_angular_service",
+        "build_angular_project",
+        "test_angular_project"
       ]
     },
     "dev-dotnet-mcp": {
@@ -124,7 +126,9 @@
       "transport": "stdio",
       "autoApprove": [
         "scaffold_dotnet_project",
-        "create_directory_structure"
+        "create_directory_structure",
+        "build_dotnet_solution",
+        "test_dotnet_solution"
       ]
     }
   }

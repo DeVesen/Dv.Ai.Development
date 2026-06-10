@@ -24,16 +24,18 @@ dev-filesystem-mcp
   Mount: /project · Parameter: file_path, root (nicht path/filePath)
 
 dev-angular-mcp
-  Stärken: Angular-Komponenten und Services scaffolden
-  Bevorzugt wenn: neue Komponente oder Service erstellen
+  Stärken: Angular-Komponenten und Services scaffolden · Angular-Projekt bauen und testen (Output intern gefiltert)
+  Bevorzugt wenn: neue Komponente oder Service erstellen · ng build oder ng test ausführen
+  Tools: scaffold_angular_component, scaffold_angular_service, build_angular_project, test_angular_project
   Skill: .cursor/skills/dev-angular-mcp/SKILL.md
   Kein Mount · Parameter: project_root (Host-Absolut)
 
 dev-dotnet-mcp
-  Stärken: .NET Projekte und Verzeichnisstrukturen scaffolden
-  Bevorzugt wenn: neues .NET-Projekt erstellen · Verzeichnisstruktur anlegen
+  Stärken: .NET Projekte und Verzeichnisstrukturen scaffolden · .NET Solution/Projekt bauen und testen (Output intern gefiltert)
+  Bevorzugt wenn: neues .NET-Projekt erstellen · Verzeichnisstruktur anlegen · dotnet build oder dotnet test ausführen
+  Tools: scaffold_dotnet_project, create_directory_structure, build_dotnet_solution, test_dotnet_solution
   Skill: .cursor/skills/dev-dotnet-mcp/SKILL.md
-  Kein Mount · Parameter: output_path, base_path (Host-Absolut)
+  Kein Mount · Parameter: output_path, base_path, path (Host-Absolut)
 
 build-log-filter
   Stärken: Build- und Test-Output komprimieren und filtern

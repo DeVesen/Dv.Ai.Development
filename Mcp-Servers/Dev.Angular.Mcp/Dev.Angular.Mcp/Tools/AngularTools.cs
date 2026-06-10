@@ -10,10 +10,11 @@ using ModelContextProtocol.Server;
 
 namespace Dev.Angular.Mcp.Tools;
 
-/// <summary>MCP tools for Angular CLI scaffolding.</summary>
+/// <summary>MCP tools for Angular CLI scaffolding, build, and test.</summary>
 public sealed class AngularTools
 {
     private readonly AngularScaffolder _scaffolder;
+    private readonly AngularRunner _runner;
     private readonly ToolCallHistory _history;
     private readonly ILogger<AngularTools> _logger;
 
@@ -24,9 +25,10 @@ public sealed class AngularTools
         TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
     };
 
-    public AngularTools(AngularScaffolder scaffolder, ToolCallHistory history, ILogger<AngularTools> logger)
+    public AngularTools(AngularScaffolder scaffolder, AngularRunner runner, ToolCallHistory history, ILogger<AngularTools> logger)
     {
         _scaffolder = scaffolder;
+        _runner = runner;
         _history = history;
         _logger = logger;
     }
@@ -63,6 +65,36 @@ public sealed class AngularTools
             () => _scaffolder.ScaffoldServiceAsync(project_root, name, path, options));
     }
 
+    [McpServerTool(Name = "build_angular_project")]
+    [Description(
+        "Runs ng build in the Angular project root and returns a filtered result. " +
+        "Raw console output is never forwarded — only structured errors, warnings, and a summary are returned. " +
+        "Defaults to the 'production' configuration unless overridden.")]
+    public async Task<string> BuildAngularProject(
+        [Description("Absolute path to the Angular project root (angular.json directory)")] string project_root,
+        [Description("Optional build configuration, e.g. production, development")] string? configuration = null)
+    {
+        return await ExecuteAsync(
+            "build_angular_project",
+            new { project_root, configuration },
+            () => _runner.BuildAsync(project_root, configuration));
+    }
+
+    [McpServerTool(Name = "test_angular_project")]
+    [Description(
+        "Runs ng test --watch=false in the Angular project root and returns a filtered result. " +
+        "Raw console output is never forwarded — only failed test names and a summary are returned. " +
+        "For containerized environments add '--browsers=ChromeHeadlessCI' via options.")]
+    public async Task<string> TestAngularProject(
+        [Description("Absolute path to the Angular project root (angular.json directory)")] string project_root,
+        [Description("Optional extra ng test flags, e.g. --browsers=ChromeHeadlessCI")] string? options = null)
+    {
+        return await ExecuteAsync(
+            "test_angular_project",
+            new { project_root, options },
+            () => _runner.TestAsync(project_root, options));
+    }
+
     private async Task<string> ExecuteAsync(
         string toolName,
         object parameters,
@@ -94,6 +126,37 @@ public sealed class AngularTools
         }
     }
 
+    private async Task<string> ExecuteAsync(
+        string toolName,
+        object parameters,
+        Func<Task<BuildResult>> action)
+    {
+        var sw = Stopwatch.StartNew();
+        var paramJson = JsonSerializer.Serialize(parameters, JsonOptions);
+
+        try
+        {
+            var result = await action();
+            sw.Stop();
+
+            var json = JsonSerializer.Serialize(ToBuildResponse(result), JsonOptions);
+            _history.Record(toolName, paramJson, json, sw.ElapsedMilliseconds);
+            _logger.LogInformation(
+                "=== {Tool} ({DurationMs}ms, success={Success}, errors={ErrorCount}) ===",
+                toolName, sw.ElapsedMilliseconds, result.Success, result.Errors.Length);
+
+            return json;
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            var errorJson = JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
+            _history.Record(toolName, paramJson, errorJson, sw.ElapsedMilliseconds);
+            _logger.LogError(ex, "=== {Tool} failed ===", toolName);
+            return errorJson;
+        }
+    }
+
     private static object ToResponse(ScaffoldResult result) => new
     {
         success = result.Success,
@@ -102,5 +165,15 @@ public sealed class AngularTools
         error = result.Error,
         stdout = result.Stdout,
         stderr = result.Stderr,
+    };
+
+    private static object ToBuildResponse(BuildResult result) => new
+    {
+        success = result.Success,
+        command = result.Command,
+        errors = result.Errors,
+        warnings = result.Warnings,
+        exitCode = result.ExitCode,
+        summary = result.Summary,
     };
 }

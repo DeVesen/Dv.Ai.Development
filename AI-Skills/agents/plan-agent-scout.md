@@ -62,11 +62,8 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 - Fallback (nur bei MCP-Fehler): Read/Grep mit Dokumentation des Grunds.
 
 **Schritt 1b — Dev-Filesystem-MCP (optional, ergänzend zu codebase-analyzer):**
-- Nach `find_in_index`, wenn konkrete Dateipfade bekannt:
-  - `read_class_summary`: Klassen-Übersicht ohne Body (statt ganze Datei laden)
-  - `read_signatures_only`: Public-API für Interface-Verständnis
-  - `find_implementations`: alle Implementierungen eines Interfaces
-- Pfade absolut übergeben (`/project/...` bei Docker-Mount).
+- Kanon: `skills/dev-filesystem-mcp/SKILL.md` — `file_path`/`root`, Schema vor Aufruf lesen.
+- Nach `find_in_index`, wenn konkrete Dateipfade bekannt: `read_class_summary`, `read_signatures_only`, `find_implementations` unter `/project/...`.
 - Fallback wenn nicht verfügbar: Schritt 1 (codebase-analyzer) allein genügt.
 
 **Schritt 2 — Erweiterte MCP-Analyse** (nach `find_in_index`, sofern konkrete Klassen/Methoden in Scope-Dateien aufgelöst):

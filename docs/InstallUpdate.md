@@ -158,6 +158,24 @@ Select-String -Path "C:\project\.cursor\**\*" -Pattern '\{frontend-path\}' -Recu
 
 ---
 
+## MCP-Skills (1 Server = 1 Kanon-Skill)
+
+Jeder MCP-Server hat ein eigenes Skill-Paket unter `AI-Skills/skills/<name>/SKILL.md` mit Tools, **exakten Parameter-Namen**, Pfad-Konventionen, JSON-Beispielen und Fehlerdiagnose.
+
+| Package | Kanon-Skill | Router / Rule |
+|---------|-------------|---------------|
+| `codebase-analyzer` | `skills/codebase-analyzer` | `rules/codebase-analyzer.mdc` |
+| `dev-filesystem-mcp` | `skills/dev-filesystem-mcp` | `dependsOn`: `dev-tooling-mcp` |
+| `dev-angular-mcp` | `skills/dev-angular-mcp` | `dependsOn`: `dev-tooling-mcp` |
+| `dev-dotnet-mcp` | `skills/dev-dotnet-mcp` | `dependsOn`: `dev-tooling-mcp` |
+| `dev-tooling-mcp` | `skills/dev-tooling-mcp` (nur Routing) | `rules/dev-tooling-mcp.mdc` |
+| `build-log-filter` | `skills/build-log-filter` | `rules/build-log-filter.mdc` (Prozess) |
+
+- **`mcps.md`** (Projekt-Root): situative Auswahl — wird beim Install/Update aus `$McpHints` ergänzt; Skill-Zeilen manuell in bestehenden Projekten ggf. nachziehen.
+- **`src/docs/mcp-*.md`**: Menschen-Doku mit Verweis auf den Kanon-Skill — keine zweite Parameter-Wahrheit pflegen.
+
+---
+
 ## MCP-Server konfigurieren
 
 ### Cursor

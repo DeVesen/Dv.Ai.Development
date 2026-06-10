@@ -149,7 +149,7 @@ Scout-Verhalten: MCP-Kette gezielt einsetzen um Repo-Fragen zu beantworten. Kein
 1. Bei **`buddy repo-check …`:** Task.md lesen (Task-Brücke) → `## Repo-Fragen` aus Task-Abschnitten ableiten. Sonst: `## Repo-Fragen` aus letztem compress (oder Thread-Stand, wenn compress übersprungen) laden
 2. `./mcps.md` lesen (Datei fehlt → Default: `codebase-analyzer`). Verfügbaren MCP situativ wählen — kein festes Ablaufschema:
    - `codebase-analyzer` → `index_project` → `find_in_index` — wenn Bereich/Symbol unbekannt
-   - `dev-filesystem-mcp` → `read_class_summary`, `read_signatures_only`, `find_implementations` (Pfade `/project/...`) — wenn Klasse/Datei bereits bekannt
+   - `dev-filesystem-mcp` → Kanon [dev-filesystem-mcp/SKILL.md](../dev-filesystem-mcp/SKILL.md) laden; `read_class_summary`, `read_signatures_only`, `find_implementations` mit `file_path`/`root` unter `/project/...` — wenn Klasse/Datei bereits bekannt. **Schema vor Aufruf lesen.**
    - Weitere MCPs aus `./mcps.md`: Stärken lesen, passenden für die jeweilige Repo-Frage wählen
 3. Pro Repo-Frage: nur gezielte MCP-Calls — kein Repo-Rundgang
 
@@ -247,7 +247,7 @@ Wenn repo-check nie lief → Hinweis in Section B unter `## Edge cases / open qu
 | Phase | Laden |
 |-------|-------|
 | intake / compress / diskussion | [buddy-agent-skill.mdc](../../rules/buddy-agent-skill.mdc) |
-| repo-check | [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) + [codebase-analyzer.mdc](../../rules/codebase-analyzer.mdc); optional [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) wenn Pipeline `dev-filesystem-mcp` enthält |
+| repo-check | [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) + [codebase-analyzer.mdc](../../rules/codebase-analyzer.mdc); bei `dev-filesystem-mcp` in `./mcps.md`: [dev-filesystem-mcp/SKILL.md](../dev-filesystem-mcp/SKILL.md) (Kanon); Router: [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) |
 | plan-prompt | [describe-as/SKILL.md](../describe-as/SKILL.md) |
 
 ---
@@ -304,7 +304,8 @@ Ask:   plan-prompt
 - [describe-as/SKILL.md](../describe-as/SKILL.md) — für Phase plan-prompt (Caveman full)
 - [describe-as/references/op-describe-as-text.md](../describe-as/references/op-describe-as-text.md) — op-Template für plan-prompt
 - [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) — für repo-check (Agent-Mode, MCP-Kette); wenn nicht deployed: repo-check fällt auf Default-Pipeline zurück (siehe Phase repo-check)
-- [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) — optional für repo-check wenn `dev-filesystem-mcp` in `./mcps.md` verfügbar
+- [dev-filesystem-mcp/SKILL.md](../dev-filesystem-mcp/SKILL.md) — Kanon für repo-check wenn `dev-filesystem-mcp` in `./mcps.md`
+- [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) — Router (welcher Dev-MCP)
 
 **Opt-out:** `ohne buddy-agent` → Buddy-Profil nicht anwenden.
 

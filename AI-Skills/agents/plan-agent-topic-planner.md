@@ -64,7 +64,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 | A | `analyze_complexity` auf Topic-relevante Dateien | Manuelle Zeilenzahl / Methoden-Zählung via Read | mind. 1 bestehende Klasse im Topic-Scope |
 | B | `analyze_refactoring_safety` auf Klassen, die umgebaut werden | Import-Zählung via Grep als Proxy | nur wenn Klassen-Umbau geplant |
 | C | `find_type_hierarchy` auf Interfaces/abstrakte Basisklassen im Topic-Scope (`direction: "down"`) | Grep auf `implements`/`extends` als Proxy | Interface oder abstrakte Basisklasse wird im Topic geändert |
-| D | dev-filesystem-mcp (optional, wenn verfügbar): `read_class_summary` auf betroffene Klassen; `read_signatures_only` für Interface-/Kontrakt-Verständnis | Read der betreffenden Datei | bestehende Klassen im Topic-Scope |
+| D | dev-filesystem-mcp (optional): Kanon `skills/dev-filesystem-mcp/SKILL.md`; `read_class_summary` / `read_signatures_only` mit `file_path` unter `/project/...` | Read der betreffenden Datei | bestehende Klassen im Topic-Scope |
 
 Kein Call bei reinen Neu-Implementierungen ohne Berührung bestehender Klassen. Ergebnis von Schritt C in IMP-Slice-Scope und Risiken (Schritt 4) einbetten. Ergebnisse in Risiken (Schritt 4) und IMP-Slice-Blocking (Schritt 5/6) einbetten.
 

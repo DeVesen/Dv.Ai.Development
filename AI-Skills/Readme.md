@@ -71,12 +71,16 @@ Jedes Verzeichnis enthält eine `SKILL.md` mit dem Workflow und optional einen `
 |-------|-------------|
 | `ado/` | Work Items laden, analysieren, speichern; Todos, Status, Task-Completion |
 
-**Code-Analyse:**
+**MCP-Kanon (1 Skill = 1 Server):**
 
-| Skill | Beschreibung |
-|-------|-------------|
-| `codebase-analyzer/` | AST, Index, Refactoring-Safety, Nullability, Auto-Fixes |
-| `dev-tooling-mcp/` | Token-effiziente Reads/Search + Angular/dotnet-Scaffolding |
+| Skill | MCP-Server |
+|-------|------------|
+| `codebase-analyzer/` | Index, Review, AST, Refactoring-Safety, Nullability |
+| `dev-filesystem-mcp/` | Token-effizientes Lesen/Suchen (`file_path`, `/project/...`) |
+| `dev-angular-mcp/` | Angular-Scaffolding (`project_root`, Host-Absolut) |
+| `dev-dotnet-mcp/` | .NET-Scaffolding (`output_path`, `base_path`) |
+| `build-log-filter/` | Build-/Test-Log filtern (`filter_output`, `tool_type`) |
+| `dev-tooling-mcp/` | **Router** — welcher Dev-MCP wann (kein eigener Server) |
 
 **Angular-Ökosystem (v20+):**
 
@@ -146,7 +150,7 @@ JSON-Manifeste definieren, welche Artefakte ein Paket enthält und wohin sie dep
 
 **Verfügbare Pakete:**
 
-`ado-requests-stories` · `angular-bundle` · `angular-material-custom-input` · `angular-refactor` · `backend-ef-migrations` · `buddy-agent` · `build-log-filter` · `caveman` · `codebase-analyzer` · `commit-message` · `conversation-insights` · `describe-as` · `describe-as-html-prompt` · `dev-angular-mcp` · `dev-dotnet-mcp` · `dev-filesystem-mcp` · `implementation-workflow` · `planning-workflow`
+`ado-requests-stories` · `angular-bundle` · `angular-material-custom-input` · `angular-refactor` · `backend-ef-migrations` · `buddy-agent` · `build-log-filter` · `caveman` · `codebase-analyzer` · `commit-message` · `conversation-insights` · `describe-as` · `describe-as-html-prompt` · `dev-angular-mcp` · `dev-dotnet-mcp` · `dev-filesystem-mcp` · `dev-tooling-mcp` · `implementation-workflow` · `planning-workflow`
 
 ---
 
@@ -156,7 +160,7 @@ Dateien, die von mehreren Paketen gemeinsam genutzt werden:
 
 | Datei | Inhalt |
 |-------|--------|
-| `mcps.md` | Situative MCP-Auswahlhilfe (codebase-analyzer vs. dev-filesystem-mcp) |
+| `mcps.md` | MCP-Router (wann welcher Server) — Kanon in `skills/<mcp>/SKILL.md` |
 | `subagent-model-before-task.md` | Vorgabe: Model-Sektion des Agent-Profils vor jeder Aufgabe lesen |
 | `verification-commands.md` | Projekt-spezifische Build/Test-Befehle pro Stack |
 

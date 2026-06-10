@@ -12,6 +12,8 @@ alwaysApply: true
 
 # build-log-filter — Build-, Test- und Serve-Ausgaben verdichten
 
+**Tool-Kanon (Parameter, `tool_type`, JSON):** [build-log-filter/SKILL.md](../skills/build-log-filter/SKILL.md)
+
 ## Geltung
 
 Gilt, wenn du **Build-/Test-Verifikation** (z. B. gemäß [`verification-commands.md`](.cursor/references/verification-commands.md)) ausführst oder Konsolen-Output zu **`.NET`** oder **Angular** im Repo anfällt, insbesondere:

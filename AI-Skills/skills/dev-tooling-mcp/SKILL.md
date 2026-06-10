@@ -1,78 +1,48 @@
 ---
 name: dev-tooling-mcp
 description: >
-  Token-effiziente Dev-MCPs für Lesen/Suchen (dev-filesystem-mcp), Angular-Scaffolding
-  (dev-angular-mcp) und .NET-Scaffolding (dev-dotnet-mcp). Trigger: Datei lesen,
-  Klasse verstehen, Methode lesen, find_file, find_by_content, find_implementations,
-  read_signatures_only, read_method, read_class_summary, ng generate, scaffold_angular,
-  dotnet new, Verzeichnisstruktur, create_directory_structure. Nicht für Code-Review,
-  Index oder AST-Analyse — dafür codebase-analyzer.
+  Router für die drei Dev-Tooling-MCPs (filesystem, angular, dotnet). Trigger: welcher
+  Dev-MCP, Datei lesen vs. scaffold, dev-tooling. Lädt nicht die Tool-Details —
+  dafür die jeweiligen Kanon-Skills. Nicht für codebase-analyzer oder build-log-filter.
 disable-model-invocation: true
 ---
 
-# Dev Tooling MCP
+# Dev Tooling MCP — Router
 
-Drei schlanke MCP-Server für **Lesen**, **Suchen** und **Scaffolding** — abgegrenzt von [codebase-analyzer](../codebase-analyzer/SKILL.md) (Analyse, Index, Review).
+Schlanke **Auswahlhilfe** — Kanon (Tools, Parameter, JSON) steht in den Server-Skills:
 
-## Voraussetzungen
-
-- MCP-Server in `.cursor/mcp.json` (Docker-Images aus `dev-*-mcp`-Packages).
-- **dev-filesystem-mcp:** Volume `-v ${workspaceFolder}:/project:ro` — Pfade als `/project/...`
-- **dev-angular-mcp / dev-dotnet-mcp:** Kein Volume — `project_root` / `output_path` / `base_path` als **Host-Absolutpfade** (read-write).
-
-## Tools (8)
-
-| Tool | MCP | Zweck |
-|------|-----|-------|
-| `find_file` | dev-filesystem-mcp | Glob-Suche unter `root` (max 100) |
-| `find_by_content` | dev-filesystem-mcp | Regex pro Zeile, optional `file_glob` |
-| `find_implementations` | dev-filesystem-mcp | Roslyn (.cs) / Regex (.ts), `language: auto` |
-| `read_signatures_only` | dev-filesystem-mcp | Signaturen ohne Methoden-Bodies |
-| `read_method` | dev-filesystem-mcp | Eine Methode/Funktion nach Name |
-| `read_class_summary` | dev-filesystem-mcp | Struktur-Überblick (Basen, Member-Liste) |
-| `scaffold_angular_component` | dev-angular-mcp | `ng generate component` (Default: `--standalone --skip-tests`) |
-| `scaffold_angular_service` | dev-angular-mcp | `ng generate service` (Default: `--skip-tests`) |
-| `scaffold_dotnet_project` | dev-dotnet-mcp | `dotnet new` + optional `dotnet sln add` |
-| `create_directory_structure` | dev-dotnet-mcp | Verzeichnisse aus JSON-Pfadliste |
+| MCP | Kanon-Skill |
+|-----|-------------|
+| dev-filesystem-mcp | [dev-filesystem-mcp/SKILL.md](../dev-filesystem-mcp/SKILL.md) |
+| dev-angular-mcp | [dev-angular-mcp/SKILL.md](../dev-angular-mcp/SKILL.md) |
+| dev-dotnet-mcp | [dev-dotnet-mcp/SKILL.md](../dev-dotnet-mcp/SKILL.md) |
 
 ## Welcher MCP wann?
 
-| Aufgabe | MCP | Nicht |
-|---------|-----|-------|
-| Datei/Klasse/Methode **lesen** (token-sparend) | dev-filesystem-mcp | `Read` ganzer Datei, Grep als Ersatz |
-| Interface-Implementierungen **finden** (strukturell) | dev-filesystem-mcp `find_implementations` | codebase-analyzer `find_type_hierarchy` (Vererbungsgraph) |
-| Angular-Komponente/Service **erzeugen** | dev-angular-mcp | Manuelles File-Write ohne `ng generate` |
-| .NET-Projekt / Ordnerstruktur **anlegen** | dev-dotnet-mcp | Shell `dotnet new` ohne MCP |
-| Code **reviewen**, **indexieren**, Komplexität, Refactoring-Safety | codebase-analyzer | dev-filesystem-mcp |
+| Aufgabe | MCP | Kanon laden |
+|---------|-----|-------------|
+| Datei/Klasse/Methode **lesen** (token-sparend) | dev-filesystem-mcp | dev-filesystem-mcp |
+| Interface-Implementierungen **finden** | dev-filesystem-mcp | dev-filesystem-mcp |
+| Angular-Komponente/Service **erzeugen** | dev-angular-mcp | dev-angular-mcp |
+| .NET-Projekt / Ordnerstruktur **anlegen** | dev-dotnet-mcp | dev-dotnet-mcp |
+| Code **reviewen**, **indexieren**, Komplexität | codebase-analyzer | [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) |
+| Build-/Test-Log **verdichten** | build-log-filter | [build-log-filter/SKILL.md](../build-log-filter/SKILL.md) |
 
-## Pfadkonvention
+## Pfad-Übersicht (nur Merkhilfe)
 
-| MCP | Mount | Parameter |
-|-----|-------|-----------|
-| dev-filesystem-mcp | `${workspaceFolder}:/project:ro` | `root`, `file_path` → `/project/<relativ>` |
-| codebase-analyzer | `${workspaceFolder}:/workspace:ro` | `projectPath`, `filePath` → `/workspace/<relativ>` |
-| dev-angular-mcp | — | `project_root` = Host-Absolutpfad zum Angular-Root (`angular.json`) |
-| dev-dotnet-mcp | — | `output_path`, `base_path` = Host-Absolutpfade |
+| MCP | Mount | Parameter-Namen |
+|-----|-------|-----------------|
+| dev-filesystem-mcp | `/project:ro` | `file_path`, `root` |
+| dev-angular-mcp | — (Host) | `project_root` |
+| dev-dotnet-mcp | — (Host) | `output_path`, `base_path` |
+| codebase-analyzer | `/workspace:ro` | `filePath`, `projectPath` |
 
-**Fehler:** `File not found: /app/...` bei filesystem → Windows- oder IDE-relativen Pfad statt `/project/...` verwenden.
+**Verwechslungsrisiko:** `path` / `filePath` / `file_path` — je Server unterschiedlich; immer Kanon-Skill + Schema lesen.
 
-## Abgrenzung zu codebase-analyzer
+## Situative Auswahl
 
-- **dev-filesystem-mcp:** syntaktisches Lesen/Suchen (Roslyn/Regex), kein Projekt-Index, keine Metriken, kein Review.
-- **codebase-analyzer:** semantische Analyse, `index_project`/`find_in_index` zuerst bei Symbol-Bezug, Review- und Planungs-Tools.
-
-Bei Symbol-Bezug in **Planung/Review:** codebase-analyzer-Landkarte; bei **Implementierung** „nur diese Methode lesen“: dev-filesystem-mcp.
-
-## Log-UI
-
-| MCP | Port | Env |
-|-----|------|-----|
-| dev-filesystem-mcp | 8091 | `LOG_VIEWER_PORT` |
-| dev-angular-mcp | 8092 | `LOG_VIEWER_PORT` |
-| dev-dotnet-mcp | 8093 | `LOG_VIEWER_PORT` |
-
-API: `GET /api/calls` (max 200 Einträge).
+`./mcps.md` im Projekt-Root listet verfügbare Server — kein festes Ablaufschema. Fallback bei MCP-Fehler: Read/Grep mit Begründung.
 
 ## Opt-out
 
-`kein dev-tooling`, `no-dev-tooling`, `skip-dev-tooling` → Skill nicht laden.
+`kein dev-tooling`, `no-dev-tooling`, `skip-dev-tooling` → Router nicht laden.

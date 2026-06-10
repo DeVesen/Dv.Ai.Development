@@ -2,6 +2,8 @@
 
 **Codebase.Analyzer.Mcp** — Automatisierte Code-Reviews und statische Analyse für Angular und .NET/C#.
 
+> **Agent-Kanon:** [`skills/codebase-analyzer/SKILL.md`](../AI-Skills/skills/codebase-analyzer/SKILL.md) — Pfade `/workspace/...`, Parameter `projectPath`/`filePath`, Tool-Operationen.
+
 | Eigenschaft | Wert |
 |-------------|------|
 | Stack | Node.js / TypeScript |

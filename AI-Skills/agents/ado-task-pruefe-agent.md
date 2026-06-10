@@ -57,7 +57,7 @@ Ist `auto` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — auto nic
 | Symbole / Einstiegspunkte | `codebase-analyzer`: `index_project` → `find_in_index` |
 | Komplexität | `codebase-analyzer`: `analyze_complexity` |
 | Refactoring-Sicherheit | `codebase-analyzer`: `analyze_refactoring_safety` |
-| Klasse/Signatur gezielt lesen | `dev-filesystem-mcp`: `read_class_summary`, `read_signatures_only` |
+| Klasse/Signatur gezielt lesen | `dev-filesystem-mcp` — Kanon `skills/dev-filesystem-mcp/SKILL.md` |
 
 ## Ablauf Modus `analyse`
 

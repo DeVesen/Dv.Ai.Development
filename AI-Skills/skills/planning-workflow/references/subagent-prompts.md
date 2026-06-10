@@ -45,11 +45,10 @@ Schritt 1 — Basis-Landkarte (Pflicht):
    UI-only-Begriffe ohne Symbol ausnehmen.
 
 Schritt 1b — Dev-Filesystem-MCP (optional, ergaenzend zu codebase-analyzer):
+   Kanon: skills/dev-filesystem-mcp/SKILL.md (file_path, root — Schema vor Aufruf lesen).
    Nach find_in_index, wenn konkrete Dateipfade bekannt:
-   - read_class_summary: Klassen-Uebersicht ohne Body
-   - read_signatures_only: Public-API fuer Interface-Verstaendnis
-   - find_implementations: alle Implementierungen eines Interfaces
-   Pfade absolut (/project/... bei Docker-Mount).
+   - read_class_summary / read_signatures_only / find_implementations
+   Pfade: /project/... (Docker-Mount).
    Fallback wenn nicht verfuegbar: Schritt 1 allein genuegt.
 
 Schritt 2 — Erweiterte MCP-Analyse (nach find_in_index, wenn konkrete Klassen/Methoden aufgeloest):

@@ -6,7 +6,7 @@
 |-------------|------|
 | Stack | C# / .NET |
 | Transport | stdio |
-| Docker-Port | 8092 |
+| Log-Port | 8092 (interner HTTP-Log-Viewer, nicht MCP-Transport) |
 | Volume-Mount | ❌ nicht erforderlich |
 | Image | `devesen/dev-angular-mcp:latest` |
 
@@ -14,7 +14,20 @@
 
 ## Was macht dieser Server?
 
-Generiert Angular-Artefakte (Komponenten, Services) via `ng generate` nach den konfigurierten Projekt-Konventionen. Der Agent muss nicht selbst `ng generate`-Befehle formulieren — er übergibt strukturierte Parameter, der Server kümmert sich um die korrekte CLI-Syntax.
+Generiert Angular-Artefakte (Komponenten, Services) via `ng generate`. Der Agent übergibt **absolute Pfade** als Parameter — der Server startet `ng generate` als Subprocess und schreibt die Dateien direkt ins Ziel-Verzeichnis auf dem Host-Dateisystem. Ein Volume-Mount ist nicht nötig, da kein Container-Dateisystem beteiligt ist.
+
+```
+Agent ──▶ scaffold_angular_component(name, path: "C:\project\src\app\users")
+              │
+              ▼
+         [Container] startet: ng generate component user-profile --working-dir=C:\project\src\app\users
+              │
+              ▼
+         Dateien direkt auf Host geschrieben:
+         C:\project\src\app\users\user-profile\user-profile.component.ts
+         C:\project\src\app\users\user-profile\user-profile.component.html
+         ...
+```
 
 ---
 

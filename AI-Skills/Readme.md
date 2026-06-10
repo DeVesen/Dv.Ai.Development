@@ -167,15 +167,17 @@ Dateien, die von mehreren Paketen gemeinsam genutzt werden:
 Definiert alle MCP-Server für das deployte Projekt. Wird beim Install in `.cursor/mcp.json` (Cursor) bzw. in die Claude-Code-Konfiguration eingebunden.
 
 ```
-Ports:
-  8089  build-log-filter
-  8090  codebase-analyzer      ← Volume-Mount erforderlich
-  8091  dev-filesystem-mcp     ← Volume-Mount erforderlich
-  8092  dev-angular-mcp
-  8093  dev-dotnet-mcp
+Log-Ports (interner HTTP-Log-Viewer, nicht MCP-Transport — alle Server nutzen stdio):
+  8089  build-log-filter        ← kein autoApprove
+  8090  codebase-analyzer       ← Volume-Mount erforderlich, 30 autoApproved Tools
+  8091  dev-filesystem-mcp      ← Volume-Mount erforderlich, 6 autoApproved Tools
+  8092  dev-angular-mcp         ← 2 autoApproved Tools
+  8093  dev-dotnet-mcp          ← 2 autoApproved Tools
 ```
 
-Alle Server haben eine `autoApprove`-Liste der Tools, die ohne Bestätigungs-Prompt aufgerufen werden dürfen.
+Die meisten Server haben eine `autoApprove`-Liste, sodass häufig genutzte Tools ohne Bestätigungs-Prompt aufgerufen werden. Ausnahme: `build-log-filter` hat kein `autoApprove` — jeder Aufruf erfordert Bestätigung.
+
+Die `mcp.json` enthält außerdem einen `ado`-Eintrag für Azure DevOps (`@azure-devops/mcp`). Dieser erfordert die eigene ADO-Organisations-URL als Parameter — der Platzhalter `<IhreOrganisation>` muss nach dem Deploy ersetzt werden. Details: [`docs/InstallUpdate.md`](../docs/InstallUpdate.md#ado-mcp-konfigurieren).
 
 ---
 

@@ -6,27 +6,29 @@
 |-------------|------|
 | Stack | Node.js / TypeScript |
 | Transport | stdio |
-| Docker-Port | 8090 |
+| Log-Port | 8090 (interner HTTP-Log-Viewer, nicht MCP-Transport) |
 | Volume-Mount | ✅ **erforderlich** (`-v ${workspaceFolder}:/workspace:ro`) |
+| API-Key | ❌ nicht erforderlich (rein statische AST-Analyse) |
 | Image | `devesen/codebase-analyzer-mcp:latest` |
 
-> **Volume-Mount ist Pflicht.** Der Server analysiert Dateien direkt auf dem Dateisystem. Ohne Mount kann er keine Projektdateien lesen.
+> **Volume-Mount ist Pflicht.** Der Server liest Projektdateien direkt über das Dateisystem für die AST-Analyse.
 
 ---
 
 ## Was macht dieser Server?
 
-Vollständige statische Code-Analyse und automatisierte Reviews für Angular- und .NET/C#-Projekte:
+Rein **statische** Code-Analyse für Angular und .NET/C# — ohne LLM-Aufrufe, ohne API-Keys. Die Intelligenz liegt im Claude-Client (Claude Code / Cursor), der Server liefert strukturierte AST-Metadaten:
 
 ```
-                    ┌─────────────────────────────────┐
-                    │       codebase-analyzer          │
-                    │                                  │
-  Review-Request ──▶│  ┌──────────┐  ┌─────────────┐  │──▶ Review-Report
-                    │  │  AST /   │  │   Claude    │  │    (JSON: score,
-                    │  │  Index   │  │   AI Model  │  │     issues,
-                    │  └──────────┘  └─────────────┘  │     quickWins)
-                    └─────────────────────────────────┘
+                    ┌──────────────────────────────────────┐
+                    │          codebase-analyzer            │
+                    │                                      │
+  Review-Request ──▶│  ┌──────────────┐  ┌─────────────┐  │──▶ Strukturiertes
+                    │  │  ts-morph    │  │   Roslyn    │  │    JSON-Ergebnis
+                    │  │  (Angular/   │  │  (.NET/C#   │  │    (Findings,
+                    │  │  TypeScript) │  │   Analyse)  │  │     Metriken, AST)
+                    │  └──────────────┘  └─────────────┘  │
+                    └──────────────────────────────────────┘
 ```
 
 ---
@@ -90,7 +92,7 @@ review_git_diff(
 )
 ```
 
-> `staged: true` → nur der Staging-Bereich (`git diff --cached`)
+> `staged: true` → nur der Staging-Bereich (`git diff --cached`)  
 > `staged: false` → alle unstaged Änderungen
 
 #### `review_files_batch`
@@ -103,12 +105,23 @@ review_files_batch(
 )
 ```
 
+#### `review_with_index`
+Reviewt eine Datei unter Einbeziehung des Projekt-Index (Symbol-Kontext).
+
 ---
 
 ### Index & Symbol-Suche
 
 #### `index_project`
-Indiziert das Projekt für schnelle Symbol-Suche (einmalig ausführen, dann gecacht).
+Indiziert das Projekt für schnelle Symbol-Suche.
+
+> **Hinweis:** Der Index liegt im laufenden Container-Speicher. Mit `--rm` wird er beim Container-Stop gelöscht. Nach jedem Session-Neustart muss `index_project` erneut aufgerufen werden.
+
+#### `index_solution`
+Indiziert eine .NET-Solution (`.sln`-Datei) inklusive aller Projekte.
+
+#### `find_in_index`
+Sucht im bereits aufgebauten Index (schnell, kein Dateisystem-Scan).
 
 #### `find_symbol_references`
 Findet alle Referenzen eines Symbols im gesamten Projekt.
@@ -116,25 +129,55 @@ Findet alle Referenzen eines Symbols im gesamten Projekt.
 #### `find_type_hierarchy`
 Zeigt Vererbungshierarchie und Interface-Implementierungen.
 
----
-
-### Komplexitäts-Analyse
-
-#### `analyze_complexity`
-Misst zyklomatische Komplexität von Klassen und Methoden.
-
-#### `detect_god_classes`
-Identifiziert God-Classes und schlägt Aufspaltungen vor.
-
-#### `suggest_class_splits`
-Konkrete Aufspaltungsvorschläge für eine spezifische Klasse.
+#### `find_api_callers`
+Findet alle Aufrufer einer bestimmten API oder Methode.
 
 ---
 
-### Erweiterte Analyse
+### Komplexitäts- & Qualitätsanalyse
+
+| Tool | Beschreibung |
+|------|-------------|
+| `analyze_complexity` | Zyklomatische Komplexität von Klassen und Methoden |
+| `detect_god_classes` | God-Classes identifizieren |
+| `suggest_class_splits` | Konkrete Aufspaltungsvorschläge für eine Klasse |
+| `analyze_maintainability_index` | Wartbarkeitsindex nach MI-Formel |
+| `analyze_dead_code` | Unerreichbaren/ungenutzten Code finden |
+| `analyze_duplicates` | Code-Duplikate erkennen |
+
+---
+
+### Statische Analyse (erweitert)
+
+| Tool | Beschreibung |
+|------|-------------|
+| `analyze_ast_only` | Reine AST-Analyse ohne Review-Logik |
+| `analyze_nullability` | Nullable-Reference-Analyse (.NET) |
+| `analyze_refactoring_safety` | Sicherheit einer geplanten Refaktorierung prüfen |
+| `analyze_dataflow` | Datenfluss-Analyse |
+| `analyze_type_graph` | Typ-Abhängigkeitsgraph |
+| `analyze_control_flow` | Kontrollfluss-Analyse |
+| `analyze_method_extraction_candidates` | Methoden die extrahiert werden könnten |
+| `generate_auto_fixes` | Automatisch behebbare Findings anwenden |
+| `compare_validation_rules` | Validierungsregeln zwischen Klassen vergleichen |
+
+---
+
+### Test-Analyse
+
+| Tool | Beschreibung |
+|------|-------------|
+| `analyze_coverage` | Test-Coverage-Analyse |
+| `analyze_test_quality` | Qualität der Tests prüfen |
+| `detect_untested_public_api` | Ungetestete Public-API-Endpunkte finden |
+| `analyze_test_health` | Gesamtgesundheit der Test-Suite |
+
+---
+
+### Vollständige Analyse
 
 #### `analyze_advanced_all`
-Vollständige Analyse: Nullability, DIP-Verletzungen, ungetestete APIs, Methodenextraktion.
+Führt alle erweiterten Analysen in einem Aufruf aus: Nullability, DIP-Verletzungen, ungetestete APIs, Methodenextraktion, Dead Code, Duplikate.
 
 ---
 
@@ -192,15 +235,22 @@ Vollständige Analyse: Nullability, DIP-Verletzungen, ungetestete APIs, Methoden
   "command": "docker",
   "args": [
     "run", "-i", "--rm",
-    "-p", "127.0.0.1:8090:8090",
+    "-p", "127.0.0.1:8090:8090",   // Log-Viewer (Diagnose)
     "-v", "${workspaceFolder}:/workspace:ro",
     "devesen/codebase-analyzer-mcp:latest"
   ],
   "transport": "stdio",
   "autoApprove": [
     "review_file", "review_code", "review_git_diff", "review_files_batch",
-    "index_project", "find_symbol_references", "find_type_hierarchy",
-    "analyze_complexity", "detect_god_classes", "analyze_advanced_all"
+    "review_with_index", "analyze_ast_only", "compare_validation_rules",
+    "find_api_callers", "index_project", "index_solution", "find_in_index",
+    "find_symbol_references", "find_type_hierarchy", "detect_god_classes",
+    "analyze_complexity", "analyze_method_extraction_candidates",
+    "analyze_dead_code", "analyze_nullability", "analyze_duplicates",
+    "analyze_refactoring_safety", "generate_auto_fixes", "analyze_dataflow",
+    "analyze_advanced_all", "suggest_class_splits", "analyze_maintainability_index",
+    "analyze_type_graph", "analyze_control_flow", "analyze_coverage",
+    "analyze_test_quality", "detect_untested_public_api", "analyze_test_health"
   ]
 }
 ```

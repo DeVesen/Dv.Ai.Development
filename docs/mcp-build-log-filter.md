@@ -6,15 +6,16 @@
 |-------------|------|
 | Stack | C# / .NET 9 |
 | Transport | stdio |
-| Docker-Port | 8089 |
+| Log-Port | 8089 (interner HTTP-Log-Viewer, nicht MCP-Transport) |
 | Volume-Mount | ❌ nicht erforderlich |
+| autoApprove | ❌ (alle Tool-Aufrufe erfordern Bestätigung) |
 | Image | `devesen/build-log-filter-mcp:latest` |
 
 ---
 
 ## Was macht dieser Server?
 
-Build- und Test-Tools produzieren oft hunderte Zeilen Output — der überwiegende Teil davon ist irrelevant. `build-log-filter` filtert diesen Roh-Output und liefert nur:
+Build- und Test-Tools produzieren oft hunderte Zeilen Output — der überwiegende Teil davon ist irrelevant. `build-log-filter` filtert diesen Roh-Output **rein lokal** (kein LLM-Aufruf, kein API-Key) und liefert nur:
 
 - ❌ **Fehler** (Compile-Fehler, Test-Failures)
 - ⚠️ **Warnungen**
@@ -109,10 +110,11 @@ Verarbeitet Log-Output chunk-weise während er noch produziert wird.
   "command": "docker",
   "args": [
     "run", "-i", "--rm",
-    "-p", "127.0.0.1:8089:8089",
+    "-p", "127.0.0.1:8089:8089",   // Log-Viewer (Diagnose, optional)
     "devesen/build-log-filter-mcp:latest"
   ],
   "transport": "stdio"
+  // Kein autoApprove — Tool-Aufrufe erfordern Bestätigung
 }
 ```
 

@@ -6,7 +6,7 @@
 |-------------|------|
 | Stack | C# / .NET |
 | Transport | stdio |
-| Docker-Port | 8093 |
+| Log-Port | 8093 (interner HTTP-Log-Viewer, nicht MCP-Transport) |
 | Volume-Mount | ❌ nicht erforderlich |
 | Image | `devesen/dev-dotnet-mcp:latest` |
 
@@ -14,7 +14,7 @@
 
 ## Was macht dieser Server?
 
-Generiert .NET-Projekte und Verzeichnisstrukturen nach Konvention. Der Agent übergibt strukturierte Parameter — der Server kümmert sich um die korrekte `dotnet new`-Syntax und erstellt die Ordnerstruktur konsistent.
+Generiert .NET-Projekte und Verzeichnisstrukturen nach Konvention. Der Agent übergibt **absolute Pfade** — der Server startet `dotnet new` als Subprocess und schreibt Dateien direkt aufs Host-Dateisystem. `create_directory_structure` nutzt `File.WriteAllText()` direkt auf dem übergebenen Pfad. Kein Volume-Mount nötig.
 
 ---
 

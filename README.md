@@ -55,15 +55,19 @@ Backend .NET       →  EF Core Migrations, Scaffolding
 
 Fünf spezialisierte **MCP-Server** als Docker-Images:
 
-| Server | Zweck | Port |
-|--------|-------|------|
+| Server | Zweck | Log-Port¹ |
+|--------|-------|-----------|
 | `build-log-filter` | Build-/Test-Output auf Fehler & Warnings reduzieren | 8089 |
 | `codebase-analyzer` | Statische Code-Analyse, Reviews, AST, Symbol-Suche | 8090 |
 | `dev-filesystem-mcp` | Token-effizientes Lesen von `.cs`/`.ts` Dateien | 8091 |
 | `dev-angular-mcp` | Angular-Scaffolding via `ng generate` | 8092 |
 | `dev-dotnet-mcp` | .NET-Scaffolding via `dotnet new` | 8093 |
 
-> **Hinweis:** `codebase-analyzer` und `dev-filesystem-mcp` benötigen ein **Volume-Mount** auf das Ziel-Projekt (`-v ${workspaceFolder}:/workspace:ro`), da sie direkt auf dem Dateisystem arbeiten.
+> ¹ Alle Server kommunizieren über **stdio** (kein TCP). Der Port ist für einen internen HTTP-Log-Viewer zur Diagnose — nicht für den MCP-Transport.
+
+> **Volume-Mount erforderlich:**
+> - `codebase-analyzer` → `-v ${workspaceFolder}:/workspace:ro` (liest Projektdateien für AST-Analyse)
+> - `dev-filesystem-mcp` → `-v ${workspaceFolder}:/project:ro` + `-e PROJECT_ROOT=/project` (liest `.cs`/`.ts` Dateien token-effizient)
 
 ➡️ Details: [`Mcp-Servers/README.md`](./Mcp-Servers/README.md)
 

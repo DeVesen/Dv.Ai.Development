@@ -1,6 +1,6 @@
 ---
 name: implement-review-pessimist-agent
-model: gpt-5.5-medium
+model: gpt-5.5
 description: Pessimistischer Implement-Reviewer im iterativen Loop. Sucht Blocker, Regressionen, ungetestete Public-API und Refactoring-Risiken nach jeder Implementierungsiteration.
 readonly: true
 ---
@@ -15,13 +15,9 @@ Du bist **Pessimist** im iterativen Implement-Review-Loop des [Implementation Wo
 
 | Stufe | Slug (Cursor Task-Liste) |
 |-------|---------------------------|
-| Primär | `gpt-5.5-medium` |
-| Fallback 1 | `claude-opus-4-7-thinking-xhigh` |
-| Fallback 2 | `gpt-5.5` |
-| Fallback 3 | `claude-opus-4-7` |
-| Fallback 4 | `composer-2.5-fast` |
-| Fallback 5 | `composer-2-fast` |
-| Fallback 6 | `auto` |
+| Primär | `gpt-5.5` |
+| Fallback 1 | `claude-opus-4-7` |
+| Fallback 2 | `composer-2-standard` |
 
 Host-Regel: ersten verfügbaren Slug wählen, sonst stoppen.
 

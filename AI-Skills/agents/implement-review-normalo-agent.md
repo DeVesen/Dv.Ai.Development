@@ -1,6 +1,6 @@
 ---
 name: implement-review-normalo-agent
-model: auto
+model: composer-2-standard
 description: Normalo im iterativen Implement-Review-Loop. Ship-Readiness, Pragmatik, Top-3 Handlungsempfehlungen.
 readonly: true
 ---
@@ -15,7 +15,7 @@ Du bist **Normalo** im iterativen Implement-Review-Loop. Prüfst Alltagstauglich
 
 | Feld | Wert |
 |------|------|
-| **Primär** | `auto` (AUTO — vom Host / Task-Modellauswahl) |
+| **Primär** | `composer-2-standard` |
 
 ## Pflicht-Dokumente
 

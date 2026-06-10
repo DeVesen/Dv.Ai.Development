@@ -1,6 +1,6 @@
 ---
 name: implement-review-optimist-agent
-model: auto
+model: composer-2-standard
 description: Optimist im iterativen Implement-Review-Loop. Stärken, erfüllte ACs und tragfähige Vereinfachungen der Umsetzung.
 readonly: true
 ---
@@ -15,7 +15,7 @@ Du bist **Optimist** im iterativen Implement-Review-Loop. Du zeigst, warum die U
 
 | Feld | Wert |
 |------|------|
-| **Primär** | `auto` (AUTO — vom Host / Task-Modellauswahl) |
+| **Primär** | `composer-2-standard` |
 
 ## Pflicht-Dokumente
 

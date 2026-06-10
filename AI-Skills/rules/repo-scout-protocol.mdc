@@ -1,5 +1,5 @@
 ---
-description: Scout-Phasen (repo-check, Code-Landkarte, plan-agent-scout) — vor Read/Grep Skill repo-scout-protocol laden; verbindliche MCP-Fallback-Kette und Scout-Protokoll-Tabelle. Opt-out ohne repo-scout-protocol.
+description: Scout-Phasen — vor Read/Grep repo-scout-protocol laden. MCP-Kanon in .cursor/references/mcp-project-paths.md (nicht AGENTS.md).
 alwaysApply: true
 ---
 
@@ -7,39 +7,8 @@ alwaysApply: true
 
 ## Pflicht in Scout-Phasen
 
-Wenn der Agent Code im Repo **read-only erkundet** (nicht nur erklärt) — insbesondere repo-check, buddy repo-check, Code-Scout, Code-Landkarte, Planning Phase 3 — dann **vor Read/Grep** diesen Skill vollständig lesen und befolgen:
+Wenn der Agent Code im Repo **read-only erkundet** — insbesondere repo-check, buddy repo-check, Planning Phase 3 — dann **vor Read/Grep** diesen Skill vollständig lesen:
 
 [`repo-scout-protocol/SKILL.md`](../skills/repo-scout-protocol/SKILL.md)
 
-## Verbindliche Aktivierung
-
-Explizit:
-
-- **`repo-check`**, **`buddy repo-check`**
-- **`Code-Scout`**, **`Code-Landkarte`**
-- **`@repo-scout-protocol`**, Scout-Protokoll, MCP-Fallback-Kette
-- Meta: `plan-agent-scout`, Planning Phase 3 Scout-Auftrag
-
-Implizit:
-
-- Agent soll Ist-Stand aus Code/Artefakten liefern (Klassen, Dateien, Services, Skills)
-- Buddy/Planning-Skill verweist auf MCP in Agent-Mode
-
-## Nicht auslösen
-
-- Reine Erklärung ohne Repo-Zugriff
-- `implementiere`, `setze um`, `fix` → Implementation Workflow
-- `ng build`, `dotnet test` → build-log-filter
-- Buddy-Phasen intake, compress, diskussion, plan-prompt (kein Scout)
-
-## Priorität
-
-| Situation | Vorrang |
-|-----------|---------|
-| Scout + Planung | dieser Skill **und** codebase-analyzer (Planung) |
-| buddy repo-check | buddy-agent **und** dieser Skill |
-| Build/Test | build-log-filter — **nicht** dieser Skill |
-
-## Opt-out
-
-`ohne repo-scout-protocol`, `ohne scout-protokoll` → Skill nicht laden.
+**MCP-Pfad-Kanon (deployt, Pflicht):** [`.cursor/references/mcp-project-paths.md`](../references/mcp-project-paths.md) + [mcp-path-canon.mdc](./mcp-path-canon.mdc). Host-Pfade aus `skill-params.json` **nicht** unverändert an codebase-analyzer. `./AGENTS.md` ist **optional**.

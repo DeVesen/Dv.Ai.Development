@@ -4,7 +4,7 @@ description: >
   Verbindliche Scout-Recherche-Kette für repo-check, Code-Landkarte und Planning-Scouts.
   Routing: Index → Filesystem-MCP bei leerem find_in_index; bei bekanntem Symbol Filesystem zuerst;
   Workflow-Artefakte (Skills/Rules/Packages) via Glob/Read unter {frontend-path}.
-  Pflicht: index_solution bei Hinweis, Schema vor MCP-Aufruf, Scout-Protokoll-Tabelle je Scout-Antwort.
+  Pflicht: `.cursor/references/mcp-project-paths.md`; Multi-.csproj via index_project; Schema vor MCP-Aufruf; Scout-Protokoll-Tabelle.
   Trigger: repo-check, buddy repo-check, Code-Scout, Code-Landkarte, plan-agent-scout.
   Opt-out: ohne repo-scout-protocol.
 disable-model-invocation: true
@@ -27,10 +27,10 @@ Orchestrierungs-Skill für **Scout- und Recherche-Phasen** — keine Duplikation
 
 | Parameter | Typische Bedeutung |
 |-----------|-------------------|
-| `{frontend-path}` | Frontend- oder Artefakt-Pfad (z. B. `src/AI-Skills` in Dv.Ai.Development) |
-| `{backend-path}` | Backend- oder Server-Code-Pfad (z. B. `src/Mcp-Servers`) |
-| `{workspace-root}` | Cursor-Workspace-Root (`.`) |
-| `{agent-index}` | `./AGENTS.md` — konkrete Pfadwerte |
+| `{frontend-path}` | Host-Pfad Frontend (Shell, Glob) — **nicht** unverändert an codebase-analyzer |
+| `{backend-path}` | Host-Pfad Backend (Shell) — MCP siehe mcp-project-paths.md |
+| `{mcp-frontend-path}` | MCP container path FE — in `.cursor/references/mcp-project-paths.md` |
+| `{mcp-project-paths}` | `.cursor/references/mcp-project-paths.md` — **Kanon** (deployt) |
 
 **Mount-Präfixe (verbindlich):**
 
@@ -66,10 +66,11 @@ Vor **jedem** MCP-Tool-Aufruf: Deskriptor/Schema lesen — Namen unterscheiden s
 
 | Situation | Erster Schritt | Zweiter Schritt | Dritter Schritt |
 |-----------|----------------|-----------------|-----------------|
-| Symbol/Bereich **unbekannt** (.cs/.ts) | Index: `index_project` oder `index_solution` | `find_in_index` | Filesystem: `find_by_content` oder `find_file` |
+| Symbol/Bereich **unbekannt** (.cs/.ts) | Index: `index_project` auf richtiges `{mcp-*}` / `.csproj` | `find_in_index` (selbes projectPath) | Filesystem: `find_by_content` oder `find_file` |
 | Symbol/Pfad **bekannt** (Task, Handoff, Treffer) | Filesystem: `read_class_summary` / `read_signatures_only` / `read_method` | optional Index für Abhängigkeiten | — |
 | Interface-Implementierungen | Filesystem: `find_implementations` | — | — |
-| Index-Hinweis „use index_solution“ | **Pflicht** `index_solution` | `find_in_index` | Filesystem |
+| Multi-.csproj Backend ohne funktionierendes `index_solution` | Mehrere `index_project` (mcp-project-paths.md routing) | `find_in_index` pro `.csproj` | Filesystem |
+| Index-Hinweis „use index_solution“ | **Nur** wenn mcp-project-paths.md `index_solution` freigibt | `index_solution` | sonst: konkretes `.csproj` indexieren |
 | **Workflow-Artefakt** (Skill, Rule, Agent, Package, `SKILL.md`, `.mdc`) | `Glob` unter `{frontend-path}/**` | `Read` der Treffer | `Grep` nur für Querverweise (`dependsOn`, Skill-Namen) |
 | Deploy-/Install-Doku | `Glob` + `Read` | — | — |
 
@@ -79,11 +80,12 @@ Vor **jedem** MCP-Tool-Aufruf: Deskriptor/Schema lesen — Namen unterscheiden s
 
 ## Hard Rules
 
-1. **Nach leerem `find_in_index`:** mindestens ein Filesystem-MCP-Versuch (`find_by_content` oder `find_file`) — **bevor** natives Read/Grep auf Klassennamen.
-2. **`index_project`-Hinweis auf Solution:** `index_solution` ausführen, nicht ignorieren.
+1. **Nach leerem `find_in_index`:** Hard-Gate-Checkliste in [op-code-map.md](../codebase-analyzer/references/op-code-map.md) — dann mindestens ein Filesystem-MCP-Versuch (`find_by_content` oder `find_file`) **bevor** natives Read/Grep auf Klassennamen.
+2. **`index_project`-Hinweis auf Solution:** `index_solution` **nur** wenn `.cursor/references/mcp-project-paths.md` `index_solution: allowed` — sonst `.csproj` via `index_project`.
 3. **MCP erreichbar:** Read/Grep **nicht** als Ersatz für MCP in Scout-Phasen.
 4. **Scout mit MCP-Pflicht** (Buddy repo-check, plan-agent-scout): nicht mit nur nativen Tools abschließen ohne dokumentierte Warnung und Scout-Protokoll.
-5. **Schema-Pflicht:** Parameter exakt wie im MCP-Deskriptor.
+5. **Schema-Pflicht:** Parameter exakt wie im MCP-Deskriptor; codebase-analyzer: `/workspace/`, dev-filesystem: `/project/`.
+6. **Pfad-Kanon:** [mcp-path-canon.mdc](../../rules/mcp-path-canon.mdc) + `.cursor/references/mcp-project-paths.md`.
 
 ---
 

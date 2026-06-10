@@ -152,7 +152,7 @@ JSON-Manifeste definieren, welche Artefakte ein Paket enthält und wohin sie dep
 
 **Verfügbare Pakete:**
 
-`ado-requests-stories` · `angular-bundle` · `angular-material-custom-input` · `angular-refactor` · `backend-ef-migrations` · `buddy-agent` · `build-log-filter` · `caveman` · `codebase-analyzer` · `commit-message` · `conversation-insights` · `describe-as` · `describe-as-html-prompt` · `dev-angular-mcp` · `dev-dotnet-mcp` · `dev-filesystem-mcp` · `dev-tooling-mcp` · `implementation-workflow` · `planning-workflow` · `repo-scout-protocol`
+`ado-requests-stories` · `angular-bundle` · `angular-material-custom-input` · `angular-refactor` · `backend-ef-migrations` · `buddy-agent` · `build-log-filter` · `caveman` · `codebase-analyzer` · `commit-message` · `conversation-insights` · `describe-as` · `describe-as-html-prompt` · `dev-angular-mcp` · `dev-dotnet-mcp` · `dev-filesystem-mcp` · `dev-tooling-mcp` · `implementation-workflow` · `mcp-path-canon` · `planning-workflow` · `repo-scout-protocol`
 
 ---
 
@@ -165,6 +165,8 @@ Dateien, die von mehreren Paketen gemeinsam genutzt werden:
 | `mcps.md` | MCP-Router (wann welcher Server) — Kanon in `skills/<mcp>/SKILL.md` |
 | `mcp-scout-fallback-chain.md` | **Alias** → Agent-Kanon: `skills/repo-scout-protocol/SKILL.md`; Menschen-Doku: `docs/mcp-scout-fallback-chain.md` |
 | `subagent-model-before-task.md` | Vorgabe: Model-Sektion des Agent-Profils vor jeder Aufgabe lesen |
+| `mcp-project-paths.md` | **Deploy-Kanon** — MCP container paths + Backend routing (generiert aus skill-params) |
+| `mcp-smoke-test.md` | Smoke-Tests nach MCP-Pfad-/Install-Änderungen |
 | `verification-commands.md` | Projekt-spezifische Build/Test-Befehle pro Stack |
 
 ---
@@ -220,4 +222,4 @@ Die `mcp.json` enthält außerdem einen `ado`-Eintrag für Azure DevOps (`@azure
 | Agents | ✅ `agents/` | ✅ `agents/` |
 | References | ✅ `references/` | ✅ `references/` |
 
-> **`Readme.md`** der AI-Skills-Bibliothek wird **nicht** ins Ziel-`.cursor/` kopiert. Projekt-Doku: eigenes `AGENTS.md` im Workspace-Root (manuell).
+> **MCP-Pfade:** `.cursor/references/mcp-project-paths.md` (deployt, aus `skill-params.json` generiert). Root-`AGENTS.md` ist für MCP **nicht** erforderlich.

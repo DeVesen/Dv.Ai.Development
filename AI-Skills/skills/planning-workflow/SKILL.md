@@ -405,8 +405,8 @@ Scouting gestartet werden soll.
 **Code-Recherche (verbindlich) — MCP-Sequenz vor nativem Grep:**
 [repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md) vollständig — Routing-Matrix, Pflicht `find_by_content`/`find_file` bei Index-Miss, Scout-Protokoll-Tabelle im Deliverable.
 Bei Bezug auf Klassen, Methoden, Properties, Services, Routen oder „von Stelle A nach Stelle B" —
-Basis-Landkarte (`index_project` / `index_solution` + `find_in_index`) gemäß
-[codebase-analyzer — Code-Landkarte](../codebase-analyzer/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
+Basis-Landkarte (`index_project` auf MCP container paths + `find_in_index`) gemäß
+[codebase-analyzer — op-code-map](../codebase-analyzer/references/op-code-map.md).
 Read/Grep nur nach ausgeschöpfter MCP-Kette oder MCP-BLOCKER.
 UI-Elemente ohne Symbol (Button-Label, Feld ohne Klassenname) sind davon ausgenommen.
 
@@ -423,13 +423,13 @@ Scouts rufen zusätzlich (MCP primär, Fallback nur bei MCP-Fehler):
 
 Scouts dokumentieren im Deliverable: MCP-Analyse-Status + Positionen 6–10 (Hotspots, Risiken, Split-Kandidaten, Maintainability-Findings, Typ-Smells).
 
-**Orchestrator-Vorindizierung (empfohlen, bei Multi-Scout mit Symbolen):** Orchestrator
-ruft **vor** Scout-Delegation einmal pro betroffenen Stack `index_project` auf und gibt
-den verifizierten `projectPath` als festen Wert in den Scout-Auftrag. Pfade gemäß
-`./AGENTS.md` (`{frontend-path}` / `{backend-path}`).
-Schlägt `index_project` fehl: BLOCKER dokumentieren; Fallback-Playbook in
-[codebase-analyzer/SKILL.md — MCP-Pfadauflösung](../codebase-analyzer/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook)
-befolgen — **kein** stilles Überspringen.
+**Orchestrator-Vorindizierung (Pflicht vor Scout-Delegation bei Symbol-Scopes):** Orchestrator
+ruft **vor** Scout-Delegation mindestens einmal pro betroffenen Stack bzw. `.csproj` `index_project` auf
+(Smoke: Output enthält Summary) und gibt die **verifizierten Literal-Pfade** in den Scout-Auftrag —
+keine unersetzten Platzhalter `{mcp-*}` ohne Wert.
+Pfade gemäß **`.cursor/references/mcp-project-paths.md`** (Literale in Scout-Prompt).
+Schlägt `index_project` fehl: BLOCKER; [op-code-map.md](../codebase-analyzer/references/op-code-map.md#mcp-pfadauflösung-docker--pflicht-playbook)
+— **kein** blindes `index_solution` ohne `index_solution: allowed` in mcp-project-paths.md.
 
 **Scout-Merge — MCP-Status-Gate:** Beim Zusammenführen aller Scout-Deliverables prüfen:
 Wenn **alle** Scouts `MCP: fallback` ohne dokumentierten Anker-Pfad zurückliefern →

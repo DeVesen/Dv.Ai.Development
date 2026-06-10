@@ -38,6 +38,26 @@ Alle dateibezogenen Parameter (`filePath`, `filePaths`, `projectPath`) verwenden
 
 **Fehlerdiagnose:** `File not found: /app/...` oder `Path not found: /app/...` = falsches Pfadformat (Windows-Pfad oder IDE-relativer Pfad statt `/workspace/...`), nicht defekte MCP-Verbindung.
 
+### MCP-Pfad-Kanon (deployt)
+
+| Quelle | Verwendung |
+|--------|------------|
+| **`.cursor/references/mcp-project-paths.md`** | **Pflicht** — MCP container paths + Backend project routing |
+| **`.cursor/skill-params.json`** | Host-Pfade (`{frontend-path}`, `{backend-path}`, `{code-root}`) — Shell/Glob, **nicht** unverändert an MCP |
+| `./AGENTS.md` | Optional; bei Widerspruch gilt **mcp-project-paths.md** |
+
+Regel: [mcp-path-canon.mdc](../../rules/mcp-path-canon.mdc). Smoke-Tests: [mcp-smoke-test.md](../../references/mcp-smoke-test.md).
+
+### Known MCP limitations
+
+| Thema | Verhalten | Workaround |
+|-------|-----------|------------|
+| `index_solution` auf manche `.sln` | `No projects found in solution` | Mehrere `index_project`; Routing in mcp-project-paths.md |
+| Angular Guards | Oft **nicht** im Angular-Index | `find_by_content` / Grep auf `*.guard.ts` |
+| `index_project` auf Verzeichnis mit `.sln` | Hinweis „use index_solution" | mcp-project-paths.md prüfen — bei `disabled` direkt `.csproj` indexieren |
+
+Details: [op-code-map.md](references/op-code-map.md) (Index-Abdeckung, Hard Gate).
+
 ## Operationen
 
 | Trigger | Operation | Detail |

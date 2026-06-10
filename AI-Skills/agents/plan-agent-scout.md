@@ -9,7 +9,7 @@ description: Read-only Codebereichs-Scout für Planning Workflow Phase 3. Use pr
 | Parameter | Beschreibung |
 |-----------|-------------|
 | `.` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
-| `./AGENTS.md` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
+| `./AGENTS.md` | Optional — MCP-Kanon ist `.cursor/references/mcp-project-paths.md` |
 
 # Mitarbeiterprofil: Codebereichs-Scout (Planning Phase 3)
 
@@ -39,25 +39,27 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 - [planning-workflow/SKILL.md](../skills/planning-workflow/SKILL.md) — Phase 3
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Abschnitt **Codebereichs-Scout** (Auftrag wortgetreu)
-- `./AGENTS.md` (Repo-Root, kein fester Pfad)
+- `.cursor/references/mcp-project-paths.md` (MCP-Kanon, deployt)
+- `.cursor/skill-params.json` (Host-Pfade)
 
 ## Aufgabe (Deliverable)
 
 **Recherche-Reihenfolge: MCP zuerst — Read/Grep nur wenn MCP nicht verfügbar oder kein Symbol auflösbar.**
 Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 
-**MCP-Pfade:** `{frontend-path}` (Angular) / `{backend-path}` (.NET) gemäß `./AGENTS.md`. Pfad-Fehler-Playbook: [codebase-analyzer/SKILL.md — MCP-Pfadauflösung](../skills/codebase-analyzer/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) (max. 2 Versuche je Stack).
+**MCP-Pfade:** Literale aus **`.cursor/references/mcp-project-paths.md`** — **nicht** Host-Werte aus `skill-params.json` unverändert an MCP. Playbook: [op-code-map.md](../skills/codebase-analyzer/references/op-code-map.md#mcp-pfadauflösung-docker--pflicht-playbook).
 
-**Schritt 0 — Compiler-Pre-Check (optional, vor Schritt 1):**
-- `analyze_compiler_diagnostics(path: <projectPath>, type: "auto", severity: "error")` auf den Scout-Scope.
-- Wenn Fehler vorhanden → im Deliverable **Abschnitt 5 (Risiken)** als „Build-Fehler im Scope" melden (Datei, Code, Zeile) — kein Blocker, aber explizit sichtbar.
+**Schritt 0a — Compiler-Pre-Check (optional, vor Index):**
+- `analyze_compiler_diagnostics(path: <MCP projectPath>, type: "auto", severity: "error")` auf den Scout-Scope.
+- Wenn Fehler vorhanden → im Deliverable **Abschnitt 5 (Risiken)** als „Build-Fehler im Scope" melden — kein Blocker, aber explizit sichtbar.
 
-**Schritt 0 — Projektwurzel / Solution wählen (vor Schritt 1):**
-- Wenn im `/workspace/`-Root (oder `{backend-path}`) eine **`.sln`-Datei** liegt und der Stack .NET ist → **`index_solution(solutionPath)`** statt `index_project` für den Backend-Stack.
-- Sonst: `{frontend-path}` / `{backend-path}` wie bisher.
+**Schritt 0 — Projektwurzel wählen (vor Schritt 1):**
+- Angular: `{mcp-frontend-path}` → `index_project`.
+- .NET Multi-.csproj: **`index_project` je betroffenem `.csproj`** (Routing in mcp-project-paths.md).
+- `index_solution`: **nur** wenn mcp-project-paths.md `index_solution: allowed`.
 
 **Schritt 1 — Basis-Landkarte (Pflicht):**
-- `index_project` (Einzelprojekt) **oder** `index_solution` (.NET Multi-Projekt) + `find_in_index` für alle genannten Symbole — kein stilles Überspringen.
+- `index_project` pro FE-Root / betroffenem BE-`.csproj` + `find_in_index` für alle genannten Symbole — kein stilles Überspringen. Im Deliverable: welche `.csproj`-Indizes gelaufen sind.
 - Wenn Scope-Bereich **> 3 Dateien** → `detect_god_classes(projectPath, top: 5)` → God-Class-Kandidaten im betroffenen Bereich in Deliverable-Abschnitt **6** (Complexity Hotspots) ergänzen.
 - Natives Read/Grep nur nach ausgeschöpfter MCP-Kette (repo-scout-protocol) oder MCP-BLOCKER — mit Dokumentation im Scout-Protokoll.
 

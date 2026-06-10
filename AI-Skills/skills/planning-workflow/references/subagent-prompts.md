@@ -28,9 +28,10 @@ Teil-Scope (Pflicht bei Multi-Scout, sonst gesamter betroffener Bereich):
 Kontext (nur aus Nutzer/Thread, nicht erfinden):
 [Anforderung in 3-10 Saetzen]
 
-MCP-Pfade (aus AGENTS.md des Projekts — Platzhalter vor Versand ersetzen):
-  FE: [MCP_FRONTEND_PATH]   (= Wert von {frontend-path} aus ./AGENTS.md)
-  BE: [MCP_BACKEND_PATH]    (= Wert von {backend-path}  aus ./AGENTS.md)
+MCP-Pfade (deployt — **vor Versand Literale aus `.cursor/references/mcp-project-paths.md` einsetzen**):
+  FE: [MCP_FRONTEND_PATH]   (= MCP container path FE aus mcp-project-paths.md)
+  BE-Projekte: [MCP_BE_PROJECTS]  (= Liste .csproj-Container-Pfade aus „Backend project routing")
+  BE-Solution (optional): [MCP_BACKEND_SOLUTION]  (= nur wenn index_solution: allowed)
 
 Fokus (Pflicht): Nur Code/Flows kartieren, die **direkt** fuer diese Anforderung noetig sind —
 kein blindes Repo-Scouting, kein Scope-Creep ausserhalb Teil-Scope/Anforderung.
@@ -38,8 +39,9 @@ kein blindes Repo-Scouting, kein Scope-Creep ausserhalb Teil-Scope/Anforderung.
 Aufgabe (MCP zuerst — Fallback Read/Grep nur wenn MCP nicht verfuegbar):
 
 Schritt 1 — Basis-Landkarte (Pflicht):
-   index_project(projectPath="[MCP_FRONTEND_PATH]", type="angular") fuer FE,
-   index_project(projectPath="[MCP_BACKEND_PATH]", type="dotnet") fuer BE (nur relevanter Stack).
+   index_project(projectPath="[MCP_FRONTEND_PATH]", type="angular") fuer FE (nur wenn FE im Scope).
+   index_project je Eintrag in [MCP_BE_PROJECTS], type="dotnet" fuer BE — nicht pauschal Backend-Root.
+   find_in_index mit demselben projectPath wie index_project (Routing mcp-project-paths.md).
    Alle genannten Symbole via find_in_index aufloesen.
    Bei 0 Treffern: find_by_content oder find_file (dev-filesystem-mcp) BEVOR Read/Grep.
    Skill repo-scout-protocol vollstaendig — Scout-Protokoll-Tabelle im Deliverable.
@@ -141,7 +143,7 @@ Clean-Code-Constraints (aus Scout-Deliverable, Positionen 6–10):
    (projektspezifische Kuerzel im Teilplan nennen) plus Wellen-/Blocking-Hinweis.
 
 Falls Scout MCP=fallback ohne Index-Anker: fuer neue Symbole aus Phase 4a zunaechst
-find_in_index versuchen (projectPath aus AGENTS.md: {frontend-path} / {backend-path});
+find_in_index versuchen (projectPath aus `.cursor/references/mcp-project-paths.md` / Routing-Tabelle);
 Ergebnis (ok oder fallback) im Teilplan festhalten — kein stilles Ueberspringen.
 
 Deliverable: strukturierter **Teilplan** fuer genau ein Topic; keine Code-Aenderungen;

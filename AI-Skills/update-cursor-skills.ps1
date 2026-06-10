@@ -577,6 +577,7 @@ foreach ($pkgName in $managedPackages) {
 
 if ($script:ParamsStore.Count -gt 0) {
     Save-ParamsStore
+    Sync-McpProjectPathsFile
     Write-Host ""
     Write-Host "  Parameter gespeichert: $script:ParamsFile" -ForegroundColor DarkGray
 }

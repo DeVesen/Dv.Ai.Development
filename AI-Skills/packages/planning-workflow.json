@@ -17,10 +17,12 @@
     "agents/plan-review-professor-agent.md"
   ],
   "references": [
-    "references/subagent-model-before-task.md"
+    "references/subagent-model-before-task.md",
+    "references/mcp-smoke-test.md"
   ],
   "params": [],
   "dependsOn": [
+    "mcp-path-canon",
     "repo-scout-protocol"
   ]
 }

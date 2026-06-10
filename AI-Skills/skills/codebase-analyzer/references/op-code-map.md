@@ -28,30 +28,47 @@ Komponenten-Namen wenn der Nutzer sie nennt) — **ohne** `index_project` nur we
 | **UI-Element, Label, Flow in der Oberfläche** (ohne Klassenname) | **Kein** Index-Zwang | Suche nach Komponente/Template/Übersetzung; erst bei genanntem `@Component`/`selector` → Landkarte |
 | **Unklar** (Code vs. UI?) | **Eine** Klärungsfrage | dann Entscheidungsbaum |
 
+## MCP-Pfade (verbindlich)
+
+Parameter `projectPath`, `filePath`, `solutionPath` für **codebase-analyzer**:
+immer Container-Pfade mit Präfix `/workspace/`.
+
+| Ableitung | Regel |
+|-----------|--------|
+| Kanon | `.cursor/references/mcp-project-paths.md` — Spalte **„MCP container path"** (`{mcp-frontend-path}`, `{mcp-be-*}`) |
+| Fallback | `.cursor/skill-params.json` — daraus `/workspace/` + `{code-root}` + Host-Pfad ableiten |
+| Filesystem-MCP | Präfix `/project/` (nicht `/workspace/`) — siehe [dev-filesystem-mcp/SKILL.md](../../dev-filesystem-mcp/SKILL.md) |
+
+**VERBOTEN als MCP-Argument:** Host-Pfade aus mcp-project-paths.md ohne `/workspace/`, `lac-db/src/...`, `src/frontend`, Windows-Pfade.
+Bei `Path not found: /app/...`: sofort korrigieren — **kein** zweiter Versuch mit demselben Format.
+
+Deploy-Kanon (wird bei Install generiert): [mcp-project-paths.md](../../references/mcp-project-paths.md). `./AGENTS.md` ist optional.
+
 ## MCP-Werkzeugkette (Planung & Code-Navigation)
 
 **Schritt 0 — Projektwurzel wählen:**
 
-| Stack | `projectPath` / `solutionPath` | `type` | Wann |
-|-------|-------------------------------|--------|------|
-| Angular FE | `/workspace/{frontend-path}` aus `./AGENTS.md` | `angular` | Standard FE-Stack |
-| .NET Backend (Einzelprojekt) | `/workspace/{backend-path}` aus `./AGENTS.md` | `dotnet` | Ein `.csproj`-Root |
-| .NET Multi-Projekt | `/workspace/<name>.sln` (Solution-Datei oder Verzeichnis mit `.sln`) | — (Tool: `index_solution`) | Wenn `.sln` im `/workspace/`-Root **oder** `index_project`-Output `projectReferences` / `externalDependencies` zeigt |
+| Stack | `projectPath` | `type` | Wann |
+|-------|---------------|--------|------|
+| Angular FE | `{mcp-frontend-path}` aus `.cursor/references/mcp-project-paths.md` | `angular` | Standard FE-Stack |
+| .NET Backend (Einzel-.csproj) | `{mcp-be-<name>}` aus mcp-project-paths.md **Backend project routing** | `dotnet` | Symbol liegt in diesem Projekt |
+| .NET Multi-Projekt | **Mehrere** `index_project` auf betroffene `.csproj`-Verzeichnisse | `dotnet` | Standard bei Multi-Stack-Backend |
+| .NET Solution (optional) | `{mcp-backend-solution}` — Tool: `index_solution` | — | **Nur** wenn mcp-project-paths.md freigibt **und** Smoke-Test grün (siehe Known Issues) |
 
-`{frontend-path}` und `{backend-path}` sind Platzhalter — die konkreten Werte stehen in `./AGENTS.md` des jeweiligen Projekts. Präfix immer `/workspace/` voranstellen (Container-Pfad, kein Windows-Pfad, kein IDE-relativer Pfad).
+Host-Platzhalter `{frontend-path}` / `{backend-path}` dienen Shell/Verifikation — **nicht** unverändert an codebase-analyzer übergeben.
 
-Bei Multi-Stack-Aufgaben: **pro Stack einmal** `index_project` (Angular + Einzel-.NET) bzw. **`index_solution`** wenn das Backend eine `.sln` mit mehreren Projekten ist (Cache ~5 min, `useCache: true`).
+Bei Multi-Stack-Aufgaben: pro benötigtem `.csproj`/FE-Root einmal `index_project` (Cache ~5 min, `useCache: true`). Orchestrator/Scout dokumentiert, welche Indizes gelaufen sind.
 
 **Volume-Mount-Voraussetzung:** Die `.cursor/mcp.json` muss `-v ${workspaceFolder}:/workspace:ro` enthalten. Ohne Mount schlagen alle dateibasierten Tools fehl — dann MCP-Fallback deklarieren und auf Read/Grep ausweichen.
 
-**MCP-Pfadauflösung (Docker) — Pflicht-Playbook:**
+## MCP-Pfadauflösung (Docker) — Pflicht-Playbook
 
 Bei `index_project`-Fehler: Pfade in dieser Reihenfolge prüfen — **max. 2 Versuche je Stack**:
 
 | Versuch | Pfad |
 |---------|------|
-| 1 (primär) | `/workspace/{frontend-path}` bzw. `/workspace/{backend-path}` (absolut im Container) |
-| 2 (Fallback) | `/workspace` allein als `projectPath` mit `type: auto` |
+| 1 (primär) | Literal aus mcp-project-paths.md Spalte „MCP container path" (z. B. `{mcp-frontend-path}`) |
+| 2 (Fallback) | `/workspace/` + normalisierter Host-Pfad (Forward-Slashes, kein Backslash) |
 
 **Dokumentationspflicht bei Fehler** — jeder fehlgeschlagene Call im Scout-Deliverable:
 ```
@@ -62,21 +79,55 @@ Nach 2 Fehlern pro Stack: **MCP-Fallback deklarieren** (kein weiteres Raten):
 MCP-Fallback: <Grund>; Anker via Read/Grep: <Liste der Einstiegspunkte>
 ```
 
-**Fehlerdiagnose:** `File not found: /app/...` = Container-Pfad fehlt `/workspace/`-Präfix — kein Verbindungsproblem.
+**Fehlerdiagnose:** `File not found: /app/...` oder `Path not found: /app/...` = Container-Pfad fehlt `/workspace/`-Präfix — kein Verbindungsproblem.
 
-**Schritt 1 — Landkarte (einmal pro Stack pro Session/Aufgabe):**
+## .NET Multi-Projekt — index_solution Known Issue
 
-`index_project` mit `projectPath`, `type` (`angular` | `dotnet` | `auto`), `format: llm`.
+Manche Solutions (z. B. komplexe `.sln` im Docker-Container) liefern:
+`No projects found in solution: ...` — obwohl die Solution gültig ist. Ursache: MSBuild/Solution-Parsing im MCP-Container.
 
-**Entscheidungspunkt .NET Multi-Projekt:** Wenn der `index_project`-Output `projectReferences` oder `externalDependencies` enthält → **`index_solution(solutionPath)`** als Folgeaufruf (gleiche Session, Cache ~5 min). Danach `find_in_index` / `find_symbol_references` / `analyze_refactoring_safety` mit dem **Solution-Pfad** (`.sln` oder Solution-Verzeichnis) statt nur `{backend-path}`.
+**Verbindliche Regel:**
+
+- `index_solution` ist **kein** primärer Schritt, solange mcp-project-paths.md kein `index_solution: allowed` (mit grünem Smoke-Test) ausweist.
+- Stattdessen: `index_project` je betroffenem `.csproj`-Verzeichnis (Routing-Tabelle mcp-project-paths.md).
+- `find_in_index`: `projectPath` = **dasselbe** `.csproj`, in dem das Symbol liegt — nicht Backend-Root, nicht Solution-Pfad.
+- Wenn `index_project` auf ein Verzeichnis mit `.sln` den Hinweis „use index_solution" liefert: **nicht** blind folgen — zuerst mcp-project-paths.md prüfen; bei Known Issue direkt konkretes `.csproj` indexieren.
+
+Smoke-Tests: [mcp-smoke-test.md](../../references/mcp-smoke-test.md).
+
+**Schritt 1 — Landkarte (einmal pro Stack/.csproj pro Session/Aufgabe):**
+
+`index_project` mit `projectPath` (MCP container path), `type` (`angular` | `dotnet` | `auto`), `format: llm`.
+
+Multi-.csproj-Backend: nur die für den Scope **nötigen** `.csproj`-Verzeichnisse indexieren — Liste im Deliverable.
 
 Kurz im Agent-Log: 2–3 Sätze — welche Bereiche/Services betroffen, auffällige Abhängigkeiten/Warnungen.
 
 **Schritt 2 — Symbol lokalisieren (bei jedem genannten Typ/Service/Component):**
 
-`find_in_index` mit `query` = exakter oder partieller Name.
+`find_in_index` mit `query` = exakter oder partieller Name; `projectPath` aus **Backend project routing** (mcp-project-paths.md), nicht pauschal Backend-Root.
 
 Ergebnis nutzen für: Dateipfad, Zeile, Methodenliste, Abhängigkeiten — **bevor** `Grep` auf den Klassennamen.
+
+## Index-Abdeckung & 0-Treffer-Interpretation
+
+| Symbol-Typ | Im Index? | Bei 0 Treffern |
+|------------|-----------|----------------|
+| Angular Component, Service | Ja | Richtiges `{mcp-frontend-path}`? → dann Filesystem-MCP |
+| Angular Guard, Pipe (nicht indexiert), Route-only | Nein / nur Route-Liste | **Kein** erneutes `index_project` — sofort `find_by_content` / Grep auf Dateiname |
+| .NET Class/Interface in falschem .csproj | Ja, anderes Projekt | Routing-Tabelle mcp-project-paths.md — anderes `{mcp-be-*}` indexieren |
+| String-Literal, Route-Pfad | Nein | Grep |
+
+**Kein Schluss „Symbol fehlt im Repo"** ohne Checkliste (Hard Gate):
+
+1. `projectPath` beginnt mit `/workspace/`?
+2. FE vs. BE vs. konkretes `.csproj` korrekt (Routing-Tabelle)?
+3. `index_project` für **dieses** `projectPath` in Session erfolgreich (Output mit Summary)?
+4. Symbol-Typ in Abdeckungs-Matrix geprüft?
+5. Backend: `index_solution` nur wenn mcp-project-paths.md erlaubt **und** zuvor erfolgreich getestet?
+6. Erst danach: `find_by_content` / `find_file` (dev-filesystem-mcp, `/project/`) → Read/Grep mit dokumentiertem MCP-Fallback
+
+**Verboten:** Mehr als 2 Pfad-/Index-Versuche pro Stack ohne dokumentierten MCP-BLOCKER.
 
 **0 Treffer bei `find_in_index`:** mindestens `find_by_content` oder `find_file` (dev-filesystem-mcp) — **bevor** natives Read/Grep. Scout-Kette: [repo-scout-protocol/SKILL.md](../../repo-scout-protocol/SKILL.md).
 
@@ -110,8 +161,10 @@ Ergebnis nutzen für: Dateipfad, Zeile, Methodenliste, Abhängigkeiten — **bev
 
 ## Checkliste vor „fertig recherchiert"
 
-- [ ] Stack-Wurzel (`frontend` / `backend`) gewählt?
-- [ ] `index_project` für diesen Stack in der Aufgabe schon gelaufen (oder Cache gültig)?
-- [ ] Alle **vom Nutzer genannten** Typen über `find_in_index` aufgelöst?
-- [ ] Grep nur für Lücken (Caller, Strings, Routes), nicht als erster Schritt bei Symbol-Frage?
+- [ ] MCP-`projectPath` aus mcp-project-paths.md „MCP container path" (mit `/workspace/`)?
+- [ ] Backend: richtiges `.csproj` aus „Backend project routing"?
+- [ ] `index_project` für dieses `projectPath` in der Aufgabe schon gelaufen (oder Cache gültig)?
+- [ ] Alle **vom Nutzer genannten** Typen über `find_in_index` aufgelöst (oder Abdeckungs-Matrix + Filesystem-MCP)?
+- [ ] Grep nur für Lücken (Caller, Strings, Routes, Guards), nicht als erster Schritt bei Symbol-Frage?
 - [ ] UI-only-Bezug nicht fälschlich über Index erzwungen?
+- [ ] Bei MCP-Fehler: Hard-Gate-Checkliste abgearbeitet (max. 2 Versuche)?

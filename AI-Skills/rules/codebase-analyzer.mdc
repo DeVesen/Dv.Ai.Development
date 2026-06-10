@@ -23,26 +23,26 @@ Schlüsselwörter: "Tests laufen", "Feature fertig", "vor dem Merge", "Sprint-En
 ## PLANUNG — Vorgehen
 
 **Symbol-Bezug (Klasse, Methode, Property, Service, Route):** Grep nicht zuerst —
-zuerst `index_project` (Einzelprojekt) oder `index_solution` (.NET Multi-Projekt / `.sln` im Root), dann `find_in_index`. Grep nur für Caller, String-Literale, Routes.
+zuerst `index_project` auf dem **richtigen** MCP-`projectPath` (siehe `.cursor/references/mcp-project-paths.md` + [mcp-path-canon.mdc](../rules/mcp-path-canon.mdc)), dann `find_in_index`. Grep nur für Caller, String-Literale, Routes.
 **Kein Index** bei reinem UI-Wortschatz (Button-Label, sichtbares Feld) ohne genanntes Symbol.
-Vollständige Recherche-Reihenfolge: [codebase-analyzer SKILL.md](../skills/codebase-analyzer/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge). Scout-Phasen: nach leerem `find_in_index` → Filesystem-MCP — [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md).
+Vollständige Recherche-Reihenfolge: [op-code-map.md](../skills/codebase-analyzer/references/op-code-map.md). Scout-Phasen: nach leerem `find_in_index` → Filesystem-MCP — [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md).
 
-**Schritt 1** — Immer zuerst (`projectPath` = `{frontend-path}` / `{backend-path}` aus `./AGENTS.md`):
+**Schritt 1** — Immer zuerst. MCP-Parameter: **Container-Pfade** mit `/workspace/` — Literale aus **`.cursor/references/mcp-project-paths.md`** (deployt; bei Install aus `skill-params.json` generiert). Host-Werte aus `skill-params.json` **nicht** unverändert an MCP.
+
 ```
 // Angular FE:
-index_project(projectPath: "{frontend-path}", type: "angular")
-// .NET Backend (Einzelprojekt):
-index_project(projectPath: "{backend-path}", type: "dotnet")
-// .NET Multi-Projekt (.sln im Root oder projectReferences im index_project-Output):
-index_solution(solutionPath: "/workspace/<name>.sln")
+index_project(projectPath: "<Literal aus mcp-project-paths.md>", type: "angular")
+// .NET — Routing-Tabelle „Backend project routing" in mcp-project-paths.md:
+index_project(projectPath: "<mcp-be-* oder mcp-backend-path>", type: "dotnet")
+// Multi-.csproj: mehrere index_project — index_solution nur wenn mcp-project-paths index_solution: allowed
 ```
-Bei Fehler: Pfad-Playbook in [codebase-analyzer SKILL.md — MCP-Pfadauflösung](../skills/codebase-analyzer/SKILL.md#mcp-pfadauflösung-dockerwindows--pflicht-playbook) befolgen (max. 2 Versuche je Stack, dann MCP-Fallback dokumentieren).
-Zeige kompakt: was gibt es, was sind die größten Abhängigkeiten, gibt es Warnungen? Bei `projectReferences` / `externalDependencies` → `index_solution` nachladen.
+Bei Fehler: [op-code-map.md — MCP-Pfadauflösung](../skills/codebase-analyzer/references/op-code-map.md#mcp-pfadauflösung-docker--pflicht-playbook) (max. 2 Versuche je Stack).
+Zeige kompakt: was gibt es, was sind die größten Abhängigkeiten, gibt es Warnungen?
 
-**Schritt 2** — Bei konkreter Klasse/Service:
+**Schritt 2** — Bei konkreter Klasse/Service (`projectPath` = dasselbe wie Schritt 1, Routing aus mcp-project-paths.md):
 ```
-find_in_index(projectPath: "{frontend-path}", type: "angular", query: "<Name>")
-// bzw. projectPath: "{backend-path}", type: "dotnet"
+find_in_index(projectPath: "{mcp-frontend-path}", type: "angular", query: "<Name>")
+// bzw. projectPath: "{mcp-be-<projekt>}", type: "dotnet"
 ```
 
 **Schritt 3** — Wenn bestehende Klasse erweitert werden soll:
@@ -121,18 +121,18 @@ Score: X/10
 
 **Schritt 0** — Compiler-Check (echter Compiler, kein Shell-Build) — **allererster** Check:
 ```
-analyze_compiler_diagnostics(path: "{frontend-path}/.../my.service.ts", type: "auto", severity: "error")
-// bzw. Projekt-/Solution-Wurzel:
-analyze_compiler_diagnostics(path: "{backend-path}", type: "auto", severity: "error")
+analyze_compiler_diagnostics(path: "{mcp-frontend-path}/.../my.service.ts", type: "auto", severity: "error")
+// bzw. Projekt-/Modul-Wurzel (MCP container path):
+analyze_compiler_diagnostics(path: "{mcp-be-<projekt>}", type: "auto", severity: "error")
 ```
 Bei Compiler-Errors: **`critical`** — keine weiteren Nach-Implementierungs-Checks bis clean.
 
 **Schritt 1** — Ungetestete public API aufdecken (Heuristik, kein Test-Run):
 ```
 // FE-Einzeldatei direkt nach der Implementierung:
-detect_untested_public_api(path: "{frontend-path}/.../my.service.ts", type: "auto", depth: "file")
-// .NET bzw. ganzes Feature/Modul: Verzeichnis- bzw. Solution-Wurzel:
-detect_untested_public_api(path: "{backend-path}", type: "auto", depth: "project")
+detect_untested_public_api(path: "{mcp-frontend-path}/.../my.service.ts", type: "auto", depth: "file")
+// .NET bzw. ganzes Feature/Modul: .csproj-Verzeichnis (MCP container path):
+detect_untested_public_api(path: "{mcp-be-<projekt>}", type: "auto", depth: "project")
 ```
 **depth-Empfehlung:** `file` für die gerade geänderte Einzeldatei (FE), `project` für ein ganzes Modul/Verzeichnis bzw. die Solution-Wurzel (.NET). Bei `depth: "file"` sucht .NET die Test-Dateien bis zur nächsten `.sln` aufwärts. Listet public-Symbole (Methoden, Properties, Get/Set-Accessoren; .NET auch records/structs) ohne erkennbare Test-Referenz. `reason`: `no_test_file` (kein Spec/Test referenziert die Klasse) oder `no_reference_found` (Test existiert, Symbol nicht referenziert). Rein syntaktische Heuristik — ersetzt keinen echten Coverage-Report.
 

@@ -76,7 +76,7 @@ Kein Call bei reinen Neu-Implementierungen ohne Berührung bestehender Klassen. 
 5. **Pflicht — Parallele Implementierung:** welche Teil-Arbeiten parallel möglich, Blocking zu anderen Topics, contract-first gemäß 4a.
 6. **Pflicht — Vorgeschlagene IMP-Slice-IDs:** gemäß [SKILL.md](../skills/planning-workflow/SKILL.md) **Slice-ID-Konvention** — `IMP-FE-{Bereich}-…` bzw. `IMP-BE-{ServiceKürzel}-…` (z. B. `IMP-FE-Search-Rules`, `IMP-BE-GW-Logging`) plus Wellen-/Blocking-Hinweis; ohne Gesamtplan.
 
-> **MCP-Lücke (wenn Scout `MCP: fallback`):** Für neue Symbole aus Phase 4a zunächst `find_in_index` aufrufen (`{frontend-path}` / `{backend-path}` aus `./AGENTS.md`); Ergebnis (ok oder fallback) im Teilplan festhalten — kein stilles Überspringen.
+> **MCP-Lücke (wenn Scout `MCP: fallback`):** Für neue Symbole zunächst `find_in_index` mit `projectPath` aus `.cursor/references/mcp-project-paths.md` (Routing-Tabelle); Ergebnis im Teilplan festhalten.
 
 ## Verboten
 

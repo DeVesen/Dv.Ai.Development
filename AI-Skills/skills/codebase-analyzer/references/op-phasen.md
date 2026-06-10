@@ -4,7 +4,7 @@
 
 **Signale:** "Ich will bauen…", "Wir planen…", "Wie gehe ich das an?", "Ich will X ändern…"
 
-**Relevante Tools:** `analyze_compiler_diagnostics` (optionaler Pre-Check) · `index_project` · `index_solution` (.NET Multi-Projekt) · `find_in_index` · `suggest_class_splits` · `analyze_refactoring_safety` · `analyze_type_graph` · `analyze_maintainability_index` · `analyze_dataflow`
+**Relevante Tools:** `analyze_compiler_diagnostics` (optionaler Pre-Check) · `index_project` (MCP container path; Multi-.csproj: mehrere Aufrufe) · `index_solution` (optional, nur wenn mcp-project-paths.md freigibt) · `find_in_index` · `suggest_class_splits` · `analyze_refactoring_safety` · `analyze_type_graph` · `analyze_maintainability_index` · `analyze_dataflow`
 
 **Gewinn:** Weiß vor dem ersten Tastendruck was vorhanden ist, was bricht und wie der beste Schnitt aussieht.
 

@@ -538,6 +538,7 @@ foreach ($pkgName in $packagesToInstall) {
 }
 
 Save-ParamsStore
+Sync-McpProjectPathsFile
 Save-Manifest
 Remove-LegacyDeployReadme
 

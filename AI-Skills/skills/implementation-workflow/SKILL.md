@@ -286,7 +286,9 @@ checkpoint, and resolve trivial merge mechanics when in scope.
      plan; escalate conflicts to the initial agent or user.
    - **When the plan provides Umsetzungs-Topologie:** **Slice-ID**, **wave**, topology
      context, parallelism/blocking, shared contracts, integration handoff (see [references/subagent-prompts.md](references/subagent-prompts.md)).
+   - **Pflicht:** [subagent-delegation-boilerplate.md](../../references/subagent-delegation-boilerplate.md) in **jeden** Task-Prompt (Compliance-Block — nicht weglassen).
    - **Pflicht:** Den passenden Abschnitt aus [references/subagent-prompts.md](references/subagent-prompts.md) in den Task-Prompt übernehmen — bei Build/Test **Implementierer (Slice — Build/Test + build-log-filter)**; build-log-filter-Checkliste kanonisch in [`.cursor/rules/build-log-filter.mdc`](../../rules/build-log-filter.mdc) (**keine** zweite 1–8-Liste im Brief duplizieren).
+   - **Rückgabe prüfen:** Ohne Compliance-Bestätigung oder ohne Verifikations-Matrix (bei Build/Test) → Subagent **ablehnen**, neu delegieren.
 
 6. **Plan deviations:** No deliberate deviation from the final plan without
    **user approval**. If implementation reveals the plan is wrong or incomplete,
@@ -464,6 +466,7 @@ Konfiguration des **implement-agent** — Implementierungs-Subagent für Schritt
 
 > **Bevor du deinen Slice startest — lade in dieser Reihenfolge:**
 >
+> 0. **[agent-compliance.md](../../references/agent-compliance.md)** — immer; Orchestrator-/Subagent-Pflicht, Delegations-Boilerplate.
 > 1. **[implementation-workflow-skill.mdc](../../rules/implementation-workflow-skill.mdc)** — immer; Subagent-Pflicht, build-log-filter-Kette, Verifikations-Matrix.
 > 2. **[build-log-filter.mdc](../../rules/build-log-filter.mdc)** — immer; Ausführungs-Checkliste 1–8 für jeden Build-/Test-Lauf.
 > 3. **[codebase-analyzer.mdc](../../rules/codebase-analyzer.mdc)** — immer; MCP-First für Analyse vor und während Implementierung.
@@ -487,7 +490,7 @@ Ist `auto` **nicht** wählbar → **stoppen**, transparent melden — **kein** s
 | Symbole / Einstiegspunkte | `index_project` → `find_in_index` |
 | Komplexität prüfen | `analyze_complexity` |
 | Refactoring-Sicherheit | `analyze_refactoring_safety` |
-| Build-/Test-Fehler analysieren | `analyze_build_output` |
+| Build-/Test-Fehler analysieren | **build-log-filter** `analyze_build_output` (nach `filter_*`) — nicht codebase-analyzer |
 
 ### Mantra
 

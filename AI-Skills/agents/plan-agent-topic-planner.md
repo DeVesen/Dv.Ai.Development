@@ -44,6 +44,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## Pflicht-Dokumente
 
+- [agent-compliance.md](../references/agent-compliance.md)
 - [planning-workflow/SKILL.md](../skills/planning-workflow/SKILL.md) — Phase 4b, Schnittstellen aus 4a
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Abschnitt **Topic-Planer**
 - [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md) — MCP-Sequenz vor Symbol-Auflösung

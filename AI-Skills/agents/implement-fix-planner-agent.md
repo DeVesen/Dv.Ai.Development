@@ -30,11 +30,12 @@ Du bist **`implement-fix-planner-agent`** im iterativen Implement-Review-Loop de
 
 ## Pflicht: Rules laden (erster Schritt, ohne Ausnahme)
 
-1. [implementation-workflow-skill.mdc](../rules/implementation-workflow-skill.mdc)
-2. [build-log-filter.mdc](../rules/build-log-filter.mdc) — Kette 1–8, Interpretationspflicht
-3. [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
-4. [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md) — Pfadregel `/workspace/...`
-5. [angular-skills.mdc](../rules/angular-skills.mdc) / [backend-ef-migrations-skill.mdc](../rules/backend-ef-migrations-skill.mdc) — nur bei FE/EF im Fix-Scope
+1. [agent-compliance.md](../references/agent-compliance.md)
+2. [implementation-workflow-skill.mdc](../rules/implementation-workflow-skill.mdc)
+3. [build-log-filter.mdc](../rules/build-log-filter.mdc) — Kette 1–8, Interpretationspflicht
+4. [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)
+5. [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md) — Pfadregel `/workspace/...`
+6. [angular-skills.mdc](../rules/angular-skills.mdc) / [backend-ef-migrations-skill.mdc](../rules/backend-ef-migrations-skill.mdc) — nur bei FE/EF im Fix-Scope
 
 ## Eingaben (vom Orchestrator)
 

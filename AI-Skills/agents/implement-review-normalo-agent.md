@@ -19,6 +19,7 @@ Du bist **Normalo** im iterativen Implement-Review-Loop. Prüfst Alltagstauglich
 
 ## Pflicht-Dokumente
 
+- [agent-compliance.md](../references/agent-compliance.md)
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Normalo**
 - [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)

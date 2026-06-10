@@ -1,4 +1,4 @@
-# Shared deploy-parameter handling for install-cursor-skills.ps1 and update-cursor-skills.ps1
+﻿# Shared deploy-parameter handling for install-cursor-skills.ps1 and update-cursor-skills.ps1
 # Requires: $script:ParamsStore, $script:DryRun, $script:TargetCursorPath, $script:PackagesDir
 
 $script:CoreDeployParams = @(
@@ -29,7 +29,12 @@ $script:FixedDeployParams = @{
     '{mcp-project-paths}'      = '.cursor/references/mcp-project-paths.md'
     '{insights-path}'          = './insights'
     '{verification-commands}'  = '.cursor/references/verification-commands.md'
+    '{agent-index}'            = 'AGENTS.md'
+    '{agent-compliance}'       = '.cursor/references/agent-compliance.md'
 }
+
+$script:AgentsComplianceMarkerStart = '<!-- ai-skills:agent-compliance:start -->'
+$script:AgentsComplianceMarkerEnd   = '<!-- ai-skills:agent-compliance:end -->'
 
 function Initialize-DefaultParams {
     foreach ($key in $script:FixedDeployParams.Keys) {
@@ -244,6 +249,167 @@ function Apply-ParamsToPath {
     } elseif (Test-Path $Path -PathType Leaf) {
         Apply-Params $Path
     }
+}
+
+function Apply-ParamsToContent {
+    param([string] $Content)
+
+    if ($script:ParamsStore.Count -eq 0) { return $Content }
+
+    $sortedKeys = $script:ParamsStore.Keys | Sort-Object { $_.Length } -Descending
+    foreach ($key in $sortedKeys) {
+        $val = $script:ParamsStore[$key]
+        if ($val -and $Content.Contains($key)) {
+            $Content = $Content.Replace($key, [string]$val)
+        }
+    }
+    return $Content
+}
+
+function Get-AgentsComplianceBlock {
+    $snippetPath = Join-Path $PSScriptRoot 'references\agents-compliance.snippet.md'
+    if (-not (Test-Path $snippetPath)) {
+        Write-Warning "Agent-compliance snippet missing: $snippetPath"
+        return $null
+    }
+    $content = Get-Content $snippetPath -Raw -Encoding UTF8
+    return Apply-ParamsToContent $content
+}
+
+function Resolve-AgentIndexPath {
+    $projectRoot = Split-Path $script:TargetCursorPath -Parent
+    if (-not $projectRoot) { return $null }
+
+    $agentIndex = $script:ParamsStore['{agent-index}']
+    if (-not $agentIndex) { $agentIndex = 'AGENTS.md' }
+
+    $relative = ($agentIndex -replace '^\./', '').Trim()
+    if ([System.IO.Path]::IsPathRooted($relative)) {
+        return $relative
+    }
+    return Join-Path $projectRoot $relative
+}
+
+function Set-AgentsComplianceMarkers {
+    param(
+        [string] $Content,
+        [string] $BlockBody
+    )
+
+    $start = $script:AgentsComplianceMarkerStart
+    $end   = $script:AgentsComplianceMarkerEnd
+    $wrapped = "$start`r`n$BlockBody`r`n$end"
+
+    $pattern = [regex]::Escape($start) + '[\s\S]*?' + [regex]::Escape($end)
+    if ($Content -match $pattern) {
+        return [regex]::Replace($Content, $pattern, $wrapped)
+    }
+
+    if ($Content -and -not $Content.EndsWith("`n")) {
+        $Content += "`r`n"
+    }
+    return $Content + "`r`n`r`n$wrapped`r`n"
+}
+
+function Sync-AgentsMdSection {
+    if (-not $script:TargetCursorPath) { return }
+
+    $complianceRef = Join-Path $script:TargetCursorPath 'references\agent-compliance.md'
+    if (-not (Test-Path $complianceRef)) {
+        Write-Host '  ~ AGENTS.md Sync übersprungen (references/agent-compliance.md nicht installiert)' -ForegroundColor DarkGray
+        return
+    }
+
+    $agentsPath = Resolve-AgentIndexPath
+    if (-not $agentsPath) { return }
+
+    $blockBody = Get-AgentsComplianceBlock
+    if (-not $blockBody) { return }
+
+    $relDisplay = $agentsPath
+    if ($script:TargetCursorPath -and $agentsPath.StartsWith((Split-Path $script:TargetCursorPath -Parent))) {
+        $relDisplay = '..' + ($agentsPath.Substring((Split-Path $script:TargetCursorPath -Parent).Length) -replace '\\', '/')
+    }
+
+    if (Test-Path $agentsPath) {
+        $existing = Get-Content $agentsPath -Raw -Encoding UTF8
+        $updated  = Set-AgentsComplianceMarkers $existing $blockBody
+
+        if ($script:DryRun) {
+            Write-Host "  [DRY] Agent-Compliance-Block in $relDisplay (Marker ersetzen/einfuegen)" -ForegroundColor Yellow
+            return
+        }
+
+        if ($updated -ne $existing) {
+            Set-Content $agentsPath $updated -Encoding UTF8 -NoNewline
+            Write-Host "  ~ $relDisplay (Agent-Compliance Marker-Block aktualisiert)" -ForegroundColor Green
+        } else {
+            Write-Host "  ~ $relDisplay (Agent-Compliance unveraendert)" -ForegroundColor DarkGray
+        }
+        return
+    }
+
+    $templatePath = Join-Path $PSScriptRoot 'references\agents-index.template.md'
+    if (-not (Test-Path $templatePath)) {
+        Write-Warning "agents-index.template.md missing — AGENTS.md nicht erzeugt: $agentsPath"
+        return
+    }
+
+    $content = Get-Content $templatePath -Raw -Encoding UTF8
+    $content = Apply-ParamsToContent $content
+    $content = $content -replace '(?s)<!-- ai-skills:agent-compliance:start -->.*?<!-- ai-skills:agent-compliance:end -->', ''
+    $content = Set-AgentsComplianceMarkers $content $blockBody
+
+    if ($script:DryRun) {
+        Write-Host "  [DRY] erzeugen: $relDisplay (aus Template + Compliance-Block)" -ForegroundColor Yellow
+        return
+    }
+
+    Set-Content $agentsPath $content -Encoding UTF8 -NoNewline
+    Write-Host "  + $relDisplay (neu aus Template + Agent-Compliance)" -ForegroundColor Green
+}
+
+function Get-McpsMdDeployedIntro {
+    $introPath = Join-Path $PSScriptRoot 'references\mcps-md-intro.md'
+    if (-not (Test-Path $introPath)) {
+        Write-Warning "mcps-md-intro.md missing — fallback header ohne Umlaute"
+        return "# Projekt MCPs`n`n## MCPs`n`n"
+    }
+    $text = Get-Content $introPath -Raw -Encoding UTF8
+    if (-not $text.EndsWith("`n")) { $text += "`n" }
+    return $text
+}
+
+function Sync-McpsMdIntro {
+    param([string] $McpsMdFile)
+
+    if (-not (Test-Path $McpsMdFile)) { return }
+
+    $intro = Get-McpsMdDeployedIntro
+    $content = Get-Content $McpsMdFile -Raw -Encoding UTF8
+    if (-not $content) { return }
+
+    if ($content -notmatch '(?m)^## MCPs\s*$') { return }
+
+    $match = [regex]::Match($content, '(?ms)^## MCPs\s*\r?\n')
+    if (-not $match.Success) { return }
+
+    $tail = $content.Substring($match.Index + $match.Length)
+    $header = $intro.TrimEnd("`r", "`n")
+    if ($header -match '(?ms)\r?\n## MCPs\s*$') {
+        $header = [regex]::Replace($header, '(?ms)\r?\n## MCPs\s*$', '')
+    }
+    $newContent = $header + "`n`n## MCPs`n`n" + $tail.TrimStart("`r", "`n")
+
+    if ($newContent -eq $content) { return }
+
+    if ($script:DryRun) {
+        Write-Host '  [DRY] mcps.md Intro aktualisiert' -ForegroundColor Yellow
+        return
+    }
+
+    Set-Content $McpsMdFile $newContent -Encoding UTF8 -NoNewline
+    Write-Host '  ~ mcps.md Intro (Header synchronisiert)' -ForegroundColor DarkGray
 }
 
 function Remove-LegacyDeployReadme {

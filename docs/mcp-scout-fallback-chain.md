@@ -17,7 +17,7 @@ Typischer Fehlablauf:
 
 1. Agent wählt `codebase-analyzer` (`index_project` → `find_in_index`)
 2. Kein Treffer oder falscher Index-Befehl
-3. Sofort Read/Grep — ohne `index_solution`, ohne `find_by_content`
+3. Sofort Read/Grep — ohne blindes `index_solution`, ohne `find_by_content`
 
 Nach außen wirkt das wie „MCP-Scout“, faktisch ist es Grep mit MCP-Vorreiter.
 
@@ -28,7 +28,9 @@ Nach außen wirkt das wie „MCP-Scout“, faktisch ist es Grep mit MCP-Vorreite
 ```
 Repo-Frage
   ├─ Pfad/Klasse bekannt? → dev-filesystem (read_*, find_file) zuerst
-  ├─ Symbol unbekannt?    → index_project / index_solution → find_in_index
+  ├─ Symbol unbekannt?    → index_project (MCP container path) → find_in_index
+  │                         → bei Multi-.csproj: mehrere index_project (mcp-project-paths.md)
+  │                         → index_solution nur wenn mcp-project-paths.md erlaubt
   │                         → bei Miss: find_by_content / find_file
   └─ Erst wenn Kette leer oder MCP down → Read/Grep (dokumentiert)
 ```
@@ -39,7 +41,7 @@ Repo-Frage
 |---------|---------------|
 | MCP-Fehler (Server down, Exception) | Ja, nach BLOCKER-Dokumentation |
 | Index-Miss (0 Treffer) | Nein — Filesystem-MCP zuerst |
-| MCP-Hinweis (`index_solution`, `projectReferences`) | Nein — Nachschritt Pflicht |
+| MCP-Hinweis „use index_solution" | Nein — nur wenn mcp-project-paths.md freigibt |
 
 ### Mindestkette bei Code-Recherche
 

@@ -19,6 +19,7 @@ Du bist **Optimist** im iterativen Implement-Review-Loop. Du zeigst, warum die U
 
 ## Pflicht-Dokumente
 
+- [agent-compliance.md](../references/agent-compliance.md)
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implement-Review: Optimist**
 - [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)

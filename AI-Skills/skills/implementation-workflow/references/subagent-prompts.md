@@ -8,9 +8,11 @@
 
 Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen.
 
-**Agent-Typ (Pflicht):** Je Rolle passendes Profil unter [../../agents/](../../agents/). **Modell:** [subagent-model-before-task.md](../../references/subagent-model-before-task.md) lesen; Slugs nicht im Prompt duplizieren.
+**Agent-Typ (Pflicht):** Je Rolle passendes Profil unter [../../../agents/](../../../agents/). **Modell:** [subagent-model-before-task.md](../../../references/subagent-model-before-task.md) lesen; Slugs nicht im Prompt duplizieren.
 
-**Workflow:** [SKILL.md](../SKILL.md) · **build-log-filter-Regel:** [build-log-filter.mdc](../../rules/build-log-filter.mdc)
+**Workflow:** [SKILL.md](../SKILL.md) · **Compliance:** [agent-compliance.md](../../../references/agent-compliance.md) · **Delegations-Boilerplate:** [subagent-delegation-boilerplate.md](../../../references/subagent-delegation-boilerplate.md) · **build-log-filter:** [build-log-filter.mdc](../../../rules/build-log-filter.mdc)
+
+**Orchestrator-Pflicht:** Vor **jedem** Subagent-Start [subagent-delegation-boilerplate.md](../../../references/subagent-delegation-boilerplate.md) + passende Vorlage unten in den Task-Prompt. Rückgaben ohne Compliance/Matrix ablehnen.
 
 **Orchestrator-Empfehlung (Schritt 2):** Für Task-Prompts mit Build/Test den Abschnitt **Implementierer (Slice — Build/Test + build-log-filter)** bevorzugen; **Implementierer (Slice — compact)** nur bei trivialen Slices ohne Build/Test.
 
@@ -18,7 +20,7 @@ Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen.
 
 ## Implementierer (Slice — compact)
 
-Für Slices **ohne** slice-scoped Build/Test oder als Kurzform mit Verweis auf [implement-agent.md](../../agents/implement-agent.md).
+Für Slices **ohne** slice-scoped Build/Test oder als Kurzform mit Verweis auf [implement-agent.md](../../../agents/implement-agent.md).
 
 ```markdown
 You are a subagent for a fixed-scope implementation task.
@@ -32,7 +34,7 @@ Required when the plan section **Umsetzungs-Topologie** is present:
 - **Wave:** [e.g. W1 — parallel with IMP-BE-GW-Logging]
 
 Rules:
-- **Agent:** `implement-agent` — [implement-agent.md](../../agents/implement-agent.md).
+- **Agent:** `implement-agent` — [implement-agent.md](../../../agents/implement-agent.md).
 - **Build/Test:** slice-scoped allowed; **build-log-filter** on every run.
 - **Not allowed:** stack-wide Technik-Gate (Schritt 3 after integration).
 - **Plan adherence:** Implement only this slice — no silent plan drift.
@@ -44,7 +46,7 @@ Reply with: summary, touched paths, open risks/blockers.
 
 ## Implementierer (Slice — Build/Test + build-log-filter)
 
-**Standard-Vorlage** für Schritt-2-Task-Prompts mit slice-scoped Build/Test. build-log-filter-Checkliste: [build-log-filter.mdc](../../rules/build-log-filter.mdc).
+**Standard-Vorlage** für Schritt-2-Task-Prompts mit slice-scoped Build/Test. build-log-filter-Checkliste: [build-log-filter.mdc](../../../rules/build-log-filter.mdc).
 
 ```text
 You are an implementation subagent for ONE plan slice (IMP-*) only.
@@ -166,6 +168,8 @@ Rolle: implement-review-professor-agent (readonly).
 Pflicht-MCP:
 - analyze_advanced_all
 - analyze_test_quality
+- review_with_index
+- detect_untested_public_api
 
 Liefern:
 - Priorisierte Liste mit [KRITISCH]/[WESENTLICH]/[FORMAL]
@@ -231,7 +235,8 @@ Bitte kurz beantworten, damit ich direkt weiterarbeiten kann.
 Rolle: implement-fix-planner-agent.
 Du erstellst einen Fix-Teilplan, implementierst NICHT.
 
-Pflicht-Rules (1-5):
+Pflicht-Rules (1-6):
+0) agent-compliance.md
 1) implementation-workflow-skill.mdc
 2) build-log-filter.mdc
 3) codebase-analyzer.mdc

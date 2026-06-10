@@ -28,14 +28,15 @@ Rule (`.mdc`), Skill-Ordner, Agent-Profile und geteilte Referenzen.
 
 ### `planning-workflow`
 
-Sechsphasiger Planungs-Workflow mit Scout-, Topic-Planer- und Drei-Perspektiven-Review-Subagents.
+Sechsphasiger Planungs-Workflow mit Scout-, Topic-Planer- und Fünf-Perspektiven-Review-Subagents.
 
 | Was | Dateien |
 |-----|---------|
 | Rule | `rules/planning-workflow-skill.mdc` |
 | Skill | `skills/planning-workflow/` |
-| Agents | `plan-agent`, `plan-agent-scout`, `plan-agent-topic-planner`, `plan-agent-optimist`, `plan-agent-pessimist`, `plan-agent-normalo` |
+| Agents | `plan-agent-scout`, `plan-agent-topic-planner`, `plan-review-optimist-agent`, `plan-review-pessimist-agent`, `plan-review-normalo-agent`, `plan-review-oberlehrer-agent`, `plan-review-professor-agent` |
 | Referenz | `references/subagent-model-before-task.md` |
+| Abhängigkeit | `mcp-path-canon`, `repo-scout-protocol`, `codebase-analyzer`, `agent-compliance` |
 
 | Parameter | Bedeutung | Beispiel |
 |-----------|-----------|---------|
@@ -52,14 +53,26 @@ Agent-Modus Umsetzungs-Workflow: Implementierungs-Subagents (Slices), Hard Gate,
 |-----|---------|
 | Rule | `rules/implementation-workflow-skill.mdc` |
 | Skill | `skills/implementation-workflow/` |
-| Agents | `implement-agent`, `verify-agent` |
+| Agents | `implement-agent`, `implement-fix-planner-agent`, `implement-review-*` (6 Perspektiven) |
 | Referenz | `references/subagent-model-before-task.md` |
-| Abhängigkeit | `build-log-filter` |
+| Abhängigkeit | `build-log-filter`, `codebase-analyzer`, `agent-compliance` |
 
 | Parameter | Bedeutung | Beispiel |
 |-----------|-----------|---------|
 | `{agent-index}` | Datei mit Agentenübersicht | `AGENTS.md` |
 | `{verification-commands}` | Datei mit Build/Test-Befehlen | `.cursor/references/verification-commands.md` |
+
+---
+
+### `agent-compliance`
+
+Verbindliche Skill/Workflow-Compliance und Orchestrator-Delegations-Boilerplate für Subagents.
+
+| Was | Dateien |
+|-----|---------|
+| References | `agent-compliance.md`, `subagent-delegation-boilerplate.md`, `agents-compliance.snippet.md` |
+
+Wird als `dependsOn` von `planning-workflow`, `implementation-workflow` und `angular-bundle` mitinstalliert.
 
 ---
 
@@ -237,11 +250,13 @@ ado-requests-stories  →  buddy-agent
 buddy-agent           →  caveman, commit-message
 angular-refactor      →  angular-bundle
 angular-material-*    →  angular-bundle
+angular-bundle        →  build-log-filter, agent-compliance
 describe-as-html-*    →  describe-as-prompt
-implementation-*      →  build-log-filter
+planning-workflow     →  mcp-path-canon, repo-scout-protocol, codebase-analyzer, agent-compliance
+implementation-*      →  build-log-filter, codebase-analyzer, agent-compliance
 ```
 
 ## Parameter-Persistenz
 
-`update-skill.ps1` speichert gesetzte Parameter in `.cursor/skill-params.json` im Zielprojekt.
+`update-cursor-skills.ps1` speichert gesetzte Parameter in `.cursor/skill-params.json` im Zielprojekt.
 Bei erneutem Update werden diese Werte automatisch übernommen — neue Parameter werden abgefragt.

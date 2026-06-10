@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Updates managed skill packages in a target project's .cursor and optionally .claude directory.
     Reads installed-manifest.json to know which files are managed:
@@ -38,9 +38,14 @@ param(
     [switch] $List
 )
 
+$script:CliTargetCursorPath = $TargetCursorPath
+$script:CliTargetClaudePath  = $TargetClaudePath
+$script:CliDryRun           = $DryRun.IsPresent
+$script:CliList             = $List.IsPresent
+
 $script:SourceCursorPath = $PSScriptRoot
 $script:PackagesDir      = Join-Path $PSScriptRoot "packages"
-$script:DryRun           = $DryRun.IsPresent
+$script:DryRun           = $script:CliDryRun
 $script:TargetClaudePath = $null
 $script:ParamsFile       = $null
 $script:ParamsStore      = @{}
@@ -48,6 +53,12 @@ $script:ManifestFile     = $null
 $script:AdoInstalled     = $false
 
 . (Join-Path $PSScriptRoot "deploy-param-handling.ps1")
+
+$TargetCursorPath = $script:CliTargetCursorPath
+$TargetClaudePath = $script:CliTargetClaudePath
+$DryRun = [bool]$script:CliDryRun
+$List = [bool]$script:CliList
+$script:DryRun = $script:CliDryRun
 
 # ---------------------------------------------------------------------------
 # Manifest — tracks which files were installed per package
@@ -183,7 +194,9 @@ function Update-McpsMd {
         return
     }
 
-    $mdHeader = "# Projekt MCPs`n`nVerfügbare MCP-Server in diesem Projekt.`nAgents wählen situativ — kein festes Ablaufschema außer in Scout-Phasen.`nScout-Phasen (repo-check, Code-Landkarte, plan-agent-scout): Kette gemäß skills/repo-scout-protocol/SKILL.md.`nFallback wenn kein MCP verfügbar oder Fehler: Read/Grep mit Begründung (nach Scout-Kette).`n`n## MCPs`n`n"
+    Sync-McpsMdIntro -McpsMdFile $McpsMdFile
+
+    $mdHeader = Get-McpsMdDeployedIntro
 
     if (-not (Test-Path $McpsMdFile)) {
         Set-Content $McpsMdFile $mdHeader -Encoding UTF8 -NoNewline
@@ -543,6 +556,9 @@ if ($TargetClaudePath -and -not (Test-Path $TargetClaudePath) -and -not $DryRun)
 
 $script:TargetCursorPath = $TargetCursorPath.TrimEnd('\', '/')
 $script:TargetClaudePath = if ($TargetClaudePath) { $TargetClaudePath.TrimEnd('\', '/') } else { $null }
+if ($script:TargetClaudePath) {
+    Write-Host "Claude-Deploy: $script:TargetClaudePath" -ForegroundColor DarkGray
+}
 $script:ParamsFile       = Join-Path $script:TargetCursorPath "skill-params.json"
 $script:ManifestFile     = Join-Path $script:TargetCursorPath "installed-manifest.json"
 
@@ -578,6 +594,7 @@ foreach ($pkgName in $managedPackages) {
 if ($script:ParamsStore.Count -gt 0) {
     Save-ParamsStore
     Sync-McpProjectPathsFile
+    Sync-AgentsMdSection
     Write-Host ""
     Write-Host "  Parameter gespeichert: $script:ParamsFile" -ForegroundColor DarkGray
 }

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Installs all skill packages into a target project's .cursor and optionally .claude directory.
     Prompts for deploy {param} placeholders and MCP configuration interactively.
@@ -37,15 +37,26 @@ param(
     [switch] $List
 )
 
+$script:CliTargetCursorPath = $TargetCursorPath
+$script:CliTargetClaudePath  = $TargetClaudePath
+$script:CliDryRun           = $DryRun.IsPresent
+$script:CliList             = $List.IsPresent
+
 $script:SourceCursorPath = $PSScriptRoot
 $script:PackagesDir      = Join-Path $PSScriptRoot "packages"
-$script:DryRun           = $DryRun.IsPresent
+$script:DryRun           = $script:CliDryRun
 $script:TargetClaudePath = $null
 $script:ParamsFile       = $null
 $script:ParamsStore      = @{}
 $script:ManifestFile     = $null
 
 . (Join-Path $PSScriptRoot "deploy-param-handling.ps1")
+
+$TargetCursorPath = $script:CliTargetCursorPath
+$TargetClaudePath = $script:CliTargetClaudePath
+$DryRun = [bool]$script:CliDryRun
+$List = [bool]$script:CliList
+$script:DryRun = $script:CliDryRun
 
 # Packages whose name matches this pattern will ask for confirmation before installing
 $ADO_PATTERN = '^ado-'
@@ -182,7 +193,9 @@ function Update-McpsMd {
         return
     }
 
-    $mdHeader = "# Projekt MCPs`n`nVerfügbare MCP-Server in diesem Projekt.`nAgents wählen situativ — kein festes Ablaufschema außer in Scout-Phasen.`nScout-Phasen (repo-check, Code-Landkarte, plan-agent-scout): Kette gemäß skills/repo-scout-protocol/SKILL.md.`nFallback wenn kein MCP verfügbar oder Fehler: Read/Grep mit Begründung (nach Scout-Kette).`n`n## MCPs`n`n"
+    Sync-McpsMdIntro -McpsMdFile $McpsMdFile
+
+    $mdHeader = Get-McpsMdDeployedIntro
 
     if (-not (Test-Path $McpsMdFile)) {
         Set-Content $McpsMdFile $mdHeader -Encoding UTF8 -NoNewline
@@ -539,6 +552,7 @@ foreach ($pkgName in $packagesToInstall) {
 
 Save-ParamsStore
 Sync-McpProjectPathsFile
+Sync-AgentsMdSection
 Save-Manifest
 Remove-LegacyDeployReadme
 

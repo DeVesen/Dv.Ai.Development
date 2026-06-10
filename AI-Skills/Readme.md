@@ -41,7 +41,7 @@ Spezialisierte Agent-Profile, die von Skills als Sub-Agents aufgerufen werden. J
 |-------|---------|
 | `implement-agent.md` | IMP-\*-Slices ausführen (Build + Test) |
 | `implement-fix-planner-agent.md` | Evidenzbasierter Fix-Plan |
-| `implement-review-*.md` | 5 Review-Perspektiven (Pessimist, Lehrer, Normalo, Oberlehrer, Professor) |
+| `implement-review-*.md` | 6 Review-Perspektiven (Pessimist, Lehrer, Normalo, Oberlehrer, Professor, Optimist) |
 
 **ADO-Agents:**
 
@@ -152,7 +152,7 @@ JSON-Manifeste definieren, welche Artefakte ein Paket enthält und wohin sie dep
 
 **Verfügbare Pakete:**
 
-`ado-requests-stories` · `angular-bundle` · `angular-material-custom-input` · `angular-refactor` · `backend-ef-migrations` · `buddy-agent` · `build-log-filter` · `caveman` · `codebase-analyzer` · `commit-message` · `conversation-insights` · `describe-as` · `describe-as-html-prompt` · `dev-angular-mcp` · `dev-dotnet-mcp` · `dev-filesystem-mcp` · `dev-tooling-mcp` · `implementation-workflow` · `mcp-path-canon` · `planning-workflow` · `repo-scout-protocol`
+`ado-requests-stories` · `agent-compliance` · `angular-bundle` · `angular-material-custom-input` · `angular-refactor` · `backend-ef-migrations` · `buddy-agent` · `build-log-filter` · `caveman` · `codebase-analyzer` · `commit-message` · `conversation-insights` · `describe-as` · `describe-as-html-prompt` · `dev-angular-mcp` · `dev-dotnet-mcp` · `dev-filesystem-mcp` · `dev-tooling-mcp` · `implementation-workflow` · `mcp-path-canon` · `planning-workflow` · `repo-scout-protocol`
 
 ---
 
@@ -165,6 +165,8 @@ Dateien, die von mehreren Paketen gemeinsam genutzt werden:
 | `mcps.md` | MCP-Router (wann welcher Server) — Kanon in `skills/<mcp>/SKILL.md` |
 | `mcp-scout-fallback-chain.md` | **Alias** → Agent-Kanon: `skills/repo-scout-protocol/SKILL.md`; Menschen-Doku: `docs/mcp-scout-fallback-chain.md` |
 | `subagent-model-before-task.md` | Vorgabe: Model-Sektion des Agent-Profils vor jeder Aufgabe lesen |
+| `agent-compliance.md` | Verbindliche Skill/Workflow-Compliance; Orchestrator → Subagent Delegation |
+| `subagent-delegation-boilerplate.md` | Copy-Paste-Block für Task-Prompts (Pflicht bei Delegation) |
 | `mcp-project-paths.md` | **Deploy-Kanon** — MCP container paths + Backend routing (generiert aus skill-params) |
 | `mcp-smoke-test.md` | Smoke-Tests nach MCP-Pfad-/Install-Änderungen |
 | `verification-commands.md` | Projekt-spezifische Build/Test-Befehle pro Stack |

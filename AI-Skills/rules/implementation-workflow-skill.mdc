@@ -12,6 +12,8 @@ Vor jeder schreibenden Umsetzung:
 - `skills/implementation-workflow/SKILL.md` laden
 - Workflow bis Abschluss befolgen
 
+**Orchestrator:** Bei jeder Subagent-Delegation [subagent-delegation-boilerplate.md](../references/subagent-delegation-boilerplate.md) + [agent-compliance.md](../references/agent-compliance.md) in den Task-Prompt — Subagents müssen Skills/Rules **einhalten**, nicht nur laden.
+
 ## Verbindliche Aktivierung
 
 Trigger u. a.:

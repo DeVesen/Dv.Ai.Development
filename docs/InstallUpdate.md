@@ -62,7 +62,7 @@ Dv.Ai.Development/AI-Skills/     →    Ziel-Projekt/
 
 > **ADO-Paket:** Das Skript fragt interaktiv, ob das ADO-Paket installiert werden soll (Azure DevOps ist optional). Wird ADO abgelehnt, werden **keine** ADO-spezifischen Platzhalter (z. B. `{devops-pipelines-path}`) und kein ADO-MCP abgefragt.
 
-> **Deploy-Parameter:** Nach der Paketauswahl fragt das Skript fehlende `{param}`-Platzhalter ab (z. B. `{code-root}`, `{frontend-path}`, `{backend-path}`) und ersetzt sie in den deployten Dateien. Werte werden in `.cursor/skill-params.json` gespeichert. Fest gesetzt **ohne** Abfrage: `{workspace-root}` = `.`, `{agent-index}` = `./AGENTS.md`, `{insights-path}` = `./insights`, `{verification-commands}` = `.cursor/references/verification-commands.md`. **`Readme.md`** wird **nicht** nach `.cursor/` kopiert.
+> **Deploy-Parameter:** Nach der Paketauswahl fragt das Skript fehlende `{param}`-Platzhalter ab (z. B. `{code-root}`, `{frontend-path}`, `{backend-path}`) und ersetzt sie in den deployten Dateien. Werte werden in `.cursor/skill-params.json` gespeichert. Fest gesetzt **ohne** Abfrage: `{workspace-root}` = `.`, `{mcp-project-paths}` = `.cursor/references/mcp-project-paths.md`, `{insights-path}` = `./insights`, `{verification-commands}` = `.cursor/references/verification-commands.md`, `{agent-index}` = `AGENTS.md`, `{agent-compliance}` = `.cursor/references/agent-compliance.md`. Nach Install/Update wird **`mcp-project-paths.md`** aus `skill-params.json` generiert (bestehende Datei: nur Platzhalter aktualisiert). **`AGENTS.md`** am Repo-Root (Parent von `.cursor/`): Abschnitt zwischen `<!-- ai-skills:agent-compliance:start/end -->` wird aktualisiert — **kein** vollständiges Überschreiben. Fehlt die Datei, wird sie aus Template angelegt. **`Readme.md`** wird **nicht** nach `.cursor/` kopiert.
 
 ### Schritt 3: Update (bestehende Installation)
 
@@ -75,7 +75,7 @@ Das Update-Skript:
 - Ersetzt veränderte Dateien
 - Entfernt veraltete Dateien, die nicht mehr im Paket sind
 - Fragt interaktiv nach **neuen oder leeren** `{param}`-Platzhaltern (bestehende Werte aus `skill-params.json` bleiben erhalten)
-- Setzt fest **ohne Abfrage:** `{workspace-root}` = `.`, `{agent-index}` = `./AGENTS.md`, `{insights-path}` = `./insights`, `{verification-commands}` = `.cursor/references/verification-commands.md`
+- Setzt fest **ohne Abfrage:** `{workspace-root}` = `.`, `{mcp-project-paths}` = `.cursor/references/mcp-project-paths.md`, `{insights-path}` = `./insights`, `{verification-commands}` = `.cursor/references/verification-commands.md`, `{agent-index}` = `AGENTS.md`, `{agent-compliance}` = `.cursor/references/agent-compliance.md`; generiert **`references/mcp-project-paths.md`**; aktualisiert **`AGENTS.md`** Compliance-Marker-Block
 - Entfernt legacy `.cursor/Readme.md` (wird nicht mehr deployt)
 - ADO-Parameter nur, wenn das Paket `ado-requests-stories` im Manifest geführt wird
 - Aktualisiert MCP-Konfiguration für Pakete mit `mcp`-Eintrag (Image-Auswahl wie bei der Erstinstallation)
@@ -123,7 +123,9 @@ Windows (PowerShell): **`install-cursor-skills.ps1`** und **`update-cursor-skill
 
 - **Erstinstallation:** Platzhalter-Abfrage erfolgt **nach** der Paketauswahl (inkl. optional ADO), **unabhängig** davon, welche MCP-Pakete dabei sind.
 - **Update:** Nur **neue oder leere** Parameter werden abgefragt; vorhandene Werte in `skill-params.json` bleiben (Enter = behalten).
-- **Fest gesetzt (ohne Abfrage):** `{workspace-root}` = `.`, `{agent-index}` = `./AGENTS.md`, `{insights-path}` = `./insights`, `{verification-commands}` = `.cursor/references/verification-commands.md`
+- **Fest gesetzt (ohne Abfrage):** `{workspace-root}` = `.`, `{mcp-project-paths}` = `.cursor/references/mcp-project-paths.md`, `{insights-path}` = `./insights`, `{verification-commands}` = `.cursor/references/verification-commands.md`, `{agent-index}` = `AGENTS.md`, `{agent-compliance}` = `.cursor/references/agent-compliance.md`
+- **`mcp-project-paths.md`:** Wird aus Template + `skill-params.json` generiert — **MCP-Kanon für Agents**
+- **`AGENTS.md`:** Marker-Block `<!-- ai-skills:agent-compliance:start/end -->` — nur dieser Abschnitt wird bei Update ersetzt; projekt-eigener Inhalt bleibt erhalten. **Nur Windows/PowerShell** (`install-cursor-skills.ps1` / `update-cursor-skills.ps1`); Bash/`install-skill.sh` synchronisiert `AGENTS.md` nicht automatisch. Voraussetzung: Paket **`agent-compliance`** installiert (direkt oder transitiv via `planning-workflow`, `implementation-workflow`, `angular-bundle`) — sonst überspringt das Skript den Sync.
 - **`{code-root}`:** Wird abgefragt — oft identisch mit `{workspace-root}` (`.`), kann abweichen (z. B. `src` wenn Git-Root unterhalb des Workspace liegt)
 
 ### Welche Parameter braucht ein Paket?
@@ -151,7 +153,9 @@ Select-String -Path "C:\project\.cursor\**\*" -Pattern '\{frontend-path\}' -Recu
 | `{backend-path}` | Pfad zum .NET-Backend-Verzeichnis |
 | `{workspace-root}` | **Fest `.`** — Cursor-Workspace-Root |
 | `{code-root}` | Wurzelpfad des Git-Repositories (Code); oft `.`, ggf. abweichend (z. B. `src`) |
-| `{agent-index}` | **Fest `./AGENTS.md`** — Agentenübersicht im Workspace-Root |
+| `{mcp-project-paths}` | **Fest `.cursor/references/mcp-project-paths.md`** — MCP-Kanon (generiert bei Install/Update) |
+| `{mcp-frontend-path}` / `{mcp-backend-path}` | Abgeleitet aus `{code-root}` + Host-Pfaden in `skill-params.json` |
+| `{index-solution-policy}` | Optional (`disabled` \| `allowed`) — Default `disabled` |
 | `{verification-commands}` | **Fest `.cursor/references/verification-commands.md`** — Build/Test-Befehle (Inhalt anpassen) |
 | `{insights-path}` | **Fest `./insights`** — Conversation-Insights-Log |
 | `{devops-pipelines-path}` | Nur bei installiertem ADO-Paket |
@@ -164,6 +168,7 @@ Jeder MCP-Server hat ein eigenes Skill-Paket unter `AI-Skills/skills/<name>/SKIL
 
 | Package | Kanon-Skill | Router / Rule |
 |---------|-------------|---------------|
+| `mcp-path-canon` | — | `rules/mcp-path-canon.mdc` (alwaysApply) |
 | `codebase-analyzer` | `skills/codebase-analyzer` | `rules/codebase-analyzer.mdc` |
 | `dev-filesystem-mcp` | `skills/dev-filesystem-mcp` | `dependsOn`: `dev-tooling-mcp` |
 | `dev-angular-mcp` | `skills/dev-angular-mcp` | `dependsOn`: `dev-tooling-mcp` |

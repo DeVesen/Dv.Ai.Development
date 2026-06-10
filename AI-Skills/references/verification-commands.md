@@ -32,4 +32,16 @@ dotnet test                        # all test projects under tests/
 
 ---
 
+## Build/Test — build-log-filter (Pflicht)
+
+Jeder Shell-Lauf der obigen Befehle (`ng build`, `ng test`, `dotnet build`, `dotnet test`, …):
+
+1. Shell ausführen → Exit-Code festhalten.
+2. **Sofort** stdout/stderr über MCP **build-log-filter** (`filter_output` / bei langen Logs `filter_output_stream`; bei Exit ≠ 0 zusätzlich `analyze_build_output`).
+3. Inhaltliche Diagnose/Freigabe **nur** aus intern gelesenem MCP — **nicht** aus Roh-Konsole.
+
+Kanon: `.cursor/rules/build-log-filter.mdc` und Skill `build-log-filter`. Compliance: `{agent-compliance}`.
+
+---
+
 > **Hinweis:** Der Abschnittstitel `Agents — mandatory verification after changes` darf nicht umbenannt werden.

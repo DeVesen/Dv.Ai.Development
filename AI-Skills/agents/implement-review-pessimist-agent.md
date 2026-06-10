@@ -27,6 +27,7 @@ Host-Regel: ersten verfügbaren Slug wählen, sonst stoppen.
 
 ## Pflicht-Dokumente
 
+- [agent-compliance.md](../references/agent-compliance.md)
 - [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md)
 - [implementation-workflow/references/subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — Abschnitt **Implement-Review: Pessimist**
 - [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc)

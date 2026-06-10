@@ -898,9 +898,10 @@ Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rol
 ### Delegations-Regeln
 
 1. **Immer** den passenden **Agent-Typ** starten — Modell gemäß [subagent-model-before-task.md](../../references/subagent-model-before-task.md) aus dem **Ziel-Profil**.
-2. Auftrag aus [references/subagent-prompts.md](references/subagent-prompts.md) (Platzhalter ersetzen) **plus** Kontext aus Phasen 1–2 bzw. 4a/4c.
-3. **Phasen-Gates (verbindlich):** Stufe N+1 **erst**, wenn Stufe N **vollständig** abgeschlossen — siehe Skill **Phasen-Gates**. Parallelität **nur innerhalb derselben Stufe**.
-4. Nur **kompakte Deliverables** zurückverlangen — du mergst und synthetisierst.
+2. **Pflicht:** [subagent-delegation-boilerplate.md](../../references/subagent-delegation-boilerplate.md) in **jeden** Task-Prompt — Skills/Rules **einhalten**, nicht nur laden ([agent-compliance.md](../../references/agent-compliance.md)).
+3. Auftrag aus [references/subagent-prompts.md](references/subagent-prompts.md) (Platzhalter ersetzen) **plus** Kontext aus Phasen 1–2 bzw. 4a/4c.
+4. **Phasen-Gates (verbindlich):** Stufe N+1 **erst**, wenn Stufe N **vollständig** abgeschlossen — siehe Skill **Phasen-Gates**. Parallelität **nur innerhalb derselben Stufe**.
+5. Nur **kompakte Deliverables** zurückverlangen — du mergst und synthetisierst. Rückgaben ohne Workflow-Compliance → Subagent **neu** starten.
 
 ### Code-Landkarte (Phase 2→3)
 

@@ -37,6 +37,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 ## Pflicht-Dokumente
 
+- [agent-compliance.md](../references/agent-compliance.md)
 - [planning-workflow/SKILL.md](../skills/planning-workflow/SKILL.md) — Phase 3
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Abschnitt **Codebereichs-Scout** (Auftrag wortgetreu)
 - `.cursor/references/mcp-project-paths.md` (MCP-Kanon, deployt)

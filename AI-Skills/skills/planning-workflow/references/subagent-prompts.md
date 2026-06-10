@@ -3,7 +3,9 @@
 Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen. Sprache der
 Antwort frei waehlbar, sofern der Nutzer nichts anderes vorgibt.
 
-**Agent-Typ (Pflicht):** Je Rolle der passende Subagent — Profil unter [../../agents/](../../agents/). **Modell:** [subagent-model-before-task.md](../../references/subagent-model-before-task.md) — Ziel-Profil, **primär** Abschnitt **`## Modell`**, sonst YAML; Slugs **nicht** in Prompts duplizieren.
+**Agent-Typ (Pflicht):** Je Rolle der passende Subagent — Profil unter [../../../agents/](../../../agents/). **Modell:** [subagent-model-before-task.md](../../../references/subagent-model-before-task.md) — Ziel-Profil, **primär** Abschnitt **`## Modell`**, sonst YAML; Slugs **nicht** in Prompts duplizieren.
+
+**Compliance (Pflicht):** [agent-compliance.md](../../../references/agent-compliance.md) · **Orchestrator:** Vor jedem Subagent [subagent-delegation-boilerplate.md](../../../references/subagent-delegation-boilerplate.md) in den Task-Prompt.
 
 Uebersicht: [SKILL.md](../SKILL.md), Abschnitt **Subagent-Typen und Agent-Definitionen**.
 

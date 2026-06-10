@@ -8,6 +8,7 @@
     "skills/implementation-workflow"
   ],
   "agents": [
+    "agents/implement-agent.md",
     "agents/implement-review-pessimist-agent.md",
     "agents/implement-review-lehrer-agent.md",
     "agents/implement-review-normalo-agent.md",
@@ -25,6 +26,8 @@
     "{backend-path}"
   ],
   "dependsOn": [
-    "build-log-filter"
+    "build-log-filter",
+    "codebase-analyzer",
+    "agent-compliance"
   ]
 }

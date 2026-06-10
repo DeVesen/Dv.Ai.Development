@@ -23,6 +23,8 @@
   "params": [],
   "dependsOn": [
     "mcp-path-canon",
-    "repo-scout-protocol"
+    "repo-scout-protocol",
+    "codebase-analyzer",
+    "agent-compliance"
   ]
 }

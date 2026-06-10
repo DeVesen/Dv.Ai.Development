@@ -18,5 +18,8 @@
   "params": [
     "{frontend-path}"
   ],
-  "dependsOn": []
+  "dependsOn": [
+    "build-log-filter",
+    "agent-compliance"
+  ]
 }

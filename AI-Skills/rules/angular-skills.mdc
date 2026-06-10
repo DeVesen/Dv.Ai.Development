@@ -11,6 +11,7 @@ alwaysApply: true
 | `.` | Wurzelpfad des Code-Repositories (z. B. `my-project/`) |
 | `./AGENTS.md` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
 | `.cursor/references/verification-commands.md` | Datei mit den Verifikationsbefehlen für Agents |
+| `.cursor/references/agent-compliance.md` | Agent-Compliance-Kanon (deployt mit agent-compliance-Paket) |
 
 # Pflicht Angular-Skills (Workspace)
 
@@ -40,4 +41,4 @@ Wenn der Nutzer im Prompt oder in der Aufgabenstellung **ausdrücklich** schreib
 
 (genau diese Formulierung oder eindeutig gleichbedeutend für **dieses** Skill-Bündel), dann **diese Pflicht-Skills nicht laden** und sie **bewusst ignorieren**.
 
-**Alle übrigen** Projektregeln — insbesondere [`./AGENTS.md`](./AGENTS.md), Verifikation gemäß [`verification-commands.md`](.cursor/references/verification-commands.md), Implementation Workflow — bleiben **vollständig** wirksam.
+**Alle übrigen** Projektregeln — insbesondere [`./AGENTS.md`](../../AGENTS.md) (Abschnitt Agent-Compliance), [agent-compliance.md](../references/agent-compliance.md), Verifikation gemäß [`verification-commands.md`](../references/verification-commands.md), Implementation Workflow — bleiben **vollständig** wirksam.

@@ -187,4 +187,16 @@ public sealed class DotnetRunnerTests
         Assert.Single(result.Errors);
         Assert.DoesNotContain("\x1B", result.Errors[0]);
     }
+
+    [Fact]
+    public void ParseBuildOutput_strips_osc_sequences()
+    {
+        var stderr = $"\x1B]0;dotnet build\x07src/A.cs(1,1): error CS0001: msg [proj.csproj]";
+
+        var result = DotnetRunner.ParseBuildOutput(string.Empty, stderr, 1);
+
+        Assert.False(result.Success);
+        Assert.Single(result.Errors);
+        Assert.DoesNotContain("\x1B", result.Errors[0]);
+    }
 }

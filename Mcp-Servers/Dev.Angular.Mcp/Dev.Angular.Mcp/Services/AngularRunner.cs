@@ -107,7 +107,7 @@ public sealed partial class AngularRunner
             .ToArray();
 
         var executedLine = lines
-            .Select(l => KarmaExecutedRegex().Match(StripAnsi(l)))
+            .Select(l => KarmaExecutedRegex().Match(l))
             .FirstOrDefault(m => m.Success);
 
         var summary = executedLine is { Success: true }
@@ -164,21 +164,31 @@ public sealed partial class AngularRunner
         var stdoutTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
         var stderrTask = process.StandardError.ReadToEndAsync(linkedCts.Token);
 
+        string stdout, stderr;
         try
         {
             await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(linkedCts.Token));
+            stdout = await stdoutTask;
+            stderr = await stderrTask;
         }
         catch (OperationCanceledException)
         {
             try { process.Kill(entireProcessTree: true); } catch { /* already exited */ }
-            try { await Task.WhenAll(stdoutTask, stderrTask); } catch { /* drain & suppress */ }
+            using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            try { await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(drainCts.Token); } catch { /* drain & suppress */ }
             var reason = timeoutCts.IsCancellationRequested
                 ? $"Process timed out after {timeoutSeconds}s."
                 : "Process was cancelled.";
             return MakeFailResult(reason, commandLabel);
         }
+        catch (Exception ex)
+        {
+            using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            try { await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(drainCts.Token); } catch { }
+            return MakeFailResult($"Process communication error: {ex.Message}", commandLabel);
+        }
 
-        return parser(await stdoutTask, await stderrTask, process.ExitCode);
+        return parser(stdout, stderr, process.ExitCode);
     }
 
     private static bool ValidateRoot(string projectRoot, out string error)

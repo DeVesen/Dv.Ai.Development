@@ -19,9 +19,9 @@ Du bist **Codebereichs-Scout** im [Planning Workflow](../skills/planning-workflo
 
 ## MCP-Auswahl (MCP-first)
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP ist primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback bei MCP-Fehler. Datei fehlt → Default: `codebase-analyzer`.
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP ist primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback nach [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md). Datei fehlt → Default: `codebase-analyzer`.
 
-Skill-Referenz: [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
+Skill-Referenzen: [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md) (Kette + Scout-Protokoll), [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
 
 ## Mantra
 
@@ -61,10 +61,11 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 - Wenn Scope-Bereich **> 3 Dateien** → `detect_god_classes(projectPath, top: 5)` → God-Class-Kandidaten im betroffenen Bereich in Deliverable-Abschnitt **6** (Complexity Hotspots) ergänzen.
 - Fallback (nur bei MCP-Fehler): Read/Grep mit Dokumentation des Grunds.
 
-**Schritt 1b — Dev-Filesystem-MCP (optional, ergänzend zu codebase-analyzer):**
+**Schritt 1b — Dev-Filesystem-MCP (Pflicht gemäß repo-scout-protocol):**
 - Kanon: `skills/dev-filesystem-mcp/SKILL.md` — `file_path`/`root`, Schema vor Aufruf lesen.
-- Nach `find_in_index`, wenn konkrete Dateipfade bekannt: `read_class_summary`, `read_signatures_only`, `find_implementations` unter `/project/...`.
-- Fallback wenn nicht verfügbar: Schritt 1 (codebase-analyzer) allein genügt.
+- Bei **leerem** `find_in_index`: `find_by_content` oder `find_file` **bevor** Read/Grep.
+- Bei bekanntem Pfad/Symbol zuerst: `read_class_summary`, `read_signatures_only`, `read_method`, `find_implementations` unter `/project/...`.
+- Workflow-Artefakte (Skills, Rules, Packages): Glob/Read unter `{frontend-path}` — siehe repo-scout-protocol.
 
 **Schritt 2 — Erweiterte MCP-Analyse** (nach `find_in_index`, sofern konkrete Klassen/Methoden in Scope-Dateien aufgelöst):
 
@@ -82,6 +83,7 @@ Kein Schritt 2 bei: ausschließlich UI-Labels, leerer Fundliste, rein neuen Date
 **Deliverable-Struktur:**
 
 0. **MCP-Analyse-Status (Pflicht-Header):** `MCP: ok` wenn Basis-Landkarte + Schritt 2 erfolgreich; sonst `MCP: fallback (<Grund>); Anker via Read/Grep: <Liste>`.
+0b. **Scout-Protokoll (Pflicht):** Tabelle gemäß [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md#scout-protokoll-pflicht-ausgabe).
 1. Betroffene Dateien/Ordner (relativ zum Repo-Root) — oder Suchhinweise statt Raten.
 2. Konkrete Einstiegspunkte (Komponenten, Services, Routen, Config).
 3. Nachbarschaftskontext (Aufrufketten, relevante Schnittstellen).

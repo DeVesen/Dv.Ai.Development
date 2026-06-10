@@ -41,7 +41,7 @@ Schlanke **Auswahlhilfe** — Kanon (Tools, Parameter, JSON) steht in den Server
 
 ## Situative Auswahl
 
-`./mcps.md` im Projekt-Root listet verfügbare Server — kein festes Ablaufschema. Fallback bei MCP-Fehler: Read/Grep mit Begründung.
+`./mcps.md` im Projekt-Root listet verfügbare Server — situativ wählen. **Scout-Phasen** (repo-check, Code-Landkarte, plan-agent-scout): verbindliche Kette gemäß [repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md). Sonst: Fallback bei MCP-Fehler Read/Grep mit Begründung.
 
 ## Opt-out
 

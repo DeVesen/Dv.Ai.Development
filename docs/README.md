@@ -26,4 +26,6 @@ Dokumentation und Referenzen für Installation, Update und MCP-Server.
 
 **MCP-Server einrichten?** → Package in `packages/*.json` installieren, dann Kanon-Skill unter `.cursor/skills/`
 
+**Scout-/Repo-Check-Kette?** → `skills/repo-scout-protocol/SKILL.md` (mit `buddy-agent` / `planning-workflow` via `dependsOn`)
+
 **Angular Material?** → [`angular-material-v22-components.md`](./angular-material-v22-components.md)

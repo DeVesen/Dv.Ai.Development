@@ -183,7 +183,7 @@ function Update-McpsMd {
         return
     }
 
-    $mdHeader = "# Projekt MCPs`n`nVerfügbare MCP-Server in diesem Projekt.`nAgents wählen situativ — kein festes Ablaufschema.`nFallback wenn kein MCP verfügbar oder Fehler: Read/Grep mit Begründung.`n`n## MCPs`n`n"
+    $mdHeader = "# Projekt MCPs`n`nVerfügbare MCP-Server in diesem Projekt.`nAgents wählen situativ — kein festes Ablaufschema außer in Scout-Phasen.`nScout-Phasen (repo-check, Code-Landkarte, plan-agent-scout): Kette gemäß skills/repo-scout-protocol/SKILL.md.`nFallback wenn kein MCP verfügbar oder Fehler: Read/Grep mit Begründung (nach Scout-Kette).`n`n## MCPs`n`n"
 
     if (-not (Test-Path $McpsMdFile)) {
         Set-Content $McpsMdFile $mdHeader -Encoding UTF8 -NoNewline

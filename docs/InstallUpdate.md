@@ -170,8 +170,9 @@ Jeder MCP-Server hat ein eigenes Skill-Paket unter `AI-Skills/skills/<name>/SKIL
 | `dev-dotnet-mcp` | `skills/dev-dotnet-mcp` | `dependsOn`: `dev-tooling-mcp` |
 | `dev-tooling-mcp` | `skills/dev-tooling-mcp` (nur Routing) | `rules/dev-tooling-mcp.mdc` |
 | `build-log-filter` | `skills/build-log-filter` | `rules/build-log-filter.mdc` (Prozess) |
+| `repo-scout-protocol` | `skills/repo-scout-protocol` | `rules/repo-scout-protocol.mdc` (Scout-Kette) |
 
-- **`mcps.md`** (Projekt-Root): situative Auswahl — wird beim Install/Update aus `$McpHints` ergänzt; Skill-Zeilen manuell in bestehenden Projekten ggf. nachziehen.
+- **`mcps.md`** (Projekt-Root): situative Auswahl — Scout-Phasen: Kette gemäß `repo-scout-protocol`. Wird beim Install/Update aus `$McpHints` ergänzt; Skill-Zeilen manuell in bestehenden Projekten ggf. nachziehen.
 - **`src/docs/mcp-*.md`**: Menschen-Doku mit Verweis auf den Kanon-Skill — keine zweite Parameter-Wahrheit pflegen.
 
 ---

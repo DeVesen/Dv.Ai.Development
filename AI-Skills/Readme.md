@@ -64,6 +64,7 @@ Jedes Verzeichnis enthält eine `SKILL.md` mit dem Workflow und optional einen `
 | `planning-workflow/` | 6-Phasen-Planung: Anforderung → Scouts → Interface → Topics → Review → Synthese |
 | `implementation-workflow/` | Agent-Mode: 1–10 Slices, Hard Gate, max. 3 Review-Iterationen |
 | `buddy-agent/` | Pre-Planning Sparring: intake → compress → repo-check → diskussion → plan-prompt |
+| `repo-scout-protocol/` | Scout-Kette (Index → Filesystem-MCP), Artefakt-Routing, Scout-Protokoll-Tabelle |
 
 **ADO-Integration:**
 
@@ -129,6 +130,7 @@ Jedes Verzeichnis enthält eine `SKILL.md` mit dem Workflow und optional einen `
 | `codebase-analyzer.mdc` | Code-Review-Fragen, Symbol-Suche |
 | `dev-tooling-mcp.mdc` | `.cs`/`.ts`-Reads, Scaffolding |
 | `buddy-agent-skill.mdc` | `@buddy-agent`, `buddy intake` |
+| `repo-scout-protocol.mdc` | `repo-check`, `buddy repo-check`, Code-Landkarte, `plan-agent-scout` |
 
 ---
 
@@ -150,7 +152,7 @@ JSON-Manifeste definieren, welche Artefakte ein Paket enthält und wohin sie dep
 
 **Verfügbare Pakete:**
 
-`ado-requests-stories` · `angular-bundle` · `angular-material-custom-input` · `angular-refactor` · `backend-ef-migrations` · `buddy-agent` · `build-log-filter` · `caveman` · `codebase-analyzer` · `commit-message` · `conversation-insights` · `describe-as` · `describe-as-html-prompt` · `dev-angular-mcp` · `dev-dotnet-mcp` · `dev-filesystem-mcp` · `dev-tooling-mcp` · `implementation-workflow` · `planning-workflow`
+`ado-requests-stories` · `angular-bundle` · `angular-material-custom-input` · `angular-refactor` · `backend-ef-migrations` · `buddy-agent` · `build-log-filter` · `caveman` · `codebase-analyzer` · `commit-message` · `conversation-insights` · `describe-as` · `describe-as-html-prompt` · `dev-angular-mcp` · `dev-dotnet-mcp` · `dev-filesystem-mcp` · `dev-tooling-mcp` · `implementation-workflow` · `planning-workflow` · `repo-scout-protocol`
 
 ---
 

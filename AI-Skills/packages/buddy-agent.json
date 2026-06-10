@@ -12,6 +12,7 @@
   "params": [],
   "dependsOn": [
     "describe-as",
-    "commit-message"
+    "commit-message",
+    "repo-scout-protocol"
   ]
 }

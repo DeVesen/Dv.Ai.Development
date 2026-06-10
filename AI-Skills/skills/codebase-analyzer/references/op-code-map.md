@@ -78,6 +78,8 @@ Kurz im Agent-Log: 2–3 Sätze — welche Bereiche/Services betroffen, auffäll
 
 Ergebnis nutzen für: Dateipfad, Zeile, Methodenliste, Abhängigkeiten — **bevor** `Grep` auf den Klassennamen.
 
+**0 Treffer bei `find_in_index`:** mindestens `find_by_content` oder `find_file` (dev-filesystem-mcp) — **bevor** natives Read/Grep. Scout-Kette: [repo-scout-protocol/SKILL.md](../../repo-scout-protocol/SKILL.md).
+
 **Schritt 3 — Vertiefung (optional, nach Bedarf):**
 
 | Situation | Tool |

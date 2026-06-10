@@ -25,7 +25,7 @@ Schlüsselwörter: "Tests laufen", "Feature fertig", "vor dem Merge", "Sprint-En
 **Symbol-Bezug (Klasse, Methode, Property, Service, Route):** Grep nicht zuerst —
 zuerst `index_project` (Einzelprojekt) oder `index_solution` (.NET Multi-Projekt / `.sln` im Root), dann `find_in_index`. Grep nur für Caller, String-Literale, Routes.
 **Kein Index** bei reinem UI-Wortschatz (Button-Label, sichtbares Feld) ohne genanntes Symbol.
-Vollständige Recherche-Reihenfolge: [codebase-analyzer SKILL.md](../skills/codebase-analyzer/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
+Vollständige Recherche-Reihenfolge: [codebase-analyzer SKILL.md](../skills/codebase-analyzer/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge). Scout-Phasen: nach leerem `find_in_index` → Filesystem-MCP — [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md).
 
 **Schritt 1** — Immer zuerst (`projectPath` = `{frontend-path}` / `{backend-path}` aus `./AGENTS.md`):
 ```

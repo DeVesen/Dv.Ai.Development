@@ -20,5 +20,7 @@
     "references/subagent-model-before-task.md"
   ],
   "params": [],
-  "dependsOn": []
+  "dependsOn": [
+    "repo-scout-protocol"
+  ]
 }

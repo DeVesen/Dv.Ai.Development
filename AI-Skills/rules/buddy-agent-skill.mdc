@@ -50,6 +50,10 @@ Im selben Intent: **`load`**, **`analyse`**, **`save`**, **`implementiere`**, **
 
 Ohne Phasen-Trigger → **intake** (Navigations-Block). Ausnahme: **`buddy repo-check …`** → direkt **repo-check** (Agent-Mode).
 
+## repo-check — Scout-Protokoll
+
+In Phase **repo-check** zusätzlich [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md) laden — MCP-Fallback-Kette und Scout-Protokoll-Tabelle.
+
 ## Opt-out
 
 `ohne buddy-agent` → Profil nicht anwenden.

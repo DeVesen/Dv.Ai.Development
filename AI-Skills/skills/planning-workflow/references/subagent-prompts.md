@@ -40,11 +40,13 @@ Aufgabe (MCP zuerst — Fallback Read/Grep nur wenn MCP nicht verfuegbar):
 Schritt 1 — Basis-Landkarte (Pflicht):
    index_project(projectPath="[MCP_FRONTEND_PATH]", type="angular") fuer FE,
    index_project(projectPath="[MCP_BACKEND_PATH]", type="dotnet") fuer BE (nur relevanter Stack).
-   Alle genannten Symbole via find_in_index aufloesen. Read/Grep nur als Fallback.
+   Alle genannten Symbole via find_in_index aufloesen.
+   Bei 0 Treffern: find_by_content oder find_file (dev-filesystem-mcp) BEVOR Read/Grep.
+   Skill repo-scout-protocol vollstaendig — Scout-Protokoll-Tabelle im Deliverable.
    Bei Fehler: max. 2 Versuche je Stack dokumentieren, dann MCP-Fallback erklaeren.
    UI-only-Begriffe ohne Symbol ausnehmen.
 
-Schritt 1b — Dev-Filesystem-MCP (optional, ergaenzend zu codebase-analyzer):
+Schritt 1b — Dev-Filesystem-MCP (Pflicht bei Index-Miss — repo-scout-protocol):
    Kanon: skills/dev-filesystem-mcp/SKILL.md (file_path, root — Schema vor Aufruf lesen).
    Nach find_in_index, wenn konkrete Dateipfade bekannt:
    - read_class_summary / read_signatures_only / find_implementations

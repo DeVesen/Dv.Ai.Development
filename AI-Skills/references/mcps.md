@@ -3,8 +3,9 @@
 > **Router** — situative Auswahl. **Kanon** (Tools, Parameter, JSON): jeweiliger Skill unter `.cursor/skills/<name>/SKILL.md`.
 
 Verfügbare MCP-Server in diesem Projekt.
-Agents wählen situativ — kein festes Ablaufschema.
-Fallback wenn kein MCP verfügbar oder Fehler: Read/Grep mit Begründung.
+Agents wählen situativ — kein festes Ablaufschema außer in **Scout-Phasen**.
+**Scout-Phasen** (repo-check, Code-Landkarte, plan-agent-scout): verbindliche Kette gemäß `skills/repo-scout-protocol/SKILL.md`.
+Fallback wenn kein MCP verfügbar oder Fehler: Read/Grep mit Begründung (nach Scout-Kette).
 
 Dev-Tooling-Routing (filesystem / angular / dotnet): `dev-tooling-mcp/SKILL.md`.
 

@@ -1,6 +1,6 @@
 ---
 name: plan-review-pessimist-agent
-model: composer-2-standard
+model: claude-opus-4-7
 description: Pessimist-Perspektive für Planning Workflow Phase 5. Sucht aktiv Blocker, Risiken, Lücken und Integrationsfallen — kein neuer Plan, nur nummerierte Review-Punkte.
 readonly: true
 ---

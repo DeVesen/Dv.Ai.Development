@@ -1,6 +1,6 @@
 ---
 name: ado-task-pruefe-agent
-model: composer-2-standard
+model: claude-opus-4-7
 description: Task-Subagent für ADO Phase analyse. Code-Scout (read-only) und Task-Draft inkl. Akzeptanzkriterien und AI Zusammenfassung — kein MD-Schreiben in analyse. Use when story analyse delegates for an open discussion task.
 ---
 
@@ -24,11 +24,13 @@ Vollständige Referenz: [task-analyse-subagent.md](../skills/ado/references/task
 
 ## Modell
 
-| Feld | Wert |
-|------|------|
-| **Primär** | `composer-2-standard` |
+| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
+|-------|--------------------------|---------------------|
+| **Primär** | `claude-opus-4-7` | Opus 4.7 |
+| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
+| **Fallback 2** | `composer-2-standard` | Composer 2 Standard |
 
-Ist `composer-2-standard` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — composer-2-standard nicht wählbar`**.
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **`BLOCKER: ado-task-pruefe-agent — kein Modell wählbar`**.
 
 ## Pflicht-Dokumente
 
@@ -72,7 +74,7 @@ Ist `composer-2-standard` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-age
 |------|--------|
 | `slug` | Task-Slug |
 | `status` | `OK` / `FAIL` |
-| `modelUsed` | `composer-2-standard` |
+| `modelUsed` | genutzter Slug |
 | `taskDraft` | Abschnitte + Möglichkeiten |
 | `legacySectionsRemoved` | für save |
 | `openQuestions` | Kurz |

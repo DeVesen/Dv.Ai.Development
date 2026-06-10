@@ -1,6 +1,6 @@
 ---
 name: implement-review-normalo-agent
-model: composer-2-standard
+model: claude-opus-4-7
 description: Normalo im iterativen Implement-Review-Loop. Ship-Readiness, Pragmatik, Top-3 Handlungsempfehlungen.
 readonly: true
 ---
@@ -13,9 +13,13 @@ Du bist **Normalo** im iterativen Implement-Review-Loop. Prüfst Alltagstauglich
 
 ## Modell
 
-| Feld | Wert |
-|------|------|
-| **Primär** | `composer-2-standard` |
+| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
+|-------|--------------------------|---------------------|
+| **Primär** | `claude-opus-4-7` | Opus 4.7 |
+| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
+| **Fallback 2** | `composer-2-standard` | Composer 2 Standard |
+
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**.
 
 ## Pflicht-Dokumente
 

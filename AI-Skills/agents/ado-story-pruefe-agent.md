@@ -1,6 +1,6 @@
 ---
 name: ado-story-pruefe-agent
-model: composer-2-standard
+model: claude-opus-4-7
 description: Story-Subagent für ADO Phase analyse (Feature-Kaskade). Story-Analyse, Task-Inventar-Drafts, parallele ado-task-pruefe-agent Modus analyse. Kein Markdown-Schreiben. Use when ado-agent delegates analyse for a Feature child story.
 ---
 
@@ -16,11 +16,13 @@ Vollständige Referenz: [story-analyse-subagent.md](../skills/ado/references/sto
 
 ## Modell
 
-| Feld | Wert |
-|------|------|
-| **Primär** | `composer-2-standard` |
+| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
+|-------|--------------------------|---------------------|
+| **Primär** | `claude-opus-4-7` | Opus 4.7 |
+| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
+| **Fallback 2** | `composer-2-standard` | Composer 2 Standard |
 
-Ist `composer-2-standard` **nicht** wählbar → **`BLOCKER: ado-story-pruefe-agent — composer-2-standard nicht wählbar`**.
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **`BLOCKER: ado-story-pruefe-agent — kein Modell wählbar`**.
 
 ## Pflicht-Dokumente
 

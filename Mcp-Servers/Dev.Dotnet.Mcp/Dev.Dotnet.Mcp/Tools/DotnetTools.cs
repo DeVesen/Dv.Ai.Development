@@ -37,8 +37,8 @@ public sealed class DotnetTools
     public async Task<string> ScaffoldDotnetProject(
         [Description("dotnet new template, e.g. classlib, webapi")] string template,
         [Description("Project name")] string name,
-        [Description("Absolute output directory path")] string output_path,
-        [Description("Optional .sln path for dotnet sln add")] string? solution_path = null,
+        [Description("Container-absolute output directory path, e.g. /workspace/src/MyLib (mapped from ${workspaceFolder}:/workspace)")] string output_path,
+        [Description("Optional container-absolute .sln path for dotnet sln add")] string? solution_path = null,
         [Description("Optional extra dotnet new flags, e.g. --framework net9.0")] string? options = null)
     {
         return await ExecuteAsync(
@@ -54,7 +54,7 @@ public sealed class DotnetTools
     [McpServerTool(Name = "create_directory_structure")]
     [Description("Creates directories (and empty files for paths with extensions) from a JSON string array of relative paths.")]
     public Task<string> CreateDirectoryStructure(
-        [Description("Absolute base directory")] string base_path,
+        [Description("Container-absolute base directory, e.g. /workspace/src (mapped from ${workspaceFolder}:/workspace)")] string base_path,
         [Description("JSON array of relative paths, e.g. [\"src/Api\", \"src/Domain/Entities/.gitkeep\"]")] string paths_json)
     {
         return ExecuteAsync(
@@ -72,7 +72,7 @@ public sealed class DotnetTools
         "Runs dotnet build on the given solution, project, or directory and returns a filtered result. " +
         "Raw console output is never forwarded — only structured errors, warnings, and a summary are returned.")]
     public async Task<string> BuildDotnetSolution(
-        [Description("Absolute path to .sln file, .csproj file, or directory containing a solution")] string path,
+        [Description("Container-absolute path to .sln file, .csproj, or directory, e.g. /workspace/backend/MySolution.sln (mapped from ${workspaceFolder}:/workspace)")] string path,
         [Description("Optional build configuration, e.g. Release, Debug")] string? configuration = null)
     {
         return await ExecuteAsync(
@@ -90,7 +90,7 @@ public sealed class DotnetTools
         "Runs dotnet test on the given solution, project, or directory and returns a filtered result. " +
         "Raw console output is never forwarded — only failed test names and a summary are returned.")]
     public async Task<string> TestDotnetSolution(
-        [Description("Absolute path to .sln file, .csproj file, or directory containing a solution")] string path,
+        [Description("Container-absolute path to .sln file, .csproj, or directory, e.g. /workspace/backend/MySolution.sln (mapped from ${workspaceFolder}:/workspace)")] string path,
         [Description("Optional extra dotnet test flags, e.g. --logger trx")] string? options = null)
     {
         return await ExecuteAsync(

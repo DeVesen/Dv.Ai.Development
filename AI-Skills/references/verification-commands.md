@@ -13,10 +13,11 @@ welche Befehle nach Code-Änderungen ausgeführt werden müssen — kein Raten e
 MCP `dev-angular-mcp` verwenden — **kein direkter Shell-Aufruf**:
 
 ```
-build_angular_project(project_root="{frontend-path}", configuration="production")
-test_angular_project(project_root="{frontend-path}")
+build_angular_project(project_root="/workspace/{frontend-relative-path}", configuration="production")
+test_angular_project(project_root="/workspace/{frontend-relative-path}")
 ```
 
+> Pfade müssen mit `/workspace/` beginnen (Docker-Mount: `${workspaceFolder}:/workspace`).
 > Vor dem ersten Build einmalig `npm install` per Shell erforderlich.
 > Dev-Server (kein Verifikationsbefehl): `ng serve` → http://localhost:4200 (proxies /api → https://localhost:7071)
 
@@ -25,10 +26,11 @@ test_angular_project(project_root="{frontend-path}")
 MCP `dev-dotnet-mcp` verwenden — **kein direkter Shell-Aufruf**:
 
 ```
-build_dotnet_solution(path="{backend-path}", configuration="Release")
-test_dotnet_solution(path="{backend-path}")
+build_dotnet_solution(path="/workspace/{backend-relative-path}", configuration="Release")
+test_dotnet_solution(path="/workspace/{backend-relative-path}")
 ```
 
+> Pfade müssen mit `/workspace/` beginnen (Docker-Mount: `${workspaceFolder}:/workspace`).
 > Vor dem ersten Build einmalig `dotnet restore` per Shell erforderlich.
 > Einzelnen Service starten (kein Verifikationsbefehl): `dotnet run --project LAC.GatewayService`
 

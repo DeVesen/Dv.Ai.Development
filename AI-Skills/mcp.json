@@ -103,6 +103,8 @@
         "--rm",
         "-p",
         "127.0.0.1:8092:8092",
+        "-v",
+        "${workspaceFolder}:/workspace",
         "devesen/dev-angular-mcp:latest"
       ],
       "transport": "stdio",
@@ -121,6 +123,8 @@
         "--rm",
         "-p",
         "127.0.0.1:8093:8093",
+        "-v",
+        "${workspaceFolder}:/workspace",
         "devesen/dev-dotnet-mcp:latest"
       ],
       "transport": "stdio",

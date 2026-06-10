@@ -38,7 +38,7 @@ public sealed class AngularTools
         "Generates an Angular component via ng generate. " +
         "Defaults: --standalone --skip-tests. Use options to override defaults.")]
     public async Task<string> ScaffoldAngularComponent(
-        [Description("Absolute path to the Angular project root (angular.json directory)")] string project_root,
+        [Description("Container-absolute path to the Angular project root, e.g. /workspace/frontend (mapped from ${workspaceFolder}:/workspace)")] string project_root,
         [Description("Component name (kebab-case recommended)")] string name,
         [Description("Optional --path value, e.g. src/app/shared")] string? path = null,
         [Description("Optional CLI flags replacing defaults, e.g. --inline-style --skip-tests")] string? options = null)
@@ -54,7 +54,7 @@ public sealed class AngularTools
         "Generates an Angular service via ng generate. " +
         "Default: --skip-tests. Use options to override defaults.")]
     public async Task<string> ScaffoldAngularService(
-        [Description("Absolute path to the Angular project root (angular.json directory)")] string project_root,
+        [Description("Container-absolute path to the Angular project root, e.g. /workspace/frontend (mapped from ${workspaceFolder}:/workspace)")] string project_root,
         [Description("Service name (kebab-case recommended)")] string name,
         [Description("Optional --path value, e.g. src/app/services")] string? path = null,
         [Description("Optional CLI flags replacing defaults, e.g. --flat --skip-tests")] string? options = null)
@@ -71,7 +71,7 @@ public sealed class AngularTools
         "Raw console output is never forwarded — only structured errors, warnings, and a summary are returned. " +
         "Defaults to the 'production' configuration unless overridden.")]
     public async Task<string> BuildAngularProject(
-        [Description("Absolute path to the Angular project root (angular.json directory)")] string project_root,
+        [Description("Container-absolute path to the Angular project root, e.g. /workspace/frontend (mapped from ${workspaceFolder}:/workspace)")] string project_root,
         [Description("Optional build configuration, e.g. production, development")] string? configuration = null)
     {
         return await ExecuteAsync(
@@ -86,7 +86,7 @@ public sealed class AngularTools
         "Raw console output is never forwarded — only failed test names and a summary are returned. " +
         "For containerized environments add '--browsers=ChromeHeadlessCI' via options.")]
     public async Task<string> TestAngularProject(
-        [Description("Absolute path to the Angular project root (angular.json directory)")] string project_root,
+        [Description("Container-absolute path to the Angular project root, e.g. /workspace/frontend (mapped from ${workspaceFolder}:/workspace)")] string project_root,
         [Description("Optional extra ng test flags, e.g. --browsers=ChromeHeadlessCI")] string? options = null)
     {
         return await ExecuteAsync(

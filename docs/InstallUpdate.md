@@ -28,9 +28,9 @@ Dv.Ai.Development/AI-Skills/     →    Ziel-Projekt/
                                        │   ├── rules/         ← .mdc-Rules (Cursor only)
                                        │   ├── skills/        ← Skill-Pakete
                                        │   ├── agents/        ← Agent-Profile
-                                       │   ├── references/    ← Shared refs
-                                       │   ├── mcp.json       ← MCP-Konfiguration
-                                       │   └── AGENTS.md      ← Paket-Referenz
+                                       │   ├── references/    ← Shared refs (inkl. verification-commands.md)
+                                       │   ├── skill-params.json
+                                       │   └── mcp.json       ← MCP-Konfiguration
                                        └── .claude/
                                            ├── skills/        ← Skill-Pakete
                                            ├── agents/        ← Agent-Profile
@@ -60,7 +60,9 @@ Dv.Ai.Development/AI-Skills/     →    Ziel-Projekt/
 .\AI-Skills\install-cursor-skills.ps1 C:\path\to\project\.cursor C:\path\to\project\.claude -DryRun
 ```
 
-> **ADO-Paket:** Das Skript fragt interaktiv, ob das ADO-Paket installiert werden soll (Azure DevOps ist optional).
+> **ADO-Paket:** Das Skript fragt interaktiv, ob das ADO-Paket installiert werden soll (Azure DevOps ist optional). Wird ADO abgelehnt, werden **keine** ADO-spezifischen Platzhalter (z. B. `{devops-pipelines-path}`) und kein ADO-MCP abgefragt.
+
+> **Deploy-Parameter:** Nach der Paketauswahl fragt das Skript fehlende `{param}`-Platzhalter ab (z. B. `{code-root}`, `{frontend-path}`, `{backend-path}`) und ersetzt sie in den deployten Dateien. Werte werden in `.cursor/skill-params.json` gespeichert. Fest gesetzt **ohne** Abfrage: `{workspace-root}` = `.`, `{agent-index}` = `./AGENTS.md`, `{insights-path}` = `./insights`, `{verification-commands}` = `.cursor/references/verification-commands.md`. **`Readme.md`** wird **nicht** nach `.cursor/` kopiert.
 
 ### Schritt 3: Update (bestehende Installation)
 
@@ -72,8 +74,11 @@ Das Update-Skript:
 - Liest `installed-manifest.json` im Zielverzeichnis
 - Ersetzt veränderte Dateien
 - Entfernt veraltete Dateien, die nicht mehr im Paket sind
-- Fragt interaktiv nach `{param}`-Platzhaltern
-- Berührt die MCP-Konfiguration **nicht**
+- Fragt interaktiv nach **neuen oder leeren** `{param}`-Platzhaltern (bestehende Werte aus `skill-params.json` bleiben erhalten)
+- Setzt fest **ohne Abfrage:** `{workspace-root}` = `.`, `{agent-index}` = `./AGENTS.md`, `{insights-path}` = `./insights`, `{verification-commands}` = `.cursor/references/verification-commands.md`
+- Entfernt legacy `.cursor/Readme.md` (wird nicht mehr deployt)
+- ADO-Parameter nur, wenn das Paket `ado-requests-stories` im Manifest geführt wird
+- Aktualisiert MCP-Konfiguration für Pakete mit `mcp`-Eintrag (Image-Auswahl wie bei der Erstinstallation)
 
 ---
 
@@ -114,7 +119,12 @@ Das Update-Skript:
 
 ## Platzhalter ersetzen
 
-Einige Pakete enthalten `{param}`-Platzhalter, die nach dem Deploy manuell ersetzt werden müssen (Windows: `update-cursor-skills.ps1` macht das interaktiv).
+Windows (PowerShell): **`install-cursor-skills.ps1`** und **`update-cursor-skills.ps1`** fragen fehlende `{param}`-Werte interaktiv ab und ersetzen sie in Skills, Rules, Agents und References. Gespeichert wird in `.cursor/skill-params.json`.
+
+- **Erstinstallation:** Platzhalter-Abfrage erfolgt **nach** der Paketauswahl (inkl. optional ADO), **unabhängig** davon, welche MCP-Pakete dabei sind.
+- **Update:** Nur **neue oder leere** Parameter werden abgefragt; vorhandene Werte in `skill-params.json` bleiben (Enter = behalten).
+- **Fest gesetzt (ohne Abfrage):** `{workspace-root}` = `.`, `{agent-index}` = `./AGENTS.md`, `{insights-path}` = `./insights`, `{verification-commands}` = `.cursor/references/verification-commands.md`
+- **`{code-root}`:** Wird abgefragt — oft identisch mit `{workspace-root}` (`.`), kann abweichen (z. B. `src` wenn Git-Root unterhalb des Workspace liegt)
 
 ### Welche Parameter braucht ein Paket?
 
@@ -139,8 +149,12 @@ Select-String -Path "C:\project\.cursor\**\*" -Pattern '\{frontend-path\}' -Recu
 |-------------|-----------|
 | `{frontend-path}` | Pfad zum Angular-Frontend-Verzeichnis |
 | `{backend-path}` | Pfad zum .NET-Backend-Verzeichnis |
-| `{workspace-root}` | Root-Verzeichnis des Workspace |
-| `{ado-organization}` | Azure DevOps Organisations-URL |
+| `{workspace-root}` | **Fest `.`** — Cursor-Workspace-Root |
+| `{code-root}` | Wurzelpfad des Git-Repositories (Code); oft `.`, ggf. abweichend (z. B. `src`) |
+| `{agent-index}` | **Fest `./AGENTS.md`** — Agentenübersicht im Workspace-Root |
+| `{verification-commands}` | **Fest `.cursor/references/verification-commands.md`** — Build/Test-Befehle (Inhalt anpassen) |
+| `{insights-path}` | **Fest `./insights`** — Conversation-Insights-Log |
+| `{devops-pipelines-path}` | Nur bei installiertem ADO-Paket |
 
 ---
 
@@ -195,7 +209,7 @@ Zwei Server benötigen ein **Volume-Mount** auf das Ziel-Projekt (damit der Cont
 → Erste Installation mit `install-cursor-skills.ps1` ausführen. Das Manifest wird dabei angelegt.
 
 **Platzhalter wurden nicht ersetzt**
-→ `update-cursor-skills.ps1` erneut ausführen — es fragt nach allen offenen `{param}`-Werten.
+→ `install-cursor-skills.ps1` (Neuinstallation) oder `update-cursor-skills.ps1` erneut ausführen — beide fragen offene `{param}`-Werte ab. Prüfen, ob `.cursor/skill-params.json` die erwarteten Einträge enthält.
 
 **MCP-Server antwortet nicht**
 → Docker installiert und gestartet? `docker ps` prüfen. Beim ersten Start muss das Image gepullt werden — Internetverbindung erforderlich.

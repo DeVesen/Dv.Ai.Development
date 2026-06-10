@@ -20,8 +20,5 @@
     "references/subagent-model-before-task.md"
   ],
   "params": [],
-  "dependsOn": [],
-  "docs": [
-    "Readme.md"
-  ]
+  "dependsOn": []
 }

@@ -212,4 +212,5 @@ Die `mcp.json` enthält außerdem einen `ado`-Eintrag für Azure DevOps (`@azure
 | Skills | ✅ `skills/<name>/` | ✅ `skills/<name>/` |
 | Agents | ✅ `agents/` | ✅ `agents/` |
 | References | ✅ `references/` | ✅ `references/` |
-| Docs (AGENTS.md) | ✅ root | — |
+
+> **`Readme.md`** der AI-Skills-Bibliothek wird **nicht** ins Ziel-`.cursor/` kopiert. Projekt-Doku: eigenes `AGENTS.md` im Workspace-Root (manuell).

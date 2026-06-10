@@ -45,6 +45,9 @@ $script:TargetClaudePath = $null
 $script:ParamsFile       = $null
 $script:ParamsStore      = @{}
 $script:ManifestFile     = $null
+$script:AdoInstalled     = $false
+
+. (Join-Path $PSScriptRoot "deploy-param-handling.ps1")
 
 # ---------------------------------------------------------------------------
 # Manifest — tracks which files were installed per package
@@ -106,7 +109,7 @@ function Register-ClaudeFile {
 }
 
 # ---------------------------------------------------------------------------
-# Parameter store (skill-params.json)
+# Parameter store (skill-params.json) — shared logic: deploy-param-handling.ps1
 # ---------------------------------------------------------------------------
 
 function Read-ParamsStore {
@@ -122,62 +125,6 @@ function Save-ParamsStore {
     if ($script:DryRun) { return }
     if ($script:ParamsStore.Count -eq 0) { return }
     $script:ParamsStore | ConvertTo-Json -Depth 2 | Set-Content $script:ParamsFile -Encoding UTF8
-}
-
-# ---------------------------------------------------------------------------
-# Collect {param} placeholders from package template files
-# ---------------------------------------------------------------------------
-
-function Get-PackageParams {
-    param([object] $Manifest)
-
-    $found = [System.Collections.Generic.HashSet[string]]::new()
-
-    if ($Manifest.PSObject.Properties['params']) {
-        foreach ($p in $Manifest.params) { $found.Add($p) | Out-Null }
-        return $found
-    }
-
-    $paths = @()
-    foreach ($r   in $Manifest.rules)      { $paths += Join-Path $script:SourceCursorPath $r }
-    foreach ($s   in $Manifest.skills)     { $paths += Join-Path $script:SourceCursorPath $s }
-    foreach ($a   in $Manifest.agents)     { $paths += Join-Path $script:SourceCursorPath $a }
-    foreach ($ref in $Manifest.references) { $paths += Join-Path $script:SourceCursorPath $ref }
-
-    foreach ($path in $paths) {
-        $files = if (Test-Path $path -PathType Container) {
-            Get-ChildItem $path -Recurse -File -Include "*.md","*.mdc","*.json"
-        } else {
-            Get-Item $path -ErrorAction SilentlyContinue
-        }
-        foreach ($file in $files) {
-            $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
-            if ($content) {
-                [regex]::Matches($content, '\{[a-zA-Z][a-zA-Z0-9._-]*\}') | ForEach-Object {
-                    $found.Add($_.Value) | Out-Null
-                }
-            }
-        }
-    }
-    return $found
-}
-
-function Request-ParamValue {
-    param([string] $Param, [string] $Existing)
-
-    if ($Existing) {
-        Write-Host "  $Param" -ForegroundColor White -NoNewline
-        Write-Host " (aktuell: " -ForegroundColor DarkGray -NoNewline
-        Write-Host $Existing -ForegroundColor Yellow -NoNewline
-        Write-Host ") — Enter zum Behalten:" -ForegroundColor DarkGray
-        $in = Read-Host "  Neuer Wert"
-        return if ($in) { $in } else { $Existing }
-    } else {
-        Write-Host "  $Param" -ForegroundColor White -NoNewline
-        Write-Host " (neu — leer lassen = Platzhalter behalten):" -ForegroundColor DarkGray
-        $in = Read-Host "  Wert"
-        return $in
-    }
 }
 
 # ---------------------------------------------------------------------------
@@ -390,48 +337,6 @@ function Invoke-McpConfig {
 }
 
 # ---------------------------------------------------------------------------
-# Apply stored {params} to a file
-# ---------------------------------------------------------------------------
-
-function Apply-Params {
-    param([string] $FilePath)
-
-    if ($script:ParamsStore.Count -eq 0) { return }
-
-    $content = Get-Content $FilePath -Raw -ErrorAction SilentlyContinue
-    if (-not $content) { return }
-
-    $changed = $false
-    foreach ($key in $script:ParamsStore.Keys) {
-        $val = $script:ParamsStore[$key]
-        if ($val -and $content.Contains($key)) {
-            $content = $content.Replace($key, $val)
-            $changed = $true
-        }
-    }
-
-    if ($changed) {
-        if ($script:DryRun) {
-            $rel = ($FilePath -replace [regex]::Escape($script:TargetCursorPath), '').TrimStart('\', '/')
-            Write-Host "  [DRY] params anwenden: $rel" -ForegroundColor Yellow
-        } else {
-            Set-Content $FilePath $content -Encoding UTF8 -NoNewline
-        }
-    }
-}
-
-function Apply-ParamsToPath {
-    param([string] $Path)
-    if (Test-Path $Path -PathType Container) {
-        Get-ChildItem $Path -Recurse -File -Include "*.md","*.mdc","*.json" | ForEach-Object {
-            Apply-Params $_.FullName
-        }
-    } elseif (Test-Path $Path -PathType Leaf) {
-        Apply-Params $Path
-    }
-}
-
-# ---------------------------------------------------------------------------
 # Copy asset, apply params, register in manifest
 # ---------------------------------------------------------------------------
 
@@ -542,20 +447,9 @@ function Update-Package {
 
     foreach ($dep in $m.dependsOn) { Update-Package $dep }
 
-    # Prompt for missing {param} placeholders
-    $needed = Get-PackageParams $m
-    $hasNew  = $false
-    foreach ($param in ($needed | Sort-Object)) {
-        if (-not $script:ParamsStore.ContainsKey($param) -or -not $script:ParamsStore[$param]) {
-            if (-not $hasNew) {
-                Write-Host ""
-                Write-Host "  Parameter fuer $Name :" -ForegroundColor Cyan
-                $hasNew = $true
-            }
-            $val = Request-ParamValue $param $script:ParamsStore[$param]
-            if ($val) { $script:ParamsStore[$param] = $val }
-        }
-    }
+    # Prompt for missing {param} placeholders (core + package manifest)
+    $needed = Resolve-RequiredParams -PackageNames @($Name) -AdoInstalled $script:AdoInstalled
+    Request-MissingParams -Params $needed -Label $Name
 
     # Rules → Cursor only
     foreach ($r in $m.rules) {
@@ -598,12 +492,6 @@ function Update-Package {
                        (Join-Path $script:TargetClaudePath "references\$leaf") `
                        $Name 'claude'
         }
-    }
-    # Docs → Cursor only
-    foreach ($doc in $m.docs) {
-        Copy-Asset (Join-Path $script:SourceCursorPath $doc) `
-                   (Join-Path $script:TargetCursorPath "$(Split-Path $doc -Leaf)") `
-                   $Name 'cursor'
     }
 
     if ($m.PSObject.Properties['mcp'] -and $m.mcp.Count -gt 0) {
@@ -650,6 +538,7 @@ $script:ParamsFile       = Join-Path $script:TargetCursorPath "skill-params.json
 $script:ManifestFile     = Join-Path $script:TargetCursorPath "installed-manifest.json"
 
 Read-ParamsStore
+Initialize-DefaultParams
 $ok = Read-Manifest
 if (-not $ok -and -not $DryRun) { exit 1 }
 
@@ -658,6 +547,7 @@ if ($DryRun) { Write-Host "[DRY RUN — keine Dateien werden veraendert]" -Foreg
 # Determine which packages are currently managed (in manifest) and which exist in source
 $sourcePackages  = (Get-ChildItem $script:PackagesDir -Filter "*.json").BaseName
 $managedPackages = @($script:Manifest.packages.Keys)
+$script:AdoInstalled = $managedPackages -contains $script:AdoPackageName
 
 Write-Host ""
 Write-Host "Updating managed packages..." -ForegroundColor Cyan
@@ -683,6 +573,7 @@ if ($script:ParamsStore.Count -gt 0) {
 }
 
 Save-Manifest
+Remove-LegacyDeployReadme
 
 Write-Host ""
 Write-Host "Fertig." -ForegroundColor Green

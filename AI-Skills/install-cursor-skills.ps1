@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
     Installs all skill packages into a target project's .cursor and optionally .claude directory.
+    Prompts for deploy {param} placeholders and MCP configuration interactively.
     ADO package is optional and will prompt for confirmation.
     Writes installed-manifest.json to track managed files (used by update-cursor-skills.ps1).
 
@@ -43,6 +44,8 @@ $script:TargetClaudePath = $null
 $script:ParamsFile       = $null
 $script:ParamsStore      = @{}
 $script:ManifestFile     = $null
+
+. (Join-Path $PSScriptRoot "deploy-param-handling.ps1")
 
 # Packages whose name matches this pattern will ask for confirmation before installing
 $ADO_PATTERN = '^ado-'
@@ -104,7 +107,8 @@ function Register-ClaudeFile {
 }
 
 # ---------------------------------------------------------------------------
-# Params store (skill-params.json) — used only when MCP entries are present
+# Params store (skill-params.json) — deploy placeholders + MCP keys
+# Shared logic: deploy-param-handling.ps1
 # ---------------------------------------------------------------------------
 
 function Read-ParamsStore {
@@ -363,6 +367,7 @@ function Copy-Asset {
     }
 
     Write-Host "  + $rel" -ForegroundColor Green
+    Apply-ParamsToPath $Dst
 
     if ($Platform -eq 'claude') {
         Register-ClaudeFile $PackageName $rel
@@ -443,12 +448,6 @@ function Install-Package {
                        $Name 'claude'
         }
     }
-    # Docs → Cursor only
-    foreach ($doc in $m.docs) {
-        Copy-Asset (Join-Path $script:SourceCursorPath $doc) `
-                   (Join-Path $script:TargetCursorPath "$(Split-Path $doc -Leaf)") `
-                   $Name 'cursor'
-    }
 
     if ($m.PSObject.Properties['mcp'] -and $m.mcp.Count -gt 0) {
         Invoke-McpConfig $m.mcp
@@ -495,6 +494,7 @@ $script:ParamsFile       = Join-Path $script:TargetCursorPath "skill-params.json
 $script:ManifestFile     = Join-Path $script:TargetCursorPath "installed-manifest.json"
 
 Read-ParamsStore
+Initialize-DefaultParams
 Read-Manifest
 
 if ($DryRun) { Write-Host "[DRY RUN — no files will be copied]" -ForegroundColor Yellow }
@@ -502,6 +502,7 @@ if ($DryRun) { Write-Host "[DRY RUN — no files will be copied]" -ForegroundCol
 Write-Host "Installing all packages..." -ForegroundColor Cyan
 
 $allPackages = Get-ChildItem $script:PackagesDir -Filter "*.json" | Sort-Object Name
+$packagesToInstall = [System.Collections.Generic.List[string]]::new()
 
 foreach ($pkgFile in $allPackages) {
     $pkgName = $pkgFile.BaseName
@@ -516,14 +517,26 @@ foreach ($pkgFile in $allPackages) {
         }
     }
 
+    $packagesToInstall.Add($pkgName) | Out-Null
+}
+
+$adoInstalled = $packagesToInstall -contains $script:AdoPackageName
+$requiredParams = Resolve-RequiredParams -PackageNames $packagesToInstall -AdoInstalled $adoInstalled
+Request-MissingParams -Params $requiredParams -Label 'Install'
+
+foreach ($pkgName in $packagesToInstall) {
     Install-Package $pkgName
 }
 
 Save-ParamsStore
 Save-Manifest
+Remove-LegacyDeployReadme
 
 Write-Host ""
 Write-Host "Done." -ForegroundColor Green
 if (-not $DryRun) {
     Write-Host "  Manifest: $script:ManifestFile" -ForegroundColor DarkGray
+    if ($script:ParamsStore.Count -gt 0) {
+        Write-Host "  Parameter: $script:ParamsFile" -ForegroundColor DarkGray
+    }
 }

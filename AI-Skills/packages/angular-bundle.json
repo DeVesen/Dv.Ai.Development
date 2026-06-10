@@ -18,8 +18,5 @@
   "params": [
     "{frontend-path}"
   ],
-  "dependsOn": [],
-  "docs": [
-    "Readme.md"
-  ]
+  "dependsOn": []
 }

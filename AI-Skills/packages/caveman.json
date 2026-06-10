@@ -8,8 +8,5 @@
   "agents": [],
   "references": [],
   "params": [],
-  "dependsOn": [],
-  "docs": [
-    "Readme.md"
-  ]
+  "dependsOn": []
 }

@@ -13,8 +13,5 @@
   "dependsOn": [
     "describe-as",
     "commit-message"
-  ],
-  "docs": [
-    "Readme.md"
   ]
 }

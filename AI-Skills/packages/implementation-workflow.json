@@ -26,8 +26,5 @@
   ],
   "dependsOn": [
     "build-log-filter"
-  ],
-  "docs": [
-    "Readme.md"
   ]
 }

@@ -15,8 +15,5 @@
     "{startup-project-name}",
     "{DbContext}"
   ],
-  "dependsOn": [],
-  "docs": [
-    "Readme.md"
-  ]
+  "dependsOn": []
 }

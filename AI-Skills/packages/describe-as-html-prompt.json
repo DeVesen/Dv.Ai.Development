@@ -12,8 +12,5 @@
   "params": [],
   "dependsOn": [
     "describe-as"
-  ],
-  "docs": [
-    "Readme.md"
   ]
 }

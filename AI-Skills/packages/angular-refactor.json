@@ -10,8 +10,5 @@
   "params": [],
   "dependsOn": [
     "angular-bundle"
-  ],
-  "docs": [
-    "Readme.md"
   ]
 }

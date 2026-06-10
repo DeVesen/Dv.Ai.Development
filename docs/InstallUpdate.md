@@ -162,7 +162,11 @@ Select-String -Path "C:\project\.cursor\**\*" -Pattern '\{frontend-path\}' -Recu
 
 ### Cursor
 
-Beim Deploy wird `AI-Skills/mcp.json` automatisch als `.cursor/mcp.json` ins Ziel-Projekt kopiert. Cursor lädt diese Konfiguration automatisch beim nächsten Start.
+Beim Install/Update schreiben `install-cursor-skills.ps1` bzw. `update-cursor-skills.ps1` die `.cursor/mcp.json` **packageweise** aus den `"mcp"`-Blöcken in `AI-Skills/packages/*.json` (Image-Auswahl und `--pull always` interaktiv bzw. aus `.cursor/skill-params.json`).
+
+`AI-Skills/mcp.json` ist die **Referenz** für das Zielbild aller Server (Ports, Volume-Mounts, `autoApprove`) — sie wird **nicht** 1:1 kopiert. Änderungen an MCP-Args gehören in das jeweilige Package-Manifest (z. B. `packages/codebase-analyzer.json`), danach `mcp.json` als Referenz synchron halten.
+
+Cursor lädt `.cursor/mcp.json` automatisch beim nächsten Start.
 
 ### Claude Code
 
@@ -186,15 +190,31 @@ Die `mcp.json` enthält auch einen `ado`-Eintrag für Azure DevOps. Der Platzhal
 
 Falls ADO nicht verwendet wird, kann dieser Eintrag entfernt werden.
 
+### Log-Viewer-Ports
+
+Jeder Docker-MCP startet einen internen HTTP-Log-Viewer (nicht MCP-Transport). Host-Port muss in den Docker-`args` gemappt sein, sonst ist die UI nur im Container erreichbar:
+
+| Server | Host-Port | Package |
+|--------|-----------|---------|
+| build-log-filter | 8089 | `packages/build-log-filter.json` |
+| codebase-analyzer | 8090 | `packages/codebase-analyzer.json` |
+| dev-filesystem-mcp | 8091 | `packages/dev-filesystem-mcp.json` |
+| dev-angular-mcp | 8092 | `packages/dev-angular-mcp.json` |
+| dev-dotnet-mcp | 8093 | `packages/dev-dotnet-mcp.json` |
+
+Beispiel (codebase-analyzer): `"-p", "127.0.0.1:8090:8090"` in `entry` und `entryPullAlways` — danach `http://127.0.0.1:8090/` im Browser.
+
 ### Volume-Mounts
 
 Zwei Server benötigen ein **Volume-Mount** auf das Ziel-Projekt (damit der Container Projektdateien lesen kann — Docker-Container haben keinen Host-Dateisystemzugriff ohne explizites Mount):
 
 ```jsonc
-// codebase-analyzer — liest Projektdateien für AST-Analyse
+// codebase-analyzer — liest Projektdateien für AST-Analyse (+ Log-Port 8090)
+"-p", "127.0.0.1:8090:8090",
 "-v", "${workspaceFolder}:/workspace:ro"
 
-// dev-filesystem-mcp — liest .cs/.ts token-effizient
+// dev-filesystem-mcp — liest .cs/.ts token-effizient (+ Log-Port 8091)
+"-p", "127.0.0.1:8091:8091",
 "-v", "${workspaceFolder}:/project:ro",
 "-e", "PROJECT_ROOT=/project"
 ```

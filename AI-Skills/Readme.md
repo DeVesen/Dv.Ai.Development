@@ -162,9 +162,9 @@ Dateien, die von mehreren Paketen gemeinsam genutzt werden:
 
 ---
 
-### `mcp.json` — MCP-Konfiguration
+### `mcp.json` — MCP-Konfiguration (Referenz)
 
-Definiert alle MCP-Server für das deployte Projekt. Wird beim Install in `.cursor/mcp.json` (Cursor) bzw. in die Claude-Code-Konfiguration eingebunden.
+Aggregiertes Zielbild aller MCP-Server (Ports, Volume-Mounts, `autoApprove`). **Deploy-Quelle** sind die `"mcp"`-Blöcke in `packages/*.json` — `install-cursor-skills.ps1` / `update-cursor-skills.ps1` mergen daraus `.cursor/mcp.json`. Nach Package-Änderungen `mcp.json` hier als Referenz synchron halten. Für Claude Code den `"mcpServers"`-Block manuell übernehmen.
 
 ```
 Log-Ports (interner HTTP-Log-Viewer, nicht MCP-Transport — alle Server nutzen stdio):

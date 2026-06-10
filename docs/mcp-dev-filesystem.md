@@ -6,8 +6,8 @@
 |-------------|------|
 | Stack | C# / .NET |
 | Transport | stdio |
-| Docker-Port | 8091 |
-| Volume-Mount | ✅ **erforderlich** (`-v ${workspaceFolder}:/project:ro -e PROJECT_ROOT=/project`) |
+| Log-Port | 8091 (interner HTTP-Log-Viewer, nicht MCP-Transport) |
+| Volume-Mount | ✅ **erforderlich** (`-v ${workspaceFolder}:/project:ro` + `-e PROJECT_ROOT=/project`) |
 | Image | `devesen/dev-filesystem-mcp:latest` |
 
 > **Volume-Mount ist Pflicht.** Das Projekt-Verzeichnis muss als `/project` gemountet und `PROJECT_ROOT=/project` als Umgebungsvariable gesetzt werden.

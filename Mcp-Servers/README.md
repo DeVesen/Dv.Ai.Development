@@ -21,7 +21,7 @@ Mcp-Servers/
 
 ### `build-log-filter` — Build.Log.Filter.Mcp
 
-**Stack:** C# / .NET 9 · **Port:** 8089 · **Volume-Mount:** ❌ nicht erforderlich
+**Stack:** C# / .NET 9 · **Log-Port:** 8089 · **Volume-Mount:** ❌ nicht erforderlich · **autoApprove:** ❌ (Bestätigung erforderlich)
 
 Reduziert rohe Build- und Test-Ausgaben auf das Wesentliche: Fehler, Warnungen, Zusammenfassungen und Stacktraces. Unterstützt Einzel- und Streaming-Verarbeitung.
 
@@ -36,7 +36,8 @@ Reduziert rohe Build- und Test-Ausgaben auf das Wesentliche: Fehler, Warnungen, 
 // mcp.json
 "build-log-filter": {
   "command": "docker",
-  "args": ["run", "-i", "--rm", "devesen/build-log-filter-mcp:latest"]
+  "args": ["run", "-i", "--rm", "-p", "127.0.0.1:8089:8089", "devesen/build-log-filter-mcp:latest"],
+  "transport": "stdio"
 }
 ```
 
@@ -46,9 +47,9 @@ Reduziert rohe Build- und Test-Ausgaben auf das Wesentliche: Fehler, Warnungen, 
 
 ### `codebase-analyzer` — Codebase.Analyzer.Mcp
 
-**Stack:** Node.js / TypeScript · **Port:** 8090 · **Volume-Mount:** ✅ **erforderlich**
+**Stack:** Node.js / TypeScript · **Log-Port:** 8090 · **Volume-Mount:** ✅ **erforderlich** · **Kein API-Key erforderlich** (rein statische AST-Analyse)
 
-> Das Projekt-Verzeichnis muss als `/workspace` gemountet werden, da der Server direkt auf dem Dateisystem analysiert.
+> Das Projekt-Verzeichnis muss als `/workspace` gemountet werden. Der Server liest Dateien direkt über das Dateisystem und analysiert sie per AST (ts-morph für TypeScript/Angular, Roslyn für C#/.NET) — ohne externe LLM-Aufrufe.
 
 Vollständige statische Code-Analyse für Angular und .NET/C#: SOLID, Security, Performance, Architektur, AST, Symbol-Suche, Refactoring-Safety und automatische Komplexitätsmessung.
 
@@ -125,9 +126,9 @@ Token-effizientes Lesen und Suchen in `.cs`- und `.ts`-Dateien. Liefert gezielt 
 
 ### `dev-angular-mcp` — Dev.Angular.Mcp
 
-**Stack:** C# / .NET · **Port:** 8092 · **Volume-Mount:** ❌ nicht erforderlich
+**Stack:** C# / .NET · **Log-Port:** 8092 · **Volume-Mount:** ❌ nicht erforderlich
 
-Angular-Scaffolding via `ng generate` mit Projekt-Konventionen. Generiert Komponenten und Services nach den konfigurierten Pfaden und Namenskonventionen.
+Angular-Scaffolding via `ng generate`. Der Agent übergibt **absolute Pfade** — der Server startet `ng generate` als Subprocess und schreibt die Dateien direkt ins Ziel-Verzeichnis auf dem Host. Kein Volume-Mount nötig, da der Container den Host-Pfad als Parameter erhält.
 
 | Tool | Beschreibung |
 |------|-------------|
@@ -148,9 +149,9 @@ Angular-Scaffolding via `ng generate` mit Projekt-Konventionen. Generiert Kompon
 
 ### `dev-dotnet-mcp` — Dev.Dotnet.Mcp
 
-**Stack:** C# / .NET · **Port:** 8093 · **Volume-Mount:** ❌ nicht erforderlich
+**Stack:** C# / .NET · **Log-Port:** 8093 · **Volume-Mount:** ❌ nicht erforderlich
 
-.NET-Scaffolding via `dotnet new` und JSON-basierte Verzeichnisstruktur-Generierung. Erstellt Projekte, Klassen und Ordnerstrukturen nach Konvention.
+.NET-Scaffolding via `dotnet new` und JSON-basierte Verzeichnisstruktur-Generierung. Wie `dev-angular-mcp` werden absolute Pfade übergeben — der Server schreibt Dateien direkt aufs Host-Dateisystem via Subprocess.
 
 | Tool | Beschreibung |
 |------|-------------|
@@ -181,6 +182,17 @@ Angular-Scaffolding via `ng generate` mit Projekt-Konventionen. Generiert Kompon
 
 ---
 
+## Ports — Hinweis
+
+Alle Server verwenden **stdio** als MCP-Transport (kein TCP). Die `-p`-Flags in `mcp.json` binden einen internen **HTTP-Log-Viewer** — ein Diagnose-Endpoint, über den Tool-Aufrufe im Browser eingesehen werden können. Für den normalen Betrieb ist der Port irrelevant.
+
+---
+
 ## Alle Server starten (docker-compose)
 
 Für lokale Entwicklung: jeder Server-Ordner enthält ein `docker-compose.yml` zum Bauen und Starten des jeweiligen Containers.
+
+```bash
+# Im jeweiligen Server-Verzeichnis
+docker compose up --build
+```

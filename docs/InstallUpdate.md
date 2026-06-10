@@ -6,9 +6,17 @@ Wie die AI-Skills-Bibliothek in ein Projekt deployed und aktualisiert wird.
 
 ## Voraussetzungen
 
+**Für die Skills (immer):**
 - Git-Repository mit diesem Repo (oder Download des `AI-Skills/`-Verzeichnisses)
 - Ziel-Projekt mit vorhandenen Verzeichnissen `.cursor/` und/oder `.claude/`
 - Windows: PowerShell 7+ / Linux/macOS: Bash
+
+**Für die MCP-Server (zusätzlich):**
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installiert und gestartet
+- Windows: Docker muss im **Linux-Container-Modus** laufen (Standard bei Docker Desktop)
+- Internetverbindung für den ersten `docker pull` der Images
+
+> **Skills funktionieren auch ohne MCP-Server.** Die MCP-Server sind ergänzend — ohne sie stehen Analyse- und Scaffolding-Tools nicht zur Verfügung, aber alle Skills laufen weiterhin.
 
 ---
 
@@ -100,6 +108,8 @@ Das Update-Skript:
 ./AI-Skills/install-skill.sh all /path/to/project/.cursor /path/to/project/.claude
 ```
 
+> **Hinweis:** Im Gegensatz zum Windows-Skript entfernt `install-skill.sh` **keine** veralteten Dateien aus vorherigen Installationen. Dateien die aus dem Paket entfernt wurden bleiben bestehen und müssen ggf. manuell gelöscht werden.
+
 ---
 
 ## Platzhalter ersetzen
@@ -136,20 +146,46 @@ Select-String -Path "C:\project\.cursor\**\*" -Pattern '\{frontend-path\}' -Recu
 
 ## MCP-Server konfigurieren
 
-Die `mcp.json` wird beim Deploy in `.cursor/mcp.json` abgelegt. Für Claude Code muss sie separat in die Claude-Konfiguration eingebunden werden.
+### Cursor
 
-**Wichtig:** Zwei Server benötigen ein **Volume-Mount** auf das Ziel-Projekt:
+Beim Deploy wird `AI-Skills/mcp.json` automatisch als `.cursor/mcp.json` ins Ziel-Projekt kopiert. Cursor lädt diese Konfiguration automatisch beim nächsten Start.
+
+### Claude Code
+
+Für Claude Code muss der Inhalt von `mcp.json` manuell in die Claude-Konfigurationsdatei eingetragen werden:
+
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json` (Claude Desktop) oder `.claude/settings.json` im Projekt
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Den `"mcpServers"`-Block aus `AI-Skills/mcp.json` in die entsprechende Datei einfügen (oder zusammenführen falls bereits vorhanden).
+
+### ADO-MCP konfigurieren
+
+Die `mcp.json` enthält auch einen `ado`-Eintrag für Azure DevOps. Der Platzhalter `<IhreOrganisation>` muss durch die eigene ADO-Organisations-URL ersetzt werden:
 
 ```jsonc
-// codebase-analyzer — mount auf /workspace
+"ado": {
+  "command": "npx",
+  "args": ["-y", "@azure-devops/mcp", "meine-organisation", "-d", "core", "work", "work-items"]
+}
+```
+
+Falls ADO nicht verwendet wird, kann dieser Eintrag entfernt werden.
+
+### Volume-Mounts
+
+Zwei Server benötigen ein **Volume-Mount** auf das Ziel-Projekt (damit der Container Projektdateien lesen kann — Docker-Container haben keinen Host-Dateisystemzugriff ohne explizites Mount):
+
+```jsonc
+// codebase-analyzer — liest Projektdateien für AST-Analyse
 "-v", "${workspaceFolder}:/workspace:ro"
 
-// dev-filesystem-mcp — mount auf /project + env-Variable
+// dev-filesystem-mcp — liest .cs/.ts token-effizient
 "-v", "${workspaceFolder}:/project:ro",
 "-e", "PROJECT_ROOT=/project"
 ```
 
-Ohne Volume-Mount können diese Server keine Dateien des Projekts lesen.
+`dev-angular-mcp` und `dev-dotnet-mcp` benötigen **keinen** Mount — sie erhalten absolute Pfade als Parameter und schreiben direkt aufs Host-Dateisystem via `ng generate` / `dotnet new`.
 
 ---
 
@@ -162,7 +198,13 @@ Ohne Volume-Mount können diese Server keine Dateien des Projekts lesen.
 → `update-cursor-skills.ps1` erneut ausführen — es fragt nach allen offenen `{param}`-Werten.
 
 **MCP-Server antwortet nicht**
-→ Docker läuft? `docker ps` prüfen. Port frei? `netstat -an | findstr 8090` (Windows).
+→ Docker installiert und gestartet? `docker ps` prüfen. Beim ersten Start muss das Image gepullt werden — Internetverbindung erforderlich.
 
 **Codebase-Analyzer findet keine Dateien**
-→ Volume-Mount prüfen: `-v ${workspaceFolder}:/workspace:ro` muss auf das richtige Verzeichnis zeigen.
+→ Volume-Mount prüfen: `-v ${workspaceFolder}:/workspace:ro` muss auf das Projektverzeichnis zeigen. Auf Windows sicherstellen, dass `${workspaceFolder}` als absoluter Pfad mit Forward-Slashes übergeben wird (z.B. `/c/Users/...` statt `C:\...`).
+
+**Docker-Image kann nicht gepullt werden**
+→ Internetverbindung prüfen. Alternativ lokal bauen: `docker build -t devesen/<server>-mcp:latest .` im jeweiligen `Mcp-Servers/<Name>/`-Verzeichnis.
+
+**`dev-angular-mcp` / `dev-dotnet-mcp` schreibt keine Dateien**
+→ Sicherstellen, dass der übergebene Pfad ein **absoluter Pfad** auf dem Host ist und der Agent-Aufruf das richtige Zielverzeichnis enthält. Diese Server benötigen keinen Volume-Mount — sie nutzen `ng generate` / `dotnet new` als Subprocess mit dem übergebenen Pfad.

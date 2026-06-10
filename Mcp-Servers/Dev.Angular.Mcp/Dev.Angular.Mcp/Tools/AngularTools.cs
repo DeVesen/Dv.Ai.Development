@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Dev.Angular.Mcp.Models;
 using Dev.Angular.Mcp.Services;
@@ -21,6 +22,7 @@ public sealed class AngularTools
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         WriteIndented = false,
         TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
     };

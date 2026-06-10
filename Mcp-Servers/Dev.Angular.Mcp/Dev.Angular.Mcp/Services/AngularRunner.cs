@@ -13,7 +13,7 @@ public sealed partial class AngularRunner
 
     private static readonly string NgExecutable = OperatingSystem.IsWindows() ? "ng.cmd" : "ng";
 
-    [GeneratedRegex(@"\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07]*\x07)")]
+    [GeneratedRegex(@"\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07\x1B]*(?:\x07|\x1B\\))")]
     private static partial Regex AnsiRegex();
 
     [GeneratedRegex(@"(?:ERROR in |error\s+TS\d+:|✘\s*\[ERROR\])", RegexOptions.IgnoreCase)]
@@ -171,6 +171,7 @@ public sealed partial class AngularRunner
         catch (OperationCanceledException)
         {
             try { process.Kill(entireProcessTree: true); } catch { /* already exited */ }
+            try { await Task.WhenAll(stdoutTask, stderrTask); } catch { /* drain & suppress */ }
             var reason = timeoutCts.IsCancellationRequested
                 ? $"Process timed out after {timeoutSeconds}s."
                 : "Process was cancelled.";

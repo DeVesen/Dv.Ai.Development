@@ -163,4 +163,28 @@ public sealed class DotnetRunnerTests
         Assert.False(result.Success);
         Assert.Single(result.Errors);
     }
+
+    [Fact]
+    public void ParseBuildOutput_strips_ansi_codes()
+    {
+        var stderr = "\x1B[31msrc/A.cs(1,1): error CS0001: msg [proj.csproj]\x1B[0m";
+
+        var result = DotnetRunner.ParseBuildOutput(string.Empty, stderr, 1);
+
+        Assert.False(result.Success);
+        Assert.Single(result.Errors);
+        Assert.DoesNotContain("\x1B", result.Errors[0]);
+    }
+
+    [Fact]
+    public void ParseTestOutput_strips_ansi_codes()
+    {
+        var stdout = $"\x1B[31m  Failed MyTests.FailingTest [< 1 ms]\x1B[0m\nFailed! - Failed:   1, Passed:   0, Skipped:   0, Total:   1";
+
+        var result = DotnetRunner.ParseTestOutput(stdout, string.Empty, 1);
+
+        Assert.False(result.Success);
+        Assert.Single(result.Errors);
+        Assert.DoesNotContain("\x1B", result.Errors[0]);
+    }
 }

@@ -120,4 +120,26 @@ public sealed class AngularRunnerTests
         Assert.False(result.Success);
         Assert.Contains("failed", result.Summary, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void ParseTestOutput_strips_ansi_codes()
+    {
+        var stdout = $"\x1B[31mFAILED\x1B[0m MyComponent should render\nExecuted 1 of 1 (1 FAILED)";
+
+        var result = AngularRunner.ParseTestOutput(stdout, string.Empty, 1);
+
+        Assert.False(result.Success);
+        Assert.Single(result.Errors);
+        Assert.DoesNotContain("\x1B", result.Errors[0]);
+    }
+
+    [Fact]
+    public void ParseBuildOutput_strips_osc_sequences()
+    {
+        var stderr = $"\x1B]0;ng build\x07error TS2304: Cannot find name 'x'.";
+
+        var result = AngularRunner.ParseBuildOutput(string.Empty, stderr, 1);
+
+        Assert.DoesNotContain("\x1B", result.Errors.FirstOrDefault() ?? string.Empty);
+    }
 }

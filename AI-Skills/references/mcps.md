@@ -21,7 +21,7 @@ dev-filesystem-mcp
   Stärken: Gezieltes Klassen-Lesen, Signaturen, Interface-Implementierungen — token-effizient
   Bevorzugt wenn: konkrete Datei/Klasse bekannt · Public API prüfen · alle Implementierungen eines Interfaces finden
   Skill: .cursor/skills/dev-filesystem-mcp/SKILL.md
-  Mount: /project · Parameter: file_path, root (nicht path/filePath)
+  Mount: ${workspaceFolder}:/project:ro (read-only) · Parameter: file_path, root (nicht path/filePath)
 
 dev-angular-mcp
   Stärken: Angular-Komponenten und Services scaffolden · Angular-Projekt bauen und testen (Output intern gefiltert)

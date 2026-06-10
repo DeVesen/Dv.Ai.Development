@@ -32,7 +32,7 @@ test_dotnet_solution(path="/workspace/{backend-relative-path}")
 
 > Pfade müssen mit `/workspace/` beginnen (Docker-Mount: `${workspaceFolder}:/workspace`).
 > Vor dem ersten Build einmalig `dotnet restore` per Shell erforderlich.
-> Einzelnen Service starten (kein Verifikationsbefehl): `dotnet run --project LAC.GatewayService`
+> Einzelnen Service starten (kein Verifikationsbefehl): `dotnet run --project {service-project}`
 
 ---
 

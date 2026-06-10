@@ -8,6 +8,11 @@ public sealed partial class DotnetRunner
 {
     private const int MaxErrors = 50;
     private const int MaxWarnings = 20;
+    private const int BuildTimeoutSeconds = 300;
+    private const int TestTimeoutSeconds = 600;
+
+    [GeneratedRegex(@"\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07]*\x07)")]
+    private static partial Regex AnsiRegex();
 
     [GeneratedRegex(@"\): error\s+[A-Z]+\d+:", RegexOptions.IgnoreCase)]
     private static partial Regex BuildErrorLineRegex();
@@ -21,7 +26,8 @@ public sealed partial class DotnetRunner
     [GeneratedRegex(@"(?:Passed|Failed)!\s*-\s*Failed:\s*\d+.*", RegexOptions.IgnoreCase)]
     private static partial Regex TestSummaryLineRegex();
 
-    [GeneratedRegex(@"^\s*Failed\s+(\S+(?:\s+\S+)*?)\s+\[", RegexOptions.IgnoreCase)]
+    // Greedy capture stops at the last [ before a duration indicator (digits or <)
+    [GeneratedRegex(@"^\s*Failed\s+(.+)\s+\[(?:<?\s*\d)", RegexOptions.IgnoreCase)]
     private static partial Regex FailedTestLineRegex();
 
     public async Task<DotnetBuildResult> BuildAsync(
@@ -32,11 +38,13 @@ public sealed partial class DotnetRunner
         if (!ValidatePath(path, out var error))
             return MakeFailResult(error, "dotnet build");
 
-        var args = $"build {Quote(Path.GetFullPath(path))}";
+        var fullPath = Path.GetFullPath(path);
+        var args = $"build {Quote(fullPath)}";
         if (!string.IsNullOrWhiteSpace(configuration))
             args += $" --configuration {configuration.Trim()}";
 
-        return await RunDotnetAsync("dotnet build", args, ParseBuildOutput, cancellationToken);
+        var workingDir = File.Exists(fullPath) ? Path.GetDirectoryName(fullPath)! : fullPath;
+        return await RunDotnetAsync("dotnet build", args, workingDir, ParseBuildOutput, BuildTimeoutSeconds, cancellationToken);
     }
 
     public async Task<DotnetBuildResult> TestAsync(
@@ -47,16 +55,18 @@ public sealed partial class DotnetRunner
         if (!ValidatePath(path, out var error))
             return MakeFailResult(error, "dotnet test");
 
-        var args = $"test {Quote(Path.GetFullPath(path))}";
+        var fullPath = Path.GetFullPath(path);
+        var args = $"test {Quote(fullPath)}";
         if (!string.IsNullOrWhiteSpace(options))
             args += $" {options.Trim()}";
 
-        return await RunDotnetAsync("dotnet test", args, ParseTestOutput, cancellationToken);
+        var workingDir = File.Exists(fullPath) ? Path.GetDirectoryName(fullPath)! : fullPath;
+        return await RunDotnetAsync("dotnet test", args, workingDir, ParseTestOutput, TestTimeoutSeconds, cancellationToken);
     }
 
     public static DotnetBuildResult ParseBuildOutput(string stdout, string stderr, int exitCode)
     {
-        var combined = stdout + "\n" + stderr;
+        var combined = StripAnsi(stdout + "\n" + stderr);
         var lines = combined.Split('\n');
 
         var errors = lines
@@ -98,7 +108,7 @@ public sealed partial class DotnetRunner
 
     public static DotnetBuildResult ParseTestOutput(string stdout, string stderr, int exitCode)
     {
-        var combined = stdout + "\n" + stderr;
+        var combined = StripAnsi(stdout + "\n" + stderr);
         var lines = combined.Split('\n');
 
         var failedTests = lines
@@ -134,13 +144,16 @@ public sealed partial class DotnetRunner
     private async Task<DotnetBuildResult> RunDotnetAsync(
         string commandLabel,
         string arguments,
+        string workingDirectory,
         Func<string, string, int, DotnetBuildResult> parser,
+        int timeoutSeconds,
         CancellationToken cancellationToken)
     {
         var psi = new ProcessStartInfo
         {
             FileName = "dotnet",
             Arguments = arguments,
+            WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -159,12 +172,29 @@ public sealed partial class DotnetRunner
             return MakeFailResult($"Failed to start dotnet: {ex.Message}", commandLabel);
         }
 
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
-        await process.WaitForExitAsync(cancellationToken);
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
+        var stderrTask = process.StandardError.ReadToEndAsync(linkedCts.Token);
+
+        try
+        {
+            await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(linkedCts.Token));
+        }
+        catch (OperationCanceledException)
+        {
+            try { process.Kill(entireProcessTree: true); } catch { /* already exited */ }
+            var reason = timeoutCts.IsCancellationRequested
+                ? $"Process timed out after {timeoutSeconds}s."
+                : "Process was cancelled.";
+            return MakeFailResult(reason, commandLabel);
+        }
 
         return parser(await stdoutTask, await stderrTask, process.ExitCode);
     }
+
+    private static string StripAnsi(string input) => AnsiRegex().Replace(input, string.Empty);
 
     private static bool ValidatePath(string path, out string error)
     {

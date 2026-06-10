@@ -163,8 +163,6 @@ public sealed class AngularTools
         createdFiles = result.CreatedFiles,
         exitCode = result.ExitCode,
         error = result.Error,
-        stdout = result.Stdout,
-        stderr = result.Stderr,
     };
 
     private static object ToBuildResponse(BuildResult result) => new

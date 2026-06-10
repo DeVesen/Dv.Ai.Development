@@ -113,7 +113,7 @@ public sealed class DotnetTools
             var result = await action();
             sw.Stop();
             _history.Record(toolName, paramJson, result, sw.ElapsedMilliseconds);
-            _logger.LogInformation("=== {Tool} ({DurationMs}ms) ===", toolName, sw.ElapsedMilliseconds);
+            _logger.LogInformation("=== {Tool} ({DurationMs}ms, result={Result}) ===", toolName, sw.ElapsedMilliseconds, result[..Math.Min(80, result.Length)]);
             return result;
         }
         catch (Exception ex)

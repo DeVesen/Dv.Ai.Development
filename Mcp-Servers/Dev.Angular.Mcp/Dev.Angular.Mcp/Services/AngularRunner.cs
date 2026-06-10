@@ -8,10 +8,12 @@ public sealed partial class AngularRunner
 {
     private const int MaxErrors = 50;
     private const int MaxWarnings = 20;
+    private const int BuildTimeoutSeconds = 300;
+    private const int TestTimeoutSeconds = 600;
 
     private static readonly string NgExecutable = OperatingSystem.IsWindows() ? "ng.cmd" : "ng";
 
-    [GeneratedRegex(@"\x1B\[[0-9;]*[mGKHFJK]")]
+    [GeneratedRegex(@"\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07]*\x07)")]
     private static partial Regex AnsiRegex();
 
     [GeneratedRegex(@"(?:ERROR in |error\s+TS\d+:|✘\s*\[ERROR\])", RegexOptions.IgnoreCase)]
@@ -38,7 +40,7 @@ public sealed partial class AngularRunner
         if (!string.IsNullOrWhiteSpace(configuration))
             args.Add($"--configuration={configuration.Trim()}");
 
-        return await RunAsync("ng build", projectRoot, args, ParseBuildOutput, cancellationToken);
+        return await RunAsync("ng build", projectRoot, args, ParseBuildOutput, BuildTimeoutSeconds, cancellationToken);
     }
 
     public async Task<BuildResult> TestAsync(
@@ -53,7 +55,7 @@ public sealed partial class AngularRunner
         if (!string.IsNullOrWhiteSpace(options))
             args.AddRange(options.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
-        return await RunAsync("ng test", projectRoot, args, ParseTestOutput, cancellationToken);
+        return await RunAsync("ng test", projectRoot, args, ParseTestOutput, TestTimeoutSeconds, cancellationToken);
     }
 
     public static BuildResult ParseBuildOutput(string stdout, string stderr, int exitCode)
@@ -130,6 +132,7 @@ public sealed partial class AngularRunner
         string projectRoot,
         List<string> args,
         Func<string, string, int, BuildResult> parser,
+        int timeoutSeconds,
         CancellationToken cancellationToken)
     {
         var psi = new ProcessStartInfo
@@ -155,9 +158,24 @@ public sealed partial class AngularRunner
             return MakeFailResult($"Failed to start ng: {ex.Message}", commandLabel);
         }
 
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
-        await process.WaitForExitAsync(cancellationToken);
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
+        var stderrTask = process.StandardError.ReadToEndAsync(linkedCts.Token);
+
+        try
+        {
+            await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(linkedCts.Token));
+        }
+        catch (OperationCanceledException)
+        {
+            try { process.Kill(entireProcessTree: true); } catch { /* already exited */ }
+            var reason = timeoutCts.IsCancellationRequested
+                ? $"Process timed out after {timeoutSeconds}s."
+                : "Process was cancelled.";
+            return MakeFailResult(reason, commandLabel);
+        }
 
         return parser(await stdoutTask, await stderrTask, process.ExitCode);
     }

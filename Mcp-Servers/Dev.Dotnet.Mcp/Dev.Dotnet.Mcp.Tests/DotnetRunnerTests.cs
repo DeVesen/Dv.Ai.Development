@@ -135,4 +135,32 @@ public sealed class DotnetRunnerTests
         Assert.True(result.Success);
         Assert.Contains("passed", result.Summary, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void ParseTestOutput_extracts_theory_test_names_with_brackets()
+    {
+        const string stdout = """
+              Failed MyTests.Calculator.Add_Theory [Theory] [< 1 ms]
+              Failed MyTests.Calculator.Multiply [2 ms]
+            Failed! - Failed:   2, Passed:   8, Skipped:   0, Total:  10, Duration: 1 s - MyTests.dll (net9.0)
+            """;
+
+        var result = DotnetRunner.ParseTestOutput(stdout, string.Empty, 1);
+
+        Assert.False(result.Success);
+        Assert.Equal(2, result.Errors.Length);
+        Assert.Contains(result.Errors, t => t.Contains("[Theory]"));
+        Assert.Contains(result.Errors, t => t.Contains("Multiply"));
+    }
+
+    [Fact]
+    public void ParseBuildOutput_handles_windows_line_endings()
+    {
+        var stdout = "src/A.cs(1,1): error CS0001: msg [proj.csproj]\r\nBuild FAILED.\r\n";
+
+        var result = DotnetRunner.ParseBuildOutput(stdout, string.Empty, 1);
+
+        Assert.False(result.Success);
+        Assert.Single(result.Errors);
+    }
 }

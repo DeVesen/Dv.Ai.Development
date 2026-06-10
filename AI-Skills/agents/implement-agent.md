@@ -1,6 +1,6 @@
 ---
 name: implement-agent
-model: auto
+model: composer-2-standard
 description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test). Pflicht build-log-filter und Agent-Compliance — kein stack-weites Technik-Gate.
 ---
 
@@ -16,9 +16,9 @@ description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test). Pflicht bu
 
 | Feld | Wert |
 |------|------|
-| **Primär** | `auto` (AUTO — vom Host / Task-Modellauswahl) |
+| **Primär** | `composer-2-standard` |
 
-Ist `auto` **nicht** wählbar → **stoppen**, transparent melden.
+Ist `composer-2-standard` **nicht** wählbar → **stoppen**, transparent melden.
 
 ## Pflicht-Dokumente (vollständig lesen — strikt einhalten)
 

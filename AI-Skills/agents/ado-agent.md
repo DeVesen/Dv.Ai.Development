@@ -1,6 +1,6 @@
 ---
 name: ado-agent
-model: auto
+model: composer-2-standard
 description: Orchestrator for ADO load → analyse → save under {workspace-root}/requests/stories/. Delegates Feature child stories and Task analyse subagents. Also Task close, ToDo, active/resolved, Task verfeinern Legacy. Trigger load story/feature/task, analyse, save, @ado.
 ---
 
@@ -18,7 +18,7 @@ Du bist **Orchestrator** für [ado](../skills/ado/SKILL.md): Phasen **`load` →
 
 | Feld | Wert |
 |------|------|
-| **Primär** | `auto` |
+| **Primär** | `composer-2-standard` |
 
 ## Pflicht-Dokumente
 

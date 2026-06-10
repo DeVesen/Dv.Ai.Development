@@ -1,6 +1,6 @@
 ---
 name: implement-review-lehrer-agent
-model: gpt-5.5-medium
+model: gpt-5.5
 description: Strenger Lehrer im iterativen Implement-Review-Loop. Prüft fachliche Korrektheit von Code, APIs, Typen und Tests — sucht aktiv Fehler.
 readonly: true
 ---
@@ -15,15 +15,11 @@ Du bist der **Strenger Lehrer** im iterativen Implement-Review-Loop des [Impleme
 
 | Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
 |-------|--------------------------|---------------------|
-| **Primär** | `gpt-5.5-medium` | GPT-5.5 Medium |
-| **Fallback 1** | `claude-opus-4-7-thinking-xhigh` | Opus 4.7 extra high |
-| **Fallback 2** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 3** | `claude-opus-4-7` | Opus 4.7 |
-| **Fallback 4** | `composer-2.5-fast` | Composer 2.5 Fast |
-| **Fallback 5** | `composer-2-fast` | Composer 2 Fast |
-| **Fallback 6** | `auto` | AUTO |
+| **Primär** | `gpt-5.5` | GPT-5.5 |
+| **Fallback 1** | `claude-opus-4-7` | Opus 4.7 |
+| **Fallback 2** | `composer-2-standard` | Composer 2 Standard |
 
-**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle sieben nicht wählbar → **stoppen**.
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**.
 
 ## Pflicht-Dokumente
 

@@ -59,7 +59,7 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 **Schritt 1 — Basis-Landkarte (Pflicht):**
 - `index_project` (Einzelprojekt) **oder** `index_solution` (.NET Multi-Projekt) + `find_in_index` für alle genannten Symbole — kein stilles Überspringen.
 - Wenn Scope-Bereich **> 3 Dateien** → `detect_god_classes(projectPath, top: 5)` → God-Class-Kandidaten im betroffenen Bereich in Deliverable-Abschnitt **6** (Complexity Hotspots) ergänzen.
-- Fallback (nur bei MCP-Fehler): Read/Grep mit Dokumentation des Grunds.
+- Natives Read/Grep nur nach ausgeschöpfter MCP-Kette (repo-scout-protocol) oder MCP-BLOCKER — mit Dokumentation im Scout-Protokoll.
 
 **Schritt 1b — Dev-Filesystem-MCP (Pflicht gemäß repo-scout-protocol):**
 - Kanon: `skills/dev-filesystem-mcp/SKILL.md` — `file_path`/`root`, Schema vor Aufruf lesen.
@@ -78,7 +78,7 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 | B2 | `find_type_hierarchy(direction: "down")` wenn `find_in_index`-Treffer ein **Interface** oder eine **abstrakte Basisklasse** ist → Ableitungen/Implementierungen in Deliverable-Abschnitt 2 (Entry Points) | manuelle `extends`/`implements`-Suche via Grep | Interface oder abstrakte Klasse im Scope |
 | C | `suggest_class_splits` auf Klassen mit >1 Verantwortung | Manuelle Lektüre via Read | nur wenn Klasse zu groß/mehrdeutig |
 
-Kein Schritt 2 bei: ausschließlich UI-Labels, leerer Fundliste, rein neuen Dateien ohne bestehende Klassen.
+Kein Schritt 2 bei: ausschließlich UI-Labels, nach **ausgeschöpfter** MCP-Kette ohne Auflösung, rein neuen Dateien ohne bestehende Klassen. **Bei leerem `find_in_index` bleibt Schritt 1b (Filesystem-Suche) Pflicht** — siehe [repo-scout-protocol](../skills/repo-scout-protocol/SKILL.md).
 
 **Deliverable-Struktur:**
 

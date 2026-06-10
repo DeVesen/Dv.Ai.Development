@@ -18,9 +18,9 @@ Du bist **Topic-Planer** im [Planning Workflow](../skills/planning-workflow/SKIL
 
 ## MCP-Auswahl (MCP-first)
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP ist primäre Analyse-Methode** für Komplexitäts- und Refactoring-Prüfungen — Fallback nur bei MCP-Fehler. Datei fehlt → Default: `codebase-analyzer`.
+`./mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP-Sequenz** gemäß [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md) vor Symbol-Auflösung — Read/Grep erst nach ausgeschöpfter Kette. Datei fehlt → Default: `codebase-analyzer`.
 
-Skill-Referenz: [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
+Skill-Referenzen: [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md), [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
 
 ## Mantra
 
@@ -46,6 +46,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 
 - [planning-workflow/SKILL.md](../skills/planning-workflow/SKILL.md) — Phase 4b, Schnittstellen aus 4a
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Abschnitt **Topic-Planer**
+- [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md) — MCP-Sequenz vor Symbol-Auflösung
 - [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md) — Abschnitt „Code-Landkarte" und „MCP-Pfadauflösung"
 - Topic-relevante Skills aus Wirtsprojekt-Doku (z. B. `./AGENTS.md`, projektspezifische Skills)
 
@@ -64,7 +65,7 @@ Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in S
 | A | `analyze_complexity` auf Topic-relevante Dateien | Manuelle Zeilenzahl / Methoden-Zählung via Read | mind. 1 bestehende Klasse im Topic-Scope |
 | B | `analyze_refactoring_safety` auf Klassen, die umgebaut werden | Import-Zählung via Grep als Proxy | nur wenn Klassen-Umbau geplant |
 | C | `find_type_hierarchy` auf Interfaces/abstrakte Basisklassen im Topic-Scope (`direction: "down"`) | Grep auf `implements`/`extends` als Proxy | Interface oder abstrakte Basisklasse wird im Topic geändert |
-| D | dev-filesystem-mcp (optional): Kanon `skills/dev-filesystem-mcp/SKILL.md`; `read_class_summary` / `read_signatures_only` mit `file_path` unter `/project/...` | Read der betreffenden Datei | bestehende Klassen im Topic-Scope |
+| D | dev-filesystem-mcp (Pflicht bei bestehenden Klassen / nach Index-Miss): Kanon `skills/dev-filesystem-mcp/SKILL.md`; `read_class_summary` / `read_signatures_only` / `find_by_content` mit `file_path`/`root` unter `/project/...` | Read nur nach ausgeschöpfter MCP-Kette | bestehende Klassen im Topic-Scope |
 
 Kein Call bei reinen Neu-Implementierungen ohne Berührung bestehender Klassen. Ergebnis von Schritt C in IMP-Slice-Scope und Risiken (Schritt 4) einbetten. Ergebnisse in Risiken (Schritt 4) und IMP-Slice-Blocking (Schritt 5/6) einbetten.
 

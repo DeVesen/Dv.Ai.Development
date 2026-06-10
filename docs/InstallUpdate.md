@@ -174,6 +174,7 @@ Jeder MCP-Server hat ein eigenes Skill-Paket unter `AI-Skills/skills/<name>/SKIL
 
 - **`mcps.md`** (Projekt-Root): situative Auswahl — Scout-Phasen: Kette gemäß `repo-scout-protocol`. Wird beim Install/Update aus `$McpHints` ergänzt; Skill-Zeilen manuell in bestehenden Projekten ggf. nachziehen.
 - **`src/docs/mcp-*.md`**: Menschen-Doku mit Verweis auf den Kanon-Skill — keine zweite Parameter-Wahrheit pflegen.
+- **Scout-Fallback:** [`docs/mcp-scout-fallback-chain.md`](./mcp-scout-fallback-chain.md) (Menschen) · Agent-Kanon: `skills/repo-scout-protocol/SKILL.md` · Paket `repo-scout-protocol` (wird mit `buddy-agent` / `planning-workflow` via `dependsOn` mitinstalliert).
 
 ---
 

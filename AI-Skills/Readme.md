@@ -163,6 +163,7 @@ Dateien, die von mehreren Paketen gemeinsam genutzt werden:
 | Datei | Inhalt |
 |-------|--------|
 | `mcps.md` | MCP-Router (wann welcher Server) — Kanon in `skills/<mcp>/SKILL.md` |
+| `mcp-scout-fallback-chain.md` | **Alias** → Agent-Kanon: `skills/repo-scout-protocol/SKILL.md`; Menschen-Doku: `docs/mcp-scout-fallback-chain.md` |
 | `subagent-model-before-task.md` | Vorgabe: Model-Sektion des Agent-Profils vor jeder Aufgabe lesen |
 | `verification-commands.md` | Projekt-spezifische Build/Test-Befehle pro Stack |
 

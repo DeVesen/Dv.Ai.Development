@@ -64,7 +64,8 @@ Schritt 2 — Erweiterte MCP-Analyse (nach find_in_index, wenn konkrete Klassen/
       — Bedingung: wie Schritt A (mind. 1 Klasse im Scope)
    E. analyze_type_graph auf betroffene Dateien (primaer) | Fallback: Grep auf Tuple< / Mehrfach-Rueckgaben
       — Bedingung: mind. 2 Klassen/Services im Scope und Schnittstellen oder Rueckgabetypen betroffen
-   Kein Schritt 2 bei: ausschliesslich UI-Labels, leerer Fundliste, rein neuen Dateien.
+   Kein Schritt 2 bei: ausschliesslich UI-Labels, nach ausgeschoepfter MCP-Kette ohne Aufloesung, rein neuen Dateien.
+   Bei leerem find_in_index: Schritt 1b (find_by_content/find_file) Pflicht — repo-scout-protocol.
 
 0. MCP-Analyse-Status (Pflicht-Header, erste Zeile im Deliverable):
    `MCP: ok` wenn Schritt 1 + Schritt 2 erfolgreich;

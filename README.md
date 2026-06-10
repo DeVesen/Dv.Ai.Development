@@ -73,9 +73,16 @@ Fünf spezialisierte **MCP-Server** als Docker-Images:
 
 ---
 
-## mcps.md
+## mcps.md und Scout-Fallback-Kette
 
-Die Datei [`mcps.md`](./mcps.md) im Root ist eine **situative MCP-Auswahlhilfe** für Agents — welcher MCP-Server wann bevorzugt wird und wie der Fallback (Read/Grep) aussieht. Sie wird beim Deploy in Projekte mitgeliefert.
+Die Datei [`mcps.md`](./mcps.md) im Root ist eine **situative MCP-Auswahlhilfe** für Agents — welcher MCP-Server wann bevorzugt wird. Sie wird beim Deploy in Projekte mitgeliefert.
+
+In **Scout-Phasen** (repo-check, Code-Landkarte, `plan-agent-scout`) gilt keine Einzel-MCP-Auswahl mit sofortigem Grep-Fallback: Agents bauen eine **MCP-Sequenz** (typisch `codebase-analyzer` → `dev-filesystem-mcp`) und arbeiten sie vollständig ab. Natives Read/Grep erst danach oder bei MCP-BLOCKER.
+
+| Dokument | Inhalt |
+|----------|--------|
+| [`AI-Skills/skills/repo-scout-protocol/SKILL.md`](./AI-Skills/skills/repo-scout-protocol/SKILL.md) | Agent-Kanon (Routing-Matrix, Scout-Protokoll-Tabelle) |
+| [`docs/mcp-scout-fallback-chain.md`](./docs/mcp-scout-fallback-chain.md) | Menschen-Doku zum gleichen Verhalten |
 
 ---
 

@@ -4,8 +4,8 @@
 
 Verfügbare MCP-Server in diesem Projekt.
 Agents wählen situativ — kein festes Ablaufschema außer in **Scout-Phasen**.
-**Scout-Phasen** (repo-check, Code-Landkarte, plan-agent-scout): verbindliche Kette gemäß `skills/repo-scout-protocol/SKILL.md`.
-Fallback wenn kein MCP verfügbar oder Fehler: Read/Grep mit Begründung (nach Scout-Kette).
+**Scout-Phasen** (repo-check, Code-Landkarte, plan-agent-scout): verbindliche **MCP-Sequenz** gemäß `skills/repo-scout-protocol/SKILL.md` (nicht ein MCP → sofort Grep). Menschen-Doku: `docs/mcp-scout-fallback-chain.md`.
+Read/Grep nur nach ausgeschöpfter Scout-Kette oder MCP-BLOCKER — mit Scout-Protokoll-Tabelle.
 
 Dev-Tooling-Routing (filesystem / angular / dotnet): `dev-tooling-mcp/SKILL.md`.
 

@@ -402,10 +402,12 @@ Scouting gestartet werden soll.
 
 (Read-only). Siehe Abschnitt **Subagent-Typen und Agent-Definitionen**.
 
-**Code-Recherche (verbindlich) — MCP zuerst, Fallback (Read/Grep) nur wenn MCP nicht verfügbar:**
+**Code-Recherche (verbindlich) — MCP-Sequenz vor nativem Grep:**
+[repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md) vollständig — Routing-Matrix, Pflicht `find_by_content`/`find_file` bei Index-Miss, Scout-Protokoll-Tabelle im Deliverable.
 Bei Bezug auf Klassen, Methoden, Properties, Services, Routen oder „von Stelle A nach Stelle B" —
-Basis-Landkarte (`index_project` + `find_in_index`) gemäß
+Basis-Landkarte (`index_project` / `index_solution` + `find_in_index`) gemäß
 [codebase-analyzer — Code-Landkarte](../codebase-analyzer/SKILL.md#code-landkarte--verbindliche-recherche-reihenfolge).
+Read/Grep nur nach ausgeschöpfter MCP-Kette oder MCP-BLOCKER.
 UI-Elemente ohne Symbol (Button-Label, Feld ohne Klassenname) sind davon ausgenommen.
 
 **Erweiterte MCP-Analyse in Phase 3** (nach `find_in_index`, wenn konkrete Klassen/Methoden aufgelöst):

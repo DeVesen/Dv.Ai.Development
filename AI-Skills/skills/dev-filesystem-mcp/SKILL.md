@@ -114,10 +114,22 @@ Kanonische Referenz für den MCP-Server **dev-filesystem-mcp** (Docker, Port 809
 | `File not found: /app/...` | Falscher **Pfad** (Host/relativ statt `/project/`) | `/project/<relativ-zu-workspace>` |
 | Datei existiert, trotzdem not found | `root`/`file_path` außerhalb Mount | Workspace-Mount prüfen |
 
+## Scout-Fallback (Index-Miss)
+
+In Scout-/repo-check-Phasen ist dieser MCP die **Pflicht-Zweitstrategie** nach leerem `find_in_index`:
+
+1. `find_by_content` (Regex, optional `file_glob`) oder `find_file` (Glob unter `root`)
+2. bei Treffer: `read_class_summary` / `read_signatures_only`
+
+**Nicht** sofort natives Grep — Kette gemäß [repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md).
+
+Bei **bekanntem Pfad/Klasse** (Task, Handoff): Filesystem-MCP **zuerst**, Index optional für Abhängigkeiten.
+
 ## Abgrenzung
 
 - **codebase-analyzer:** Index, Review, Metriken — Mount `/workspace`, Parameter `filePath`/`projectPath`
 - **Routing (welcher MCP wann):** [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) oder `./mcps.md`
+- **Scout-Kette:** [repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md)
 
 ## Log-UI
 

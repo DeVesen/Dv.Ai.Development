@@ -146,6 +146,8 @@ Ohne vollständige Tabelle: Scout **nicht** als abgeschlossen markieren.
 | [dev-filesystem-mcp](../dev-filesystem-mcp/SKILL.md) | Pflicht-Zweitstrategie bei Index-Miss |
 | [planning-workflow](../planning-workflow/SKILL.md) Phase 3 | Scout-Subagent nutzt dieselbe Kette |
 
+**Menschen-Doku:** [docs/mcp-scout-fallback-chain.md](../../docs/mcp-scout-fallback-chain.md) · **Alias-Referenz:** [mcp-scout-fallback-chain.md](../../references/mcp-scout-fallback-chain.md)
+
 ---
 
 ## Pflegehinweis

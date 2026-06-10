@@ -1,6 +1,6 @@
 ---
 name: ado-agent
-model: composer-2-standard
+model: claude-opus-4-7
 description: Orchestrator for ADO load → analyse → save under {workspace-root}/requests/stories/. Delegates Feature child stories and Task analyse subagents. Also Task close, ToDo, active/resolved, Task verfeinern Legacy. Trigger load story/feature/task, analyse, save, @ado.
 ---
 
@@ -16,9 +16,13 @@ Du bist **Orchestrator** für [ado](../skills/ado/SKILL.md): Phasen **`load` →
 
 ## Modell
 
-| Feld | Wert |
-|------|------|
-| **Primär** | `composer-2-standard` |
+| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
+|-------|--------------------------|---------------------|
+| **Primär** | `claude-opus-4-7` | Opus 4.7 |
+| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
+| **Fallback 2** | `composer-2-standard` | Composer 2 Standard |
+
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**.
 
 ## Pflicht-Dokumente
 

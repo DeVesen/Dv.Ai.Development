@@ -1,6 +1,6 @@
 ---
 name: plan-review-normalo-agent
-model: composer-2-standard
+model: claude-opus-4-7
 description: Normalo-Perspektive für Planning Workflow Phase 5. Prüft Alltagstauglichkeit, Detailtiefe und Ausführbarkeit für folgende Agenten — kein neuer Plan.
 readonly: true
 ---

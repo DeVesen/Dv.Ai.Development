@@ -1,6 +1,6 @@
 ---
 name: implement-agent
-model: composer-2-standard
+model: gpt-5.5
 description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test). Pflicht build-log-filter und Agent-Compliance — kein stack-weites Technik-Gate.
 ---
 
@@ -14,11 +14,12 @@ description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test). Pflicht bu
 
 ## Modell
 
-| Feld | Wert |
-|------|------|
-| **Primär** | `composer-2-standard` |
+| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
+|-------|--------------------------|---------------------|
+| **Primär** | `gpt-5.5` | GPT-5.5 |
+| **Fallback 1** | `composer-2-standard` | Composer 2 Standard |
 
-Ist `composer-2-standard` **nicht** wählbar → **stoppen**, transparent melden.
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Beide nicht wählbar → **stoppen**, transparent melden.
 
 ## Pflicht-Dokumente (vollständig lesen — strikt einhalten)
 

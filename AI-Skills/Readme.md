@@ -78,8 +78,8 @@ Jedes Verzeichnis enthält eine `SKILL.md` mit dem Workflow und optional einen `
 |-------|------------|
 | `codebase-analyzer/` | Index, Review, AST, Refactoring-Safety, Nullability |
 | `dev-filesystem-mcp/` | Token-effizientes Lesen/Suchen (`file_path`, `/project/...`) |
-| `dev-angular-mcp/` | Angular-Scaffolding (`project_root`, Host-Absolut) |
-| `dev-dotnet-mcp/` | .NET-Scaffolding (`output_path`, `base_path`) |
+| `dev-angular-mcp/` | Angular-Scaffolding + Build/Test (`project_root`, `/workspace/...`) |
+| `dev-dotnet-mcp/` | .NET-Scaffolding + Build/Test (`output_path`, `base_path`, `path`, `/workspace/...`) |
 | `build-log-filter/` | Build-/Test-Log filtern (`filter_output`, `tool_type`) |
 | `dev-tooling-mcp/` | **Router** — welcher Dev-MCP wann (kein eigener Server) |
 
@@ -182,8 +182,8 @@ Log-Ports (interner HTTP-Log-Viewer, nicht MCP-Transport — alle Server nutzen 
   8089  build-log-filter        ← kein autoApprove
   8090  codebase-analyzer       ← Volume-Mount erforderlich, 30 autoApproved Tools
   8091  dev-filesystem-mcp      ← Volume-Mount erforderlich, 6 autoApproved Tools
-  8092  dev-angular-mcp         ← 2 autoApproved Tools
-  8093  dev-dotnet-mcp          ← 2 autoApproved Tools
+  8092  dev-angular-mcp         ← Volume-Mount erforderlich, 4 autoApproved Tools
+  8093  dev-dotnet-mcp          ← Volume-Mount erforderlich, 4 autoApproved Tools
 ```
 
 Die meisten Server haben eine `autoApprove`-Liste, sodass häufig genutzte Tools ohne Bestätigungs-Prompt aufgerufen werden. Ausnahme: `build-log-filter` hat kein `autoApprove` — jeder Aufruf erfordert Bestätigung.

@@ -126,9 +126,9 @@ Jedes Verzeichnis enthält eine `SKILL.md` mit dem Workflow und optional einen `
 | `implementation-workflow-skill.mdc` | `implementiere`, `setze um`, `fix`, `leg los` |
 | `angular-skills.mdc` | Angular-Dateien, `ng`, Signals, Routing |
 | `ado-skill.mdc` | `load`, `analyse`, `save`, Task-Status |
-| `build-log-filter.mdc` | Automatisch bei `ng build/test`, `dotnet build/test` |
+| `build-log-filter.mdc` | `ng serve`, `npm start`, Shell-Fallback nach MCP-BLOCKER |
 | `codebase-analyzer.mdc` | Code-Review-Fragen, Symbol-Suche |
-| `dev-tooling-mcp.mdc` | `.cs`/`.ts`-Reads, Scaffolding |
+| `dev-tooling-mcp.mdc` | `.cs`/`.ts`-Reads, Scaffolding, Build, Test |
 | `buddy-agent-skill.mdc` | `@buddy-agent`, `buddy intake` |
 | `repo-scout-protocol.mdc` | `repo-check`, `buddy repo-check`, Code-Landkarte, `plan-agent-scout` |
 

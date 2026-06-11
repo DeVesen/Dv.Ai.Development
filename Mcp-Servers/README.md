@@ -11,8 +11,8 @@ Mcp-Servers/
 ├── Build.Log.Filter.Mcp/    → Build-/Test-Output komprimieren
 ├── Codebase.Analyzer.Mcp/   → Statische Code-Analyse & Reviews
 ├── Dev.Filesystem.Mcp/      → Token-effizientes Datei-Lesen
-├── Dev.Angular.Mcp/         → Angular-Scaffolding
-└── Dev.Dotnet.Mcp/          → .NET-Scaffolding
+├── Dev.Angular.Mcp/         → Angular-Scaffolding + Build + Test
+└── Dev.Dotnet.Mcp/          → .NET-Scaffolding + Build + Test
 ```
 
 ---
@@ -126,20 +126,36 @@ Token-effizientes Lesen und Suchen in `.cs`- und `.ts`-Dateien. Liefert gezielt 
 
 ### `dev-angular-mcp` — Dev.Angular.Mcp
 
-**Stack:** C# / .NET · **Log-Port:** 8092 · **Volume-Mount:** ❌ nicht erforderlich
+**Stack:** C# / .NET · **Log-Port:** 8092 · **Volume-Mount:** ✅ **erforderlich** — `${workspaceFolder}:/workspace`
 
-Angular-Scaffolding via `ng generate`. Der Agent übergibt **absolute Pfade** — der Server startet `ng generate` als Subprocess und schreibt die Dateien direkt ins Ziel-Verzeichnis auf dem Host. Kein Volume-Mount nötig, da der Container den Host-Pfad als Parameter erhält.
+Angular-Scaffolding via `ng generate` sowie Build und Test via `ng build` / `ng test`. Das Projekt-Verzeichnis wird als `/workspace` gemountet — alle Pfade im Container beginnen mit `/workspace/...`.
+
+**Internes Output-Filtering:** `build_angular_project` und `test_angular_project` führen `ng` als Subprocess aus. Die rohe stdout/stderr verlässt den Server nie — der Agent erhält ausschließlich ein strukturiertes JSON-Ergebnis (`success`, `errors[]`, `warnings[]`, `summary`, `exitCode`).
 
 | Tool | Beschreibung |
 |------|-------------|
-| `scaffold_angular_component` | Standalone-Komponente generieren |
-| `scaffold_angular_service` | Service generieren |
+| `scaffold_angular_component` | Standalone-Komponente via `ng generate` |
+| `scaffold_angular_service` | Service via `ng generate` |
+| `build_angular_project` | `ng build` — strukturiertes Ergebnis |
+| `test_angular_project` | `ng test --watch=false` — strukturiertes Ergebnis |
 
 ```jsonc
 // mcp.json
 "dev-angular-mcp": {
   "command": "docker",
-  "args": ["run", "-i", "--rm", "devesen/dev-angular-mcp:latest"]
+  "args": [
+    "run", "-i", "--rm",
+    "-p", "127.0.0.1:8092:8092",
+    "-v", "${workspaceFolder}:/workspace",
+    "devesen/dev-angular-mcp:latest"
+  ],
+  "transport": "stdio",
+  "autoApprove": [
+    "scaffold_angular_component",
+    "scaffold_angular_service",
+    "build_angular_project",
+    "test_angular_project"
+  ]
 }
 ```
 
@@ -149,20 +165,36 @@ Angular-Scaffolding via `ng generate`. Der Agent übergibt **absolute Pfade** �
 
 ### `dev-dotnet-mcp` — Dev.Dotnet.Mcp
 
-**Stack:** C# / .NET · **Log-Port:** 8093 · **Volume-Mount:** ❌ nicht erforderlich
+**Stack:** C# / .NET · **Log-Port:** 8093 · **Volume-Mount:** ✅ **erforderlich** — `${workspaceFolder}:/workspace`
 
-.NET-Scaffolding via `dotnet new` und JSON-basierte Verzeichnisstruktur-Generierung. Wie `dev-angular-mcp` werden absolute Pfade übergeben — der Server schreibt Dateien direkt aufs Host-Dateisystem via Subprocess.
+.NET-Scaffolding via `dotnet new`, JSON-basierte Verzeichnisstruktur-Generierung sowie Build und Test via `dotnet build` / `dotnet test`. Das Projekt-Verzeichnis wird als `/workspace` gemountet — alle Pfade im Container beginnen mit `/workspace/...`.
+
+**Internes Output-Filtering:** `build_dotnet_solution` und `test_dotnet_solution` führen `dotnet` als Subprocess aus. Die rohe stdout/stderr verlässt den Server nie — der Agent erhält ausschließlich ein strukturiertes JSON-Ergebnis (`success`, `errors[]`, `warnings[]`, `summary`, `exitCode`).
 
 | Tool | Beschreibung |
 |------|-------------|
-| `scaffold_dotnet_project` | Projekt via `dotnet new` anlegen |
+| `scaffold_dotnet_project` | Projekt via `dotnet new` anlegen + optional `dotnet sln add` |
 | `create_directory_structure` | Verzeichnis-Baum aus JSON generieren |
+| `build_dotnet_solution` | `dotnet build` — strukturiertes Ergebnis |
+| `test_dotnet_solution` | `dotnet test` — strukturiertes Ergebnis |
 
 ```jsonc
 // mcp.json
 "dev-dotnet-mcp": {
   "command": "docker",
-  "args": ["run", "-i", "--rm", "devesen/dev-dotnet-mcp:latest"]
+  "args": [
+    "run", "-i", "--rm",
+    "-p", "127.0.0.1:8093:8093",
+    "-v", "${workspaceFolder}:/workspace",
+    "devesen/dev-dotnet-mcp:latest"
+  ],
+  "transport": "stdio",
+  "autoApprove": [
+    "scaffold_dotnet_project",
+    "create_directory_structure",
+    "build_dotnet_solution",
+    "test_dotnet_solution"
+  ]
 }
 ```
 
@@ -177,8 +209,8 @@ Angular-Scaffolding via `ng generate`. Der Agent übergibt **absolute Pfade** �
 | `build-log-filter` | ❌ | — | — |
 | `codebase-analyzer` | ✅ | `-v ${workspaceFolder}:/workspace:ro` | — |
 | `dev-filesystem-mcp` | ✅ | `-v ${workspaceFolder}:/project:ro` | `PROJECT_ROOT=/project` |
-| `dev-angular-mcp` | ❌ | — | — |
-| `dev-dotnet-mcp` | ❌ | — | — |
+| `dev-angular-mcp` | ✅ | `-v ${workspaceFolder}:/workspace` | — |
+| `dev-dotnet-mcp` | ✅ | `-v ${workspaceFolder}:/workspace` | — |
 
 ---
 

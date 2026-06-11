@@ -25,6 +25,8 @@
 !.cursor/packages/**
 !Cursor-AI-Skills/packages/
 !Cursor-AI-Skills/packages/**
+!AI-Skills/packages/
+!AI-Skills/packages/**
 
 # .NET build artifacts
 artifacts/

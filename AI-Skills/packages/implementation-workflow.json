@@ -26,6 +26,9 @@
     "{backend-path}"
   ],
   "dependsOn": [
+    "dev-angular-mcp",
+    "dev-dotnet-mcp",
+    "dev-tooling-mcp",
     "build-log-filter",
     "codebase-analyzer",
     "agent-compliance"

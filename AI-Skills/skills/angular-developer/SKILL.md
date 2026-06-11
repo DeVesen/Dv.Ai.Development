@@ -16,8 +16,8 @@ disable-model-invocation: true
 
 1. **Angular-Version** vor Antwort prüfen — Best Practices variieren stark zwischen Majors.
 2. Angular Style Guide + Best Practices für Wartbarkeit/Performance einhalten.
-3. Nach Code-Generierung `ng build` ausführen; Fehler **nur** nach build-log-filter-Kette analysieren — Rule [build-log-filter.mdc](../../rules/build-log-filter.mdc).
-4. Wenn `dev-angular-mcp` verfügbar: `scaffold_angular_component` / `scaffold_angular_service` bevorzugen (Token-effizient, Conventions eingebaut) — siehe [references/op-tooling.md](references/op-tooling.md).
+3. Nach Code-Generierung `build_angular_project` via **dev-angular-mcp** ausführen — **kein** direkter Shell-Aufruf `ng build`; `errors[]` / `warnings[]` / `summary` auswerten. Kanon: [dev-angular-mcp/SKILL.md](../dev-angular-mcp/SKILL.md).
+4. `scaffold_angular_component` / `scaffold_angular_service` via **dev-angular-mcp** bevorzugen (Token-effizient, Conventions eingebaut) — siehe [references/op-tooling.md](references/op-tooling.md).
 
 ## Operationen
 

@@ -1,7 +1,7 @@
 ---
 name: implement-agent
 model: gpt-5.5
-description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test). Pflicht build-log-filter und Agent-Compliance — kein stack-weites Technik-Gate.
+description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test via MCP). Build/Test via dev-angular-mcp / dev-dotnet-mcp — kein Shell ng/dotnet build/test, kein build-log-filter für diese. Kein stack-weites Technik-Gate.
 ---
 
 # Mitarbeiterprofil: Implement-Agent
@@ -25,7 +25,7 @@ description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test). Pflicht bu
 
 1. [agent-compliance.md](../references/agent-compliance.md) — **Compliance-Kanon**
 2. [implementation-workflow-skill.mdc](../rules/implementation-workflow-skill.mdc)
-3. [build-log-filter.mdc](../rules/build-log-filter.mdc) — Schritte 1–8 **pro** Build-/Test-Lauf
+3. [dev-tooling-mcp/SKILL.md](../skills/dev-tooling-mcp/SKILL.md) — Build/Test-Routing (MCP-First)
 4. [codebase-analyzer.mdc](../rules/codebase-analyzer.mdc) — MCP-first vor/während Implementierung
 5. [implementation-workflow/SKILL.md](../skills/implementation-workflow/SKILL.md) — Abschnitt **Orchestrator-Konfiguration** / implement-agent
 6. [subagent-prompts.md](../skills/implementation-workflow/references/subagent-prompts.md) — **Implementierer**-Vorlage aus dem Auftrag
@@ -33,26 +33,39 @@ description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test). Pflicht bu
 
 **Kein Überspringen.** Erst danach Slice starten.
 
-## build-log-filter (verbindlich)
+## Build/Test — MCP-Pflicht (verbindlich, Hard Gate)
 
-Kanon: [build-log-filter.mdc](../rules/build-log-filter.mdc). Diagnose **nur** aus intern gelesenem MCP. MCP nicht erreichbar → **`BLOCKER: build-log-filter nicht erreichbar`** — stoppen.
+| Aufgabe | MCP-Tool | VERBOTEN |
+|---------|----------|---------|
+| Angular Build | `build_angular_project` (dev-angular-mcp) | Shell `ng build` |
+| Angular Test | `test_angular_project` (dev-angular-mcp) | Shell `ng test` |
+| .NET Build | `build_dotnet_solution` (dev-dotnet-mcp) | Shell `dotnet build` |
+| .NET Test | `test_dotnet_solution` (dev-dotnet-mcp) | Shell `dotnet test` |
+
+**Pro Lauf:** MCP aufrufen → `errors[]` / `warnings[]` / `summary` auswerten — **kein** Roh-Log, **kein** build-log-filter für diese Kommandos wenn MCP verfügbar.
+
+**Hard Stop — MCP nicht erreichbar:** `BLOCKER: [dev-angular-mcp | dev-dotnet-mcp] nicht erreichbar` — stoppen; **kein** stiller Shell-Fallback; erst nach expliziter Nutzerfreigabe: Shell + [build-log-filter.mdc](../rules/build-log-filter.mdc) Schritte 1–8 als Fallback.
+
+**Kanon:** [dev-angular-mcp/SKILL.md](../skills/dev-angular-mcp/SKILL.md) · [dev-dotnet-mcp/SKILL.md](../skills/dev-dotnet-mcp/SKILL.md) · [dev-tooling-mcp/SKILL.md](../skills/dev-tooling-mcp/SKILL.md)
 
 ## Erlaubt — nur im Slice-Scope
 
-- Build: `dotnet build`, `ng build`, `npm run build`
-- Test: `dotnet test`, `ng test`, `npm test` — slice-relevant
+- Build (MCP): `build_dotnet_solution`, `build_angular_project`
+- Test (MCP): `test_dotnet_solution`, `test_angular_project` — slice-relevant
 - Unit-Tests für den Slice anlegen/ausführen
 
 ## Verboten
 
 - Scope über den Slice hinaus; stille Planänderung
 - Stack-weites Technik-Gate in Schritt 2
-- Roh-Konsole ohne abgeschlossene build-log-filter-Kette
+- Shell: `ng build` / `ng test` / `dotnet build` / `dotnet test` ohne BLOCKER-Nachweis
+- build-log-filter für Angular/dotnet Build/Test wenn MCPs verfügbar
 - Skills/Rules nur laden ohne Einhaltung
 
 ## Rückgabe an Orchestrator
 
 - Summary, touched paths
-- Build/Test: Kommandos, OK/FAIL, **Verifikations-Matrix** pro Lauf
+- Build/Test: MCP-Tool, `success`, `errors[]`-Zusammenfassung pro Lauf
+- MCP-Build/Test eingehalten: ja / BLOCKER (Grund)
 - Compliance eingehalten: ja/nein
 - Open risks / blockers

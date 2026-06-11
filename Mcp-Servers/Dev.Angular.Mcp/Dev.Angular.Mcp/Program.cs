@@ -14,6 +14,7 @@ builder.Logging.AddConsole(consoleLogOptions =>
 });
 
 builder.Services.AddSingleton<AngularScaffolder>();
+builder.Services.AddSingleton<AngularRunner>();
 builder.Services.AddSingleton<ToolCallHistory>();
 builder.Services.AddHostedService<LogWebServer>();
 

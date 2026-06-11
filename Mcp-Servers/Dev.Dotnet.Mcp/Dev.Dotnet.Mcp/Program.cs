@@ -16,6 +16,7 @@ builder.Logging.AddConsole(consoleLogOptions =>
 
 builder.Services.AddSingleton<DotnetScaffolder>();
 builder.Services.AddSingleton<DirectoryTemplateService>();
+builder.Services.AddSingleton<DotnetRunner>();
 builder.Services.AddSingleton<ToolCallHistory>();
 builder.Services.AddHostedService<LogWebServer>();
 

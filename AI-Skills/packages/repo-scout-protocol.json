@@ -1,6 +1,6 @@
 {
   "name": "repo-scout-protocol",
-  "description": "Scout compliance: MCP fallback chains, artefact routing, Scout-Protokoll reporting",
+  "description": "Scout chain: Index → Filesystem-MCP fallback, artifact routing, scout protocol table. Used by plan-agent-scout and buddy-agent repo-check phase.",
   "rules": [
     "rules/repo-scout-protocol.mdc"
   ],
@@ -9,14 +9,11 @@
   ],
   "agents": [],
   "references": [
-    "references/mcp-scout-fallback-chain.md",
-    "references/mcp-smoke-test.md"
+    "references/mcp-scout-fallback-chain.md"
   ],
-  "params": [
-    "frontend-path",
-    "backend-path"
-  ],
+  "params": [],
   "dependsOn": [
+    "dev-filesystem-mcp",
     "mcp-path-canon"
   ]
 }

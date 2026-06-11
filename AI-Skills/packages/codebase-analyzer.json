@@ -1,6 +1,6 @@
 {
   "name": "codebase-analyzer",
-  "description": "Codebase Analyzer MCP: static analysis tools for Angular and .NET — AST, index, refactoring safety, nullability, auto-fixes. Log-UI port 8090.",
+  "description": "Codebase analysis via MCP: index, code-map, AST, refactoring-safety, nullability checks. Provides structured codebase understanding before planning or review.",
   "rules": [
     "rules/codebase-analyzer.mdc"
   ],
@@ -8,117 +8,7 @@
     "skills/codebase-analyzer"
   ],
   "agents": [],
-  "references": [
-    "references/mcp-smoke-test.md"
-  ],
+  "references": [],
   "params": [],
-  "dependsOn": [
-    "mcp-path-canon"
-  ],
-  "mcp": [
-    {
-      "serverName": "codebase-analyzer",
-      "type": "docker",
-      "imageParamKey": "codebase-analyzer-image",
-      "pullAlwaysKey": "codebase-analyzer-pull-always",
-      "globalImage": "devesen/codebase-analyzer-mcp:latest",
-      "localDefault": "dv-codebase-analyzer-mcp:local",
-      "entry": {
-        "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "--rm",
-          "-p",
-          "127.0.0.1:8090:8090",
-          "-v",
-          "${workspaceFolder}:/workspace:ro",
-          "__IMAGE__"
-        ],
-        "transport": "stdio",
-        "autoApprove": [
-          "review_file",
-          "review_code",
-          "review_git_diff",
-          "review_files_batch",
-          "review_with_index",
-          "analyze_ast_only",
-          "compare_validation_rules",
-          "find_api_callers",
-          "index_project",
-          "index_solution",
-          "find_in_index",
-          "find_symbol_references",
-          "find_type_hierarchy",
-          "detect_god_classes",
-          "analyze_complexity",
-          "analyze_method_extraction_candidates",
-          "analyze_dead_code",
-          "analyze_nullability",
-          "analyze_duplicates",
-          "analyze_refactoring_safety",
-          "generate_auto_fixes",
-          "analyze_dataflow",
-          "analyze_advanced_all",
-          "suggest_class_splits",
-          "analyze_maintainability_index",
-          "analyze_type_graph",
-          "analyze_control_flow",
-          "analyze_coverage",
-          "analyze_test_quality",
-          "detect_untested_public_api",
-          "analyze_test_health"
-        ]
-      },
-      "entryPullAlways": {
-        "command": "docker",
-        "args": [
-          "run",
-          "-i",
-          "--rm",
-          "-p",
-          "127.0.0.1:8090:8090",
-          "--pull",
-          "always",
-          "-v",
-          "${workspaceFolder}:/workspace:ro",
-          "__IMAGE__"
-        ],
-        "transport": "stdio",
-        "autoApprove": [
-          "review_file",
-          "review_code",
-          "review_git_diff",
-          "review_files_batch",
-          "review_with_index",
-          "analyze_ast_only",
-          "compare_validation_rules",
-          "find_api_callers",
-          "index_project",
-          "index_solution",
-          "find_in_index",
-          "find_symbol_references",
-          "find_type_hierarchy",
-          "detect_god_classes",
-          "analyze_complexity",
-          "analyze_method_extraction_candidates",
-          "analyze_dead_code",
-          "analyze_nullability",
-          "analyze_duplicates",
-          "analyze_refactoring_safety",
-          "generate_auto_fixes",
-          "analyze_dataflow",
-          "analyze_advanced_all",
-          "suggest_class_splits",
-          "analyze_maintainability_index",
-          "analyze_type_graph",
-          "analyze_control_flow",
-          "analyze_coverage",
-          "analyze_test_quality",
-          "detect_untested_public_api",
-          "analyze_test_health"
-        ]
-      }
-    }
-  ]
+  "dependsOn": []
 }

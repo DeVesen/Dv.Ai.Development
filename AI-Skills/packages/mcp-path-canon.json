@@ -1,18 +1,17 @@
 {
   "name": "mcp-path-canon",
-  "description": "Always-on MCP path canon rule; generates mcp-project-paths.md from skill-params on install/update",
+  "description": "MCP container path conventions and backend routing canon. Defines /workspace/... and /project/... path schemas used by all MCP-based dev tools.",
   "rules": [
     "rules/mcp-path-canon.mdc"
   ],
   "skills": [],
   "agents": [],
   "references": [
-    "references/mcp-smoke-test.md"
+    "references/mcp-project-paths.template.md"
   ],
   "params": [
-    "{mcp-backend-solution}",
-    "{index-solution-policy}"
+    "{frontend-path}",
+    "{backend-path}"
   ],
-  "dependsOn": [],
-  "mcp": []
+  "dependsOn": []
 }

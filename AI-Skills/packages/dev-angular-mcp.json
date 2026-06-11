@@ -1,0 +1,12 @@
+{
+  "name": "dev-angular-mcp",
+  "description": "Angular scaffolding and build/test via MCP: scaffold_angular_component, scaffold_angular_service, build_angular_project, test_angular_project. project_root as /workspace/... path.",
+  "rules": [],
+  "skills": [
+    "skills/dev-angular-mcp"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": []
+}

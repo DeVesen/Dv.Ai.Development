@@ -1,0 +1,12 @@
+{
+  "name": "dev-dotnet-mcp",
+  "description": ".NET scaffolding and build/test via MCP: scaffold_dotnet_project, create_directory_structure, build_dotnet_solution, test_dotnet_solution. Paths as /workspace/...",
+  "rules": [],
+  "skills": [
+    "skills/dev-dotnet-mcp"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": []
+}

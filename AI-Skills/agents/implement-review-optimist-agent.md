@@ -1,6 +1,6 @@
 ---
 name: implement-review-optimist-agent
-model: claude-opus-4-7
+model: claude-opus-4-8
 description: Optimist im iterativen Implement-Review-Loop. Stärken, erfüllte ACs und tragfähige Vereinfachungen der Umsetzung.
 readonly: true
 ---
@@ -15,9 +15,9 @@ Du bist **Optimist** im iterativen Implement-Review-Loop. Du zeigst, warum die U
 
 | Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
 |-------|--------------------------|---------------------|
-| **Primär** | `claude-opus-4-7` | Opus 4.7 |
+| **Primär** | `claude-opus-4-8` | Opus 4.8 |
 | **Fallback 1** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 2** | `composer-2-standard` | Composer 2 Standard |
+| **Fallback 2** | `composer-2.5-standard` | Composer 2.5 Standard |
 
 **Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**.
 

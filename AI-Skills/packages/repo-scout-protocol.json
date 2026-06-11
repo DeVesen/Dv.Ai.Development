@@ -1,0 +1,22 @@
+{
+  "name": "repo-scout-protocol",
+  "description": "Scout compliance: MCP fallback chains, artefact routing, Scout-Protokoll reporting",
+  "rules": [
+    "rules/repo-scout-protocol.mdc"
+  ],
+  "skills": [
+    "skills/repo-scout-protocol"
+  ],
+  "agents": [],
+  "references": [
+    "references/mcp-scout-fallback-chain.md",
+    "references/mcp-smoke-test.md"
+  ],
+  "params": [
+    "frontend-path",
+    "backend-path"
+  ],
+  "dependsOn": [
+    "mcp-path-canon"
+  ]
+}

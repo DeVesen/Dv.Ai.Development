@@ -1,0 +1,54 @@
+{
+  "name": "dev-filesystem-mcp",
+  "description": "Dev Filesystem MCP: token-efficient file search and targeted code reading for .cs and .ts. Kanon-Skill: skills/dev-filesystem-mcp. Log-UI port 8091.",
+  "rules": [],
+  "skills": [
+    "skills/dev-filesystem-mcp"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": [
+    "dev-tooling-mcp"
+  ],
+  "mcp": [
+    {
+      "serverName": "dev-filesystem-mcp",
+      "type": "docker",
+      "imageParamKey": "dev-filesystem-mcp-image",
+      "pullAlwaysKey": "dev-filesystem-mcp-pull-always",
+      "globalImage": "devesen/dev-filesystem-mcp:latest",
+      "localDefault": "dv-filesystem-mcp:local",
+      "entry": {
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "--rm",
+          "-p",
+          "127.0.0.1:8091:8091",
+          "-v",
+          "${workspaceFolder}:/project:ro",
+          "__IMAGE__"
+        ],
+        "transport": "stdio"
+      },
+      "entryPullAlways": {
+        "command": "docker",
+        "args": [
+          "run",
+          "-i",
+          "--rm",
+          "-p",
+          "127.0.0.1:8091:8091",
+          "--pull",
+          "always",
+          "-v",
+          "${workspaceFolder}:/project:ro",
+          "__IMAGE__"
+        ],
+        "transport": "stdio"
+      }
+    }
+  ]
+}

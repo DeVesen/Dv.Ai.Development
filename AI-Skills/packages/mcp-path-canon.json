@@ -1,0 +1,18 @@
+{
+  "name": "mcp-path-canon",
+  "description": "Always-on MCP path canon rule; generates mcp-project-paths.md from skill-params on install/update",
+  "rules": [
+    "rules/mcp-path-canon.mdc"
+  ],
+  "skills": [],
+  "agents": [],
+  "references": [
+    "references/mcp-smoke-test.md"
+  ],
+  "params": [
+    "{mcp-backend-solution}",
+    "{index-solution-policy}"
+  ],
+  "dependsOn": [],
+  "mcp": []
+}

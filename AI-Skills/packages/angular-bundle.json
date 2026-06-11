@@ -19,6 +19,8 @@
     "{frontend-path}"
   ],
   "dependsOn": [
+    "dev-angular-mcp",
+    "dev-tooling-mcp",
     "build-log-filter",
     "agent-compliance"
   ]

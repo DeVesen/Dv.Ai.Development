@@ -1,0 +1,17 @@
+{
+  "name": "mcp-path-canon",
+  "description": "MCP container path conventions and backend routing canon. Defines /workspace/... and /project/... path schemas used by all MCP-based dev tools.",
+  "rules": [
+    "rules/mcp-path-canon.mdc"
+  ],
+  "skills": [],
+  "agents": [],
+  "references": [
+    "references/mcp-project-paths.template.md"
+  ],
+  "params": [
+    "{frontend-path}",
+    "{backend-path}"
+  ],
+  "dependsOn": []
+}

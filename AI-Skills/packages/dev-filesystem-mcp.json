@@ -1,0 +1,12 @@
+{
+  "name": "dev-filesystem-mcp",
+  "description": "Token-efficient file reading and searching via MCP: file_path and /project/... path conventions. Used by scouts and implementation agents for low-token codebase access.",
+  "rules": [],
+  "skills": [
+    "skills/dev-filesystem-mcp"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": []
+}

@@ -16,9 +16,8 @@ AI-Skills/              Source library — do not edit deployed copies
 ├── packages/           Package manifests (JSON) — define what gets deployed
 ├── references/         Shared references (subagent-model-before-task.md etc.)
 ├── install-cursor-skills.ps1   Deploy script (Windows/PowerShell)
-├── install-skill.sh            Deploy script (Linux/macOS)
 ├── update-cursor-skills.ps1    Update script (Windows/PowerShell, handles params + MCP)
-└── Readme.md           Full package reference + install instructions (= AGENTS.md after deploy)
+└── Readme.md           Full package reference + install instructions
 
 Mcp-Servers/            MCP server implementations (Docker images referenced in AI-Skills/mcp.json)
 ├── Build.Log.Filter.Mcp/   build-log-filter — Build/Test output compression
@@ -50,28 +49,6 @@ Note: `.claude/agents/` and `.cursor/` are populated in **target projects** afte
 
 AI-Skills artifacts must be deployed into a target project before they are active. The target project's `.cursor/` and `.claude/` directories must already exist.
 
-**Step 0 — browse available packages:**
-```bash
-./AI-Skills/install-skill.sh --list
-```
-
-**Linux/macOS — install:**
-```bash
-# Cursor + Claude Code
-./AI-Skills/install-skill.sh all /path/to/project/.cursor /path/to/project/.claude
-
-# Cursor only
-./AI-Skills/install-skill.sh all /path/to/project/.cursor
-
-# Preview without copying (target dirs need not exist for dry-run)
-./AI-Skills/install-skill.sh planning-workflow /path/to/project/.cursor /path/to/project/.claude --dry-run
-```
-
-**Linux/macOS — update (re-run install, replaces files, MCP not touched):**
-```bash
-./AI-Skills/install-skill.sh all /path/to/project/.cursor /path/to/project/.claude
-```
-
 **Windows (PowerShell):**
 ```powershell
 # List packages
@@ -86,7 +63,7 @@ AI-Skills artifacts must be deployed into a target project before they are activ
 
 **Post-install — replace placeholders:**
 
-Neither `install-skill.sh` nor `install-cursor-skills.ps1` substitutes `{param}` placeholders. After installing, replace them manually (or use `update-cursor-skills.ps1` on Windows for interactive prompts):
+`install-cursor-skills.ps1` substitutes no `{param}` placeholders. After installing, replace them manually (or use `update-cursor-skills.ps1` for interactive prompts):
 
 1. Check which params a package needs: `AI-Skills/packages/<name>.json` → `"params"` array
 2. Search deployed files: `grep -r '{frontend-path}' /path/to/project/.cursor/`

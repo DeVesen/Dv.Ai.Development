@@ -1,18 +1,17 @@
-## Parameter
+# Parameter
 
-| Parameter | Beschreibung |
-|-----------|-------------|
+| Parameter                 | Beschreibung                                    |
+| ------------------------- | ----------------------------------------------- |
 | `{verification-commands}` | Datei mit den Verifikationsbefehlen fuer Agents |
+
 
 # Subagent-Prompts — Implementation Workflow
 
 Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen.
 
-**Agent-Typ (Pflicht):** Je Rolle passendes Profil unter [../../../agents/](../../../agents/). **Modell:** [subagent-model-before-task.md](../../../references/subagent-model-before-task.md) lesen; Slugs nicht im Prompt duplizieren.
+**Agent-Typ (Pflicht):** Je Rolle passendes Profil unter `../../../agents/`. **Modell:** `subagent-model-before-task.md` lesen; Slugs nicht im Prompt duplizieren.
 
-**Workflow:** [SKILL.md](../SKILL.md) · **Compliance:** [agent-compliance.md](../../../references/agent-compliance.md) · **Delegations-Boilerplate:** [subagent-delegation-boilerplate.md](../../../references/subagent-delegation-boilerplate.md) · **build-log-filter:** [build-log-filter.mdc](../../../rules/build-log-filter.mdc)
-
-**Orchestrator-Pflicht:** Vor **jedem** Subagent-Start [subagent-delegation-boilerplate.md](../../../references/subagent-delegation-boilerplate.md) + passende Vorlage unten in den Task-Prompt. Rückgaben ohne Compliance/Matrix ablehnen.
+**Orchestrator-Pflicht:** Vor **jedem** Subagent-Start `subagent-delegation-boilerplate.md` + passende Vorlage unten in den Task-Prompt. Rückgaben ohne Compliance/Matrix ablehnen.
 
 **Orchestrator-Empfehlung (Schritt 2):** Für Task-Prompts mit Build/Test den Abschnitt **Implementierer (Slice — Build/Test + build-log-filter)** bevorzugen; **Implementierer (Slice — compact)** nur bei trivialen Slices ohne Build/Test.
 
@@ -20,9 +19,9 @@ Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen.
 
 ## Implementierer (Slice — compact)
 
-Für Slices **ohne** slice-scoped Build/Test oder als Kurzform mit Verweis auf [implement-agent.md](../../../agents/implement-agent.md).
+Für Slices **ohne** slice-scoped Build/Test oder als Kurzform.
 
-```markdown
+```
 You are a subagent for a fixed-scope implementation task.
 
 Context:
@@ -34,8 +33,8 @@ Required when the plan section **Umsetzungs-Topologie** is present:
 - **Wave:** [e.g. W1 — parallel with IMP-BE-GW-Logging]
 
 Rules:
-- **Agent:** `implement-agent` — [implement-agent.md](../../../agents/implement-agent.md).
-- **Build/Test:** slice-scoped allowed; **build-log-filter** on every run.
+- **Agent:** `implement-agent`.
+- **Build/Test:** slice-scoped allowed; **build-log-filter mandatory on every run** (see below).
 - **Not allowed:** stack-wide Technik-Gate (Schritt 3 after integration).
 - **Plan adherence:** Implement only this slice — no silent plan drift.
 
@@ -46,9 +45,9 @@ Reply with: summary, touched paths, open risks/blockers.
 
 ## Implementierer (Slice — Build/Test + build-log-filter)
 
-**Standard-Vorlage** für Schritt-2-Task-Prompts mit slice-scoped Build/Test. build-log-filter-Checkliste: [build-log-filter.mdc](../../../rules/build-log-filter.mdc).
+**Standard-Vorlage** für Schritt-2-Task-Prompts mit slice-scoped Build/Test.
 
-```text
+```
 You are an implementation subagent for ONE plan slice (IMP-*) only.
 
 Slice-ID: [e.g. IMP-FE-Search-Rules]
@@ -56,25 +55,35 @@ Working directory: [absolute path]
 
 Hard rules:
 - **Agent:** `implement-agent`. **Slice scope only** — not stack-wide Technik-Gate (Schritt 3).
-- **Pre-Coding (wenn dev-filesystem-mcp verfügbar):** Vor erstem Code-Edit — `read_class_summary` oder `read_signatures_only` mit `file_path` unter `/project/...`; `read_method` nur für die konkrete Änderungsmethode. Kanon: [dev-filesystem-mcp/SKILL.md](../../dev-filesystem-mcp/SKILL.md). Schema vor Aufruf lesen.
+- **Pre-Coding (wenn dev-filesystem-mcp verfügbar):** Vor erstem Code-Edit — `read_class_summary`
+  oder `read_signatures_only`; `read_method` nur für konkrete Änderungsmethode.
 - **Build/Test (slice-scoped):** dotnet/ng/npm build/test for this slice only.
-- **Every** run: build-log-filter checklist 1–8; diagnose only from internally read MCP.
-- **Forbidden:** stack-wide Technik-Gate; raw console without MCP chain.
+- **Every run — build-log-filter PFLICHT (kein Opt-out):**
+  1. Kommando ausführen → Exit-Code festhalten
+  2. Vollständiges Capture (Tee-Object oder Redirect in Temp-Datei)
+  3. Vor MCP-Call sichtbar ausgeben: „Rufe build-log-filter filter_output (tool_type: [DotnetTest|DotnetBuild|NgBuild|…]) auf"
+  4. filter_output (oder filter_output_stream bei langen Logs) mit vollständigem Capture aufrufen
+  5. Bei Exit ≠ 0: analyze_build_output aufrufen
+  6. Diagnose NUR aus intern gelesenem MCP-Ergebnis ableiten — NICHT aus Roh-Shell-Output
+  7. Verifikations-Matrix-Zeile in Rückgabe aufnehmen
+- **MCP nicht erreichbar:** Sofort „BLOCKER: build-log-filter nicht erreichbar" — kein Lauf starten.
+- **Verboten:** „7/7 Passed" / „Build succeeded" aus Terminal ohne MCP als verifiziert markieren.
+- **Forbidden:** stack-wide Technik-Gate; raw console diagnosis without MCP chain.
 
-Pre-Coding (wenn Dev-MCPs verfuegbar):
-  Lesen: dev-filesystem-mcp — Kanon ../../dev-filesystem-mcp/SKILL.md (file_path, /project/...)
-  Angular scaffold: dev-angular-mcp — Kanon ../../dev-angular-mcp/SKILL.md (project_root Host-Absolut)
-  .NET scaffold: dev-dotnet-mcp — Kanon ../../dev-dotnet-mcp/SKILL.md (output_path, base_path)
+Pre-Coding (wenn Dev-MCPs verfügbar):
+  Lesen: dev-filesystem-mcp — file_path unter /project/...
+  Angular scaffold: dev-angular-mcp — project_root Host-Absolut
+  .NET scaffold: dev-dotnet-mcp — output_path, base_path
   Schema vor jedem MCP-Aufruf lesen.
 
-Reply with: summary, touched paths, Verifikations-Matrix per run, blockers.
+Reply with: summary, touched paths, Verifikations-Matrix per run (Pflicht), blockers.
 ```
 
 ---
 
 ## Technik-Gate pro Stack
 
-```text
+```
 Rolle: Du fuehrst das Technik-Gate fuer genau einen Stack aus (Frontend oder Backend).
 Kontext: aktuelle Iteration im Implement-Review-Loop.
 
@@ -82,13 +91,21 @@ Stack: [Frontend | Backend | Backend/Sub-Einheit]
 Working directory: [absolute path]
 Commands: aus [{verification-commands}] + Repo-Doku.
 
+build-log-filter PFLICHT (kein Opt-out) — vor jedem Lauf:
+  1. Kommando ausführen → Exit-Code festhalten
+  2. Vollständiges Capture
+  3. Vor MCP: "Rufe build-log-filter filter_output (tool_type: ...) auf" — sichtbar ausgeben
+  4. filter_output / filter_output_stream aufrufen
+  5. Bei Exit ≠ 0: analyze_build_output aufrufen
+  6. Diagnose NUR aus MCP-Ergebnis — nicht aus Shell-Output
+  7. Verifikations-Matrix-Zeile pro Lauf
+
+MCP nicht erreichbar => BLOCKER: build-log-filter nicht erreichbar — Gate abbrechen.
+
 Phase 1 (Build-Fix, max 8 Turns):
 1) Build ausfuehren.
-2) Vollstaendiges Capture.
-3) In-scope: filter_output/filter_output_stream immer (auch Exit 0), bei FAIL analyze_build_output.
-4) Vor jedem MCP: "Rufe build-log-filter ...".
-5) MCP down => BLOCKER: build-log-filter nicht erreichbar.
-6) Bei FAIL minimale Fixes, wiederholen.
+2) build-log-filter-Kette wie oben (obligatorisch auch bei Exit 0).
+3) Bei FAIL minimale Fixes, wiederholen.
 
 Phase 2 (Test-Fix, max 8 Turns, nur wenn Phase 1 OK):
 1) Unit-Test-Command ausfuehren.
@@ -98,7 +115,7 @@ Phase 2 (Test-Fix, max 8 Turns, nur wenn Phase 1 OK):
 Rueckgabe:
 - Phase 1 OK/FAIL, Turns, Command
 - Phase 2 OK/FAIL/SKIPPED, Turns, Command
-- Verifikations-Matrix (eine Zeile pro Lauf)
+- Verifikations-Matrix (eine Zeile pro Lauf — Pflicht)
 - Kurzdiagnose je Lauf (nur aus intern gelesener MCP-Ausgabe)
 - Geaenderte Pfade (nur Gate-Fixes)
 ```
@@ -107,7 +124,7 @@ Rueckgabe:
 
 ## Implement-Review: Pessimist
 
-```text
+```
 Rolle: implement-review-pessimist-agent (readonly).
 Input:
 - Finaler Plan + ACs
@@ -126,7 +143,7 @@ Liefern:
 
 ## Implement-Review: Lehrer
 
-```text
+```
 Rolle: implement-review-lehrer-agent (readonly).
 Pflicht-MCP:
 - review_git_diff
@@ -139,7 +156,7 @@ Liefern:
 
 ## Implement-Review: Normalo
 
-```text
+```
 Rolle: implement-review-normalo-agent (readonly).
 Pflicht-MCP:
 - review_with_index
@@ -151,7 +168,7 @@ Liefern:
 
 ## Implement-Review: Oberlehrer
 
-```text
+```
 Rolle: implement-review-oberlehrer-agent (readonly).
 Pflicht-MCP:
 - review_file
@@ -163,7 +180,7 @@ Liefern:
 
 ## Implement-Review: Professor
 
-```text
+```
 Rolle: implement-review-professor-agent (readonly).
 Pflicht-MCP:
 - analyze_advanced_all
@@ -178,7 +195,7 @@ Liefern:
 
 ## Implement-Review: Optimist
 
-```text
+```
 Rolle: implement-review-optimist-agent (readonly).
 Pflicht-MCP:
 - review_with_index
@@ -191,7 +208,7 @@ Liefern:
 
 ## Review-Digest (Implement)
 
-```text
+```
 ### Review-Digest (Iteration [N])
 
 #### Pessimist
@@ -219,7 +236,7 @@ Liefern:
 
 ## Gebuendelte Rueckfragen (vor Fix-Plan)
 
-```text
+```
 Vor dem Fix — kurze Rueckfragen:
 1. [Punkt A] — [Kontext]
 2. [Punkt B] — [Kontext]
@@ -231,11 +248,11 @@ Bitte kurz beantworten, damit ich direkt weiterarbeiten kann.
 
 ## Fix-Planer (nach Review)
 
-```text
+```
 Rolle: implement-fix-planner-agent.
 Du erstellst einen Fix-Teilplan, implementierst NICHT.
 
-Pflicht-Rules (1-6):
+Pflicht-Rules (0-5):
 0) agent-compliance.md
 1) implementation-workflow-skill.mdc
 2) build-log-filter.mdc
@@ -260,11 +277,11 @@ F analyze_test_quality
 G find_symbol_references
 H compare_validation_rules
 
-build-log-filter:
-- Technik-Gate nur ueber MCP-/Kurzdiagnosen interpretieren.
-- Optionale Diagnose-Laeufe erlaubt, aber nicht stack-weite Abschlusspruefung.
-- Vor jedem MCP: "Rufe build-log-filter ...".
+build-log-filter (Pflicht auch für Diagnose-Läufe):
+- Vor jedem Build/Test-Diagnose-Lauf: vollständiges Capture + filter_output/analyze_build_output
+- Vor jedem MCP: "Rufe build-log-filter ..." sichtbar ausgeben
 - MCP down => BLOCKER: build-log-filter nicht erreichbar (kein Fix-Plan ausgeben).
+- Technik-Gate nur ueber MCP-Kurzdiagnosen interpretieren — nicht aus Roh-Console.
 
 Liefern:
 1) Konkrete Fix-Schritte (Datei/Symbol/Reihenfolge)
@@ -275,7 +292,7 @@ Liefern:
 6) Abgrenzung (nicht anfassen)
 7) Evidenz-Basis (Pflicht):
    - MCP-Calls + ok/fallback
-   - ggf. Diagnose-Laeufe (Command, Exit, Kurzdiagnose)
+   - ggf. Diagnose-Laeufe (Command, Exit, Kurzdiagnose aus MCP)
    - Technik-Gate-Bezug je Slice
 ```
 
@@ -283,7 +300,7 @@ Liefern:
 
 ## Implementierer (Fix-Slice)
 
-```text
+```
 Rolle: implement-agent.
 Input:
 - Fix-Teilplan (verbindlich)
@@ -292,13 +309,17 @@ Input:
 Regeln:
 - Nur dieser Slice.
 - Build/Test slice-scoped.
-- build-log-filter pro Lauf.
+- build-log-filter PFLICHT pro Lauf (kein Opt-out):
+  Shell → Capture → filter_output → bei FAIL: analyze_build_output
+  Vor MCP: "Rufe build-log-filter ..." sichtbar ausgeben
+  Diagnose NUR aus MCP — nicht aus Shell-Output
+  MCP nicht erreichbar: BLOCKER ausgeben, stoppen
 - keine stille Scope-Erweiterung.
 
 Rueckgabe:
 - Summary
 - Touched paths
-- Build/Test-Matrix
+- Build/Test-Matrix (Pflicht — eine Zeile pro Lauf)
 - offene Risiken/Blocker
 ```
 
@@ -306,7 +327,7 @@ Rueckgabe:
 
 ## Abschlussformat (Orchestrator)
 
-```markdown
+```
 ## Summary
 - Ergebnis vs. Plan: [complete | partial]
 - Iterationen: [Anzahl] von max. 3
@@ -314,6 +335,7 @@ Rueckgabe:
 
 ## Iterativer Review-Loop
 - Technik-Gate je Iteration/Stack: [OK/FAIL/SKIPPED]
+- build-log-filter-Compliance: [ja — Matrix vorhanden | BLOCKIERT]
 - Reviews je Iteration: 6 Rollen ausgefuehrt [ja/nein]
 - Fix-Planer je Iteration: [vorhanden + Evidenz-Basis ja/nein]
 - Umgesetzte Fix-Slices: [Liste]
@@ -329,16 +351,16 @@ Rueckgabe:
 - Technik-Gate letzte Iteration: [OK/FAIL/SKIPPED]
 
 ## Offene Punkte
-- [falls vorhanden; bei Rest-Findings hier Empfehlung: manuell / User-Entscheidung / akzeptiertes Rest-Risiko]
+- [falls vorhanden; bei Rest-Findings hier Empfehlung]
 ```
 
 ---
 
 ## Rest-Findings nach Maximum (Orchestrator)
 
-Nur wenn nach **Iteration 3** noch behebbare oder wesentliche Findings offen sind — **kein** vierter Review-Zyklus.
+Nur wenn nach **Iteration 3** noch behebbare oder wesentliche Findings offen sind.
 
-```markdown
+```
 ## Rest-Findings nach 3 Iterationen
 
 Technik-Gate (Iteration 3): [OK/FAIL/SKIPPED je Stack]
@@ -361,5 +383,6 @@ Technik-Gate (Iteration 3): [OK/FAIL/SKIPPED je Stack]
 ### Optimist
 - ...
 
-**Hinweis:** Review-Loop-Maximum erreicht — keine weitere automatische Fix-Runde. User-Entscheidung oder manuelle Nacharbeit empfohlen fuer offene Punkte.
+**Hinweis:** Review-Loop-Maximum erreicht — keine weitere automatische Fix-Runde.
+User-Entscheidung oder manuelle Nacharbeit empfohlen fuer offene Punkte.
 ```

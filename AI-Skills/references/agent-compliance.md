@@ -29,6 +29,20 @@ Vor **jeder** Delegation (Task/Subagent): [subagent-delegation-boilerplate.md](.
 
 **Rückgabe prüfen:** Berichte ohne Compliance-Bezug, ohne Verifikations-Matrix (bei Build/Test) oder ohne Workflow-Einhaltung → **ablehnen**, Subagent mit Fix-Kontext **neu** starten.
 
+## Ausgabe-Stil
+
+Kanon: [output-style-canon.md](./output-style-canon.md)
+
+| Kontext | Modus |
+|---------|-------|
+| Buddy compress · repo-check · diskussion | **HUMAN-TERSE** — Bullets, vollständige Wörter, kein Fließtext, kein Warum |
+| Sub-Agent-Deliverable / Orchestrator-Ausgabe (User-sichtbar) | **BULLET-TERSE** — Stichpunkte, keine Prosa-Blöcke, keine Begrüßung |
+| Agent-zu-Agent-Übergaben (Task-Prompt, Rückgabe) | **MACHINE-DENSE** — maximale Kompression, Key:Value, keine Rollenwiederholung |
+
+**Selbstcheck (Pflicht vor jeder Ausgabe):** Modus aus obiger Tabelle bestimmen → Selbstcheck-Liste in output-style-canon.md abarbeiten → bei Verstoß STOPP + `STILFEHLER: [Kontext] — [Modus] verletzt.`
+
+**Kein Opt-out** für HUMAN-TERSE im Buddy und MACHINE-DENSE bei Agent-zu-Agent-Handoffs.
+
 ## Kanon-Pfade (deployt)
 
 | Artefakt | Pfad |

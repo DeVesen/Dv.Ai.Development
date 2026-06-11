@@ -66,11 +66,11 @@ Agent-Modus Umsetzungs-Workflow: Implementierungs-Subagents (Slices), Hard Gate,
 
 ### `agent-compliance`
 
-Verbindliche Skill/Workflow-Compliance und Orchestrator-Delegations-Boilerplate für Subagents.
+Verbindliche Skill/Workflow-Compliance, Orchestrator-Delegations-Boilerplate und Output-Stil-Kanon für Subagents.
 
 | Was | Dateien |
 |-----|---------|
-| References | `agent-compliance.md`, `subagent-delegation-boilerplate.md`, `agents-compliance.snippet.md` |
+| References | `agent-compliance.md`, `subagent-delegation-boilerplate.md`, `agents-compliance.snippet.md`, `output-style-canon.md` |
 
 Wird als `dependsOn` von `planning-workflow`, `implementation-workflow` und `angular-bundle` mitinstalliert.
 

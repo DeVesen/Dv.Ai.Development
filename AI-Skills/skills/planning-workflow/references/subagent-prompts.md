@@ -1,15 +1,14 @@
 # Subagent-Prompts - Planning Workflow
 
-Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen. Sprache der
-Antwort frei waehlbar, sofern der Nutzer nichts anderes vorgibt.
+Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen. Sprache frei waehlbar.
 
-**Agent-Typ (Pflicht):** Je Rolle der passende Subagent — Profil unter [../../../agents/](../../../agents/). **Modell:** [subagent-model-before-task.md](../../../references/subagent-model-before-task.md) — Ziel-Profil, **primär** Abschnitt **`## Modell`**, sonst YAML; Slugs **nicht** in Prompts duplizieren.
+**Ausgabe-Stil aller Handoffs: MACHINE-DENSE** — [output-style-canon.md](../../../references/output-style-canon.md). Kein Fließtext, keine Rollenwiederholung, Key:Value wo ausreichend. Deliverables zurück an Orchestrator: MACHINE-DENSE.
 
-**Compliance (Pflicht):** [agent-compliance.md](../../../references/agent-compliance.md) · **Orchestrator:** Vor jedem Subagent [subagent-delegation-boilerplate.md](../../../references/subagent-delegation-boilerplate.md) in den Task-Prompt.
+**Agent-Typ (Pflicht):** Profil unter [../../../agents/](../../../agents/). **Modell:** [subagent-model-before-task.md](../../../references/subagent-model-before-task.md) — primär `## Modell`, sonst YAML; Slugs nicht in Prompts duplizieren.
 
-Uebersicht: [SKILL.md](../SKILL.md), Abschnitt **Subagent-Typen und Agent-Definitionen**.
+**Compliance (Pflicht):** [agent-compliance.md](../../../references/agent-compliance.md) · Vor jedem Subagent [subagent-delegation-boilerplate.md](../../../references/subagent-delegation-boilerplate.md) in den Task-Prompt.
 
-Die Vorlagen unten sind **Auftrags-Payloads** (Platzhalter), nicht Ersatz fuer die Agent-Profile.
+Vorlagen sind **Auftrags-Payloads** (Platzhalter) — kein Ersatz für Agent-Profile.
 
 ---
 
@@ -20,15 +19,12 @@ je Lauf **einen** eng begrenzten **Teil-Scope**; Platzhalter **Scout-ID** und **
 setzen. Der Hauptagent fuehrt die Scout-Ergebnisse vor Phase 4a zusammen.
 
 ```text
-Rolle: Du bist ein Read-only-Scout. Keine Implementierung, kein finaler
-Umsetzungsplan. Agent-Profil: plan-agent-scout.
+Profil:plan-agent-scout|read-only|kein-plan|keine-impl
 
-Scout-ID (optional, bei Multi-Scout): [z. B. SCOUT-FE-1]
-Teil-Scope (Pflicht bei Multi-Scout, sonst gesamter betroffener Bereich):
-[Pfade, Module, Services oder Suchhinweise — nur dieser Bereich]
+Scout-ID (Multi-Scout): [z.B. SCOUT-FE-1 — weglassen wenn Single-Scout]
+Teil-Scope: [Pfade/Module/Services — nur dieser Bereich; weglassen wenn Single-Scout]
 
-Kontext (nur aus Nutzer/Thread, nicht erfinden):
-[Anforderung in 3-10 Saetzen]
+Req:[Bullets — nur Thread-Fakten, nichts erfinden, max. 5]
 
 MCP-Pfade (deployt — **vor Versand Literale aus `.cursor/references/mcp-project-paths.md` einsetzen**):
   FE: [MCP_FRONTEND_PATH]   (= MCP container path FE aus mcp-project-paths.md)
@@ -88,8 +84,7 @@ Schritt 2 — Erweiterte MCP-Analyse (nach find_in_index, wenn konkrete Klassen/
 9. Clean-Code-Metriken (Maintainability): Methoden mit MI < 65 (Note C–F) oder LCOM > 0,7 · Handlungsempfehlung — oder "nicht gerufen — <Grund>".
 10. Typ-Smells (Type Graph): Tuple-Returns, fehlende Model/DTO-Typen, Parameter-Listen > 3 in betroffenen Signaturen — oder "nicht gerufen — <Grund>".
 
-Deliverable: strukturierte Aufzaehlung, keine Code-Aenderungen, kein Plan mit
-Schritt-fuer-Schritt-Umsetzung.
+Deliverable:strukturierte Aufzählung — kein Code, kein Umsetzungsplan. Stil:MACHINE-DENSE.
 ```
 
 ---
@@ -99,16 +94,12 @@ Schritt-fuer-Schritt-Umsetzung.
 Ein Lauf mit Agent-Typ **`plan-agent-interface-designer`** ([plan-agent-interface-designer.md](../../../agents/plan-agent-interface-designer.md)) — nach Scout-Zusammenführung, **vor** Phase 4b. Kein Parallelstart mit Topic-Planern.
 
 ```text
-Rolle: Du bist Interface-Designer. Du entwirfst Topic-Map und Schnittstellen-Vertrag
-aus den Scout-Deliverables. Keine Implementierung, kein Gesamtplan, kein Review,
-keine Topic-Teilpläne. Agent-Profil: plan-agent-interface-designer.
+Profil:plan-agent-interface-designer|Topic-Map+Schnittstellen-Vertrag|kein-Gesamtplan|kein-Review|keine-Teilpläne
 
-Scout-Zusammenführung (Pflicht — alle Scout-Deliverables, Positionen 0–10 je Scout):
-[Vollständige inhaltliche Zusammenführung aller Scout-Rückgaben: MCP-Status, betroffene
-Dateien, Einstiegspunkte, Nachbarschaft, Risiken, Lücken, Hotspots]
+Scout-Merge (Pflicht — alle Scout-Deliverables, Positionen 0–10 je Scout):
+[Zusammenführung aller Scout-Rückgaben: MCP-Status, Dateien, Einstiegspunkte, Nachbarschaft, Risiken, Lücken, Hotspots]
 
-Anforderung (Auszug Phasen 1–2):
-[3–10 Sätze]
+Req:[Bullets — Auszug Phasen 1–2, max. 5]
 
 Aufgabe:
 
@@ -130,8 +121,7 @@ MCP-Nachverifikation (nur bei konkreten Lücken im Schnittstellen-Vertrag):
    Fehlende Signatur oder unbekannter Typ → find_in_index mit projectPath aus
    .cursor/references/mcp-project-paths.md. Ergebnis (ok/fallback) festhalten.
 
-Deliverable: Topic-Map + Schnittstellen-Vertrag (+ Sequence-Diagramm bei ≥ 2 Topics)
-— kompakt, vollständig. Keine Implementierungsschritte, kein Gesamtplan.
+Deliverable:Topic-Map + Schnittstellen-Vertrag (+ Sequence-Diagramm bei ≥ 2 Topics) — kompakt, vollständig. Stil:MACHINE-DENSE.
 ```
 
 ---
@@ -143,21 +133,18 @@ je Lauf **genau ein** Topic; Platzhalter **Topic-ID**, **Topic-Scope** und **Tec
 setzen. Der Hauptagent merged in Phase 4c.
 
 ```text
-Rolle: Du bist Topic-Planer. Du planst NUR den dir zugewiesenen Topic-Scope.
-Keine Implementierung, kein Gesamtplan, kein Review. Agent-Profil: plan-agent-topic-planner.
+Profil:plan-agent-topic-planner|nur-dieser-Topic|kein-Gesamtplan|kein-Review|keine-Impl
 
-Topic-ID: [z. B. TOPIC-FE-Search, TOPIC-BE-GW, TOPIC-BE-AppService]
-Topic-Scope: [Pfade, Module, Service — nur dieser Bereich]
-Tech-Mindset: [z. B. Angular Frontend, .NET Gateway, .NET App-Service, EF Core]
+Topic-ID:[z.B. TOPIC-FE-Search]
+Topic-Scope:[Pfade/Module/Service — nur dieser Bereich]
+Tech-Mindset:[z.B. Angular Frontend | .NET Gateway | EF Core]
 
-Schnittstellen-Vertrag (aus Phase 4a, nur dieses Topic):
-[eingehend: … / ausgehend: … — Routen, DTOs, Signaturen]
+Vertrag (Phase 4a, nur dieses Topic):
+eingehend:[…] ausgehend:[…] — Routen/DTOs/Signaturen
 
-Anforderung (Auszug Phasen 1–2):
-[3–10 Saetze]
+Req:[Bullets — Auszug Phasen 1–2, max. 5]
 
-Scout-Auszug (nur fuer dieses Topic):
-[relevante Dateien, Einstiegspunkte, Nachbarschaft]
+Scout:[Bullets — relevante Dateien, Einstiegspunkte, Nachbarschaft dieses Topics]
 
 Aufgabe (MCP zuerst — Fallback nur bei MCP-Fehler):
 
@@ -190,8 +177,7 @@ Falls Scout MCP=fallback ohne Index-Anker: fuer neue Symbole aus Phase 4a zunaec
 find_in_index versuchen (projectPath aus `.cursor/references/mcp-project-paths.md` / Routing-Tabelle);
 Ergebnis (ok oder fallback) im Teilplan festhalten — kein stilles Ueberspringen.
 
-Deliverable: strukturierter **Teilplan** fuer genau ein Topic; keine Code-Aenderungen;
-kein Gesamtplan; kein Review anderer Topics.
+Deliverable:strukturierter Teilplan für genau ein Topic — kein Code, kein Gesamtplan, kein Review anderer Topics. Stil:MACHINE-DENSE.
 ```
 
 ---
@@ -201,18 +187,15 @@ kein Gesamtplan; kein Review anderer Topics.
 Ein Lauf mit Agent-Typ **`plan-agent-merger`** ([plan-agent-merger.md](../../../agents/plan-agent-merger.md)) — nach Abschluss aller Topic-Planer aus 4b, **vor** Phase 5.
 
 ```text
-Rolle: Du bist Merger. Du führst alle Topic-Teilpläne zur Arbeitsversion zusammen.
-Keine neue Planung, kein Codebereichs-Scouting, kein Review, keine Implementierung.
-Agent-Profil: plan-agent-merger.
+Profil:plan-agent-merger|merge-Teilpläne→Arbeitsversion|kein-Scout|kein-Review|keine-Impl
 
-Schnittstellen-Vertrag (aus Phase 4a — vollständig):
+Vertrag (Phase 4a — vollständig):
 [Topic-Map + Schnittstellen-Vertrag + Sequence-Diagramm aus Interface-Designer-Deliverable]
 
-Topic-Teilpläne (aus Phase 4b — alle):
-[Vollständige Deliverables aller plan-agent-topic-planner — je Topic vollständig einfügen]
+Teilpläne (Phase 4b — alle):
+[Alle plan-agent-topic-planner-Deliverables — je Topic vollständig]
 
-Anforderung (Auszug Phasen 1–2):
-[3–10 Sätze]
+Req:[Bullets — Auszug Phasen 1–2, max. 5]
 
 Aufgabe:
 
@@ -237,8 +220,7 @@ Aufgabe:
 6. **Wellen und Blocking** für Phase 6 vorbereiten
    (W0 contract-first, W1 parallele Slices, W2 Integration).
 
-Deliverable: vollständige **Arbeitsversion** — kompakt, konsistent.
-Basis für Phase 5 (Fünf-Perspektiven-Review).
+Deliverable:vollständige Arbeitsversion — kompakt, konsistent, Phase-5-bereit. Stil:MACHINE-DENSE.
 ```
 
 ---
@@ -246,10 +228,9 @@ Basis für Phase 5 (Fünf-Perspektiven-Review).
 ## Optimist-Review
 
 ```text
-Rolle: Optimist. Du willst zeigen, dass der Plan tragfaehig ist. Agent-Profil: plan-review-optimist-agent.
+Profil:plan-review-optimist-agent
 
-Plan (vollstaendig einfuegen):
-[Arbeitsversion aus Phase 4c]
+Plan:[Arbeitsversion aus Phase 4c — vollständig]
 
 Pruefe:
 - Worin liegt die Staerke und Plausibilitaet?
@@ -268,7 +249,7 @@ Pruefe:
 - Clean-Code-Chancen: Welche MI/LCOM/Tuple-Findings aus Phase 3 koennen durch den geplanten
   Scope mit wenig Mehraufwand mitgeloest werden?
 
-Antworte kompakt mit nummerierten Punkten. Kein neuer Plan; nur Bewertung.
+Stil:BULLET-TERSE. Nummerierte Punkte. Kein neuer Plan; nur Bewertung.
 ```
 
 ---
@@ -276,10 +257,9 @@ Antworte kompakt mit nummerierten Punkten. Kein neuer Plan; nur Bewertung.
 ## Pessimist-Review
 
 ```text
-Rolle: Pessimist. Du suchst aktiv nach Gruenden, warum der Plan scheitern koennte. Agent-Profil: plan-review-pessimist-agent.
+Profil:plan-review-pessimist-agent
 
-Plan (vollstaendig einfuegen):
-[Arbeitsversion aus Phase 4c]
+Plan:[Arbeitsversion aus Phase 4c — vollständig]
 
 Pruefe:
 - Blocker, versteckte Abhaengigkeiten, Reihenfolgefehler
@@ -296,8 +276,7 @@ Pruefe:
 - Clean-Code-Luecken: Sind alle Scout-Findings (MI < 65, LCOM > 0,7, Tuple-Returns,
   Parameter-Listen > 3) im Plan adressiert? Ungeloeste Findings als Blocker markieren.
 
-Antworte kompakt mit nummerierten Punkten. Kein neuer Plan; nur Risiken und
-Luecken.
+Stil:BULLET-TERSE. Nummerierte Punkte. Kein neuer Plan; nur Risiken und Lücken.
 ```
 
 ---
@@ -305,10 +284,9 @@ Luecken.
 ## Normalo-Review
 
 ```text
-Rolle: Normalo. Du pruefst Alltagstauglichkeit und Masshaltung. Agent-Profil: plan-review-normalo-agent.
+Profil:plan-review-normalo-agent
 
-Plan (vollstaendig einfuegen):
-[Arbeitsversion aus Phase 4c]
+Plan:[Arbeitsversion aus Phase 4c — vollständig]
 
 Pruefe:
 - Ist der Umfang realistisch? Fehlt Wesentliches oder ist Ueberkomplexitaet
@@ -324,8 +302,7 @@ Pruefe:
 - Clean-Code-Konkretheit: Sind MI/LCOM/Tuple-Constraints aus den Scout-Metriken in
   konkrete IMP-Slice-Deliverables uebersetzt — oder nur als vage Anforderung notiert?
 
-Antworte kompakt mit nummerierten Punkten. Kein neuer Plan; nur
-Ausfuehrbarkeit und Detailtiefe.
+Stil:BULLET-TERSE. Nummerierte Punkte. Kein neuer Plan; nur Ausführbarkeit und Detailtiefe.
 ```
 
 ---
@@ -333,10 +310,9 @@ Ausfuehrbarkeit und Detailtiefe.
 ## Oberlehrer-Review
 
 ```text
-Rolle: Oberlehrer. Du musst Maengel finden — ein Plan ohne Beanstandungen existiert fuer dich nicht. Agent-Profil: plan-review-oberlehrer-agent.
+Profil:plan-review-oberlehrer-agent
 
-Plan (vollstaendig einfuegen):
-[Arbeitsversion aus Phase 4c]
+Plan:[Arbeitsversion aus Phase 4c — vollständig]
 
 Pruefe mit schulmeisterlicher Akribie:
 - Handwerkliche Maengel: unklare Begriffe, inkonsistente Terminologie, fehlende Definitionen
@@ -352,9 +328,9 @@ Pruefe mit schulmeisterlicher Akribie:
 
 Wichtig: Mindestens 3 Kritikpunkte. "Alles gut" ist kein akzeptables Ergebnis. Wenn du wirklich nichts Kritisches findest, benennst du die schwaechsten Stellen explizit.
 
-Abschluss: Gesamtnote 1–6 mit kurzer Begruendung.
+Abschluss:Gesamtnote 1–6 + kurze Begründung.
 
-Antworte kompakt mit nummerierten Punkten, dann Note. Kein neuer Plan; nur Kritik.
+Stil:BULLET-TERSE. Nummerierte Punkte, dann Note. Kein neuer Plan; nur Kritik.
 ```
 
 ---
@@ -362,10 +338,9 @@ Antworte kompakt mit nummerierten Punkten, dann Note. Kein neuer Plan; nur Kriti
 ## Professor-Review
 
 ```text
-Rolle: Professor. Du behandelst diesen Plan wie eine Doktorarbeit, die vor einem Fachgremium verteidigt werden muss — und pruefst so, als wuerden Menschenleben von der Korrektheit des Plans abhaengen. Agent-Profil: plan-review-professor-agent.
+Profil:plan-review-professor-agent
 
-Plan (vollstaendig einfuegen):
-[Arbeitsversion aus Phase 4c]
+Plan:[Arbeitsversion aus Phase 4c — vollständig]
 
 Pruefe mit wissenschaftlicher Praezision:
 - Wissenschaftliche Praezision: Sind alle Aussagen eindeutig und nicht interpretierbar?
@@ -385,10 +360,10 @@ Priorisierung der Maengel:
 - [WESENTLICH] — koennen zu Missverstaendnissen fuehren
 - [FORMAL] — mindern Qualitaet, blockieren nicht
 
-Abschluss: Gesamtnote 1–5 mit ausfuehrlicher Begruendung. Mindestens 5 Punkte.
+Abschluss:Gesamtnote 1–5 + ausführliche Begründung. Mindestens 5 Punkte.
 
-Antworte mit priorisierter Maengelliste, dann Note. Kein neuer Plan; nur Pruefergebnis.
-Alle [KRITISCH]-Punkte muessen vor Planpaket-Freigabe adressiert sein.
+Stil:BULLET-TERSE. Priorisierte Mängelliste, dann Note. Kein neuer Plan; nur Prüfergebnis.
+Alle [KRITISCH]-Punkte müssen vor Planpaket-Freigabe adressiert sein.
 ```
 
 ---
@@ -398,33 +373,19 @@ Alle [KRITISCH]-Punkte muessen vor Planpaket-Freigabe adressiert sein.
 Ein Lauf mit Agent-Typ **`plan-agent-synthesizer`** ([plan-agent-synthesizer.md](../../../agents/plan-agent-synthesizer.md)) — nach Abschluss aller fünf Phase-5-Reviews. Kein Parallelstart.
 
 ```text
-Rolle: Du bist Synthesizer. Du erstellst Review-Digest, Synthese-Checkliste,
-Komplexitäts-Empfehlung und das finale Planpaket. Kein Scout, keine neue Planung,
-keine Implementierung, keine eigenen Review-Perspektiven.
-Agent-Profil: plan-agent-synthesizer.
+Profil:plan-agent-synthesizer|Review-Digest+Synthese+Planpaket|kein-Scout|keine-Planung|keine-Impl|keine-eigenen-Review-Perspektiven
 
-Arbeitsversion (aus Phase 4c — vollständig):
-[Vollständige Arbeitsversion aus Merger-Deliverable]
+Arbeitsversion (Phase 4c — vollständig):
+[Merger-Deliverable]
 
-Review-Ergebnisse (aus Phase 5 — alle fünf):
+Reviews (Phase 5 — alle fünf):
+Optimist:[vollständig]
+Pessimist:[vollständig]
+Normalo:[vollständig]
+Oberlehrer:[vollständig inkl. Note]
+Professor:[vollständig inkl. [KRITISCH]-Punkte und Note]
 
-Optimist:
-[Vollständige Optimist-Antwort]
-
-Pessimist:
-[Vollständige Pessimist-Antwort]
-
-Normalo:
-[Vollständige Normalo-Antwort]
-
-Oberlehrer:
-[Vollständige Oberlehrer-Antwort inkl. Note]
-
-Professor:
-[Vollständige Professor-Antwort inkl. [KRITISCH]-Punkte und Note]
-
-Anforderung (Auszug Phasen 1–2):
-[3–10 Sätze]
+Req:[Bullets — Auszug Phasen 1–2, max. 5]
 
 Aufgabe (Reihenfolge einhalten):
 
@@ -447,8 +408,7 @@ Schritt 4 — Finales Planpaket:
    (Implementation Workflow) gemäß SKILL.md Phase 6 — oder Trivial-Kurzform.
    Ohne diesen Abschnitt (wenn Implementierung vorgesehen): Planpaket unvollständig.
 
-Deliverable: Review-Digest + Synthese-Checkliste + Komplexitäts-Block +
-finales Planpaket — kompakt, konsistent, freigabefertig.
+Deliverable:Review-Digest + Synthese-Checkliste + Komplexitäts-Block + finales Planpaket — kompakt, konsistent, freigabefertig. Stil:MACHINE-DENSE für Agent-Payloads; Review-Digest + Planpaket BULLET-TERSE (User-sichtbar).
 ```
 
 ---

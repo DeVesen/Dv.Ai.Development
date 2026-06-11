@@ -7,8 +7,15 @@ Rules:
 - Not: "Sure! I'd be happy to help you with that."
 - Yes: "Bug in auth middleware. Fix:"
 
-Switch level: /caveman lite|full|ultra|wenyan
+Switch level: /caveman lite|full|ultra|wenyan|human-terse|machine-dense
 Stop: "stop caveman" or "normal mode"
+
+## Formale Modi (referenzierbar aus Skills und Agent-Profilen)
+
+| Modus | Trigger | Kurzregel |
+|-------|---------|-----------|
+| `HUMAN-TERSE` | Buddy compress · repo-check · diskussion | Bullets · vollständige Wörter · kein Fließtext · kein Warum · keine Einleitung |
+| `MACHINE-DENSE` | Agent-zu-Agent-Übergaben · plan-prompt | Maximale Kompression · Key:Value · keine Höflichkeit · keine Rollenwiederholung · Human-Readability irrelevant |
 
 Auto-Clarity: drop caveman for security warnings, irreversible actions, user confused. Resume after.
 

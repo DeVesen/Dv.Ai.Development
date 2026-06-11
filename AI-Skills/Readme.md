@@ -167,6 +167,7 @@ Dateien, die von mehreren Paketen gemeinsam genutzt werden:
 | `subagent-model-before-task.md` | Vorgabe: Model-Sektion des Agent-Profils vor jeder Aufgabe lesen |
 | `agent-compliance.md` | Verbindliche Skill/Workflow-Compliance; Orchestrator → Subagent Delegation |
 | `subagent-delegation-boilerplate.md` | Copy-Paste-Block für Task-Prompts (Pflicht bei Delegation) |
+| `output-style-canon.md` | Ausgabe-Stil-Kanon: HUMAN-TERSE · BULLET-TERSE · MACHINE-DENSE mit Selbstchecks |
 | `mcp-project-paths.md` | **Deploy-Kanon** — MCP container paths + Backend routing (generiert aus skill-params) |
 | `mcp-smoke-test.md` | Smoke-Tests nach MCP-Pfad-/Install-Änderungen |
 | `verification-commands.md` | Projekt-spezifische Build/Test-Befehle pro Stack |

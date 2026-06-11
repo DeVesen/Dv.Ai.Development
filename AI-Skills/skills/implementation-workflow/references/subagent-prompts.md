@@ -9,6 +9,8 @@
 
 Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen.
 
+**Ausgabe-Stil aller Handoffs: MACHINE-DENSE** — [output-style-canon.md](../../../references/output-style-canon.md). Rückgaben: MACHINE-DENSE (Agent-zu-Agent). Review-Deliverables: BULLET-TERSE (ggf. User-sichtbar).
+
 **Agent-Typ (Pflicht):** Je Rolle passendes Profil unter `../../../agents/`. **Modell:** `subagent-model-before-task.md` lesen; Slugs nicht im Prompt duplizieren.
 
 **Orchestrator-Pflicht:** Vor **jedem** Subagent-Start `subagent-delegation-boilerplate.md` + passende Vorlage unten in den Task-Prompt. Rückgaben ohne Compliance/Matrix ablehnen.
@@ -237,11 +239,9 @@ Liefern:
 ## Gebuendelte Rueckfragen (vor Fix-Plan)
 
 ```
-Vor dem Fix — kurze Rueckfragen:
+Klärungsbedarf vor Fix-Plan:
 1. [Punkt A] — [Kontext]
 2. [Punkt B] — [Kontext]
-
-Bitte kurz beantworten, damit ich direkt weiterarbeiten kann.
 ```
 
 ---

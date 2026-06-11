@@ -30,6 +30,32 @@ Deutsch. Fachlich, kurz, direkt. Keine Code-Beispiele. Kein Consultant-Deutsch.
 
 **Modi:** Ask für intake, compress, diskussion, plan-prompt (Kosten, ReadOnly). Agent **nur** für repo-check (MCP).
 
+---
+
+## ⚠️ Ausgabe-Stil-Pflicht
+
+Kanon: [output-style-canon.md](../../references/output-style-canon.md)
+
+| Phase | Modus | Selbstcheck |
+|-------|-------|-------------|
+| intake | (unverändert) | — |
+| compress | **HUMAN-TERSE** | Bullets · vollständige Wörter · kein Fließtext · kein Warum |
+| repo-check | **HUMAN-TERSE** | Wie compress |
+| diskussion | **HUMAN-TERSE** | Wie compress |
+| plan-prompt | **MACHINE-DENSE** | Section A: max. 3 Zeilen · Section B: caveman ultra |
+
+**Selbstcheck compress / repo-check / diskussion (Pflicht vor jeder Ausgabe):**
+
+1. Beginnt eine Zeile mit Fließtext statt Bullet? → Bullet.
+2. Enthält die Ausgabe Abkürzungen? → Ausschreiben.
+3. Steht ein Warum / eine Begründung drin? → Streichen.
+4. Einleitungssatz ("Hier ist …", "Ich habe …")? → Löschen.
+
+**Wenn eine Zeile den Check nicht besteht:**
+→ STOPP. Ausgabe: `STILFEHLER: [compress|repo-check|diskussion] — HUMAN-TERSE verletzt. Ausgabe neu formulieren.`
+
+---
+
 **Leitgedanke:** Wenig intake ist besser — wenn der Wunsch schon vollständig ist, direkt `repo-check`. compress dokumentiert den Stand; repo-check beantwortet nur `## Repo-Fragen`. plan-prompt liefert **vollständigen** Handoff — Planer soll ideally **keine** Klärungsfragen mehr stellen müssen.
 
 **Abgrenzung ADO:** Buddy kennt **keine** ado-Phasen (`load`/`analyse`/`save`). Sync: Nutzer führt ado separat aus. Buddy liest höchstens eine **Task.md** (siehe Task-Brücke).

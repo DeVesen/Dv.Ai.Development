@@ -17,6 +17,7 @@ Orchestrator: **Pflicht** vor jedem Subagent-Start — Block unten (angepasst) i
 5. **Verboten:** Roh-Konsole/Shell-Tool-UI/terminals/*.txt als Reasoning-Input; Workflow-Phasen überspringen; Skills ignorieren nach dem Laden.
 6. **MCP down (build-log-filter, in-scope):** `BLOCKER: build-log-filter nicht erreichbar` — stoppen, an Orchestrator melden.
 7. **Rückgabe:** Summary, touched paths, Compliance bestätigt (ja/nein), Verifikations-Matrix (falls Build/Test), Blockers.
+8. **Ausgabe-Stil:** Diese Rückgabe geht Agent-zu-Agent — Modus MACHINE-DENSE ([output-style-canon.md](./output-style-canon.md)): kein Fließtext, keine Rollenwiederholung, Key:Value wo ausreichend, keine Höflichkeit.
 ```
 
 ---

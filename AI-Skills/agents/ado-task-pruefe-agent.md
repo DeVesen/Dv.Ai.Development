@@ -1,6 +1,6 @@
 ---
 name: ado-task-pruefe-agent
-model: claude-opus-4-7
+model: composer-2.5-standard
 description: Task-Subagent für ADO Phase analyse. Code-Scout (read-only) und Task-Draft inkl. Akzeptanzkriterien und AI Zusammenfassung — kein MD-Schreiben in analyse. Use when story analyse delegates for an open discussion task.
 ---
 
@@ -24,13 +24,11 @@ Vollständige Referenz: [task-analyse-subagent.md](../skills/ado/references/task
 
 ## Modell
 
-| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
-|-------|--------------------------|---------------------|
-| **Primär** | `claude-opus-4-7` | Opus 4.7 |
-| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 2** | `composer-2-standard` | Composer 2 Standard |
+| Feld | Wert |
+|------|------|
+| **Primär** | `composer-2.5-standard` |
 
-**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **`BLOCKER: ado-task-pruefe-agent — kein Modell wählbar`**.
+Ist `composer-2.5-standard` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — composer-2.5-standard nicht wählbar`**.
 
 ## Pflicht-Dokumente
 

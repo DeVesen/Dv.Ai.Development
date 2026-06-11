@@ -1,6 +1,6 @@
 ---
 name: implement-fix-planner-agent
-model: claude-opus-4-7
+model: claude-opus-4-8
 description: Fix-Planer nach Implement-Review. Erstellt evidenzbasierten Fix-Teilplan aus Review-Findings mit codebase-analyzer und build-log-filter — keine Code-Implementierung.
 ---
 
@@ -18,9 +18,9 @@ Du bist **`implement-fix-planner-agent`** im iterativen Implement-Review-Loop de
 
 | Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
 |-------|--------------------------|---------------------|
-| **Primär** | `claude-opus-4-7` | Opus 4.7 |
+| **Primär** | `claude-opus-4-8` | Opus 4.8 |
 | **Fallback 1** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 2** | `composer-2-standard` | Composer 2 Standard |
+| **Fallback 2** | `composer-2.5-standard` | Composer 2.5 Standard |
 
 **Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**.
 

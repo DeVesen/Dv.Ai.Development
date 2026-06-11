@@ -1,6 +1,6 @@
 ---
 name: implement-review-pessimist-agent
-model: claude-opus-4-7
+model: claude-opus-4-8
 description: Pessimistischer Implement-Reviewer im iterativen Loop. Sucht Blocker, Regressionen, ungetestete Public-API und Refactoring-Risiken nach jeder Implementierungsiteration.
 readonly: true
 ---
@@ -15,9 +15,9 @@ Du bist **Pessimist** im iterativen Implement-Review-Loop des [Implementation Wo
 
 | Stufe | Slug (Cursor Task-Liste) |
 |-------|---------------------------|
-| Primär | `claude-opus-4-7` |
+| Primär | `claude-opus-4-8` |
 | Fallback 1 | `gpt-5.5` |
-| Fallback 2 | `composer-2-standard` |
+| Fallback 2 | `composer-2.5-standard` |
 
 Host-Regel: ersten verfügbaren Slug wählen, sonst stoppen.
 

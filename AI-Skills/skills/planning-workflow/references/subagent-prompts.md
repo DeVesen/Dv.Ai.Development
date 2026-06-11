@@ -94,6 +94,48 @@ Schritt-fuer-Schritt-Umsetzung.
 
 ---
 
+## Interface-Designer (Phase 4a)
+
+Ein Lauf mit Agent-Typ **`plan-agent-interface-designer`** ([plan-agent-interface-designer.md](../../../agents/plan-agent-interface-designer.md)) — nach Scout-Zusammenführung, **vor** Phase 4b. Kein Parallelstart mit Topic-Planern.
+
+```text
+Rolle: Du bist Interface-Designer. Du entwirfst Topic-Map und Schnittstellen-Vertrag
+aus den Scout-Deliverables. Keine Implementierung, kein Gesamtplan, kein Review,
+keine Topic-Teilpläne. Agent-Profil: plan-agent-interface-designer.
+
+Scout-Zusammenführung (Pflicht — alle Scout-Deliverables, Positionen 0–10 je Scout):
+[Vollständige inhaltliche Zusammenführung aller Scout-Rückgaben: MCP-Status, betroffene
+Dateien, Einstiegspunkte, Nachbarschaft, Risiken, Lücken, Hotspots]
+
+Anforderung (Auszug Phasen 1–2):
+[3–10 Sätze]
+
+Aufgabe:
+
+1. **Topic-Map:** Liste aller Topics (z. B. TOPIC-FE-Search, TOPIC-BE-GW,
+   TOPIC-BE-AppService, TOPIC-BE-EF) mit kurzer Verantwortungsbeschreibung.
+   Topics sind Planungs-IDs (TOPIC-*); IMP-Slice-IDs folgen in Phase 6.
+
+2. **Schnittstellen-Vertrag:** Pro Topic-Grenze: eingehend/ausgehend
+   (HTTP-Route, DTO, Methoden-Signatur, Events). Keine stillen Annahmen zwischen Topics.
+
+3. **Sequence-Diagramm (Pflicht bei ≥ 2 Topics):** Mermaid-Diagramm oder
+   tabellarische Darstellung der Aufrufkette
+   (z. B. UI-Aktion → Gateway → AppService → DB).
+
+4. **Offene Punkte:** Unaufgelöste Scout-Findings, die den Schnittstellen-Vertrag
+   beeinflussen — explizit markieren.
+
+MCP-Nachverifikation (nur bei konkreten Lücken im Schnittstellen-Vertrag):
+   Fehlende Signatur oder unbekannter Typ → find_in_index mit projectPath aus
+   .cursor/references/mcp-project-paths.md. Ergebnis (ok/fallback) festhalten.
+
+Deliverable: Topic-Map + Schnittstellen-Vertrag (+ Sequence-Diagramm bei ≥ 2 Topics)
+— kompakt, vollständig. Keine Implementierungsschritte, kein Gesamtplan.
+```
+
+---
+
 ## Topic-Planer (Phase 4b)
 
 Bei **Multi-Topic** (bis **10** parallele Task-Subagents, siehe [SKILL.md](../SKILL.md) Phase 4b):
@@ -150,6 +192,53 @@ Ergebnis (ok oder fallback) im Teilplan festhalten — kein stilles Ueberspringe
 
 Deliverable: strukturierter **Teilplan** fuer genau ein Topic; keine Code-Aenderungen;
 kein Gesamtplan; kein Review anderer Topics.
+```
+
+---
+
+## Merger (Phase 4c)
+
+Ein Lauf mit Agent-Typ **`plan-agent-merger`** ([plan-agent-merger.md](../../../agents/plan-agent-merger.md)) — nach Abschluss aller Topic-Planer aus 4b, **vor** Phase 5.
+
+```text
+Rolle: Du bist Merger. Du führst alle Topic-Teilpläne zur Arbeitsversion zusammen.
+Keine neue Planung, kein Codebereichs-Scouting, kein Review, keine Implementierung.
+Agent-Profil: plan-agent-merger.
+
+Schnittstellen-Vertrag (aus Phase 4a — vollständig):
+[Topic-Map + Schnittstellen-Vertrag + Sequence-Diagramm aus Interface-Designer-Deliverable]
+
+Topic-Teilpläne (aus Phase 4b — alle):
+[Vollständige Deliverables aller plan-agent-topic-planner — je Topic vollständig einfügen]
+
+Anforderung (Auszug Phasen 1–2):
+[3–10 Sätze]
+
+Aufgabe:
+
+1. Führe alle Topic-Teilpläne zu einer **Arbeitsversion** zusammen (startfähig
+   für Phase 5 ohne weitere Recherche).
+
+2. **Drift-Prüfung (Pflicht):** Schnittstellen aus Phase 4a vs. Teilpläne —
+   Abweichungen, Lücken, Widersprüche auflösen oder als Nutzerfrage markieren.
+
+3. Gesamtübersicht: relevante Dateien, Einstiegspunkte, Schritte,
+   Akzeptanzkriterien, Risiken, offene Fragen.
+
+4. **IMP-Slices ableiten:** Aus den vorgeschlagenen IMP-Slice-IDs der Topic-Teilpläne
+   (Schritt 6 je Topic) eine konsistente Slice-Tabelle zusammenführen. Keine neuen
+   Slices erfinden — nur aus Teilplan-Deliverables übernehmen, Konflikte auflösen,
+   Duplikate bereinigen.
+
+5. **Multi-Subagent-Aufteilung:** Arbeitspakete, Parallelität, Blocking, gemeinsame
+   Artefakte, Interface-first, Orchestrator-Integration, E2E-Prüfung — oder
+   Begründung Single-Agent.
+
+6. **Wellen und Blocking** für Phase 6 vorbereiten
+   (W0 contract-first, W1 parallele Slices, W2 Integration).
+
+Deliverable: vollständige **Arbeitsversion** — kompakt, konsistent.
+Basis für Phase 5 (Fünf-Perspektiven-Review).
 ```
 
 ---
@@ -304,7 +393,67 @@ Alle [KRITISCH]-Punkte muessen vor Planpaket-Freigabe adressiert sein.
 
 ---
 
-## Review-Digest (Pflicht, Hauptagent)
+## Synthesizer (Phase 6)
+
+Ein Lauf mit Agent-Typ **`plan-agent-synthesizer`** ([plan-agent-synthesizer.md](../../../agents/plan-agent-synthesizer.md)) — nach Abschluss aller fünf Phase-5-Reviews. Kein Parallelstart.
+
+```text
+Rolle: Du bist Synthesizer. Du erstellst Review-Digest, Synthese-Checkliste,
+Komplexitäts-Empfehlung und das finale Planpaket. Kein Scout, keine neue Planung,
+keine Implementierung, keine eigenen Review-Perspektiven.
+Agent-Profil: plan-agent-synthesizer.
+
+Arbeitsversion (aus Phase 4c — vollständig):
+[Vollständige Arbeitsversion aus Merger-Deliverable]
+
+Review-Ergebnisse (aus Phase 5 — alle fünf):
+
+Optimist:
+[Vollständige Optimist-Antwort]
+
+Pessimist:
+[Vollständige Pessimist-Antwort]
+
+Normalo:
+[Vollständige Normalo-Antwort]
+
+Oberlehrer:
+[Vollständige Oberlehrer-Antwort inkl. Note]
+
+Professor:
+[Vollständige Professor-Antwort inkl. [KRITISCH]-Punkte und Note]
+
+Anforderung (Auszug Phasen 1–2):
+[3–10 Sätze]
+
+Aufgabe (Reihenfolge einhalten):
+
+Schritt 1 — Review-Digest (zuerst ausgeben, vor inhaltlicher Synthese):
+   Fünf Abschnitte: Optimist, Pessimist, Normalo, Oberlehrer, Professor.
+   Pro nummeriertem Punkt max. 1–2 Sätze Kernaussage.
+   Vorlage: subagent-prompts.md Abschnitt "Review-Digest".
+
+Schritt 2 — Synthese-Checkliste (Punkte 1–6):
+   Vorlage: subagent-prompts.md Abschnitt "Synthese-Checkliste".
+   [KRITISCH]-Punkte des Professors sind Pflicht-Adressierung.
+
+Schritt 3 — Komplexitäts- und Executor-Empfehlung:
+   Low/Medium/High, Executor-Tier illustrativ, Topologie-Hinweis (konsistent mit
+   Umsetzungs-Topologie), Begründung 2–4 Sätze, Disclaimer.
+   Bei trivialem Plan einzeilig "Empfehlung nicht erforderlich".
+
+Schritt 4 — Finales Planpaket:
+   Vollständigen Freigabetext formulieren. Pflicht-Abschnitt Umsetzungs-Topologie
+   (Implementation Workflow) gemäß SKILL.md Phase 6 — oder Trivial-Kurzform.
+   Ohne diesen Abschnitt (wenn Implementierung vorgesehen): Planpaket unvollständig.
+
+Deliverable: Review-Digest + Synthese-Checkliste + Komplexitäts-Block +
+finales Planpaket — kompakt, konsistent, freigabefertig.
+```
+
+---
+
+## Review-Digest (Pflicht, plan-agent-synthesizer)
 
 **Unmittelbar nach** Eingang aller fuenf Phase-5-Subagent-Antworten (Optimist,
 Pessimist, Normalo, Oberlehrer, Professor) und **bevor** die Synthese-Checkliste inhaltlich abgearbeitet
@@ -351,10 +500,10 @@ fuenf Rollen; Limitations-Hinweis aus Phase 5 beibehalten.
 
 ## Synthese-Checkliste
 
-Nach dem Review-Digest und mit den fuenf Reviews durch den Hauptagenten
+Nach dem Review-Digest und mit den fuenf Reviews durch den **plan-agent-synthesizer**
 abarbeiten — **Reihenfolge laut** [SKILL.md](../SKILL.md) **Phase 6:** Punkte **1–6**,
 danach **Punkt 7** (**Komplexitaets- und Executor-Empfehlung**), danach **Punkt 8**
-(finales Planpaket im Chat durch den Hauptagenten).
+(finales Planpaket).
 
 1. **Uebernommen:** Welche konkreten Aenderungen am Plan ergeben sich aus
    Optimist, Pessimist, Normalo, Oberlehrer und Professor? [KRITISCH]-Punkte des Professors sind Pflicht-Adressierung.
@@ -374,7 +523,7 @@ danach **Punkt 7** (**Komplexitaets- und Executor-Empfehlung**), danach **Punkt 
    Executor-Tier illustrativ, Topologie-Hinweis als Kurzfassung — konsistent mit Pflichtabschnitt
    **Umsetzungs-Topologie**, 2–4 Saetze Begruendung aus den fuenf Reviews, Disclaimer; bei
    trivialem Plan einzeilig „nicht erforderlich“)
-   laut Phase 6 SKILL **vom Hauptagenten** im Chat ausgeben — **vor** Punkt 8.
+   laut Phase 6 SKILL **vom plan-agent-synthesizer** ausgeben — **vor** Punkt 8.
 8. **Finales Planpaket:** Vollständigen Freigabetext formulieren (integriert
    aktualisierten Plan, Reviews, Synthese aus 1–6, Block aus Punkt 7) und dem Nutzer
    zur Zustimmung vorlegen. **Pflicht:** Abschnitt **Umsetzungs-Topologie

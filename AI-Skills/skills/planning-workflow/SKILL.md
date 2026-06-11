@@ -4,14 +4,14 @@ description: >
   Beschreibt einen portablen Planungsworkflow fuer Coding-Agenten: zuerst
   reine Anforderungsarbeit ohne Code-Recherche, dann kurzer Zwischenstand
   (Phase 2), unmittelbar gefolgt von Codebereichs-Scouting (Phase 3) per
-  einem bis zu zehn **plan-agent-scout**-Laeufen (Phase 3), anschliessend **Phase 4** in **4a** (Orchestrator
-  **plan-agent**: Topic-Map und Schnittstellen-Vertrag), **4b** (bis zu zehn **plan-agent-topic-planner**,
-  je ein Topic mit Tech-Mindset und Teilplan inkl. paralleler Implementierung) und **4c** (Merge zur
+  einem bis zu zehn **plan-agent-scout**-Laeufen (Phase 3), anschliessend **Phase 4** in **4a** (**plan-agent-interface-designer**: Topic-Map und Schnittstellen-Vertrag),
+  **4b** (bis zu zehn **plan-agent-topic-planner**,
+  je ein Topic mit Tech-Mindset und Teilplan inkl. paralleler Implementierung) und **4c** (**plan-agent-merger**: Merge zur
   **Arbeitsversion**), verpflichtendes Fuenf-Perspektiven-Review (**plan-review-optimist-agent**,
   **plan-review-pessimist-agent**, **plan-review-normalo-agent**, **plan-review-oberlehrer-agent**, **plan-review-professor-agent**), Synthese und finales Planpaket mit verbindlicher
   **Umsetzungs-Topologie** fuer den [Implementation Workflow](../implementation-workflow/SKILL.md)
   (1–10 Implementierungs-Slices, **Slice-ID-Konvention** IMP-FE-{Bereich}/IMP-BE-{ServiceKuerzel},
-  Wellen, Integration); Phase 6 formuliert der Orchestrator **plan-agent**.
+  Wellen, Integration); Phase 6 formuliert **plan-agent-synthesizer**.
   Agent-Profile und **Modellwahl** zentral unter `.cursor/agents/plan-agent*.md`; Abschnitt
   **Subagent-Typen und Agent-Definitionen** in diesem Skill. Phase 6 umfasst Review-Digest,
   Synthese, Komplexitaets- und Executor-Empfehlung. Fuenf-Perspektiven-Review nicht optional.
@@ -70,11 +70,17 @@ Review auf unvollstaendigem Plan.
 
 **Verboten (haeufiger Orchestrator-Fehler):**
 
-- Phase 5 (Review) starten, waehrend Phase 4b (Topic-Planer) noch laeuft.
+- Phase 4b (Topic-Planer) starten, solange Interface-Designer (4a) noch laeuft oder das Deliverable nicht formal geprueft wurde (Topic-Map + Schnittstellen-Vertrag vollstaendig? Sequence-Diagramm bei ≥ 2 Topics vorhanden?).
+
+- Phase 4c (Merger) starten, waehrend noch Topic-Planer aus 4b laufen.
+
+- Phase 5 (Review) starten, waehrend Phase 4b (Topic-Planer) oder Phase 4c (Merger) noch laeuft.
 
 - Phase 4b oder 5 starten, waehrend Phase-3-Scouts noch laufen.
 
 - Review mit **vorlaeufigem** Scout-/4a-Entwurf statt **merge-fertiger Arbeitsversion aus 4c**.
+
+- Phase 6 (Synthesizer) starten, bevor alle fuenf Phase-5-Reviews abgeschlossen sind.
 
 - `run_in_background` oder parallele Task-Starts nutzen, um Phasen-Gates zu umgehen.
 
@@ -92,7 +98,7 @@ Typen** (welche Agent-Definition den Auftrag ausfuehrt).
 
 |---------|-----------|
 
-| **Orchestrator / Hauptagent** | Fuehrt Phasen 1, 2, 4a, 4c und 6 aus; delegiert Scouting, Topic-Planung und Review; merged Ergebnisse. |
+| **Orchestrator / Hauptagent** | Fuehrt Phasen 1 und 2 aus; delegiert alle Inhalts-Phasen; prueft Deliverables auf formale Vollstaendigkeit; steuert Phasen-Gates. Erstellt selbst weder Plaene noch Implementierungen. |
 
 | **Rolle** | Funktion im Workflow (Scout, Topic-Planer, Optimist, …) — Inhalt kommt aus [references/subagent-prompts.md](references/subagent-prompts.md). |
 
@@ -100,7 +106,7 @@ Typen** (welche Agent-Definition den Auftrag ausfuehrt).
 
 | **Delegation** | Orchestrator startet einen separaten Lauf mit Rolle + Scope; der Lauf liefert nur das Rollen-Deliverable zurueck. |
 
-**Regel in diesem Projekt (ohne Ausnahme):** Jede delegierte Planungs-Rolle (Phase 3, 4b, 5)
+**Regel in diesem Projekt (ohne Ausnahme):** Jede delegierte Planungs-Rolle (Phase 3, 4a, 4b, 4c, 5, 6)
 
 wird von einem **spezialisierten Agent-Typ** aus [../../agents/](../../agents/) ausgefuehrt —
 
@@ -114,11 +120,15 @@ Diese Rollen sind **fest** — unabhaengig vom Host. Prompt-Vorlagen (Platzhalte
 
 |-------|-------|-----------|-------------|---------------|-----------|
 
-| **Planer / Orchestrator** | 1, 2, 4a, 4c, 6 | — | 1 | ja | [`plan-agent`](SKILL.md#orchestrator-konfiguration) |
+| **Orchestrator** | 1, 2 | — | 1 | ja | [`plan-agent`](SKILL.md#orchestrator-konfiguration) |
 
 | **Codebereichs-Scout** | 3 | bevorzugt | 10 | nein | [`plan-agent-scout`](../../agents/plan-agent-scout.md) |
 
+| **Interface-Designer** | 4a | nein | 1 | nein | [`plan-agent-interface-designer`](../../agents/plan-agent-interface-designer.md) |
+
 | **Topic-Planer** | 4b | bevorzugt | 10 | nein | [`plan-agent-topic-planner`](../../agents/plan-agent-topic-planner.md) |
+
+| **Merger** | 4c | nein | 1 | nein | [`plan-agent-merger`](../../agents/plan-agent-merger.md) |
 
 | **Optimist** | 5 | bevorzugt (×5) | 1 | nein | [`plan-review-optimist-agent`](../../agents/plan-review-optimist-agent.md) |
 
@@ -129,6 +139,8 @@ Diese Rollen sind **fest** — unabhaengig vom Host. Prompt-Vorlagen (Platzhalte
 | **Oberlehrer** | 5 | bevorzugt (×5) | 1 | nein | [`plan-review-oberlehrer-agent`](../../agents/plan-review-oberlehrer-agent.md) |
 
 | **Professor** | 5 | bevorzugt (×5) | 1 | nein | [`plan-review-professor-agent`](../../agents/plan-review-professor-agent.md) |
+
+| **Synthesizer** | 6 | nein | 1 | nein | [`plan-agent-synthesizer`](../../agents/plan-agent-synthesizer.md) |
 
 **Verboten:** Rollensimulation im Orchestrator-Turn. **Verboten:** Implementierungs- oder
 
@@ -149,7 +161,13 @@ primär, sonst YAML-Frontmatter — **nicht** in diesem Skill oder in Rules dupl
 
 | `plan-agent-scout` | [plan-agent-scout.md](../../agents/plan-agent-scout.md) |
 
+| `plan-agent-interface-designer` | [plan-agent-interface-designer.md](../../agents/plan-agent-interface-designer.md) |
+
 | `plan-agent-topic-planner` | [plan-agent-topic-planner.md](../../agents/plan-agent-topic-planner.md) |
+
+| `plan-agent-merger` | [plan-agent-merger.md](../../agents/plan-agent-merger.md) |
+
+| `plan-agent-synthesizer` | [plan-agent-synthesizer.md](../../agents/plan-agent-synthesizer.md) |
 
 | `plan-review-optimist-agent` | [plan-review-optimist-agent.md](../../agents/plan-review-optimist-agent.md) |
 
@@ -187,15 +205,17 @@ plan-agent (Phase 1–2)
 
   → plan-agent-scout              (Phase 3, ggf. parallel × N)
 
-  → plan-agent: Merge + Phase 4a
+  → plan-agent: Scout-Zusammenführung, Deliverable-Prüfung
+
+  → plan-agent-interface-designer (Phase 4a — Gate: abgeschlossen + formal geprüft vor 4b)
 
   → plan-agent-topic-planner      (Phase 4b, pro Topic, parallel bevorzugt)
 
-  → plan-agent: Phase 4c Merge
+  → plan-agent-merger             (Phase 4c — Gate: alle 4b-Deliverables abgeschlossen)
 
   → plan-review-optimist-agent | plan-review-pessimist-agent | plan-review-normalo-agent | plan-review-oberlehrer-agent | plan-review-professor-agent  (Phase 5, parallel bevorzugt)
 
-  → plan-agent: Phase 6 Synthese + finales Planpaket
+  → plan-agent-synthesizer        (Phase 6 — Gate: alle 5 Reviews abgeschlossen)
 
 ```
 
@@ -237,9 +257,9 @@ plan-agent (Phase 1–2)
 
   Auftrag zu reduzieren. **Kein** Pseudo-Scouting gleicher Dateien durch mehrere Scouts.
 
-- **Schnittstellen-Design (Phase 4a, Hauptagent):** Nach Scout-Zusammenfuehrung entwirft der
+- **Schnittstellen-Design (Phase 4a, Interface-Designer):** Nach Scout-Zusammenfuehrung delegiert der
 
-  **Hauptagent** die **Topic-Map** (z. B. Frontend, Gateway, Service-A, Service-B, EF/DB)
+  **Orchestrator** an **`plan-agent-interface-designer`**, der die **Topic-Map** (z. B. Frontend, Gateway, Service-A, Service-B, EF/DB)
 
   und den **Schnittstellen-Vertrag** zwischen den Topics (Request/Response, DTOs,
 
@@ -263,25 +283,25 @@ plan-agent (Phase 1–2)
 
   reduzieren. **Verboten:** Topic-Planer nur durch Rollensimulation im Hauptagenten-Turn.
 
-- **Merge (Phase 4c, Hauptagent):** Teilplaene aus 4b zu **Arbeitsversion** fuer Phase 5
+- **Merge (Phase 4c, Merger):** Der Orchestrator delegiert nach Abschluss aller 4b-Topic-Planer
 
-  zusammenfuehren; **harter Gate:** Schnittstellen-Drift pruefen, Widersprueche aufloesen oder
+  an **`plan-agent-merger`**, der Teilplaene zu **Arbeitsversion** fuer Phase 5 zusammenfuehrt;
 
-  als Nutzerfrage markieren. **Ohne** abgeschlossene 4b **kein** 4c.
+  **harter Gate:** Schnittstellen-Drift pruefen, Widersprueche aufloesen oder als Nutzerfrage markieren.
+
+  **Ohne** abgeschlossene 4b **kein** 4c.
 
 - **Fuenf-Perspektiven-Review (Phase 5):** verpflichtend, ohne Nutzer-Opt-in. Gate: erst nach vollstaendiger 4c-Arbeitsversion (nicht Scout-Notizen/4a-Schnittstellen). Je ein Lauf `plan-review-optimist-agent`/`plan-review-pessimist-agent`/`plan-review-normalo-agent`/`plan-review-oberlehrer-agent`/`plan-review-professor-agent` — parallel bevorzugt; sonst sequenziell fuenf Task-Subagent-Laeufe. **Verboten:** Rollensimulation statt Subagents. → Phase 5 (vollstaendige Ausfuehrungsregeln).
 
 - Parallele Subagenten **nur innerhalb derselben Stufe** (siehe **Phasen-Gates**); **keine**
 
-  Cross-Phase-Parallelitaet. Danach **inhaltliche** Synthese, Konsistenzpruefung und das **finale Planpaket** zur
+  Cross-Phase-Parallelitaet. Danach **inhaltliche** Synthese (Phase 6, **`plan-agent-synthesizer`**), Konsistenzpruefung und das **finale Planpaket** zur
 
-  Nutzer-Freigabe durch den **Hauptagenten** (Phase 6).
+  Nutzer-Freigabe.
 
 - **Finales Planpaket (Phase 6):** Nach Review-Digest, Synthese-Checkliste,
 
-  Planaktualisierung und Block **Komplexitaets- und Executor-Empfehlung** formuliert der
-
-  **Hauptagent** das vollstaendige finale Planpaket (kein separater Task-Subagent).
+  Planaktualisierung und Block **Komplexitaets- und Executor-Empfehlung** formuliert **`plan-agent-synthesizer`** das vollstaendige finale Planpaket.
 
   Ist eine spaetere **Implementierung** vorgesehen, ist das Planpaket **ohne** den
 
@@ -486,11 +506,15 @@ Phase 4 ist in drei Teilschritte gegliedert. Die **Arbeitsversion** fuer Phase 5
 
 erst in **Phase 4c** (Merge). **Kein** finales Nutzer-Paket vor Phase 6.
 
-### Phase 4a - Schnittstellen-Design (Hauptagent)
+### Phase 4a - Schnittstellen-Design (Interface-Designer)
 
-**Direkt nach** Scout-Zusammenfuehrung (Phase 3). Der **Hauptagent** (Modell = Nutzer-Chat)
+**Direkt nach** Scout-Zusammenfuehrung (Phase 3). Der **Orchestrator** delegiert an
 
-formuliert **ohne** Topic-Planer-Subagents zuerst:
+**`plan-agent-interface-designer`** ([plan-agent-interface-designer.md](../../agents/plan-agent-interface-designer.md)).
+
+Auftrag aus [references/subagent-prompts.md](references/subagent-prompts.md) (Abschnitt "Interface-Designer") bauen.
+
+Der Interface-Designer formuliert aus den Scout-Deliverables:
 
 - **Topic-Map:** Liste der Topics (z. B. `TOPIC-FE-Search`, `TOPIC-BE-GW`,
 
@@ -511,6 +535,18 @@ formuliert **ohne** Topic-Planer-Subagents zuerst:
 - Scout-Ergebnisse und Anforderung (Phasen 1–2) einbeziehen; offene Punkte markieren.
 
 **Deliverable 4a:** Topic-Map + Schnittstellen-Vertrag — verbindliche Eingabe fuer Phase 4b.
+
+**Gate 4a → 4b (Orchestrator-Pflicht):** Vor Start von Phase 4b prueft der Orchestrator das
+
+Interface-Designer-Deliverable auf formale Vollstaendigkeit:
+
+- Alle Topics in der Topic-Map vorhanden?
+- Schnittstellen-Vertrag fuer jede Topic-Grenze (inbound/outbound)?
+- Sequence-Diagramm vorhanden, wenn ≥ 2 Topics?
+
+Bei Luecken: Interface-Designer mit Fix-Kontext **neu starten** — **kein** 4b ohne geprueftes Deliverable.
+
+**Modell:** Ziel-Profil — [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
 
 ### Phase 4b - Topic-Planer-Subagents (verpflichtend)
 
@@ -542,15 +578,21 @@ es erlaubt.
 
 **Wenn Subagents/Task-Tool nicht verfuegbar:** transparent melden, **kein** Pseudo-Planer
 
-durch den Hauptagenten; **kein** 4c ohne 4b.
+im Orchestrator-Turn; **kein** 4c ohne 4b.
 
 Topic-Planer liefern **nur** den Teilplan fuer **ein** Topic — **keinen** Gesamtplan, **kein** Review.
 
-### Phase 4c - Merge zur Arbeitsversion (Hauptagent)
+### Phase 4c - Merge zur Arbeitsversion (Merger)
 
 **Voraussetzung:** alle Topic-Planer aus 4b abgeschlossen.
 
-Der **Hauptagent** fuehrt zusammen:
+Der **Orchestrator** delegiert an **`plan-agent-merger`** ([plan-agent-merger.md](../../agents/plan-agent-merger.md)).
+
+Auftrag aus [references/subagent-prompts.md](references/subagent-prompts.md) (Abschnitt "Merger") bauen —
+
+Schnittstellen-Vertrag aus 4a und alle Topic-Teilplaene vollstaendig einfuegen.
+
+Der Merger fuehrt zusammen:
 
 - Teilplaene zu **einer** **Arbeitsversion** fuer Phase 5 (startfaehig ohne weitere Recherche)
 
@@ -562,7 +604,7 @@ Der **Hauptagent** fuehrt zusammen:
 
   offene Fragen
 
-- **Ausfuehrung Multi- vs. Single-Agent** und **Orchestrator-Sicht** (wie bisher in Phase 4):
+- **Ausfuehrung Multi- vs. Single-Agent** und **Orchestrator-Sicht:**
 
   Multi-Subagent-Aufteilung **oder** Begruendung Single-Agent; bei Multi: Arbeitspakete,
 
@@ -570,17 +612,15 @@ Der **Hauptagent** fuehrt zusammen:
 
   E2E-Pruefung
 
-- **IMP-Slices aus Teilplaenen ableiten:** Pro Service- bzw. Feature-Bereich eigenes
+- **IMP-Slices aus Teilplaenen ableiten** (nicht erfinden): Aus vorgeschlagenen IMP-Slice-IDs
 
-  Kuerzel in der Slice-ID (`IMP-FE-{Bereich}-…`, `IMP-BE-{ServiceKuerzel}-…`); nicht
+  der Topic-Teilplaene eine konsistente Slice-Tabelle zusammenfuehren. Kuerzel gemaess
 
-  mehrere Services unter einer undifferenzierten `IMP-BE`-ID buendeln. Wellen und Blocking
+  `IMP-FE-{Bereich}-…` / `IMP-BE-{ServiceKuerzel}-…`; nicht mehrere Services unter einer
 
-  fuer Phase 6 vorbereiten.
+  undifferenzierten `IMP-BE`-ID buendeln. Wellen und Blocking fuer Phase 6 vorbereiten.
 
-- **Arbeitshypothese spaetere Umsetzung (optional):** nur vorlaeufig; finale Executor-Empfehlung
-
-  in **Phase 6**
+**Modell:** Ziel-Profil — [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
 
 **Ohne** 4b **kein** 4c. Bei **einem** Topic: ein Planer, Merge trotzdem in 4c.
 
@@ -700,135 +740,60 @@ mehrere `IMP-BE-*`-Slices koennen denselben Backend-verify-Stack teilen.
 
 ## Phase 6 - Synthese und Freigabe
 
-**Voraussetzung:** abgeschlossenes Fuenf-Perspektiven-Review aus Phase 5 (alle fuenf
+**Voraussetzung:** alle fuenf Phase-5-Reviews abgeschlossen.
 
-Perspektiven vorhanden).
+Der **Orchestrator** delegiert an **`plan-agent-synthesizer`** ([plan-agent-synthesizer.md](../../agents/plan-agent-synthesizer.md)).
 
-- **Review-Digest (Pflicht, zuerst, Nutzer-Chat):** Liegen alle fuenf
+Auftrag aus [references/subagent-prompts.md](references/subagent-prompts.md) (Abschnitt "Synthesizer") bauen —
 
-  Task-Subagent-Rueckgaben aus Phase 5 vor **und** wurde das Fuenf-Perspektiven-
+Arbeitsversion aus 4c und alle fuenf Review-Ergebnisse vollstaendig einfuegen.
 
-  Review tatsaechlich mit Task-Subagents ausgefuehrt (nicht nur der
+**Modell:** Ziel-Profil — [subagent-model-before-task.md](../../references/subagent-model-before-task.md).
 
-  Limitations-Hinweis bei fehlendem Task-Tool), **zuerst** im Chat einen
+Der Synthesizer erstellt in dieser Reihenfolge (Deliverable-Details im Agent-Profil und in der Prompt-Vorlage):
 
-  **Review-Digest** ausgeben — **bevor** inhaltliche Synthese, Plan-Aenderungen
+1. **Review-Digest** — zuerst ausgeben, bevor inhaltliche Synthese beginnt. Fuenf Abschnitte
+   (Optimist, Pessimist, Normalo, Oberlehrer, Professor); je nummeriertem Punkt 1–2 Saetze Kernaussage.
+   Bei fehlendem Task-Tool in Phase 5: Limitations-Hinweis beibehalten, keinen erzwungenen Digest.
 
-  oder die Synthese-Checkliste inhaltlich bearbeitet werden. Struktur: fuenf
+2. **Synthese-Checkliste (Punkte 1–6)** — Checkliste aus
+   [references/subagent-prompts.md](references/subagent-prompts.md) (Abschnitt „Synthese-Checkliste").
+   [KRITISCH]-Punkte des Professors sind Pflicht-Adressierung.
 
-  Abschnitte **Optimist**, **Pessimist**, **Normalo**, **Oberlehrer**, **Professor**. Pro **nummeriertem Punkt**
+3. **Komplexitaets- und Executor-Empfehlung (final)** — kurzer eigenstaendiger Block:
+   Komplexitaet Low/Medium/High; Executor-Tier illustrativ (keine Markennamen als Vorschreibung);
+   Topologie-Hinweis verbindlich (konsistent mit Pflichtabschnitt Umsetzungs-Topologie);
+   Begruendung 2–4 Saetze aus Phase-5-Reviews (insbesondere Pessimist); Disclaimer.
+   Bei trivialem Plan einzeilig: „Empfehlung nicht erforderlich".
 
-  der jeweiligen Subagent-Antwort hoechstens **1–2 Saetze** eigenstaendige
+4. **Finales Planpaket** — vollstaendiger Freigabetext. Pflicht-Abschnitt
 
-  Kernaussage (neutral: Befund; bei Pessimist/Normalo ggf. Risiko oder Luecke);
+   **Umsetzungs-Topologie (Implementation Workflow)** (wenn Implementierung vorgesehen;
+   Trivial-Kurzform: `Topologie: 1× IMP-1, sequentiell, keine Blocking-Deps`). Mindestschema:
 
-  nicht den Originalwortlaut bloss wiederholen. Punktnummern der Subagent-Antworten
+   - **Modus:** `single` | `sequential` | `parallel` (Wellen)
 
-  beibehalten oder klar referenzieren.
+   - **Slices (1–10):** Tabelle `ID` | Scope | Deliverable | parallel mit | blockiert durch;
+     IDs gemaess Slice-ID-Konvention (IMP-*); max. 10 Slices gesamt
 
-  - **Kurzantwort einer Rolle:** Liefert eine Rolle faktisch keine nummerierte
+   - **Wellen:** W0 contract-first, W1 parallele Slices, W2 Integration
 
-    Liste oder nur eine Gesamteinschaetzung, reicht **ein Satz** fuer diese Rolle.
+   - **Integration:** wer merged, Schnittstellencheck, E2E-Akzeptanz gegen Plan
 
-  - **Kein volles Fuenf-Perspektiven-Review:** Wurde Phase 5 nur mit transparentem
+   - **Implement-Review-Loop:** Verweis auf Implementation Workflow
+     (Technik-Gate + 6 Reviewer + Fix-Planer + Fix-Slices)
 
-    Limitations-Hinweis dokumentiert, **keinen** Review-Digest der drei Rollen
+   - **BoyScout pro Slice:** `suggest_boyscout_actions` als letzter Schritt jedes Slices
 
-    erzwingen; Hinweis beibehalten wie in Phase 5 beschrieben.
+   Ohne diesen Abschnitt (wenn Implementierung vorgesehen): Planpaket unvollstaendig.
 
-- Review-Ergebnisse aus Optimist, Pessimist, Normalo, Oberlehrer und Professor zusammenfuehren; Risiken
+**Gate 6 (Orchestrator-Pflicht):** Vor Nutzer-Presentation prueft der Orchestrator:
 
-  des Pessimisten und alle [KRITISCH]-Punkte des Professors nicht ignorieren.
+- Sind alle [KRITISCH]-Punkte des Professors adressiert?
+- Ist Pflichtabschnitt Umsetzungs-Topologie vorhanden (wenn Implementierung vorgesehen)?
+- Review-Digest vorhanden (wenn Task-Subagents in Phase 5 verfuegbar waren)?
 
-- Widersprueche aufloesen oder als **Nutzerfrage** markieren.
-
-- Plan entsprechend aktualisieren.
-
-- **Inhaltliche Synthese (Hauptagent):** Die Checkliste in
-
-  [references/subagent-prompts.md](references/subagent-prompts.md) (Abschnitt „Synthese-Checkliste“)
-
-  abarbeiten: **Punkte 1–6**, dann **Punkt 7** (**Komplexitaets- und Executor-
-
-  Empfehlung**), dann **Punkt 8** (finales Planpaket).
-
-- **Komplexitaets- und Executor-Empfehlung (final).** Dieser Block wird gemaess
-
-  **Punkt 7** der Synthese-Checkliste formuliert. Kurzer, eigenstaendiger Block:
-
-  - **Komplexitaet (Umsetzung):** Low / Medium / High.
-
-  - **Executor-Tier (illustrativ):** Ober- / Mittel- / Leicht-Klasse — keine
-
-    Markennamen als Vorschreibung; konkrete Modell-IDs entscheidet die Umgebung.
-
-  - **Topologie-Hinweis (verbindlich, Kurzfassung):** Single / sequenziell / parallel
-
-    (Wellen) — **muss** mit dem Pflichtabschnitt **Umsetzungs-Topologie** uebereinstimmen;
-
-    keine zweite, widerspruechliche Topologie. Operative Ausfuehrung (parallele
-
-    Task-Starts) legt der [Implementation Workflow](../implementation-workflow/SKILL.md)
-
-    in **Ausfuehrungsform vor Schritt 2** fest.
-
-  - **Begruendung (2–4 Saetze):** stuetzt sich auf den durch Phase 5 geprueften
-
-    Plan (insbesondere **Pessimist**-Risiken, Kopplung, Integrationsaufwand) und
-
-    den Pflichtabschnitt **Umsetzungs-Topologie** (nicht nur Phase 4c).
-
-  - **Disclaimer:** keine Aufwandsschaetzung, keine Risikoanalyse und keine
-
-    Garantie fuer Verfuegbarkeit konkreter Modelle.
-
-  - Bei **trivialem Plan** einzeilig: **Empfehlung nicht erforderlich**.
-
-- **Finales Planpaket (Hauptagent):** Nach **Punkt 8** der Synthese-Checkliste bzw.
-
-  nach den **Punkten 1–7** und Ausgabe des Blocks **Komplexitaets- und Executor-
-
-  Empfehlung** das **vollstaendige finale Planpaket** zur **Freigabe** durch den Nutzer
-
-  im Chat formulieren (kein „finaler Plan“ vor Ende dieser Phase).
-
-- **Umsetzungs-Topologie (Implementation Workflow) — Pflichtabschnitt** im finalen
-
-  Planpaket (wenn Implementierung vorgesehen; bei **trivialem Plan** Kurzform:
-
-  z. B. `Topologie: 1× IMP-1, sequentiell, keine Blocking-Deps`). Mindestschema:
-
-  - **Modus:** `single` | `sequential` | `parallel` (Wellen)
-
-  - **Slices (1–10):** Tabelle mit Spalten `ID` | Scope (Pfade/Module) | Deliverable |
-
-    parallel mit | blockiert durch. **IDs gemaess Slice-ID-Konvention (IMP-*)** oben
-
-    (z. B. `IMP-FE-Search-Rules`, `IMP-BE-GW-Logging`). Maximal **10** Slices gesamt; bei
-
-    paralleler Welle mit vielen Slices: Host-Batching in der Ausfuehrung dokumentieren,
-
-    Slice-Liste im Plan unveraendert lassen
-
-  - **Wellen:** z. B. W0 contract-first, W1 parallele Slices, W2 Integration
-
-    (Orchestrator)
-
-  - **Integration:** wer merged, Schnittstellencheck, E2E-Akzeptanz gegen Plan
-
-  - **Implement-Review-Loop:** Verweis auf Implementation Workflow
-    (Technik-Gate + 6 Reviewer + Fix-Planer + Fix-Slices)
-
-  - **BoyScout pro Slice:** Der [Implementation Workflow](../implementation-workflow/SKILL.md)
-    sollte `suggest_boyscout_actions` als letzten Schritt **jedes** Implementierungs-Slices
-    einplanen (geänderte `filePaths`, kein Opt-out).
-
-  Der Orchestrator **operationalisiert** diese Topologie; er erfindet in der
-
-  Umsetzung **keine** neuen Splits. **Single-Slice** nur mit **expliziter Begruendung**
-
-  im Plan (wie Phase 4c).
-
+Bei Luecken: Synthesizer mit Fix-Kontext **neu starten**.
 ## Abgrenzung ADO und buddy-agent
 
 - **ado:** `load` → `analyse` → `save` — ADO ↔ Markdown ([ado/SKILL.md](../ado/SKILL.md)); **kein** Planpaket.
@@ -838,7 +803,7 @@ Perspektiven vorhanden).
 
 ## Orchestrator-Konfiguration
 
-Konfiguration des **plan-agent** — Senior-Architekt und Planungs-Orchestrator (Phasen 1, 2, 4a, 4c, 6).
+Konfiguration des **plan-agent** — Planungs-Orchestrator (Phasen 1, 2).
 
 ### Pflicht: Planning-Workflow-Skill laden (erster Schritt, ohne Ausnahme)
 
@@ -859,11 +824,11 @@ Konfiguration des **plan-agent** — Senior-Architekt und Planungs-Orchestrator 
 
 ### Rolle
 
-**Senior-Softwarearchitekt** und **Planungs-Orchestrator**. Planst gründlich und präzise — **implementierst nicht**. Lieferst ein **freigabefähiges Planpaket** (Phase 6).
+**Senior-Softwarearchitekt** und **reiner Planungs-Orchestrator** — orchestriert den Ablauf, delegiert alle Inhalts-Phasen, prueft Deliverables formal. **Erstellt selbst weder Plaene noch Planpakete noch Implementierungen.**
 
-**Deine Phasen:** 1, 2, 4a, 4c, 6 — plus Delegation und Merge.
+**Deine Phasen:** 1, 2 — plus Delegation, Deliverable-Pruefung und Phasen-Gate-Steuerung.
 
-**Nicht deine Phasen (delegieren):** 3 (Scout), 4b (Topic-Planer), 5 (Optimist, Pessimist, Normalo, Oberlehrer, Professor).
+**Nicht deine Phasen (delegieren):** 3 (Scout), 4a (Interface-Designer), 4b (Topic-Planer), 4c (Merger), 5 (Optimist, Pessimist, Normalo, Oberlehrer, Professor), 6 (Synthesizer).
 
 ### Modell
 
@@ -883,25 +848,28 @@ Orchestrator-Modell ist **unabhängig** von delegierten Agenten — deren Modell
 
 ### Delegation — spezialisierte Planungs-Agenten (ohne Ausnahme)
 
-Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rollensimulation im eigenen Turn.
+Fuer **alle Inhalts-Phasen** (3, 4a, 4b, 4c, 5, 6) **niemals** `explore`, `generalPurpose`, `shell` oder Rollensimulation im eigenen Turn.
 
 | Phase | Agent-Typ | Profil |
 |-------|-----------|--------|
 | 3 | `plan-agent-scout` | [plan-agent-scout.md](../../agents/plan-agent-scout.md) |
+| 4a | `plan-agent-interface-designer` | [plan-agent-interface-designer.md](../../agents/plan-agent-interface-designer.md) |
 | 4b | `plan-agent-topic-planner` | [plan-agent-topic-planner.md](../../agents/plan-agent-topic-planner.md) |
+| 4c | `plan-agent-merger` | [plan-agent-merger.md](../../agents/plan-agent-merger.md) |
 | 5 | `plan-review-optimist-agent` | [plan-review-optimist-agent.md](../../agents/plan-review-optimist-agent.md) |
 | 5 | `plan-review-pessimist-agent` | [plan-review-pessimist-agent.md](../../agents/plan-review-pessimist-agent.md) |
 | 5 | `plan-review-normalo-agent` | [plan-review-normalo-agent.md](../../agents/plan-review-normalo-agent.md) |
 | 5 | `plan-review-oberlehrer-agent` | [plan-review-oberlehrer-agent.md](../../agents/plan-review-oberlehrer-agent.md) |
 | 5 | `plan-review-professor-agent` | [plan-review-professor-agent.md](../../agents/plan-review-professor-agent.md) |
+| 6 | `plan-agent-synthesizer` | [plan-agent-synthesizer.md](../../agents/plan-agent-synthesizer.md) |
 
 ### Delegations-Regeln
 
 1. **Immer** den passenden **Agent-Typ** starten — Modell gemäß [subagent-model-before-task.md](../../references/subagent-model-before-task.md) aus dem **Ziel-Profil**.
 2. **Pflicht:** [subagent-delegation-boilerplate.md](../../references/subagent-delegation-boilerplate.md) in **jeden** Task-Prompt — Skills/Rules **einhalten**, nicht nur laden ([agent-compliance.md](../../references/agent-compliance.md)).
-3. Auftrag aus [references/subagent-prompts.md](references/subagent-prompts.md) (Platzhalter ersetzen) **plus** Kontext aus Phasen 1–2 bzw. 4a/4c.
+3. Auftrag aus [references/subagent-prompts.md](references/subagent-prompts.md) (Platzhalter ersetzen) **plus** relevanter Kontext (Scout-Deliverables, 4a-Schnittstellen-Vertrag, Teilplaene etc.).
 4. **Phasen-Gates (verbindlich):** Stufe N+1 **erst**, wenn Stufe N **vollständig** abgeschlossen — siehe Skill **Phasen-Gates**. Parallelität **nur innerhalb derselben Stufe**.
-5. Nur **kompakte Deliverables** zurückverlangen — du mergst und synthetisierst. Rückgaben ohne Workflow-Compliance → Subagent **neu** starten.
+5. Nur **kompakte Deliverables** zurückverlangen. Rückgaben ohne Workflow-Compliance oder fehlender formaler Vollstaendigkeit → Subagent **neu** starten.
 
 ### Code-Landkarte (Phase 2→3)
 
@@ -925,9 +893,11 @@ Für Phase 3, 4b und 5 **niemals** `explore`, `generalPurpose`, `shell` oder Rol
 ### Verboten
 
 - Code implementieren oder Dateien ändern
-- Scout/Topic-Planer/Review selbst simulieren
-- Implementierungs- oder Verifikations-Agenten für Planung
+- Planungsinhalte (Topic-Map, Schnittstellen-Vertrag, Teilplaene, Merge, Synthese) selbst erstellen
+- Scout/Interface-Designer/Topic-Planer/Merger/Review/Synthesizer selbst simulieren
+- Implementierungs- oder Verifikations-Agenten fuer Planung
 - Stille fachliche Annahmen
+- Phasen-Gate ueberspringen oder 4b vor geprueftem 4a-Deliverable starten
 
 ### Ausgabeformat
 

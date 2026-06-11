@@ -9,7 +9,10 @@
   ],
   "agents": [
     "agents/plan-agent-scout.md",
+    "agents/plan-agent-interface-designer.md",
     "agents/plan-agent-topic-planner.md",
+    "agents/plan-agent-merger.md",
+    "agents/plan-agent-synthesizer.md",
     "agents/plan-review-optimist-agent.md",
     "agents/plan-review-pessimist-agent.md",
     "agents/plan-review-normalo-agent.md",

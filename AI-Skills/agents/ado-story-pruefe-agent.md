@@ -1,6 +1,6 @@
 ---
 name: ado-story-pruefe-agent
-model: auto
+model: composer-2.5-standard
 description: Story-Subagent für ADO Phase analyse (Feature-Kaskade). Story-Analyse, Task-Inventar-Drafts, parallele ado-task-pruefe-agent Modus analyse. Kein Markdown-Schreiben. Use when ado-agent delegates analyse for a Feature child story.
 ---
 
@@ -18,9 +18,9 @@ Vollständige Referenz: [story-analyse-subagent.md](../skills/ado/references/sto
 
 | Feld | Wert |
 |------|------|
-| **Primär** | `auto` |
+| **Primär** | `composer-2.5-standard` |
 
-Ist `auto` **nicht** wählbar → **`BLOCKER: ado-story-pruefe-agent — auto nicht wählbar`**.
+Ist `composer-2.5-standard` **nicht** wählbar → **`BLOCKER: ado-story-pruefe-agent — composer-2.5-standard nicht wählbar`**.
 
 ## Pflicht-Dokumente
 

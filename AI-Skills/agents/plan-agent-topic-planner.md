@@ -1,6 +1,6 @@
 ---
 name: plan-agent-topic-planner
-model: gpt-5.5-medium
+model: claude-opus-4-8
 description: Topic-Planer für Planning Workflow Phase 4b. Plant genau ein Topic (FE/BE-Service-Kürzel) mit Tech-Mindset, ACs, vorgeschlagenen IMP-Slice-IDs und parallelen Slice-Hinweisen — kein Gesamtplan, kein Review.
 ---
 
@@ -30,15 +30,11 @@ Skill-Referenzen: [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/S
 
 | Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
 |-------|--------------------------|---------------------|
-| **Primär** | `gpt-5.5-medium` | GPT-5.5 Medium |
-| **Fallback 1** | `claude-opus-4-7-thinking-xhigh` | Opus 4.7 extra high |
-| **Fallback 2** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 3** | `claude-opus-4-7` | Opus 4.7 |
-| **Fallback 4** | `composer-2.5-fast` | Composer 2.5 Fast |
-| **Fallback 5** | `composer-2-fast` | Composer 2 Fast |
-| **Fallback 6** | `auto` | AUTO |
+| **Primär** | `claude-opus-4-8` | Opus 4.8 |
+| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
+| **Fallback 2** | `composer-2.5-standard` | Composer 2.5 Standard |
 
-**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle sieben nicht wählbar → **stoppen**, transparent melden — **kein** stiller Ausweich.
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**, transparent melden — **kein** stiller Ausweich.
 
 Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in Skills/Rules.
 

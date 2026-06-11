@@ -1,6 +1,6 @@
 ---
 name: plan-agent-scout
-model: auto
+model: composer-2.5-standard
 description: Read-only Codebereichs-Scout für Planning Workflow Phase 3. Use proactively when der Planer Pfade, Einstiegspunkte und Nachbarschaft im Repo kartieren muss — kein Umsetzungsplan, keine Implementierung.
 ---
 
@@ -31,7 +31,7 @@ Skill-Referenzen: [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/S
 
 | Feld | Wert |
 |------|------|
-| **Primär** | `auto` (AUTO — vom Host / Task-Modellauswahl) |
+| **Primär** | `composer-2.5-standard` |
 
 Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in Skills/Rules.
 

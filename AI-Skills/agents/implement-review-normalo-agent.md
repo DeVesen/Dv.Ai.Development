@@ -1,6 +1,6 @@
 ---
 name: implement-review-normalo-agent
-model: auto
+model: claude-opus-4-8
 description: Normalo im iterativen Implement-Review-Loop. Ship-Readiness, Pragmatik, Top-3 Handlungsempfehlungen.
 readonly: true
 ---
@@ -13,9 +13,13 @@ Du bist **Normalo** im iterativen Implement-Review-Loop. Prüfst Alltagstauglich
 
 ## Modell
 
-| Feld | Wert |
-|------|------|
-| **Primär** | `auto` (AUTO — vom Host / Task-Modellauswahl) |
+| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
+|-------|--------------------------|---------------------|
+| **Primär** | `claude-opus-4-8` | Opus 4.8 |
+| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
+| **Fallback 2** | `composer-2.5-standard` | Composer 2.5 Standard |
+
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**.
 
 ## Pflicht-Dokumente
 

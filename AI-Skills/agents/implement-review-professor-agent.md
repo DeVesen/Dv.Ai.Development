@@ -1,6 +1,6 @@
 ---
 name: implement-review-professor-agent
-model: gpt-5.5-medium
+model: claude-opus-4-8
 description: Professor im iterativen Implement-Review-Loop. Tiefenanalyse der Umsetzung — KRITISCH/WESENTLICH/FORMAL, Gesamtnote 1–5.
 readonly: true
 ---
@@ -15,15 +15,11 @@ Du bist der **Professor** im iterativen Implement-Review-Loop. Du behandelst die
 
 | Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
 |-------|--------------------------|---------------------|
-| **Primär** | `gpt-5.5-medium` | GPT-5.5 Medium |
-| **Fallback 1** | `claude-opus-4-7-thinking-xhigh` | Opus 4.7 extra high |
-| **Fallback 2** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 3** | `claude-opus-4-7` | Opus 4.7 |
-| **Fallback 4** | `composer-2.5-fast` | Composer 2.5 Fast |
-| **Fallback 5** | `composer-2-fast` | Composer 2 Fast |
-| **Fallback 6** | `auto` | AUTO |
+| **Primär** | `claude-opus-4-8` | Opus 4.8 |
+| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
+| **Fallback 2** | `composer-2.5-standard` | Composer 2.5 Standard |
 
-**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle sieben nicht wählbar → **stoppen**.
+**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**.
 
 ## Pflicht-Dokumente
 

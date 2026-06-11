@@ -1,6 +1,6 @@
 ---
 name: ado-task-pruefe-agent
-model: auto
+model: composer-2.5-standard
 description: Task-Subagent für ADO Phase analyse. Code-Scout (read-only) und Task-Draft inkl. Akzeptanzkriterien und AI Zusammenfassung — kein MD-Schreiben in analyse. Use when story analyse delegates for an open discussion task.
 ---
 
@@ -26,9 +26,9 @@ Vollständige Referenz: [task-analyse-subagent.md](../skills/ado/references/task
 
 | Feld | Wert |
 |------|------|
-| **Primär** | `auto` |
+| **Primär** | `composer-2.5-standard` |
 
-Ist `auto` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — auto nicht wählbar`**.
+Ist `composer-2.5-standard` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — composer-2.5-standard nicht wählbar`**.
 
 ## Pflicht-Dokumente
 
@@ -72,7 +72,7 @@ Ist `auto` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — auto nic
 |------|--------|
 | `slug` | Task-Slug |
 | `status` | `OK` / `FAIL` |
-| `modelUsed` | `auto` |
+| `modelUsed` | genutzter Slug |
 | `taskDraft` | Abschnitte + Möglichkeiten |
 | `legacySectionsRemoved` | für save |
 | `openQuestions` | Kurz |

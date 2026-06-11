@@ -1,10 +1,11 @@
 ---
 name: build-log-filter
 description: >
-  Kanon für MCP build-log-filter: Build-/Test-Logs verdichten (filter_output,
-  filter_output_stream, analyze_build_output). Trigger: ng build/test, dotnet build/test,
-  Verifikation, Build-Log analysieren. tool_type-Mapping DotnetBuild/NgTest etc.
-  Prozess-Pflicht (Matrix, Hard Stop) in Rule build-log-filter.mdc — nicht hier.
+  Kanon für MCP build-log-filter: Shell-Build-/Test-Logs verdichten (filter_output,
+  filter_output_stream, analyze_build_output). AUSSER SCOPE: ng build/test und dotnet
+  build/test laufen via dev-angular-mcp / dev-dotnet-mcp (MCPs filtern intern).
+  build-log-filter nur für ng serve, npm start und Shell-Fallback nach BLOCKER-Freigabe.
+  tool_type-Mapping DotnetBuild/NgTest etc. Prozess-Pflicht in Rule build-log-filter.mdc.
 disable-model-invocation: true
 ---
 
@@ -81,8 +82,18 @@ Letzter Chunk derselben `session_id`: `"is_final": true`.
 | Leeres/kurzes `raw` | Nicht vollständiges Capture | Temp-Capture ungekürzt übergeben |
 | Falscher `tool_type` | Mapping verwechselt | Tabelle oben |
 
+## Außer Scope — MCP-First
+
+`ng build`, `ng test`, `dotnet build`, `dotnet test` laufen via **dev-angular-mcp** / **dev-dotnet-mcp**. Diese MCPs filtern intern und liefern `errors[]`, `warnings[]`, `summary` — **kein** `filter_output` für MCP-Läufe.
+
+**build-log-filter gilt nur für:**
+- `ng serve`, `npm start` (Dev-Server — kein MCP)
+- Shell-Fallback nach expliziter BLOCKER-Freigabe (`BLOCKER: dev-angular-mcp / dev-dotnet-mcp nicht erreichbar`)
+
 ## Abgrenzung
 
+- **dev-angular-mcp** `build_angular_project` / `test_angular_project`: ng Build + Test (MCP-First — ersetzt build-log-filter für diese Kommandos)
+- **dev-dotnet-mcp** `build_dotnet_solution` / `test_dotnet_solution`: dotnet Build + Test (MCP-First)
 - **codebase-analyzer** `analyze_compiler_diagnostics`: Compiler ohne Shell-Build
 - **Prozess-Gate:** Rule `build-log-filter.mdc` (`alwaysApply`)
 

@@ -1,22 +1,40 @@
 ---
-description: Dev Tooling MCP — Router + Kanon-Skills für filesystem/angular/dotnet. Bei *.cs/*.ts und Signaturen/Methode/Glob vor vollem Read. Nicht für Index/Review (codebase-analyzer).
+description: Dev Tooling MCP — Router + Kanon-Skills für filesystem/angular/dotnet. Bei *.cs/*.ts und Signaturen/Methode/Glob vor vollem Read. Nicht für Index/Review (codebase-analyzer). VERBOTEN: ng build / ng test / dotnet build / dotnet test als Shell — immer MCP.
 globs: *.cs,*.ts
 alwaysApply: false
 ---
 
 # Dev Tooling MCP
 
-**Trigger:** Datei/Klasse/Methode verstehen, `find_file`, `read_signatures_only`, `scaffold_angular`, `scaffold_dotnet`, Scaffolding.
+**Trigger:** Datei/Klasse/Methode verstehen, `find_file`, `read_signatures_only`, `scaffold_angular`, `scaffold_dotnet`, Scaffolding, Build, Test, `ng build`, `ng test`, `dotnet build`, `dotnet test`.
 
 **Router:** [dev-tooling-mcp/SKILL.md](../skills/dev-tooling-mcp/SKILL.md)
 
 ## Kanon-Skills (Parameter + JSON)
 
-| Situation | Skill laden |
-|-----------|-------------|
-| Lesen/Suchen unter `/project/...` | [dev-filesystem-mcp/SKILL.md](../skills/dev-filesystem-mcp/SKILL.md) |
-| Angular `ng generate` | [dev-angular-mcp/SKILL.md](../skills/dev-angular-mcp/SKILL.md) |
-| `dotnet new` / Ordnerstruktur | [dev-dotnet-mcp/SKILL.md](../skills/dev-dotnet-mcp/SKILL.md) |
-| Review, Index, Komplexität | **codebase-analyzer** — [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md) |
+| Situation | Tool | Skill laden |
+|-----------|------|-------------|
+| Lesen/Suchen unter `/project/...` | dev-filesystem-mcp | [dev-filesystem-mcp/SKILL.md](../skills/dev-filesystem-mcp/SKILL.md) |
+| Angular `ng generate` | `scaffold_angular_component` / `scaffold_angular_service` | [dev-angular-mcp/SKILL.md](../skills/dev-angular-mcp/SKILL.md) |
+| Angular **Build** | `build_angular_project` (dev-angular-mcp) | [dev-angular-mcp/SKILL.md](../skills/dev-angular-mcp/SKILL.md) |
+| Angular **Test** | `test_angular_project` (dev-angular-mcp) | [dev-angular-mcp/SKILL.md](../skills/dev-angular-mcp/SKILL.md) |
+| `dotnet new` / Ordnerstruktur | `scaffold_dotnet_project` / `create_directory_structure` | [dev-dotnet-mcp/SKILL.md](../skills/dev-dotnet-mcp/SKILL.md) |
+| .NET **Build** | `build_dotnet_solution` (dev-dotnet-mcp) | [dev-dotnet-mcp/SKILL.md](../skills/dev-dotnet-mcp/SKILL.md) |
+| .NET **Test** | `test_dotnet_solution` (dev-dotnet-mcp) | [dev-dotnet-mcp/SKILL.md](../skills/dev-dotnet-mcp/SKILL.md) |
+| Review, Index, Komplexität | **codebase-analyzer** | [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md) |
 
-**Pflicht:** Tool-Schema aus `mcps/<server>/tools/*.json` lesen, dann aufrufen — keine geratenen Keys (`path` vs `file_path` vs `filePath`).
+## VERBOTEN — Hard Stop
+
+**`ng build` / `ng test` / `dotnet build` / `dotnet test` niemals als Shell-Kommando** wenn MCPs verfügbar.
+
+| Falsch | Richtig |
+|--------|---------|
+| Shell: `ng build` | `build_angular_project` via dev-angular-mcp |
+| Shell: `ng test` | `test_angular_project` via dev-angular-mcp |
+| Shell: `dotnet build` | `build_dotnet_solution` via dev-dotnet-mcp |
+| Shell: `dotnet test` | `test_dotnet_solution` via dev-dotnet-mcp |
+| `build-log-filter` für Build/Test | MCPs filtern intern — `errors[]` direkt auswerten |
+
+**Wenn MCP nicht erreichbar:** `BLOCKER: [dev-angular-mcp | dev-dotnet-mcp] nicht erreichbar` melden — **kein** stiller Shell-Fallback ohne explizite Nutzerfreigabe.
+
+**Pflicht:** Tool-Schema aus `mcps/<server>/tools/*.json` lesen, dann aufrufen — keine geratenen Keys.

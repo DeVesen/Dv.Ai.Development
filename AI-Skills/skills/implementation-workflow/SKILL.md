@@ -17,41 +17,43 @@ disable-model-invocation: true
 
 # Implementation Workflow
 
-## ⚠️ build-log-filter Anti-Shortcut-Regel (höchste Priorität, ohne Ausnahme)
+## ⚠️ MCP-First Build/Test — Anti-Shortcut-Regel (höchste Priorität, ohne Ausnahme)
 
-**Kein Test-Lauf ist zu trivial für die build-log-filter-MCP-Kette.**
+**Kein Build- oder Test-Lauf wird als Shell-Kommando ausgeführt — immer MCP.**
 
-Für jeden `dotnet test`, `dotnet build`, `ng build`, `ng test`, `npm test`, `npm run build`-Lauf gilt **ohne Ausnahme**:
+| Aufgabe | MCP-Tool | MCP-Server | VERBOTEN |
+|---------|----------|-----------|---------|
+| Angular Build | `build_angular_project` | dev-angular-mcp | Shell `ng build` |
+| Angular Test | `test_angular_project` | dev-angular-mcp | Shell `ng test` |
+| .NET Build | `build_dotnet_solution` | dev-dotnet-mcp | Shell `dotnet build` |
+| .NET Test | `test_dotnet_solution` | dev-dotnet-mcp | Shell `dotnet test` |
 
-1. Shell ausführen → Exit-Code festhalten
-2. Vollständiges Capture (z. B. Tee-Object oder Redirect)
-3. **Sofort danach:** `filter_output` (oder bei langen Logs `filter_output_stream`) mit `tool_type: DotnetTest` / `DotnetBuild` / `NgBuild` etc. und vollständigem Capture-Inhalt
-4. Bei Exit ≠ 0 zusätzlich: `analyze_build_output`
-5. Diagnose / „verifiziert" / „grün" **nur** aus intern gelesenem MCP-Ergebnis ableiten — **nie** aus Roh-Shell-Output
-6. Sichtbare Zeile im Chat: `„Rufe build-log-filter [filter_output|analyze_build_output] …"` **vor** jedem MCP-Call
-7. Verifikations-Matrix (eine Zeile pro Lauf) in der Rückgabe
+**Für jeden Build-/Test-Lauf gilt ohne Ausnahme:**
 
-**„7/7 Passed" oder „Build succeeded" aus dem Terminal ist kein Verifikationsnachweis.**
-Der Abschluss „verifiziert" darf **nicht** ausgesprochen werden ohne vollständige MCP-Kette + Verifikations-Matrix.
+1. MCP-Tool aufrufen (`build_angular_project` / `test_angular_project` / `build_dotnet_solution` / `test_dotnet_solution`)
+2. Response lesen: `errors[]`, `warnings[]`, `summary`, `success`
+3. Diagnose / „verifiziert" / „grün" **nur** aus MCP-Ergebnis — **nie** aus Shell-Output
+4. MCP-Lauf in der Rückgabe dokumentieren (MCP-Tool, `success`, Fehleranzahl)
+
+**„Build succeeded" aus dem Terminal ist kein Verifikationsnachweis.** Nur MCP-`success: true` gilt.
 
 **Wenn MCP nicht erreichbar:** Sofort **Hard Stop** ausgeben:
-`„⚠️ BLOCKER: build-log-filter nicht erreichbar — kein Build/Test-Lauf starten."`
-Kein Ausweichen auf Raw-Console-Diagnose.
+`„⚠️ BLOCKER: [dev-angular-mcp | dev-dotnet-mcp] nicht erreichbar — kein Build/Test-Lauf starten."`
+Kein stiller Shell-Fallback; kein Ausweichen auf build-log-filter ohne explizite Nutzerfreigabe.
 
 **Kein Opt-out** (außer explizitem User-Text im Thread für Opt-out B/C/D gemäß `{verification-commands}`).
 
 ## Transparenz-Pflicht vor jedem Build/Test-Lauf
 
-**Vor jedem** Build- oder Test-Kommando gibt der ausführende Agent im Chat aus:
+**Vor jedem** Build- oder Test-Lauf gibt der ausführende Agent im Chat aus:
 
 ```
-„Führe jetzt [dotnet test / dotnet build / ng build / …] aus.
-Danach: Rufe build-log-filter filter_output (tool_type: [DotnetTest/DotnetBuild/…]) auf."
+„Führe jetzt Build/Test via [build_angular_project | test_angular_project | build_dotnet_solution | test_dotnet_solution] aus."
 ```
 
-**Wenn dieser Satz nicht ausgegeben werden kann, weil der Agent das MCP-Call überspringen will:**
+**Wenn dieser Satz nicht ausgegeben werden kann, weil der Agent Shell statt MCP verwenden will:**
 → **STOPP.** Ausgabe im Chat:
-`„⚠️ build-log-filter-Pflicht verletzt: [Kommando] ohne MCP-Kette. Nicht regelkonform."`
+`„⚠️ MCP-First-Pflicht verletzt: [Kommando] ohne MCP-Aufruf. Nicht regelkonform."`
 
 Kein stilles Ausführen. Kein „ich leite aus der Shell-Ausgabe ab".
 
@@ -245,7 +247,8 @@ All implementation edits are performed only by **1–10** **`implement-agent`** 
 1. With Ausführungsform aligned, execute via the documented **execution topology**.
 
 2. **Implementierungs-Subagents — strikt:** each agent implements **only** its assigned slice from
-the plan; **no** scope expansion, **no** silent replanning. **Build/Test (slice-scoped):** **allowed** per [implement-agent](#orchestrator-konfiguration) — `dotnet build`, `dotnet test`, `ng build`, `npm run build`, `ng test`, `npm test` — **build-log-filter mandatory on every such run** (see [⚠️ build-log-filter Anti-Shortcut-Regel](#️-build-log-filter-anti-shortcut-regel-höchste-priorität-ohne-ausnahme)). **Not** stack-wide Technik-Gate (that is **Schritt 3**).
+   the plan; **no** scope expansion, **no** silent replanning, **no** product or design decisions beyond what the plan already fixes.
+   **Build/Test (slice-scoped):** **via MCP** per [implement-agent](SKILL.md#orchestrator-konfiguration) — `build_dotnet_solution` / `test_dotnet_solution` (dev-dotnet-mcp), `build_angular_project` / `test_angular_project` (dev-angular-mcp) und unit tests **for the assigned slice**. **VERBOTEN:** Shell-Ausführung von `ng build` / `ng test` / `dotnet build` / `dotnet test` ohne BLOCKER-Nachweis. **Not** stack-wide Technik-Gate (that is **Schritt 3** after integration).
 
 3. **Agent-Typ (Implementierung):** **`implement-agent`** — Modell gemäß `subagent-model-before-task.md`.
 
@@ -266,18 +269,22 @@ implementation subagents, boundaries taken **from the plan**, and whether execut
 
 7. The initial agent remains orchestrator: subagent output is **not** done until the **integration checkpoint** and **Schritt 3** pass.
 
-### Build/Test + build-log-filter (kurz — gilt überall)
+### Build/Test — MCP-Pflicht (kurz — gilt überall)
 
-**Kanon (keine zweite Liste):** `.cursor/rules/build-log-filter.mdc` — **Ausführungs-Checkliste (pro Build-/Test-Lauf)** Schritte **1–8** und **Interpretationspflicht (verbindlich)**. **Gilt** für **`implement-agent`** (slice build/test), **Technik-Gate** (Schritt 3), **`implement-fix-planner-agent`** (Diagnose-Läufe) und den **initialen Agenten** nur bei dokumentierter Host-Limitation.
+**Angular und .NET Build/Test ausschließlich via MCP** — Shell-Kommandos sind verboten:
 
-- Pro Lauf: Shell → vollständiges Capture → **build-log-filter (Pflicht)** → **intern lesen** → Kurzprosa + Shell-Exit (**kein** MCP-Body, **kein** Roh-Log ans LLM).
-- **Ankündigung (Pflicht):** Vor jedem MCP: `„Rufe build-log-filter …"` sichtbar im Chat.
-- **Stilles Überspringen verboten:** Kein Agent darf Build/Test-Ergebnisse aus Roh-Shell-Output ableiten und als „verifiziert" markieren — auch nicht wenn Exit 0 und Passed-Zeilen sichtbar sind.
-- **Unklare verdichtete Ausgabe:** Agent **informiert den Nutzer**, dass build-log-filter nachgeschärft werden soll — **nicht** aus Roh-Konsole raten.
-- **Interpretationspflicht:** inhaltliche Diagnose/Freigabe **nur** aus intern gelesenem MCP; **OK/FAIL** aus Shell-Exit; **kein** Kurz-`raw`, **kein** Terminal-Datei-Ersatz (`terminals/*.txt`).
-- **MCP nicht erreichbar:** Sofort **Hard Stop** (`BLOCKER: build-log-filter nicht erreichbar`) — **kein** Ausweichen auf Raw-Console.
+| Stack | VERBOTEN | Richtig |
+|-------|----------|---------|
+| Angular Build | Shell `ng build` | `build_angular_project` (dev-angular-mcp) |
+| Angular Test | Shell `ng test` | `test_angular_project` (dev-angular-mcp) |
+| .NET Build | Shell `dotnet build` | `build_dotnet_solution` (dev-dotnet-mcp) |
+| .NET Test | Shell `dotnet test` | `test_dotnet_solution` (dev-dotnet-mcp) |
 
-**Vor Technik-Gate (Orchestrator):** Wenn MCP bei applicable Kommando **nicht** erreichbar ist → sofort **Hard Stop**, **keine** Technik-Gate-/Review-Subagents starten.
+**Pro MCP-Lauf:** Tool aufrufen → `errors[]` / `warnings[]` / `summary` lesen → Kurzprosa (**kein** Roh-Log ans LLM, **kein** build-log-filter für diese Kommandos).
+
+**Hard Stop — MCP nicht erreichbar:** `BLOCKER: [dev-angular-mcp | dev-dotnet-mcp] nicht erreichbar` — **kein** stiller Shell-Fallback; Technik-Gate-/Review-Subagents **nicht** starten; erst nach expliziter Nutzerfreigabe Shell + build-log-filter als Fallback ([`{verification-commands}`]({verification-commands})).
+
+**Fallback (Shell nach BLOCKER-Freigabe):** Kanon [`.cursor/rules/build-log-filter.mdc`](../../rules/build-log-filter.mdc) — Ausführungs-Checkliste Schritte 1–8 + Interpretationspflicht.
 
 **Implementation subagents (Schritt 2):** **must not** perform **stack-wide Technik-Gate** during Schritt 2 — that is **Schritt 3** after the integration checkpoint.
 
@@ -437,32 +444,18 @@ Ist `auto` **nicht** wählbar → **stoppen**, transparent melden.
 
 ### Erlaubt — nur im Slice-Scope
 
-- **Build:** `dotnet build`, `ng build`, `npm run build`
-- **Test:** `dotnet test`, `ng test`, `npm test` — **slice-relevant**
+- **Build (MCP):** `build_dotnet_solution` (dev-dotnet-mcp), `build_angular_project` (dev-angular-mcp)
+- **Test (MCP):** `test_dotnet_solution` (dev-dotnet-mcp), `test_angular_project` (dev-angular-mcp) — **slice-relevant**
 - **Unit-Tests anlegen und ausführen**, die **deinen Slice** absichern
 - Minimale Fixes, damit **deine** Build-/Test-Läufe für den Slice grün werden
 
-### build-log-filter (verbindlich — kein Opt-out)
+**VERBOTEN:** Shell-Ausführung von `ng build` / `ng test` / `dotnet build` / `dotnet test` ohne BLOCKER-Nachweis.
 
-**Für jeden** `dotnet build`, `dotnet test`, `ng build`, `ng test`, `npm run build`, `npm test`-Lauf:
+### MCP-Build/Test-Pflicht (verbindlich)
 
-1. Kommando ausführen → Exit-Code festhalten
-2. Vollständiges Capture (Tee-Object oder Redirect in Temp-Datei)
-3. **Sofort:** `filter_output` (oder `filter_output_stream` bei langen Logs) mit vollständigem Capture-Inhalt
-4. Bei Exit ≠ 0 zusätzlich: `analyze_build_output`
-5. Diagnose **ausschließlich** aus intern gelesenem MCP-Ergebnis ableiten
-6. **Vor jedem MCP:** `„Rufe build-log-filter filter_output …"` sichtbar ausgeben
-7. Verifikations-Matrix-Zeile in die Rückgabe aufnehmen (eine Zeile pro Lauf)
+MCP aufrufen → `errors[]` / `warnings[]` / `summary` auswerten — kein Raw-Log, kein build-log-filter für diese Kommandos wenn MCP verfügbar.
 
-**Wenn MCP nicht erreichbar:** Sofort stoppen → `„BLOCKER: build-log-filter nicht erreichbar"` — **kein** Lauf ohne MCP, **kein** Ableiten aus Shell-Output.
-
-**Verboten:**
-- Build/Test-Ergebnis aus Roh-Shell-Output ableiten (auch bei Exit 0 / Passed-Zeilen)
-- „Grün" oder „verifiziert" ohne MCP-Kette ausgeben
-- `terminals/*.txt` als Capture-Ersatz
-- Stilles Überspringen mit Begründung „Ergebnis ist offensichtlich"
-
-Kanon via Pflicht-Schritt 2: `.cursor/rules/build-log-filter.mdc` — Schritte 1–8 und **Interpretationspflicht (verbindlich)**.
+**MCP nicht erreichbar:** **`BLOCKER: [dev-angular-mcp | dev-dotnet-mcp] nicht erreichbar`** — stoppen; kein Shell-Fallback ohne Nutzerfreigabe. Fallback mit Nutzerfreigabe: [`.cursor/rules/build-log-filter.mdc`](../../rules/build-log-filter.mdc) Schritte 1–8.
 
 ### Parallelität
 

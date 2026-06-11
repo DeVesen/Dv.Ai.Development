@@ -14,20 +14,39 @@ alwaysApply: true
 
 **Tool-Kanon (Parameter, `tool_type`, JSON):** [build-log-filter/SKILL.md](../skills/build-log-filter/SKILL.md)
 
+## MCP-FIRST — Außerhalb des Scopes dieser Rule (Hard Gate)
+
+**`ng build` / `ng test` / `dotnet build` / `dotnet test` laufen via MCP — nicht als Shell.**
+
+| Kommando | MCP-Tool | Server |
+|----------|----------|--------|
+| `ng build` | `build_angular_project` | dev-angular-mcp |
+| `ng test` | `test_angular_project` | dev-angular-mcp |
+| `dotnet build` | `build_dotnet_solution` | dev-dotnet-mcp |
+| `dotnet test` | `test_dotnet_solution` | dev-dotnet-mcp |
+
+**Diese Kommandos sind für build-log-filter außer Scope**, solange MCPs verfügbar: MCPs filtern intern und liefern `errors[]`, `warnings[]`, `summary`. Kein `filter_output` für MCP-Läufe.
+
+**Shell-Fallback (nur nach expliziter BLOCKER-Freigabe durch den Nutzer):** Wenn MCP nachweislich nicht erreichbar (`BLOCKER: [dev-angular-mcp | dev-dotnet-mcp] nicht erreichbar` gemeldet) und Nutzer explizit Shell freigegeben hat, gilt build-log-filter für diese Kommandos wie gewöhnlich.
+
+**VERBOTEN:** build-log-filter für `ng build` / `ng test` / `dotnet build` / `dotnet test` wenn MCPs verfügbar — auch nicht „zur Sicherheit“ oder „zusätzlich“.
+
+---
+
 ## Geltung
 
-Gilt, wenn du **Build-/Test-Verifikation** (z. B. gemäß [`verification-commands.md`](.cursor/references/verification-commands.md)) ausführst oder Konsolen-Output zu **`.NET`** oder **Angular** im Repo anfällt, insbesondere:
+Gilt, wenn du **Build-/Test-Verifikation** ausführst und Konsolen-Output via **Shell** anfällt — entweder im Shell-Fallback (nach BLOCKER-Freigabe für ng/dotnet) oder für Kommandos die grundsätzlich nicht via MCP laufen:
 
-**Backend (`{backend-path}` typisch):**
+**Backend — nur Shell-Fallback nach BLOCKER-Freigabe:**
 
 - `dotnet build` (inkl. einzelne `.csproj` / Solution, je nach Kommando)
 - `dotnet test`
 
-**Frontend (`{frontend-path}` typisch):**
+**Frontend — nur Shell-Fallback nach BLOCKER-Freigabe oder nicht-MCP-Scope:**
 
 - `ng build`, `ng build --configuration production` und gleichwertige Production-Builds
 - `ng test`, `npm test`
-- `ng serve`, `npm start` (Dev-Server, ggf. lange/streamende Logs)
+- `ng serve`, `npm start` (Dev-Server — läuft nie via MCP; gilt **immer**)
 
 **npm im Frontend:** `npm run build`, `npm run …` nur dann mit dem Angular-Mapping unten, wenn Arbeitsverzeichnis oder Script eindeutig das Frontend (`{frontend-path}`) ist.
 

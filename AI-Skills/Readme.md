@@ -11,7 +11,6 @@ AI-Skills/
 ├── references/               Geteilte Referenz-Dateien
 ├── mcp.json                  MCP-Server-Konfiguration
 ├── install-cursor-skills.ps1 Deploy-Skript (Windows/PowerShell)
-├── install-skill.sh          Deploy-Skript (Linux/macOS)
 └── update-cursor-skills.ps1  Update-Skript (Windows, manifest-basiert)
 ```
 
@@ -28,7 +27,10 @@ Spezialisierte Agent-Profile, die von Skills als Sub-Agents aufgerufen werden. J
 | Agent | Aufgabe |
 |-------|---------|
 | `plan-agent-scout.md` | Phase 3: Codebase-Scouting |
+| `plan-agent-interface-designer.md` | Phase 4a: Interface-Design |
 | `plan-agent-topic-planner.md` | Phase 4b: IMP-\*-Slices planen |
+| `plan-agent-merger.md` | Phase 4c: Slice-Pläne zusammenführen |
+| `plan-agent-synthesizer.md` | Phase 6: Plan-Synthese & Finalisierung |
 | `plan-review-pessimist-agent.md` | Risiko-Review (skeptisch) |
 | `plan-review-optimist-agent.md` | Risiko-Review (konstruktiv) |
 | `plan-review-normalo-agent.md` | Risiko-Review (pragmatisch) |
@@ -207,11 +209,6 @@ Die `mcp.json` enthält außerdem einen `ado`-Eintrag für Azure DevOps (`@azure
 
 # Update (manifest-basiert, entfernt veraltete Dateien)
 .\AI-Skills\update-cursor-skills.ps1 C:\project\.cursor C:\project\.claude
-```
-
-**Linux/macOS:**
-```bash
-./AI-Skills/install-skill.sh all /path/to/project/.cursor /path/to/project/.claude
 ```
 
 ---

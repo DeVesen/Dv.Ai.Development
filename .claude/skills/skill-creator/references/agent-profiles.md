@@ -1,7 +1,6 @@
 # Agent Profiles — Complete Reference
 
-Agent profiles are Markdown files with YAML frontmatter. One file can serve both Cursor and
-Claude Code when written with compatible fields (the dual-use pattern).
+Agent profiles are Markdown files with YAML frontmatter located in `.claude/agents/`.
 
 ---
 

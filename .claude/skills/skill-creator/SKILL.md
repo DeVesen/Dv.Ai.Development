@@ -1,16 +1,15 @@
 ---
 name: skill-creator
 description: >
-  Create, edit, and optimize AI workflow artifacts for Cursor and Claude Code: SKILL.md skill
-  files, Cursor .mdc rules (Always/Auto-Attached/Agent-Requested/Manual), and agent profiles
-  (.claude/agents/, .cursor/agents/). Produces token-dense descriptions, dual-platform agent
-  files, correct rule→agent wiring. Use proactively when creating any skill, rule, or agent;
-  improving or reviewing existing ones; running evals; or optimizing description triggering.
+  Create, edit, and optimize AI workflow artifacts for Claude Code: SKILL.md skill files and
+  agent profiles (.claude/agents/). Produces token-dense descriptions, correct agent wiring,
+  eval test cases, and description optimization. Use proactively when creating any skill or
+  agent; improving or reviewing existing ones; running evals; or optimizing description
+  triggering.
 when_to_use: >
-  Trigger: "create skill", "new rule", "mdc erstellen", "agent profil", "sub-agent",
-  "cursorrules", "skill verbessern", "description optimieren", "rules schreiben",
-  "agent-datei", ".cursor/rules", ".claude/agents", SKILL.md pasted for review/improvement.
-  Aliases: /rule-creator, /agent-creator.
+  Trigger: "create skill", "neuer skill", "agent profil", "sub-agent", "skill verbessern",
+  "description optimieren", "agent-datei", ".claude/agents", SKILL.md pasted for
+  review/improvement. Aliases: /agent-creator.
 ---
 
 # Skill Creator
@@ -27,14 +26,9 @@ Calibrate communication to user familiarity: "evaluation" and "benchmark" are fi
 
 | Situation | Artifact | File |
 |-----------|----------|------|
-| Repeatable workflow / process (Claude-driven) | **Skill** (SKILL.md) | `.claude/skills/` or `skills/` |
-| Auto-inject context by file pattern or phrase (Cursor-only) | **Rule** (.mdc) | `.cursor/rules/` |
-| Specialized agent: own context window, model, tools | **Agent profile** (.md) | `.claude/agents/` / `agents/` |
+| Repeatable workflow / process (Claude-driven) | **Skill** (SKILL.md) | `.claude/skills/<name>/` |
+| Specialized agent: own context window, model, tools | **Agent profile** (.md) | `.claude/agents/` |
 | Skill needs isolation from main conversation | Skill + `context: fork` + `agent:` | — |
-| Rule must delegate to defined agent behavior | Rule links agent profile | — |
-
-**Migration note:** existing skills in `.claude/skills/` continue to work unchanged. The new
-sections extend, not replace, the existing format.
 
 ---
 
@@ -129,7 +123,7 @@ my-skill/
 Keep SKILL.md under 500 lines. Push large reference material to `references/` with a note on
 when to read it. For files >300 lines, include a table of contents.
 
-**Sub-agent reference pattern** (Claude Code follows these links; Cursor agents use the same `.md` file directly via `.cursor/agents/` — no duplication needed):
+**Sub-agent reference pattern:**
 ```markdown
 Subagent: [`agents/worker.md`](agents/worker.md)
 Read full profile before delegation. Do not repeat model slug or behavior here.
@@ -161,124 +155,34 @@ Write 2–3 realistic test prompts. Share with user for confirmation. Save to `e
 
 ---
 
-## Creating a Cursor Rule (.mdc)
-
-Use a rule when behavior must **auto-inject into Cursor** based on file context or recognized
-phrases — without the user invoking anything explicitly. Rules are **Cursor-only**; Claude Code
-has no equivalent (.mdc files are ignored there).
-
-### Four activation modes
-
-```yaml
-# 1. Always — every conversation (expensive; use only for foundational project-wide context)
----
-alwaysApply: true
----
-Keep always-rules short: every token costs in every request.
-
-# 2. Auto-Attached — loads when matching files are in context
----
-globs: "src/**/*.ts, **/*.spec.ts"
----
-Glob syntax: src/**/*.tsx matches subdirs; src/*.tsx matches src/ root only.
-
-# 3. Agent-Requested — agent reads description and decides (no globs, alwaysApply: false)
----
-description: "EF Core Migrations. Load when dotnet migration, DbContext, Add-Migration in scope."
-alwaysApply: false
----
-
-# 4. Manual — user explicitly requests via @rule-name (empty frontmatter, no globs)
----
----
-```
-
-### Agent-Requested description quality
-
-Keyword-first, imperative: `"Angular Components. Load when Angular, Component, Signal in scope."` — not `"Use for Angular stuff"`.
-
-### Rule → agent profile reference pattern
-
-Rule = *routing* (triggers, opt-out, priority). Agent profile = *behavior*. Never duplicate.
-
-```markdown
-## Mandatory activation
-
-Recognized intent → read full agent profile before responding:
-
-[`agents/plan-agent.md`](../agents/plan-agent.md)
-
-Phase model and workflow defined there only. Opt-out: `ohne plan-agent`
-```
-
-→ Full reference: [`references/cursor-rules.md`](references/cursor-rules.md)
-
----
-
 ## Creating an Agent Profile
 
 Use an agent profile when you need a **specialized context window** with its own model, tools,
 and system prompt — reusable across skills and rules without duplicating behavior.
 
-### Dual-use pattern (single source of truth)
-
-One `.md` file works for both Cursor and Claude Code. Both systems read the YAML frontmatter
-for configuration and the Markdown body as the system prompt. Claude Code-only fields are
-ignored by Cursor; Cursor-only fields are ignored by Claude Code:
+### Agent profile structure
 
 ```markdown
 ---
-name: agent-name               # required by both: unique identifier
-# model: omit for platform default (Claude Code → inherit; Cursor → auto)
-#        or use full model-id for explicit control (e.g. claude-sonnet-4-6)
-#        — no shared alias exists between platforms
-description: >                 # required by both: delegation trigger (keyword-first)
+name: agent-name               # lowercase, hyphens; used in Agent(agent-name) tool calls
+model: claude-sonnet-4-6       # or claude-opus-4-8, claude-haiku-4-5-20251001, inherit
+description: >                 # delegation trigger — keyword-first, imperative
   Senior code reviewer. Checks PR diff for security, correctness, style violations.
   Returns numbered findings with file:line references. Does NOT implement fixes.
   Use proactively after code changes or before merge. Alias: reviewer.
 
-# Claude Code-only fields (Cursor ignores these silently):
-tools: Read, Grep, Glob, Bash
-disallowedTools: Write, Edit
+tools: Read, Grep, Glob, Bash  # allowlist
+disallowedTools: Write, Edit   # denylist
 permissionMode: acceptEdits
 memory: project
 skills:
   - api-conventions
 ---
 
-[Markdown body = system prompt for BOTH systems]
+[Markdown body = system prompt]
 ```
 
-**Shared source:** `AI-Skills/agents/agent-name.md` — deployed via install script (no manual symlinks):
-
-```powershell
-# Deploy: Cursor + Claude Code gleichzeitig
-.\install-skill.ps1 <package> C:\Project\.cursor C:\Project\.claude
-.\update-skill.ps1  <package> C:\Project\.cursor C:\Project\.claude
-```
-
-| Deploy-Ziel | Cursor | Claude Code |
-|-------------|--------|-------------|
-| Rules (`.mdc`) | `.cursor/rules/` | — (Cursor-only) |
-| Skills | `.cursor/skills/<name>/` | `.claude/skills/<name>/` |
-| Agents | `.cursor/agents/` | `.claude/agents/` |
-| References | `.cursor/references/` | `.claude/references/` |
-
-**Cursor:** reads Markdown body as fresh subagent context (no parent conversation history). **Claude Code:** reads YAML + body.
-**Note:** Claude Code-only fields (`tools`, `disallowedTools`, `memory`, etc.) are not recognized by Cursor's YAML parser and are treated as unknown keys — standard YAML behavior, but verify with your Cursor version.
-
-#### Package-Manifest und Readme — immer zusammen pflegen
-
-Wenn ein Skill, eine Rule, ein Agent oder ein Parameter hinzukommt oder sich ändert:
-
-| Was | Wo |
-|-----|----|
-| Inhalt anlegen/ändern | `AI-Skills/skills/`, `agents/`, `rules/` |
-| Package-Manifest aktualisieren | `AI-Skills/packages/<name>.json` — Datei in `skills`, `agents`, `rules`, `references`, `params` eintragen |
-| Readme aktualisieren | `AI-Skills/Readme.md` — Abschnitt: Operations, Rules, Skills, Sub-Agents, Parameters |
-| Parameter pflegen | `{platzhalter}` im Inhalt → in `packages/<name>.json` → `"params"` und in Readme → Parameters-Tabelle |
-
-**Vergissene Manifest/Readme-Updates:** Deploy bricht für andere Nutzer lautlos oder liefert falsche Parameterwerte.
+File location: `.claude/agents/<name>.md`
 
 ### Agent description quality
 
@@ -303,33 +207,6 @@ Elements: keyword-first role + actions (delegation trigger) · output format · 
 Note: subagents cannot spawn other subagents in Claude Code.
 
 → Full reference: [`references/agent-profiles.md`](references/agent-profiles.md)
-
----
-
-## Dual-Platform Quick Reference
-
-### Field compatibility table
-
-| Field | Claude Code (agents) | Cursor (agents) |
-|-------|---------------------|-----------------|
-| `name` | Unique identifier (required) | Agent name (required) |
-| `description` | Delegation trigger (required) | Delegation trigger (required) |
-| `model` | inherit/sonnet/opus/haiku/full-id | auto/model-id |
-| `tools` | Allowlist | Ignored |
-| `disallowedTools` | Denylist | Ignored |
-| `permissionMode` | Permission mode | Ignored |
-| `skills` | Preload skills at startup | Ignored |
-| `memory` | Persistent memory scope | Ignored |
-| `isolation` | Git worktree | Ignored |
-| `background` | Run as background task | Ignored |
-| `is_background` | Ignored | Run in background (Cursor-specific) |
-| `readonly` | Ignored | Read-only mode (Cursor-specific) |
-
-### Token-dense description formula
-
-`[Role] — [Key actions]. [Output]. [Non-goals]. Use proactively [trigger]. Alias: [name].`
-
-**Budget:** `description` + `when_to_use` ≤ 1,536 chars (Claude Code). No hard limit in Cursor, keep concise.
 
 ---
 
@@ -531,5 +408,4 @@ The `agents/` directory contains instructions for specialized subagents used in 
 The `references/` directory has additional documentation:
 
 - `references/schemas.md` — JSON structures for evals.json, grading.json, etc.
-- `references/cursor-rules.md` — Complete Cursor .mdc rule reference (modes, glob syntax, best practices, anti-patterns)
-- `references/agent-profiles.md` — Complete agent profile reference for Claude Code and Cursor (all fields, dual-use pattern, memory, permissions, agent teams)
+- `references/agent-profiles.md` — Complete agent profile reference (all fields, memory, permissions, agent teams)

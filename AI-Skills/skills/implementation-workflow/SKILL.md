@@ -34,12 +34,24 @@ disable-model-invocation: true
 `„⚠️ BLOCKER: [dev-angular-mcp | dev-dotnet-mcp] nicht erreichbar — kein Build/Test-Lauf starten."`
 Kein Shell-Fallback ohne explizite Nutzerfreigabe; kein build-log-filter-Ausweichen ohne Freigabe.
 
-**"path does not exist" ≠ MCP nicht erreichbar:** MCP läuft — der Pfad ist falsch. Vor BLOCKER systematisch prüfen:
-1. `mcp-project-paths.md` (deployed) lesen → Kanon-Pfad für `{mcp-backend-path}`, `{mcp-backend-solution}`
-2. Solution-Datei (`.sln`) statt Projekt-Pfad versuchen
-3. Relativen Pfad ohne `/workspace/`-Präfix versuchen (Ableitung: `"/workspace/" + relPath aus skill-params.json`)
-Erst nach diesen Versuchen ohne Erfolg → BLOCKER.
-`test_dotnet_solution` / `test_angular_project` sind eigenständige MCP-Tools — separat aufrufen, auch wenn Build-MCP bereits lief.
+**"path does not exist" = falscher Pfad, MCP läuft:**
+MCP hat geantwortet → MCP ist erreichbar → Shell ist kein zulässiger Fallback, egal wie viele Pfade scheitern.
+
+Pfad-Diagnose vor BLOCKER (Reihenfolge einhalten):
+1. `mcp-project-paths.md` (deployed, `.cursor/references/`) lesen → exakten `{mcp-backend-solution}`-Wert verwenden — nicht ableiten, nicht aus dem Gedächtnis
+2. Solution-Pfad (`.sln`) statt Projekt- oder Test-Pfad (`.csproj`) versuchen
+3. Normalisierung: Backslash → Forward-Slash; `/workspace/`-Präfix prüfen und ggf. ergänzen
+
+Alle Pfad-Varianten gescheitert → **Pflicht-BLOCKER** im Chat ausgeben, dann stoppen:
+```
+⚠️ BLOCKER: dev-dotnet-mcp / dev-angular-mcp — Pfadauflösung gescheitert.
+Versucht: [vollständige Liste aller probierter Pfade]
+mcp-project-paths.md {mcp-backend-solution}: [exakter Wert aus deployed file]
+Shell-Fallback: NICHT freigegeben. Bitte MCP-Pfad klären.
+```
+Kein `dotnet test` / `ng test` in der Shell — auch nicht „nur kurz zum prüfen", auch nicht nach N gescheiterten Pfaden.
+
+`test_dotnet_solution` / `test_angular_project` sind eigenständige MCP-Tools — auch nach erfolgreichem `build_dotnet_solution` separat aufrufen.
 
 **Kein Opt-out** (außer explizitem User-Text für B/C/D gemäß `{verification-commands}`).
 

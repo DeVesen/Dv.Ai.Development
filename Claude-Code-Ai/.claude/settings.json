@@ -1,0 +1,104 @@
+{
+  "mcpServers": {
+    "build-log-filter": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-p",
+        "127.0.0.1:8089:8089",
+        "devesen/build-log-filter-mcp:latest"
+      ]
+    },
+    "codebase-analyzer": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "docker run -i --rm -p 127.0.0.1:8090:8090 -v \"$PWD:/workspace:ro\" devesen/codebase-analyzer-mcp:latest"
+      ]
+    },
+    "ado": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "<IhreOrganisation>",
+        "-d",
+        "core",
+        "work",
+        "work-items"
+      ]
+    },
+    "dev-filesystem-mcp": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "docker run -i --rm -p 127.0.0.1:8091:8091 -v \"$PWD:/project:ro\" -e PROJECT_ROOT=/project devesen/dev-filesystem-mcp:latest"
+      ]
+    },
+    "dev-angular-mcp": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "docker run -i --rm -p 127.0.0.1:8092:8092 -v \"$PWD:/workspace\" devesen/dev-angular-mcp:latest"
+      ]
+    },
+    "dev-dotnet-mcp": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "docker run -i --rm -p 127.0.0.1:8093:8093 -v \"$PWD:/workspace\" devesen/dev-dotnet-mcp:latest"
+      ]
+    }
+  },
+  "permissions": {
+    "allow": [
+      "mcp__codebase-analyzer__review_file",
+      "mcp__codebase-analyzer__review_code",
+      "mcp__codebase-analyzer__review_git_diff",
+      "mcp__codebase-analyzer__review_files_batch",
+      "mcp__codebase-analyzer__review_with_index",
+      "mcp__codebase-analyzer__analyze_ast_only",
+      "mcp__codebase-analyzer__compare_validation_rules",
+      "mcp__codebase-analyzer__find_api_callers",
+      "mcp__codebase-analyzer__index_project",
+      "mcp__codebase-analyzer__index_solution",
+      "mcp__codebase-analyzer__find_in_index",
+      "mcp__codebase-analyzer__find_symbol_references",
+      "mcp__codebase-analyzer__find_type_hierarchy",
+      "mcp__codebase-analyzer__detect_god_classes",
+      "mcp__codebase-analyzer__analyze_complexity",
+      "mcp__codebase-analyzer__analyze_method_extraction_candidates",
+      "mcp__codebase-analyzer__analyze_dead_code",
+      "mcp__codebase-analyzer__analyze_nullability",
+      "mcp__codebase-analyzer__analyze_duplicates",
+      "mcp__codebase-analyzer__analyze_refactoring_safety",
+      "mcp__codebase-analyzer__generate_auto_fixes",
+      "mcp__codebase-analyzer__analyze_dataflow",
+      "mcp__codebase-analyzer__analyze_advanced_all",
+      "mcp__codebase-analyzer__suggest_class_splits",
+      "mcp__codebase-analyzer__analyze_maintainability_index",
+      "mcp__codebase-analyzer__analyze_type_graph",
+      "mcp__codebase-analyzer__analyze_control_flow",
+      "mcp__codebase-analyzer__analyze_coverage",
+      "mcp__codebase-analyzer__analyze_test_quality",
+      "mcp__codebase-analyzer__detect_untested_public_api",
+      "mcp__codebase-analyzer__analyze_test_health",
+      "mcp__dev-filesystem-mcp__find_file",
+      "mcp__dev-filesystem-mcp__find_by_content",
+      "mcp__dev-filesystem-mcp__find_implementations",
+      "mcp__dev-filesystem-mcp__read_signatures_only",
+      "mcp__dev-filesystem-mcp__read_method",
+      "mcp__dev-filesystem-mcp__read_class_summary",
+      "mcp__dev-angular-mcp__scaffold_angular_component",
+      "mcp__dev-angular-mcp__scaffold_angular_service",
+      "mcp__dev-angular-mcp__build_angular_project",
+      "mcp__dev-angular-mcp__test_angular_project",
+      "mcp__dev-dotnet-mcp__scaffold_dotnet_project",
+      "mcp__dev-dotnet-mcp__create_directory_structure",
+      "mcp__dev-dotnet-mcp__build_dotnet_solution",
+      "mcp__dev-dotnet-mcp__test_dotnet_solution"
+    ]
+  }
+}

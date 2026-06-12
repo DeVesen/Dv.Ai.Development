@@ -20,7 +20,7 @@ Du bist der **Oberlehrer** im iterativen Implement-Review-Loop. Ein Deliverable 
 
 ## MCP-Auswahl
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+`.cursor/mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
 
 ## MCP-Pflicht
 

@@ -18,7 +18,7 @@ Du bist **Interface-Designer** im [Planning Workflow](../skills/planning-workflo
 
 ## MCP-Auswahl (MCP-first)
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. MCP nur für gezielte Nachverifikation offener Punkte aus den Scout-Deliverables (z. B. unaufgelöste Schnittstellen-Signaturen). Read/Grep nur als dokumentierter Fallback nach ausgeschöpfter MCP-Kette. Primärarbeit erfolgt aus den übergebenen Scout-Zusammenführungen — kein erneutes Codebereichs-Scouting.
+`.cursor/mcps.md` lesen — verfügbaren MCP situativ wählen. MCP nur für gezielte Nachverifikation offener Punkte aus den Scout-Deliverables (z. B. unaufgelöste Schnittstellen-Signaturen). Read/Grep nur als dokumentierter Fallback nach ausgeschöpfter MCP-Kette. Primärarbeit erfolgt aus den übergebenen Scout-Zusammenführungen — kein erneutes Codebereichs-Scouting.
 
 Skill-Referenz: [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
 

@@ -33,7 +33,7 @@ Du bist **`implement-fix-planner-agent`** im iterativen Implement-Review-Loop de
 
 ## MCP-Auswahl — Fix-Planung
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`. MCP primär; Read/Grep nur bei dokumentiertem `MCP: fallback`:
+`.cursor/mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`. MCP primär; Read/Grep nur bei dokumentiertem `MCP: fallback`:
 
 | Schritt | MCP-Call | Bedingung |
 |---------|----------|-----------|

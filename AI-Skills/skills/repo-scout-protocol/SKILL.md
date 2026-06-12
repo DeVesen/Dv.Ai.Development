@@ -21,7 +21,7 @@ Orchestrierungs-Skill für **Scout- und Recherche-Phasen** — keine Duplikation
 | Index, Review, Metriken | [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) |
 | Lesen/Suchen token-effizient | [dev-filesystem-mcp/SKILL.md](../dev-filesystem-mcp/SKILL.md) |
 | Dev-MCP-Router | [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) |
-| MCP-Übersicht | `./mcps.md` |
+| MCP-Übersicht | `.cursor/mcps.md` |
 
 ## Parameter
 
@@ -130,7 +130,7 @@ Ohne vollständige Tabelle: Scout **nicht** als abgeschlossen markieren.
 
 ## Ablauf-Checkliste (pro Repo-Frage)
 
-1. `./mcps.md` lesen (fehlt → Default: `codebase-analyzer`).
+1. `.cursor/mcps.md` lesen (fehlt → Default: `codebase-analyzer`).
 2. Routing-Matrix: Situation zuordnen.
 3. Schema lesen → MCP-Call.
 4. Zeile in Scout-Protokoll.

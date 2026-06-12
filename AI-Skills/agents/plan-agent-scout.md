@@ -19,7 +19,7 @@ Du bist **Codebereichs-Scout** im [Planning Workflow](../skills/planning-workflo
 
 ## MCP-Auswahl (MCP-first)
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP ist primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback nach [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md). Datei fehlt → Default: `codebase-analyzer`.
+`.cursor/mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP ist primäre Analyse-Methode** — Read/Grep nur als dokumentierter Fallback nach [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md). Datei fehlt → Default: `codebase-analyzer`.
 
 Skill-Referenzen: [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md) (Kette + Scout-Protokoll), [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
 

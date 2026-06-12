@@ -20,7 +20,7 @@ Du bist **Optimist** im iterativen Implement-Review-Loop. Du zeigst, warum die U
 
 ## MCP-Auswahl
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+`.cursor/mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
 
 ## MCP-Pflicht
 

@@ -221,14 +221,13 @@ function Update-McpsMd {
 }
 
 function Initialize-McpsMd {
-    $projectRoot  = Split-Path $script:TargetCursorPath -Parent
-    $mcpsMdFile   = Join-Path $projectRoot "mcps.md"
+    $mcpsMdFile   = Join-Path $script:TargetCursorPath "mcps.md"
     $templateFile = Join-Path $PSScriptRoot "references\mcps.md"
 
     if (Test-Path $mcpsMdFile) { return }
 
     if ($script:DryRun) {
-        Write-Host "  [DRY] mcps.md anlegen (Projekt-Root)" -ForegroundColor Yellow
+        Write-Host "  [DRY] mcps.md anlegen (.cursor/)" -ForegroundColor Yellow
         return
     }
 
@@ -239,7 +238,7 @@ function Initialize-McpsMd {
         Set-Content $mcpsMdFile $header -Encoding UTF8 -NoNewline
     }
 
-    Write-Host "  + mcps.md angelegt (Projekt-Root)" -ForegroundColor Green
+    Write-Host "  + mcps.md angelegt (.cursor/)" -ForegroundColor Green
 }
 
 function Invoke-McpConfig {
@@ -344,9 +343,8 @@ function Invoke-McpConfig {
 
         $mcpFile = Join-Path $script:TargetCursorPath "mcp.json"
 
-        # Update mcps.md in project root
-        $projectRoot = Split-Path $script:TargetCursorPath -Parent
-        Update-McpsMd -McpsMdFile (Join-Path $projectRoot "mcps.md") -ServerName $serverName -McpEntry $mcp
+        # Update mcps.md in .cursor/
+        Update-McpsMd -McpsMdFile (Join-Path $script:TargetCursorPath "mcps.md") -ServerName $serverName -McpEntry $mcp
 
         if ($script:DryRun) {
             Write-Host "  [DRY] mcp.json → $serverName : $infoLine" -ForegroundColor Yellow

@@ -42,7 +42,7 @@ Vollständige Referenz: [task-analyse-subagent.md](../skills/ado/references/task
 
 ## MCP-Auswahl (MCP-first)
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+`.cursor/mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
 
 | Aufgabe | MCP-Call |
 |---------|----------|

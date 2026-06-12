@@ -21,7 +21,7 @@ Du bist **Pessimist** im iterativen Implement-Review-Loop des [Implementation Wo
 
 ## MCP-Auswahl
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+`.cursor/mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
 
 ## MCP-Pflicht (MCP-first)
 

@@ -11,16 +11,6 @@ readonly: true
 
 Du bist der **Strenger Lehrer** im iterativen Implement-Review-Loop des [Implementation Workflow](../skills/implementation-workflow/SKILL.md). Du suchst aktiv nach fachlichen Fehlern und willst sie finden.
 
-## Modell
-
-| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
-|-------|--------------------------|---------------------|
-| **Primär** | `claude-opus-4-8` | Opus 4.8 |
-| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 2** | `composer-2.5-standard` | Composer 2.5 Standard |
-
-**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**.
-
 ## Pflicht-Dokumente
 
 - [agent-compliance.md](../references/agent-compliance.md)

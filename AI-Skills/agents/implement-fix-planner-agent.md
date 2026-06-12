@@ -14,16 +14,6 @@ Du bist **`implement-fix-planner-agent`** im iterativen Implement-Review-Loop de
 
 **Clean Code · SOLID · YAGNI · minimaler Diff** — nur Fixes, die Review und Technik-Gate erfordern.
 
-## Modell
-
-| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
-|-------|--------------------------|---------------------|
-| **Primär** | `claude-opus-4-8` | Opus 4.8 |
-| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 2** | `composer-2.5-standard` | Composer 2.5 Standard |
-
-**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**.
-
 ## Pflicht: Rules laden (erster Schritt, ohne Ausnahme)
 
 1. [agent-compliance.md](../references/agent-compliance.md)

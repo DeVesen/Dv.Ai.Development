@@ -94,11 +94,18 @@ Fünf spezialisierte **MCP-Server** als Docker-Images:
 
 ### Einrichtung in Claude Code
 
-Die fertige Konfiguration liegt unter [`.claude/settings.json`](./.claude/settings.json) — einfach in das Ziel-Repository kopieren. Sie enthält alle MCP-Server-Definitionen sowie die passenden `permissions.allow`-Einträge (entspricht `autoApprove` in Cursor).
+Zwei Dateien in das Ziel-Repository kopieren:
+
+| Datei | Zweck |
+|---|---|
+| [`.mcp.json`](./.mcp.json) | MCP-Server-Definitionen — wird von Claude Code automatisch erkannt |
+| [`.claude/settings.json`](./.claude/settings.json) | `permissions.allow` — entspricht `autoApprove` in Cursor |
+
+Volume-Mounts verwenden `${CLAUDE_PROJECT_DIR:-.}` — Claude Code setzt diese Variable automatisch auf den Projektroot, kein manuelles Anpassen nötig.
 
 **ADO-Organisation eintragen (einmaliger Schritt)**
 
-Im `ado`-Server steht der Platzhalter `<IhreOrganisation>` für den Azure DevOps Organisations-Namen:
+Im `ado`-Server in `.mcp.json` steht der Platzhalter `<IhreOrganisation>` für den Azure DevOps Organisations-Namen:
 
 ```json
 "ado": {
@@ -131,4 +138,4 @@ In **Scout-Phasen** (repo-check, Code-Landkarte, `plan-agent-scout`) bauen Agent
 | Skills | ✅ via Rules (`.mdc`) | ✅ via `/skill-name` |
 | Agents | ✅ `.cursor/agents/` | ✅ `.claude/agents/` |
 | Rules (`.mdc`) | ✅ Auto-inject | — (nicht unterstützt) |
-| MCP-Server | ✅ `mcp.json` | ✅ `.claude/settings.json` |
+| MCP-Server | ✅ `mcp.json` | ✅ `.mcp.json` + `.claude/settings.json` |

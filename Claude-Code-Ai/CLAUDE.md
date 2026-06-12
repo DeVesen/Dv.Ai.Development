@@ -125,7 +125,7 @@ MCP servers run as Docker containers. Configure in Claude Code settings (`mcpSer
 | dev-angular-mcp | 8092 | `${workspaceFolder}:/workspace` |
 | dev-dotnet-mcp | 8093 | `${workspaceFolder}:/workspace` |
 
-Reference config: `.claude/settings.json`.
+MCP server config: `.mcp.json` (Projektroot). Tool permissions: `.claude/settings.json`.
 
 **Path convention:** All MCP calls use `/workspace/` prefix (codebase-analyzer, dev-angular-mcp, dev-dotnet-mcp) or `/project/` prefix (dev-filesystem-mcp). Never use host paths or `{parameter}` placeholders.
 

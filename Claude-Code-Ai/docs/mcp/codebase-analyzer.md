@@ -230,7 +230,7 @@ Führt alle erweiterten Analysen in einem Aufruf aus: Nullability, DIP-Verletzun
 
 ---
 
-## Konfiguration (settings.json)
+## Konfiguration (.mcp.json)
 
 ```jsonc
 "codebase-analyzer": {

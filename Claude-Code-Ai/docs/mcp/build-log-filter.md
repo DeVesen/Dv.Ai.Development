@@ -105,7 +105,7 @@ Verarbeitet Log-Output chunk-weise während er noch produziert wird.
 
 ---
 
-## Konfiguration (settings.json)
+## Konfiguration (.mcp.json)
 
 ```jsonc
 "build-log-filter": {

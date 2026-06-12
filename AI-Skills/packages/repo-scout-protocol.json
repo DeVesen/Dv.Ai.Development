@@ -1,6 +1,6 @@
 {
   "name": "repo-scout-protocol",
-  "description": "Scout chain: Index → Filesystem-MCP fallback, artifact routing, scout protocol table. Used by plan-agent-scout and buddy-agent repo-check phase.",
+  "description": "MCP-first repo scouting protocol: codebase-analyzer then dev-filesystem before native grep/read",
   "rules": [
     "rules/repo-scout-protocol.mdc"
   ],
@@ -8,12 +8,10 @@
     "skills/repo-scout-protocol"
   ],
   "agents": [],
-  "references": [
-    "references/mcp-scout-fallback-chain.md"
-  ],
+  "references": [],
   "params": [],
   "dependsOn": [
-    "dev-filesystem-mcp",
-    "mcp-path-canon"
+    "mcp-path-canon",
+    "codebase-analyzer"
   ]
 }

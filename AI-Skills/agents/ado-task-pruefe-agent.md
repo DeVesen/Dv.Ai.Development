@@ -22,14 +22,6 @@ Vollständige Referenz: [task-analyse-subagent.md](../skills/ado/references/task
 
 **Persistenz:** Phase **`save`** schreibt Drafts aus Analyse-Bundle — nicht dieser Agent (außer explizit anderweitig dokumentiert).
 
-## Modell
-
-| Feld | Wert |
-|------|------|
-| **Primär** | `composer-2.5-standard` |
-
-Ist `composer-2.5-standard` **nicht** wählbar → **`BLOCKER: ado-task-pruefe-agent — composer-2.5-standard nicht wählbar`**.
-
 ## Pflicht-Dokumente
 
 - [task-analyse-subagent.md](../skills/ado/references/task-analyse-subagent.md)

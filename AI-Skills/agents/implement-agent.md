@@ -1,6 +1,6 @@
 ---
 name: implement-agent
-model: gpt-5.5
+model: composer-2.5-standard
 description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test via MCP). Build/Test via dev-angular-mcp / dev-dotnet-mcp — kein Shell ng/dotnet build/test, kein build-log-filter für diese. Kein stack-weites Technik-Gate.
 ---
 
@@ -11,15 +11,6 @@ description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test via MCP). Bu
 **Implementierungs-Subagent** im [Implementation Workflow](../skills/implementation-workflow/SKILL.md) **Schritt 2**. Setzt **genau einen** Plan-Slice (IMP-*) um — Code und lokale Qualitätssicherung **innerhalb des Slice-Scopes**.
 
 **Kein** stack-weites Technik-Gate — das ist **Schritt 3** (Orchestrator).
-
-## Modell
-
-| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
-|-------|--------------------------|---------------------|
-| **Primär** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 1** | `composer-2-standard` | Composer 2 Standard |
-
-**Host-Regel:** Ersten **verfügbaren** Slug setzen. Beide nicht wählbar → **stoppen**, transparent melden.
 
 ## Pflicht-Dokumente (vollständig lesen — strikt einhalten)
 

@@ -25,7 +25,7 @@ Dieses Repository ist die **Quellbibliothek** für AI-Workflow-Artefakte, die in
 | Verzeichnis | Inhalt |
 |-------------|--------|
 | [`AI-Skills/`](./AI-Skills/) | Skills, Agents, Cursor-Rules, Package-Manifeste und Deploy-Skripte |
-| [`Mcp-Servers/`](./Mcp-Servers/) | Implementierungen von MCP-Servern (Docker-Images) |
+| [`../Mcp-Servers/`](../Mcp-Servers/) | Implementierungen von MCP-Servern (Docker-Images) |
 | [`docs/`](./docs/) | Installationsanleitungen, MCP-Server-Referenzen |
 
 ---
@@ -69,7 +69,7 @@ Fünf spezialisierte **MCP-Server** als Docker-Images:
 > - `codebase-analyzer` → `-v ${workspaceFolder}:/workspace:ro` (liest Projektdateien für AST-Analyse)
 > - `dev-filesystem-mcp` → `-v ${workspaceFolder}:/project:ro` + `-e PROJECT_ROOT=/project` (liest `.cs`/`.ts` Dateien token-effizient)
 
-➡️ Details: [`Mcp-Servers/README.md`](./Mcp-Servers/README.md)
+➡️ Details: [`../Mcp-Servers/README.md`](../Mcp-Servers/README.md)
 
 ---
 

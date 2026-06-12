@@ -1,31 +1,38 @@
-# Dv.Ai.Development
+# Claude-Code-Ai
 
-> **Portable AI workflow library** for [Cursor](https://cursor.sh) and [Claude Code](https://claude.ai/code) — skills, agents, rules, and MCP servers for Angular & .NET development.
+> **Portable AI workflow library** for [Claude Code](https://claude.ai/code) — skills, agents, references, and MCP servers for Angular & .NET development.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     Dv.Ai.Development                       │
 │                                                             │
-│  .claude/            Mcp-Servers/          docs/            │
-│  ┌──────────┐        ┌──────────┐          ┌──────────┐     │
-│  │ Skills   │        │ Docker   │          │ skills/  │     │
-│  │ Agents   │──────▶ │  MCP     │          │ mcp/     │     │
-│  │ Refs     │        │ Servers  │          └──────────┘     │
-│  └──────────┘        └──────────┘                          │
+│  Claude-Code-Ai/     Cursor-AI/            Mcp-Servers/     │
+│  ┌───────────────┐   ┌──────────┐          ┌──────────┐     │
+│  │ .claude/      │   │ Rules    │          │ Docker   │     │
+│  │ docs/         │   │ Agents   │          │  MCP     │     │
+│  │               │   └──────────┘          │ Servers  │     │
+│  └───────────────┘                         └──────────┘     │
 └─────────────────────────────────────────────────────────────┘
+```
+
+```
+Claude-Code-Ai/
+├── .claude/            Skills, Agents, References für Claude Code
+└── docs/               Skill- und MCP-Referenzdokumentation
 ```
 
 ---
 
 ## Was steckt dahinter?
 
-Dieses Repository ist die **Quellbibliothek** für AI-Workflow-Artefakte, die in Projekte deploybar sind. Es enthält:
+Dieses Verzeichnis enthält alle **Claude Code AI-Workflow-Artefakte** — deploybar in Projekte. Es enthält:
 
 | Verzeichnis | Inhalt |
 |-------------|--------|
 | [`.claude/`](./.claude/) | 27 Skills, 21 Agent-Profile, geteilte References |
-| [`Mcp-Servers/`](./Mcp-Servers/) | Implementierungen von MCP-Servern (Docker-Images) |
 | [`docs/`](./docs/) | Skill-Verwendungsdoku (`docs/skills/`), MCP-Server-Referenzen (`docs/mcp/`), Enforcement |
+
+> Die MCP-Server-Implementierungen liegen auf der Hauptebene unter [`../Mcp-Servers/`](../Mcp-Servers/).
 
 ---
 
@@ -83,7 +90,7 @@ Fünf spezialisierte **MCP-Server** als Docker-Images:
 | Dev Dotnet | [`docs/mcp/dev-dotnet.md`](./docs/mcp/dev-dotnet.md) |
 | Scout-Fallback-Kette | [`docs/mcp/scout-fallback-chain.md`](./docs/mcp/scout-fallback-chain.md) |
 
-➡️ Details: [`Mcp-Servers/README.md`](./Mcp-Servers/README.md)
+➡️ Details: [`../Mcp-Servers/README.md`](../Mcp-Servers/README.md)
 
 ---
 

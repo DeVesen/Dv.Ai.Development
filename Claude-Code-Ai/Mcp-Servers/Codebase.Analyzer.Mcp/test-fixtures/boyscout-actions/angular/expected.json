@@ -1,8 +1,0 @@
-{
-  "file": "boyscout-sample.ts",
-  "minActions": 2,
-  "requiredCategories": ["nullability", "dead_code", "complexity", "untested_api"],
-  "compilerGateFile": "compiler-gate.ts",
-  "compilerGateMinCritical": 1,
-  "compilerGateSkipCategories": ["untested_api", "extraction"]
-}

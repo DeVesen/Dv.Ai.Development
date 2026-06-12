@@ -1,9 +1,0 @@
-[
-  { "symbol": "DiscriminatorA.Compute", "file": "DiscriminatorA.cs", "reason": "no_reference_found" },
-  { "symbol": "OrphanService.Count", "file": "OrphanService.cs", "reason": "no_test_file" },
-  { "symbol": "OrphanService.Run", "file": "OrphanService.cs", "reason": "no_test_file" },
-  { "symbol": "PersonRecord.Age", "file": "PersonRecord.cs", "reason": "no_reference_found" },
-  { "symbol": "PersonRecord.Display", "file": "PersonRecord.cs", "reason": "no_reference_found" },
-  { "symbol": "SampleCalculator.Subtract", "file": "SampleCalculator.cs", "reason": "no_reference_found" },
-  { "symbol": "WordBoundaryTarget.Cleanup", "file": "WordBoundaryTarget.cs", "reason": "no_reference_found" }
-]

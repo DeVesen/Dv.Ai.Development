@@ -1,8 +1,0 @@
-{
-  "projects": ["Api", "Domain"],
-  "symbols": {
-    "CalcController": { "project": "Api", "layer": "Controller" },
-    "ICalcService": { "project": "Domain" }
-  },
-  "apiProjectReferences": ["../Domain/Domain.csproj"]
-}

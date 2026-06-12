@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="Build.Log.Filter.Mcp/Build.Log.Filter.Mcp.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="Build.Log.Filter.Mcp.Tests/Build.Log.Filter.Mcp.Tests.csproj" />
-  </Folder>
-</Solution>

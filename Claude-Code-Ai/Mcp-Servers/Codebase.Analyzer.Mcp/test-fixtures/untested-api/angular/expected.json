@@ -1,7 +1,0 @@
-[
-  { "symbol": "AccessorSample.total", "file": "accessor-sample.ts", "reason": "no_reference_found" },
-  { "symbol": "DiscriminatorA.compute", "file": "discriminator-a.ts", "reason": "no_reference_found" },
-  { "symbol": "SampleService.removeValue", "file": "sample.service.ts", "reason": "no_reference_found" },
-  { "symbol": "UntestedService.doThing", "file": "untested.service.ts", "reason": "no_test_file" },
-  { "symbol": "UntestedService.value", "file": "untested.service.ts", "reason": "no_test_file" }
-]

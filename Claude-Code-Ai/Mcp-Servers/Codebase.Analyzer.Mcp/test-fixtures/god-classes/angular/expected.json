@@ -1,7 +1,0 @@
-{
-  "GodOrderService": {
-    "minMethodCount": 25,
-    "minDependencies": 12,
-    "minUrgencyRank": 3
-  }
-}

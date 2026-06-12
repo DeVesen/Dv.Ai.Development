@@ -1,6 +1,6 @@
 {
   "name": "codebase-analyzer",
-  "description": "Codebase analysis via MCP: index, code-map, AST, refactoring-safety, nullability checks. Provides structured codebase understanding before planning or review.",
+  "description": "MCP-first codebase analysis: index, find, complexity, refactoring safety, review, test quality",
   "rules": [
     "rules/codebase-analyzer.mdc"
   ],

@@ -128,7 +128,7 @@ Bei **bekanntem Pfad/Klasse** (Task, Handoff): Filesystem-MCP **zuerst**, Index 
 ## Abgrenzung
 
 - **codebase-analyzer:** Index, Review, Metriken — Mount `/workspace`, Parameter `filePath`/`projectPath`
-- **Routing (welcher MCP wann):** [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) oder `./mcps.md`
+- **Routing (welcher MCP wann):** [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) oder `.cursor/mcps.md`
 - **Scout-Kette:** [repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md)
 
 ## Log-UI

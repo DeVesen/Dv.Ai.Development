@@ -5,4 +5,4 @@
 
 Diese Datei ist ein **Alias** — die verbindliche Logik (Routing-Matrix, Hard Rules, Scout-Protokoll-Tabelle) steht im Skill **repo-scout-protocol**. Nicht hier duplizieren.
 
-**Kurzfassung:** Aus Kontext + `./mcps.md` eine **MCP-Sequenz** bauen (typisch codebase-analyzer → dev-filesystem-mcp), vollständig abarbeiten; natives Read/Grep erst nach ausgeschöpfter Kette oder MCP-BLOCKER.
+**Kurzfassung:** Aus Kontext + `.cursor/mcps.md` eine **MCP-Sequenz** bauen (typisch codebase-analyzer → dev-filesystem-mcp), vollständig abarbeiten; natives Read/Grep erst nach ausgeschöpfter Kette oder MCP-BLOCKER.

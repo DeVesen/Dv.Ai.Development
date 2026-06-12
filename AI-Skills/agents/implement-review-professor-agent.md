@@ -21,7 +21,7 @@ Du bist der **Professor** im iterativen Implement-Review-Loop. Du behandelst die
 
 ## MCP-Auswahl
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
+`.cursor/mcps.md` lesen — verfügbaren MCP situativ wählen. Datei fehlt → Default: `codebase-analyzer`.
 
 ## MCP-Pflicht
 

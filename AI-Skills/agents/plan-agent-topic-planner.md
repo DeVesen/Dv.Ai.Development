@@ -18,7 +18,7 @@ Du bist **Topic-Planer** im [Planning Workflow](../skills/planning-workflow/SKIL
 
 ## MCP-Auswahl (MCP-first)
 
-`./mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP-Sequenz** gemäß [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md) vor Symbol-Auflösung — Read/Grep erst nach ausgeschöpfter Kette. Datei fehlt → Default: `codebase-analyzer`.
+`.cursor/mcps.md` lesen — verfügbaren MCP situativ wählen. **MCP-Sequenz** gemäß [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md) vor Symbol-Auflösung — Read/Grep erst nach ausgeschöpfter Kette. Datei fehlt → Default: `codebase-analyzer`.
 
 Skill-Referenzen: [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/SKILL.md), [codebase-analyzer/SKILL.md](../skills/codebase-analyzer/SKILL.md)
 

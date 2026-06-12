@@ -63,7 +63,7 @@ Wenn `dev-angular-mcp` oder `dev-dotnet-mcp` für Build/Test **nicht** in der To
 
 ## Situative Auswahl
 
-`./mcps.md` im Projekt-Root listet verfügbare Server — situativ wählen. **Scout-Phasen** (repo-check, Code-Landkarte, plan-agent-scout): verbindliche Kette gemäß [repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md). Sonst: Fallback bei MCP-Fehler Read/Grep mit Begründung.
+`.cursor/mcps.md` listet verfügbare Server — situativ wählen. **Scout-Phasen** (repo-check, Code-Landkarte, plan-agent-scout): verbindliche Kette gemäß [repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md). Sonst: Fallback bei MCP-Fehler Read/Grep mit Begründung.
 
 ## Opt-out
 

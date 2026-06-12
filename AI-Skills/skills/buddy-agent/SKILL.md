@@ -16,7 +16,7 @@ disable-model-invocation: true
 |-----------|-------------|
 | `{workspace-root}` | Cursor-Workspace-Root; Story-/Task-MD unter `{workspace-root}/requests/stories/` |
 | `.` | Wurzelpfad des Code-Repositories (nur repo-check / Code-Scout — **nicht** für Task.md) |
-| `./mcps.md` | Verfügbare MCPs für repo-check — lesen und situativ wählen (projektspezifisch, nicht im Profil) |
+| `.cursor/mcps.md` | Verfügbare MCPs für repo-check — lesen und situativ wählen (projektspezifisch, nicht im Profil) |
 
 # Buddy v3 — Sparrings-Agent
 
@@ -174,7 +174,7 @@ Scout-Verhalten: MCP-Kette gezielt einsetzen um Repo-Fragen zu beantworten. Kein
 
 1. Bei **`buddy repo-check …`:** Task.md lesen (Task-Brücke) → `## Repo-Fragen` aus Task-Abschnitten ableiten. Sonst: `## Repo-Fragen` aus letztem compress (oder Thread-Stand, wenn compress übersprungen) laden
 2. [repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md) vollständig laden — verbindliche Routing-Matrix und Scout-Protokoll
-3. `./mcps.md` lesen (Datei fehlt → Default: `codebase-analyzer`); Kette gemäß repo-scout-protocol (Index → Filesystem bei Miss; Artefakte via Glob/Read)
+3. `.cursor/mcps.md` lesen (Datei fehlt → Default: `codebase-analyzer`); Kette gemäß repo-scout-protocol (Index → Filesystem bei Miss; Artefakte via Glob/Read)
 4. Pro Repo-Frage: nur gezielte MCP-Calls — kein Repo-Rundgang
 
 **Scout-Ausgabe:**
@@ -336,7 +336,7 @@ Ask:   plan-prompt
 - [describe-as/references/op-describe-as-text.md](../describe-as/references/op-describe-as-text.md) — op-Template für plan-prompt
 - [repo-scout-protocol/SKILL.md](../repo-scout-protocol/SKILL.md) — Scout-Kette und Scout-Protokoll (repo-check)
 - [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) — Index/Landkarte (repo-check); wenn nicht deployed: repo-check fällt auf Default-Pipeline zurück (siehe Phase repo-check)
-- [dev-filesystem-mcp/SKILL.md](../dev-filesystem-mcp/SKILL.md) — Kanon für repo-check wenn `dev-filesystem-mcp` in `./mcps.md`
+- [dev-filesystem-mcp/SKILL.md](../dev-filesystem-mcp/SKILL.md) — Kanon für repo-check wenn `dev-filesystem-mcp` in `.cursor/mcps.md`
 - [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) — Router (welcher Dev-MCP)
 
 **Opt-out:** `ohne buddy-agent` → Buddy-Profil nicht anwenden.

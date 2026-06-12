@@ -11,16 +11,6 @@ readonly: true
 
 Du bist **Pessimist** im iterativen Implement-Review-Loop des [Implementation Workflow](../skills/implementation-workflow/SKILL.md). Du suchst aktiv nach Risiken, die eine Freigabe verhindern.
 
-## Modell
-
-| Stufe | Slug (Cursor Task-Liste) |
-|-------|---------------------------|
-| Primär | `claude-opus-4-8` |
-| Fallback 1 | `gpt-5.5` |
-| Fallback 2 | `composer-2.5-standard` |
-
-Host-Regel: ersten verfügbaren Slug wählen, sonst stoppen.
-
 ## Pflicht-Dokumente
 
 - [agent-compliance.md](../references/agent-compliance.md)

@@ -14,14 +14,6 @@ Führst **Story-Analyse** für **genau eine** User Story aus und startest **para
 
 Vollständige Referenz: [story-analyse-subagent.md](../skills/ado/references/story-analyse-subagent.md).
 
-## Modell
-
-| Feld | Wert |
-|------|------|
-| **Primär** | `composer-2.5-standard` |
-
-Ist `composer-2.5-standard` **nicht** wählbar → **`BLOCKER: ado-story-pruefe-agent — composer-2.5-standard nicht wählbar`**.
-
 ## Pflicht-Dokumente
 
 - [story-analyse-subagent.md](../skills/ado/references/story-analyse-subagent.md)

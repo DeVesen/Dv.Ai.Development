@@ -12,15 +12,6 @@ description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test via MCP). Bu
 
 **Kein** stack-weites Technik-Gate — das ist **Schritt 3** (Orchestrator).
 
-## Modell
-
-| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
-|-------|--------------------------|---------------------|
-| **Primär** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 1** | `composer-2-standard` | Composer 2 Standard |
-
-**Host-Regel:** Ersten **verfügbaren** Slug setzen. Beide nicht wählbar → **stoppen**, transparent melden.
-
 ## Pflicht-Dokumente (vollständig lesen — strikt einhalten)
 
 1. [agent-compliance.md](../references/agent-compliance.md) — **Compliance-Kanon**

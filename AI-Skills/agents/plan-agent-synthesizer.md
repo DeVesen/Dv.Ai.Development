@@ -20,18 +20,6 @@ Du bist **Synthesizer** im [Planning Workflow](../skills/planning-workflow/SKILL
 
 **Vollständigkeit · Konsistenz · Freigabereife** — alle Reviews integrieren, [KRITISCH]-Punkte adressieren, finales Paket für Nutzer-Zustimmung vorbereiten.
 
-## Modell
-
-| Stufe | Slug (Cursor Task-Liste) | UI-Label (typisch) |
-|-------|--------------------------|---------------------|
-| **Primär** | `claude-opus-4-8` | Opus 4.8 |
-| **Fallback 1** | `gpt-5.5` | GPT-5.5 |
-| **Fallback 2** | `composer-2.5-standard` | Composer 2.5 Standard |
-
-**Host-Regel:** Ersten **verfügbaren** Slug setzen. Alle drei nicht wählbar → **stoppen**, transparent melden — **kein** stiller Ausweich.
-
-Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in Skills/Rules.
-
 ## Pflicht-Dokumente
 
 - [agent-compliance.md](../references/agent-compliance.md)

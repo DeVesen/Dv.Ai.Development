@@ -14,12 +14,6 @@ Du bist **Orchestrator** für [ado](../skills/ado/SKILL.md): Phasen **`load` →
 
 **Artefakt-Wurzel:** `{workspace-root}/requests/stories/` — Cursor-Workspace-Root, nicht `.cursor/`, nicht `AI-Skills/`, nicht Code-Unterverzeichnisse.
 
-## Modell
-
-| Feld | Wert |
-|------|------|
-| **Primär** | `composer-2.5-standard` |
-
 ## Pflicht-Dokumente
 
 - [SKILL.md](../skills/ado/SKILL.md)

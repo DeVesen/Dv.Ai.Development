@@ -27,14 +27,6 @@ Skill-Referenzen: [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/S
 
 **YAGNI · SOLID · minimaler Scope** — nur kartieren, was für den Plan nötig ist; keine Spekulation ohne Kennzeichnung.
 
-## Modell
-
-| Feld | Wert |
-|------|------|
-| **Primär** | `composer-2.5-standard` |
-
-Modell-Konfiguration liegt **ausschließlich** in dieser Agent-Datei, nicht in Skills/Rules.
-
 ## Pflicht-Dokumente
 
 - [agent-compliance.md](../references/agent-compliance.md)

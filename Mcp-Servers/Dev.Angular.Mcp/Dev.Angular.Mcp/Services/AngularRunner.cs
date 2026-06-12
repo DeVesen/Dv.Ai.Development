@@ -36,11 +36,15 @@ public sealed partial class AngularRunner
         if (!ValidateRoot(projectRoot, out var error))
             return MakeFailResult(error, "ng build");
 
+        var preStep = await EnsureCompatibleEsbuildAsync(projectRoot, cancellationToken);
+
         var args = new List<string> { "build" };
         if (!string.IsNullOrWhiteSpace(configuration))
             args.Add($"--configuration={configuration.Trim()}");
 
-        return await RunAsync("ng build", projectRoot, args, ParseBuildOutput, BuildTimeoutSeconds, cancellationToken);
+        var result = await RunAsync("ng build", projectRoot, args, ParseBuildOutput, BuildTimeoutSeconds, cancellationToken);
+        if (preStep != null) result.ConsoleOutput = preStep + "\n\n" + result.ConsoleOutput;
+        return result;
     }
 
     public async Task<BuildResult> TestAsync(
@@ -51,11 +55,15 @@ public sealed partial class AngularRunner
         if (!ValidateRoot(projectRoot, out var error))
             return MakeFailResult(error, "ng test");
 
+        var preStep = await EnsureCompatibleEsbuildAsync(projectRoot, cancellationToken);
+
         var args = new List<string> { "test", "--watch=false" };
         if (!string.IsNullOrWhiteSpace(options))
             args.AddRange(options.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
-        return await RunAsync("ng test", projectRoot, args, ParseTestOutput, TestTimeoutSeconds, cancellationToken);
+        var result = await RunAsync("ng test", projectRoot, args, ParseTestOutput, TestTimeoutSeconds, cancellationToken);
+        if (preStep != null) result.ConsoleOutput = preStep + "\n\n" + result.ConsoleOutput;
+        return result;
     }
 
     public static BuildResult ParseBuildOutput(string stdout, string stderr, int exitCode)
@@ -211,6 +219,50 @@ public sealed partial class AngularRunner
         var result = parser(stdout, stderr, process.ExitCode);
         result.ConsoleOutput = $"> {NgExecutable} {string.Join(' ', args)}\n\n{StripAnsi(stdout + "\n" + stderr).Trim()}";
         return result;
+    }
+
+    private static async Task<string?> EnsureCompatibleEsbuildAsync(
+        string projectRoot,
+        CancellationToken cancellationToken)
+    {
+        if (!OperatingSystem.IsLinux()) return null;
+
+        var esbuildDir = Path.Combine(projectRoot, "node_modules", "@esbuild");
+        if (!Directory.Exists(esbuildDir)) return null;
+
+        var linuxPkg = Path.Combine(esbuildDir, "linux-x64");
+        if (Directory.Exists(linuxPkg)) return null;
+
+        var hasWrongPlatform = Directory.GetDirectories(esbuildDir)
+            .Select(Path.GetFileName)
+            .Any(n => n != null && (n.StartsWith("win", StringComparison.OrdinalIgnoreCase)
+                                 || n.StartsWith("darwin", StringComparison.OrdinalIgnoreCase)));
+        if (!hasWrongPlatform) return null;
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = "npm",
+            Arguments = "install @esbuild/linux-x64 --no-save",
+            WorkingDirectory = projectRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        using var process = new Process { StartInfo = psi };
+        if (!process.Start()) return null;
+
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(3));
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(linked.Token);
+        var stderrTask = process.StandardError.ReadToEndAsync(linked.Token);
+        try { await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(linked.Token)); }
+        catch (OperationCanceledException) { try { process.Kill(entireProcessTree: true); } catch { } }
+
+        var output = StripAnsi((await stdoutTask) + "\n" + (await stderrTask)).Trim();
+        return $"> npm install @esbuild/linux-x64 --no-save  [auto: non-Linux esbuild detected]\n\n{output}";
     }
 
     private static bool ValidateRoot(string projectRoot, out string error)

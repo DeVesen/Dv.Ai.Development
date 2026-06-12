@@ -106,21 +106,39 @@ public sealed partial class AngularRunner
             .Take(MaxErrors)
             .ToArray();
 
+        var tsErrors = lines
+            .Where(l => BuildErrorLineRegex().IsMatch(l))
+            .Select(l => l.Trim())
+            .Where(l => l.Length > 0)
+            .Distinct()
+            .Take(MaxErrors)
+            .ToArray();
+
         var executedLine = lines
             .Select(l => KarmaExecutedRegex().Match(l))
             .FirstOrDefault(m => m.Success);
+
+        var errors = failedTests.Length > 0
+            ? failedTests
+            : tsErrors.Length > 0
+                ? tsErrors
+                : [];
 
         var summary = executedLine is { Success: true }
             ? executedLine.Value.Trim()
             : exitCode == 0
                 ? "All tests passed."
-                : $"Tests failed: {failedTests.Length} failing test(s).";
+                : failedTests.Length > 0
+                    ? $"Tests failed: {failedTests.Length} failing test(s)."
+                    : tsErrors.Length > 0
+                        ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
+                        : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
 
         return new BuildResult
         {
             Success = exitCode == 0,
             Command = "ng test",
-            Errors = failedTests,
+            Errors = errors,
             Warnings = [],
             ExitCode = exitCode,
             Summary = summary,

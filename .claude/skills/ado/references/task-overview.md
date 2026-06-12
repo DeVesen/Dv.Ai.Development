@@ -28,9 +28,9 @@ Für jeden Task mit effektivem `TASK-CLOSED` gilt bei **analyse** und Feature-Ka
 | Task aus Code-Stand-Liste **entfernen** | ja (Pflicht, falls noch vorhanden) |
 | Repo-Scout / Code-Stand-Checkbox setzen oder aktualisieren | **nein** |
 | Testabsicherung-Status aus Repo-Lauf ableiten oder „grün" schätzen | **nein** |
-| `## Akzeptanzkriterien`-Block aus Repo neu ableiten | **nein** — bestehenden Block **beibehalten**; nur anlegen wenn Abschnitt **komplett fehlt** |
+| `## Akzeptanzkriterien`-Block aus Repo neu ableiten | **nein** — bestehenden Block **beibehalten** |
 
-**Repo-Abgleich (Code-Stand)** nur, wenn der Nutzer das **explizit** verlangt (z. B. „Code-Stand prüfen", „Repo-Abgleich für Story …") — und dann **nur** für Tasks **ohne** effektives `TASK-CLOSED`.
+**Repo-Abgleich (Code-Stand)** nur, wenn der Nutzer das **explizit** verlangt — und dann **nur** für Tasks **ohne** effektives `TASK-CLOSED`.
 
 ## Marker-Sync (Schritt bei `analyse` / `save` / Task schließen)
 

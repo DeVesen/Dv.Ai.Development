@@ -1,121 +1,125 @@
 # Dv.Ai.Development — Claude Code Guide
 
-This repository is the **source library** for dual-platform AI workflow artifacts (skills, rules, agents) and **MCP server implementations** targeting both **Cursor** and **Claude Code**.
-
-**Cursor entry point:** [`AGENTS.md`](./AGENTS.md) — thin pointer to this file. Architecture, deploy workflow, and `.claude/` conventions are documented here only; do not duplicate them in `AGENTS.md` or elsewhere.
+This repository contains **AI workflow artifacts** (skills, agents, references) for Claude Code and **MCP server implementations** for Angular/.NET development.
 
 ---
 
 ## Repository Structure
 
 ```
-AI-Skills/              Source library — do not edit deployed copies
-├── agents/             Dual-use agent profiles (.md)
-├── skills/             Skill packages (SKILL.md + references/)
-├── rules/              Cursor MDC rules (.mdc) — Cursor only
-├── packages/           Package manifests (JSON) — define what gets deployed
-├── references/         Shared references (subagent-model-before-task.md etc.)
-├── install-cursor-skills.ps1   Deploy script (Windows/PowerShell)
-├── update-cursor-skills.ps1    Update script (Windows/PowerShell, handles params + MCP)
-└── Readme.md           Full package reference + install instructions
+.claude/                Claude Code — direkt nutzbar
+├── skills/             25 Skills (via /skill-name oder automatisch)
+│   ├── planning-workflow/
+│   ├── implementation-workflow/
+│   ├── buddy-agent/
+│   ├── repo-scout-protocol/
+│   ├── codebase-analyzer/
+│   ├── build-log-filter/
+│   ├── dev-tooling-mcp/
+│   ├── dev-angular-mcp/
+│   ├── dev-dotnet-mcp/
+│   ├── dev-filesystem-mcp/
+│   ├── angular-developer/
+│   ├── angular-developer-extension/
+│   ├── angular-cache-busting/
+│   ├── angular-material/
+│   ├── angular-material-custom-input/
+│   ├── angular-new-app/
+│   ├── angular-new-app-extension/
+│   ├── angular-refactor/
+│   ├── backend-ef-migrations/
+│   ├── ado/
+│   ├── describe-as/
+│   ├── commit-message/
+│   ├── conversation-insights/
+│   ├── caveman/
+│   ├── skill-creator/   Meta-skill: create/improve skills and agent profiles
+│   └── work-review/     Quality review: 4 parallel reviewer agents
+├── agents/             20 Sub-Agent-Profile (auto-discovered)
+└── references/         Shared references (compliance, output-style, boilerplate)
 
-Mcp-Servers/            MCP server implementations (Docker images referenced in AI-Skills/mcp.json)
-├── Build.Log.Filter.Mcp/   build-log-filter — Build/Test output compression
+Mcp-Servers/            MCP server implementations (Docker)
+├── Build.Log.Filter.Mcp/   build-log-filter — Build/Test log compression
 ├── Codebase.Analyzer.Mcp/  codebase-analyzer — static analysis, index, review
-├── Dev.Filesystem.Mcp/ dev-filesystem-mcp — token-efficient read/search
-├── Dev.Angular.Mcp/    dev-angular-mcp — Angular scaffolding
-└── Dev.Dotnet.Mcp/     dev-dotnet-mcp — .NET scaffolding
+├── Dev.Filesystem.Mcp/     dev-filesystem-mcp — token-efficient read/search
+├── Dev.Angular.Mcp/        dev-angular-mcp — Angular scaffolding + build/test
+└── Dev.Dotnet.Mcp/         dev-dotnet-mcp — .NET scaffolding + build/test
 
-.claude/                Claude Code config for this repo (skills used here)
-└── skills/
-    ├── skill-creator/  Meta-skill: create/improve skills, rules, and agent profiles
-    └── work-review/    Quality review: 4 parallel reviewer agents on any deliverable
+docs/                   MCP documentation and enforcement references
+├── mcp-dev-angular.md
+├── mcp-dev-dotnet.md
+├── mcp-dev-filesystem.md
+├── mcp-codebase-analyzer.md
+├── mcp-build-log-filter.md
+├── mcp-scout-fallback-chain.md
+├── silent-shortcut-prevention.md
+└── output-style-enforcement.md
 ```
-
-Note: `.claude/agents/` and `.cursor/` are populated in **target projects** after deployment — they do not exist in this source repo.
 
 ---
 
-## Key Skills (Claude Code)
+## Key Skills
 
 | Skill | Trigger | Purpose |
 |-------|---------|---------|
-| `/skill-creator` | `create skill`, `new rule`, `agent profil` | Create/improve skills, rules, agents for both platforms |
-| `/work-review` | After completing any deliverable | 4-reviewer quality gate (Pessimist, Lehrer, Normalo, Professor) |
+| `/planning-workflow` | `plane`, `Roadmap`, `Architektur` | 6-Phasen-Planung mit Scouts, Topic-Planern, 5 Reviews |
+| `/implementation-workflow` | `implementiere`, `fix`, `IMP-*` | Hard Gate, Slices, iterativer Review-Loop |
+| `/buddy-agent` | `buddy intake`, `Sparring`, `plan-prompt` | Pre-Planning Sparring Partner |
+| `/repo-scout-protocol` | `repo-check`, `Code-Scout` | MCP-First Repo-Recherche-Kette |
+| `/codebase-analyzer` | Code-Gespräch, Review, Analyse | 31 MCP-Tools für Angular/.NET |
+| `/build-log-filter` | `ng serve`, Shell-Fallback | Build/Test-Log-Filterung |
+| `/angular-developer` | Angular-Arbeit | Signals, DI, Routing, Testing |
+| `/skill-creator` | `create skill`, `agent profil` | Skills und Agents erstellen/verbessern |
+| `/work-review` | Nach jedem Deliverable | 4-Reviewer Qualitäts-Gate |
 
 ---
 
-## Deploying to a Project
-
-AI-Skills artifacts must be deployed into a target project before they are active. The target project's `.cursor/` and `.claude/` directories must already exist.
-
-**Windows (PowerShell):**
-```powershell
-# List packages
-.\AI-Skills\install-cursor-skills.ps1 -List
-
-# Cursor + Claude Code (also handles MCP config interactively; ADO is optional)
-.\AI-Skills\install-cursor-skills.ps1 C:\project\.cursor C:\project\.claude
-
-# Update existing install (manifest-based: removes stale files, updates present ones)
-.\AI-Skills\update-cursor-skills.ps1 C:\project\.cursor C:\project\.claude
-```
-
-**Post-install — replace placeholders:**
-
-`install-cursor-skills.ps1` substitutes no `{param}` placeholders. After installing, replace them manually (or use `update-cursor-skills.ps1` for interactive prompts):
-
-1. Check which params a package needs: `AI-Skills/packages/<name>.json` → `"params"` array
-2. Search deployed files: `grep -r '{frontend-path}' /path/to/project/.cursor/`
-3. Replace in all matched files
-
-**What goes where (in target projects):**
-
-| Artifact | `.cursor/` | `.claude/` |
-|----------|-----------|-----------|
-| Rules (`.mdc`) | ✓ `rules/` | — Cursor only |
-| Skills | ✓ `skills/<name>/` | ✓ `skills/<name>/` |
-| Agents | ✓ `agents/` | ✓ `agents/` |
-| References | ✓ `references/` | ✓ `references/` |
-| Docs (AGENTS.md) | ✓ root | — |
-
----
-
-## Adding or Changing a Skill / Rule / Agent
-
-Always update all four artifacts together — missing any one breaks the deploy for other users:
+## Adding or Changing a Skill / Agent
 
 | Step | File |
 |------|------|
-| 1. Edit content | `AI-Skills/skills/<name>/`, `agents/<name>.md`, `rules/<name>.mdc` |
-| 2. Update package manifest | `AI-Skills/packages/<name>.json` — add new files to `skills`, `agents`, `rules`, `references`, `params` |
-| 3. Update Readme | `AI-Skills/Readme.md` — sync Operations, Rules, Skills, Sub-Agents, Parameters tables |
-| 4. Sync parameters | `{platzhalter}` in content → list in `packages/<name>.json` `"params"` array + Readme Parameters table |
+| 1. Edit content | `.claude/skills/<name>/SKILL.md` + `references/` |
+| 2. Edit agent | `.claude/agents/<name>.md` |
+| 3. Update shared refs | `.claude/references/` |
 
-Use `/skill-creator` to create new artifacts — it knows both Cursor and Claude Code conventions.
+Use `/skill-creator` to create new skills or agent profiles.
 
 ---
 
 ## Adding or Changing an MCP Server
 
-MCP implementations live under `Mcp-Servers/`. Each subfolder maps to a server key in `AI-Skills/mcp.json`:
+| Folder | MCP Server Key | Skills |
+|--------|---------------|--------|
+| `Mcp-Servers/Build.Log.Filter.Mcp/` | `build-log-filter` | build-log-filter |
+| `Mcp-Servers/Codebase.Analyzer.Mcp/` | `codebase-analyzer` | codebase-analyzer |
+| `Mcp-Servers/Dev.Filesystem.Mcp/` | `dev-filesystem-mcp` | dev-filesystem-mcp, dev-tooling-mcp |
+| `Mcp-Servers/Dev.Angular.Mcp/` | `dev-angular-mcp` | dev-angular-mcp, dev-tooling-mcp |
+| `Mcp-Servers/Dev.Dotnet.Mcp/` | `dev-dotnet-mcp` | dev-dotnet-mcp, dev-tooling-mcp |
 
-| Folder | MCP key (`mcp.json`) | Package (AI-Skills) |
-|--------|----------------------|---------------------|
-| `Mcp-Servers/Build.Log.Filter.Mcp/` | `build-log-filter` | `build-log-filter` |
-| `Mcp-Servers/Codebase.Analyzer.Mcp/` | `codebase-analyzer` | `codebase-analyzer` |
-| `Mcp-Servers/Dev.Filesystem.Mcp/` | `dev-filesystem-mcp` | (dev-tooling-mcp) |
-| `Mcp-Servers/Dev.Angular.Mcp/` | `dev-angular-mcp` | (dev-tooling-mcp) |
-| `Mcp-Servers/Dev.Dotnet.Mcp/` | `dev-dotnet-mcp` | (dev-tooling-mcp) |
-
-When changing an MCP: update the server code in `Mcp-Servers/<name>/`, sync `AI-Skills/mcp.json` / package manifests if Docker tags or tools change, and update the matching skill or rule in `AI-Skills/`.
+When changing an MCP: update `Mcp-Servers/<name>/`, update `docs/mcp-<name>.md`, and update the matching skill under `.claude/skills/`.
 
 ---
 
-## Platform Notes
+## MCP Configuration
 
-**Cursor** activates skills via Rules (`.mdc`). Rules auto-inject context based on file patterns or keywords, and route to agent profiles in `.cursor/agents/`.
+MCP servers run as Docker containers. Configure in Claude Code settings (`mcpServers`):
 
-**Claude Code** invokes skills directly (`/skill-name`) or via the `Skill` tool. The harness uses the skill's `description` + `when_to_use` frontmatter for automatic selection. Agent profiles deployed to `.claude/agents/` are auto-discovered; skills can also reference agent files directly to delegate with full agent context.
+| Server | Port | Volume |
+|--------|------|--------|
+| build-log-filter | 8089 | — |
+| codebase-analyzer | 8090 | `${workspaceFolder}:/workspace:ro` |
+| dev-filesystem-mcp | 8091 | `${workspaceFolder}:/project:ro` |
+| dev-angular-mcp | 8092 | `${workspaceFolder}:/workspace` |
+| dev-dotnet-mcp | 8093 | `${workspaceFolder}:/workspace` |
 
-**Rules are Cursor-only.** Claude Code does not use `.mdc` files. The trigger equivalent in Claude Code is the skill's `description` + `when_to_use` frontmatter.
+Reference config: `AI-Skills/mcp.json` (legacy reference snapshot).
+
+**Path convention:** All MCP calls use `/workspace/` prefix (codebase-analyzer, dev-angular-mcp, dev-dotnet-mcp) or `/project/` prefix (dev-filesystem-mcp). Never use host paths or `{parameter}` placeholders.
+
+---
+
+## Enforcement
+
+Silent-shortcut prevention and MCP-first policy: `docs/silent-shortcut-prevention.md`
+
+Agent compliance and output style: `.claude/references/agent-compliance.md`, `.claude/references/output-style-canon.md`

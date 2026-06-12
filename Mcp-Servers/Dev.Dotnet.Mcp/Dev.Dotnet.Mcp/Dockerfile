@@ -8,11 +8,12 @@ COPY Dev.Dotnet.Mcp ./Dev.Dotnet.Mcp
 RUN dotnet publish Dev.Dotnet.Mcp/Dev.Dotnet.Mcp.csproj -c Release -o /out /p:UseAppHost=false \
     /p:InformationalVersion="0.1.0+build.${BUILD_NUMBER}"
 
-## Runtime — SDK required for dotnet new / sln add; .NET 8 runtime added for net8.0 test hosts
+## .NET 8 runtime — copied from official image so net8.0 test hosts can run alongside SDK 9
+FROM mcr.microsoft.com/dotnet/runtime:8.0 AS dotnet8
+
+## Runtime — SDK 9 required for dotnet new / sln add
 FROM mcr.microsoft.com/dotnet/sdk:9.0
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends dotnet-runtime-8.0 \
-    && rm -rf /var/lib/apt/lists/*
+COPY --from=dotnet8 /usr/share/dotnet/shared/Microsoft.NETCore.App /usr/share/dotnet/shared/Microsoft.NETCore.App
 WORKDIR /app
 COPY --from=build /out ./
 ENV DOTNET_ENVIRONMENT=Production

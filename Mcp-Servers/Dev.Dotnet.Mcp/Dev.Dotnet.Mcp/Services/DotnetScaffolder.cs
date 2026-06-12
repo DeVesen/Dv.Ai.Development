@@ -47,18 +47,22 @@ public sealed class DotnetScaffolder
 
         var fullOutput = Path.GetFullPath(outputPath);
         var newArgs = BuildNewCommand(template, name, fullOutput, options);
-        var newResult = await RunDotnetAsync(newArgs, cancellationToken);
+        var (newSuccess, newError, newConsole) = await RunDotnetAsync(newArgs, cancellationToken);
 
-        if (!newResult.Success)
+        if (!newSuccess)
         {
             return new DotnetScaffoldResult
             {
                 Success = false,
                 Command = $"dotnet {newArgs}",
                 ProjectPath = fullOutput,
-                Error = newResult.Error
+                Error = newError,
+                ConsoleOutput = newConsole
             };
         }
+
+        var consoleLog = new System.Text.StringBuilder();
+        consoleLog.AppendLine(newConsole);
 
         var addedToSolution = false;
         if (!string.IsNullOrWhiteSpace(solutionPath))
@@ -70,9 +74,10 @@ public sealed class DotnetScaffolder
             if (File.Exists(slnPath) && File.Exists(csproj))
             {
                 var slnArgs = BuildSlnAddCommand(slnPath, csproj);
-                var slnResult = await RunDotnetAsync(slnArgs, cancellationToken);
-                addedToSolution = slnResult.Success;
-                if (!slnResult.Success)
+                var (slnSuccess, slnError, slnConsole) = await RunDotnetAsync(slnArgs, cancellationToken);
+                consoleLog.AppendLine(slnConsole);
+                addedToSolution = slnSuccess;
+                if (!slnSuccess)
                 {
                     return new DotnetScaffoldResult
                     {
@@ -80,7 +85,8 @@ public sealed class DotnetScaffolder
                         Command = $"dotnet {newArgs}",
                         ProjectPath = fullOutput,
                         AddedToSolution = false,
-                        Error = $"Project created but sln add failed: {slnResult.Error}"
+                        Error = $"Project created but sln add failed: {slnError}",
+                        ConsoleOutput = consoleLog.ToString().Trim()
                     };
                 }
             }
@@ -91,7 +97,8 @@ public sealed class DotnetScaffolder
             Success = true,
             Command = $"dotnet {newArgs}",
             ProjectPath = fullOutput,
-            AddedToSolution = addedToSolution
+            AddedToSolution = addedToSolution,
+            ConsoleOutput = consoleLog.ToString().Trim()
         };
     }
 
@@ -101,7 +108,7 @@ public sealed class DotnetScaffolder
         Error = message
     };
 
-    private static async Task<(bool Success, string? Error)> RunDotnetAsync(string arguments, CancellationToken cancellationToken)
+    private static async Task<(bool Success, string? Error, string ConsoleOutput)> RunDotnetAsync(string arguments, CancellationToken cancellationToken)
     {
         var psi = new ProcessStartInfo
         {
@@ -118,24 +125,26 @@ public sealed class DotnetScaffolder
         try
         {
             if (!process.Start())
-                return (false, "Failed to start dotnet process.");
+                return (false, "Failed to start dotnet process.", $"> dotnet {arguments}\n\n(process failed to start)");
         }
         catch (Exception ex)
         {
-            return (false, ex.Message);
+            return (false, ex.Message, $"> dotnet {arguments}\n\n(exception: {ex.Message})");
         }
 
         var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken);
         var stderr = await process.StandardError.ReadToEndAsync(cancellationToken);
         await process.WaitForExitAsync(cancellationToken);
 
+        var consoleOutput = $"> dotnet {arguments}\n\n{(stdout + "\n" + stderr).Trim()}";
+
         if (process.ExitCode == 0)
-            return (true, null);
+            return (true, null, consoleOutput);
 
         var message = !string.IsNullOrWhiteSpace(stderr) ? stderr.Trim()
             : !string.IsNullOrWhiteSpace(stdout) ? stdout.Trim()
             : $"dotnet exited with code {process.ExitCode}.";
-        return (false, message);
+        return (false, message, consoleOutput);
     }
 
     private static string Quote(string value) =>

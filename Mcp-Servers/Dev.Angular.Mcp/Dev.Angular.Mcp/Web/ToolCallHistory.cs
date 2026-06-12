@@ -7,7 +7,7 @@ public sealed class ToolCallHistory
     private int _counter;
     private const int MaxEntries = 200;
 
-    public ToolCallRecord Record(string tool, string parameters, string output, long durationMs)
+    public ToolCallRecord Record(string tool, string parameters, string output, string consoleOutput, long durationMs)
     {
         var preview = output.Length <= 500 ? output : output[..500];
         var record = new ToolCallRecord(
@@ -17,7 +17,8 @@ public sealed class ToolCallHistory
             Params: parameters,
             OutputChars: output.Length,
             DurationMs: durationMs,
-            Preview: preview);
+            Preview: preview,
+            ConsoleOutput: consoleOutput);
 
         lock (_lock)
         {

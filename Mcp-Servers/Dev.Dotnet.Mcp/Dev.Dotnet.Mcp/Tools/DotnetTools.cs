@@ -47,7 +47,7 @@ public sealed class DotnetTools
             async () =>
             {
                 var result = await _scaffolder.ScaffoldAsync(template, name, output_path, solution_path, options);
-                return JsonSerializer.Serialize(result, JsonDefaults.Options);
+                return (JsonSerializer.Serialize(result, JsonDefaults.Options), result.ConsoleOutput);
             });
     }
 
@@ -63,7 +63,7 @@ public sealed class DotnetTools
             () =>
             {
                 var result = _directories.Create(base_path, paths_json);
-                return Task.FromResult(JsonSerializer.Serialize(result, JsonDefaults.Options));
+                return Task.FromResult((JsonSerializer.Serialize(result, JsonDefaults.Options), string.Empty));
             });
     }
 
@@ -81,7 +81,7 @@ public sealed class DotnetTools
             async () =>
             {
                 var result = await _runner.BuildAsync(path, configuration);
-                return JsonSerializer.Serialize(result, JsonDefaults.Options);
+                return (JsonSerializer.Serialize(result, JsonDefaults.Options), result.ConsoleOutput);
             });
     }
 
@@ -99,20 +99,20 @@ public sealed class DotnetTools
             async () =>
             {
                 var result = await _runner.TestAsync(path, options);
-                return JsonSerializer.Serialize(result, JsonDefaults.Options);
+                return (JsonSerializer.Serialize(result, JsonDefaults.Options), result.ConsoleOutput);
             });
     }
 
-    private async Task<string> ExecuteAsync(string toolName, object parameters, Func<Task<string>> action)
+    private async Task<string> ExecuteAsync(string toolName, object parameters, Func<Task<(string json, string consoleOutput)>> action)
     {
         var sw = Stopwatch.StartNew();
         var paramJson = JsonSerializer.Serialize(parameters, JsonDefaults.Options);
 
         try
         {
-            var result = await action();
+            var (result, consoleOutput) = await action();
             sw.Stop();
-            _history.Record(toolName, paramJson, result, sw.ElapsedMilliseconds);
+            _history.Record(toolName, paramJson, result, consoleOutput, sw.ElapsedMilliseconds);
             _logger.LogInformation("=== {Tool} ({DurationMs}ms) ===", toolName, sw.ElapsedMilliseconds);
             return result;
         }
@@ -120,7 +120,7 @@ public sealed class DotnetTools
         {
             sw.Stop();
             var errorJson = JsonSerializer.Serialize(new { error = ex.Message }, JsonDefaults.Options);
-            _history.Record(toolName, paramJson, errorJson, sw.ElapsedMilliseconds);
+            _history.Record(toolName, paramJson, errorJson, string.Empty, sw.ElapsedMilliseconds);
             _logger.LogError(ex, "=== {Tool} failed ===", toolName);
             return errorJson;
         }

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Dev.Dotnet.Mcp.Models;
 
 public sealed class DotnetBuildResult
@@ -8,4 +10,6 @@ public sealed class DotnetBuildResult
     public string[] Warnings { get; init; } = [];
     public int ExitCode { get; init; }
     public string Summary { get; init; } = string.Empty;
+    [JsonIgnore]
+    public string ConsoleOutput { get; set; } = string.Empty;
 }

@@ -111,7 +111,10 @@ public sealed class AngularTools
             sw.Stop();
 
             var json = JsonSerializer.Serialize(ToResponse(result), JsonOptions);
-            _history.Record(toolName, paramJson, json, sw.ElapsedMilliseconds);
+            var consoleOutput = string.Join("\n", new[] { result.Stdout, result.Stderr }
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s!.Trim()));
+            _history.Record(toolName, paramJson, json, consoleOutput, sw.ElapsedMilliseconds);
             _logger.LogInformation(
                 "=== {Tool} ({DurationMs}ms, success={Success}, files={FileCount}) ===",
                 toolName, sw.ElapsedMilliseconds, result.Success, result.CreatedFiles.Count);
@@ -122,7 +125,7 @@ public sealed class AngularTools
         {
             sw.Stop();
             var errorJson = JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
-            _history.Record(toolName, paramJson, errorJson, sw.ElapsedMilliseconds);
+            _history.Record(toolName, paramJson, errorJson, string.Empty, sw.ElapsedMilliseconds);
             _logger.LogError(ex, "=== {Tool} failed ===", toolName);
             return errorJson;
         }
@@ -142,7 +145,7 @@ public sealed class AngularTools
             sw.Stop();
 
             var json = JsonSerializer.Serialize(ToBuildResponse(result), JsonOptions);
-            _history.Record(toolName, paramJson, json, sw.ElapsedMilliseconds);
+            _history.Record(toolName, paramJson, json, result.ConsoleOutput, sw.ElapsedMilliseconds);
             _logger.LogInformation(
                 "=== {Tool} ({DurationMs}ms, success={Success}, errors={ErrorCount}) ===",
                 toolName, sw.ElapsedMilliseconds, result.Success, result.Errors.Length);
@@ -153,7 +156,7 @@ public sealed class AngularTools
         {
             sw.Stop();
             var errorJson = JsonSerializer.Serialize(new { error = ex.Message }, JsonOptions);
-            _history.Record(toolName, paramJson, errorJson, sw.ElapsedMilliseconds);
+            _history.Record(toolName, paramJson, errorJson, string.Empty, sw.ElapsedMilliseconds);
             _logger.LogError(ex, "=== {Tool} failed ===", toolName);
             return errorJson;
         }

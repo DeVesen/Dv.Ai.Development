@@ -23,12 +23,18 @@ public sealed partial class DotnetRunner
     [GeneratedRegex(@"Build\s+(succeeded|FAILED)\.", RegexOptions.IgnoreCase)]
     private static partial Regex BuildSummaryLineRegex();
 
-    [GeneratedRegex(@"(?:Passed|Failed)!\s*-\s*Failed:\s*\d+.*", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?:Passed|Failed|Aborted)!\s*-\s*Failed:\s*\d+.*", RegexOptions.IgnoreCase)]
     private static partial Regex TestSummaryLineRegex();
 
     // Greedy capture stops at the last [ before a duration indicator (digits or <)
     [GeneratedRegex(@"^\s*Failed\s+(.+)\s+\[(?:<?\s*\d)", RegexOptions.IgnoreCase)]
     private static partial Regex FailedTestLineRegex();
+
+    [GeneratedRegex(@"No test matches the given testcase filter\b.*", RegexOptions.IgnoreCase)]
+    private static partial Regex NoTestMatchesRegex();
+
+    [GeneratedRegex(@"^Test Run Aborted\.", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex TestRunAbortedRegex();
 
     public async Task<DotnetBuildResult> BuildAsync(
         string path,
@@ -124,17 +130,37 @@ public sealed partial class DotnetRunner
             .Select(l => TestSummaryLineRegex().Match(l))
             .FirstOrDefault(m => m.Success);
 
+        var noMatchLine = lines
+            .Select(l => NoTestMatchesRegex().Match(l))
+            .FirstOrDefault(m => m.Success);
+
+        var abortLine = TestRunAbortedRegex().Match(string.Join("\n", lines));
+
+        var errors = failedTests.Length > 0
+            ? failedTests
+            : noMatchLine is { Success: true }
+                ? [noMatchLine.Value.Trim()]
+                : abortLine.Success
+                    ? ["Test Run Aborted."]
+                    : [];
+
         var summary = summaryLine is { Success: true }
             ? summaryLine.Value.Trim()
             : exitCode == 0
                 ? "All tests passed."
-                : $"Tests failed: {failedTests.Length} failing test(s).";
+                : failedTests.Length > 0
+                    ? $"Tests failed: {failedTests.Length} failing test(s)."
+                    : noMatchLine is { Success: true }
+                        ? "No tests matched the filter — run aborted."
+                        : abortLine.Success
+                            ? "Test run aborted — see Console output for details."
+                            : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
 
         return new DotnetBuildResult
         {
             Success = exitCode == 0,
             Command = "dotnet test",
-            Errors = failedTests,
+            Errors = errors,
             Warnings = [],
             ExitCode = exitCode,
             Summary = summary,
@@ -202,7 +228,9 @@ public sealed partial class DotnetRunner
             return MakeFailResult($"Process communication error: {ex.Message}", commandLabel);
         }
 
-        return parser(stdout, stderr, process.ExitCode);
+        var result = parser(stdout, stderr, process.ExitCode);
+        result.ConsoleOutput = $"> dotnet {arguments}\n\n{StripAnsi(stdout + "\n" + stderr).Trim()}";
+        return result;
     }
 
     private static string StripAnsi(string input) => AnsiRegex().Replace(input, string.Empty);

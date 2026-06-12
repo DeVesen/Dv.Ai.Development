@@ -7,4 +7,5 @@ public sealed record ToolCallRecord(
     string Params,
     int OutputChars,
     long DurationMs,
-    string Preview);
+    string Preview,
+    string ConsoleOutput);

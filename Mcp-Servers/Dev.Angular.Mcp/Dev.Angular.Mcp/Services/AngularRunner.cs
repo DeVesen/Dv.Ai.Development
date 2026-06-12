@@ -16,7 +16,7 @@ public sealed partial class AngularRunner
     [GeneratedRegex(@"\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07\x1B]*(?:\x07|\x1B\\))")]
     private static partial Regex AnsiRegex();
 
-    [GeneratedRegex(@"(?:ERROR in |error\s+TS\d+:|✘\s*\[ERROR\])", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?:ERROR in |error\s+TS\d+:|✘\s*\[ERROR\]|^\s*✖|An unhandled exception occurred:)", RegexOptions.IgnoreCase)]
     private static partial Regex BuildErrorLineRegex();
 
     [GeneratedRegex(@"(?:WARNING in |warning\s+TS\d+:|⚠\s*\[WARNING\])", RegexOptions.IgnoreCase)]
@@ -36,11 +36,15 @@ public sealed partial class AngularRunner
         if (!ValidateRoot(projectRoot, out var error))
             return MakeFailResult(error, "ng build");
 
+        var preStep = await EnsureCompatibleEsbuildAsync(projectRoot, cancellationToken);
+
         var args = new List<string> { "build" };
         if (!string.IsNullOrWhiteSpace(configuration))
             args.Add($"--configuration={configuration.Trim()}");
 
-        return await RunAsync("ng build", projectRoot, args, ParseBuildOutput, BuildTimeoutSeconds, cancellationToken);
+        var result = await RunAsync("ng build", projectRoot, args, ParseBuildOutput, BuildTimeoutSeconds, cancellationToken);
+        if (preStep != null) result.ConsoleOutput = preStep + "\n\n" + result.ConsoleOutput;
+        return result;
     }
 
     public async Task<BuildResult> TestAsync(
@@ -51,11 +55,15 @@ public sealed partial class AngularRunner
         if (!ValidateRoot(projectRoot, out var error))
             return MakeFailResult(error, "ng test");
 
+        var preStep = await EnsureCompatibleEsbuildAsync(projectRoot, cancellationToken);
+
         var args = new List<string> { "test", "--watch=false" };
         if (!string.IsNullOrWhiteSpace(options))
             args.AddRange(options.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
-        return await RunAsync("ng test", projectRoot, args, ParseTestOutput, TestTimeoutSeconds, cancellationToken);
+        var result = await RunAsync("ng test", projectRoot, args, ParseTestOutput, TestTimeoutSeconds, cancellationToken);
+        if (preStep != null) result.ConsoleOutput = preStep + "\n\n" + result.ConsoleOutput;
+        return result;
     }
 
     public static BuildResult ParseBuildOutput(string stdout, string stderr, int exitCode)
@@ -80,7 +88,9 @@ public sealed partial class AngularRunner
 
         var summary = exitCode == 0
             ? $"Build successful. {warnings.Length} warning(s)."
-            : $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s).";
+            : errors.Length > 0
+                ? $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s)."
+                : $"Build failed (exitCode {exitCode}) — see Console output for details.";
 
         return new BuildResult
         {
@@ -106,21 +116,39 @@ public sealed partial class AngularRunner
             .Take(MaxErrors)
             .ToArray();
 
+        var tsErrors = lines
+            .Where(l => BuildErrorLineRegex().IsMatch(l))
+            .Select(l => l.Trim())
+            .Where(l => l.Length > 0)
+            .Distinct()
+            .Take(MaxErrors)
+            .ToArray();
+
         var executedLine = lines
             .Select(l => KarmaExecutedRegex().Match(l))
             .FirstOrDefault(m => m.Success);
+
+        var errors = failedTests.Length > 0
+            ? failedTests
+            : tsErrors.Length > 0
+                ? tsErrors
+                : [];
 
         var summary = executedLine is { Success: true }
             ? executedLine.Value.Trim()
             : exitCode == 0
                 ? "All tests passed."
-                : $"Tests failed: {failedTests.Length} failing test(s).";
+                : failedTests.Length > 0
+                    ? $"Tests failed: {failedTests.Length} failing test(s)."
+                    : tsErrors.Length > 0
+                        ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
+                        : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
 
         return new BuildResult
         {
             Success = exitCode == 0,
             Command = "ng test",
-            Errors = failedTests,
+            Errors = errors,
             Warnings = [],
             ExitCode = exitCode,
             Summary = summary,
@@ -188,7 +216,53 @@ public sealed partial class AngularRunner
             return MakeFailResult($"Process communication error: {ex.Message}", commandLabel);
         }
 
-        return parser(stdout, stderr, process.ExitCode);
+        var result = parser(stdout, stderr, process.ExitCode);
+        result.ConsoleOutput = $"> {NgExecutable} {string.Join(' ', args)}\n\n{StripAnsi(stdout + "\n" + stderr).Trim()}";
+        return result;
+    }
+
+    private static async Task<string?> EnsureCompatibleEsbuildAsync(
+        string projectRoot,
+        CancellationToken cancellationToken)
+    {
+        if (!OperatingSystem.IsLinux()) return null;
+
+        var esbuildDir = Path.Combine(projectRoot, "node_modules", "@esbuild");
+        if (!Directory.Exists(esbuildDir)) return null;
+
+        var linuxPkg = Path.Combine(esbuildDir, "linux-x64");
+        if (Directory.Exists(linuxPkg)) return null;
+
+        var hasWrongPlatform = Directory.GetDirectories(esbuildDir)
+            .Select(Path.GetFileName)
+            .Any(n => n != null && (n.StartsWith("win", StringComparison.OrdinalIgnoreCase)
+                                 || n.StartsWith("darwin", StringComparison.OrdinalIgnoreCase)));
+        if (!hasWrongPlatform) return null;
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = "npm",
+            Arguments = "install @esbuild/linux-x64 --no-save",
+            WorkingDirectory = projectRoot,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        using var process = new Process { StartInfo = psi };
+        if (!process.Start()) return null;
+
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(3));
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync(linked.Token);
+        var stderrTask = process.StandardError.ReadToEndAsync(linked.Token);
+        try { await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(linked.Token)); }
+        catch (OperationCanceledException) { try { process.Kill(entireProcessTree: true); } catch { } }
+
+        var output = StripAnsi((await stdoutTask) + "\n" + (await stderrTask)).Trim();
+        return $"> npm install @esbuild/linux-x64 --no-save  [auto: non-Linux esbuild detected]\n\n{output}";
     }
 
     private static bool ValidateRoot(string projectRoot, out string error)

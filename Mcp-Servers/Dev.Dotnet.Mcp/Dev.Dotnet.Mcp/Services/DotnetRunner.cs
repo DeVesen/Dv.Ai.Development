@@ -202,7 +202,9 @@ public sealed partial class DotnetRunner
             return MakeFailResult($"Process communication error: {ex.Message}", commandLabel);
         }
 
-        return parser(stdout, stderr, process.ExitCode);
+        var result = parser(stdout, stderr, process.ExitCode);
+        result.ConsoleOutput = $"> dotnet {arguments}\n\n{StripAnsi(stdout + "\n" + stderr).Trim()}";
+        return result;
     }
 
     private static string StripAnsi(string input) => AnsiRegex().Replace(input, string.Empty);

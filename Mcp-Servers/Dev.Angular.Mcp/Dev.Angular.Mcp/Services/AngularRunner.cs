@@ -188,7 +188,9 @@ public sealed partial class AngularRunner
             return MakeFailResult($"Process communication error: {ex.Message}", commandLabel);
         }
 
-        return parser(stdout, stderr, process.ExitCode);
+        var result = parser(stdout, stderr, process.ExitCode);
+        result.ConsoleOutput = $"> {NgExecutable} {string.Join(' ', args)}\n\n{StripAnsi(stdout + "\n" + stderr).Trim()}";
+        return result;
     }
 
     private static bool ValidateRoot(string projectRoot, out string error)

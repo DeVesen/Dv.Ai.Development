@@ -81,6 +81,9 @@ internal static class LogHtmlTemplate
               overflow: auto; max-height: 320px; white-space: pre-wrap; word-break: break-word;
               font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
             }
+            pre.console {
+              background: #060809; border-color: #2a3040; color: #a8c4e0; max-height: 500px;
+            }
           </style>
         </head>
         <body>
@@ -147,6 +150,7 @@ internal static class LogHtmlTemplate
                   + '<div class="meta-cell"><div class="meta-label">Output Chars</div><div class="meta-value">' + fmtNum(it.outputChars) + '</div></div>'
                   + '</div></div>'
                   + '<div class="section"><div class="section-title">Parameter</div><pre>' + esc(it.params) + '</pre></div>'
+                  + (it.consoleOutput ? '<div class="section"><div class="section-title">Console</div><pre class="console">' + esc(it.consoleOutput) + '</pre></div>' : '')
                   + '<div class="section"><div class="section-title">Output (Preview)</div><pre>' + esc(it.preview) + '</pre></div>'
                   + '</div>'
                   + '</div>';

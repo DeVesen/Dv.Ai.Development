@@ -16,7 +16,7 @@ public sealed partial class AngularRunner
     [GeneratedRegex(@"\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07\x1B]*(?:\x07|\x1B\\))")]
     private static partial Regex AnsiRegex();
 
-    [GeneratedRegex(@"(?:ERROR in |error\s+TS\d+:|✘\s*\[ERROR\])", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?:ERROR in |error\s+TS\d+:|✘\s*\[ERROR\]|^\s*✖|An unhandled exception occurred:)", RegexOptions.IgnoreCase)]
     private static partial Regex BuildErrorLineRegex();
 
     [GeneratedRegex(@"(?:WARNING in |warning\s+TS\d+:|⚠\s*\[WARNING\])", RegexOptions.IgnoreCase)]
@@ -80,7 +80,9 @@ public sealed partial class AngularRunner
 
         var summary = exitCode == 0
             ? $"Build successful. {warnings.Length} warning(s)."
-            : $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s).";
+            : errors.Length > 0
+                ? $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s)."
+                : $"Build failed (exitCode {exitCode}) — see Console output for details.";
 
         return new BuildResult
         {

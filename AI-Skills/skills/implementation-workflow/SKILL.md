@@ -34,11 +34,38 @@ disable-model-invocation: true
 `„⚠️ BLOCKER: [dev-angular-mcp | dev-dotnet-mcp] nicht erreichbar — kein Build/Test-Lauf starten."`
 Kein Shell-Fallback ohne explizite Nutzerfreigabe; kein build-log-filter-Ausweichen ohne Freigabe.
 
+**"path does not exist" ≠ MCP nicht erreichbar:** MCP läuft — der Pfad ist falsch. Vor BLOCKER systematisch prüfen:
+1. `mcp-project-paths.md` (deployed) lesen → Kanon-Pfad für `{mcp-backend-path}`, `{mcp-backend-solution}`
+2. Solution-Datei (`.sln`) statt Projekt-Pfad versuchen
+3. Relativen Pfad ohne `/workspace/`-Präfix versuchen (Ableitung: `"/workspace/" + relPath aus skill-params.json`)
+Erst nach diesen Versuchen ohne Erfolg → BLOCKER.
+`test_dotnet_solution` / `test_angular_project` sind eigenständige MCP-Tools — separat aufrufen, auch wenn Build-MCP bereits lief.
+
 **Kein Opt-out** (außer explizitem User-Text für B/C/D gemäß `{verification-commands}`).
 
 **Transparenz-Pflicht:** Vor jedem Build/Test-Lauf im Chat ausgeben:
 `„Führe jetzt Build/Test via [build_angular_project | test_angular_project | build_dotnet_solution | test_dotnet_solution] aus."`
 Wenn dieser Satz nicht möglich, weil Shell statt MCP → **STOPP:** `„⚠️ MCP-First-Pflicht verletzt: [Kommando] ohne MCP-Aufruf. Nicht regelkonform."`
+
+## ⚠️ Orchestrator-Delegation-Pflicht — Anti-Shortcut-Regel
+
+**Orchestrator schreibt in Schritt 2+3 keinen Produkt-Code selbst — immer implement-agent.**
+
+Auch wenn der Nutzer sagt „mach alles fertig", „stoppe nicht", „ein Turn":
+→ Delegation bleibt Pflicht, kein Opt-out, keine Ausnahme.
+
+**Vollständiges Lesen Pflicht:** Skill end-to-end lesen vor dem ersten Schritt — kein Partial-Read und dann starten.
+
+**Transparenz-Pflicht vor Schritt 2:** Im Chat ausgeben:
+`„Starte jetzt implement-agent für Slice [IMP-*]…"`
+
+**Wenn dieser Satz nicht möglich, weil Orchestrator selbst implementieren will → STOPP:**
+`„⚠️ Orchestrator-Delegation verletzt: Slice [IMP-*] ohne implement-agent. Nicht regelkonform. Neu starten."`
+
+**Verboten:**
+- Orchestrator schreibt Produkt-Code statt implement-agent zu delegieren
+- Orchestrator- und Implementierer-Rolle in einem Turn zusammenlegen
+- Kein Technik-Gate / kein 6× Review-Loop trotz abgeschlossener Implementierung
 
 ## Subagent-Typen und Agent-Definitionen (host-neutral)
 

@@ -14,36 +14,34 @@ metadata:
 ## Skill-Verbund
 
 Bei Angular-Arbeit immer zusätzlich laden:
-- **angular-developer-extension** (immer — Projektstruktur, Test-Policy, Signal-Architektur, Migration)
-- **angular-new-app** (nur bei neuem Projekt / `ng new` / Greenfield-Scaffolding)
-- **angular-new-app-extension** (nur zusammen mit angular-new-app, für Decision Gate + Plan-Orchestrierung)
-- **angular-cache-busting** (nur bei Cache-Konfiguration, `outputHashing`, stale `index.html`)
+- `angular-developer-extension` (immer — Projektstruktur, Test-Policy, Signal-Architektur)
+- `angular-new-app` + `angular-new-app-extension` (nur bei neuem Projekt / `ng new`)
+- `angular-cache-busting` (nur bei Cache-Konfiguration / Browser-Cache-Problemen nach Deploy)
 
-> **Projektspezifischer Override:** Regeln aus `./AGENTS.md` (z. B. Tailwind-Verbot, Styleguide in `./.skills`) überschreiben diesen Skill dort, wo sie anderes nahelegen.
+**LAC-Override:** Projektspezifische `AGENTS.md` im Ziel-Repository (z. B. Tailwind-Verbot, Pflicht-UI-Lib, Styleguide) überschreiben diese Skill-Regeln dort, wo Vendor-Skills anderes nahelegen.
 
-> **Opt-out:** `ohne die Angular Skills` → alle Angular-Pflicht-Skills nicht laden.
-
----
+**Opt-out:** `ohne die Angular Skills` → dieser Skill-Verbund wird nicht geladen.
 
 ## Voraussetzungen
 
 1. **Angular-Version** vor Antwort prüfen — Best Practices variieren stark zwischen Majors.
 2. Angular Style Guide + Best Practices für Wartbarkeit/Performance einhalten.
-3. Nach Code-Generierung Build via **dev-angular-mcp** ausführen (siehe Build/Test-Sektion unten).
+3. Nach Code-Generierung Build via **dev-angular-mcp** ausführen — **kein** direkter Shell-Aufruf `ng build`. Kanon: [references/op-tooling.md](references/op-tooling.md).
 4. `scaffold_angular_component` / `scaffold_angular_service` via **dev-angular-mcp** bevorzugen (Token-effizient, Conventions eingebaut) — siehe [references/op-tooling.md](references/op-tooling.md).
 
 ## Build/Test via MCP (Pflicht)
 
-| Aktion | MCP-Tool | VERBOTEN |
-|--------|----------|---------|
-| Build | `build_angular_project` (dev-angular-mcp) | Shell `ng build` |
-| Test | `test_angular_project` (dev-angular-mcp) | Shell `ng test` |
+| Verboten | Richtig |
+|----------|---------|
+| Shell: `ng build` | `build_angular_project` (dev-angular-mcp) |
+| Shell: `ng test` | `test_angular_project` (dev-angular-mcp) |
+| build-log-filter für diese Kommandos | MCPs filtern intern — `errors[]` direkt auswerten |
 
-`build_angular_project` und `test_angular_project` filtern Konsolenausgabe intern — der LLM erhält ausschließlich `errors[]`, `warnings[]`, `summary`. Kein build-log-filter für diese Aufrufe.
+**Hard Stop — MCP nicht erreichbar:** `BLOCKER: dev-angular-mcp nicht erreichbar`
+- Kein stiller Fallback auf Shell
+- Nutzer informieren; erst nach **expliziter Freigabe**: Shell-Fallback
 
-**Hard Stop wenn MCP nicht erreichbar:** `BLOCKER: dev-angular-mcp nicht erreichbar` — kein Shell-Fallback ohne explizite Nutzerfreigabe.
-
-Referenz: `docs/mcp-dev-angular.md` (vollständige Tool-Dokumentation)
+Referenz: `docs/mcp-dev-angular.md`
 
 *Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
 

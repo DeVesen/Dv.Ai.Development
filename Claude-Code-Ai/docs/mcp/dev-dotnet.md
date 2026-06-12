@@ -88,7 +88,7 @@ Kein build-log-filter erforderlich für diese Tools.
 
 ---
 
-## Konfiguration (mcp.json)
+## Konfiguration (settings.json)
 
 ```jsonc
 "dev-dotnet-mcp": {

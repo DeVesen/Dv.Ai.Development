@@ -43,9 +43,9 @@ Weitere Beispiele: Kanon-Skill.
 
 ---
 
-## Konfiguration (mcp.json)
+## Konfiguration (settings.json)
 
-Siehe `packages/dev-filesystem-mcp.json` und Referenz `.claude/mcp.json`.
+Siehe `packages/dev-filesystem-mcp.json` und Referenz `.claude/settings.json`.
 
 ---
 

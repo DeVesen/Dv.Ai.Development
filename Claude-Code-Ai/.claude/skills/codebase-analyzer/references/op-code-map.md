@@ -59,7 +59,7 @@ Host-Platzhalter `{frontend-path}` / `{backend-path}` dienen Shell/Verifikation 
 
 Bei Multi-Stack-Aufgaben: pro benötigtem `.csproj`/FE-Root einmal `index_project` (Cache ~5 min, `useCache: true`). Orchestrator/Scout dokumentiert, welche Indizes gelaufen sind.
 
-**Volume-Mount-Voraussetzung:** Die `.cursor/mcp.json` muss `-v ${workspaceFolder}:/workspace:ro` enthalten. Ohne Mount schlagen alle dateibasierten Tools fehl — dann MCP-Fallback deklarieren und auf Read/Grep ausweichen.
+**Volume-Mount-Voraussetzung:** Die `.claude/settings.json` muss `-v "$PWD:/workspace:ro"` enthalten. Ohne Mount schlagen alle dateibasierten Tools fehl — dann MCP-Fallback deklarieren und auf Read/Grep ausweichen.
 
 ## MCP-Pfadauflösung (Docker) — Pflicht-Playbook
 

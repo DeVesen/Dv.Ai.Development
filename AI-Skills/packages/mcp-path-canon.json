@@ -1,0 +1,20 @@
+{
+  "name": "mcp-path-canon",
+  "description": "MCP container path canon: /workspace/ for codebase-analyzer, /project/ for dev-filesystem; source of truth mcp-project-paths.md",
+  "rules": [
+    "rules/mcp-path-canon.mdc"
+  ],
+  "skills": [],
+  "agents": [],
+  "references": [
+    "references/mcp-project-paths.template.md",
+    "references/mcp-smoke-test.md"
+  ],
+  "params": [
+    "{mcp-frontend-path}",
+    "{mcp-backend-path}",
+    "{mcp-backend-solution}",
+    "{index-solution-policy}"
+  ],
+  "dependsOn": []
+}

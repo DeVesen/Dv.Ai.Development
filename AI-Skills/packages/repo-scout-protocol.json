@@ -1,0 +1,17 @@
+{
+  "name": "repo-scout-protocol",
+  "description": "MCP-first repo scouting protocol: codebase-analyzer then dev-filesystem before native grep/read",
+  "rules": [
+    "rules/repo-scout-protocol.mdc"
+  ],
+  "skills": [
+    "skills/repo-scout-protocol"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": [
+    "mcp-path-canon",
+    "codebase-analyzer"
+  ]
+}

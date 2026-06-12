@@ -1,0 +1,14 @@
+{
+  "name": "codebase-analyzer",
+  "description": "MCP-first codebase analysis: index, find, complexity, refactoring safety, review, test quality",
+  "rules": [
+    "rules/codebase-analyzer.mdc"
+  ],
+  "skills": [
+    "skills/codebase-analyzer"
+  ],
+  "agents": [],
+  "references": [],
+  "params": [],
+  "dependsOn": []
+}

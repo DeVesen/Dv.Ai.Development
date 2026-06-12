@@ -1,0 +1,8 @@
+{
+  "file": "BoyscoutSample.cs",
+  "minActions": 2,
+  "requiredCategories": ["nullability", "dead_code", "complexity", "untested_api"],
+  "compilerGateFile": "CompilerGate.cs",
+  "compilerGateMinCritical": 1,
+  "compilerGateSkipCategories": ["untested_api", "extraction"]
+}

@@ -1,0 +1,17 @@
+services:
+  dv-filesystem-mcp:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        BUILD_NUMBER: ${BUILD_NUMBER:-0}
+    image: dv-filesystem-mcp:local
+    stdin_open: true
+    tty: false
+    volumes:
+      - ${PROJECT_ROOT:-/tmp}:/project:ro
+    ports:
+      - "127.0.0.1:8091:8091"
+    environment:
+      LOG_VIEWER_PORT: "8091"
+      PROJECT_ROOT: "/project"

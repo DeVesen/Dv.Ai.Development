@@ -1,0 +1,24 @@
+[
+  {
+    "method": "shortMethod",
+    "suggestedName": null,
+    "startLine": null,
+    "endLine": null,
+    "parameters": [],
+    "expectCandidates": false
+  },
+  {
+    "method": "processOrder",
+    "suggestedName": "validateOrderItems",
+    "startLine": 12,
+    "endLine": 23,
+    "parameters": []
+  },
+  {
+    "method": "processOrder",
+    "suggestedName": "applyDiscountRules",
+    "startLine": 26,
+    "endLine": 35,
+    "parameters": ["discountConfig", "items", "order"]
+  }
+]

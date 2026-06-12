@@ -1,0 +1,4 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Marker file only — FindSolutionRoot just needs a *.sln to exist here so the
+# upward search resolves this directory as the test root (covering the sibling
+# Calc.Tests project alongside src/Calc).

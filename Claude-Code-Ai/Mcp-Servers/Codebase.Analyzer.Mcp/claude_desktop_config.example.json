@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "codebase-analyzer": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--env", "ANTHROPIC_API_KEY",
+        "-v", "/path/to/your/project:/workspace:ro",
+        "-w", "/workspace",
+        "dv-codebase-analyzer-mcp:local"
+      ],
+      "env": {
+        "ANTHROPIC_API_KEY": "sk-ant-..."
+      }
+    }
+  }
+}

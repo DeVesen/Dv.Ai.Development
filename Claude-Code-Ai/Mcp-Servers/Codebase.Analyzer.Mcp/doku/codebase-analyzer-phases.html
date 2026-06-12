@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>codebase-analyzer — Wann kann was?</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #07090d;
+    --surface: #0f1117;
+    --surface2: #161b25;
+    --border: #1c2130;
+    --plan:   #f59e0b;
+    --impl:   #3b82f6;
+    --post:   #10b981;
+    --text: #dde4f0;
+    --muted: #4e5a72;
+    --muted2: #6b7a96;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    padding: 48px 32px;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(245,158,11,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 90%, rgba(16,185,129,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(59,130,246,0.03) 0%, transparent 70%);
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; }
+
+  /* ── Header ── */
+  header { margin-bottom: 60px; }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted2); margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 36px; font-weight: 800; line-height: 1.1;
+    color: #fff; margin-bottom: 10px;
+  }
+
+  .sub { font-size: 15px; color: var(--muted2); max-width: 560px; line-height: 1.6; }
+
+  /* ── Phase timeline ── */
+  .timeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2px;
+    margin-bottom: 56px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .phase {
+    padding: 28px 28px 24px;
+    background: var(--surface);
+    position: relative;
+  }
+
+  .phase:not(:last-child)::after {
+    content: '→';
+    position: absolute; right: -14px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px; color: var(--muted);
+    z-index: 2;
+  }
+
+  .phase-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 14px;
+  }
+
+  .phase-badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  .phase-plan  .phase-badge { background: rgba(245,158,11,0.12); color: var(--plan);  border: 1px solid rgba(245,158,11,0.2); }
+  .phase-impl  .phase-badge { background: rgba(59,130,246,0.12);  color: var(--impl);  border: 1px solid rgba(59,130,246,0.2); }
+  .phase-post  .phase-badge { background: rgba(16,185,129,0.12);  color: var(--post);  border: 1px solid rgba(16,185,129,0.2); }
+
+  .phase-plan  .phase-badge .dot { background: var(--plan); }
+  .phase-impl  .phase-badge .dot { background: var(--impl); }
+  .phase-post  .phase-badge .dot { background: var(--post); }
+
+  .phase h2 { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+  .phase p  { font-size: 13px; color: var(--muted2); line-height: 1.5; }
+
+  .phase-tools {
+    margin-top: 16px;
+    display: flex; flex-wrap: wrap; gap: 5px;
+  }
+
+  .pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; font-weight: 600;
+    padding: 3px 9px; border-radius: 5px;
+    border: 1px solid;
+  }
+
+  .phase-plan  .pill { color: var(--plan);  border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.06); }
+  .phase-impl  .pill { color: var(--impl);  border-color: rgba(59,130,246,0.25);  background: rgba(59,130,246,0.06); }
+  .phase-post  .pill { color: var(--post);  border-color: rgba(16,185,129,0.25);  background: rgba(16,185,129,0.06); }
+
+  /* ── Section ── */
+  .section { margin-bottom: 52px; }
+
+  .section-label {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .section-bar { height: 2px; flex: 1; border-radius: 1px; }
+  .plan-bar  { background: linear-gradient(90deg, var(--plan), transparent); }
+  .impl-bar  { background: linear-gradient(90deg, var(--impl), transparent); }
+  .post-bar  { background: linear-gradient(90deg, var(--post), transparent); }
+  .mixed-bar { background: linear-gradient(90deg, var(--plan), var(--impl), var(--post)); }
+
+  .section-title-text {
+    font-size: 12px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; white-space: nowrap;
+  }
+
+  /* ── Cards ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 12px 0 0 12px;
+  }
+
+  .card-plan::before  { background: var(--plan); }
+  .card-impl::before  { background: var(--impl); }
+  .card-post::before  { background: var(--post); }
+  .card-mixed::before { background: linear-gradient(var(--plan), var(--impl), var(--post)); }
+
+  .card:hover { border-color: #252d3d; }
+
+  .card-header {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .card-tool {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; font-weight: 700; color: #fff;
+  }
+
+  .phase-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
+  }
+  .dot-plan  { background: var(--plan); box-shadow: 0 0 6px var(--plan); }
+  .dot-impl  { background: var(--impl); box-shadow: 0 0 6px var(--impl); }
+  .dot-post  { background: var(--post); box-shadow: 0 0 6px var(--post); }
+
+  .card-what {
+    font-size: 13px; color: #8899bb; line-height: 1.55;
+    margin-bottom: 12px;
+  }
+
+  .card-why {
+    font-size: 12px; line-height: 1.5;
+    padding: 10px 12px;
+    border-radius: 7px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+
+  .card-why-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; margin-bottom: 4px;
+  }
+
+  .card-plan .card-why-label  { color: var(--plan); }
+  .card-impl .card-why-label  { color: var(--impl); }
+  .card-post .card-why-label  { color: var(--post); }
+  .card-mixed .card-why-label { color: #a78bfa; }
+
+  .card-why p { color: var(--muted2); }
+
+  .card-constraint {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 10px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+    color: var(--muted);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 4px; padding: 3px 8px;
+  }
+
+  /* ── Decision matrix ── */
+  .matrix {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .matrix table { width: 100%; border-collapse: collapse; }
+
+  .matrix th {
+    padding: 14px 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted2);
+    text-align: left;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .matrix td {
+    padding: 14px 20px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .matrix tr:last-child td { border-bottom: none; }
+  .matrix tr:hover td { background: rgba(255,255,255,0.01); }
+
+  .matrix .tool-col {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; color: #fff;
+    white-space: nowrap;
+  }
+
+  .phase-badge-sm {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px; border-radius: 4px;
+    font-size: 10px; font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .pb-plan  { background: rgba(245,158,11,0.12); color: var(--plan); }
+  .pb-impl  { background: rgba(59,130,246,0.12);  color: var(--impl); }
+  .pb-post  { background: rgba(16,185,129,0.12);  color: var(--post); }
+  .pb-all   { background: rgba(139,92,246,0.12);  color: #a78bfa; }
+
+  .matrix .why-col { color: var(--muted2); line-height: 1.5; }
+  .matrix .limit-col { color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+  /* ── Callout ── */
+  .callout {
+    display: flex; gap: 14px;
+    background: rgba(245,158,11,0.06);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-top: 40px;
+  }
+
+  .callout-icon { font-size: 22px; flex-shrink: 0; }
+  .callout-title { font-weight: 700; color: var(--plan); margin-bottom: 4px; font-size: 14px; }
+  .callout-body  { font-size: 13px; color: var(--muted2); line-height: 1.6; }
+
+  @media (max-width: 900px) {
+    .timeline { grid-template-columns: 1fr; }
+    .phase:not(:last-child)::after { display: none; }
+    .cards { grid-template-columns: 1fr; }
+    body { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <p class="eyebrow">codebase-analyzer v7 — Zeitliche Einordnung</p>
+    <h1>Wann kann was eingesetzt werden?</h1>
+    <p class="sub">Nicht jedes Tool passt in jede Phase. Diese Übersicht zeigt welche Analysen vor, während und nach der Implementierung sinnvoll sind — und warum.</p>
+  </header>
+
+  <!-- Timeline overview -->
+  <div class="timeline">
+    <div class="phase phase-plan">
+      <div class="phase-badge"><span class="dot"></span>Planung</div>
+      <h2>Vor der Implementierung</h2>
+      <p>Bevor eine Zeile Code geschrieben wird. Nur bestehender Code als Basis.</p>
+      <div class="phase-tools">
+        <span class="pill">index_project</span>
+        <span class="pill">find_in_index</span>
+        <span class="pill">analyze_type_graph</span>
+        <span class="pill">suggest_class_splits</span>
+        <span class="pill">analyze_refactoring_safety</span>
+        <span class="pill">analyze_dataflow</span>
+        <span class="pill">analyze_maintainability_index</span>
+      </div>
+    </div>
+    <div class="phase phase-impl">
+      <div class="phase-badge"><span class="dot"></span>Implementierung</div>
+      <h2>Während der Entwicklung</h2>
+      <p>Laufend auf geänderten oder neuem Code. Git-Diff oder einzelne Dateien.</p>
+      <div class="phase-tools">
+        <span class="pill">review_file</span>
+        <span class="pill">review_code</span>
+        <span class="pill">review_git_diff</span>
+        <span class="pill">analyze_ast_only</span>
+        <span class="pill">analyze_nullability</span>
+        <span class="pill">analyze_complexity</span>
+        <span class="pill">generate_auto_fixes</span>
+        <span class="pill">analyze_control_flow</span>
+        <span class="pill">analyze_dead_code</span>
+      </div>
+    </div>
+    <div class="phase phase-post">
+      <div class="phase-badge"><span class="dot"></span>Nach Implementierung</div>
+      <h2>Nach Fertigstellung</h2>
+      <p>Nach Tests, Build und Merge. <code>suggest_boyscout_actions</code> aggregiert Compiler-Gate + Top-5-Findings pro geänderter Datei in einem Call. <code>detect_untested_public_api</code> läuft rein statisch <strong>ohne Test-Run</strong>; nur die Coverage-Tools (<code>analyze_coverage</code>, <code>analyze_test_health</code>) brauchen einen vorherigen Test-Run.</p>
+      <div class="phase-tools">
+        <span class="pill">suggest_boyscout_actions</span>
+        <span class="pill">detect_untested_public_api</span>
+        <span class="pill">analyze_coverage</span>
+        <span class="pill">analyze_test_health</span>
+        <span class="pill">analyze_test_quality</span>
+        <span class="pill">analyze_duplicates</span>
+        <span class="pill">analyze_advanced_all</span>
+        <span class="pill">review_files_batch</span>
+        <span class="pill">review_with_index</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ① PLANUNG -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-title-text" style="color:var(--plan)">① Planungsphase</span>
+      <div class="section-bar plan-bar"></div>
+    </div>
+    <div class="cards">
+
+      <div class="card card-plan">
+        <div class="card-header">
+          <div class="card-tool">index_project + find_in_index</div>
+          <div class="phase-dot dot-plan"></div>
+        </div>
+        <p class="card-what">Vollständige Karte des Projekts: alle Klassen, Services, Interfaces, Routen, Dependency-Graph.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum in der Planung?</div>
+          <p>Bevor du einen neuen Service schreibst, weißt du: Gibt es schon etwas Ähnliches? Welche Interfaces muss er implementieren? Wer wird ihn nutzen? Welche Layer-Regeln gelten?</p>
+        </div>
+      </div>
+
+      <div class="card card-plan">
+        <div class="card-header">
+          <div class="card-tool">analyze_type_graph</div>
+          <div class="phase-dot dot-plan"></div>
+        </div>
+        <p class="card-what">Vollständiger Typ-Graph: Vererbung, Zyklen, Layer-Violations, meistverwendete Typen.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum in der Planung?</div>
+          <p>Zeigt wo der neue Code andocken muss und welche Zyklen er nicht erzeugen darf. Verhindert Architekturbrüche bevor sie entstehen.</p>
+        </div>
+      </div>
+
+      <div class="card card-plan">
+        <div class="card-header">
+          <div class="card-tool">suggest_class_splits</div>
+          <div class="phase-dot dot-plan"></div>
+        </div>
+        <p class="card-what">LCOM + Method-Cluster → zeigt welche bestehenden Klassen zu groß sind und wie sie geschnitten werden sollten.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum in der Planung?</div>
+          <p>Wenn du eine bestehende Klasse erweitern willst: Zuerst prüfen ob sie überhaupt noch erweiterbar ist oder ob ein Split vor dem Feature sinnvoller wäre.</p>
+        </div>
+      </div>
+
+      <div class="card card-plan">
+        <div class="card-header">
+          <div class="card-tool">analyze_refactoring_safety</div>
+          <div class="phase-dot dot-plan"></div>
+        </div>
+        <p class="card-what">Wie viele Dateien nutzen eine Methode? Template-Bindings? Interface-Kontrakt? Risiko-Bewertung.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum in der Planung?</div>
+          <p>Bevor du eine bestehende API änderst: Prüfe wie viele Stellen brechen würden. Lieber jetzt wissen als beim Merge.</p>
+        </div>
+      </div>
+
+      <div class="card card-plan">
+        <div class="card-header">
+          <div class="card-tool">analyze_maintainability_index</div>
+          <div class="phase-dot dot-plan"></div>
+        </div>
+        <p class="card-what">MI-Score + LCOM für bestehende Klassen die du anfassen wirst.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum in der Planung?</div>
+          <p>MI F + LCOM hoch = Klasse ist schwer zu erweitern. Das beeinflusst die Schätzung und ob ein Refactoring-Ticket davor nötig ist.</p>
+        </div>
+      </div>
+
+      <div class="card card-plan">
+        <div class="card-header">
+          <div class="card-tool">analyze_dataflow</div>
+          <div class="phase-dot dot-plan"></div>
+        </div>
+        <p class="card-what">Wie fließen Daten zwischen bestehenden Klassen? Nullable-Grenzen, unawaited Tasks.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum in der Planung?</div>
+          <p>Zeigt wo der neue Code in bestehende Datenflüsse eingreift und welche Null-Checks er mitbringen muss.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ② IMPLEMENTIERUNG -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-title-text" style="color:var(--impl)">② Implementierungsphase</span>
+      <div class="section-bar impl-bar"></div>
+    </div>
+    <div class="cards">
+
+      <div class="card card-impl">
+        <div class="card-header">
+          <div class="card-tool">review_code / review_file</div>
+          <div class="phase-dot dot-impl"></div>
+        </div>
+        <p class="card-what">LLM-Review auf frisch geschriebenem Code — SOLID, Security, Performance, Best Practices.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum während der Impl.?</div>
+          <p>Sofortiges Feedback auf den Code den du gerade schreibst. Wie ein Senior-Reviewer der direkt neben dir sitzt.</p>
+        </div>
+        <span class="card-constraint">💡 Auch: review_code für einzelne Methoden</span>
+      </div>
+
+      <div class="card card-impl">
+        <div class="card-header">
+          <div class="card-tool">review_git_diff</div>
+          <div class="phase-dot dot-impl"></div>
+        </div>
+        <p class="card-what">Review aller geänderten Dateien seit letztem Commit — staged oder unstaged.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum während der Impl.?</div>
+          <p>Pre-Commit-Hook oder manuell vor dem Push. Fängt Probleme bevor sie im PR landen.</p>
+        </div>
+      </div>
+
+      <div class="card card-impl">
+        <div class="card-header">
+          <div class="card-tool">analyze_nullability</div>
+          <div class="phase-dot dot-impl"></div>
+        </div>
+        <p class="card-what">Null-Safety in frisch geschriebenem Code: !, .Result, FirstOrDefault ohne Check, subscribe ohne error.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum während der Impl.?</div>
+          <p>Null-Bugs sind die häufigsten Runtime-Crashs. Besser jetzt finden als im Produktionsbetrieb.</p>
+        </div>
+      </div>
+
+      <div class="card card-impl">
+        <div class="card-header">
+          <div class="card-tool">analyze_complexity</div>
+          <div class="phase-dot dot-impl"></div>
+        </div>
+        <p class="card-what">Zyklomatische Komplexität während du eine Methode schreibst.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum während der Impl.?</div>
+          <p>CC &gt; 10 während der Implementierung ist ein Signal zum Aufteilen — nicht erst beim Review. Frühzeitig extrahieren ist einfacher.</p>
+        </div>
+      </div>
+
+      <div class="card card-impl">
+        <div class="card-header">
+          <div class="card-tool">generate_auto_fixes</div>
+          <div class="phase-dot dot-impl"></div>
+        </div>
+        <p class="card-what">Konkrete Before/After-Fixes: @Input→input(), *ngIf→@if, .Result→await, CancellationToken.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum während der Impl.?</div>
+          <p>Direkt anwendbar während du schreibst. Neue Patterns lernen durch konkrete Beispiele im eigenen Code.</p>
+        </div>
+      </div>
+
+      <div class="card card-impl">
+        <div class="card-header">
+          <div class="card-tool">analyze_control_flow</div>
+          <div class="phase-dot dot-impl"></div>
+        </div>
+        <p class="card-what">Unreachable Code, fehlende Return-Pfade, always-true Conditions, Infinite-Loop-Risiken.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum während der Impl.?</div>
+          <p>Logikfehler im Kontrollfluss sind am einfachsten zu fixen während die Methode noch frisch im Kopf ist.</p>
+        </div>
+      </div>
+
+      <div class="card card-impl">
+        <div class="card-header">
+          <div class="card-tool">analyze_dead_code</div>
+          <div class="phase-dot dot-impl"></div>
+        </div>
+        <p class="card-what">Private Methoden/Felder die nie genutzt werden, unused Imports.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum während der Impl.?</div>
+          <p>Beim Refactoring entstehen oft Reste. Lieber sofort entfernen als technische Schulden anhäufen.</p>
+        </div>
+      </div>
+
+      <div class="card card-impl">
+        <div class="card-header">
+          <div class="card-tool">analyze_ast_only</div>
+          <div class="phase-dot dot-impl"></div>
+        </div>
+        <p class="card-what">Schnelle Strukturmetadaten ohne LLM-Kosten — Klassen, Methoden, Deps, SOLID-Flags.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum während der Impl.?</div>
+          <p>In CI/CD-Pipelines: schnelles Structural-Gating ohne API-Latenz. Blockiert den Build bei kritischen Verletzungen.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ③ NACH IMPLEMENTIERUNG -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-title-text" style="color:var(--post)">③ Nach der Implementierung</span>
+      <div class="section-bar post-bar"></div>
+    </div>
+    <div class="cards">
+
+      <div class="card card-post">
+        <div class="card-header">
+          <div class="card-tool">analyze_coverage</div>
+          <div class="phase-dot dot-post"></div>
+        </div>
+        <p class="card-what">Parst lcov.info / cobertura.xml — Line/Branch/Function-Coverage, Grade A–F, uncovered Methoden.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum erst danach?</div>
+          <p>Braucht einen abgeschlossenen Test-Run mit Coverage-Flag. Erst nach "ng test --code-coverage" oder "dotnet test --collect" aufrufbar.</p>
+        </div>
+        <span class="card-constraint">⚠️ Benötigt: Test-Run mit Coverage</span>
+      </div>
+
+      <div class="card card-post">
+        <div class="card-header">
+          <div class="card-tool">detect_untested_public_api</div>
+          <div class="phase-dot dot-post"></div>
+        </div>
+        <p class="card-what">Listet public-Symbole (Methoden, Properties, Get/Set-Accessoren) ohne erkennbare Test-Referenz — Heuristik, kein Test-Run. reason: no_test_file / no_reference_found.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum erst danach?</div>
+          <p>Erster Check nach der Implementierung: zeigt neu hinzugekommene API ohne Test, bevor mit analyze_test_quality die Güte der vorhandenen Tests bewertet wird. Statischer Proxy, ersetzt keinen echten Coverage-Report.</p>
+        </div>
+      </div>
+
+      <div class="card card-post">
+        <div class="card-header">
+          <div class="card-tool">analyze_test_quality</div>
+          <div class="phase-dot dot-post"></div>
+        </div>
+        <p class="card-what">Statische Test-Analyse: no-assertions, tautology, mock-heavy, happy-path-only, fehlende Test-Dateien.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum erst danach?</div>
+          <p>Tests werden meist am Ende geschrieben. Erst wenn Tests existieren macht die Qualitätsanalyse Sinn. Kann aber auch laufend genutzt werden.</p>
+        </div>
+      </div>
+
+      <div class="card card-post">
+        <div class="card-header">
+          <div class="card-tool">analyze_test_health</div>
+          <div class="phase-dot dot-post"></div>
+        </div>
+        <p class="card-what">Dashboard: Coverage + Test-Qualität kombiniert in einem Bericht.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum erst danach?</div>
+          <p>Das vollständige Bild — was ist abgedeckt, was ist gut getestet, was fehlt — ergibt sich erst nach der vollständigen Implementierung.</p>
+        </div>
+        <span class="card-constraint">⚠️ Benötigt: Test-Run mit Coverage</span>
+      </div>
+
+      <div class="card card-post">
+        <div class="card-header">
+          <div class="card-tool">analyze_duplicates</div>
+          <div class="phase-dot dot-post"></div>
+        </div>
+        <p class="card-what">Strukturelle Duplikate via AST-Hash — gleiche Logik in verschiedenen Klassen.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum erst danach?</div>
+          <p>Duplikate entstehen oft durch Copy-Paste während der Implementierung. Nach dem Feature-Freeze sieht man das vollständige Bild.</p>
+        </div>
+      </div>
+
+      <div class="card card-post">
+        <div class="card-header">
+          <div class="card-tool">review_with_index</div>
+          <div class="phase-dot dot-post"></div>
+        </div>
+        <p class="card-what">Review mit vollem Projekt-Kontext — LLM versteht Dependency-Graph bevor es den Code liest.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum erst danach?</div>
+          <p>Nach der Implementierung ist der Index aktuell und enthält den neuen Code. Das gibt dem LLM das präziseste Gesamtbild für den abschliessenden Review.</p>
+        </div>
+      </div>
+
+      <div class="card card-post">
+        <div class="card-header">
+          <div class="card-tool">review_files_batch</div>
+          <div class="phase-dot dot-post"></div>
+        </div>
+        <p class="card-what">Alle geänderten Dateien des Features auf einmal reviewen.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum erst danach?</div>
+          <p>Sprint-End oder vor dem Merge: vollständiger Review aller Files des Features als letztes Qualitätsgate.</p>
+        </div>
+      </div>
+
+      <div class="card card-post">
+        <div class="card-header">
+          <div class="card-tool">analyze_advanced_all</div>
+          <div class="phase-dot dot-post"></div>
+        </div>
+        <p class="card-what">Alle 7 Advanced-Analysen in einem Aufruf: Komplexität + Dead Code + Nullable + Duplikate + Refactoring + AutoFixes + Dataflow.</p>
+        <div class="card-why">
+          <div class="card-why-label">Warum erst danach?</div>
+          <p>Der vollständige Gesundheitsbericht für das gesamte Projekt. Ideal nach einem Sprint oder Release als Qualitätsbaseline.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Decision Matrix -->
+  <div class="section">
+    <div class="section-label">
+      <span class="section-title-text" style="color:var(--muted2)">Entscheidungsmatrix — alle 27 Tools auf einen Blick</span>
+      <div class="section-bar mixed-bar"></div>
+    </div>
+    <div class="matrix">
+      <table>
+        <tr>
+          <th style="width:220px">Tool</th>
+          <th style="width:130px">Phase</th>
+          <th style="width:200px">Warum diese Phase</th>
+          <th>Limitierung / Voraussetzung</th>
+        </tr>
+        <tr>
+          <td class="tool-col">index_project</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Projektverständnis vor Beginn</td>
+          <td class="limit-col">Kein Build nötig. Cache 5min.</td>
+        </tr>
+        <tr>
+          <td class="tool-col">find_in_index</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Navigation im bestehenden Code</td>
+          <td class="limit-col">Index muss generiert sein</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_type_graph</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Architektur verstehen, Zyklen vermeiden</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">suggest_class_splits</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Schnitt vor Erweiterung klären</td>
+          <td class="limit-col">Nur sinnvoll auf bestehendem Code</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_refactoring_safety</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Impact bestehender API-Änderungen</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">find_symbol_references</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Konkrete Aufrufstellen nach analyze_refactoring_safety</td>
+          <td class="limit-col">Kein Build nötig. Datei-Cap 400</td>
+        </tr>
+        <tr>
+          <td class="tool-col">find_type_hierarchy</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Vererbungs-Scope bei Interface-/Basisklassen-Änderung (down = Implementor-Liste)</td>
+          <td class="limit-col">Kein Build nötig. Datei-Cap 400</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_maintainability_index</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Schätzung / Refactoring-Bedarf</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_dataflow</td>
+          <td><span class="phase-badge-sm pb-plan">Planung</span></td>
+          <td class="why-col">Bestehende Datenflüsse verstehen</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">review_file</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">Sofortfeedback auf neuen Code</td>
+          <td class="limit-col">Claude API nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">review_code</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">Inline-Snippet reviewen</td>
+          <td class="limit-col">Claude API nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">review_git_diff</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">Pre-Commit-Review</td>
+          <td class="limit-col">Git-Repo nötig, Claude API</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_ast_only</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">Schnelles CI-Gating ohne API</td>
+          <td class="limit-col">Kein Build, kein LLM</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_nullability</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">Null-Bugs früh finden</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_complexity</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">Methoden rechtzeitig aufteilen</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">generate_auto_fixes</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">Modern-Angular / .NET Patterns</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_control_flow</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">Logikfehler sofort beheben</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_dead_code</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">Reste nach Refactoring entfernen</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">compare_validation_rules</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">FE↔BE-Validierung abgleichen</td>
+          <td class="limit-col">Kein Build nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">find_api_callers</td>
+          <td><span class="phase-badge-sm pb-impl">Implementierung</span></td>
+          <td class="why-col">HttpClient-Aufrufe je Endpoint finden</td>
+          <td class="limit-col">Kein Build nötig, nur Angular</td>
+        </tr>
+        <tr>
+          <td class="tool-col">detect_untested_public_api</td>
+          <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
+          <td class="why-col">Ungetestete public-Symbole aufdecken (erster Check)</td>
+          <td class="limit-col">Heuristik, kein Test-Run nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_coverage</td>
+          <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
+          <td class="why-col">Coverage nach Test-Run messen</td>
+          <td class="limit-col">⚠️ ng test --code-coverage oder dotnet test --collect nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_test_quality</td>
+          <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
+          <td class="why-col">Test-Anti-Patterns finden</td>
+          <td class="limit-col">Tests müssen existieren</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_test_health</td>
+          <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
+          <td class="why-col">Gesamtbild Coverage + Qualität</td>
+          <td class="limit-col">⚠️ Test-Run mit Coverage nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_duplicates</td>
+          <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
+          <td class="why-col">Copy-Paste nach Feature-Freeze finden</td>
+          <td class="limit-col">Kein Build nötig, aber vollständiger Code</td>
+        </tr>
+        <tr>
+          <td class="tool-col">review_with_index</td>
+          <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
+          <td class="why-col">Finaler Review mit vollem Kontext</td>
+          <td class="limit-col">Claude API + aktueller Index</td>
+        </tr>
+        <tr>
+          <td class="tool-col">review_files_batch</td>
+          <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
+          <td class="why-col">Feature-Review vor Merge</td>
+          <td class="limit-col">Claude API nötig</td>
+        </tr>
+        <tr>
+          <td class="tool-col">analyze_advanced_all</td>
+          <td><span class="phase-badge-sm pb-post">Nach Impl.</span></td>
+          <td class="why-col">Sprint/Release-Qualitätsbaseline</td>
+          <td class="limit-col">Kein Build nötig, dauert länger</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-icon">💡</div>
+    <div>
+      <div class="callout-title">Die wichtigste Erkenntnis</div>
+      <div class="callout-body">
+        25 von 27 Tools brauchen <strong>keinen Build und keinen Test-Run</strong> — sie arbeiten rein auf dem Quellcode (AST). Nur die beiden Coverage-Tools benötigen einen vorherigen Test-Run. Das bedeutet: der grösste Teil der Qualitätssicherung kann ohne CI/CD-Pipeline, ohne Build-Umgebung und ohne Wartezeit direkt im Editor oder Pre-Commit stattfinden.
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

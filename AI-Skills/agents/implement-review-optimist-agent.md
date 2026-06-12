@@ -1,6 +1,6 @@
 ---
 name: implement-review-optimist-agent
-model: claude-opus-4-8
+model: composer-2.5-standard
 description: Optimist im iterativen Implement-Review-Loop. Stärken, erfüllte ACs und tragfähige Vereinfachungen der Umsetzung.
 readonly: true
 ---

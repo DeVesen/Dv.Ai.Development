@@ -1,6 +1,6 @@
 ---
 name: implement-review-normalo-agent
-model: claude-opus-4-8
+model: composer-2.5-standard
 description: Normalo im iterativen Implement-Review-Loop. Ship-Readiness, Pragmatik, Top-3 Handlungsempfehlungen.
 readonly: true
 ---

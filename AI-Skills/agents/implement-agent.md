@@ -1,6 +1,6 @@
 ---
 name: implement-agent
-model: gpt-5.5
+model: composer-2.5-standard
 description: IMP-*-Slice ausführen (Code + slice-scoped Build/Test via MCP). Build/Test via dev-angular-mcp / dev-dotnet-mcp — kein Shell ng/dotnet build/test, kein build-log-filter für diese. Kein stack-weites Technik-Gate.
 ---
 

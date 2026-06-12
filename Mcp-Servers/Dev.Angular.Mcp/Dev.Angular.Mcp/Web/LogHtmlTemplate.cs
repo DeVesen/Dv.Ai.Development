@@ -66,10 +66,20 @@ internal static class LogHtmlTemplate
 
             .section { margin-bottom: 16px; }
             .section:last-child { margin-bottom: 0; }
+            .section-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+            .section-header .section-title { margin-bottom: 0; }
             .section-title {
               font-size: 0.72rem; font-weight: 700; letter-spacing: .06em;
               text-transform: uppercase; color: #64748b; margin-bottom: 8px;
             }
+            .btn-copy {
+              background: none; border: 1px solid #374151; color: #64748b;
+              border-radius: 4px; width: 20px; height: 20px; padding: 0; cursor: pointer;
+              display: inline-flex; align-items: center; justify-content: center;
+              transition: border-color .12s, color .12s; flex-shrink: 0;
+            }
+            .btn-copy:hover { border-color: #60a5fa; color: #60a5fa; }
+            .btn-copy.copied { border-color: #10b981; color: #10b981; }
             .meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
             .meta-cell { background: #0a0c10; border-radius: 6px; padding: 6px 10px; }
             .meta-label { font-size: 0.68rem; color: #475569; text-transform: uppercase; letter-spacing: .04em; }
@@ -120,6 +130,21 @@ internal static class LogHtmlTemplate
                 .replace(/'/g, '&#39;');
             }
 
+            var COPY_SVG = '<svg width="11" height="11" viewBox="0 0 16 16" fill="currentColor"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z"/></svg>';
+
+            function copyBtn(text) {
+              return '<button class="btn-copy" title="In Zwischenablage kopieren" onclick="copyText(this)" data-copy="' + esc(text) + '">' + COPY_SVG + '</button>';
+            }
+
+            function copyText(btn) {
+              var text = btn.getAttribute('data-copy');
+              navigator.clipboard.writeText(text).then(function() {
+                btn.classList.add('copied');
+                btn.innerHTML = '&#10003;';
+                setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = COPY_SVG; }, 1500);
+              });
+            }
+
             function render() {
               var list = document.getElementById('list');
               var count = document.getElementById('count');
@@ -149,9 +174,9 @@ internal static class LogHtmlTemplate
                   + '<div class="meta-cell"><div class="meta-label">Duration</div><div class="meta-value">' + it.durationMs + ' ms</div></div>'
                   + '<div class="meta-cell"><div class="meta-label">Output Chars</div><div class="meta-value">' + fmtNum(it.outputChars) + '</div></div>'
                   + '</div></div>'
-                  + '<div class="section"><div class="section-title">Parameter</div><pre>' + esc(it.params) + '</pre></div>'
-                  + (it.consoleOutput ? '<div class="section"><div class="section-title">Console</div><pre class="console">' + esc(it.consoleOutput) + '</pre></div>' : '')
-                  + '<div class="section"><div class="section-title">Output (Preview)</div><pre>' + esc(it.preview) + '</pre></div>'
+                  + '<div class="section"><div class="section-header"><div class="section-title">Parameter</div>' + copyBtn(it.params) + '</div><pre>' + esc(it.params) + '</pre></div>'
+                  + (it.consoleOutput ? '<div class="section"><div class="section-header"><div class="section-title">Console</div>' + copyBtn(it.consoleOutput) + '</div><pre class="console">' + esc(it.consoleOutput) + '</pre></div>' : '')
+                  + '<div class="section"><div class="section-header"><div class="section-title">Output (Preview)</div>' + copyBtn(it.preview) + '</div><pre>' + esc(it.preview) + '</pre></div>'
                   + '</div>'
                   + '</div>';
               }).join('');

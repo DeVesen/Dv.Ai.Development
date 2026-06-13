@@ -45,13 +45,26 @@ Mcp-Servers/            MCP server implementations (Docker)
 ├── Dev.Angular.Mcp/        dev-angular-mcp — Angular scaffolding + build/test
 └── Dev.Dotnet.Mcp/         dev-dotnet-mcp — .NET scaffolding + build/test
 
-docs/                   MCP documentation and enforcement references
-├── mcp-dev-angular.md
-├── mcp-dev-dotnet.md
-├── mcp-dev-filesystem.md
-├── mcp-codebase-analyzer.md
-├── mcp-build-log-filter.md
-├── mcp-scout-fallback-chain.md
+docs/                   Skill docs, MCP docs, enforcement references
+├── skills/             Skill usage docs (usage, sub-agents, examples)
+│   ├── planning-workflow.md
+│   ├── implementation-workflow.md
+│   ├── buddy-agent.md
+│   ├── repo-scout-protocol.md
+│   ├── codebase-analyzer.md
+│   ├── build-log-filter.md
+│   ├── dev-tooling-mcp.md
+│   ├── angular-developer.md
+│   ├── ado.md
+│   ├── utility-skills.md
+│   └── angular-material-v22-components.md
+├── mcp/                MCP server reference docs
+│   ├── dev-angular.md
+│   ├── dev-dotnet.md
+│   ├── dev-filesystem.md
+│   ├── codebase-analyzer.md
+│   ├── build-log-filter.md
+│   └── scout-fallback-chain.md
 ├── silent-shortcut-prevention.md
 └── output-style-enforcement.md
 ```
@@ -96,7 +109,7 @@ Use `/skill-creator` to create new skills or agent profiles.
 | `Mcp-Servers/Dev.Angular.Mcp/` | `dev-angular-mcp` | dev-angular-mcp, dev-tooling-mcp |
 | `Mcp-Servers/Dev.Dotnet.Mcp/` | `dev-dotnet-mcp` | dev-dotnet-mcp, dev-tooling-mcp |
 
-When changing an MCP: update `Mcp-Servers/<name>/`, update `docs/mcp-<name>.md`, and update the matching skill under `.claude/skills/`.
+When changing an MCP: update `Mcp-Servers/<name>/`, update `docs/mcp/<name>.md`, and update the matching skill under `.claude/skills/`.
 
 ---
 
@@ -112,7 +125,7 @@ MCP servers run as Docker containers. Configure in Claude Code settings (`mcpSer
 | dev-angular-mcp | 8092 | `${workspaceFolder}:/workspace` |
 | dev-dotnet-mcp | 8093 | `${workspaceFolder}:/workspace` |
 
-Reference config: `AI-Skills/mcp.json` (legacy reference snapshot).
+Reference config: `.claude/mcp.json`.
 
 **Path convention:** All MCP calls use `/workspace/` prefix (codebase-analyzer, dev-angular-mcp, dev-dotnet-mcp) or `/project/` prefix (dev-filesystem-mcp). Never use host paths or `{parameter}` placeholders.
 

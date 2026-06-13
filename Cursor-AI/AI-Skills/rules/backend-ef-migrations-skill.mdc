@@ -1,0 +1,64 @@
+---
+description: EF-Core-Migrationen {database-project-name} — nur dotnet ef migrations add; Triplet (.cs, Designer, Snapshot); <view-name> SQL in Up/Down. Kein manuelles Migrations-.cs ohne CLI.
+alwaysApply: true
+---
+
+## Parameter
+
+| Parameter | Beschreibung |
+|-----------|-------------|
+| `{backend-path}` | Pfad zum Backend-Projekt innerhalb von `.` |
+| `./AGENTS.md` | Datei mit der Repository-Agentenübersicht (z. B. `AGENTS.md`) |
+
+# Backend EF-Migrations (Cursor)
+
+## Pflicht bei Schema-/View-Änderungen in {database-project-name}
+
+Wenn der Nutzer oder die Aufgabe **EF-Migrationen**, **Datenbankschema**, neue **Spalten/Tabellen/Views** in `{backend-path}/{database-project-name}` oder **`<view-name>`** betrifft, dann **vor** Anlegen oder Ändern von Dateien unter `Migrations/` diesen Skill **vollständig lesen und befolgen**:
+
+[`backend-ef-migrations/SKILL.md`](../skills/backend-ef-migrations/SKILL.md)
+
+**Discovery:** `disable-model-invocation: true` — Auslösung über diese Rule und [./AGENTS.md](./AGENTS.md).
+
+## Verbindliche Aktivierung
+
+Vorbehaltlich **Opt-out** unten: erkennbarer Backend-Schema- oder Migrations-Intent.
+
+Explizite Imperative (sofort ladend), u. a.:
+
+- **`EF migration`**, **`Entity Framework migration`**, **`dotnet ef migrations add`**
+- **`{database-project-name}/Migrations`**, **`{DbContext}ModelSnapshot`**, **`<view-name>`**
+- **`@backend-ef-migrations`**, **`@.cursor/skills/backend-ef-migrations`**
+
+## Implizite Aktivierung
+
+- Entity/DbSet/Spalte/Tabelle/View im Backend-Kontext + Schema-Bezug
+- `MigrationBuilder`, `AddColumn`, `CreateTable` in `{database-project-name}`
+- „Datenbankschema anpassen“ bei `{backend-path}`
+- Postgres-Fehler **`42703`** / **`column … does not exist`** auf `<view-name>`
+
+## Hard Rule (Kurz)
+
+- **Neue Migrationen nur** via `dotnet ef migrations add` mit `--project {database-project-name}` und `--startup-project {startup-project}` (CWD `{backend-path}`).
+- **VERBOTEN:** neue `Migrations/*.cs` ohne CLI; **VERBOTEN:** nur Snapshot ohne `migrations add`; **VERBOTEN:** Snapshot/Migration manuell nachkorrigieren (nullable/`IsRequired`) ohne anschließendes `migrations add` → `PendingModelChangesWarning` bei `Migrate()`.
+- **Pflicht-Triplet:** `.cs`, `.Designer.cs`, `{DbContext}ModelSnapshot.cs`.
+- **Nach Entity-/Snapshot-Änderung:** `dotnet ef migrations has-pending-model-changes` muss **No changes** melden, bevor `Migrate()` als „fertig“ gilt.
+- **Views:** SQL in `Up()`/`Down()` der **CLI-generierten** Datei — siehe Skill-References.
+
+## Nicht auslösen
+
+- Reine Lese-Fragen zu bestehenden Migrationen ohne Schema-Änderung
+- Reines CRUD/API ohne DB-Schema
+- Reine Erklärung: „Was steht im Skill?“ ohne Migrations-Auftrag
+
+## Priorität
+
+| Situation | Vorrang |
+|-----------|---------|
+| `plane …` (Umsetzungsplan) | [Planning Workflow](planning-workflow-skill.mdc) |
+| `implementiere …` mit DB-Schema | [Implementation Workflow](implementation-workflow-skill.mdc) **und** dieser Skill |
+| Nur EF-Migration anlegen/prüfen | **dieser Skill** |
+
+## Ausdrücklicher Opt-out
+
+`ohne ef-migration-skill`, `ohne backend-ef-migrations-skill`, `no ef migration skill` → Skill **nicht** laden.

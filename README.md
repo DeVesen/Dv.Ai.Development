@@ -2,110 +2,61 @@
 
 > **Portable AI workflow library** for [Cursor](https://cursor.sh) and [Claude Code](https://claude.ai/code) — skills, agents, rules, and MCP servers for Angular & .NET development.
 
+Dieses Repository ist die **Quellbibliothek** für AI-Workflow-Artefakte. Es enthält wiederverwendbare Skills, Agent-Profile und MCP-Server-Implementierungen, die in Projekte deploybar sind.
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Dv.Ai.Development                       │
-│                                                             │
-│  AI-Skills/          Mcp-Servers/          docs/            │
-│  ┌──────────┐        ┌──────────┐          ┌──────────┐     │
-│  │ Skills   │        │ Docker   │          │ Guides & │     │
-│  │ Agents   │──────▶ │  MCP     │          │  Refs    │     │
-│  │ Rules    │        │ Servers  │          └──────────┘     │
-│  │ Packages │        └──────────┘                          │
-│  └──────────┘                                               │
-└─────────────────────────────────────────────────────────────┘
+Dv.Ai.Development/
+├── Claude-Code-Ai/     Skills, Agents & MCP-Server für Claude Code
+├── Cursor-AI/          Skills, Agents & Rules für Cursor
+└── Mcp-Servers/        MCP-Server-Implementierungen (Docker-Images)
 ```
 
 ---
 
-## Was steckt dahinter?
+## Claude-Code-Ai
 
-Dieses Repository ist die **Quellbibliothek** für AI-Workflow-Artefakte, die in Projekte deploybar sind. Es enthält:
+Skills, Agents, References und MCP-Server-Implementierungen für **Claude Code**.
 
 | Verzeichnis | Inhalt |
 |-------------|--------|
-| [`AI-Skills/`](./AI-Skills/) | Skills, Agents, Cursor-Rules, Package-Manifeste und Deploy-Skripte |
-| [`Mcp-Servers/`](./Mcp-Servers/) | Implementierungen von MCP-Servern (Docker-Images) |
-| [`docs/`](./docs/) | Installationsanleitungen, MCP-Server-Referenzen |
+| `.claude/` | 27 Skills (via `/skill-name`), 21 Agent-Profile, geteilte References |
+| `Mcp-Servers/` | Alle 5 MCP-Server als Docker-Images |
+| `docs/` | Skill- und MCP-Referenzdokumentation |
+
+Enthaltene Workflows: Planning, Implementation, ADO-Integration, Angular v20+, .NET/EF Core.
+
+➡️ Details: [`Claude-Code-Ai/README.md`](./Claude-Code-Ai/README.md)
 
 ---
 
-## AI-Skills
+## Cursor-AI
 
-Die `AI-Skills/`-Bibliothek enthält wiederverwendbare **Skill-Pakete**, die in Projekte deployed werden:
+Skills, Agents und Cursor-Rules für **Cursor**.
 
-- **Skills** — Schritt-für-Schritt-Workflows für Claude Code (`/skill-name`)
-- **Agents** — Spezialisierte Sub-Agent-Profile (Planung, Review, Implementierung)
-- **Rules** — Cursor-Rules (`.mdc`), die Context automatisch injizieren
-- **Packages** — JSON-Manifeste, die definieren was wohin deployed wird
+| Verzeichnis | Inhalt |
+|-------------|--------|
+| `AI-Skills/` | Skills, Agents, Rules (`.mdc`), Package-Manifeste, Deploy-Skripte |
+| `docs/` | Installationsanleitungen, Referenzen |
 
-```
-Planning Workflow  →  6 Phasen: Anforderung → Scouts → Interface → Topics → Review → Synthese
-Implementation     →  1–10 Slices, Hard Gate, max. 3 Review-Iterationen
-ADO Integration    →  Work Items laden, analysieren, speichern
-Angular v20+       →  Signals, Material v22, Routing, Forms, Testing
-Backend .NET       →  EF Core Migrations, Scaffolding
-```
-
-➡️ Details: [`AI-Skills/README.md`](./AI-Skills/README.md)
+➡️ Details: [`Cursor-AI/README.md`](./Cursor-AI/README.md)
 
 ---
 
 ## Mcp-Servers
 
-Fünf spezialisierte **MCP-Server** als Docker-Images:
+MCP-Server-Implementierungen als **Docker-Images** — nutzbar in Cursor und Claude Code.
 
-| Server | Zweck | Log-Port¹ |
-|--------|-------|-----------|
+| Server | Zweck | Log-Port |
+|--------|-------|----------|
 | `build-log-filter` | Build-/Test-Output auf Fehler & Warnings reduzieren | 8089 |
 | `codebase-analyzer` | Statische Code-Analyse, Reviews, AST, Symbol-Suche | 8090 |
-| `dev-filesystem-mcp` | Token-effizientes Lesen von `.cs`/`.ts` Dateien | 8091 |
-| `dev-angular-mcp` | Angular-Scaffolding via `ng generate` | 8092 |
-| `dev-dotnet-mcp` | .NET-Scaffolding via `dotnet new` | 8093 |
+| `dev-filesystem-mcp` | Token-effizientes Lesen von `.cs`/`.ts`-Dateien | 8091 |
+| `dev-angular-mcp` | Angular-Scaffolding + Build/Test via `ng` | 8092 |
+| `dev-dotnet-mcp` | .NET-Scaffolding + Build/Test via `dotnet` | 8093 |
 
-> ¹ Alle Server kommunizieren über **stdio** (kein TCP). Der Port ist für einen internen HTTP-Log-Viewer zur Diagnose — nicht für den MCP-Transport.
-
-> **Volume-Mount erforderlich:**
-> - `codebase-analyzer` → `-v ${workspaceFolder}:/workspace:ro` (liest Projektdateien für AST-Analyse)
-> - `dev-filesystem-mcp` → `-v ${workspaceFolder}:/project:ro` + `-e PROJECT_ROOT=/project` (liest `.cs`/`.ts` Dateien token-effizient)
+> Alle Server kommunizieren über **stdio** (kein TCP). Ports sind für einen internen HTTP-Log-Viewer zur Diagnose.
 
 ➡️ Details: [`Mcp-Servers/README.md`](./Mcp-Servers/README.md)
-
----
-
-## mcps.md und Scout-Fallback-Kette
-
-Die Datei [`mcps.md`](./mcps.md) im Root ist eine **situative MCP-Auswahlhilfe** für Agents — welcher MCP-Server wann bevorzugt wird. Sie wird beim Deploy in Projekte mitgeliefert.
-
-In **Scout-Phasen** (repo-check, Code-Landkarte, `plan-agent-scout`) gilt keine Einzel-MCP-Auswahl mit sofortigem Grep-Fallback: Agents bauen eine **MCP-Sequenz** (typisch `codebase-analyzer` → `dev-filesystem-mcp`) und arbeiten sie vollständig ab. Natives Read/Grep erst danach oder bei MCP-BLOCKER.
-
-| Dokument | Inhalt |
-|----------|--------|
-| [`AI-Skills/skills/repo-scout-protocol/SKILL.md`](./AI-Skills/skills/repo-scout-protocol/SKILL.md) | Agent-Kanon (Routing-Matrix, Scout-Protokoll-Tabelle) |
-| [`docs/mcp-scout-fallback-chain.md`](./docs/mcp-scout-fallback-chain.md) | Menschen-Doku zum gleichen Verhalten |
-
----
-
-## Installation & Update
-
-➡️ Vollständige Anleitung: **[`docs/InstallUpdate.md`](./docs/InstallUpdate.md)**
-
-**Kurzfassung Windows:**
-```powershell
-# Pakete auflisten
-.\AI-Skills\install-cursor-skills.ps1 -List
-
-# In Projekt deployen (Cursor + Claude Code)
-.\AI-Skills\install-cursor-skills.ps1 C:\project\.cursor C:\project\.claude
-
-# Update (ersetzt veraltete Dateien, MCP bleibt unberührt)
-.\AI-Skills\update-cursor-skills.ps1 C:\project\.cursor C:\project\.claude
-```
-
-**Kurzfassung Linux/macOS:**
-```bash
-./AI-Skills/install-skill.sh all /path/to/project/.cursor /path/to/project/.claude
-```
 
 ---
 
@@ -115,5 +66,5 @@ In **Scout-Phasen** (repo-check, Code-Landkarte, `plan-agent-scout`) gilt keine 
 |---------|--------|-------------|
 | Skills | ✅ via Rules (`.mdc`) | ✅ via `/skill-name` |
 | Agents | ✅ `.cursor/agents/` | ✅ `.claude/agents/` |
-| Rules (`.mdc`) | ✅ Auto-inject | — (nicht unterstützt) |
+| Rules (`.mdc`) | ✅ Auto-inject | — |
 | MCP-Server | ✅ `mcp.json` | ✅ `mcp.json` |

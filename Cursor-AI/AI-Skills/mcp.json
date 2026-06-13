@@ -1,0 +1,139 @@
+{
+  "mcpServers": {
+    "build-log-filter": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-p",
+        "127.0.0.1:8089:8089",
+        "devesen/build-log-filter-mcp:latest"
+      ],
+      "transport": "stdio"
+    },
+    "codebase-analyzer": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-p",
+        "127.0.0.1:8090:8090",
+        "-v",
+        "${workspaceFolder}:/workspace:ro",
+        "devesen/codebase-analyzer-mcp:latest"
+      ],
+      "transport": "stdio",
+      "autoApprove": [
+        "review_file",
+        "review_code",
+        "review_git_diff",
+        "review_files_batch",
+        "review_with_index",
+        "analyze_ast_only",
+        "compare_validation_rules",
+        "find_api_callers",
+        "index_project",
+        "index_solution",
+        "find_in_index",
+        "find_symbol_references",
+        "find_type_hierarchy",
+        "detect_god_classes",
+        "analyze_complexity",
+        "analyze_method_extraction_candidates",
+        "analyze_dead_code",
+        "analyze_nullability",
+        "analyze_duplicates",
+        "analyze_refactoring_safety",
+        "generate_auto_fixes",
+        "analyze_dataflow",
+        "analyze_advanced_all",
+        "suggest_class_splits",
+        "analyze_maintainability_index",
+        "analyze_type_graph",
+        "analyze_control_flow",
+        "analyze_coverage",
+        "analyze_test_quality",
+        "detect_untested_public_api",
+        "analyze_test_health"
+      ]
+    },
+    "ado": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure-devops/mcp",
+        "<IhreOrganisation>",
+        "-d",
+        "core",
+        "work",
+        "work-items"
+      ]
+    },
+    "dev-filesystem-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-p",
+        "127.0.0.1:8091:8091",
+        "-v",
+        "${workspaceFolder}:/project:ro",
+        "-e",
+        "PROJECT_ROOT=/project",
+        "devesen/dev-filesystem-mcp:latest"
+      ],
+      "transport": "stdio",
+      "autoApprove": [
+        "find_file",
+        "find_by_content",
+        "find_implementations",
+        "read_signatures_only",
+        "read_method",
+        "read_class_summary"
+      ]
+    },
+    "dev-angular-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-p",
+        "127.0.0.1:8092:8092",
+        "-v",
+        "${workspaceFolder}:/workspace",
+        "devesen/dev-angular-mcp:latest"
+      ],
+      "transport": "stdio",
+      "autoApprove": [
+        "scaffold_angular_component",
+        "scaffold_angular_service",
+        "build_angular_project",
+        "test_angular_project"
+      ]
+    },
+    "dev-dotnet-mcp": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-p",
+        "127.0.0.1:8093:8093",
+        "-v",
+        "${workspaceFolder}:/workspace",
+        "devesen/dev-dotnet-mcp:latest"
+      ],
+      "transport": "stdio",
+      "autoApprove": [
+        "scaffold_dotnet_project",
+        "create_directory_structure",
+        "build_dotnet_solution",
+        "test_dotnet_solution"
+      ]
+    }
+  }
+}

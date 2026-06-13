@@ -1,0 +1,29 @@
+# {{taskTitle}}
+
+← [[../UserStory-{{workItemId}}-{{storySlug}}|Story #{{workItemId}}]]
+
+**Status:** Erledigt ({{closedSource}}) · **Priorität:** {{priority}}
+
+## Anforderung
+
+{{requirementText}}
+
+## Offene Fragen
+
+{{openQuestions}}
+
+## Story-Bezug
+
+{{originalText}}
+
+## Akzeptanzkriterien
+
+{{acText}}
+
+### Lösung
+
+{{loesungText}}
+
+## AI Zusammenfassung
+
+{{aiSummary}}

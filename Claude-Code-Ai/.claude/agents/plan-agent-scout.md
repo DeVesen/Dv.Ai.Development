@@ -33,8 +33,8 @@ Skill-Referenzen: [repo-scout-protocol/SKILL.md](../skills/repo-scout-protocol/S
 - [planning-workflow/SKILL.md](../skills/planning-workflow/SKILL.md) — Phase 3
 - [subagent-prompts.md](../skills/planning-workflow/references/subagent-prompts.md) — Abschnitt **Codebereichs-Scout** (Auftrag wortgetreu)
 - [mcp-scout-fallback-chain.md](../references/mcp-scout-fallback-chain.md) — Fallback-Kette und Scout-Protokoll
-- [docs/mcp-dev-filesystem.md](../../../docs/mcp-dev-filesystem.md) — dev-filesystem-mcp Kanon
-- [docs/mcp-codebase-analyzer.md](../../../docs/mcp-codebase-analyzer.md) — codebase-analyzer Kanon
+- [docs/mcp/dev-filesystem.md](../../docs/mcp/dev-filesystem.md) — dev-filesystem-mcp Kanon
+- [docs/mcp/codebase-analyzer.md](../../docs/mcp/codebase-analyzer.md) — codebase-analyzer Kanon
 
 ## Aufgabe (Deliverable)
 
@@ -56,7 +56,7 @@ Deliverable nennt aufgelöste Symbole (Pfad aus Index) und Aufrufketten.
 - Natives Read/Grep nur nach ausgeschöpfter MCP-Kette oder MCP-BLOCKER — mit Dokumentation im Scout-Protokoll.
 
 **Schritt 1b — Dev-Filesystem-MCP (Pflicht gemäß repo-scout-protocol):**
-- Kanon: [docs/mcp-dev-filesystem.md](../../../docs/mcp-dev-filesystem.md) — `file_path`/`root`, Schema vor Aufruf lesen.
+- Kanon: [docs/mcp/dev-filesystem.md](../../docs/mcp/dev-filesystem.md) — `file_path`/`root`, Schema vor Aufruf lesen.
 - Bei **leerem** `find_in_index`: `find_by_content` oder `find_file` **bevor** Read/Grep.
 - Bei bekanntem Pfad/Symbol zuerst: `read_class_summary`, `read_signatures_only`, `read_method`, `find_implementations` unter `/project/...`.
 

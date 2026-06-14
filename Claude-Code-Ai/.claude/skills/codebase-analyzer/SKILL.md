@@ -439,7 +439,7 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 - Kein Build nötig erwähnen wenn der User fragt ob er erst bauen muss
 - Coverage-Tools immer mit dem Hinweis versehen dass zuerst ein Test-Run nötig ist
 
-Weiterführende Dokumentation: `docs/mcp-codebase-analyzer.md`
+Weiterführende Dokumentation: `docs/mcp/codebase-analyzer.md`
 
 ## Opt-out
 

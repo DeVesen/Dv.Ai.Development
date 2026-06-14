@@ -149,7 +149,7 @@ Bei **bekanntem Pfad/Klasse** (Task, Handoff): Filesystem-MCP **zuerst**, Index 
 
 Log-UI: Port **8091** — `GET /api/calls` (max 200 Einträge)
 
-Weiterführende Dokumentation: `docs/mcp-dev-filesystem.md`
+Weiterführende Dokumentation: `docs/mcp/dev-filesystem.md`
 
 ## Opt-out
 

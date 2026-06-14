@@ -34,7 +34,7 @@ Wenn `dev-angular-mcp` oder `dev-dotnet-mcp` für Build/Test **nicht** in der To
 > - Kein stiller Fallback auf Shell + build-log-filter
 > - Build-/Test-Kette stoppen
 > - Nutzer informieren (Docker? MCP aktiv? Image gebaut?)
-> - Erst nach **expliziter Nutzerfreigabe**: Shell-Fallback + build-log-filter gemäß `docs/mcp/build-log-filter.md`
+> - Erst nach **expliziter Nutzerfreigabe**: Shell-Fallback + build-log-filter gemäß `docs/mcp-build-log-filter.md`
 
 *Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
 

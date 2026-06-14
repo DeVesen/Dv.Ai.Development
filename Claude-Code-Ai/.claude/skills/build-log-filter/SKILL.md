@@ -352,7 +352,7 @@ Nur wenn das Kommando **nicht** im Mapping liegt:
 
 Log-UI: Port **8089**
 
-Weiterführende Dokumentation: `docs/mcp/build-log-filter.md`
+Weiterführende Dokumentation: `docs/mcp-build-log-filter.md`
 
 ## Opt-out
 

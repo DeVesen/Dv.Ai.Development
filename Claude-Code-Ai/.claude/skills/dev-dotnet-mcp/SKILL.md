@@ -167,7 +167,7 @@ MCP-Build/Test eingehalten: ja
 
 Log-UI: Port **8093** — `GET /api/calls`
 
-Weiterführende Dokumentation: `docs/mcp/dev-dotnet.md`
+Weiterführende Dokumentation: `docs/mcp-dev-dotnet.md`
 
 dev-tooling-mcp Constraints für .NET:
 - `dotnet build` / `dotnet test` immer via `build_dotnet_solution` / `test_dotnet_solution` wenn MCP verfügbar

@@ -37,7 +37,7 @@ Vor **jedem** MCP-Tool-Aufruf: Deskriptor/Schema lesen — Namen unterscheiden s
 
 **MCP-Pfad-Kanon:** Projekt-MCP-Pfad-Dokumentation (deployed im Projekt, typisch `references/mcp-project-paths.md`) — Host-Pfade nicht unveraendert an codebase-analyzer.
 
-Erklaerung der Fallback-Kette: [docs/mcp/scout-fallback-chain.md](../../docs/mcp/scout-fallback-chain.md)
+Erklaerung der Fallback-Kette: [docs/mcp-scout-fallback-chain.md](../../docs/mcp-scout-fallback-chain.md)
 
 ---
 
@@ -150,7 +150,7 @@ Ohne vollstaendige Tabelle: Scout **nicht** als abgeschlossen markieren.
 | [dev-filesystem-mcp](../dev-filesystem-mcp/SKILL.md) | Pflicht-Zweitstrategie bei Index-Miss |
 | [planning-workflow](../planning-workflow/SKILL.md) Phase 3 | Scout-Subagent nutzt dieselbe Kette |
 
-**Vertiefung Fallback-Logik:** [docs/mcp/scout-fallback-chain.md](../../docs/mcp/scout-fallback-chain.md)
+**Vertiefung Fallback-Logik:** [docs/mcp-scout-fallback-chain.md](../../docs/mcp-scout-fallback-chain.md)
 
 ---
 

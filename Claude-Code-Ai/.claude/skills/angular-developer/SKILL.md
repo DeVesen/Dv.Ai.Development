@@ -41,7 +41,7 @@ Bei Angular-Arbeit immer zusätzlich laden:
 - Kein stiller Fallback auf Shell
 - Nutzer informieren; erst nach **expliziter Freigabe**: Shell-Fallback
 
-Referenz: `docs/mcp/dev-angular.md`
+Referenz: `docs/mcp-dev-angular.md`
 
 *Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
 

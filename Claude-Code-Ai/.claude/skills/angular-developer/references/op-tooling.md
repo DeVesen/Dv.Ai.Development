@@ -47,6 +47,6 @@ Output Build/Test: JSON mit `success`, `errors[]`, `warnings[]`, `summary`, `exi
 
 Nach dem Scaffolding: erstellte Dateien lesen und projektspezifisch anpassen.
 
-Referenz: `docs/mcp/dev-angular.md`
+Referenz: `docs/mcp-dev-angular.md`
 
 > **Abgrenzung:** `@angular/cli mcp` (siehe [mcp.md](mcp.md)) ist der offizielle Angular-Dokumentations-MCP — **dev-angular-mcp** führt `ng`-Kommandos im Container aus.

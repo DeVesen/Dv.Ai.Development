@@ -20,7 +20,7 @@ Guidance for Angular Material v22+ components, theming, and CDK usage.
 ## Vollständige Komponenten-Referenz
 
 Alle verfügbaren Komponenten, APIs und Verwendungsbeispiele:
-→ `docs/skills/angular-material-v22-components.md`
+→ `docs/angular-material-v22-components.md`
 
 ## Schnellübersicht: Häufige Komponenten
 

@@ -52,4 +52,4 @@ Kanon: [output-style-canon.md](./output-style-canon.md)
 | Agent-Compliance (dieses Dokument) | `.claude/references/agent-compliance.md` |
 | Delegations-Boilerplate | `.claude/references/subagent-delegation-boilerplate.md` |
 | Verifikationsbefehle | `.claude/references/verification-commands.md` |
-| MCP-Dokumentation | `docs/mcp/*.md` |
+| MCP-Dokumentation | `docs/mcp-*.md` |

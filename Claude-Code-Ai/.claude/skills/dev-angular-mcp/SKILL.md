@@ -161,7 +161,7 @@ MCP-Build/Test eingehalten: ja
 
 Log-UI: Port **8092** — `GET /api/calls`
 
-Weiterführende Dokumentation: `docs/mcp/dev-angular.md`
+Weiterführende Dokumentation: `docs/mcp-dev-angular.md`
 
 dev-tooling-mcp Constraints für Angular:
 - `ng build` / `ng test` immer via `build_angular_project` / `test_angular_project` wenn MCP verfügbar

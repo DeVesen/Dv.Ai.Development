@@ -33,9 +33,10 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 │   ├── commit-message/
 │   ├── conversation-insights/
 │   ├── caveman/
-│   ├── skill-creator/   Meta-skill: create/improve skills and agent profiles
-│   └── work-review/     Quality review: 4 parallel reviewer agents
-├── agents/             20 Sub-Agent-Profile (auto-discovered)
+│   ├── skill-creator/       Meta-skill: create/improve skills and agent profiles
+│   ├── work-review/         Quality review: 4 parallel reviewer agents
+│   └── work-review-iterative/  Iterative review loop until no findings remain
+├── agents/             21 Sub-Agent-Profile (auto-discovered)
 └── references/         Shared references (compliance, output-style, boilerplate)
 
 Mcp-Servers/            MCP server implementations (Docker)

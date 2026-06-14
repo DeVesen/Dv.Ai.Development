@@ -2,7 +2,7 @@
 
 **Build.Log.Filter.Mcp** — Reduziert rohe Build- und Test-Ausgaben auf das Wesentliche.
 
-> **Agent-Kanon:** [`skills/build-log-filter/SKILL.md`](../.claude/skills/build-log-filter/SKILL.md) — Tools, `tool_type`-Mapping, JSON. **Verifikations-Prozess:** Rule `build-log-filter.mdc` (nicht im Skill).
+> **Agent-Kanon:** [`skills/build-log-filter/SKILL.md`](../../.claude/skills/build-log-filter/SKILL.md) — Tools, `tool_type`-Mapping, JSON. **Verifikations-Prozess:** Rule `build-log-filter.mdc` (nicht im Skill).
 
 | Eigenschaft | Wert |
 |-------------|------|

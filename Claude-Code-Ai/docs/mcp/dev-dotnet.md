@@ -2,7 +2,7 @@
 
 **Dev.Dotnet.Mcp** — .NET-Scaffolding, Build und Test via MCP.
 
-> **Agent-Kanon:** [`skills/dev-dotnet-mcp/SKILL.md`](../.claude/skills/dev-dotnet-mcp/SKILL.md)
+> **Agent-Kanon:** [`skills/dev-dotnet-mcp/SKILL.md`](../../.claude/skills/dev-dotnet-mcp/SKILL.md)
 
 | Eigenschaft | Wert |
 |-------------|------|

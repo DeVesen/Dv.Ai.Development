@@ -42,7 +42,7 @@ immer Container-Pfade mit Präfix `/workspace/`.
 **VERBOTEN als MCP-Argument:** Host-Pfade aus mcp-project-paths.md ohne `/workspace/`, `lac-db/src/...`, `src/frontend`, Windows-Pfade.
 Bei `Path not found: /app/...`: sofort korrigieren — **kein** zweiter Versuch mit demselben Format.
 
-Deploy-Kanon (wird bei Install generiert): [mcp-project-paths.md](../../references/mcp-project-paths.md). `./AGENTS.md` ist optional.
+Deploy-Kanon (wird bei Install generiert): `mcp-project-paths.md` (project-specific, not in this repo). `./AGENTS.md` ist optional.
 
 ## MCP-Werkzeugkette (Planung & Code-Navigation)
 
@@ -93,7 +93,7 @@ Manche Solutions (z. B. komplexe `.sln` im Docker-Container) liefern:
 - `find_in_index`: `projectPath` = **dasselbe** `.csproj`, in dem das Symbol liegt — nicht Backend-Root, nicht Solution-Pfad.
 - Wenn `index_project` auf ein Verzeichnis mit `.sln` den Hinweis „use index_solution" liefert: **nicht** blind folgen — zuerst mcp-project-paths.md prüfen; bei Known Issue direkt konkretes `.csproj` indexieren.
 
-Smoke-Tests: [mcp-smoke-test.md](../../references/mcp-smoke-test.md).
+Smoke-Tests: [mcp-smoke-test.md](../../../references/mcp-smoke-test.md).
 
 **Schritt 1 — Landkarte (einmal pro Stack/.csproj pro Session/Aufgabe):**
 

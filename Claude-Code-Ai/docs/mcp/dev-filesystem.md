@@ -2,7 +2,7 @@
 
 **Dev.Filesystem.Mcp** — Token-effizientes Lesen und Suchen in `.cs`- und `.ts`-Dateien.
 
-> **Agent-Kanon (Pflicht):** [`skills/dev-filesystem-mcp/SKILL.md`](../.claude/skills/dev-filesystem-mcp/SKILL.md) — Tools, Parameter (`file_path`, `root`), JSON-Beispiele, Fehlerdiagnose. Diese Datei ist Menschen-Doku; bei Widersprüchen gilt der Skill.
+> **Agent-Kanon (Pflicht):** [`skills/dev-filesystem-mcp/SKILL.md`](../../.claude/skills/dev-filesystem-mcp/SKILL.md) — Tools, Parameter (`file_path`, `root`), JSON-Beispiele, Fehlerdiagnose. Diese Datei ist Menschen-Doku; bei Widersprüchen gilt der Skill.
 
 | Eigenschaft | Wert |
 |-------------|------|

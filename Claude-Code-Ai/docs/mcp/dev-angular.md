@@ -2,7 +2,7 @@
 
 **Dev.Angular.Mcp** — Angular-Scaffolding, Build und Test via MCP.
 
-> **Agent-Kanon:** [`skills/dev-angular-mcp/SKILL.md`](../.claude/skills/dev-angular-mcp/SKILL.md)
+> **Agent-Kanon:** [`skills/dev-angular-mcp/SKILL.md`](../../.claude/skills/dev-angular-mcp/SKILL.md)
 
 | Eigenschaft | Wert |
 |-------------|------|

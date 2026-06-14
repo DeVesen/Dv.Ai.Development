@@ -74,6 +74,6 @@ Fallback nur mit expliziter Zeile, welche MCP-Schritte vorher versucht wurden.
 
 ## Siehe auch
 
-- [`mcps.md`](../mcps.md) — situative Server-Auswahl; verweist auf repo-scout-protocol in Scout-Phasen
+- `mcps.md` — situative Server-Auswahl; verweist auf repo-scout-protocol in Scout-Phasen
 - [`dev-filesystem.md`](./dev-filesystem.md) — `find_by_content`, `find_file`
 - [`codebase-analyzer.md`](./codebase-analyzer.md) — Index, `index_solution`

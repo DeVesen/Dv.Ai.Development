@@ -36,4 +36,24 @@ public sealed class DotnetScaffolderTests
         Assert.Contains("\"C:\\repo\\My Solution.sln\"", args);
         Assert.Contains("\"C:\\repo\\src\\My Project\\My Project.csproj\"", args);
     }
+
+    [Fact]
+    public void BuildNewSlnCommand_includes_name_and_output()
+    {
+        var args = DotnetScaffolder.BuildNewSlnCommand("MySolution", @"C:\repo");
+
+        Assert.Contains("new sln", args);
+        Assert.Contains("--name MySolution", args);
+        Assert.Contains("-o", args);
+        Assert.Contains(@"C:\repo", args);
+    }
+
+    [Fact]
+    public void BuildNewSlnCommand_quotes_paths_with_spaces()
+    {
+        var args = DotnetScaffolder.BuildNewSlnCommand("My Solution", @"C:\My Repo");
+
+        Assert.Contains("--name \"My Solution\"", args);
+        Assert.Contains("-o \"C:\\My Repo\"", args);
+    }
 }

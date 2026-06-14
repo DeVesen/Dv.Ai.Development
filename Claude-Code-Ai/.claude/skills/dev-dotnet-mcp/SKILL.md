@@ -1,14 +1,17 @@
 ---
 name: dev-dotnet-mcp
 description: >
-  Kanon für MCP dev-dotnet-mcp: dotnet new, Verzeichnisstrukturen, Build und Test.
-  Trigger: scaffold_dotnet_project, create_directory_structure, dotnet new,
-  neues .NET-Projekt, Ordnerstruktur, build_dotnet_solution, test_dotnet_solution,
-  dotnet build, dotnet test, .NET bauen, .NET testen.
+  Kanon für MCP dev-dotnet-mcp: Solution erstellen, dotnet new, Datei umbenennen,
+  Verzeichnisstrukturen, Build und Test.
+  Trigger: create_dotnet_solution, scaffold_dotnet_project, rename_file,
+  create_directory_structure, dotnet new, neue .sln, neues .NET-Projekt,
+  Ordnerstruktur, build_dotnet_solution, test_dotnet_solution,
+  dotnet build, dotnet test, .NET bauen, .NET testen, Datei umbenennen.
   Parameter output_path, base_path, path als /workspace/... Pfade (Volume-Mount).
   Nicht für Code-Lesen — dev-filesystem-mcp.
 when_to_use: >
-  Aktiviere für .NET-Scaffolding (Projekte, Ordnerstrukturen) und .NET Build/Test via MCP.
+  Aktiviere für .NET-Scaffolding (Solutions, Projekte, Ordnerstrukturen),
+  Datei-Umbenennen und .NET Build/Test via MCP.
   build_dotnet_solution und test_dotnet_solution ersetzen dotnet build / dotnet test als Shell-Kommandos
   vollständig — MCPs filtern intern und liefern errors[], warnings[], summary.
   Bei MCP nicht erreichbar: BLOCKER melden, kein stiller Shell-Fallback.
@@ -51,10 +54,16 @@ when_to_use: >
 
 | Tool | Zweck |
 |------|-------|
+| `create_dotnet_solution` | `dotnet new sln` — erstellt eine neue `.sln`-Datei |
 | `scaffold_dotnet_project` | `dotnet new` + optional `dotnet sln add` |
+| `rename_file` | Datei umbenennen oder verschieben (Container-Pfade) |
 | `create_directory_structure` | Verzeichnisse/Dateien aus `paths_json` |
 | `build_dotnet_solution` | `dotnet build` — gibt `{success, errors[], warnings[], summary}` zurück |
 | `test_dotnet_solution` | `dotnet test` — gibt `{success, errors[], summary}` zurück |
+
+**Reihenfolge für eine neue Solution:**
+1. `create_dotnet_solution` → `.sln` anlegen
+2. `scaffold_dotnet_project` (1× pro Projekt) → Projekt erstellen + zur Solution hinzufügen
 
 **Wichtig:** `build_dotnet_solution` und `test_dotnet_solution` filtern den rohen Konsolen-Output intern.
 Agents erhalten ausschließlich strukturierte Daten (`errors[]`, `warnings[]`, `summary`) — niemals Raw-stdout/stderr.
@@ -64,17 +73,32 @@ Agents erhalten ausschließlich strukturierte Daten (`errors[]`, `warnings[]`, `
 
 ## Parameter (verbindlich)
 
-| Parameter | Verwendung |
-|-----------|------------|
-| `output_path` | Zielverzeichnis für `dotnet new` (Container-Pfad `/workspace/...`) |
-| `base_path` | Basis für `create_directory_structure` (Container-Pfad `/workspace/...`) |
-| `path` | Solution/Projekt/Verzeichnis für Build oder Test (`/workspace/...`) |
-| `template` | `dotnet new`-Template (z. B. `webapi`, `classlib`) |
-| `name` | Projektname |
-| `solution_path` | Optional: `.sln` für `dotnet sln add` (`/workspace/...`) |
-| `configuration` | Optional: Build-Konfiguration (z. B. `Release`) |
-| `options` | Optional: extra CLI-Flags |
-| `paths_json` | JSON-Array relativer Pfade unter `base_path` |
+| Parameter | Tool | Verwendung |
+|-----------|------|------------|
+| `name` | `create_dotnet_solution`, `scaffold_dotnet_project` | Solution- oder Projektname |
+| `output_path` | `create_dotnet_solution`, `scaffold_dotnet_project` | Zielverzeichnis (Container-Pfad `/workspace/...`) |
+| `template` | `scaffold_dotnet_project` | `dotnet new`-Template (s. u.) |
+| `solution_path` | `scaffold_dotnet_project` | Optional: `.sln` für `dotnet sln add` (`/workspace/...`) |
+| `options` | `scaffold_dotnet_project` | Optional: extra CLI-Flags (z. B. `--framework net9.0`) |
+| `old_path` | `rename_file` | Quelldatei (Container-Pfad `/workspace/...`) |
+| `new_path` | `rename_file` | Zieldatei (Container-Pfad `/workspace/...`) |
+| `base_path` | `create_directory_structure` | Basis für Verzeichnisstruktur (`/workspace/...`) |
+| `paths_json` | `create_directory_structure` | JSON-Array relativer Pfade unter `base_path` |
+| `path` | `build_dotnet_solution`, `test_dotnet_solution` | Solution/Projekt/Verzeichnis (`/workspace/...`) |
+| `configuration` | `build_dotnet_solution` | Optional: Build-Konfiguration (z. B. `Release`) |
+
+### Häufige `dotnet new`-Templates
+
+| Template | Projekttyp |
+|----------|-----------|
+| `classlib` | Leere Klassenbibliothek |
+| `web` | ASP.NET Core (`Microsoft.NET.Sdk.Web`) |
+| `webapi` | ASP.NET Core Web API |
+| `console` | Konsolenanwendung |
+| `xunit` | xUnit-Testprojekt |
+| `blazorserver` | Blazor Server App |
+| `blazorwasm` | Blazor WebAssembly App |
+| `worker` | Worker Service |
 
 ### Nicht verwenden
 
@@ -89,6 +113,17 @@ Agents erhalten ausschließlich strukturierte Daten (`errors[]`, `warnings[]`, `
 
 ## JSON-Beispiele
 
+### create_dotnet_solution
+
+```json
+{
+  "name": "MyApp",
+  "output_path": "/workspace/src/backend"
+}
+```
+
+Ergebnis: `/workspace/src/backend/MyApp.sln`
+
 ### scaffold_dotnet_project
 
 ```json
@@ -100,6 +135,18 @@ Agents erhalten ausschließlich strukturierte Daten (`errors[]`, `warnings[]`, `
   "options": "--framework net9.0"
 }
 ```
+
+### rename_file
+
+```json
+{
+  "old_path": "/workspace/src/backend/UserService/OldName.cs",
+  "new_path": "/workspace/src/backend/UserService/NewName.cs"
+}
+```
+
+Schlägt fehl wenn: Quelldatei fehlt, Zieldatei bereits existiert.
+Erstellt fehlende Zielverzeichnisse automatisch.
 
 ### create_directory_structure
 

@@ -5,6 +5,39 @@ namespace Dev.Dotnet.Mcp.Services;
 
 public sealed class DotnetScaffolder
 {
+    public static string BuildNewSlnCommand(string name, string outputPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
+
+        return $"new sln --name {Quote(name)} -o {Quote(outputPath)}";
+    }
+
+    public async Task<DotnetSolutionResult> CreateSolutionAsync(
+        string name,
+        string outputPath,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return new DotnetSolutionResult { Success = false, Error = "name is required." };
+        if (string.IsNullOrWhiteSpace(outputPath))
+            return new DotnetSolutionResult { Success = false, Error = "output_path is required." };
+
+        var fullOutput = Path.GetFullPath(outputPath);
+        var args = BuildNewSlnCommand(name, fullOutput);
+        var (success, error, console) = await RunDotnetAsync(args, cancellationToken);
+
+        return new DotnetSolutionResult
+        {
+            Success = success,
+            Command = $"dotnet {args}",
+            SolutionPath = Path.Combine(fullOutput, $"{name}.sln"),
+            Error = success ? null : error,
+            ConsoleOutput = console
+        };
+    }
+
+
     public static string BuildNewCommand(string template, string name, string outputPath, string? options = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(template);

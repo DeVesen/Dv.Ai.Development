@@ -32,6 +32,56 @@ public sealed class DotnetTools
         _logger = logger;
     }
 
+    [McpServerTool(Name = "create_dotnet_solution")]
+    [Description("Creates a new .sln file using 'dotnet new sln'. Use scaffold_dotnet_project afterwards to add projects to it.")]
+    public async Task<string> CreateDotnetSolution(
+        [Description("Solution name (becomes <name>.sln)")] string name,
+        [Description("Container-absolute output directory, e.g. /workspace/backend (mapped from ${workspaceFolder}:/workspace)")] string output_path)
+    {
+        return await ExecuteAsync(
+            "create_dotnet_solution",
+            new { name, output_path },
+            async () =>
+            {
+                var result = await _scaffolder.CreateSolutionAsync(name, output_path);
+                return (JsonSerializer.Serialize(result, JsonDefaults.Options), result.ConsoleOutput);
+            });
+    }
+
+    [McpServerTool(Name = "rename_file")]
+    [Description("Renames or moves a file. Fails if the source does not exist or the destination already exists.")]
+    public Task<string> RenameFile(
+        [Description("Container-absolute path of the file to rename, e.g. /workspace/src/OldName.cs")] string old_path,
+        [Description("Container-absolute destination path, e.g. /workspace/src/NewName.cs")] string new_path)
+    {
+        return ExecuteAsync(
+            "rename_file",
+            new { old_path, new_path },
+            () =>
+            {
+                var result = RenameFileInternal(old_path, new_path);
+                return Task.FromResult((JsonSerializer.Serialize(result, JsonDefaults.Options), string.Empty));
+            });
+    }
+
+    private static Dev.Dotnet.Mcp.Models.RenameFileResult RenameFileInternal(string oldPath, string newPath)
+    {
+        var fullOld = Path.GetFullPath(oldPath);
+        var fullNew = Path.GetFullPath(newPath);
+
+        if (!File.Exists(fullOld))
+            return new Dev.Dotnet.Mcp.Models.RenameFileResult { Success = false, OldPath = fullOld, NewPath = fullNew, Error = $"Source file not found: {fullOld}" };
+        if (File.Exists(fullNew))
+            return new Dev.Dotnet.Mcp.Models.RenameFileResult { Success = false, OldPath = fullOld, NewPath = fullNew, Error = $"Destination already exists: {fullNew}" };
+
+        var destDir = Path.GetDirectoryName(fullNew);
+        if (!string.IsNullOrEmpty(destDir))
+            Directory.CreateDirectory(destDir);
+
+        File.Move(fullOld, fullNew);
+        return new Dev.Dotnet.Mcp.Models.RenameFileResult { Success = true, OldPath = fullOld, NewPath = fullNew };
+    }
+
     [McpServerTool(Name = "scaffold_dotnet_project")]
     [Description("Runs dotnet new with template, name, and output path. Optionally adds project to a solution.")]
     public async Task<string> ScaffoldDotnetProject(

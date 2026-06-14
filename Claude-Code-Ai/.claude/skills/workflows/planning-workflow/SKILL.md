@@ -88,7 +88,7 @@ Parallelitaet nur innerhalb derselben Stufe: Scouts parallel (Phase 3), Topic-Pl
 
 ## Subagent-Typen und Agent-Definitionen (host-neutral)
 
-**Modellwahl** (Slugs, Ketten, Host-Regeln) nur in `.claude/agents/*.md` (Abschnitt `## Modell`) — nicht hier duplizieren.
+**Modellwahl** (Slugs, Ketten, Host-Regeln) nur in `agents/*.md` (Abschnitt `## Modell`) — nicht hier duplizieren.
 
 **Verboten fuer Phase 3, 4b, 5:** `explore`, `generalPurpose`, `shell` oder Rollensimulation im Orchestrator-Turn.
 
@@ -105,7 +105,7 @@ Parallelitaet nur innerhalb derselben Stufe: Scouts parallel (Phase 3), Topic-Pl
 | **Oberlehrer** | 5 | bevorzugt (×5) | 1 | nein | `plan-review-oberlehrer-agent` |
 | **Professor** | 5 | bevorzugt (×5) | 1 | nein | `plan-review-professor-agent` |
 
-**Subagent — Modell vor Task (Pflicht):** Profil unter `.claude/agents/` — vor jedem Task Ziel-Profil lesen; primaer Abschnitt `## Modell`; Slugs nicht hier duplizieren.
+**Subagent — Modell vor Task (Pflicht):** Profil unter `agents/` — vor jedem Task Ziel-Profil lesen; primaer Abschnitt `## Modell`; Slugs nicht hier duplizieren.
 
 ### Agent-Definitionen
 
@@ -120,7 +120,7 @@ Parallelitaet nur innerhalb derselben Stufe: Scouts parallel (Phase 3), Topic-Pl
 | `plan-review-oberlehrer-agent` | plan-review-oberlehrer-agent.md |
 | `plan-review-professor-agent` | plan-review-professor-agent.md |
 
-Neue Planungs-Agenten: unter `.claude/agents/` anlegen und in dieser Tabelle eintragen.
+Neue Planungs-Agenten: unter `agents/` anlegen und in dieser Tabelle eintragen.
 
 ### Ausfuehrung je Host
 

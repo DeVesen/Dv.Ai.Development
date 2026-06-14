@@ -8,31 +8,40 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 
 ```
 .claude/                Claude Code — direkt nutzbar
-├── skills/             25 Skills (via /skill-name oder automatisch)
-│   ├── planning-workflow/
-│   ├── implementation-workflow/
-│   ├── buddy-agent/
-│   ├── repo-scout-protocol/
-│   ├── codebase-analyzer/
-│   ├── build-log-filter/
-│   ├── dev-tooling-mcp/
-│   ├── dev-angular-mcp/
-│   ├── dev-dotnet-mcp/
-│   ├── dev-filesystem-mcp/
-│   ├── angular-developer/
-│   ├── angular-developer-extension/
-│   ├── angular-cache-busting/
-│   ├── angular-material/
-│   ├── angular-material-custom-input/
-│   ├── angular-new-app/
-│   ├── angular-new-app-extension/
-│   ├── angular-refactor/
-│   ├── backend-ef-migrations/
-│   ├── ado/
-│   ├── describe-as/
-│   ├── commit-message/
-│   ├── conversation-insights/
-│   ├── caveman/
+├── skills/             27 Skills (via /skill-name oder automatisch)
+│   ├── workflows/          Planungs- und Prozess-Orchestrierung
+│   │   ├── planning-workflow/
+│   │   ├── implementation-workflow/
+│   │   ├── buddy-agent/
+│   │   ├── repo-scout-protocol/
+│   │   └── ado/
+│   ├── angular/            Angular-Entwicklung (fachlich)
+│   │   ├── angular-developer/
+│   │   ├── angular-developer-extension/
+│   │   ├── angular-new-app/
+│   │   ├── angular-new-app-extension/
+│   │   ├── angular-refactor/
+│   │   ├── angular-material/
+│   │   ├── angular-material-custom-input/
+│   │   └── angular-cache-busting/
+│   ├── dotnet/             .NET-Entwicklung (fachlich)
+│   │   └── backend-ef-migrations/
+│   ├── mcp/                MCP-Server-Kanons
+│   │   ├── dev-angular-mcp/
+│   │   ├── dev-dotnet-mcp/
+│   │   ├── dev-filesystem-mcp/
+│   │   ├── dev-tooling-mcp/
+│   │   ├── build-log-filter/
+│   │   └── codebase-analyzer/
+│   ├── meta/               Claude-Code-Selbstverwaltung & Skill-Tooling
+│   │   ├── skill-creator/
+│   │   ├── work-review/
+│   │   ├── work-review-iterative/
+│   │   ├── conversation-insights/
+│   │   ├── describe-as/
+│   │   └── commit-message/
+│   └── style/              Antwort-/Kommunikationsstil
+│       └── caveman/
 │   ├── skill-creator/       Meta-skill: create/improve skills and agent profiles
 │   ├── work-review/         Quality review: 4 parallel reviewer agents
 │   └── work-review-iterative/  Iterative review loop until no findings remain

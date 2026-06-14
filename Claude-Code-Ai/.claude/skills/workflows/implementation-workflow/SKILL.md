@@ -107,7 +107,7 @@ Vor jeder schreibenden Umsetzung:
 
 ## Subagent-Typen und Agent-Definitionen (host-neutral)
 
-**Modellwahl** ausschliesslich in `.claude/agents/*.md` (Abschnitt `## Modell`) — nicht hier duplizieren.
+**Modellwahl** ausschliesslich in `agents/*.md` (Abschnitt `## Modell`) — nicht hier duplizieren.
 
 ### Rollen im Implementation Workflow
 
@@ -119,7 +119,7 @@ Vor jeder schreibenden Umsetzung:
 | **Implement-Review x6** | 3.2 (pro Iteration) | `implement-review-*-agent` |
 | **Fix-Planung** | 3.6 (pro Iteration) | `implement-fix-planner-agent` |
 
-**Subagent — Modell vor Task (Pflicht):** Agent-Profil unter `.claude/agents/` lesen; primaer Abschnitt `## Modell`; Slugs nicht hier duplizieren.
+**Subagent — Modell vor Task (Pflicht):** Agent-Profil unter `agents/` lesen; primaer Abschnitt `## Modell`; Slugs nicht hier duplizieren.
 
 - **implement-agent:** genau ein Slice (IMP-*); Build/Test slice-scoped via MCP; Unit-Tests im Slice; build-log-filter Pflicht auf jedem Lauf.
 - **implement-review-*:** readonly; je eine Rolle; 6 parallele Laeufe pro Iteration; MCP-Pflicht je Profil.
@@ -133,7 +133,7 @@ Vor jeder schreibenden Umsetzung:
 | ---------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | **Claude Code** | Sub-Lauf mit `implement-agent.md` als System-Prompt | Sub-Laeufe mit jeweiligem Agent-`.md` als System-Prompt |
 
-Neue Implementation-Agenten: unter `.claude/agents/` anlegen und hier eintragen.
+Neue Implementation-Agenten: unter `agents/` anlegen und hier eintragen.
 
 ---
 
@@ -417,7 +417,7 @@ Keine Code-Beispiele ohne explizite Nachfrage.
 
 ## Prompt-Vorlagen
 
-Kopierbare Auftrags-Payloads — nicht Ersatz fuer Agent-Profile unter `.claude/agents/`:
+Kopierbare Auftrags-Payloads — nicht Ersatz fuer Agent-Profile unter `agents/`:
 
 | Abschnitt | Datei | Wann |
 | ---------------------------------------------- | --------------------------------- | -------------------------------------------------- |

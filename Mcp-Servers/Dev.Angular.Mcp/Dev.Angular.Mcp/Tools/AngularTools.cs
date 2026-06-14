@@ -35,6 +35,21 @@ public sealed class AngularTools
         _logger = logger;
     }
 
+    [McpServerTool(Name = "create_angular_project")]
+    [Description(
+        "Creates a new Angular workspace via ng new. " +
+        "Defaults: --standalone --skip-tests --routing --style=scss. Use options to override all defaults.")]
+    public async Task<string> CreateAngularProject(
+        [Description("Container-absolute path to the parent directory where the new project folder will be created, e.g. /workspace")] string parent_directory,
+        [Description("Project name (kebab-case recommended)")] string name,
+        [Description("Optional CLI flags replacing defaults, e.g. --style=css --no-routing")] string? options = null)
+    {
+        return await ExecuteAsync(
+            "create_angular_project",
+            new { parent_directory, name, options },
+            () => _scaffolder.CreateProjectAsync(parent_directory, name, options));
+    }
+
     [McpServerTool(Name = "scaffold_angular_component")]
     [Description(
         "Generates an Angular component via ng generate. " +
@@ -65,6 +80,22 @@ public sealed class AngularTools
             "scaffold_angular_service",
             new { project_root, name, path, options },
             () => _scaffolder.ScaffoldServiceAsync(project_root, name, path, options));
+    }
+
+    [McpServerTool(Name = "scaffold_angular_directive")]
+    [Description(
+        "Generates an Angular directive via ng generate. " +
+        "Defaults: --standalone --skip-tests. Use options to override defaults.")]
+    public async Task<string> ScaffoldAngularDirective(
+        [Description("Container-absolute path to the Angular project root, e.g. /workspace/frontend (mapped from ${workspaceFolder}:/workspace)")] string project_root,
+        [Description("Directive name (kebab-case recommended)")] string name,
+        [Description("Optional --path value, e.g. src/app/shared/directives")] string? path = null,
+        [Description("Optional CLI flags replacing defaults, e.g. --flat --skip-tests")] string? options = null)
+    {
+        return await ExecuteAsync(
+            "scaffold_angular_directive",
+            new { project_root, name, path, options },
+            () => _scaffolder.ScaffoldDirectiveAsync(project_root, name, path, options));
     }
 
     [McpServerTool(Name = "build_angular_project")]

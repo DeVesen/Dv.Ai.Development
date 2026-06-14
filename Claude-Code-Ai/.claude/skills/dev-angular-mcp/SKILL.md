@@ -1,14 +1,16 @@
 ---
 name: dev-angular-mcp
 description: >
-  Kanon für MCP dev-angular-mcp: Angular-Scaffolding und Build/Test.
-  Trigger: scaffold_angular_component, scaffold_angular_service, ng generate,
-  neue Komponente, neuer Service, build_angular_project, test_angular_project,
+  Kanon für MCP dev-angular-mcp: Angular-Projekt erstellen, Scaffolding und Build/Test.
+  Trigger: create_angular_project, ng new, neues Angular-Projekt, scaffold_angular_component,
+  scaffold_angular_service, scaffold_angular_directive, ng generate,
+  neue Komponente, neuer Service, neue Direktive, build_angular_project, test_angular_project,
   ng build, ng test, Angular bauen, Angular testen.
-  Parameter project_root als /workspace/... Pfad (Volume-Mount).
+  Parameter project_root / parent_directory als /workspace/... Pfad (Volume-Mount).
   Nicht für Code-Lesen — dev-filesystem-mcp; nicht für Review — codebase-analyzer.
 when_to_use: >
-  Aktiviere für Angular-Scaffolding (Komponenten, Services) und Angular Build/Test via MCP.
+  Aktiviere für Angular-Projekt-Erstellung (ng new) und Scaffolding (Komponenten, Services,
+  Direktiven) sowie Angular Build/Test via MCP.
   build_angular_project und test_angular_project ersetzen ng build / ng test als Shell-Kommandos
   vollständig — MCPs filtern intern und liefern errors[], warnings[], summary.
   Bei MCP nicht erreichbar: BLOCKER melden, kein stiller Shell-Fallback.
@@ -51,8 +53,10 @@ when_to_use: >
 
 | Tool | Zweck |
 |------|-------|
+| `create_angular_project` | `ng new` — neues Angular-Workspace; Default `--standalone --skip-tests --routing --style=scss` |
 | `scaffold_angular_component` | `ng generate component` — Default `--standalone --skip-tests` |
 | `scaffold_angular_service` | `ng generate service` — Default `--skip-tests` |
+| `scaffold_angular_directive` | `ng generate directive` — Default `--standalone --skip-tests` |
 | `build_angular_project` | `ng build` — gibt `{success, errors[], warnings[], summary}` zurück |
 | `test_angular_project` | `ng test --watch=false` — gibt `{success, errors[], summary}` zurück |
 
@@ -64,13 +68,14 @@ Agents erhalten ausschließlich strukturierte Daten (`errors[]`, `warnings[]`, `
 
 ## Parameter (verbindlich)
 
-| Parameter | Verwendung |
-|-----------|------------|
-| `project_root` | Container-Pfad zum Angular-Root (`angular.json`), z. B. `/workspace/src/frontend` |
-| `name` | Komponenten-/Service-Name (kebab-case empfohlen) |
-| `path` | Optional: ng `--path` (relativ zu `project_root`) |
-| `configuration` | Optional: `--configuration` für Build (z. B. `production`) |
-| `options` | Optional: CLI-Flags für Scaffolding oder Test |
+| Parameter | Tool | Verwendung |
+|-----------|------|------------|
+| `parent_directory` | `create_angular_project` | Container-Pfad zum Elternverzeichnis des neuen Projekts, z. B. `/workspace` |
+| `project_root` | alle anderen | Container-Pfad zum Angular-Root (`angular.json`), z. B. `/workspace/src/frontend` |
+| `name` | alle Scaffolding-Tools | Projekt-/Komponenten-/Service-/Direktiven-Name (kebab-case empfohlen) |
+| `path` | Scaffolding (außer `create`) | Optional: ng `--path` (relativ zu `project_root`) |
+| `configuration` | `build_angular_project` | Optional: Build-Konfiguration (z. B. `production`) |
+| `options` | alle | Optional: CLI-Flags, überschreiben **alle** Defaults komplett |
 
 ### Nicht verwenden
 
@@ -83,6 +88,25 @@ Agents erhalten ausschließlich strukturierte Daten (`errors[]`, `warnings[]`, `
 ---
 
 ## JSON-Beispiele
+
+### create_angular_project
+
+```json
+{
+  "parent_directory": "/workspace",
+  "name": "my-app"
+}
+```
+
+Mit abweichenden Defaults:
+
+```json
+{
+  "parent_directory": "/workspace",
+  "name": "my-app",
+  "options": "--style=css --no-routing"
+}
+```
 
 ### scaffold_angular_component
 
@@ -102,6 +126,16 @@ Agents erhalten ausschließlich strukturierte Daten (`errors[]`, `warnings[]`, `
   "project_root": "/workspace/src/frontend",
   "name": "user",
   "path": "src/app/users"
+}
+```
+
+### scaffold_angular_directive
+
+```json
+{
+  "project_root": "/workspace/src/frontend",
+  "name": "highlight",
+  "path": "src/app/shared/directives"
 }
 ```
 
@@ -145,7 +179,9 @@ MCP-Build/Test eingehalten: ja
 
 | Symptom | Ursache | Maßnahme |
 |---------|---------|----------|
-| `project_root is required` | Key fehlt | `/workspace/...` Pfad setzen |
+| `parent_directory is required` | Key fehlt bei `create_angular_project` | `parent_directory` statt `project_root` verwenden |
+| `parent_directory does not exist` | Pfad falsch | Pfad mit `/workspace/` beginnen lassen |
+| `project_root is required` | Key fehlt bei Scaffolding/Build | `/workspace/...` Pfad setzen |
 | `project_root does not exist` | Pfad falsch oder falsches Präfix | Pfad mit `/workspace/` beginnen lassen |
 | Build/Test schlägt fehl | Fehler in `errors[]` | `errors[]`-Array auswerten |
 | Invoke-Fehler ohne klare Meldung | Falscher Parameter-Key | Schema lesen, MCP-Deskriptor konsultieren |

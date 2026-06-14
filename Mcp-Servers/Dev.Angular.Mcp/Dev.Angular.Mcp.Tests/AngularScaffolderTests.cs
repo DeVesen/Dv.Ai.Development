@@ -89,4 +89,47 @@ public sealed class AngularScaffolderTests
         Assert.Empty(AngularScaffolder.ParseCreateLines(""));
         Assert.Empty(AngularScaffolder.ParseCreateLines("   \n  "));
     }
+
+    [Fact]
+    public void BuildDirectiveArguments_UsesDefaultFlags()
+    {
+        var args = AngularScaffolder.BuildDirectiveArguments("highlight", null, null);
+
+        Assert.Equal("generate directive highlight --standalone --skip-tests", args);
+    }
+
+    [Fact]
+    public void BuildDirectiveArguments_IncludesPath()
+    {
+        var args = AngularScaffolder.BuildDirectiveArguments("highlight", "src/app/shared/directives", null);
+
+        Assert.Equal("generate directive highlight --path=src/app/shared/directives --standalone --skip-tests", args);
+    }
+
+    [Fact]
+    public void BuildDirectiveArguments_OptionsOverrideDefaults()
+    {
+        var args = AngularScaffolder.BuildDirectiveArguments("highlight", null, "--flat");
+
+        Assert.Equal("generate directive highlight --flat", args);
+        Assert.DoesNotContain("--standalone", args);
+        Assert.DoesNotContain("--skip-tests", args);
+    }
+
+    [Fact]
+    public void BuildNewProjectArguments_UsesDefaultFlags()
+    {
+        var args = AngularScaffolder.BuildNewProjectArguments("my-app", null);
+
+        Assert.Equal("new my-app --standalone --skip-tests --routing --style=scss", args);
+    }
+
+    [Fact]
+    public void BuildNewProjectArguments_OptionsOverrideDefaults()
+    {
+        var args = AngularScaffolder.BuildNewProjectArguments("my-app", "--style=css --no-routing");
+
+        Assert.Equal("new my-app --style=css --no-routing", args);
+        Assert.DoesNotContain("--standalone", args);
+    }
 }

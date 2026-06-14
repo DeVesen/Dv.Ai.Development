@@ -12,6 +12,17 @@ public sealed partial class AngularScaffolder
     [GeneratedRegex(@"^\s*CREATE\s+(.+?)\s+\(\d+\s+bytes\)\s*$", RegexOptions.IgnoreCase)]
     private static partial Regex CreateLineRegex();
 
+    public static string BuildNewProjectArguments(string name, string? options)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        var args = new List<string> { "new", name };
+        if (!string.IsNullOrWhiteSpace(options))
+            args.AddRange(SplitOptions(options));
+        else
+            args.AddRange(["--standalone", "--skip-tests", "--routing", "--style=scss"]);
+        return string.Join(' ', args);
+    }
+
     public static string BuildComponentArguments(string name, string? path, string? options)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -22,6 +33,12 @@ public sealed partial class AngularScaffolder
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         return string.Join(' ', BuildArgumentList("service", name, path, options, "--skip-tests"));
+    }
+
+    public static string BuildDirectiveArguments(string name, string? path, string? options)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        return string.Join(' ', BuildArgumentList("directive", name, path, options, "--standalone", "--skip-tests"));
     }
 
     public static IReadOnlyList<string> BuildArgumentList(
@@ -60,6 +77,27 @@ public sealed partial class AngularScaffolder
         return files;
     }
 
+    public async Task<ScaffoldResult> CreateProjectAsync(
+        string parentDirectory,
+        string name,
+        string? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(parentDirectory))
+            return new ScaffoldResult { Success = false, ExitCode = -1, Error = "parent_directory is required." };
+
+        if (!Directory.Exists(parentDirectory))
+            return new ScaffoldResult { Success = false, ExitCode = -1, Error = $"parent_directory does not exist: {parentDirectory}" };
+
+        var args = new List<string> { "new", name };
+        if (!string.IsNullOrWhiteSpace(options))
+            args.AddRange(SplitOptions(options));
+        else
+            args.AddRange(["--standalone", "--skip-tests", "--routing", "--style=scss"]);
+
+        return await RunNgAsync(parentDirectory, args, cancellationToken);
+    }
+
     public async Task<ScaffoldResult> ScaffoldComponentAsync(
         string projectRoot,
         string name,
@@ -79,6 +117,17 @@ public sealed partial class AngularScaffolder
         CancellationToken cancellationToken = default)
     {
         var args = BuildArgumentList("service", name, path, options, "--skip-tests");
+        return await RunNgAsync(projectRoot, args, cancellationToken);
+    }
+
+    public async Task<ScaffoldResult> ScaffoldDirectiveAsync(
+        string projectRoot,
+        string name,
+        string? path = null,
+        string? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        var args = BuildArgumentList("directive", name, path, options, "--standalone", "--skip-tests");
         return await RunNgAsync(projectRoot, args, cancellationToken);
     }
 

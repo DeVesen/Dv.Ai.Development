@@ -44,7 +44,7 @@ Schlüsselwörter: "Tests laufen", "Feature fertig", "vor dem Merge", "Sprint-En
 | MCP | Parameter-Präfix | Beispiel |
 |-----|------------------|----------|
 | codebase-analyzer | `/workspace/` | `/workspace/src/frontend` |
-| dev-filesystem-mcp | `/project/` | `/project/src/backend` |
+| dev-mcp | Windows-Absolutpfad | `C:\Develop\MyProject\src\backend` |
 
 **Quelle für konkrete Container-Pfade:** `mcp-project-paths.md` (deployed in target project as `.cursor/references/mcp-project-paths.md`)
 - Host-Pfade aus `skill-params.json` **nicht** unverändert an MCP übergeben
@@ -416,19 +416,19 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 
 ---
 
-## Abgrenzung zu dev-filesystem-mcp
+## Abgrenzung zu dev-mcp
 
 | Aufgabe | Empfohlener MCP |
 |---------|----------------|
-| Eine Methode / eine Klasse lesen | dev-filesystem-mcp |
-| Datei nach Name oder Inhalt suchen | dev-filesystem-mcp |
-| Interface-Implementierungen finden | dev-filesystem-mcp |
+| Eine Methode / eine Klasse lesen | dev-mcp |
+| Datei nach Name oder Inhalt suchen | dev-mcp |
+| Interface-Implementierungen finden | dev-mcp |
 | Komplexität, Refactoring-Safety | codebase-analyzer |
 | Symbol-Index über ganzen Stack | codebase-analyzer |
 | Build-Output analysieren | codebase-analyzer / build-log-filter |
 | Nullability, Duplikate, Coverage | codebase-analyzer |
 
-**Faustregel: Lesen → dev-filesystem-mcp (`/project`). Analysieren → codebase-analyzer (`/workspace`).**
+**Faustregel: Lesen → dev-mcp (`C:\...`). Analysieren → codebase-analyzer (`/workspace/...`).**
 
 ---
 

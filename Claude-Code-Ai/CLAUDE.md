@@ -9,51 +9,44 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 ```
 .claude/                Claude Code — direkt nutzbar
 ├── skills/             27 Skills (via /skill-name oder automatisch)
-│   ├── workflows/          Planungs- und Prozess-Orchestrierung
-│   │   ├── planning-workflow/
-│   │   ├── implementation-workflow/
-│   │   ├── buddy-agent/
-│   │   ├── repo-scout-protocol/
-│   │   └── ado/
-│   ├── angular/            Angular-Entwicklung (fachlich)
-│   │   ├── angular-developer/
-│   │   ├── angular-developer-extension/
-│   │   ├── angular-new-app/
-│   │   ├── angular-new-app-extension/
-│   │   ├── angular-refactor/
-│   │   ├── angular-material/
-│   │   ├── angular-material-custom-input/
-│   │   └── angular-cache-busting/
-│   ├── dotnet/             .NET-Entwicklung (fachlich)
-│   │   └── backend-ef-migrations/
-│   ├── mcp/                MCP-Server-Kanons
-│   │   ├── dev-angular-mcp/
-│   │   ├── dev-dotnet-mcp/
-│   │   ├── dev-filesystem-mcp/
-│   │   ├── dev-tooling-mcp/
-│   │   ├── build-log-filter/
-│   │   └── codebase-analyzer/
-│   ├── meta/               Claude-Code-Selbstverwaltung & Skill-Tooling
-│   │   ├── skill-creator/
-│   │   ├── work-review/
-│   │   ├── work-review-iterative/
-│   │   ├── conversation-insights/
-│   │   ├── describe-as/
-│   │   └── commit-message/
-│   └── style/              Antwort-/Kommunikationsstil
-│       └── caveman/
-│   ├── skill-creator/       Meta-skill: create/improve skills and agent profiles
-│   ├── work-review/         Quality review: 4 parallel reviewer agents
-│   └── work-review-iterative/  Iterative review loop until no findings remain
+│   ├── planning-workflow/       Planungs-Workflow
+│   ├── implementation-workflow/ Implementierungs-Workflow
+│   ├── buddy-agent/             Pair-Programming-Agent
+│   ├── repo-scout-protocol/     Repo-Erkundung
+│   ├── ado/                     Azure DevOps Workflow
+│   ├── angular-developer/       Angular-Entwicklung (Kernregeln)
+│   ├── angular-developer-extension/ Angular Signals, RxJS, Testing
+│   ├── angular-new-app/         Neue Angular-App erstellen
+│   ├── angular-new-app-extension/   Angular-App erweitern
+│   ├── angular-refactor/        Angular-Refactoring
+│   ├── angular-material/        Angular Material
+│   ├── angular-material-custom-input/ Custom Material Inputs
+│   ├── angular-cache-busting/   Cache-Busting
+│   ├── backend-ef-migrations/   EF Core Migrations
+│   ├── dev-mcp/                 unified stdio exe (18 Tools: filesystem+dotnet+angular)
+│   ├── dev-angular-mcp/         VERALTET, Redirect auf dev-mcp
+│   ├── dev-dotnet-mcp/          VERALTET, Redirect auf dev-mcp
+│   ├── dev-filesystem-mcp/      VERALTET, Redirect auf dev-mcp
+│   ├── dev-tooling-mcp/         Router (aktualisiert auf dev-mcp)
+│   ├── build-log-filter/        Build-Log-Kompression
+│   ├── codebase-analyzer/       Statische Analyse & Review
+│   ├── skill-creator/           Meta-skill: create/improve skills and agent profiles
+│   ├── work-review/             Quality review: 4 parallel reviewer agents
+│   ├── work-review-iterative/   Iterative review loop until no findings remain
+│   ├── conversation-insights/   Konversations-Analyse
+│   ├── describe-as/             Stil-Anpassung
+│   ├── commit-message/          Commit-Message-Generator
+│   └── caveman/                 Kommunikationsstil: Caveman
 ├── agents/             21 Sub-Agent-Profile (auto-discovered)
 └── references/         Shared references (compliance, output-style, boilerplate)
 
-Mcp-Servers/            MCP server implementations (Docker)
-├── Build.Log.Filter.Mcp/   build-log-filter — Build/Test log compression
-├── Codebase.Analyzer.Mcp/  codebase-analyzer — static analysis, index, review
-├── Dev.Filesystem.Mcp/     dev-filesystem-mcp — token-efficient read/search
-├── Dev.Angular.Mcp/        dev-angular-mcp — Angular scaffolding + build/test
-└── Dev.Dotnet.Mcp/         dev-dotnet-mcp — .NET scaffolding + build/test
+Mcp-Servers/            MCP server implementations
+├── Build.Log.Filter.Mcp/       build-log-filter — Build/Test log compression (Docker)
+├── Codebase.Analyzer.Mcp/      codebase-analyzer — static analysis, index, review (Docker/Node)
+├── Dev.WindowsService.Mcp/     dev-mcp — unified stdio exe: filesystem+dotnet+angular (18 Tools)
+├── Dev.Filesystem.Mcp/         VERALTET — in dev-mcp integriert
+├── Dev.Angular.Mcp/            VERALTET — in dev-mcp integriert
+└── Dev.Dotnet.Mcp/             VERALTET — in dev-mcp integriert
 
 docs/                   Skill docs, MCP docs, enforcement references
 ├── skills/             Skill usage docs (usage, sub-agents, examples)
@@ -115,9 +108,7 @@ Use `/skill-creator` to create new skills or agent profiles.
 |--------|---------------|--------|
 | `Mcp-Servers/Build.Log.Filter.Mcp/` | `build-log-filter` | build-log-filter |
 | `Mcp-Servers/Codebase.Analyzer.Mcp/` | `codebase-analyzer` | codebase-analyzer |
-| `Mcp-Servers/Dev.Filesystem.Mcp/` | `dev-filesystem-mcp` | dev-filesystem-mcp, dev-tooling-mcp |
-| `Mcp-Servers/Dev.Angular.Mcp/` | `dev-angular-mcp` | dev-angular-mcp, dev-tooling-mcp |
-| `Mcp-Servers/Dev.Dotnet.Mcp/` | `dev-dotnet-mcp` | dev-dotnet-mcp, dev-tooling-mcp |
+| `Mcp-Servers/Dev.WindowsService.Mcp/` | `dev-mcp` | dev-mcp, dev-tooling-mcp |
 
 When changing an MCP: update `Mcp-Servers/<name>/`, update `docs/mcp/<name>.md`, and update the matching skill under `.claude/skills/`.
 
@@ -125,19 +116,14 @@ When changing an MCP: update `Mcp-Servers/<name>/`, update `docs/mcp/<name>.md`,
 
 ## MCP Configuration
 
-MCP servers run as Docker containers. Configure in Claude Code settings (`mcpServers`):
+| Server | Transport | Details |
+|--------|-----------|---------|
+| build-log-filter | Docker HTTP | Port 8089 |
+| codebase-analyzer | Docker HTTP | Port 8090, `${workspaceFolder}:/workspace:ro` |
+| dev-mcp | **stdio** | `C:\Develop\.apps\dev-mcp\Dev.WindowsService.Mcp.exe`, Log-Viewer Port 5050 |
 
-| Server | Port | Volume |
-|--------|------|--------|
-| build-log-filter | 8089 | — |
-| codebase-analyzer | 8090 | `${workspaceFolder}:/workspace:ro` |
-| dev-filesystem-mcp | 8091 | `${workspaceFolder}:/project:ro` |
-| dev-angular-mcp | 8092 | `${workspaceFolder}:/workspace` |
-| dev-dotnet-mcp | 8093 | `${workspaceFolder}:/workspace` |
-
-Reference config: `.claude/mcp.json`.
-
-**Path convention:** All MCP calls use `/workspace/` prefix (codebase-analyzer, dev-angular-mcp, dev-dotnet-mcp) or `/project/` prefix (dev-filesystem-mcp). Never use host paths or `{parameter}` placeholders.
+**dev-mcp path convention:** Real Windows absolute paths (`C:\Develop\...`). No Docker volume prefix.
+**codebase-analyzer path convention:** `/workspace/` prefix (Docker). Never use host paths or `{parameter}` placeholders.
 
 ---
 

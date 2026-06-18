@@ -56,7 +56,7 @@ when_to_use: >
 ## MCP dev-mcp — Server und Tools
 
 **Server:** `dev-mcp` (stdio, `C:\Develop\.apps\dev-mcp\Dev.WindowsService.Mcp.exe`)
-**Log-Viewer:** `http://localhost:5050/` (Port via `LOG_VIEWER_PORT` konfigurierbar)
+**Log-Viewer:** `http://localhost:5051/` (Port via `LOG_VIEWER_PORT` konfigurierbar)
 **Sicherheit:** AllowedDirectories in `C:\Develop\.apps\dev-mcp\appsettings.json`
 
 ### Filesystem-Tools (read-only, lesen/suchen)
@@ -302,7 +302,7 @@ Nicht sofort natives Grep — MCP-Kette zuerst.
 - **build-log-filter:** Rohen Log filtern — nur für `ng serve`/`npm start` oder Shell-Fallback nach BLOCKER
 - Kein `/project/`-Prefix, kein `/workspace/`-Prefix — dev-mcp läuft nativ, kein Docker
 
-Log-Viewer: `http://localhost:5050/` — `GET /api/calls` (max 200 Einträge, nach Source filterbar)
+Log-Viewer: `http://localhost:5051/` — `GET /api/calls` (max 200 Einträge, nach Source filterbar)
 
 ## Opt-out
 

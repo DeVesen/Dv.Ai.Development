@@ -1,7 +1,14 @@
-import { spawnSync } from "child_process";
+import { spawnSync } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { TypeHierarchyResult } from "./type-hierarchy-types.js";
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-hierarchy.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-hierarchy.csx";
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-hierarchy.csx");
+}
 
 export function runDotnetHierarchy(
   rootPath: string,
@@ -11,7 +18,7 @@ export function runDotnetHierarchy(
 ): TypeHierarchyResult {
   const result = spawnSync(
     "dotnet",
-    ["script", "--no-cache", SCRIPT_PATH, "--", rootPath, typeName, filePath ?? "", direction],
+    ["script", "--no-cache", resolveScriptPath(), "--", rootPath, typeName, filePath ?? "", direction],
     { encoding: "utf-8", timeout: 120_000, maxBuffer: 20 * 1024 * 1024 },
   );
 

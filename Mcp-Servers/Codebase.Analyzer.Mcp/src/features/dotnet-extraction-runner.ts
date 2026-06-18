@@ -1,4 +1,7 @@
 import { spawnSync } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import {
   DEFAULT_MIN_CC,
   DEFAULT_MIN_LINES,
@@ -6,7 +9,11 @@ import {
   MethodExtractionReport,
 } from "./extraction-types.js";
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-extraction.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-extraction.csx";
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-extraction.csx");
+}
 
 export interface DotnetExtractionResult {
   reports: MethodExtractionReport[];
@@ -22,7 +29,7 @@ export function runDotnetExtraction(
 
   const result = spawnSync(
     "dotnet",
-    ["script", "--no-cache", SCRIPT_PATH, "--", filePath, String(minLines), String(minCC)],
+    ["script", "--no-cache", resolveScriptPath(), "--", filePath, String(minLines), String(minCC)],
     { encoding: "utf-8", timeout: 120_000, maxBuffer: 20 * 1024 * 1024 },
   );
 

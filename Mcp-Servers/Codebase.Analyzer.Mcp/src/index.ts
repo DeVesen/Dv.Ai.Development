@@ -1765,8 +1765,12 @@ server.tool(
 server.tool(
   "analyze_test_quality",
   "Statically analyzes test files without running them. Detects: tests without assertions, tautological assertions (expect(true).toBe(true)), mock-heavy tests, happy-path-only tests, missing error/null scenarios, unhandled async, real timers, no Arrange/Act/Assert structure (.NET), focused/skipped tests. Also finds source files with no test counterpart. Works for Angular (Jest/Jasmine .spec.ts) and .NET (xUnit/NUnit/MSTest).",
-  { projectPath: projectPathSchema, type: projectTypeSchema },
-  async ({ projectPath, type }) => {
+  {
+    projectPath: projectPathSchema,
+    type: projectTypeSchema,
+    testProjectPath: z.string().optional().describe(".NET only. Explicit path to the test project directory. Skips project-reference graph discovery when provided."),
+  },
+  async ({ projectPath, type, testProjectPath }) => {
     const abs = resolve(projectPath);
 
     if (type === "angular") {
@@ -1806,7 +1810,7 @@ server.tool(
       return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(report, null, 2) }] };
 
     } else {
-      const report = runDotnetTestQuality(abs);
+      const report = runDotnetTestQuality(abs, testProjectPath ? resolve(testProjectPath) : undefined);
       if (report.error) return { content: [{ type: "text", text: `⚠️ ${report.error}` }] };
 
       const s = report.summary!;
@@ -1921,8 +1925,9 @@ server.tool(
     path: z.string().describe("File or directory path to analyze. With depth='file' a single file; with depth='project' a directory root."),
     type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Stack. 'auto' detects by file extension (depth=file) or angular.json/project.json vs .csproj/.sln (depth=project)."),
     depth: z.enum(["file", "project"]).default("file").describe("'file' analyzes only the given file; 'project' walks the directory (capped)."),
+    testProjectPath: z.string().optional().describe(".NET only. Explicit path to the test project directory. When provided the MCP uses this path directly and skips project-reference graph discovery. Useful when the test project is in a non-standard location or when auto-discovery is too slow."),
   },
-  async ({ path, type, depth }) => {
+  async ({ path, type, depth, testProjectPath }) => {
     const abs = resolve(path);
     if (!existsSync(abs))
       return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
@@ -1964,7 +1969,7 @@ server.tool(
     let capReached = false;
     try {
       if (stack === "dotnet") {
-        findings = runDotnetTestCoverageStatic(abs, depth);
+        findings = runDotnetTestCoverageStatic(abs, depth, testProjectPath ? resolve(testProjectPath) : undefined);
         capReached = dotnetUntestedApiScanState.capReached;
       } else {
         findings = detectUntestedPublicApi(abs, depth);
@@ -2096,14 +2101,18 @@ server.tool(
 server.tool(
   "analyze_test_health",
   "Combines coverage report + static test quality in one shot. Shows overall test health: what is covered, what is tested well, and what is missing. Best run after 'ng test --code-coverage' or 'dotnet test --collect:\"XPlat Code Coverage\"'.",
-  { projectPath: projectPathSchema, type: projectTypeSchema },
-  async ({ projectPath, type }) => {
+  {
+    projectPath: projectPathSchema,
+    type: projectTypeSchema,
+    testProjectPath: z.string().optional().describe(".NET only. Explicit path to the test project directory. Skips project-reference graph discovery when provided."),
+  },
+  async ({ projectPath, type, testProjectPath }) => {
     const abs = resolve(projectPath);
 
     const coverage = type === "angular" ? parseLcov(abs) : parseCobertura(abs);
     const quality = type === "angular"
       ? analyzeAngularTestQuality(abs)
-      : runDotnetTestQuality(abs);
+      : runDotnetTestQuality(abs, testProjectPath ? resolve(testProjectPath) : undefined);
 
     if ("error" in quality && quality.error)
       return { content: [{ type: "text", text: `⚠️ Test quality analyzer error: ${quality.error}` }], isError: true };

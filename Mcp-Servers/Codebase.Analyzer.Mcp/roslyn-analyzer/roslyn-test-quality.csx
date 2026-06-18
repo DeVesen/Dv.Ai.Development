@@ -10,15 +10,53 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 
 var rootPath = Args.ElementAtOrDefault(0) ?? Directory.GetCurrentDirectory();
+// Optional: caller-supplied test project path — skips auto-discovery entirely.
+var explicitTestPath = Args.ElementAtOrDefault(1);
 
 var allFiles = Directory.GetFiles(rootPath, "*.cs", SearchOption.AllDirectories)
     .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
              && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
     .ToList();
 
-var testFiles  = allFiles.Where(f => f.Contains("Test") || f.Contains("Spec") || f.EndsWith("Tests.cs")).ToList();
+// Discover test files from sibling test projects.
+// Priority: (1) explicit testProjectPath arg, (2) project-reference graph,
+// (3) solution-root walk as last fallback.
+IEnumerable<string> extraTestFiles = Enumerable.Empty<string>();
+if (explicitTestPath != null)
+{
+    extraTestFiles = Directory.Exists(explicitTestPath)
+        ? Directory.GetFiles(explicitTestPath, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                     && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+        : Enumerable.Empty<string>();
+}
+else
+{
+    var testProjectDirs = FindTestProjectsViaReferences(rootPath);
+    if (testProjectDirs.Count > 0)
+    {
+        extraTestFiles = testProjectDirs
+            .Where(Directory.Exists)
+            .SelectMany(d => Directory.GetFiles(d, "*.cs", SearchOption.AllDirectories))
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                     && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"));
+    }
+    else
+    {
+        var solutionRoot = FindSolutionRootFromDir(rootPath);
+        if (solutionRoot != null && solutionRoot != rootPath)
+            extraTestFiles = Directory.GetFiles(solutionRoot, "*.cs", SearchOption.AllDirectories)
+                .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                         && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+                .Where(f => IsTestFile(Path.GetFileName(f)));
+    }
+}
+
+var extraList = extraTestFiles.Except(allFiles, StringComparer.OrdinalIgnoreCase).ToList();
+var testFiles  = allFiles.Where(f => IsTestFile(Path.GetFileName(f))).Union(extraList).ToList();
 var srcFiles   = allFiles.Except(testFiles).ToList();
 
 var parsedTests = testFiles.Select(f =>
@@ -220,6 +258,69 @@ static List<string> BuildRecommendations(List<TestEntry> tests, List<AntiPattern
 
 static int CountOccurrences(string text, string pattern) =>
     (text.Length - text.Replace(pattern, "").Length) / pattern.Length;
+
+// Test-file detection on the FILE NAME only — never the full path, so a
+// parent folder named "Tests" or "Specs" does not classify every file.
+static bool IsTestFile(string fileName) =>
+    fileName.Contains("Test") || fileName.Contains("Spec")
+    || fileName.EndsWith("Tests.cs") || fileName.EndsWith("Test.cs") || fileName.EndsWith("Spec.cs");
+
+// Walks up from a directory to find the nearest ancestor containing a .sln file.
+static string? FindSolutionRootFromDir(string startDir)
+{
+    var dir = Path.GetFullPath(startDir);
+    while (!string.IsNullOrEmpty(dir))
+    {
+        if (Directory.GetFiles(dir, "*.sln").Length > 0) return dir;
+        var parent = Path.GetDirectoryName(dir);
+        if (string.IsNullOrEmpty(parent) || parent == dir) break;
+        dir = parent;
+    }
+    return null;
+}
+
+// Reads the .sln at the solution root, then checks every listed .csproj for a
+// <ProjectReference> pointing back to the production project in productionDir.
+// Returns the directory of each referencing project (typically test projects).
+static List<string> FindTestProjectsViaReferences(string productionDir)
+{
+    var result = new List<string>();
+    var inputCsproj = Directory.GetFiles(productionDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
+    if (inputCsproj == null) return result;
+    var inputCsprojFull = Path.GetFullPath(inputCsproj);
+
+    var slnRoot = FindSolutionRootFromDir(productionDir);
+    if (slnRoot == null) return result;
+    var slnFile = Directory.GetFiles(slnRoot, "*.sln").FirstOrDefault();
+    if (slnFile == null) return result;
+
+    var sep = Path.DirectorySeparatorChar;
+    var projectPaths = File.ReadAllLines(slnFile)
+        .Where(l => l.TrimStart().StartsWith("Project("))
+        .Select(l => System.Text.RegularExpressions.Regex.Match(l, @",\s*""([^""]+\.csproj)"""))
+        .Where(m => m.Success)
+        .Select(m => Path.GetFullPath(Path.Combine(slnRoot, m.Groups[1].Value.Replace('\\', sep))))
+        .Where(File.Exists)
+        .ToList();
+
+    foreach (var csproj in projectPaths)
+    {
+        if (string.Equals(csproj, inputCsprojFull, StringComparison.OrdinalIgnoreCase)) continue;
+        try
+        {
+            var xml = XDocument.Load(csproj);
+            var refs = xml.Descendants("ProjectReference")
+                .Select(r => r.Attribute("Include")?.Value)
+                .Where(v => !string.IsNullOrEmpty(v))
+                .Select(v => Path.GetFullPath(Path.Combine(
+                    Path.GetDirectoryName(csproj)!, v!.Replace('\\', sep))));
+            if (refs.Any(r => string.Equals(r, inputCsprojFull, StringComparison.OrdinalIgnoreCase)))
+                result.Add(Path.GetDirectoryName(csproj)!);
+        }
+        catch { /* malformed .csproj — skip */ }
+    }
+    return result;
+}
 
 static string Describe(string p) => p switch
 {

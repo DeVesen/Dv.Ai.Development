@@ -1,6 +1,13 @@
 import { spawnSync } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-advanced.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-advanced.csx";
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-advanced.csx");
+}
 
 export type AdvancedFeature = "complexity" | "deadcode" | "nullflow" | "duplicates" | "refactoring" | "autofix" | "dataflow" | "all";
 
@@ -26,7 +33,7 @@ export interface DotnetAutoFixEntry { file: string; line: number; category: stri
 export interface DotnetDataflowEntry { file: string; line: number; fromClass: string; fromMethod: string; toClass: string; toMethod: string; issue: string; severity: string; dataPath: string; }
 
 export function runDotnetAdvancedAnalysis(rootPath: string, feature: AdvancedFeature = "all"): DotnetAdvancedAnalysis {
-  const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", rootPath, feature], {
+  const result = spawnSync("dotnet", ["script", "--no-cache", resolveScriptPath(), "--", rootPath, feature], {
     encoding: "utf-8",
     timeout: 120_000,
     maxBuffer: 20 * 1024 * 1024,

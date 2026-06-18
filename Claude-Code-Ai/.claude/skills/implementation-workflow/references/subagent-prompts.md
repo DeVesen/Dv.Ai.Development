@@ -50,7 +50,7 @@ Working directory: [absolute path]
 
 Hard rules:
 - **Agent:** `implement-agent`. **Slice scope only** — not stack-wide Technik-Gate (Schritt 3).
-- **Pre-Coding (wenn dev-filesystem-mcp verfuegbar):** Vor erstem Code-Edit — `read_class_summary`
+- **Pre-Coding (wenn dev-mcp verfuegbar):** Vor erstem Code-Edit — `read_class_summary`
   oder `read_signatures_only`; `read_method` nur fuer konkrete Aenderungsmethode.
 - **Build/Test (slice-scoped):** dotnet/ng/npm build/test for this slice only.
 - **Every run — build-log-filter PFLICHT (kein Opt-out):**
@@ -65,10 +65,10 @@ Hard rules:
 - **Verboten:** "7/7 Passed" / "Build succeeded" aus Terminal ohne MCP als verifiziert markieren.
 - **Forbidden:** stack-wide Technik-Gate; raw console diagnosis without MCP chain.
 
-Pre-Coding (wenn Dev-MCPs verfuegbar):
-  Lesen: dev-filesystem-mcp — file_path unter /project/...
-  Angular scaffold: dev-angular-mcp — project_root Host-Absolut
-  .NET scaffold: dev-dotnet-mcp — output_path, base_path
+Pre-Coding (wenn dev-mcp verfuegbar):
+  Lesen: dev-mcp — file_path als Windows-Absolutpfad (C:\...)
+  Angular scaffold: dev-mcp — project_root als Windows-Absolutpfad (C:\...)
+  .NET scaffold: dev-mcp — output_path, base_path als Windows-Absolutpfad (C:\...)
   Schema vor jedem MCP-Aufruf lesen.
 
 Reply with: summary, touched paths, Verifikations-Matrix per run (Pflicht), blockers.

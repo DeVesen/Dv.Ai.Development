@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(**)",
+      "Read(**)",
+      "Write(**)",
+      "Bash(claude mcp *)",
+      "Bash(claude mcp list*)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git status *)",
+      "Bash(git ls-files *)",
+      "Bash(git commit *)",
+      "Bash(git add *)",
+      "Bash(docker ps *)",
+      "Bash(docker images *)",
+      "Bash(sed -i *)",
+      "Bash(npm view *)",
+      "Bash(curl -s *)",
+      "mcp__ccd_session__mark_chapter",
+      "mcp__ccd_session_mgmt__search_session_transcripts"
+    ]
+  }
+}

@@ -1,11 +1,18 @@
 import { spawnSync } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import {
   GodClassScanResult,
   filterAndRank,
   toGodClassCandidate,
 } from "./god-class-types.js";
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-split.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-split.csx";
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-split.csx");
+}
 
 export interface DotnetClassSplitAnalysis {
   file: string;
@@ -21,7 +28,7 @@ export interface DotnetClassSplitAnalysis {
 }
 
 export function runDotnetSplitAnalysis(rootPath: string, targetClass?: string): DotnetClassSplitAnalysis[] {
-  const args = ["script", "--no-cache", SCRIPT_PATH, "--", rootPath];
+  const args = ["script", "--no-cache", resolveScriptPath(), "--", rootPath];
   if (targetClass) args.push(targetClass);
 
   const result = spawnSync("dotnet", args, {
@@ -60,7 +67,7 @@ interface DotnetGodClassScanPayload {
 }
 
 export function runDotnetGodClassScan(rootPath: string, top = 10): GodClassScanResult {
-  const args = ["script", "--no-cache", SCRIPT_PATH, "--", rootPath, "", "project-scan"];
+  const args = ["script", "--no-cache", resolveScriptPath(), "--", rootPath, "", "project-scan"];
 
   const result = spawnSync("dotnet", args, {
     encoding: "utf-8",

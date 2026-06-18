@@ -31,16 +31,16 @@ Komponenten-Namen wenn der Nutzer sie nennt) — **ohne** `index_project` nur we
 ## MCP-Pfade (verbindlich)
 
 Parameter `projectPath`, `filePath`, `solutionPath` für **codebase-analyzer**:
-immer Container-Pfade mit Präfix `/workspace/`.
+**Windows-Absolutpfade** (`C:\...`) — kein `/workspace/`-Präfix mehr (MCP läuft nativ als Node-Prozess).
 
 | Ableitung | Regel |
 |-----------|--------|
-| Kanon | `.cursor/references/mcp-project-paths.md` — Spalte **„MCP container path"** (`{mcp-frontend-path}`, `{mcp-be-*}`) |
-| Fallback | `.cursor/skill-params.json` — daraus `/workspace/` + `{code-root}` + Host-Pfad ableiten |
-| Filesystem-MCP | Präfix `/project/` (nicht `/workspace/`) — siehe [dev-filesystem-mcp/SKILL.md](../../dev-filesystem-mcp/SKILL.md) |
+| Kanon | `.cursor/references/mcp-project-paths.md` — Windows-Absolutpfade aus Spalte „Host path" |
+| Fallback | `.cursor/skill-params.json` — Host-Pfade direkt als Windows-Absolutpfad übergeben |
+| dev-mcp | Windows-Absolutpfad `C:\...` — siehe [dev-mcp/SKILL.md](../../dev-mcp/SKILL.md) |
 
-**VERBOTEN als MCP-Argument:** Host-Pfade aus mcp-project-paths.md ohne `/workspace/`, `lac-db/src/...`, `src/frontend`, Windows-Pfade.
-Bei `Path not found: /app/...`: sofort korrigieren — **kein** zweiter Versuch mit demselben Format.
+**VERBOTEN als MCP-Argument:** `/workspace/`-Pfade, relative Pfade, `{frontend-path}`/`{backend-path}`-Platzhalter.
+Bei `Path not found: ...`: sofort korrigieren — **kein** zweiter Versuch mit demselben Format.
 
 Deploy-Kanon (wird bei Install generiert): `mcp-project-paths.md` (project-specific, not in this repo). `./AGENTS.md` ist optional.
 
@@ -50,25 +50,23 @@ Deploy-Kanon (wird bei Install generiert): `mcp-project-paths.md` (project-speci
 
 | Stack | `projectPath` | `type` | Wann |
 |-------|---------------|--------|------|
-| Angular FE | `{mcp-frontend-path}` aus `.cursor/references/mcp-project-paths.md` | `angular` | Standard FE-Stack |
-| .NET Backend (Einzel-.csproj) | `{mcp-be-<name>}` aus mcp-project-paths.md **Backend project routing** | `dotnet` | Symbol liegt in diesem Projekt |
+| Angular FE | Windows-Absolutpfad aus mcp-project-paths.md | `angular` | Standard FE-Stack |
+| .NET Backend (Einzel-.csproj) | Windows-Absolutpfad aus mcp-project-paths.md **Backend project routing** | `dotnet` | Symbol liegt in diesem Projekt |
 | .NET Multi-Projekt | **Mehrere** `index_project` auf betroffene `.csproj`-Verzeichnisse | `dotnet` | Standard bei Multi-Stack-Backend |
-| .NET Solution (optional) | `{mcp-backend-solution}` — Tool: `index_solution` | — | **Nur** wenn mcp-project-paths.md freigibt **und** Smoke-Test grün (siehe Known Issues) |
+| .NET Solution (optional) | Windows-Absolutpfad der `.sln` — Tool: `index_solution` | — | **Nur** wenn mcp-project-paths.md freigibt **und** Smoke-Test grün (siehe Known Issues) |
 
-Host-Platzhalter `{frontend-path}` / `{backend-path}` dienen Shell/Verifikation — **nicht** unverändert an codebase-analyzer übergeben.
+Pfade aus mcp-project-paths.md direkt (als Windows-Absolutpfad) an codebase-analyzer übergeben.
 
 Bei Multi-Stack-Aufgaben: pro benötigtem `.csproj`/FE-Root einmal `index_project` (Cache ~5 min, `useCache: true`). Orchestrator/Scout dokumentiert, welche Indizes gelaufen sind.
 
-**Volume-Mount-Voraussetzung:** Die `.cursor/mcp.json` muss `-v ${workspaceFolder}:/workspace:ro` enthalten. Ohne Mount schlagen alle dateibasierten Tools fehl — dann MCP-Fallback deklarieren und auf Read/Grep ausweichen.
-
-## MCP-Pfadauflösung (Docker) — Pflicht-Playbook
+## MCP-Pfadauflösung (nativ) — Pflicht-Playbook
 
 Bei `index_project`-Fehler: Pfade in dieser Reihenfolge prüfen — **max. 2 Versuche je Stack**:
 
 | Versuch | Pfad |
 |---------|------|
-| 1 (primär) | Literal aus mcp-project-paths.md Spalte „MCP container path" (z. B. `{mcp-frontend-path}`) |
-| 2 (Fallback) | `/workspace/` + normalisierter Host-Pfad (Forward-Slashes, kein Backslash) |
+| 1 (primär) | Windows-Absolutpfad aus mcp-project-paths.md |
+| 2 (Fallback) | Windows-Absolutpfad direkt aus Repo-Struktur ableiten (`C:\Develop\...\src\frontend`) |
 
 **Dokumentationspflicht bei Fehler** — jeder fehlgeschlagene Call im Scout-Deliverable:
 ```
@@ -79,12 +77,12 @@ Nach 2 Fehlern pro Stack: **MCP-Fallback deklarieren** (kein weiteres Raten):
 MCP-Fallback: <Grund>; Anker via Read/Grep: <Liste der Einstiegspunkte>
 ```
 
-**Fehlerdiagnose:** `File not found: /app/...` oder `Path not found: /app/...` = Container-Pfad fehlt `/workspace/`-Präfix — kein Verbindungsproblem.
+**Fehlerdiagnose:** `Path not found: ...` = falscher Pfad — Windows-Absolutpfad prüfen, kein Verbindungsproblem.
 
 ## .NET Multi-Projekt — index_solution Known Issue
 
-Manche Solutions (z. B. komplexe `.sln` im Docker-Container) liefern:
-`No projects found in solution: ...` — obwohl die Solution gültig ist. Ursache: MSBuild/Solution-Parsing im MCP-Container.
+Manche Solutions (z. B. komplexe `.sln`) liefern:
+`No projects found in solution: ...` — obwohl die Solution gültig ist. Ursache: MSBuild/Solution-Parsing im MCP.
 
 **Verbindliche Regel:**
 
@@ -120,16 +118,16 @@ Ergebnis nutzen für: Dateipfad, Zeile, Methodenliste, Abhängigkeiten — **bev
 
 **Kein Schluss „Symbol fehlt im Repo"** ohne Checkliste (Hard Gate):
 
-1. `projectPath` beginnt mit `/workspace/`?
+1. `projectPath` ist ein Windows-Absolutpfad (`C:\...`)?
 2. FE vs. BE vs. konkretes `.csproj` korrekt (Routing-Tabelle)?
 3. `index_project` für **dieses** `projectPath` in Session erfolgreich (Output mit Summary)?
 4. Symbol-Typ in Abdeckungs-Matrix geprüft?
 5. Backend: `index_solution` nur wenn mcp-project-paths.md erlaubt **und** zuvor erfolgreich getestet?
-6. Erst danach: `find_by_content` / `find_file` (dev-filesystem-mcp, `/project/`) → Read/Grep mit dokumentiertem MCP-Fallback
+6. Erst danach: `find_by_content` / `find_file` (dev-mcp, Windows-Absolutpfad `C:\...`) → Read/Grep mit dokumentiertem MCP-Fallback
 
 **Verboten:** Mehr als 2 Pfad-/Index-Versuche pro Stack ohne dokumentierten MCP-BLOCKER.
 
-**0 Treffer bei `find_in_index`:** mindestens `find_by_content` oder `find_file` (dev-filesystem-mcp) — **bevor** natives Read/Grep. Scout-Kette: [repo-scout-protocol/SKILL.md](../../repo-scout-protocol/SKILL.md).
+**0 Treffer bei `find_in_index`:** mindestens `find_by_content` oder `find_file` (dev-mcp) — **bevor** natives Read/Grep. Scout-Kette: [repo-scout-protocol/SKILL.md](../../repo-scout-protocol/SKILL.md).
 
 **Schritt 3 — Vertiefung (optional, nach Bedarf):**
 
@@ -161,7 +159,7 @@ Ergebnis nutzen für: Dateipfad, Zeile, Methodenliste, Abhängigkeiten — **bev
 
 ## Checkliste vor „fertig recherchiert"
 
-- [ ] MCP-`projectPath` aus mcp-project-paths.md „MCP container path" (mit `/workspace/`)?
+- [ ] MCP-`projectPath` als Windows-Absolutpfad aus mcp-project-paths.md?
 - [ ] Backend: richtiges `.csproj` aus „Backend project routing"?
 - [ ] `index_project` für dieses `projectPath` in der Aufgabe schon gelaufen (oder Cache gültig)?
 - [ ] Alle **vom Nutzer genannten** Typen über `find_in_index` aufgelöst (oder Abdeckungs-Matrix + Filesystem-MCP)?

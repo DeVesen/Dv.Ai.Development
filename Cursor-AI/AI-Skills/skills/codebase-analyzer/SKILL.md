@@ -2,7 +2,7 @@
 name: codebase-analyzer
 description: >
   Aktiviere diesen Skill sobald der User über Code spricht — egal ob er plant,
-  gerade schreibt oder fertig ist. Der MCP hat 31 Tools für Angular und .NET.
+  gerade schreibt oder fertig ist. Der MCP hat 33 Tools für Angular und .NET.
   Bei Code-Symbolen (Klasse, Methode, Property, Service, Route): zuerst
   index_project/index_solution/find_in_index, Grep nur ergänzend. UI-Labels ohne Symbol:
   keine Landkarte. Trigger: Review, Analyse, Planung, Implementierung, Merge,
@@ -20,33 +20,31 @@ disable-model-invocation: true
 
 ## Voraussetzungen
 
-- MCP `codebase-analyzer` muss in `.cursor/mcp.json` konfiguriert sein (Docker-Image).
-- **Volume-Mount ist Pflicht** für alle dateibasierten Tools: `-v ${workspaceFolder}:/workspace:ro`
-  - Host-Workspace → `/workspace` im Container (read-only)
-  - Kein `-w`-Flag setzen — MCP-Server läuft in `/app`, nicht im gemounteten Verzeichnis
+- MCP `codebase-analyzer` muss in `.cursor/mcp.json` konfiguriert sein (Node stdio — kein Docker).
+- **Kein Volume-Mount** erforderlich — MCP läuft nativ als Node-Prozess.
 - `projectPath` und `type` (`angular` | `dotnet` | `auto`) pro Aufruf angeben.
 - Coverage-Tools (`analyze_coverage`, `analyze_test_health`) benötigen vorherigen Test-Run.
 
 ## Pfadregel (verbindlich)
 
-Alle dateibezogenen Parameter (`filePath`, `filePaths`, `projectPath`) verwenden **Container-Pfade**:
+Alle dateibezogenen Parameter (`filePath`, `filePaths`, `projectPath`) verwenden **Windows-Absolutpfade**:
 
 | Format | Korrekt | Falsch |
 |--------|---------|--------|
-| `projectPath` | `/workspace/src/frontend` | `C:\Develop\...\frontend` |
-| `filePath` | `/workspace/src/frontend/app/my.component.ts` | `src/frontend/app/my.component.ts` |
+| `projectPath` | `C:\Develop\MyProject\src\frontend` | `/workspace/src/frontend` |
+| `filePath` | `C:\Develop\MyProject\src\frontend\app\my.component.ts` | `src/frontend/app/my.component.ts` |
 
-**Fehlerdiagnose:** `File not found: /app/...` oder `Path not found: /app/...` = falsches Pfadformat (Windows-Pfad oder IDE-relativer Pfad statt `/workspace/...`), nicht defekte MCP-Verbindung.
+**Fehlerdiagnose:** `Path not found: ...` = falscher Pfad — Windows-Absolutpfad prüfen, kein Verbindungsproblem.
 
 ### MCP-Pfad-Kanon (deployt)
 
 | Quelle | Verwendung |
 |--------|------------|
-| **`.cursor/references/mcp-project-paths.md`** | **Pflicht** — MCP container paths + Backend project routing |
-| **`.cursor/skill-params.json`** | Host-Pfade (`{frontend-path}`, `{backend-path}`, `{code-root}`) — Shell/Glob, **nicht** unverändert an MCP |
+| **`.cursor/references/mcp-project-paths.md`** | **Pflicht** — Windows-Absolutpfade + Backend project routing |
+| **`.cursor/skill-params.json`** | Host-Pfade (`{frontend-path}`, `{backend-path}`, `{code-root}`) — direkt als Windows-Absolutpfad an MCP |
 | `./AGENTS.md` | Optional; bei Widerspruch gilt **mcp-project-paths.md** |
 
-Regel: [mcp-path-canon.mdc](../../rules/mcp-path-canon.mdc). Smoke-Tests: [mcp-smoke-test.md](../../references/mcp-smoke-test.md).
+Smoke-Tests: [mcp-smoke-test.md](../../references/mcp-smoke-test.md).
 
 ### Known MCP limitations
 
@@ -55,14 +53,49 @@ Regel: [mcp-path-canon.mdc](../../rules/mcp-path-canon.mdc). Smoke-Tests: [mcp-s
 | `index_solution` auf manche `.sln` | `No projects found in solution` | Mehrere `index_project`; Routing in mcp-project-paths.md |
 | Angular Guards | Oft **nicht** im Angular-Index | `find_by_content` / Grep auf `*.guard.ts` |
 | `index_project` auf Verzeichnis mit `.sln` | Hinweis „use index_solution" | mcp-project-paths.md prüfen — bei `disabled` direkt `.csproj` indexieren |
+| **`detect_untested_public_api` / `analyze_test_quality` auf .NET-Produktionsprojekt mit separatem Testprojekt** | `depth=project` findet keine Testdateien → alles `no_test_file`; `analyze_test_quality` meldet 0 Tests | Siehe Rezept unten |
+| **`analyze_coverage` ohne vorherigen Test-Run** | Immer 0% — kein `coverage.cobertura.xml` vorhanden | Erst `dotnet test --collect:"XPlat Code Coverage"` ausführen |
 
 Details: [op-code-map.md](references/op-code-map.md) (Index-Abdeckung, Hard Gate).
+
+### Rezept: Separate .NET-Testprojekte (z.B. `tests/LAC.Tests.Unit.*`)
+
+Repo-Muster: Produktionsprojekt und Testprojekt liegen in getrennten `.csproj`-Verzeichnissen.
+
+```
+MyLib/                              ← Produktionsprojekt (.csproj hier)
+tests/MyLib.Tests.Unit/             ← Testprojekt (.csproj hier)
+MyLib.sln                           ← Solution-Root
+```
+
+**Robuste Reihenfolge:**
+
+```
+// 1. Beide Projekte indexieren
+index_project(projectPath: "/workspace/MyLib", type: "dotnet")
+index_project(projectPath: "/workspace/tests/MyLib.Tests.Unit", type: "dotnet")
+
+// 2. Test-Qualität: Testprojekt-Pfad übergeben
+analyze_test_quality(projectPath: "/workspace/tests/MyLib.Tests.Unit", type: "dotnet")
+analyze_test_health(projectPath: "/workspace/tests/MyLib.Tests.Unit", type: "dotnet")
+
+// 3. Ungetestete API: depth=file auf konkrete Quelldateien ODER
+//    depth=project auf das Produktionsprojekt (MCP sucht ab .sln-Root nach Testdateien)
+detect_untested_public_api(path: "/workspace/MyLib/Services/MyService.cs", type: "dotnet", depth: "file")
+// alternativ:
+detect_untested_public_api(path: "/workspace/MyLib", type: "dotnet", depth: "project")
+
+// 4. Coverage: erst dotnet test laufen lassen, dann:
+analyze_coverage(projectPath: "/workspace/tests/MyLib.Tests.Unit", type: "dotnet")
+```
+
+**Nie:** `analyze_test_health` / `analyze_test_quality` auf den Produktionsprojekt-Pfad — dort gibt es keine Testdateien.
 
 ## Operationen
 
 | Trigger | Operation | Detail |
 |---------|-----------|--------|
-| Tool-Liste, welches Tool, 31 Tools | Alle verfügbaren Tools (Übersicht & Parameter) | [references/op-tool-overview.md](references/op-tool-overview.md) |
+| Tool-Liste, welches Tool, 33 Tools | Alle verfügbaren Tools (Übersicht & Parameter) | [references/op-tool-overview.md](references/op-tool-overview.md) |
 | Code-Landkarte, Symbol suchen, index_project, find_in_index, Recherche-Reihenfolge | Code-Landkarte & verbindliche Recherche-Reihenfolge | [references/op-code-map.md](references/op-code-map.md) |
 | Planung, Implementierung, Merge, Review-Phase, Sprint-End, Release | Die drei Review-Phasen (Planung / Implementierung / Nach-Implementierung) | [references/op-phasen.md](references/op-phasen.md) |
 | Validierung, API-Contract, DTO, DataAnnotations, FE↔BE-Abgleich | Validierungs- & Contract-Reviews | Abschnitt unten |

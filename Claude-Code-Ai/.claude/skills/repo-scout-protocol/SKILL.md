@@ -5,7 +5,7 @@ description: >
   Routing: Index → Filesystem-MCP bei leerem find_in_index; bei bekanntem Symbol Filesystem zuerst;
   Workflow-Artefakte (Skills/Agents/Packages) via Glob/Read unter Projektverzeichnis.
   MCP-Kanon: codebase-analyzer (codebase-analyzer MCP, /workspace/ Praefix),
-  dev-filesystem-mcp (/project/ Praefix). Schema vor MCP-Aufruf lesen. Scout-Protokoll-Tabelle Pflicht.
+  dev-mcp (Windows-Absolutpfad C:\...). Schema vor MCP-Aufruf lesen. Scout-Protokoll-Tabelle Pflicht.
   Ausloesung: repo-check, buddy repo-check, Code-Scout, Code-Landkarte, plan-agent-scout.
   Opt-out: ohne repo-scout-protocol.
 when_to_use: >
@@ -23,7 +23,7 @@ Orchestrierungs-Skill fuer **Scout- und Recherche-Phasen** — keine Duplikation
 | MCP / Bereich | Kanon |
 |---------------|-------|
 | Index, Review, Metriken | [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) |
-| Lesen/Suchen token-effizient | [dev-filesystem-mcp/SKILL.md](../dev-filesystem-mcp/SKILL.md) |
+| Lesen/Suchen token-effizient | [dev-mcp/SKILL.md](../dev-mcp/SKILL.md) |
 | MCP-Uebersicht | [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) |
 
 **Mount-Praefixe (verbindlich):**
@@ -31,7 +31,7 @@ Orchestrierungs-Skill fuer **Scout- und Recherche-Phasen** — keine Duplikation
 | MCP | Container-Praefix | Parameter |
 |-----|------------------|-----------|
 | codebase-analyzer | `/workspace/` | `projectPath`, `filePath` |
-| dev-filesystem-mcp | `/project/` | `file_path`, `root` |
+| dev-mcp | Windows-Absolutpfad `C:\...` | `file_path`, `root` |
 
 Vor **jedem** MCP-Tool-Aufruf: Deskriptor/Schema lesen — Namen unterscheiden sich (`file_path` ≠ `filePath`).
 
@@ -82,7 +82,7 @@ Erklaerung der Fallback-Kette: [docs/mcp/scout-fallback-chain.md](../../../docs/
 2. **`index_project`-Hinweis auf Solution:** `index_solution` **nur** wenn Projekt-MCP-Pfad-Dokumentation `index_solution: allowed` — sonst `.csproj` via `index_project`.
 3. **MCP erreichbar:** Read/Grep **nicht** als Ersatz fuer MCP in Scout-Phasen.
 4. **Scout mit MCP-Pflicht** (Buddy repo-check, plan-agent-scout): nicht mit nur nativen Tools abschliessen ohne dokumentierte Warnung und Scout-Protokoll.
-5. **Schema-Pflicht:** Parameter exakt wie im MCP-Deskriptor; codebase-analyzer: `/workspace/`, dev-filesystem: `/project/`.
+5. **Schema-Pflicht:** Parameter exakt wie im MCP-Deskriptor; codebase-analyzer: `/workspace/`, dev-mcp: Windows-Absolutpfad `C:\...`.
 6. **Pfad-Kanon:** Projekt-MCP-Pfad-Dokumentation ist verbindlich — nicht aus dem Gedaechtnis ableiten.
 
 *Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
@@ -115,7 +115,7 @@ Jede Scout-Antwort enthaelt:
 | # | Ziel / Repo-Frage | Strategie | MCP | Tool | Ergebnis | Naechster Schritt |
 |---|-------------------|-----------|-----|------|----------|------------------|
 | 1 | … | index | codebase-analyzer | find_in_index | 0 Treffer | → find_by_content |
-| 2 | … | filesystem | dev-filesystem-mcp | find_by_content | 3 Dateien | → read_class_summary |
+| 2 | … | filesystem | dev-mcp | find_by_content | 3 Dateien | → read_class_summary |
 | … | | | | | | |
 
 **Status:** MCP: ok | MCP: fallback (<Grund>)
@@ -147,7 +147,7 @@ Ohne vollstaendige Tabelle: Scout **nicht** als abgeschlossen markieren.
 |---------|-------|
 | [buddy-agent](../buddy-agent/SKILL.md) repo-check | Konsument — laed diesen Skill in Agent-Mode |
 | [codebase-analyzer](../codebase-analyzer/SKILL.md) | Index, Review — nicht alleiniger Scout |
-| [dev-filesystem-mcp](../dev-filesystem-mcp/SKILL.md) | Pflicht-Zweitstrategie bei Index-Miss |
+| [dev-mcp](../dev-mcp/SKILL.md) | Pflicht-Zweitstrategie bei Index-Miss |
 | [planning-workflow](../planning-workflow/SKILL.md) Phase 3 | Scout-Subagent nutzt dieselbe Kette |
 
 **Vertiefung Fallback-Logik:** [docs/mcp/scout-fallback-chain.md](../../../docs/mcp/scout-fallback-chain.md)

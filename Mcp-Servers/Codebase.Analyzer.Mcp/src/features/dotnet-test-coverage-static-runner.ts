@@ -1,15 +1,25 @@
 import { spawnSync } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { UntestedApiFinding } from "./untested-api-types.js";
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-test-coverage-static.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-test-coverage-static.csx";
+
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-test-coverage-static.csx");
+}
 
 // Set by runDotnetTestCoverageStatic; read by the index.ts handler to surface a
 // cap warning. Mirrors untestedApiScanState on the Angular side.
 export const dotnetUntestedApiScanState: { capReached: boolean } = { capReached: false };
 
-export function runDotnetTestCoverageStatic(path: string, depth: "file" | "project"): UntestedApiFinding[] {
+export function runDotnetTestCoverageStatic(path: string, depth: "file" | "project", testProjectPath?: string): UntestedApiFinding[] {
   dotnetUntestedApiScanState.capReached = false;
-  const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", path, depth], {
+  const args = ["script", "--no-cache", resolveScriptPath(), "--", path, depth];
+  if (testProjectPath) args.push(testProjectPath);
+  const result = spawnSync("dotnet", args, {
     encoding: "utf-8", timeout: 120_000, maxBuffer: 20 * 1024 * 1024,
   });
 

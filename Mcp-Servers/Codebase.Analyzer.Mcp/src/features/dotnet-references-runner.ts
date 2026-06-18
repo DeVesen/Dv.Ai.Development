@@ -1,7 +1,14 @@
 import { spawnSync } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { SymbolReference } from "./symbol-reference-types.js";
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-references.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-references.csx";
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-references.csx");
+}
 
 export interface DotnetReferencesResult {
   references: SymbolReference[];
@@ -10,7 +17,7 @@ export interface DotnetReferencesResult {
 }
 
 export function runDotnetReferences(rootPath: string, symbolName: string, filePath?: string): DotnetReferencesResult {
-  const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", rootPath, symbolName, filePath ?? ""], {
+  const result = spawnSync("dotnet", ["script", "--no-cache", resolveScriptPath(), "--", rootPath, symbolName, filePath ?? ""], {
     encoding: "utf-8",
     timeout: 120_000,
     maxBuffer: 20 * 1024 * 1024,

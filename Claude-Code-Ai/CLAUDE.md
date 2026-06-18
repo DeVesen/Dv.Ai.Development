@@ -119,11 +119,10 @@ When changing an MCP: update `Mcp-Servers/<name>/`, update `docs/mcp/<name>.md`,
 | Server | Transport | Details |
 |--------|-----------|---------|
 | build-log-filter | Docker HTTP | Port 8089 |
-| codebase-analyzer | Docker HTTP | Port 8090, `${workspaceFolder}:/workspace:ro` |
+| codebase-analyzer | **Node stdio** | `C:\Develop\.apps\codebase-analyzer\index.js`, Log-Viewer Port 5052 |
 | dev-mcp | **stdio** | `C:\Develop\.apps\dev-mcp\Dev.WindowsService.Mcp.exe`, Log-Viewer Port 5050 |
 
-**dev-mcp path convention:** Real Windows absolute paths (`C:\Develop\...`). No Docker volume prefix.
-**codebase-analyzer path convention:** `/workspace/` prefix (Docker). Never use host paths or `{parameter}` placeholders.
+**Path convention (both MCPs):** Windows absolute paths (`C:\Develop\...`). No Docker, no `/workspace/` prefix, no `{parameter}` placeholders.
 
 ---
 

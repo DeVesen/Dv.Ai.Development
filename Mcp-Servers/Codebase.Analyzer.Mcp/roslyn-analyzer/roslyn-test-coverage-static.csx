@@ -27,16 +27,19 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 var inputPath = Args.ElementAtOrDefault(0) ?? Directory.GetCurrentDirectory();
 // Default aligned with the zod schema (depth defaults to "file").
 var depth = Args.ElementAtOrDefault(1) ?? "file";
+// Optional: caller-supplied test project path — skips auto-discovery entirely.
+var explicitTestPath = Args.ElementAtOrDefault(2);
 
 const int FILE_CAP = 400;
 var excludedMembers = new HashSet<string> { "Dispose", "Finalize", "ToString", "Equals", "GetHashCode" };
 
 string scanRoot;
-string testRoot;
+List<string> testRoots;
 List<string> srcTargets;
 var capReached = false;
 
@@ -55,18 +58,35 @@ if (depth == "file" && File.Exists(inputPath))
 {
     scanRoot = Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
     srcTargets = new List<string> { inputPath };
-    // Search test files up to the solution root (nearest .sln upward from the
-    // file); fall back to the file's own directory when no .sln is found.
-    testRoot = FindSolutionRoot(inputPath) ?? scanRoot;
+    if (explicitTestPath != null)
+        testRoots = new List<string> { explicitTestPath };
+    else
+    {
+        // Find owning .csproj, then discover referencing test projects via the
+        // project-reference graph. Fall back to solution-root walk.
+        var owningDir = FindOwningProjectDir(inputPath);
+        var discovered = owningDir != null ? FindTestProjectsViaReferences(owningDir) : new List<string>();
+        testRoots = discovered.Count > 0 ? discovered
+            : new List<string> { FindSolutionRoot(inputPath) ?? scanRoot };
+    }
 }
 else
 {
     scanRoot = inputPath;
-    testRoot = scanRoot; // depth=project: global, unchanged
+    if (explicitTestPath != null)
+        testRoots = new List<string> { explicitTestPath };
+    else
+    {
+        // Primary: find all projects in the .sln that reference this production
+        // project via <ProjectReference>. Fall back to solution-root walk.
+        var discovered = FindTestProjectsViaReferences(inputPath);
+        testRoots = discovered.Count > 0 ? discovered
+            : new List<string> { FindSolutionRootFromDir(inputPath) ?? scanRoot };
+    }
     var nonTestFiles = Directory.GetFiles(scanRoot, "*.cs", SearchOption.AllDirectories)
         .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
                  && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
-        .Where(f => !IsTestFile(f))
+        .Where(f => !IsTestFile(Path.GetFileName(f)))
         .ToList();
     capReached = nonTestFiles.Count > FILE_CAP;
     srcTargets = nonTestFiles.Take(FILE_CAP).ToList();
@@ -76,11 +96,14 @@ else
 // when the source itself is named *Test*/*Spec*).
 var srcSet = new HashSet<string>(srcTargets.Select(Path.GetFullPath), StringComparer.OrdinalIgnoreCase);
 
-var allTestFiles = Directory.GetFiles(testRoot, "*.cs", SearchOption.AllDirectories)
+var allTestFiles = testRoots
+    .Where(Directory.Exists)
+    .SelectMany(tr => Directory.GetFiles(tr, "*.cs", SearchOption.AllDirectories))
     .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
              && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
-    .Where(IsTestFile)
+    .Where(f => IsTestFile(Path.GetFileName(f)))
     .Where(f => !srcSet.Contains(Path.GetFullPath(f)))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
     .ToList();
 
 // Per test file: exact MemberAccess names + raw code (for the word-boundary
@@ -191,6 +214,7 @@ static bool WordMatch(string text, string word) =>
     !string.IsNullOrEmpty(word) && Regex.IsMatch(text, $@"\b{Regex.Escape(word)}\b");
 
 // Nearest ancestor directory that contains a .sln file; null when none exists.
+// startFile must be a FILE path — GetDirectoryName strips the filename first.
 static string? FindSolutionRoot(string startFile)
 {
     var dir = Path.GetDirectoryName(Path.GetFullPath(startFile));
@@ -202,6 +226,79 @@ static string? FindSolutionRoot(string startFile)
         dir = parent;
     }
     return null;
+}
+
+// Same as FindSolutionRoot but accepts a DIRECTORY path directly (for depth=project).
+static string? FindSolutionRootFromDir(string startDir)
+{
+    var dir = Path.GetFullPath(startDir);
+    while (!string.IsNullOrEmpty(dir))
+    {
+        if (Directory.GetFiles(dir, "*.sln").Length > 0) return dir;
+        var parent = Path.GetDirectoryName(dir);
+        if (string.IsNullOrEmpty(parent) || parent == dir) break;
+        dir = parent;
+    }
+    return null;
+}
+
+// Walks up from a FILE to find the nearest ancestor directory that owns a .csproj.
+static string? FindOwningProjectDir(string filePath)
+{
+    var dir = Path.GetDirectoryName(Path.GetFullPath(filePath));
+    while (!string.IsNullOrEmpty(dir))
+    {
+        if (Directory.GetFiles(dir, "*.csproj", SearchOption.TopDirectoryOnly).Length > 0) return dir;
+        var parent = Path.GetDirectoryName(dir);
+        if (string.IsNullOrEmpty(parent) || parent == dir) break;
+        dir = parent;
+    }
+    return null;
+}
+
+// Reads the .sln at the solution root, then checks every listed .csproj for a
+// <ProjectReference> that points back to the production project in productionDir.
+// Returns the directory of every project that references the production project
+// (typically the test project(s)).
+static List<string> FindTestProjectsViaReferences(string productionDir)
+{
+    var result = new List<string>();
+    var inputCsproj = Directory.GetFiles(productionDir, "*.csproj", SearchOption.TopDirectoryOnly).FirstOrDefault();
+    if (inputCsproj == null) return result;
+    var inputCsprojFull = Path.GetFullPath(inputCsproj);
+
+    var slnRoot = FindSolutionRootFromDir(productionDir);
+    if (slnRoot == null) return result;
+    var slnFile = Directory.GetFiles(slnRoot, "*.sln").FirstOrDefault();
+    if (slnFile == null) return result;
+
+    // Parse project paths from the .sln (lines like: Project("...") = "Name", "rel\path.csproj", "{GUID}")
+    var sep = Path.DirectorySeparatorChar;
+    var projectPaths = File.ReadAllLines(slnFile)
+        .Where(l => l.TrimStart().StartsWith("Project("))
+        .Select(l => Regex.Match(l, @",\s*""([^""]+\.csproj)"""))
+        .Where(m => m.Success)
+        .Select(m => Path.GetFullPath(Path.Combine(slnRoot, m.Groups[1].Value.Replace('\\', sep))))
+        .Where(File.Exists)
+        .ToList();
+
+    foreach (var csproj in projectPaths)
+    {
+        if (string.Equals(csproj, inputCsprojFull, StringComparison.OrdinalIgnoreCase)) continue;
+        try
+        {
+            var xml = XDocument.Load(csproj);
+            var refs = xml.Descendants("ProjectReference")
+                .Select(r => r.Attribute("Include")?.Value)
+                .Where(v => !string.IsNullOrEmpty(v))
+                .Select(v => Path.GetFullPath(Path.Combine(
+                    Path.GetDirectoryName(csproj)!, v!.Replace('\\', sep))));
+            if (refs.Any(r => string.Equals(r, inputCsprojFull, StringComparison.OrdinalIgnoreCase)))
+                result.Add(Path.GetDirectoryName(csproj)!);
+        }
+        catch { /* malformed .csproj — skip */ }
+    }
+    return result;
 }
 
 static string SafeRead(string f) { try { return File.ReadAllText(f); } catch { return ""; } }

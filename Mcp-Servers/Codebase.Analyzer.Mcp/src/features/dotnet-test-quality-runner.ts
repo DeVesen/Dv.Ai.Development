@@ -1,6 +1,14 @@
 import { spawnSync } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-test-quality.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-test-quality.csx";
+
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-test-quality.csx");
+}
 
 export interface DotnetTestQualityResult {
   projectRoot: string;
@@ -13,8 +21,10 @@ export interface DotnetTestQualityResult {
   error?: string;
 }
 
-export function runDotnetTestQuality(rootPath: string): DotnetTestQualityResult {
-  const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", rootPath], {
+export function runDotnetTestQuality(rootPath: string, testProjectPath?: string): DotnetTestQualityResult {
+  const args = ["script", "--no-cache", resolveScriptPath(), "--", rootPath];
+  if (testProjectPath) args.push(testProjectPath);
+  const result = spawnSync("dotnet", args, {
     encoding: "utf-8", timeout: 120_000, maxBuffer: 20 * 1024 * 1024,
   });
 

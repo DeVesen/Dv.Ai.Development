@@ -1,7 +1,8 @@
 import { execSync, spawnSync } from "child_process";
 import { writeFileSync, unlinkSync, existsSync } from "fs";
 import { tmpdir } from "os";
-import { join } from "path";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 export interface RoslynMetadata {
   filename: string;
@@ -89,7 +90,11 @@ export interface RoslynMetrics {
   criticalApiValidationIssues: number;
 }
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-analyzer.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-analyzer.csx";
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-analyzer.csx");
+}
 
 export function isRoslynAvailable(): boolean {
   try { execSync("dotnet script --version", { stdio: "ignore" }); return true; } catch { return false; }
@@ -104,7 +109,7 @@ export function analyzeCSharp(code: string, filename: string): RoslynMetadata {
   try {
     writeFileSync(tmpFile, code, "utf-8");
 
-    const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", tmpFile], {
+    const result = spawnSync("dotnet", ["script", "--no-cache", resolveScriptPath(), "--", tmpFile], {
       encoding: "utf-8",
       timeout: 30_000,
       maxBuffer: 5 * 1024 * 1024,

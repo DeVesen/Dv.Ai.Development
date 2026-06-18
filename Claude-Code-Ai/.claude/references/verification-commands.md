@@ -12,38 +12,38 @@ welche Befehle nach Code-Änderungen ausgeführt werden müssen — kein Raten e
 
 ### Frontend
 
-MCP `dev-angular-mcp` verwenden — **kein direkter Shell-Aufruf**:
+MCP `dev-mcp` verwenden — **kein direkter Shell-Aufruf**:
 
 ```
-build_angular_project(project_root="/workspace/[frontend-relativer-pfad]", configuration="production")
-test_angular_project(project_root="/workspace/[frontend-relativer-pfad]")
+build_angular_project(project_root="C:\Develop\[frontend-absolutpfad]", configuration="production")
+test_angular_project(project_root="C:\Develop\[frontend-absolutpfad]")
 ```
 
-> Pfade müssen mit `/workspace/` beginnen (Docker-Mount: `${workspaceFolder}:/workspace`).
+> Pfade als Windows-Absolutpfade (`C:\...`) — kein `/workspace/`.
 > Vor dem ersten Build einmalig `npm install` per Shell erforderlich.
 > Dev-Server (kein Verifikationsbefehl): `ng serve` → http://localhost:4200
 
 ### Backend
 
-MCP `dev-dotnet-mcp` verwenden — **kein direkter Shell-Aufruf**:
+MCP `dev-mcp` verwenden — **kein direkter Shell-Aufruf**:
 
 ```
-build_dotnet_solution(path="/workspace/[backend-relativer-pfad]", configuration="Release")
-test_dotnet_solution(path="/workspace/[backend-relativer-pfad]")
+build_dotnet_solution(path="C:\Develop\[backend-absolutpfad]", configuration="Release")
+test_dotnet_solution(path="C:\Develop\[backend-absolutpfad]")
 ```
 
-> Pfade müssen mit `/workspace/` beginnen (Docker-Mount: `${workspaceFolder}:/workspace`).
+> Pfade als Windows-Absolutpfade (`C:\...`) — kein `/workspace/`.
 > Vor dem ersten Build einmalig `dotnet restore` per Shell erforderlich.
 
 ---
 
 ## Warum MCP statt Shell
 
-`build_angular_project`, `test_angular_project`, `build_dotnet_solution` und `test_dotnet_solution` filtern die
-Konsolenausgabe **intern** im MCP-Server — rohe stdout/stderr verlässt den Server nie.
+`build_angular_project`, `test_angular_project`, `build_dotnet_solution` und `test_dotnet_solution` (alle via `dev-mcp`)
+filtern die Konsolenausgabe **intern** im MCP-Server — rohe stdout/stderr verlässt den Server nie.
 Der LLM erhält ausschließlich strukturierte Daten: `errors[]`, `warnings[]`, `summary`.
 
-Build-log-filter bleibt als Fallback für externe Shell-Aufrufe, die nicht über diese MCPs laufen.
+Build-log-filter bleibt als Fallback für externe Shell-Aufrufe, die nicht über dev-mcp laufen.
 
 ---
 

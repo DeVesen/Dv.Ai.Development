@@ -1,11 +1,18 @@
 import { spawnSync } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import {
   CompilerDiagnosticsResult,
   SeverityFilter,
   sortDiagnostics,
 } from "./diagnostics-types.js";
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-diagnostics.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-diagnostics.csx";
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-diagnostics.csx");
+}
 
 export function runDotnetDiagnostics(
   path: string,
@@ -13,7 +20,7 @@ export function runDotnetDiagnostics(
 ): CompilerDiagnosticsResult {
   const result = spawnSync(
     "dotnet",
-    ["script", "--no-cache", SCRIPT_PATH, "--", path, severity],
+    ["script", "--no-cache", resolveScriptPath(), "--", path, severity],
     { encoding: "utf-8", timeout: 120_000, maxBuffer: 30 * 1024 * 1024 },
   );
 

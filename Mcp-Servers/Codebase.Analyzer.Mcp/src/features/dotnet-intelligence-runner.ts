@@ -1,6 +1,13 @@
 import { spawnSync } from "child_process";
+import { existsSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
-const SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-intelligence.csx";
+const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-intelligence.csx";
+function resolveScriptPath(): string {
+  if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
+  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-intelligence.csx");
+}
 
 export type IntelligenceFeature = "maintainability" | "typegraph" | "cfg" | "all";
 
@@ -38,7 +45,7 @@ export interface DotnetCfgEntry {
 }
 
 export function runDotnetIntelligence(rootPath: string, feature: IntelligenceFeature = "all"): DotnetIntelligenceResult {
-  const result = spawnSync("dotnet", ["script", "--no-cache", SCRIPT_PATH, "--", rootPath, feature], {
+  const result = spawnSync("dotnet", ["script", "--no-cache", resolveScriptPath(), "--", rootPath, feature], {
     encoding: "utf-8", timeout: 120_000, maxBuffer: 30 * 1024 * 1024,
   });
 

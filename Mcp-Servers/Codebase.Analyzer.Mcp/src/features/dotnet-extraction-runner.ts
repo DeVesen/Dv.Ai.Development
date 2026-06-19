@@ -12,7 +12,7 @@ import {
 const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-extraction.csx";
 function resolveScriptPath(): string {
   if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
-  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-extraction.csx");
+  return join(dirname(fileURLToPath(import.meta.url)), "../roslyn-analyzer/roslyn-extraction.csx");
 }
 
 export interface DotnetExtractionResult {

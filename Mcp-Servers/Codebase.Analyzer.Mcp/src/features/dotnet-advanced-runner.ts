@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-advanced.csx";
 function resolveScriptPath(): string {
   if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
-  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-advanced.csx");
+  return join(dirname(fileURLToPath(import.meta.url)), "../roslyn-analyzer/roslyn-advanced.csx");
 }
 
 export type AdvancedFeature = "complexity" | "deadcode" | "nullflow" | "duplicates" | "refactoring" | "autofix" | "dataflow" | "all";

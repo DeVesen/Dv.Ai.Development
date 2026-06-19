@@ -1,5 +1,5 @@
 import { readFileSync, existsSync, readdirSync, statSync } from "fs";
-import { join, relative } from "path";
+import { join, relative, resolve, dirname } from "path";
 import { XMLParser } from "fast-xml-parser";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -163,29 +163,61 @@ function parseLcovContent(content: string, rootPath: string): CoverageReport {
 // ─── Cobertura Parser (.NET) ──────────────────────────────────────────────────
 
 export function parseCobertura(rootPath: string): CoverageReport {
-  // Find coverage.cobertura.xml
-  function findCobertura(dir: string, depth = 0): string | null {
-    if (depth > 5) return null;
-    try {
-      for (const entry of readdirSync(dir)) {
-        const full = join(dir, entry);
-        if (entry === "coverage.cobertura.xml" || entry.endsWith(".cobertura.xml")) return full;
-        if (statSync(full).isDirectory() && !["bin", "obj", ".git", "node_modules"].includes(entry)) {
-          const found = findCobertura(full, depth + 1);
-          if (found) return found;
-        }
-      }
-    } catch {}
-    return null;
-  }
-
-  const xmlPath = findCobertura(rootPath);
+  const xmlPath = findCoberturaXml(rootPath);
   if (!xmlPath) {
     return buildEmptyReport("cobertura", "coverage.cobertura.xml not found. Run: dotnet test --collect:\"XPlat Code Coverage\"");
   }
 
   const xml = readFileSync(xmlPath, "utf-8");
   return parseCoberturaXml(xml, rootPath);
+}
+
+function findCoberturaXml(startPath: string): string | null {
+  // Strategy 1: search DOWN from startPath (handles test project path with TestResults/<guid>/ layout)
+  function collectXmls(dir: string, depth = 0, results: string[] = []): string[] {
+    if (depth > 5) return results;
+    try {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (entry === "coverage.cobertura.xml" || entry.endsWith(".cobertura.xml")) {
+          results.push(full);
+        } else if (statSync(full).isDirectory() && !["bin", "obj", ".git", "node_modules"].includes(entry)) {
+          collectXmls(full, depth + 1, results);
+        }
+      }
+    } catch {}
+    return results;
+  }
+
+  const downwards = collectXmls(startPath);
+  if (downwards.length > 0) {
+    // Prefer the most recently modified — guards against stale solution-wide reports
+    // coexisting with fresh project-specific ones.
+    return downwards.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
+  }
+
+  // Strategy 2: walk UP the directory tree and search sibling *.Tests* folders.
+  // Handles the case where the caller passed the production project path instead
+  // of the test project path (agents often do this).
+  let current = startPath;
+  for (let up = 0; up < 4; up++) {
+    const parent = dirname(current);
+    if (parent === current) break;
+    try {
+      for (const sibling of readdirSync(parent)) {
+        if (!sibling.toLowerCase().includes("test")) continue;
+        const siblingFull = join(parent, sibling);
+        if (!statSync(siblingFull).isDirectory()) continue;
+        const found = collectXmls(siblingFull);
+        if (found.length > 0) {
+          return found.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
+        }
+      }
+    } catch {}
+    current = parent;
+  }
+
+  return null;
 }
 
 function parseCoberturaXml(xml: string, rootPath: string): CoverageReport {
@@ -195,13 +227,27 @@ function parseCoberturaXml(xml: string, rootPath: string): CoverageReport {
   if (!coverage) return buildEmptyReport("cobertura", "Invalid Cobertura XML");
 
   const files: FileCoverage[] = [];
+  const normalizedRoot = resolve(rootPath).replace(/\\/g, "/").toLowerCase();
 
   const packages = coverage.packages?.package ?? [];
   for (const pkg of packages) {
     const classes = pkg.classes?.class ?? [];
     for (const cls of classes) {
+      // Skip compiler-generated state machines (async/await, iterator, lambda closures).
+      // They appear as duplicate entries with names like "<MethodName>d__N" or "<>c__DisplayClassN".
+      const className = cls["@_name"] ?? "";
+      if (className.includes("d__") || className.startsWith("<>")) continue;
+
       const fileName = (cls["@_filename"] ?? "").replace(/\\/g, "/");
-      const relFile = fileName.includes(rootPath) ? relative(rootPath, fileName) : fileName;
+
+      // When the XML is solution-wide, filter to only classes whose source file
+      // is under the requested rootPath — prevents Grade F from unrelated projects.
+      const normalizedFile = fileName.toLowerCase();
+      if (normalizedFile && !normalizedFile.includes(normalizedRoot)) continue;
+
+      const relFile = fileName.toLowerCase().includes(normalizedRoot)
+        ? relative(rootPath, fileName.replace(/\//g, "\\"))
+        : fileName;
 
       const methods = cls.methods?.method ?? [];
       const lines = cls.lines?.line ?? [];

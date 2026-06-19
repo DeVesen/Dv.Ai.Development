@@ -42,16 +42,28 @@ public sealed class FilesystemTools
         });
 
     [McpServerTool(Name = "find_by_content")]
-    [Description("Finds files containing a regex/literal. Returns JSON array: [{file, line, match}].")]
+    [Description("Finds files containing a regex/literal. Returns JSON array: [{file, line, match}]. format: 'full'|'compact'|'paths_only'. group_by_file=true aggregates per file.")]
     public string FindByContent(
         [Description("Root directory (absolute path, must be under an AllowedDirectory)")] string root,
         [Description("Regex or literal pattern")] string pattern,
         [Description("File glob filter, e.g. '*.cs'")] string? file_glob = null,
-        [Description("Max results (default 20, max 100)")] int max_results = 20) =>
-        Execute("find_by_content", "filesystem", new { root, pattern, file_glob, max_results }, () =>
+        [Description("Max results (default 20, max 100)")] int max_results = 20,
+        [Description("Output format: 'full' (default, includes match text) | 'compact' | 'paths_only' (filePath+line only)")] string format = "full",
+        [Description("Group matches by file (default false)")] bool group_by_file = false) =>
+        Execute("find_by_content", "filesystem", new { root, pattern, file_glob, max_results, format, group_by_file }, () =>
         {
             if (!ValidateRoot(root, out var normalizedRoot, out var err)) return JsonOptions.Error(err);
-            return JsonOptions.Serialize(_contentSearch.FindByContent(normalizedRoot, pattern, file_glob, max_results));
+            var matches = _contentSearch.FindByContent(normalizedRoot, pattern, file_glob, max_results);
+
+            if (format == "paths_only")
+                return JsonOptions.Serialize(matches.Select(m => new { filePath = m.File, line = m.Line }).ToList());
+
+            if (group_by_file)
+                return JsonOptions.Serialize(matches.GroupBy(m => m.File)
+                    .Select(g => new { file = g.Key, matches = g.Select(m => new { m.Line, m.Match }).ToList() })
+                    .ToList());
+
+            return JsonOptions.Serialize(matches);
         });
 
     [McpServerTool(Name = "find_implementations")]

@@ -7,7 +7,7 @@ import { TypeHierarchyResult } from "./type-hierarchy-types.js";
 const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-hierarchy.csx";
 function resolveScriptPath(): string {
   if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
-  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-hierarchy.csx");
+  return join(dirname(fileURLToPath(import.meta.url)), "../roslyn-analyzer/roslyn-hierarchy.csx");
 }
 
 export function runDotnetHierarchy(

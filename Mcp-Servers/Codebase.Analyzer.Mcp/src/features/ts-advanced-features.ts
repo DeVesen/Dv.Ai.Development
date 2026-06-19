@@ -8,7 +8,7 @@ import {
   ts,
 } from "ts-morph";
 import { readdirSync, statSync, readFileSync, existsSync } from "fs";
-import { join, extname, relative, dirname, resolve } from "path";
+import { join, extname, relative, dirname, resolve, sep } from "path";
 import { UntestedApiFinding } from "./untested-api-types.js";
 import { SymbolReference } from "./symbol-reference-types.js";
 import { GodClassScanResult, filterAndRank, toGodClassCandidate } from "./god-class-types.js";
@@ -969,9 +969,25 @@ export function detectUntestedPublicApi(path: string, depth: "file" | "project")
   if (depth === "file") {
     if (isSpec(path) || path.endsWith(".d.ts") || extname(path) !== ".ts") return findings;
     sourceFiles.push(path);
-    // Spec-conform: consider spec files in the SAME or any PARENT directory; the
-    // import gate below decides which of them actually exercise a given class.
-    for (const cand of specCandidatesUpward(path)) testFiles.push(cand);
+    // P2 fast path: use spec index if available (avoids re-scanning spec files)
+    const specIndexFile = join(findAngularProjectRoot(path), ".codebase-analyzer-index-angular-specs.json");
+    let specIndexLoaded = false;
+    if (existsSync(specIndexFile)) {
+      try {
+        const raw = JSON.parse(readFileSync(specIndexFile, "utf-8"));
+        const age = Date.now() - new Date(raw.generatedAt as string).getTime();
+        if (age < 5 * 60 * 1000 && Array.isArray(raw.specs)) {
+          for (const s of raw.specs as { file: string }[]) {
+            const absSpec = join(findAngularProjectRoot(path), s.file.split("/").join(sep));
+            if (existsSync(absSpec)) testFiles.push(absSpec);
+          }
+          specIndexLoaded = true;
+        }
+      } catch {}
+    }
+    if (!specIndexLoaded) {
+      for (const cand of specCandidatesUpward(path)) testFiles.push(cand);
+    }
   } else {
     const walk = (dir: string) => {
       try {
@@ -992,6 +1008,12 @@ export function detectUntestedPublicApi(path: string, depth: "file" | "project")
 
   const project = new Project({ useInMemoryFileSystem: false, skipAddingFilesFromTsConfig: true });
   for (const f of [...sourceFiles, ...testFiles]) { try { project.addSourceFileAtPath(f); } catch {} }
+
+  // Build componentImportsMap for transitive Stufe-B detection.
+  // P1 fast path: use cached Angular project index if it exists (avoids full project re-scan).
+  // Fallback: load source files and build the map via ts-morph.
+  const projectRoot = findAngularProjectRoot(path);
+  const componentImportsMap = buildComponentImportsMapCached(projectRoot, path, project, depth);
 
   // Read each spec's text once for the import gate + member matching.
   const specTexts = new Map<string, string>();
@@ -1016,11 +1038,36 @@ export function detectUntestedPublicApi(path: string, depth: "file" | "project")
         : [];
       const classHasTest = importingSpecs.length > 0;
 
-      for (const member of collectPublicMembers(cls)) {
-        if (!classHasTest) {
-          findings.push({ symbol: `${clsName}.${member.name}`, file: relFile, line: member.line, reason: "no_test_file" });
-          continue;
+      if (!classHasTest) {
+        // Angular Component check: detect indirect rendering via parent specs (Stufe B/A-via-parent).
+        // Transitive chain: spec imports ParentComponent → ParentComponent has this class in
+        // @Component.imports → ParentComponent template uses the selector → spec calls detectChanges.
+        const componentSelector = extractAngularSelector(cls);
+        const indirectSpecs = clsName
+          ? findTransitiveRenderingSpecs(clsName, componentSelector, testFiles, specTexts, componentImportsMap)
+          : [];
+
+        for (const member of collectPublicMembers(cls)) {
+          if (indirectSpecs.length > 0) {
+            const assertingSpecs = componentSelector
+              ? indirectSpecs.filter((t) => specAssertsOnSelector(specTexts.get(t) ?? "", componentSelector))
+              : [];
+            findings.push({
+              symbol: `${clsName}.${member.name}`,
+              file: relFile,
+              line: member.line,
+              reason: assertingSpecs.length > 0 ? "rendered_and_asserted" : "rendered_not_asserted",
+              indirectSpecs: indirectSpecs.map((s) => relative(base, s)),
+              ...(assertingSpecs.length > 0 ? { assertedBy: assertingSpecs.map((s) => relative(base, s)) } : {}),
+            });
+          } else {
+            findings.push({ symbol: `${clsName}.${member.name}`, file: relFile, line: member.line, reason: "no_test_file" });
+          }
         }
+        continue;
+      }
+
+      for (const member of collectPublicMembers(cls)) {
         const referenced = importingSpecs.some((t) => referencesMember(specTexts.get(t) ?? "", member.name));
         if (!referenced) {
           findings.push({ symbol: `${clsName}.${member.name}`, file: relFile, line: member.line, reason: "no_reference_found" });
@@ -1096,6 +1143,158 @@ function referencesMember(specText: string, name: string): boolean {
   if (new RegExp(`\\.${esc}\\b`).test(specText)) return true;            // property / method access
   if (new RegExp(`\\b${esc}\\s*\\(`).test(specText)) return true;        // call
   if (new RegExp(`['"\`][^'"\`]*\\b${esc}\\b[^'"\`]*['"\`]`).test(specText)) return true; // string literal
+  return false;
+}
+
+// Extract the Angular @Component selector string (e.g. "app-atlas-action-btn") from the decorator.
+export function extractAngularSelector(cls: ClassDeclaration): string | null {
+  for (const decorator of cls.getDecorators()) {
+    if (decorator.getName() !== "Component") continue;
+    const args = decorator.getArguments();
+    if (args.length === 0) continue;
+    const text = args[0].getText();
+    const m = text.match(/selector\s*:\s*['"`]([^'"`]+)['"`]/);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// Build className → @Component.imports[] from source files (for transitive detection).
+export function buildComponentImportsMap(sourceFiles: SourceFile[]): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const sf of sourceFiles) {
+    for (const cls of sf.getClasses()) {
+      const name = cls.getName();
+      if (!name) continue;
+      for (const dec of cls.getDecorators()) {
+        if (dec.getName() !== "Component") continue;
+        const args = dec.getArguments();
+        if (!args.length) continue;
+        const text = args[0].getText();
+        // Match imports: [...] in the decorator object literal
+        const m = text.match(/\bimports\s*:\s*\[([^\]]*)\]/s);
+        if (!m) continue;
+        const imports = m[1].split(",")
+          .map((s) => s.trim().replace(/[<([].*/,"").trim()) // strip generics / forwardRef
+          .filter((s) => /^[A-Z]/.test(s));
+        if (imports.length) map.set(name, imports);
+      }
+    }
+  }
+  return map;
+}
+
+// Extract class names from TypeScript import statements in a file.
+export function extractImportedClassNames(text: string): string[] {
+  const names: string[] = [];
+  const regex = /import\s*\{([^}]+)\}\s*from/g;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    const parts = m[1].split(",").map((s) => s.trim().split(/\s+as\s+/)[0].trim());
+    names.push(...parts.filter((n) => /^[A-Z]/.test(n)));
+  }
+  return names;
+}
+
+// Walk upward from a file path to find the Angular project root (angular.json / tsconfig.json).
+export function findAngularProjectRoot(filePath: string): string {
+  let dir = dirname(filePath);
+  let prev = "";
+  while (dir && dir !== prev) {
+    if (existsSync(join(dir, "angular.json")) || existsSync(join(dir, "project.json"))) return dir;
+    if (existsSync(join(dir, "tsconfig.json"))) return dir;
+    prev = dir;
+    dir = dirname(dir);
+  }
+  return dirname(filePath);
+}
+
+// Build componentImportsMap with P1 index fast path:
+//   1. Try cached Angular project index (zero ts-morph parsing needed)
+//   2. Fallback: load source files and build via ts-morph
+function buildComponentImportsMapCached(
+  projectRoot: string,
+  targetPath: string,
+  project: Project,
+  depth: "file" | "project",
+): Map<string, string[]> {
+  // Try the cached index first (written by index_project calls)
+  const indexFile = join(projectRoot, ".codebase-analyzer-index-angular.json");
+  if (existsSync(indexFile)) {
+    try {
+      const raw = JSON.parse(readFileSync(indexFile, "utf-8"));
+      const age = Date.now() - new Date(raw.generatedAt as string).getTime();
+      if (age < 5 * 60 * 1000 && Array.isArray(raw.components)) {
+        // Index is fresh — build map directly without ts-morph
+        const map = new Map<string, string[]>();
+        for (const c of raw.components as { name: string; angularImports?: string[] }[]) {
+          if (c.name && Array.isArray(c.angularImports)) map.set(c.name, c.angularImports);
+        }
+        return map;
+      }
+    } catch {}
+  }
+
+  // Fallback: load source files (depth=file needs the whole project; depth=project already has them)
+  if (depth === "file") {
+    const extra: string[] = [];
+    const walkForImports = (dir: string) => {
+      try {
+        for (const entry of readdirSync(dir)) {
+          if (["node_modules", ".git", "dist", "coverage", ".angular"].includes(entry)) continue;
+          const full = join(dir, entry);
+          if (statSync(full).isDirectory()) { walkForImports(full); return; }
+          if (extname(full) === ".ts" && !full.endsWith(".spec.ts") && !full.endsWith(".d.ts") && full !== targetPath) {
+            if (extra.length < 350) extra.push(full);
+          }
+        }
+      } catch {}
+    };
+    walkForImports(projectRoot);
+    for (const f of extra) { try { project.addSourceFileAtPath(f); } catch {} }
+  }
+
+  const allSrcFiles = project.getSourceFiles().filter(
+    (sf) => !sf.getFilePath().endsWith(".spec.ts") && !sf.getFilePath().endsWith(".d.ts"),
+  );
+  return buildComponentImportsMap(allSrcFiles);
+}
+
+// Transitive rendering detection:
+//   spec imports ParentComponent → ParentComponent has clsName in @Component.imports
+//   → component is rendered in TestBed (with or without DOM assertions).
+// Also catches direct selector usage in the spec (querySelector, By.css).
+export function findTransitiveRenderingSpecs(
+  clsName: string,
+  selector: string | null,
+  testFiles: string[],
+  specTexts: Map<string, string>,
+  componentImportsMap: Map<string, string[]>,
+): string[] {
+  return testFiles.filter((t) => {
+    const specText = specTexts.get(t) ?? "";
+    // Direct selector usage in spec (querySelector, By.css, template literal, attribute)
+    if (selector) {
+      const esc = escapeRegExp(selector);
+      if (new RegExp(`['"\`]${esc}['"\`]`).test(specText)) return true;
+    }
+    // Transitive: spec imports a parent → parent's @Component.imports includes our class
+    const importedClasses = extractImportedClassNames(specText);
+    return importedClasses.some((parentCls) => componentImportsMap.get(parentCls)?.includes(clsName));
+  });
+}
+
+// Returns true when a spec has DOM assertions specifically targeting the given selector.
+export function specAssertsOnSelector(specText: string, selector: string): boolean {
+  const esc = escapeRegExp(selector);
+  // querySelector / querySelectorAll with selector
+  if (new RegExp(`querySelectorAll?\\s*\\(\\s*['"\`]${esc}['"\`]`).test(specText)) return true;
+  // By.css with selector
+  if (new RegExp(`By\\.css\\s*\\(\\s*['"\`]${esc}['"\`]`).test(specText)) return true;
+  // debugElement.query / queryAll with selector
+  if (new RegExp(`\\.query(?:All)?\\s*\\([^)]*['"\`]${esc}['"\`]`).test(specText)) return true;
+  // nativeElement.querySelector
+  if (new RegExp(`nativeElement[^;]*querySelector[^;]*['"\`]${esc}['"\`]`).test(specText)) return true;
   return false;
 }
 

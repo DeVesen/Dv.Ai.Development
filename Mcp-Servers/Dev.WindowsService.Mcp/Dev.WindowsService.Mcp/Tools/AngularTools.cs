@@ -69,12 +69,33 @@ public sealed class AngularTools
             () => _runner.BuildAsync(project_root, configuration));
 
     [McpServerTool(Name = "test_angular_project")]
-    [Description("Runs ng test --watch=false and returns a filtered result (failed tests and summary).")]
+    [Description("Runs ng test --watch=false and returns a filtered result (failed tests and summary). Use include_patterns or test_name_pattern to run a subset of specs.")]
     public async Task<string> TestAngularProject(
         [Description("Absolute path to the Angular project root")] string project_root,
-        [Description("Optional extra ng test flags")] string? options = null) =>
-        await ExecuteBuildAsync("test_angular_project", new { project_root, options },
-            () => _runner.TestAsync(project_root, options));
+        [Description("Optional extra ng test flags")] string? options = null,
+        [Description("Optional spec include glob patterns, e.g. [\"src/app/feature/**/*.spec.ts\"]")] string? include_patterns = null,
+        [Description("Optional spec basename pattern, e.g. 'my-service' adds --include=**/my-service.spec.ts")] string? test_name_pattern = null)
+    {
+        // Build effective options
+        var effectiveOptions = options ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(include_patterns))
+        {
+            List<string> globs = [];
+            try { globs = JsonSerializer.Deserialize<List<string>>(include_patterns, JsonOptions.Default) ?? []; }
+            catch { /* treat as single glob */ globs = [include_patterns]; }
+            foreach (var glob in globs)
+                effectiveOptions += $" --include={glob}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(test_name_pattern))
+            effectiveOptions += $" --include=**/{test_name_pattern}.spec.ts";
+
+        effectiveOptions = effectiveOptions.Trim();
+
+        return await ExecuteBuildAsync("test_angular_project", new { project_root, options, include_patterns, test_name_pattern },
+            () => _runner.TestAsync(project_root, string.IsNullOrWhiteSpace(effectiveOptions) ? null : effectiveOptions));
+    }
 
     private async Task<string> ExecuteScaffoldAsync(string toolName, object parameters, Func<Task<AngularScaffoldResult>> action)
     {

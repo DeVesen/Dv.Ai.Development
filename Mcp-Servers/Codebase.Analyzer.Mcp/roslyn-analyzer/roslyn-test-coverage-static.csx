@@ -17,7 +17,10 @@
 //                          "CapReached": bool }
 // Reason: "no_test_file" (class/record/struct has no associated test file) |
 //         "no_reference_found" (a test file exists for the type, but the member
-//         is never referenced).
+//         is never referenced) |
+//         "no_test_file:controller_may_be_integration_tested" (Controller class — likely
+//         covered by WebApplicationFactory/HTTP integration tests, not unit tests) |
+//         "no_reference_found:controller_may_be_integration_tested" (same hint for member level).
 
 #r "nuget: Microsoft.CodeAnalysis.CSharp, 5.0.0-2.final"
 #nullable enable
@@ -127,12 +130,25 @@ foreach (var srcFile in srcTargets)
     var root = CSharpSyntaxTree.ParseText(code, path: srcFile).GetRoot();
 
     // Scan classes, records and structs (interfaces excluded: no implementation to test).
+    // Skip nested types (private inner classes, compiler-generated closures) — they are
+    // implementation details of the outer class, not independent public API surfaces.
+    // A type is nested when its direct parent in the syntax tree is another TypeDeclarationSyntax.
     var typeDecls = root.DescendantNodes().OfType<TypeDeclarationSyntax>()
-        .Where(t => t is ClassDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax);
+        .Where(t => t is ClassDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax)
+        .Where(t => t.Parent is not TypeDeclarationSyntax);
 
     foreach (var type in typeDecls)
     {
         var clsName = type.Identifier.Text;
+
+        // Controllers are typically covered by integration tests (WebApplicationFactory,
+        // HttpClient-based tests) rather than unit tests. Static heuristics cannot
+        // detect integration-test coverage — findings for controllers are marked with
+        // a hint so callers know they may be false positives.
+        var typeAttrs = type.AttributeLists.SelectMany(al => al.Attributes).Select(a => a.Name.ToString()).ToList();
+        var isController = typeAttrs.Any(a => a.Contains("ApiController") || a == "Controller")
+                        || clsName.EndsWith("Controller");
+
         // Class→test association (per-class scoping, analogous to the Angular
         // import gate): a test file is associated when its name stem is
         // <Class>[Tests|Test|Spec(s)] OR its code references the class by word
@@ -150,11 +166,10 @@ foreach (var srcFile in srcTargets)
         // an explicit property, etc.
         var seen = new HashSet<string>();
 
-        // Record positional properties (e.g. `record Foo(int A, string B)`) — public by definition.
-        if (type is RecordDeclarationSyntax rec && rec.ParameterList != null)
-            foreach (var param in rec.ParameterList.Parameters.Where(p => !excludedMembers.Contains(p.Identifier.Text)))
-                if (seen.Add(param.Identifier.Text))
-                    members.Add((param.Identifier.Text, param.GetLocation().GetLineSpan().StartLinePosition.Line + 1));
+        // Record positional properties (e.g. `record Foo(int A, string B)`) are implicitly
+        // tested whenever the record constructor is exercised — do NOT flag them individually.
+        // A test that does `new Foo("x", 1)` covers all positional properties, but the
+        // property names rarely appear as MemberAccess targets in the test code.
 
         foreach (var m in type.Members.OfType<MethodDeclarationSyntax>()
             .Where(m => m.Modifiers.Any(mod => mod.Text == "public") && !excludedMembers.Contains(m.Identifier.Text)))
@@ -170,13 +185,18 @@ foreach (var srcFile in srcTargets)
         {
             if (!classHasTestFile)
             {
-                findings.Add(new Finding { Symbol = $"{clsName}.{name}", File = relPath, Line = line, Reason = "no_test_file" });
+                // Controllers without a unit test file are likely covered by integration tests.
+                var reason = isController ? "no_test_file:controller_may_be_integration_tested" : "no_test_file";
+                findings.Add(new Finding { Symbol = $"{clsName}.{name}", File = relPath, Line = line, Reason = reason });
                 continue;
             }
             // Scoped to the test files associated with THIS class only.
             var referenced = associatedTests.Any(t => t.MemberNames.Contains(name) || WordMatch(t.Code, name));
             if (!referenced)
-                findings.Add(new Finding { Symbol = $"{clsName}.{name}", File = relPath, Line = line, Reason = "no_reference_found" });
+            {
+                var reason = isController ? "no_reference_found:controller_may_be_integration_tested" : "no_reference_found";
+                findings.Add(new Finding { Symbol = $"{clsName}.{name}", File = relPath, Line = line, Reason = reason });
+            }
         }
     }
 }

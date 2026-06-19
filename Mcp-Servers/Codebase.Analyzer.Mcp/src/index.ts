@@ -44,6 +44,13 @@ import { runDotnetDiagnostics } from "./features/dotnet-diagnostics-runner.js";
 import { getCompilerDiagnostics } from "./features/ts-compiler-diagnostics.js";
 import { CompilerDiagnostic } from "./features/diagnostics-types.js";
 import { runBoyscoutActions, formatBoyscoutMarkdown } from "./features/boyscout-runner.js";
+import {
+  scoutSymbol, scoutScope, ScoutQuestion,
+  findAngularRoute, findAngularGuard, findDotnetEndpoint,
+  findDiRegistration, analyzePlanningInventory, traceApiContract, findApiConsumers,
+} from "./features/new-tools.js";
+import { analyzeSliceImpact } from "./features/slice-impact.js";
+import { registerIndex, getAllRegistryEntries } from "./index-registry.js";
 
 // ─── Language Detection ───────────────────────────────────────────────────────
 
@@ -779,8 +786,41 @@ server.tool(
     type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Project type. 'auto' detects by presence of angular.json or .csproj"),
     format: z.enum(["llm", "json"]).default("llm").describe("'llm' = readable text for LLM context, 'json' = raw structured data"),
     useCache: z.boolean().default(true).describe("Use cached index if < 5 minutes old"),
+    projects: z.array(z.string()).optional().describe("Batch mode: list of project paths to index. When provided, indexes all and returns array of status."),
   },
-  async ({ projectPath, type, format, useCache }) => {
+  async ({ projectPath, type, format, useCache, projects }) => {
+    // Batch mode
+    if (projects && projects.length > 0) {
+      const batchResults: Array<{ projectPath: string; status: string; symbolCount?: number; error?: string }> = [];
+      for (const batchPath of projects) {
+        const absP = resolve(batchPath);
+        if (!existsSync(absP)) {
+          batchResults.push({ projectPath: batchPath, status: "error", error: "Path not found" });
+          continue;
+        }
+        try {
+          // Detect type
+          const { existsSync: ex } = await import("fs");
+          const { join: pj } = await import("path");
+          let detectedT: "angular" | "dotnet" = "dotnet";
+          if (ex(pj(absP, "angular.json")) || ex(pj(absP, "project.json"))) detectedT = "angular";
+          if (detectedT === "angular") {
+            const idx = indexAngularProjectCached(absP, useCache);
+            const sc = idx.components.length + idx.services.length + idx.interfaces.length + idx.enums.length + idx.pipes.length;
+            registerIndex({ projectPath: absP, type: "angular", indexedAt: idx.generatedAt, symbolCount: sc });
+            batchResults.push({ projectPath: absP, status: "ok", symbolCount: sc });
+          } else {
+            const idx = indexDotnetProject(absP, useCache);
+            const sc = (idx.classes?.length ?? 0) + (idx.interfaces?.length ?? 0) + (idx.enums?.length ?? 0) + (idx.records?.length ?? 0);
+            registerIndex({ projectPath: absP, type: "dotnet", indexedAt: idx.generatedAt, symbolCount: sc });
+            batchResults.push({ projectPath: absP, status: "ok", symbolCount: sc });
+          }
+        } catch (e) {
+          batchResults.push({ projectPath: batchPath, status: "error", error: (e as Error).message });
+        }
+      }
+      return { content: [{ type: "text", text: JSON.stringify(batchResults, null, 2) }] };
+    }
     const absPath = resolve(projectPath);
     if (!existsSync(absPath))
       return { content: [{ type: "text", text: `Path not found: ${absPath}` }], isError: true };
@@ -818,10 +858,22 @@ server.tool(
 
     if (detectedType === "angular") {
       const index = indexAngularProjectCached(absPath, useCache);
+      registerIndex({
+        projectPath: absPath,
+        type: "angular",
+        indexedAt: index.generatedAt,
+        symbolCount: index.components.length + index.services.length + index.interfaces.length + index.enums.length + index.pipes.length,
+      });
       const output = format === "json" ? JSON.stringify(index, null, 2) : formatAngularIndexForLLM(index);
       return { content: [{ type: "text", text: output }] };
     } else {
       const index = indexDotnetProject(absPath, useCache);
+      registerIndex({
+        projectPath: absPath,
+        type: "dotnet",
+        indexedAt: index.generatedAt,
+        symbolCount: (index.classes?.length ?? 0) + (index.interfaces?.length ?? 0) + (index.enums?.length ?? 0) + (index.records?.length ?? 0),
+      });
       const output = format === "json" ? JSON.stringify(index, null, 2) : formatDotnetIndexForLLM(index);
       return { content: [{ type: "text", text: output }] };
     }
@@ -857,8 +909,9 @@ server.tool(
     projectPath: z.string().describe("Root path of the project"),
     type: z.enum(["angular", "dotnet"]).describe("Project type"),
     query: z.string().describe("Name to search for (partial match supported)"),
+    format: z.enum(["full", "compact", "paths_only"]).default("full").describe("Output format: 'full' = all details, 'compact' = name+file+line+summary, 'paths_only' = name+filePath+line only"),
   },
-  async ({ projectPath, type, query }) => {
+  async ({ projectPath, type, query, format }) => {
     const absPath = resolve(projectPath);
     const q = query.toLowerCase();
     const results: unknown[] = [];
@@ -884,6 +937,24 @@ server.tool(
 
     if (results.length === 0)
       return { content: [{ type: "text", text: `No matches found for "${query}" in ${projectPath}` }] };
+
+    if (format === "paths_only") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const slim = results.map((r: any) => ({ name: r.name, filePath: r.file ?? r.filePath, line: r.line ?? 0 }));
+      return { content: [{ type: "text", text: JSON.stringify(slim, null, 2) }] };
+    }
+
+    if (format === "compact") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const compact = results.map((r: any) => ({
+        name: r.name,
+        kind: r.kind,
+        filePath: r.file ?? r.filePath,
+        line: r.line ?? 0,
+        summary: `${r.kind} in ${(r.file ?? r.filePath ?? "").split(/[\\/]/).pop()}`,
+      }));
+      return { content: [{ type: "text", text: JSON.stringify(compact, null, 2) }] };
+    }
 
     return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
   }
@@ -1765,12 +1836,8 @@ server.tool(
 server.tool(
   "analyze_test_quality",
   "Statically analyzes test files without running them. Detects: tests without assertions, tautological assertions (expect(true).toBe(true)), mock-heavy tests, happy-path-only tests, missing error/null scenarios, unhandled async, real timers, no Arrange/Act/Assert structure (.NET), focused/skipped tests. Also finds source files with no test counterpart. Works for Angular (Jest/Jasmine .spec.ts) and .NET (xUnit/NUnit/MSTest).",
-  {
-    projectPath: projectPathSchema,
-    type: projectTypeSchema,
-    testProjectPath: z.string().optional().describe(".NET only. Explicit path to the test project directory. Skips project-reference graph discovery when provided."),
-  },
-  async ({ projectPath, type, testProjectPath }) => {
+  { projectPath: projectPathSchema, type: projectTypeSchema },
+  async ({ projectPath, type }) => {
     const abs = resolve(projectPath);
 
     if (type === "angular") {
@@ -1810,7 +1877,7 @@ server.tool(
       return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(report, null, 2) }] };
 
     } else {
-      const report = runDotnetTestQuality(abs, testProjectPath ? resolve(testProjectPath) : undefined);
+      const report = runDotnetTestQuality(abs);
       if (report.error) return { content: [{ type: "text", text: `⚠️ ${report.error}` }] };
 
       const s = report.summary!;
@@ -1925,9 +1992,8 @@ server.tool(
     path: z.string().describe("File or directory path to analyze. With depth='file' a single file; with depth='project' a directory root."),
     type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Stack. 'auto' detects by file extension (depth=file) or angular.json/project.json vs .csproj/.sln (depth=project)."),
     depth: z.enum(["file", "project"]).default("file").describe("'file' analyzes only the given file; 'project' walks the directory (capped)."),
-    testProjectPath: z.string().optional().describe(".NET only. Explicit path to the test project directory. When provided the MCP uses this path directly and skips project-reference graph discovery. Useful when the test project is in a non-standard location or when auto-discovery is too slow."),
   },
-  async ({ path, type, depth, testProjectPath }) => {
+  async ({ path, type, depth }) => {
     const abs = resolve(path);
     if (!existsSync(abs))
       return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
@@ -1969,7 +2035,7 @@ server.tool(
     let capReached = false;
     try {
       if (stack === "dotnet") {
-        findings = runDotnetTestCoverageStatic(abs, depth, testProjectPath ? resolve(testProjectPath) : undefined);
+        findings = runDotnetTestCoverageStatic(abs, depth);
         capReached = dotnetUntestedApiScanState.capReached;
       } else {
         findings = detectUntestedPublicApi(abs, depth);
@@ -2101,18 +2167,14 @@ server.tool(
 server.tool(
   "analyze_test_health",
   "Combines coverage report + static test quality in one shot. Shows overall test health: what is covered, what is tested well, and what is missing. Best run after 'ng test --code-coverage' or 'dotnet test --collect:\"XPlat Code Coverage\"'.",
-  {
-    projectPath: projectPathSchema,
-    type: projectTypeSchema,
-    testProjectPath: z.string().optional().describe(".NET only. Explicit path to the test project directory. Skips project-reference graph discovery when provided."),
-  },
-  async ({ projectPath, type, testProjectPath }) => {
+  { projectPath: projectPathSchema, type: projectTypeSchema },
+  async ({ projectPath, type }) => {
     const abs = resolve(projectPath);
 
     const coverage = type === "angular" ? parseLcov(abs) : parseCobertura(abs);
     const quality = type === "angular"
       ? analyzeAngularTestQuality(abs)
-      : runDotnetTestQuality(abs, testProjectPath ? resolve(testProjectPath) : undefined);
+      : runDotnetTestQuality(abs);
 
     if ("error" in quality && quality.error)
       return { content: [{ type: "text", text: `⚠️ Test quality analyzer error: ${quality.error}` }], isError: true };
@@ -2189,6 +2251,235 @@ server.tool(
         isError: true,
       };
     }
+  }
+);
+
+// ─── New Tools (REQ-F01, REQ-A01, REQ-A02, REQ-G02, REQ-A03, REQ-G03, REQ-G04, REQ-G06) ────
+
+// Tool: index_status (REQ-F01)
+server.tool(
+  "index_status",
+  "List all projects that have been indexed in this session, their index timestamp, TTL status, and symbol count. Uses the in-memory registry populated by index_project/index_solution calls.",
+  {
+    project_path: z.string().optional().describe("Optional: filter by specific project path"),
+  },
+  ({ project_path }) => {
+    const CACHE_TTL_MS = 5 * 60 * 1000;
+    const allEntries = getAllRegistryEntries();
+    const filtered = project_path
+      ? allEntries.filter((e) => e.projectPath.toLowerCase().includes(project_path.toLowerCase()))
+      : allEntries;
+
+    const entries = filtered.map((e) => {
+      const age = Date.now() - new Date(e.indexedAt).getTime();
+      const stale = age > CACHE_TTL_MS;
+      const expiresAt = new Date(new Date(e.indexedAt).getTime() + CACHE_TTL_MS).toISOString();
+      return {
+        projectPath: e.projectPath,
+        type: e.type,
+        indexedAt: e.indexedAt,
+        expiresAt,
+        symbolCount: e.symbolCount,
+        stale,
+      };
+    });
+
+    const result = { entries, totalIndexed: entries.length };
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+// Tool: scout_symbol (REQ-A01)
+server.tool(
+  "scout_symbol",
+  "Fast symbol search across an Angular or .NET project. Uses the cached index first, falls back to filesystem scan. Returns symbol location, kind, summary. Use format='paths_only' for minimal output, 'compact' for summaries, 'full' for all details.",
+  {
+    query: z.string().describe("Class/service/component name — partial match supported"),
+    project_path: z.string().describe("Windows absolute path to the project root"),
+    type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Project type. 'auto' detects from index or file extensions."),
+    format: z.enum(["paths_only", "compact", "full"]).default("compact").describe("Output format"),
+    fallback_to_filesystem: z.boolean().default(true).describe("If index has no match, scan filesystem"),
+    include_references_count: z.boolean().default(false).describe("Count how many files reference each symbol (slow for large projects)"),
+  },
+  ({ query, project_path, type, format, fallback_to_filesystem, include_references_count }) => {
+    const result = scoutSymbol(query, project_path, type, format, fallback_to_filesystem, include_references_count);
+
+    if (format === "paths_only") {
+      const slim = result.symbols.map((s) => ({ name: s.name, filePath: s.filePath, line: s.line }));
+      return { content: [{ type: "text", text: JSON.stringify(slim, null, 2) }] };
+    }
+
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+// Tool: scout_scope (REQ-A02)
+server.tool(
+  "scout_scope",
+  "Run multiple symbol searches in one call. Accepts a list of questions ({id, query, type?, project_path?}) and returns a scout table (Markdown) or compact JSON summary. Ideal for repo exploration at the start of a planning or implementation session.",
+  {
+    questions: z.string().describe("JSON array of {id: string, query: string, type?: string, project_path?: string}"),
+    default_project_path: z.string().describe("Default project path used when question has no project_path"),
+    default_type: z.enum(["angular", "dotnet", "auto"]).default("auto").describe("Default project type"),
+    format: z.enum(["scout_table", "compact", "full"]).default("scout_table").describe("Output format"),
+  },
+  ({ questions, default_project_path, default_type, format }) => {
+    let parsed: ScoutQuestion[];
+    try {
+      parsed = JSON.parse(questions) as ScoutQuestion[];
+    } catch {
+      return { content: [{ type: "text", text: `Invalid JSON in questions parameter: ${questions}` }], isError: true };
+    }
+    const result = scoutScope(parsed, default_project_path, default_type, format);
+    const output = format === "scout_table"
+      ? result.markdown + "\n\n" + JSON.stringify(result.rows, null, 2)
+      : JSON.stringify(result.rows, null, 2);
+    return { content: [{ type: "text", text: output }] };
+  }
+);
+
+// Tool: analyze_slice_impact (REQ-G02)
+server.tool(
+  "analyze_slice_impact",
+  "Analyze the impact of a set of changed files: runs compiler gate, BoyScout actions, untested public API detection, and refactoring safety — in that order. Skips subsequent steps if compiler errors are found. Returns Markdown + JSON.",
+  {
+    changed_file_paths: z.string().describe("JSON array of changed source file paths (.ts or .cs)"),
+    type: z.enum(["auto", "angular", "dotnet"]).default("auto").describe("Stack type. 'auto' detects from file extensions."),
+    format: z.enum(["compact", "full"]).default("compact").describe("'compact' = summary + critical findings only; 'full' = all details"),
+  },
+  async ({ changed_file_paths, type, format }) => {
+    let paths: string[];
+    try {
+      paths = JSON.parse(changed_file_paths) as string[];
+    } catch {
+      return { content: [{ type: "text", text: `Invalid JSON in changed_file_paths: ${changed_file_paths}` }], isError: true };
+    }
+    const result = await analyzeSliceImpact(paths, type, format);
+    return {
+      content: [{
+        type: "text",
+        text: result.markdown + "\n\n" + JSON.stringify({
+          summary: result.summary,
+          compilerGate: result.compilerGate,
+          boyscout: format === "full" ? result.boyscout : result.boyscout.slice(0, 5),
+          untestedApis: format === "full" ? result.untestedApis : result.untestedApis.slice(0, 5),
+          refactoringSafety: format === "full" ? result.refactoringSafety : result.refactoringSafety.slice(0, 5),
+          skipped: result.skipped,
+        }, null, 2),
+      }],
+    };
+  }
+);
+
+// Tool: find_angular_route (REQ-A03)
+server.tool(
+  "find_angular_route",
+  "Find Angular routes by partial path match. Uses the cached Angular index first; falls back to filesystem scan. Returns route path, component, file, line, and guards. Max 20 results.",
+  {
+    project_path: z.string().describe("Angular project root path"),
+    route_path: z.string().describe("Partial route path to search for (e.g. 'experiments', 'admin/users')"),
+  },
+  ({ project_path, route_path }) => {
+    const result = findAngularRoute(project_path, route_path);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+// Tool: find_angular_guard (REQ-A03)
+server.tool(
+  "find_angular_guard",
+  "Find Angular route guards by name. Uses the cached Angular index first; falls back to filesystem scan.",
+  {
+    project_path: z.string().describe("Angular project root path"),
+    guard_name: z.string().describe("Guard name (partial match)"),
+  },
+  ({ project_path, guard_name }) => {
+    const result = findAngularGuard(project_path, guard_name);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+// Tool: find_dotnet_endpoint (REQ-A03)
+server.tool(
+  "find_dotnet_endpoint",
+  "Find .NET API controller endpoints by route template or action name (partial match). Uses the cached .NET index to locate controller files, then scans them. Max 20 results.",
+  {
+    project_path: z.string().describe(".NET project root path"),
+    route_or_action: z.string().describe("Partial route template or action method name"),
+  },
+  ({ project_path, route_or_action }) => {
+    const result = findDotnetEndpoint(project_path, route_or_action);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+// Tool: find_di_registration (REQ-A03)
+server.tool(
+  "find_di_registration",
+  "Find .NET dependency injection registrations (AddSingleton/AddScoped/AddTransient) for a service by name. Scans .cs files for registration patterns.",
+  {
+    project_path: z.string().describe(".NET project root path"),
+    service_name: z.string().describe("Service class or interface name to search for"),
+  },
+  ({ project_path, service_name }) => {
+    const result = findDiRegistration(project_path, service_name);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+// Tool: analyze_planning_inventory (REQ-G03)
+server.tool(
+  "analyze_planning_inventory",
+  "Inventory HTTP endpoints, Angular routes, and DTOs/interfaces from a set of files. Returns Markdown tables suitable for planning sessions.",
+  {
+    file_paths: z.string().describe("JSON array of file paths (.cs and/or .ts) to inventory"),
+    format: z.enum(["compact", "full"]).default("compact").describe("Output format"),
+  },
+  ({ file_paths, format }) => {
+    let paths: string[];
+    try {
+      paths = JSON.parse(file_paths) as string[];
+    } catch {
+      return { content: [{ type: "text", text: `Invalid JSON in file_paths: ${file_paths}` }], isError: true };
+    }
+    const result = analyzePlanningInventory(paths.map((p) => resolve(p)), format);
+    return {
+      content: [{
+        type: "text",
+        text: result.markdown + "\n\n" + JSON.stringify({
+          endpoints: result.endpoints,
+          routes: result.routes,
+          dtos: result.dtos,
+        }, null, 2),
+      }],
+    };
+  }
+);
+
+// Tool: trace_api_contract (REQ-G04)
+server.tool(
+  "trace_api_contract",
+  "Trace API contract from an Angular service file (extracts HttpClient calls) or a .NET controller file (extracts endpoints). Helps map FE↔BE API surface.",
+  {
+    file_path: z.string().describe("Path to Angular .ts service file OR .NET controller .cs file"),
+  },
+  ({ file_path }) => {
+    const result = traceApiContract(resolve(file_path));
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+// Tool: find_api_consumers (REQ-G06)
+server.tool(
+  "find_api_consumers",
+  "Reverse lookup: given a BE endpoint route pattern, find all Angular TypeScript files that call that URL. Returns file, line, HTTP method, and URL for each consumer.",
+  {
+    project_path: z.string().describe("Angular frontend project root path"),
+    endpoint_pattern: z.string().describe("Partial endpoint/route to search for (e.g. 'experiments', 'api/users')"),
+  },
+  ({ project_path, endpoint_pattern }) => {
+    const result = findApiConsumers(project_path, endpoint_pattern);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   }
 );
 

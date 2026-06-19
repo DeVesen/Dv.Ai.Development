@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="Dev.Angular.Mcp/Dev.Angular.Mcp.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="Dev.Angular.Mcp.Tests/Dev.Angular.Mcp.Tests.csproj" />
-  </Folder>
-</Solution>

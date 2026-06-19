@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "browser-inspector": {
+      "command": "npx",
+      "args": [
+        "browser-inspector-mcp"
+      ]
+    },
+    "dev-mcp": {
+      "command": "C:\\Develop\\.apps\\dev-mcp\\Dev.Mcp.exe",
+      "env": {
+        "LOG_VIEWER_PORT": "50010"
+      }
+    },
+    "codebase-analyzer": {
+      "command": "node",
+      "args": [
+        "C:\\Develop\\.apps\\codebase-analyzer\\index.js"
+      ],
+      "env": {
+        "LOG_VIEWER_PORT": "50020"
+      }
+    }
+  }
+}

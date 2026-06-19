@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-intelligence.csx";
 function resolveScriptPath(): string {
   if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
-  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-intelligence.csx");
+  return join(dirname(fileURLToPath(import.meta.url)), "../roslyn-analyzer/roslyn-intelligence.csx");
 }
 
 export type IntelligenceFeature = "maintainability" | "typegraph" | "cfg" | "all";

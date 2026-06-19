@@ -1,7 +1,0 @@
-{
-  "organization": "<IhreOrganisation>",
-  "defaultProject": "<Projekt-GUID>",
-  "storiesRoot": "requests/stories",
-  "workItemUrlPattern": "https://dev.azure.com/<IhreOrganisation>/{project}/_workitems/edit/{id}",
-  "markerVersion": "REQUESTS v1"
-}

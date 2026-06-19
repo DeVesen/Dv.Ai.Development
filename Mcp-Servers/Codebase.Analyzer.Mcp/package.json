@@ -1,6 +1,6 @@
 {
   "name": "codebase-analyzer",
-  "version": "2.6.0",
+  "version": "2.9.0",
   "description": "MCP Server for Angular & .NET code reviews",
   "type": "module",
   "main": "dist/index.js",

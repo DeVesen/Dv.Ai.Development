@@ -7,7 +7,7 @@ import { SymbolReference } from "./symbol-reference-types.js";
 const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-references.csx";
 function resolveScriptPath(): string {
   if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
-  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-references.csx");
+  return join(dirname(fileURLToPath(import.meta.url)), "../roslyn-analyzer/roslyn-references.csx");
 }
 
 export interface DotnetReferencesResult {

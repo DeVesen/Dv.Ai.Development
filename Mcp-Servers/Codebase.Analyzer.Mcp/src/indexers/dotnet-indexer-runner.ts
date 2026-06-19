@@ -132,7 +132,7 @@ export interface DotnetArchitectureReport {
 
 function resolveScriptPath(): string {
   if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
-  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/dotnet-indexer.csx");
+  return join(dirname(fileURLToPath(import.meta.url)), "../roslyn-analyzer/dotnet-indexer.csx");
 }
 
 export function isDotnetSolutionPath(inputPath: string): boolean {

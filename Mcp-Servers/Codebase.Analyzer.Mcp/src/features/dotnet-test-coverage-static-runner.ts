@@ -8,7 +8,7 @@ const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-test-coverage-static.csx
 
 function resolveScriptPath(): string {
   if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
-  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-test-coverage-static.csx");
+  return join(dirname(fileURLToPath(import.meta.url)), "../roslyn-analyzer/roslyn-test-coverage-static.csx");
 }
 
 // Set by runDotnetTestCoverageStatic; read by the index.ts handler to surface a

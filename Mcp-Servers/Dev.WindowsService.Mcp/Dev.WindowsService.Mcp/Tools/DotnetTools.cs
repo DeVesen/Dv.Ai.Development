@@ -96,13 +96,19 @@ public sealed class DotnetTools
         });
 
     [McpServerTool(Name = "test_dotnet_solution")]
-    [Description("Runs dotnet test on the given solution, project, or directory and returns a filtered result.")]
+    [Description("Runs dotnet test on the given solution, project, or directory and returns a filtered result. Use filter to run a subset of tests, test_project_path to test one project only.")]
     public async Task<string> TestDotnetSolution(
         [Description("Absolute path to .sln file, .csproj, or directory")] string path,
-        [Description("Optional extra dotnet test flags, e.g. --logger trx")] string? options = null) =>
-        await ExecuteAsync("test_dotnet_solution", new { path, options }, async () =>
+        [Description("Optional extra dotnet test flags, e.g. --logger trx")] string? options = null,
+        [Description("Optional test filter expression, e.g. 'FullyQualifiedName~MyService'")] string? filter = null,
+        [Description("Optional absolute path to a specific test .csproj to run instead of the full solution")] string? test_project_path = null) =>
+        await ExecuteAsync("test_dotnet_solution", new { path, options, filter, test_project_path }, async () =>
         {
-            var result = await _runner.TestAsync(path, options);
+            var effectivePath = test_project_path ?? path;
+            var effectiveOptions = options ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(filter))
+                effectiveOptions = (effectiveOptions + $" --filter \"{filter}\"").Trim();
+            var result = await _runner.TestAsync(effectivePath, string.IsNullOrWhiteSpace(effectiveOptions) ? null : effectiveOptions);
             return (JsonSerializer.Serialize(result, JsonOptions.Default), result.ConsoleOutput);
         });
 

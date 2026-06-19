@@ -93,7 +93,7 @@ export interface RoslynMetrics {
 const DOCKER_SCRIPT_PATH = "/app/roslyn-analyzer/roslyn-analyzer.csx";
 function resolveScriptPath(): string {
   if (existsSync(DOCKER_SCRIPT_PATH)) return DOCKER_SCRIPT_PATH;
-  return join(dirname(fileURLToPath(import.meta.url)), "../../roslyn-analyzer/roslyn-analyzer.csx");
+  return join(dirname(fileURLToPath(import.meta.url)), "../roslyn-analyzer/roslyn-analyzer.csx");
 }
 
 export function isRoslynAvailable(): boolean {

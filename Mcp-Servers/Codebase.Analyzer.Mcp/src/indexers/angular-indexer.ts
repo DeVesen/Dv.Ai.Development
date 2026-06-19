@@ -64,6 +64,8 @@ export interface ComponentEntry {
   usesAsyncPipe: boolean;
   controlFlowSyntax: "modern" | "legacy" | "mixed" | "none";
   templateDependencies: string[];
+  /** Class names listed in @Component.imports: [...] — used for transitive test-coverage detection */
+  angularImports: string[];
 }
 
 export interface ServiceEntry {
@@ -341,6 +343,17 @@ function analyzeComponent(cls: ClassDeclaration, sourceFile: SourceFile, rootPat
   const selectorMatches = rawCode.match(/<app-[a-z-]+/g) ?? [];
   selectorMatches.forEach((s) => { const n = s.slice(1); if (!templateDeps.includes(n)) templateDeps.push(n); });
 
+  // @Component.imports: [...] — class names for transitive test-coverage detection
+  const angularImports: string[] = [];
+  const decoratorText = args?.getText() ?? "";
+  const importsMatch = decoratorText.match(/\bimports\s*:\s*\[([^\]]*)\]/s);
+  if (importsMatch) {
+    importsMatch[1].split(",")
+      .map((s) => s.trim().replace(/[<([].*/,"").trim())
+      .filter((s) => /^[A-Z]/.test(s))
+      .forEach((s) => angularImports.push(s));
+  }
+
   // Template/style file references
   const templateUrl = args ? getStringProperty(args, "templateUrl") : null;
   const styleUrls: string[] = [];
@@ -368,6 +381,7 @@ function analyzeComponent(cls: ClassDeclaration, sourceFile: SourceFile, rootPat
     usesAsyncPipe,
     controlFlowSyntax,
     templateDependencies: templateDeps,
+    angularImports,
   };
 }
 

@@ -26,6 +26,15 @@ builder.Services.AddSingleton<DotnetRunner>();
 builder.Services.AddSingleton<AngularScaffolder>();
 builder.Services.AddSingleton<AngularRunner>();
 
+// New extended services (P0/P1/P2)
+builder.Services.AddSingleton<PatchService>();
+builder.Services.AddSingleton<GitService>();
+builder.Services.AddSingleton<SliceTestTargetsService>();
+builder.Services.AddSingleton<ImpactAnalysisService>();
+builder.Services.AddSingleton<AngularDiscoveryService>();
+builder.Services.AddSingleton<DotnetDiscoveryService>();
+builder.Services.AddSingleton<FileOperationsService>();
+
 // Shared log viewer
 builder.Services.AddSingleton<ToolCallHistory>();
 builder.Services.AddHostedService<LogWebServer>();
@@ -36,6 +45,8 @@ builder.Services
     .WithStdioServerTransport()
     .WithTools<FilesystemTools>()
     .WithTools<DotnetTools>()
-    .WithTools<AngularTools>();
+    .WithTools<AngularTools>()
+    .WithTools<ExtendedFilesystemTools>()
+    .WithTools<GitAndTestTools>();
 
 await builder.Build().RunAsync();

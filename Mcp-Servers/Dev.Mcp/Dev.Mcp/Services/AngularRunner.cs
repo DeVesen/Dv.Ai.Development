@@ -28,6 +28,19 @@ public sealed partial class AngularRunner
     [GeneratedRegex(@"^\s*(?:FAILED|✗|✕)\s+(.+)", RegexOptions.IgnoreCase)]
     private static partial Regex KarmaFailedTestRegex();
 
+    // Jest output patterns
+    [GeneratedRegex(@"^\s*●\s+(.+)", RegexOptions.Multiline)]
+    private static partial Regex JestFailedTestRegex();
+
+    [GeneratedRegex(@"^\s*NOTE:\s+The Jest builder is currently EXPERIMENTAL", RegexOptions.IgnoreCase)]
+    private static partial Regex JestExperimentalNoteRegex();
+
+    [GeneratedRegex(@"Tests:\s+.+", RegexOptions.IgnoreCase)]
+    private static partial Regex JestTestsSummaryRegex();
+
+    [GeneratedRegex(@"^(?:FAIL|PASS)\s+.+", RegexOptions.Multiline)]
+    private static partial Regex JestSuiteLineRegex();
+
     public async Task<AngularBuildResult> BuildAsync(string projectRoot, string? configuration = null, CancellationToken cancellationToken = default)
     {
         if (!ValidateRoot(projectRoot, out var error)) return MakeFailResult(error, "ng build");
@@ -46,12 +59,38 @@ public sealed partial class AngularRunner
         if (!ValidateRoot(projectRoot, out var error)) return MakeFailResult(error, "ng test");
 
         var preStep = await EnsureCompatibleEsbuildAsync(projectRoot, cancellationToken);
-        var args = new List<string> { "test", "--watch=false" };
+        var isJest = IsJestBuilder(projectRoot);
+        var args = new List<string> { "test" };
+        if (!isJest) args.Add("--watch=false");
         if (!string.IsNullOrWhiteSpace(options)) args.AddRange(options.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
-        var result = await RunAsync("ng test", projectRoot, args, ParseTestOutput, TestTimeoutSeconds, cancellationToken);
+        var result = await RunAsync("ng test", projectRoot, args, isJest ? ParseJestOutput : ParseTestOutput, TestTimeoutSeconds, cancellationToken);
         if (preStep != null) result.ConsoleOutput = preStep + "\n\n" + result.ConsoleOutput;
         return result;
+    }
+
+    private static bool IsJestBuilder(string projectRoot)
+    {
+        var angularJsonPath = Path.Combine(projectRoot, "angular.json");
+        if (!File.Exists(angularJsonPath)) return false;
+        try
+        {
+            var json = File.ReadAllText(angularJsonPath);
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("projects", out var projects)) return false;
+            foreach (var project in projects.EnumerateObject())
+            {
+                if (project.Value.TryGetProperty("architect", out var arch) &&
+                    arch.TryGetProperty("test", out var test) &&
+                    test.TryGetProperty("builder", out var builder))
+                {
+                    var builderValue = builder.GetString() ?? string.Empty;
+                    if (builderValue.Contains("jest", StringComparison.OrdinalIgnoreCase)) return true;
+                }
+            }
+        }
+        catch { /* fall through */ }
+        return false;
     }
 
     public static AngularBuildResult ParseBuildOutput(string stdout, string stderr, int exitCode)
@@ -69,14 +108,60 @@ public sealed partial class AngularRunner
 
     public static AngularBuildResult ParseTestOutput(string stdout, string stderr, int exitCode)
     {
-        var lines = StripAnsi(stdout + "\n" + stderr).Split('\n');
+        var combined = StripAnsi(stdout + "\n" + stderr);
+        var lines = combined.Split('\n');
         var failedTests = lines.Select(l => KarmaFailedTestRegex().Match(l)).Where(m => m.Success)
             .Select(m => m.Groups[1].Value.Trim()).Where(t => t.Length > 0).Distinct().Take(MaxErrors).ToArray();
         var tsErrors = lines.Where(l => BuildErrorLineRegex().IsMatch(l)).Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray();
         var executedLine = lines.Select(l => KarmaExecutedRegex().Match(l)).FirstOrDefault(m => m.Success);
 
-        var errors = failedTests.Length > 0 ? failedTests : tsErrors.Length > 0 ? tsErrors : [];
+        string[] errors;
+        if (failedTests.Length > 0) errors = failedTests;
+        else if (tsErrors.Length > 0) errors = tsErrors;
+        else if (exitCode != 0 && !string.IsNullOrWhiteSpace(stderr))
+            errors = StripAnsi(stderr).Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).Take(MaxErrors).ToArray();
+        else errors = [];
+
         var summary = executedLine is { Success: true } ? executedLine.Value.Trim()
+            : exitCode == 0 ? "All tests passed."
+            : failedTests.Length > 0 ? $"Tests failed: {failedTests.Length} failing test(s)."
+            : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
+            : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
+
+        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = [], ExitCode = exitCode, Summary = summary };
+    }
+
+    public static AngularBuildResult ParseJestOutput(string stdout, string stderr, int exitCode)
+    {
+        var combined = StripAnsi(stdout + "\n" + stderr);
+        var lines = combined.Split('\n');
+
+        // Collect failed test names (lines starting with "●")
+        var failedTests = lines.Select(l => JestFailedTestRegex().Match(l)).Where(m => m.Success)
+            .Select(m => m.Groups[1].Value.Trim()).Where(t => t.Length > 0 && !t.StartsWith("●"))
+            .Distinct().Take(MaxErrors).ToArray();
+
+        // Collect TS/build errors
+        var tsErrors = lines.Where(l => BuildErrorLineRegex().IsMatch(l)).Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray();
+
+        // Jest summary line: "Tests: 1 failed, 19 passed, 20 total"
+        var jestSummaryLine = lines.Select(l => JestTestsSummaryRegex().Match(l)).FirstOrDefault(m => m.Success);
+
+        string[] errors;
+        if (failedTests.Length > 0) errors = failedTests;
+        else if (tsErrors.Length > 0) errors = tsErrors;
+        else if (exitCode != 0)
+        {
+            var stderrLines = StripAnsi(stderr).Split('\n').Select(l => l.Trim())
+                .Where(l => l.Length > 0 && !JestExperimentalNoteRegex().IsMatch(l)).ToArray();
+            var fallbackLines = lines.Where(l => l.Contains("Error", StringComparison.OrdinalIgnoreCase) && !JestExperimentalNoteRegex().IsMatch(l))
+                .Select(l => l.Trim()).Where(l => l.Length > 0).ToArray();
+            errors = stderrLines.Length > 0 ? stderrLines.Take(MaxErrors).ToArray()
+                : fallbackLines.Take(MaxErrors).ToArray();
+        }
+        else errors = [];
+
+        var summary = jestSummaryLine is { Success: true } ? jestSummaryLine.Value.Trim()
             : exitCode == 0 ? "All tests passed."
             : failedTests.Length > 0 ? $"Tests failed: {failedTests.Length} failing test(s)."
             : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."

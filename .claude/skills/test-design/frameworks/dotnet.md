@@ -1,6 +1,6 @@
 # .NET — Test-Environment
 
-Gilt für **Backend-Tests** unter `lac-db\src\backend\tests\`.
+Gilt für **Backend-Tests** (typisch unter `tests\` im Solution-Root).
 
 Gemeinsame Konventionen: [SKILL.md](../SKILL.md), [references/naming-and-aaa.md](../references/naming-and-aaa.md), [references/avoid-magic-strings.md](../references/avoid-magic-strings.md).
 
@@ -23,9 +23,9 @@ Details und `.csproj`-Vorlage: [dotnet/unit-test-template.md](dotnet/unit-test-t
 
 | Regel | Wert |
 |-------|------|
-| Pfad | `lac-db\src\backend\tests\<Projekt>.Tests\` |
-| Solution | Ordner **Tests** in `LAC.sln` |
-| Name | `<Projekt>.Tests` (Punkt, z. B. `LAC.ExperimentService.Tests`) |
+| Pfad | `tests\<Projekt>.Tests\` (relativ zum Solution-Root) |
+| Solution | Ordner **Tests** in der `.sln` |
+| Name | `<Projekt>.Tests` (Punkt, z. B. `MyApp.OrderService.Tests`) |
 | Referenz | `ProjectReference` auf das Produktionsprojekt |
 | Unit + Integration | **ein** Projekt; Integration nur unter `Integration-Tests/` |
 
@@ -33,9 +33,9 @@ Details und `.csproj`-Vorlage: [dotnet/unit-test-template.md](dotnet/unit-test-t
 
 | Produktion | Test |
 |------------|------|
-| `LAC.ExperimentService\Controller\ExperimentController.cs` | `LAC.ExperimentService.Tests\Controller\ExperimentControllerTests.cs` |
-| Namespace `LAC.ExperimentService.Controller` | Namespace `LAC.ExperimentService.Tests.Controller` |
-| `…\Services\SetupService.cs` | `…\Services\SetupServiceTests.cs` |
+| `MyApp.OrderService\Controller\OrderController.cs` | `MyApp.OrderService.Tests\Controller\OrderControllerTests.cs` |
+| Namespace `MyApp.OrderService.Controller` | Namespace `MyApp.OrderService.Tests.Controller` |
+| `…\Services\OrderService.cs` | `…\Services\OrderServiceTests.cs` |
 
 - Klassenname: `<ClassName>Tests`
 - **Ausnahme:** `Integration-Tests/` auf oberster Ebene — kein 1:1-Spiegel; darin nach Szenario/Feature gruppieren
@@ -55,7 +55,7 @@ Gilt bei **jedem** neuen oder angepassten Test — unabhängig von xUnit, NUnit 
 
 **Standard:** HTTP-Emulation — `WebApplicationFactory<Program>` + **`HttpClient`**. **Kein Flurl** in neuen Tests.
 
-DI in der Factory: **Moq** oder **explizite Test-Fakes**, wenn übersichtlicher (z. B. `TestBoGatewayService`).
+DI in der Factory: **Moq** oder **explizite Test-Fakes**, wenn übersichtlicher.
 
 Vorlage: [dotnet/controller-test-template.md](dotnet/controller-test-template.md)
 
@@ -79,7 +79,7 @@ Vorlage: [dotnet/controller-test-template.md](dotnet/controller-test-template.md
 
 ## Verifikation
 
-`test_dotnet_solution` via MCP `dev-dotnet-mcp` — siehe `.cursor/references/verification-commands.md`.
+`test_dotnet_solution` via MCP `dev-mcp`.
 
 ## Templates und Beispiele
 

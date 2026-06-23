@@ -35,9 +35,3 @@ In Tests besonders kritisch: derselbe Wert taucht an **mehreren Stellen** auf (A
 3. Spiegelt der String einen **API-Vertrag** in mehreren Tests? → gemeinsame Test-Konstanten prüfen
 4. Konstanten **oben** in Testdatei/-klasse — nicht mitten im Testbody
 
-## Referenzen im Repo
-
-| Stack | Beispiel |
-|-------|----------|
-| .NET | `lac-db\src\backend\tests\LAC.AiService.Tests\Integration-Tests\PyScriptPipelineTests.cs` |
-| Angular | `lac-db\src\frontend\src\app\features\search-strategie\services\search-filter-buffer-persist.service.spec.ts` (`gridDto`, `capturedState`) |

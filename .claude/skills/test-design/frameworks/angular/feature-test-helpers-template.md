@@ -10,8 +10,8 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { Router, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 
-/** Gemeinsame Provider für shallow Wizard-Feature-Specs. */
-export function provideExperimentWizardShallowTestProviders(): Array<Provider | EnvironmentProviders> {
+/** Gemeinsame Provider für shallow Feature-Specs. */
+export function provideFeatureShallowTestProviders(): Array<Provider | EnvironmentProviders> {
   const activatedRouteStub = {
     snapshot: {
       queryParamMap: { get: () => null as string | null, has: () => false },
@@ -38,8 +38,6 @@ export function provideExperimentWizardShallowTestProviders(): Array<Provider | 
   ];
 }
 ```
-
-Orientierung: `lac-db\src\frontend\src\app\features\experiment-wizard\testing\experiment-wizard-testing.helpers.ts`.
 
 Regeln:
 

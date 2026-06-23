@@ -62,5 +62,3 @@ describe('ParameterSearchService', () => {
 ## Bestand: bestehende Namen
 
 Specs mit `it('should …')` oder natürlichsprachlichen Namen **nicht** umbenennen, solange der Test nicht ohnehin geändert wird. Neue Tests in derselben Datei nach Schema benennen.
-
-Referenz im Repo: `parameter.service.spec.ts`, `parameters-can-deactivate.guard.spec.ts`.

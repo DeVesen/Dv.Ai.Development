@@ -3,40 +3,38 @@
 ## Ort
 
 ```
-tests/LAC.ExampleService.Tests/
+tests/<Projekt>.Tests/
 ├── Services/                    ← Unit (1:1-Spiegel)
 ├── Controller/
 └── Integration-Tests/           ← nur Integration, Top-Level
     ├── ExampleIntegrationTestBase.cs
-    └── Experiment/…
+    └── Orders/…
 ```
 
 ## Basis mit Testcontainers (PostgreSQL)
 
-Orientierung: `lac-db\src\backend\tests\LAC.SearchService.Integration.Tests\TestBase\IntegrationTestBase.cs`
-
 ```csharp
-using LAC.Database.Context;
+using MyApp.Database.Context;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 
-namespace LAC.ExampleService.Tests.Integration_Tests;
+namespace MyApp.ExampleService.Tests.Integration_Tests;
 
 public class ExampleIntegrationTestBase : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgres;
 
-    protected LacDbContext DbContext { get; private set; } = null!;
+    protected AppDbContext DbContext { get; private set; } = null!;
 
     public async ValueTask InitializeAsync()
     {
         _postgres = new PostgreSqlBuilder().WithUsername("postgres").Build();
         await _postgres.StartAsync();
 
-        var options = new DbContextOptionsBuilder<LacDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(_postgres.GetConnectionString())
             .Options;
-        DbContext = new LacDbContext(options);
+        DbContext = new AppDbContext(options);
     }
 
     public async ValueTask DisposeAsync()
@@ -46,6 +44,8 @@ public class ExampleIntegrationTestBase : IAsyncLifetime
     }
 }
 ```
+
+`AppDbContext` durch den tatsächlichen `DbContext`-Namen des Projekts ersetzen.
 
 ## Web-API Integration
 

@@ -121,7 +121,7 @@ Feld-Mapping: [`references/field-mapping.md`](references/field-mapping.md) · Te
 | Task fertig / ToDo / active / resolved | **dieser Skill** |
 | `Task … verfeinern` (Legacy) | **dieser Skill** |
 | `buddy intake` / `buddy repo-check` / Buddy-Sparring | buddy-agent |
-| `plane Task …` | planning-workflow |
+| `plane Task …` | feature-delivery |
 
 ### Priorität
 

@@ -68,7 +68,7 @@ Am **Ende** der Story-`UserStory-{id}-*.md`:
 | `buddy intake …` / `buddy repo-check …` | **buddy-agent** — nur Task.md |
 | `markiere Task …`, `ToDo …` | ado — [`op-close-task.md`](op-close-task.md) / [`op-add-todo.md`](op-add-todo.md) |
 | `Story … active` / `resolved` | ado — [`op-set-state.md`](op-set-state.md) |
-| `plane Task …` | planning-workflow |
+| `plane Task …` | feature-delivery |
 
 **Entfernt:** `prüfe Story/Task/Feature`, `@buddy-agent Task … Plan-Prompt`, `Task … verfeinern` in Möglichkeiten (Legacy `verfeinern` nur noch expliziter Trigger außerhalb des Blocks).
 

@@ -1,6 +1,6 @@
-# Angular — Test-Environment (LAC)
+# Angular — Test-Environment
 
-Gilt für **Frontend-Tests** unter `lac-db\src\frontend\` (`*.spec.ts`).
+Gilt für **Frontend-Tests** (`*.spec.ts`, co-located neben der Quell-Datei).
 
 Gemeinsame Konventionen: [SKILL.md](../SKILL.md), [references/naming-and-aaa.md](../references/naming-and-aaa.md), [references/avoid-magic-strings.md](../references/avoid-magic-strings.md).
 
@@ -90,7 +90,7 @@ Kein Pflicht-Ordner `Integration-Tests/` — große Specs (z. B. `parameter-se
 
 ## Verifikation
 
-`test_angular_project` via MCP `dev-angular-mcp` — siehe `.cursor/references/verification-commands.md`.
+`test_angular_project` via MCP `dev-mcp`.
 
 ## Templates und Beispiele
 
@@ -103,11 +103,6 @@ Kein Pflicht-Ordner `Integration-Tests/` — große Specs (z. B. `parameter-se
 | Feature-Test-Helper | [angular/feature-test-helpers-template.md](angular/feature-test-helpers-template.md) |
 | Guard | [angular/guard-template.md](angular/guard-template.md) |
 
-## Referenzen im Repo
+## Referenzen
 
-| Muster | Datei |
-|--------|-------|
-| HTTP | `lac-db\src\frontend\src\app\services\parameter\parameter.service.spec.ts` |
-| Spies + Fixtures | `…/search-filter-buffer-persist.service.spec.ts` |
-| Feature-Helper | `…/experiment-wizard/testing/experiment-wizard-testing.helpers.ts` |
-| Guard | `…/guards/parameters-can-deactivate.guard.spec.ts` |
+Templates unter `frameworks/angular/` zeigen vollständige Muster für alle gängigen Fälle.

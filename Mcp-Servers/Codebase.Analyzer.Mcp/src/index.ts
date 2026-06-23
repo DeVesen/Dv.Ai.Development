@@ -51,6 +51,7 @@ import {
 } from "./features/new-tools.js";
 import { analyzeSliceImpact } from "./features/slice-impact.js";
 import { registerIndex, getAllRegistryEntries } from "./index-registry.js";
+import { runTsIospAnalysis } from "./features/ts-iosp-runner.js";
 
 // ─── Language Detection ───────────────────────────────────────────────────────
 
@@ -2483,6 +2484,71 @@ server.tool(
   }
 );
 
+// ─── IOSP Compliance ─────────────────────────────────────────────────────────
+
+server.tool(
+  "analyze_iosp_compliance",
+  "Check methods for IOSP violations (Integration Operation Segregation Principle): a method must be either an Integration (delegates entirely to other methods — no own logic) or an Operation (contains logic — no calls to class-internal methods). Methods that mix both are violations. TypeScript/Angular: ts-morph AST. NOTE: 'this.xyz()' counts as an internal call only when xyz is declared as a method in the same class; calls on injected dependencies (this.httpClient, this.router, etc.) are not internal calls. Arrow-function callbacks (.pipe(map(...)), .subscribe(...)) are excluded from logic checks — only statement-level constructs are analysed.",
+  {
+    projectPath: z.string().describe("Windows absolute path to the Angular/TypeScript project root"),
+    language: z.enum(["typescript", "csharp"]).default("typescript").describe("Language to analyse. 'csharp' support is added by Strang 5 — currently only 'typescript' is implemented."),
+  },
+  ({ projectPath, language }) => {
+    if (language === "csharp") {
+      return {
+        content: [{
+          type: "text",
+          text: "⚠️ IOSP analysis for C#/.NET is not yet implemented. Set language: \"typescript\" for Angular/TypeScript projects.",
+        }],
+        isError: true,
+      };
+    }
+
+    const abs = resolve(projectPath);
+    if (!existsSync(abs))
+      return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
+
+    let result;
+    try {
+      result = runTsIospAnalysis(abs);
+    } catch (e) {
+      return { content: [{ type: "text", text: `⚠️ IOSP analysis error: ${(e as Error).message}` }], isError: true };
+    }
+
+    const { summary, violations } = result;
+
+    const lines: string[] = [
+      `# IOSP Compliance Report (TypeScript/Angular)`,
+      `**Methods scanned:** ${summary.methods}  |  **Violations:** ${summary.violations}`,
+      "",
+    ];
+
+    if (violations.length === 0) {
+      lines.push("✅ No IOSP violations found.");
+    } else {
+      lines.push(`## Violations (${violations.length})\n`);
+      lines.push("| Method | File | Line | Integration Calls | Operation Exprs |");
+      lines.push("|--------|------|------|-------------------|-----------------|");
+      const ROW_CAP = 50;
+      for (const v of violations.slice(0, ROW_CAP)) {
+        const esc = (s: string) => s.replace(/\|/g, "\\|");
+        lines.push(
+          `| \`${esc(v.method)}\` | \`${esc(v.file)}\` | ${v.line} | ${v.integrationCalls.map((c) => `\`${esc(c)}\``).join(", ")} | ${v.operationExpr.map((e) => `\`${esc(e)}\``).join(", ")} |`
+        );
+      }
+      if (violations.length > ROW_CAP)
+        lines.push(`\n_Showing first ${ROW_CAP} of ${violations.length} violations._`);
+    }
+
+    return {
+      content: [{
+        type: "text",
+        text: lines.join("\n") + "\n\n## Raw JSON\n```json\n" + JSON.stringify(result, null, 2) + "\n```",
+      }],
+    };
+  }
+);
+
 // ─── Git Diff Parser ──────────────────────────────────────────────────────────
 
 function parseDiff(diff: string): { filename: string; content: string }[] {
@@ -2505,4 +2571,4 @@ startLogViewer(logViewerPort);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("codebase-analyzer v2.6 running (index_solution, suggest_boyscout_actions, detect_god_classes, analyze_compiler_diagnostics, detect_untested_public_api, find_symbol_references, find_type_hierarchy)");
+console.error("codebase-analyzer v2.9 running (analyze_iosp_compliance[typescript], index_solution, suggest_boyscout_actions, detect_god_classes, analyze_compiler_diagnostics, detect_untested_public_api, find_symbol_references, find_type_hierarchy)");

@@ -1,19 +1,21 @@
 ---
 name: dev-mcp
 description: >
-  Kanon für MCP dev-mcp: 39 Dev-Tools in einem stdio-Prozess —
+  Kanon für MCP dev-mcp: 45 Dev-Tools in einem stdio-Prozess —
   Filesystem (find_file, find_by_content, find_implementations, read_signatures_only, read_method, read_class_summary,
   read_file_raw, list_directory, find_test_pattern, read_lines, read_files_batch, read_component_bundle),
   Filesystem-Intelligence (find_angular_route, find_angular_guard, find_dotnet_endpoint, find_di_registration,
-  read_related_files, update_imports, delete_file_safe),
+  read_related_files, update_imports),
   Git (git_changed_files, git_diff_summary),
   Patch/Write (apply_text_patch, replace_in_files, insert_member),
   Move/Rename (rename_file, rename_file_with_impact),
-  .NET-Scaffolding (create_dotnet_solution, scaffold_dotnet_project, scaffold_dotnet_test_class, rename_file,
+  .NET-Scaffolding (create_dotnet_solution, scaffold_dotnet_project, scaffold_dotnet_test_class,
   create_directory_structure, build_dotnet_solution, test_dotnet_solution, scaffold_dto, scaffold_api_action),
   Angular (create_angular_project, scaffold_angular_component, scaffold_angular_service,
-  scaffold_angular_directive, scaffold_spec_for, build_angular_project, test_angular_project),
-  Utilities (slice_test_targets, read_related_files).
+  scaffold_angular_directive, scaffold_spec_for, build_angular_project, test_angular_project,
+  lint_angular_project),
+  Statische Analyse (run_inspectcode, analyze_angular_architecture),
+  Utilities (slice_test_targets, delete_file_safe).
   Pfade: echte Windows-Absolutpfade (C:\...). Nicht für Index/Review/Metriken — codebase-analyzer.
 when_to_use: >
   Aktiviere für: Dateien lesen/suchen (.cs/.ts), Angular oder .NET Scaffolding,
@@ -22,6 +24,8 @@ when_to_use: >
   build_angular_project / test_angular_project ersetzen Shell-ng-Kommandos vollständig.
   Pfade immer als echte Windows-Absolutpfade (C:\Develop\...) — kein /project/, kein /workspace/.
   Bei MCP nicht erreichbar: BLOCKER melden, kein stiller Shell-Fallback.
+  run_inspectcode für JetBrains-Statische-Analyse (.NET), lint_angular_project für ESLint-Analyse (Angular).
+  analyze_angular_architecture für Angular-Architektur-Regeln (Placement/Naming-Contract/HttpClient-Isolation) — kein Build nötig.
   Nicht für Code-Review, Index, Metriken — codebase-analyzer.
 ---
 
@@ -80,7 +84,7 @@ when_to_use: >
 
 ## MCP dev-mcp — Server und Tools
 
-**Server:** `dev-mcp` (stdio, `C:\Develop\.apps\dev-mcp\Dev.WindowsService.Mcp.exe`)
+**Server:** `dev-mcp` (stdio, `C:\Develop\.apps\dev-mcp\Dev.Mcp.exe`)
 **Log-Viewer:** `http://localhost:5050/` (Port via `LOG_VIEWER_PORT` konfigurierbar)
 **Sicherheit:** AllowedDirectories in `C:\Develop\.apps\dev-mcp\appsettings.json`
 
@@ -141,7 +145,7 @@ when_to_use: >
 | `slice_test_targets` | **NEU P0** — Aus geänderten Dateien Test-Globs (Angular) und Filter (dotnet) ableiten |
 | `delete_file_safe` | **NEU P2** — Referenzen prüfen, `dry_run`, `force`-Gate |
 
-### .NET-Tools (9 Tools)
+### .NET-Tools (8 Tools)
 
 | Tool | Zweck |
 |------|-------|
@@ -153,7 +157,6 @@ when_to_use: >
 | `test_dotnet_solution` | `dotnet test` → `{success, errors[], summary}`; **NEU:** `filter`, `test_project_path` |
 | `scaffold_dto` | **NEU P2** — DTO/Record aus Projekt-Konventionen ableiten |
 | `scaffold_api_action` | **NEU P2** — Controller-Action mit Route-Template |
-| `rename_file` | Datei umbenennen/verschieben |
 
 ### Angular-Tools (8 Tools)
 
@@ -166,6 +169,13 @@ when_to_use: >
 | `scaffold_spec_for` | Spec für .ts oder .cs; Angular (TestBed) + .NET (xUnit/NUnit) |
 | `build_angular_project` | `ng build` → `{success, errors[], warnings[], summary}` |
 | `test_angular_project` | `ng test --watch=false`; **NEU:** `include_patterns[]`, `test_name_pattern` |
+| `lint_angular_project` | `ng lint --format=json` → `{success, summary:{errors,warnings}, errors[], warnings[]}` |
+
+### Statische Analyse-Tools (.NET) (1 Tool)
+
+| Tool | Zweck |
+|------|-------|
+| `run_inspectcode` | `jb inspectcode --no-build` → `{success, summary:{errors,warnings,suggestions}, errors[], warnings[], suggestions[]}` |
 
 > **Neue Spec — wann welches Tool?**
 > - Neue Komponente/Service anlegen **und** Spec: `include_tests=true` an `scaffold_angular_*`
@@ -484,6 +494,8 @@ Nicht sofort natives Grep — MCP-Kette zuerst.
 | .NET-Projekt anlegen | `create_dotnet_solution` + `scaffold_dotnet_project` |
 | .NET **bauen** (`dotnet build`) | `build_dotnet_solution` |
 | .NET **testen** (`dotnet test`) | `test_dotnet_solution` |
+| .NET statisch **analysieren** (JetBrains) | `run_inspectcode` (dev-mcp) |
+| Angular-Projekt **linten** (ESLint) | `lint_angular_project` (dev-mcp) |
 | Code **reviewen**, **indexieren**, Komplexität | **codebase-analyzer** |
 
 ---

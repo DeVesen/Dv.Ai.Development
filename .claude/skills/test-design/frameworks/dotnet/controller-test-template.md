@@ -8,8 +8,6 @@
 
 ## Factory mit Test-Fakes (DI übersichtlicher als Moq)
 
-Orientierung: `lac-db\src\backend\tests\LAC.GatewayService.Tests\GatewayWebApplicationFactory.cs`
-
 ```csharp
 internal sealed class ExampleWebApplicationFactory : WebApplicationFactory<Program>
 {
@@ -33,9 +31,9 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 
-namespace LAC.ExampleService.Tests.Controller;
+namespace MyApp.ExampleService.Tests.Controller;
 
-public class ExperimentControllerTests
+public class OrderControllerTests
 {
     [Fact]
     public async Task Post_GivenValidRequest_WithTaskId_ReturnsOk()
@@ -47,7 +45,7 @@ public class ExperimentControllerTests
         var request = new { Name = "Test" };
 
         // Act
-        var response = await client.PostAsJsonAsync($"/experiments/{taskId}", request);
+        var response = await client.PostAsJsonAsync($"/orders/{taskId}", request);
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);

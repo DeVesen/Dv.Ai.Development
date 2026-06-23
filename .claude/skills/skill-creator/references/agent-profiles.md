@@ -39,7 +39,7 @@ isolation: worktree            # worktree = isolated git copy; cleaned up automa
 
 # Context enrichment
 skills:                        # preload full skill content at startup (not just description)
-  - planning-workflow
+  - feature-delivery
   - caveman
 mcpServers:                    # MCP servers scoped to this agent
   - github                     # string = reference to existing configured server
@@ -135,7 +135,7 @@ disallowedTools: Write, Edit
 permissionMode: default
 memory: project
 skills:
-  - planning-workflow
+  - feature-delivery
   - caveman
   - codebase-analyzer
 ---

@@ -55,7 +55,7 @@ Erklaerung der Fallback-Kette: [docs/mcp/scout-fallback-chain.md](../../../docs/
 **Nicht laden:**
 
 - Reine Erklaerung ohne Repo-Zugriff
-- Implementierung/Umsetzung → [implementation-workflow](../implementation-workflow/SKILL.md)
+- Implementierung/Umsetzung → [feature-delivery](../feature-delivery/SKILL.md)
 - Build/Test-Verifikation → [build-log-filter](../build-log-filter/SKILL.md)
 
 **Opt-out:** `ohne repo-scout-protocol`, `ohne scout-protokoll`
@@ -150,7 +150,7 @@ Ohne vollstaendige Tabelle: Scout **nicht** als abgeschlossen markieren.
 | [buddy-agent](../buddy-agent/SKILL.md) repo-check | Konsument — laed diesen Skill in Agent-Mode |
 | [codebase-analyzer](../codebase-analyzer/SKILL.md) | Index, Review — nicht alleiniger Scout |
 | [dev-mcp](../dev-mcp/SKILL.md) | Pflicht-Zweitstrategie bei Index-Miss |
-| [planning-workflow](../planning-workflow/SKILL.md) Phase 3 | Scout-Subagent nutzt dieselbe Kette |
+| [feature-delivery](../feature-delivery/SKILL.md) Phase 3 | Scout-Subagent nutzt dieselbe Kette |
 
 **Vertiefung Fallback-Logik:** [docs/mcp/scout-fallback-chain.md](../../../docs/mcp/scout-fallback-chain.md)
 

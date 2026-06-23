@@ -40,4 +40,3 @@ describe('ParametersCanDeactivateGuard', () => {
 });
 ```
 
-Orientierung: `parameters-can-deactivate.guard.spec.ts`.

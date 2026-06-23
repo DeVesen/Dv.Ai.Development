@@ -9,8 +9,8 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 ```
 .claude/                Claude Code — direkt nutzbar
 ├── skills/             27 Skills (via /skill-name oder automatisch)
-│   ├── planning-workflow/       Planungs-Workflow
-│   ├── implementation-workflow/ Implementierungs-Workflow
+│   ├── feature-delivery/        Orchestrator: Planung + Implementierung, drei Einstiege
+│   ├── acceptance-design/       Anforderungen auf Testbarkeit prüfen und schärfen
 │   ├── buddy-agent/             Pair-Programming-Agent
 │   ├── repo-scout-protocol/     Repo-Erkundung
 │   ├── ado/                     Azure DevOps Workflow
@@ -23,7 +23,7 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 │   ├── angular-material-custom-input/ Custom Material Inputs
 │   ├── angular-cache-busting/   Cache-Busting
 │   ├── backend-ef-migrations/   EF Core Migrations
-│   ├── dev-mcp/                 unified stdio exe (39 Tools: filesystem+dotnet+angular+git+patch)
+│   ├── dev-mcp/                 unified stdio exe (44 Tools: filesystem+dotnet+angular+git+patch+analyse)
 │   ├── dev-angular-mcp/         VERALTET, Redirect auf dev-mcp
 │   ├── dev-dotnet-mcp/          VERALTET, Redirect auf dev-mcp
 │   ├── dev-filesystem-mcp/      VERALTET, Redirect auf dev-mcp
@@ -38,21 +38,21 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 │   ├── describe-as/             Stil-Anpassung
 │   ├── commit-message/          Commit-Message-Generator
 │   └── caveman/                 Kommunikationsstil: Caveman
-├── agents/             21 Sub-Agent-Profile (auto-discovered)
+├── agents/             Sub-Agent-Profile (auto-discovered) — acceptance-design-agent.md vorhanden; weitere Profile liegen noch unter skills/*/agents/
 └── references/         Shared references (compliance, output-style, boilerplate)
 
 Mcp-Servers/            MCP server implementations
 ├── Build.Log.Filter.Mcp/       build-log-filter — Build/Test log compression (Docker)
 ├── Codebase.Analyzer.Mcp/      codebase-analyzer — static analysis, index, review (Docker/Node)
-├── Dev.WindowsService.Mcp/     dev-mcp — unified stdio exe: filesystem+dotnet+angular (39 Tools)
+├── Dev.Mcp/Dev.Mcp/            dev-mcp — unified stdio exe: filesystem+dotnet+angular+git+patch
 ├── Dev.Filesystem.Mcp/         VERALTET — in dev-mcp integriert
 ├── Dev.Angular.Mcp/            VERALTET — in dev-mcp integriert
 └── Dev.Dotnet.Mcp/             VERALTET — in dev-mcp integriert
 
 docs/                   Skill docs, MCP docs, enforcement references
 ├── skills/             Skill usage docs (usage, sub-agents, examples)
-│   ├── planning-workflow.md
-│   ├── implementation-workflow.md
+│   ├── feature-delivery.md
+│   ├── acceptance-design.md
 │   ├── buddy-agent.md
 │   ├── repo-scout-protocol.md
 │   ├── codebase-analyzer.md
@@ -63,9 +63,7 @@ docs/                   Skill docs, MCP docs, enforcement references
 │   ├── utility-skills.md
 │   └── angular-material-v22-components.md
 ├── mcp/                MCP server reference docs
-│   ├── dev-angular.md
-│   ├── dev-dotnet.md
-│   ├── dev-filesystem.md
+│   ├── dev-mcp.md
 │   ├── codebase-analyzer.md
 │   ├── build-log-filter.md
 │   └── scout-fallback-chain.md
@@ -79,8 +77,8 @@ docs/                   Skill docs, MCP docs, enforcement references
 
 | Skill | Trigger | Purpose |
 |-------|---------|---------|
-| `/planning-workflow` | `plane`, `Roadmap`, `Architektur` | 6-Phasen-Planung mit Scouts, Topic-Planern, 5 Reviews |
-| `/implementation-workflow` | `implementiere`, `fix`, `IMP-*` | Hard Gate, Slices, iterativer Review-Loop |
+| `/feature-delivery` | `plane`, `implementiere`, `fix`, `feature-delivery` | Orchestrator: Planung + Implementierung, drei Einstiege |
+| `/acceptance-design` | `schärfe Anforderung`, `Akzeptanzkriterien prüfen` | Anforderungen auf Testbarkeit prüfen und schärfen |
 | `/buddy-agent` | `buddy intake`, `Sparring`, `plan-prompt` | Pre-Planning Sparring Partner |
 | `/repo-scout-protocol` | `repo-check`, `Code-Scout` | MCP-First Repo-Recherche-Kette |
 | `/codebase-analyzer` | Code-Gespräch, Review, Analyse | 43 MCP-Tools für Angular/.NET (inkl. Composite/Domain-Finder) |
@@ -110,7 +108,7 @@ Use `/skill-creator` to create new skills or agent profiles.
 |--------|---------------|--------|
 | `Mcp-Servers/Build.Log.Filter.Mcp/` | `build-log-filter` | build-log-filter |
 | `Mcp-Servers/Codebase.Analyzer.Mcp/` | `codebase-analyzer` | codebase-analyzer |
-| `Mcp-Servers/Dev.WindowsService.Mcp/` | `dev-mcp` | dev-mcp, dev-tooling-mcp |
+| `Mcp-Servers/Dev.Mcp/Dev.Mcp/` | `dev-mcp` | dev-mcp, dev-tooling-mcp |
 
 When changing an MCP: update `Mcp-Servers/<name>/`, update `docs/mcp/<name>.md`, and update the matching skill under `.claude/skills/`.
 
@@ -122,7 +120,7 @@ When changing an MCP: update `Mcp-Servers/<name>/`, update `docs/mcp/<name>.md`,
 |--------|-----------|---------|
 | build-log-filter | Docker HTTP | Port 8089 |
 | codebase-analyzer | **Node stdio** | `C:\Develop\.apps\codebase-analyzer\index.js`, Log-Viewer Port 5052 |
-| dev-mcp | **stdio** | `C:\Develop\.apps\dev-mcp\Dev.WindowsService.Mcp.exe`, Log-Viewer Port 5050 |
+| dev-mcp | **stdio** | `C:\Develop\.apps\dev-mcp\Dev.Mcp.exe`, Log-Viewer Port 5050 |
 
 **Path convention (both MCPs):** Windows absolute paths (`C:\Develop\...`). No Docker, no `/workspace/` prefix, no `{parameter}` placeholders.
 

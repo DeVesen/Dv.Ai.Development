@@ -27,4 +27,4 @@ Refine a specific log entry or promote it to a rule or skill.
 | `describe-as-prompt` | Complementary — run describe-as-prompt for handoff, this skill for learning capture. Both can run in the same session. |
 | `commit-message` | commit-message records WHAT changed in code; insights records WHY a direction was chosen. |
 | `buddy-agent` | Buddy surfaces open questions during sparring; insights captures what those questions revealed. |
-| `planning-workflow` | After a planning session resolves an architectural ambiguity — that resolution is an insight candidate. |
+| `feature-delivery` | After a planning session resolves an architectural ambiguity — that resolution is an insight candidate. |

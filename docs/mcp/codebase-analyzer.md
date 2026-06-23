@@ -176,6 +176,44 @@ Findet alle Aufrufer einer bestimmten API oder Methode.
 
 ---
 
+### IOSP-Analyse
+
+#### `analyze_iosp_compliance`
+Prüft Klassen-Methoden auf IOSP-Konformität (Integration Operation Segregation Principle): Eine Methode muss entweder **Integration** (delegiert ausschließlich an andere Methoden) oder **Operation** (eigene Logik, keine internen Methodenaufrufe) sein — nie beides.
+
+```
+analyze_iosp_compliance(
+  projectPath: "C:\\Develop\\MyProject\\src",
+  language: "typescript"
+)
+```
+
+**Klassifikations-Regeln:**
+- **Interner Aufruf:** `this.xyz()` zählt nur dann als intern, wenn `xyz` in den eigenen Methoden der Klasse deklariert ist. Aufrufe auf injected Dependencies (`this.httpClient`, `this.router`, `this.store`) sind **keine** internen Aufrufe.
+- **Logik-Erkennung:** Nur Statement-Level-Konstrukte (`if`, Schleifen, `switch`, ternäre Ausdrücke, binäre Ausdrücke in return/variable). Arrow-Function-Callbacks in RxJS-Operatoren (`.pipe(map(...))`, `.subscribe(...)`) werden **nicht** als Logik gewertet.
+- **Scope:** Alle Klassen-Methoden in `.ts`-Dateien (ohne `spec.ts`, `node_modules`, `dist`). Konstruktoren und Getter/Setter werden übersprungen.
+
+**Output-Schema:**
+```json
+{
+  "summary": { "methods": 42, "violations": 3 },
+  "violations": [
+    {
+      "file": "src/app/my.service.ts",
+      "method": "MyService.processData",
+      "line": 25,
+      "integrationCalls": ["this.validate()", "this.save()"],
+      "operationExpr": ["if (data.length > 0)"],
+      "msg": "Mixes integration (method calls) and operation (expressions/logic)"
+    }
+  ]
+}
+```
+
+> **Strang 5 (C#/.NET):** `language: "csharp"` ist noch nicht implementiert — wird durch Strang 5 ergänzt.
+
+---
+
 ### Vollständige Analyse
 
 #### `analyze_advanced_all`
@@ -252,7 +290,8 @@ Führt alle erweiterten Analysen in einem Aufruf aus: Nullability, DIP-Verletzun
     "analyze_refactoring_safety", "generate_auto_fixes", "analyze_dataflow",
     "analyze_advanced_all", "suggest_class_splits", "analyze_maintainability_index",
     "analyze_type_graph", "analyze_control_flow", "analyze_coverage",
-    "analyze_test_quality", "detect_untested_public_api", "analyze_test_health"
+    "analyze_test_quality", "detect_untested_public_api", "analyze_test_health",
+    "analyze_iosp_compliance"
   ]
 }
 ```

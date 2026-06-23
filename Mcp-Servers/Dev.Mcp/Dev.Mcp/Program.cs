@@ -21,10 +21,13 @@ builder.Services.AddSingleton<CodeReadService>();
 builder.Services.AddSingleton<DotnetScaffolder>();
 builder.Services.AddSingleton<DirectoryTemplateService>();
 builder.Services.AddSingleton<DotnetRunner>();
+builder.Services.AddSingleton<InspectionRunner>();
 
 // Angular services
 builder.Services.AddSingleton<AngularScaffolder>();
 builder.Services.AddSingleton<AngularRunner>();
+builder.Services.AddSingleton<LintRunner>();
+builder.Services.AddSingleton<AngularArchRunner>();
 
 // New extended services (P0/P1/P2)
 builder.Services.AddSingleton<PatchService>();
@@ -47,6 +50,9 @@ builder.Services
     .WithTools<DotnetTools>()
     .WithTools<AngularTools>()
     .WithTools<ExtendedFilesystemTools>()
-    .WithTools<GitAndTestTools>();
+    .WithTools<GitAndTestTools>()
+    .WithTools<InspectionTools>()
+    .WithTools<LintTools>()
+    .WithTools<AngularArchTools>();
 
 await builder.Build().RunAsync();

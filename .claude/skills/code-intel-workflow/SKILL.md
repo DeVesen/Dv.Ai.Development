@@ -5,7 +5,7 @@ description: >
   impact (rename preview, referenzen), verify (compiler + slice tests).
   Phasen: narrow → read → impact → verify.
   Trigger: Symbol suchen, Datei lesen, Umbenennen mit Impact, Post-Slice-Verifikation, Batch-Scout.
-  Nicht für Planning/Implementation-Orchestrierung (→ planning-workflow, implementation-workflow).
+  Nicht für Planning/Implementation-Orchestrierung (→ feature-delivery).
 when_to_use: >
   Aktiviere wenn: Symbol suchen (scout_symbol/scout_scope), Datei-Bundle lesen (read_files_batch,
   read_component_bundle), Rename-Impact prüfen (rename_file_with_impact), Post-Slice
@@ -62,7 +62,7 @@ MCP-Routing für **Code-Intelligence-Ketten** — ohne Planning/Implementation z
 }
 ```
 
-Dieses Bundle **nicht verwerfen** nach Phase 1 — als Kontext an implementation-workflow oder planning-workflow mitgeben. Spart Wiederholungs-Scouts in Phase 2+.
+Dieses Bundle **nicht verwerfen** nach Phase 1 — als Kontext an feature-delivery mitgeben. Spart Wiederholungs-Scouts in Phase 2+.
 
 ---
 
@@ -164,7 +164,7 @@ Für spezifische Code-Konstrukte ohne vollständigen Index-Scan:
 
 | Workflow | Zuständig |
 |----------|-----------|
-| Vollständige Sprint-Planung | planning-workflow |
-| Slice-basierte Implementierung | implementation-workflow |
+| Vollständige Sprint-Planung | feature-delivery |
+| Slice-basierte Implementierung | feature-delivery |
 | Repo-Scout (read-only) | repo-scout-protocol |
 | Symbol-Suche + Patch-Kette | **code-intel-workflow** |

@@ -1,6 +1,6 @@
 # MCP: dev-mcp
 
-**Dev.WindowsService.Mcp** — Alle 18 Dev-Tools in einem nativen stdio-Prozess.
+**Dev.Mcp** — Alle 22 Dev-Tools in einem nativen stdio-Prozess.
 Kombiniert Filesystem-Lesen/Suchen, .NET-Scaffolding/Build/Test und Angular-Scaffolding/Build/Test.
 
 > **Agent-Kanon (Pflicht):** [`.claude/skills/dev-mcp/SKILL.md`](../../.claude/skills/dev-mcp/SKILL.md)
@@ -13,7 +13,7 @@ Kombiniert Filesystem-Lesen/Suchen, .NET-Scaffolding/Build/Test und Angular-Scaf
 | Eigenschaft | Wert |
 |-------------|------|
 | Transport | stdio (Claude Code startet als Child-Prozess) |
-| Exe | `C:\Develop\.apps\dev-mcp\Dev.WindowsService.Mcp.exe` |
+| Exe | `C:\Develop\.apps\dev-mcp\Dev.Mcp.exe` |
 | Log-Viewer | `http://localhost:5050/` (Port via `LOG_VIEWER_PORT`) |
 | Config | `C:\Develop\.apps\dev-mcp\appsettings.json` |
 | Pfad-Format | Windows-Absolutpfade: `C:\Develop\...` |
@@ -21,7 +21,10 @@ Kombiniert Filesystem-Lesen/Suchen, .NET-Scaffolding/Build/Test und Angular-Scaf
 
 ---
 
-## Tools (18 gesamt)
+## Tools (44 gesamt)
+
+> **Hinweis:** Diese Übersicht zeigt den Stand von Strang 2. Die vollständige Tool-Liste mit allen Parametern und Beispielen ist im Agent-Kanon: [`.claude/skills/dev-mcp/SKILL.md`](../../.claude/skills/dev-mcp/SKILL.md).
+
 
 ### Filesystem (lesen/suchen — read-only)
 
@@ -56,6 +59,50 @@ Kombiniert Filesystem-Lesen/Suchen, .NET-Scaffolding/Build/Test und Angular-Scaf
 | `build_angular_project` | `ng build` → `{success, errors[], warnings[], summary}` |
 | `test_angular_project` | `ng test --watch=false` → `{success, errors[], summary}` |
 
+### .NET Statische Analyse
+
+| Tool | Beschreibung |
+|------|-------------|
+| `run_inspectcode` | `jb inspectcode --no-build` → `{success, summary:{errors,warnings,suggestions}, errors[], warnings[], suggestions[]}` |
+
+### Angular Statische Analyse
+
+| Tool | Beschreibung |
+|------|-------------|
+| `lint_angular_project` | `ng lint --format=json` → `{success, summary:{errors,warnings}, errors[], warnings[]}` |
+| `analyze_angular_architecture` | TypeScript-AST-Analyse (kein Build) → `{summary:{filesScanned,violations}, misplaced[], httpInFeatureService[], namingViolations[]}` |
+
+### Aufruf-Beispiele
+
+**run_inspectcode**
+```json
+{ "solution_path": "C:\\Develop\\MyProject\\MyProject.sln" }
+```
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|-------------|
+| `solution_path` | string | ja | Absoluter Windows-Pfad zur `.sln`-Datei |
+
+**lint_angular_project**
+```json
+{ "project_path": "C:\\Develop\\MyAngularApp" }
+```
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|-------------|
+| `project_path` | string | ja | Absoluter Windows-Pfad zum Angular-Projekt-Root (enthält `angular.json`) |
+
+**analyze_angular_architecture**
+```json
+{ "project_path": "C:\\Develop\\MyAngularApp" }
+```
+
+| Parameter | Typ | Pflicht | Beschreibung |
+|-----------|-----|---------|-------------|
+| `project_path` | string | ja | Absoluter Windows-Pfad zum Angular-Projekt-Root |
+
+Regeln: (1) `*ApiService` muss unter `src/app/core/api/` liegen; (2) Klassen in `core/api/` dürfen nur `HttpClient` injizieren; (3) Klassen in `features/<name>/services/` dürfen `HttpClient` nicht direkt injizieren. Erkennt Constructor-Injection und functional `inject()`.
+
 ---
 
 ## Konfiguration (claude.json)
@@ -65,7 +112,7 @@ Kombiniert Filesystem-Lesen/Suchen, .NET-Scaffolding/Build/Test und Angular-Scaf
   "mcpServers": {
     "dev-mcp": {
       "type": "stdio",
-      "command": "C:\\Develop\\.apps\\dev-mcp\\Dev.WindowsService.Mcp.exe",
+      "command": "C:\\Develop\\.apps\\dev-mcp\\Dev.Mcp.exe",
       "env": {
         "LOG_VIEWER_PORT": "5050"
       }

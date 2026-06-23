@@ -1,23 +1,15 @@
 ---
 name: test-design
 description: >
-  LAC Test-Konventionen (Backend + Frontend): AAA, Namenskonvention Given/With/Expected,
-  Magic-String-Vermeidung, Bestand respektieren. Framework-Routing: lac-db/src/backend →
-  frameworks/dotnet; lac-db/src/frontend → frameworks/angular. .NET: xUnit v3, FluentAssertions,
+  Test-Konventionen (Backend + Frontend): AAA, Namenskonvention Given/With/Expected,
+  Magic-String-Vermeidung, Bestand respektieren. Framework-Routing: .cs/.csproj → frameworks/dotnet;
+  .spec.ts/angular → frameworks/angular. .NET: xUnit v3, FluentAssertions,
   Moq, WebApplicationFactory. Angular: Karma, Jasmine, TestBed, HttpTestingController.
   Trigger: Unit-Test, Integrationstest, spec.ts, xUnit, Moq, Jasmine, Test-Klasse,
   dotnet test, ng test, @testing-design, Backend-/Frontend-Test.
 ---
 
-# Parameter
-
-| Parameter | Beschreibung |
-|-----------|--------------|
-| `lac-db\src\backend` | Backend-Wurzel (Solution `LAC.sln`, Ordner `tests/`) |
-| `lac-db\src\frontend` | Angular-App (`ng test`, co-located `*.spec.ts`) |
-| `.cursor/references/verification-commands.md` | Verifikation via MCP |
-
-# Testing Design (LAC)
+# Testing Design
 
 Stackübergreifende Test-Konventionen plus framework-spezifische Regeln unter `frameworks/`.
 
@@ -33,8 +25,8 @@ Stackübergreifende Test-Konventionen plus framework-spezifische Regeln unter `f
 ## Ladereihenfolge
 
 1. **Immer:** [references/naming-and-aaa.md](references/naming-and-aaa.md), [references/avoid-magic-strings.md](references/avoid-magic-strings.md)
-2. **Pfad enthält** `lac-db\src\backend` → [frameworks/dotnet.md](frameworks/dotnet.md) und dort verlinkte Templates
-3. **Pfad enthält** `lac-db\src\frontend` → [frameworks/angular.md](frameworks/angular.md) und dort verlinkte Templates; Mechanik (TestBed, Harnesses) zusätzlich [angular-developer](../angular-developer/SKILL.md) bei Bedarf
+2. **Kontext ist .NET** (`.cs`, `tests/`, `.csproj`, `dotnet test`) → [frameworks/dotnet.md](frameworks/dotnet.md) und dort verlinkte Templates
+3. **Kontext ist Angular** (`*.spec.ts`, `ng test`, Angular-Imports) → [frameworks/angular.md](frameworks/angular.md) und dort verlinkte Templates; Mechanik (TestBed, Harnesses) zusätzlich [angular-developer](../angular-developer/SKILL.md) bei Bedarf
 
 ## Gemeinsame Konventionen (Kurz)
 
@@ -71,10 +63,10 @@ Fachlich gekoppelte String-Literale nicht duplizieren — siehe [references/avoi
 
 | Stack | MCP |
 |-------|-----|
-| Backend | `test_dotnet_solution` via `dev-dotnet-mcp` |
-| Frontend | `test_angular_project` via `dev-angular-mcp` |
+| Backend | `test_dotnet_solution` via `dev-mcp` |
+| Frontend | `test_angular_project` via `dev-mcp` |
 
-Siehe `.cursor/references/verification-commands.md`. Kein Shell-`dotnet test` / `ng test` ohne MCP-Freigabe.
+Kein Shell-`dotnet test` / `ng test` ohne MCP-Freigabe.
 
 ## Referenzen
 

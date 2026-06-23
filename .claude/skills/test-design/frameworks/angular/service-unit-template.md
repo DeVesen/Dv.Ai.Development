@@ -40,4 +40,3 @@ describe('SearchFilterBufferPersistService', () => {
 });
 ```
 
-Orientierung: `search-filter-buffer-persist.service.spec.ts`.

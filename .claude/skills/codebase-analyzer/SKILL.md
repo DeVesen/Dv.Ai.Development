@@ -113,6 +113,7 @@ Schlüsselwörter: "Tests laufen", "Feature fertig", "vor dem Merge", "Sprint-En
 | `analyze_planning_inventory` | **NEU** — Endpoint/Route/DTO-Inventar für Planungs-Phase |
 | `trace_api_contract` | **NEU** — FE Service → BE Endpoint + Validierungs-Delta (1 Call) |
 | `find_api_consumers` | **NEU** — BE Endpoint → alle FE-Call-Sites (Reverse zu find_api_callers) |
+| `analyze_iosp_compliance` | **NEU** — IOSP-Check: Methoden die Integration und Operation mischen (TypeScript/Angular; C# folgt mit Strang 5) |
 
 ---
 

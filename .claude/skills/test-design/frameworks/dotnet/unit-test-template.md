@@ -11,7 +11,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <RootNamespace>LAC.ExampleService.Tests</RootNamespace>
+    <RootNamespace>MyApp.ExampleService.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,23 +30,24 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\LAC.ExampleService\LAC.ExampleService.csproj" />
+    <ProjectReference Include="..\..\MyApp.ExampleService\MyApp.ExampleService.csproj" />
   </ItemGroup>
 
 </Project>
 ```
 
 `TargetFramework` und Paketversionen an das Produktionsprojekt bzw. aktuellste stabile NuGet-Versionen anpassen.
+Namespace-Präfix (`MyApp`) durch den tatsächlichen Solution-Namespace ersetzen.
 
 ## Unit-Test mit Moq
 
 ```csharp
 using FluentAssertions;
-using LAC.ExampleService.Interfaces;
-using LAC.ExampleService.Services;
+using MyApp.ExampleService.Interfaces;
+using MyApp.ExampleService.Services;
 using Moq;
 
-namespace LAC.ExampleService.Tests.Services;
+namespace MyApp.ExampleService.Tests.Services;
 
 public class SetupServiceTests
 {
@@ -78,7 +79,6 @@ public class SetupServiceTests
 ## CLI (nur wenn kein MCP)
 
 ```powershell
-cd lac-db\src\backend
 dotnet new install xunit.v3.templates
-dotnet new xunit3 -n LAC.ExampleService.Tests -o tests\LAC.ExampleService.Tests
+dotnet new xunit3 -n MyApp.ExampleService.Tests -o tests\MyApp.ExampleService.Tests
 ```

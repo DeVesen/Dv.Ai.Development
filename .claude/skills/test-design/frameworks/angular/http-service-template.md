@@ -5,22 +5,22 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 
-import { ParameterService } from './parameter.service';
-import { BoSuggestionRequestModel } from '../../Interfaces/bo';
+import { OrderApiService } from './order-api.service';
+import { CreateOrderRequest } from '../../interfaces/order';
 
-describe('ParameterService', () => {
-  let service: ParameterService;
+describe('OrderApiService', () => {
+  let service: OrderApiService;
   let httpMock: HttpTestingController;
 
   const taskId = 'task-1';
-  const setupId = 'setup-1';
-  const boSuggestionRoute = `/api/bo/task/${taskId}/setup/${setupId}`;
+  const orderId = 'order-1';
+  const createOrderRoute = `/api/tasks/${taskId}/orders/${orderId}`;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [ParameterService, provideHttpClient(), provideHttpClientTesting()],
+      providers: [OrderApiService, provideHttpClient(), provideHttpClientTesting()],
     });
-    service = TestBed.inject(ParameterService);
+    service = TestBed.inject(OrderApiService);
     httpMock = TestBed.inject(HttpTestingController);
   });
 
@@ -28,20 +28,18 @@ describe('ParameterService', () => {
     httpMock.verify();
   });
 
-  it('sendBoSuggestion_GivenTaskAndSetup_WithConfigurationsBody_PostsToExpectedRoute', () => {
+  it('createOrder_GivenTaskAndOrder_WithRequestBody_PostsToExpectedRoute', () => {
     // Arrange
-    const body: BoSuggestionRequestModel = { configurations: [/* … */] };
+    const body: CreateOrderRequest = { name: 'Test Order' };
 
     // Act
-    service.sendBoSuggestion(taskId, setupId, body).subscribe();
+    service.createOrder(taskId, orderId, body).subscribe();
 
     // Assert
-    const req = httpMock.expectOne(boSuggestionRoute);
+    const req = httpMock.expectOne(createOrderRoute);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(body);
     req.flush({});
   });
 });
 ```
-
-Orientierung: `parameter.service.spec.ts`.

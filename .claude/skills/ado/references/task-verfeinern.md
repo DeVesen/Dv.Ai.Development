@@ -9,7 +9,7 @@ Interaktiver Klärungsworkflow in `tasks/task-*.md` — **nicht** dasselbe wie `
 | `load` / `analyse` / `save` | [phase-load/analyse/save](phase-load.md) | Load-/Analyse-Bundles | **save** schreibt schlankes Schema |
 | `buddy intake` / `buddy repo-check` | buddy-agent | Sparring | nur **Read** Task.md |
 | `Task … verfeinern` | **dieser Ablauf** | Phasen 1–4 read-only; Phase 5 erst nach Nutzer-Freigabe | Nur freigegebene Inhalte |
-| `plane Task …` | planning-workflow | Planpaket im Chat | optional `### Planung` |
+| `plane Task …` | feature-delivery | Planpaket im Chat | optional `### Planung` |
 
 **Kein** ADO-MCP bei `verfeinern` (wie bei `plane Task`).
 

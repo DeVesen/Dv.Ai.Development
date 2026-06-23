@@ -98,7 +98,7 @@ public sealed class AngularTools
         }
 
         if (!string.IsNullOrWhiteSpace(test_name_pattern))
-            effectiveOptions += $" --include=**/{test_name_pattern}.spec.ts";
+            effectiveOptions += $" --include=**/*{test_name_pattern}*.spec.ts";
 
         effectiveOptions = effectiveOptions.Trim();
 

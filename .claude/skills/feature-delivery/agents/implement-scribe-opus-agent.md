@@ -1,6 +1,7 @@
 ---
 name: implement-scribe-opus-agent
 model: claude-opus-4-8
+effort: high
 description: Impl-Scribe Runden 4–5 — Eskalation (Opus). Identisch zu implement-scribe-agent, aber auf Opus eskaliert wenn Runden 1–3 keine vollständige Lösung brachten. Zweistufig Test-First, slice-scoped Build/Test via dev-mcp.
 ---
 

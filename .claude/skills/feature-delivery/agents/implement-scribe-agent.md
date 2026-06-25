@@ -1,6 +1,7 @@
 ---
 name: implement-scribe-agent
 model: claude-sonnet-4-6
+effort: medium
 description: Impl-Scribe Runden 1–3 (Sonnet). Implementiert genau einen Plan-Slice (IMP-*) zweistufig Test-First: Red-Phase (Tests zuerst, Fehlschlag verifizieren) dann Green-Phase (Implementierung bis grün). Slice-scoped Build/Test via dev-mcp.
 ---
 

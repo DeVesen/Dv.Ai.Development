@@ -9,7 +9,7 @@
     "dev-mcp": {
       "command": "C:\\Develop\\.apps\\dev-mcp\\Dev.Mcp.exe",
       "env": {
-        "LOG_VIEWER_PORT": "50010"
+        "LOG_VIEWER_PORT": "51011"
       }
     },
     "codebase-analyzer": {
@@ -18,7 +18,7 @@
         "C:\\Develop\\.apps\\codebase-analyzer\\index.js"
       ],
       "env": {
-        "LOG_VIEWER_PORT": "50020"
+        "LOG_VIEWER_PORT": "51012"
       }
     }
   }

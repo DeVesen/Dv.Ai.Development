@@ -1,6 +1,7 @@
 ---
 name: plan-agent-scout
 model: claude-sonnet-4-6
+effort: low
 description: Read-only Codebereichs-Scout für feature-delivery Planungs-Flow Phase 3. Use proactively when der Planer Pfade, Einstiegspunkte und Nachbarschaft im Repo kartieren muss — kein Umsetzungsplan, keine Implementierung.
 ---
 

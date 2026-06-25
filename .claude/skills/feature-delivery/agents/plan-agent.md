@@ -1,6 +1,7 @@
 ---
 name: plan-agent
 model: claude-opus-4-8
+effort: high
 description: Plan-Orchestrator für feature-delivery Planungs-Flow (Phasen 1, 2, 4a, 4c, 6). Senior-Architekt — klärt Anforderungen, entwirft Topic-Map und Schnittstellen-Vertrag, mergt Topic-Teilpläne, konsolidiert finales Planpaket mit Umsetzungs-Topologie und Akzeptanz→Test-Liste.
 ---
 
@@ -83,7 +84,7 @@ Reihenfolge einhalten:
 |-------|-----------|
 | 3 | `plan-agent-scout` |
 | 4b | `plan-agent-topic-planner` |
-| Review-Loop | `plan-review-optimist-agent`, `plan-review-pessimist-agent`, `plan-review-normalo-agent`, `plan-review-oberlehrer-agent`, `plan-review-professor-agent`, `plan-review-ioda-agent` |
+| Review-Loop | `plan-review-guard-agent`, `plan-review-risk-agent`, `plan-review-readiness-agent`, `plan-review-craft-agent`, `plan-review-auditor-agent`, `plan-review-design-principles-agent` |
 | Review-Loop Patch | `plan-fixer-agent` |
 
 **Verboten für Phase 3, 4b, Review-Loop:** `explore`, `generalPurpose`, `shell` oder Rollensimulation im eigenen Turn.

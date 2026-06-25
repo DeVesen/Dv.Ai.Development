@@ -64,7 +64,7 @@ Phase 4c — Merge zur Arbeitsversion:
   Subagent-Vorlage: "Merger (Phase 4c)" aus dieser Datei.
 
 Plan-Review-Loop (max. 5 Iterationen):
-  6 Reviewer parallel: optimist · pessimist · normalo · oberlehrer · professor · ioda
+  6 Reviewer parallel: guard · risk · readiness · craft · auditor · design-principles
   Vorlagen: Abschnitte "Plan-Review-*" in dieser Datei.
   Findings? ja → Plan-Fixer (Opus, Vorlage "Plan-Fixer") → nächste Iteration
              nein / Max erreicht → weiter nach Phase 6
@@ -298,10 +298,10 @@ Deliverable:vollständige Arbeitsversion — kompakt, konsistent, Review-Loop-be
 
 ---
 
-### Plan-Review-Optimist (plan-review-optimist-agent)
+### Plan-Review-Guard (plan-review-guard-agent)
 
 ```text
-Profil:plan-review-optimist-agent
+Profil:plan-review-guard-agent
 
 Plan:[Arbeitsversion aus Phase 4c — vollständig inkl. Akzeptanz→Test-Liste]
 
@@ -326,10 +326,10 @@ Stil:BULLET-TERSE. Nummerierte Punkte. Kein neuer Plan; nur Bewertung.
 
 ---
 
-### Plan-Review-Pessimist (plan-review-pessimist-agent)
+### Plan-Review-Risk (plan-review-risk-agent)
 
 ```text
-Profil:plan-review-pessimist-agent
+Profil:plan-review-risk-agent
 
 Plan:[Arbeitsversion aus Phase 4c — vollständig inkl. Akzeptanz→Test-Liste]
 
@@ -357,10 +357,10 @@ Stil:BULLET-TERSE. Nummerierte Punkte. Kein neuer Plan; nur Risiken und Lücken.
 
 ---
 
-### Plan-Review-Normalo (plan-review-normalo-agent)
+### Plan-Review-Readiness (plan-review-readiness-agent)
 
 ```text
-Profil:plan-review-normalo-agent
+Profil:plan-review-readiness-agent
 
 Plan:[Arbeitsversion aus Phase 4c — vollständig inkl. Akzeptanz→Test-Liste]
 
@@ -384,10 +384,10 @@ Stil:BULLET-TERSE. Nummerierte Punkte. Kein neuer Plan; nur Ausführbarkeit und 
 
 ---
 
-### Plan-Review-Oberlehrer (plan-review-oberlehrer-agent)
+### Plan-Review-Craft (plan-review-craft-agent)
 
 ```text
-Profil:plan-review-oberlehrer-agent
+Profil:plan-review-craft-agent
 
 Plan:[Arbeitsversion aus Phase 4c — vollständig inkl. Akzeptanz→Test-Liste]
 
@@ -414,10 +414,10 @@ Stil:BULLET-TERSE. Nummerierte Punkte, dann Note. Kein neuer Plan; nur Kritik.
 
 ---
 
-### Plan-Review-Professor (plan-review-professor-agent)
+### Plan-Review-Auditor (plan-review-auditor-agent)
 
 ```text
-Profil:plan-review-professor-agent
+Profil:plan-review-auditor-agent
 
 Plan:[Arbeitsversion aus Phase 4c — vollständig inkl. Akzeptanz→Test-Liste]
 
@@ -449,10 +449,10 @@ Alle [KRITISCH]-Punkte müssen vor Planpaket-Freigabe adressiert sein.
 
 ---
 
-### Plan-Review-IODA (plan-review-ioda-agent) [NEU]
+### Plan-Review-Design-Principles (plan-review-design-principles-agent)
 
 ```text
-Profil:plan-review-ioda-agent
+Profil:plan-review-design-principles-agent
 
 Plan:[Arbeitsversion aus Phase 4c — vollständig inkl. geplante Klassen/Services/Methoden]
 
@@ -539,12 +539,12 @@ Arbeitsversion (letzte — vollständig):
 [finale Plan-Arbeitsversion nach Review-Loop]
 
 Reviews (letzte Iteration — alle sechs):
-Optimist:[vollständig]
-Pessimist:[vollständig]
-Normalo:[vollständig]
-Oberlehrer:[vollständig inkl. Note]
-Professor:[vollständig inkl. [KRITISCH]-Punkte und Note]
-IODA:[vollständig inkl. Priorisierung]
+Guard:[vollständig]
+Risk:[vollständig]
+Readiness:[vollständig]
+Craft:[vollständig]
+Auditor:[vollständig inkl. [KRITISCH]-Punkte und Go/No-Go]
+Design-Principles:[vollständig inkl. Priorisierung]
 
 Req:[Bullets — Auszug Phasen 1–2, max. 5]
 
@@ -584,28 +584,26 @@ Vorlage für plan-agent-synthesizer nach Eingang aller Review-Antworten:
 ```text
 ### Review-Digest (Plan-Review-Loop Iteration [N])
 
-#### Optimist
+#### Guard
 - Punkt 1: …
-- Punkt 2: …
+- PRESERVE: …
 
-#### Pessimist
+#### Risk
+- [BLOCKING] Punkt 1: …
+- [RISK] Punkt 2: …
+
+#### Readiness
 - Punkt 1: …
-- Punkt 2: …
 
-#### Normalo
+#### Craft
 - Punkt 1: …
-- Punkt 2: …
 
-#### Oberlehrer
-- Punkt 1: …
-- Note: …
-
-#### Professor
+#### Auditor
 - [KRITISCH] Punkt 1: …
 - [WESENTLICH] Punkt 2: …
-- Note: …
+- Go/No-Go: …
 
-#### IODA
+#### Design-Principles
 - [KRITISCH] Punkt 1: …
 - [WESENTLICH] Punkt 2: …
 ```
@@ -616,7 +614,7 @@ Vorlage für plan-agent-synthesizer nach Eingang aller Review-Antworten:
 
 ```text
 1. Übernommen: Welche konkreten Änderungen am Plan ergeben sich aus allen sechs Reviewern?
-   [KRITISCH]-Punkte des Professors und IODA-Agent sind Pflicht-Adressierung.
+   [KRITISCH]-Punkte des Auditors und Design-Principles-Agent sind Pflicht-Adressierung.
 2. Verworfen: Welche Review-Punkte sind nicht stichhaltig oder widersprechen der Anforderung?
    Kurz begründen.
 3. Eskaliert: Welche Punkte bleiben widersprüchlich oder fachlich offen,
@@ -664,6 +662,13 @@ SCRIBES (pro Welle/Slice):
   Je Scribe: nur slice-scoped Build/Test — KEIN stack-weites Gate.
 
 INTEGRATION-CHECKPOINT (nach Merge aller parallelen Scribes einer Welle):
+  SLICE-COVERAGE-CHECK (Pflicht — vor Gate 1, kein Skip erlaubt):
+    Für jeden IMP-* Slice der Plan-Topologie:
+    → Liegt mindestens eine Datei aus Scribe-Touched-Paths im erwarteten Slice-Scope?
+    → Nein: BLOCKER — Slice [ID] hat keine Touched Paths. Gate-Start verboten.
+    Ausgabe: Tabelle IMP-Slice | Erwarteter-Scope | Touched-Paths | OK/BLOCKER
+    Bei BLOCKER: fehlenden Slice als Fix-Scribe neu beauftragen → Slice-Coverage-Check wiederholen.
+    Diese Tabelle als Pflicht-Evidenz in alle 7 Reviewer-Prompts einbetten (Abschnitt "Slice-Coverage").
   QUALITY GATES (integrationsweite Ausführung — nicht pro Scribe):
     Gate 1 — BUILD (Vorbedingung):
       build_dotnet_solution + build_angular_project (dev-mcp)
@@ -677,16 +682,16 @@ INTEGRATION-CHECKPOINT (nach Merge aller parallelen Scribes einer Welle):
       analyze_iosp_compliance (codebase-analyzer — wenn Strang 5/6 verfügbar)
       Security-Findings severity `critical` → IMMER blockierend (nie als Warning gebündelt).
       Nur Warnings → alle Stufen durchlaufen, gebündelte Findings an Fix-Planer.
-    Gate 3 — IODA-REVIEW:
-      implement-review-ioda-agent (Opus)
-      Subagent-Vorlage: "Impl-Review-IODA" aus dieser Datei.
+    Gate 3 — DESIGN-PRINCIPLES-REVIEW:
+      implement-review-design-principles-agent (Opus)
+      Subagent-Vorlage: "Impl-Review-Design-Principles" aus dieser Datei.
     Gate 4 — TEST-SUITE:
       test_dotnet_solution + test_angular_project (dev-mcp)
       Grün = Akzeptanzkriterien erfüllt (§8).
   Findings → gebündelt an Fix-Planer (implement-fix-planner-agent, immer Opus).
 
 REVIEW-LOOP (nach Gates):
-  7 Reviewer parallel: pessimist · ioda · lehrer · normalo · oberlehrer · professor · optimist
+  7 Reviewer parallel: risk · design-principles · verifier · readiness · craft · auditor · guard
   Vorlagen: Abschnitte "Impl-Review-*" in dieser Datei.
   review_git_diff-Befunde aus Gate 2 als Evidenz in Reviewer-Prompts einbetten.
   Findings? ja → Fix-Planer → Fix-Scribes → Gates erneut → nächste Iteration
@@ -880,10 +885,10 @@ Liefern:
 
 ---
 
-### Impl-Review-IODA (implement-review-ioda-agent) [NEU]
+### Impl-Review-Design-Principles (implement-review-design-principles-agent)
 
 ```text
-Profil:implement-review-ioda-agent (readonly)
+Profil:implement-review-design-principles-agent (readonly)
 
 Input:
 - Finales Planpaket + IODA-Vorgaben aus Plan-Review-IODA
@@ -923,10 +928,10 @@ Stil:BULLET-TERSE. Priorisierte Liste. Kein Fix; nur Prüfergebnis.
 
 ---
 
-### Impl-Review-Pessimist
+### Impl-Review-Risk
 
 ```text
-Profil: implement-review-pessimist-agent (readonly).
+Profil: implement-review-risk-agent (readonly).
 Input:
 - Finales Planpaket + Akzeptanz→Test-Liste
 - Aktueller Diff / betroffene Pfade
@@ -945,10 +950,12 @@ Liefern:
 
 ---
 
-### Impl-Review-Lehrer
+### Impl-Review-Verifier
 
 ```text
-Profil: implement-review-lehrer-agent (readonly).
+Profil: implement-review-verifier-agent (readonly).
+Input zusätzlich zum Diff:
+- Slice-Coverage-Tabelle (aus Integration-Checkpoint — Pflicht-Input vom Orchestrator)
 Pflicht-MCP:
 - review_git_diff
 - review_files_batch (oder review_file)
@@ -956,6 +963,8 @@ Pflicht-MCP:
 
 Liefern:
 - Nummerierte fachliche Fehlerliste, priorisiert nach Schaden.
+- Slice-Präsenz-Check: Sind alle IMP-* Slices aus der Slice-Coverage-Tabelle mit Status OK?
+  Slice mit Status BLOCKER → [KRITISCH] (zweites Netz nach Integration-Checkpoint).
 - Akzeptanz-Coverage (§8/F4): Deckt die finale Test-Suite **alle** Akzeptanzkriterien
   aus der Planpaket-Akzeptanz→Test-Liste ab? Jedes Kriterium einzeln prüfen.
   Fehlende Coverage → [KRITISCH], fehlende Testfall-Skizze umgesetzt → [WESENTLICH].
@@ -963,10 +972,10 @@ Liefern:
 
 ---
 
-### Impl-Review-Normalo
+### Impl-Review-Readiness
 
 ```text
-Profil: implement-review-normalo-agent (readonly).
+Profil: implement-review-readiness-agent (readonly).
 Pflicht-MCP:
 - review_with_index
 - analyze_duplicates
@@ -977,10 +986,10 @@ Liefern:
 
 ---
 
-### Impl-Review-Oberlehrer
+### Impl-Review-Craft
 
 ```text
-Profil: implement-review-oberlehrer-agent (readonly).
+Profil: implement-review-craft-agent (readonly).
 Pflicht-MCP:
 - review_file
 - analyze_maintainability_index
@@ -991,10 +1000,10 @@ Liefern:
 
 ---
 
-### Impl-Review-Professor
+### Impl-Review-Auditor
 
 ```text
-Profil: implement-review-professor-agent (readonly).
+Profil: implement-review-auditor-agent (readonly).
 Pflicht-MCP:
 - analyze_advanced_all
 - analyze_test_quality
@@ -1009,10 +1018,10 @@ Liefern:
 
 ---
 
-### Impl-Review-Optimist
+### Impl-Review-Guard
 
 ```text
-Profil: implement-review-optimist-agent (readonly).
+Profil: implement-review-guard-agent (readonly).
 Pflicht-MCP:
 - review_with_index
 
@@ -1028,29 +1037,33 @@ Liefern:
 ```text
 ### Review-Digest (Iteration [N])
 
-#### Pessimist
-- Punkt 1: ...
+#### Risk
+- [BLOCKING] Punkt 1: ...
+- [RISK] Punkt 2: ...
 
-#### IODA
+#### Design-Principles
 - [KRITISCH] Punkt 1: ...
+- [WESENTLICH] Punkt 2: ...
 
-#### Lehrer
+#### Verifier
 - Punkt 1: ...
-- Akzeptanz-Coverage: [vollständig | fehlend: Liste]
+- AC-Map: [vollständig | fehlend: Liste]
 
-#### Normalo
+#### Readiness
+- Ship-Readiness: [SHIP | CONDITIONAL | NO-SHIP]
 - Punkt 1: ...
 
-#### Oberlehrer
+#### Craft
 - Punkt 1: ...
+
+#### Auditor
+- [KRITISCH] Punkt 1: ...
+- Go/No-Go: ...
 - Note: ...
 
-#### Professor
-- [KRITISCH] Punkt 1: ...
-- Note: ...
-
-#### Optimist
-- Punkt 1: ...
+#### Guard
+- PRESERVE: ...
+- Erfüllte ACs: ...
 ```
 
 ---
@@ -1066,24 +1079,24 @@ Liefern:
 ## Quality Gates (letzte Iteration)
 - Gate 1 Build: [OK/FAIL]
 - Gate 2 Statische Analyse: [OK/FAIL/WARNINGS — Findings: run_inspectcode / ArchUnit / lint / codebase-analyzer / iosp_compliance]
-- Gate 3 IODA-Review: [OK/FAIL]
+- Gate 3 Design-Principles-Review: [OK/FAIL]
 - Gate 4 Test-Suite: [OK/FAIL]
 
 ## Iterativer Review-Loop
 - Reviews je Iteration: 7 Rollen ausgeführt [ja/nein]
 - Fix-Planer je Iteration: [vorhanden + Evidenz-Basis ja/nein]
 - Umgesetzte Fix-Slices: [Liste]
-- Akzeptanz-Coverage (Lehrer): [vollständig | fehlend: Liste]
+- Akzeptanz-Coverage (Verifier): [vollständig | fehlend: Liste]
 - Letzte Iteration ohne behebbares Finding: [ja/nein]
 
 ## Rest-Findings (nur bei Maximum mit offenen Punkten)
-- Pessimist: [Punkte oder —]
-- IODA: [Punkte oder —]
-- Lehrer: [Punkte oder —]
-- Normalo: [Punkte oder —]
-- Oberlehrer: [Punkte oder —]
-- Professor: [Punkte oder —]
-- Optimist: [Punkte oder —]
+- Risk: [Punkte oder —]
+- Design-Principles: [Punkte oder —]
+- Verifier: [Punkte oder —]
+- Readiness: [Punkte oder —]
+- Craft: [Punkte oder —]
+- Auditor: [Punkte oder —]
+- Guard: [Punkte oder —]
 
 ## Offene Punkte
 - [falls vorhanden; bei Rest-Findings hier Empfehlung]

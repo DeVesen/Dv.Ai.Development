@@ -1,6 +1,7 @@
 ---
 name: plan-agent-topic-planner
 model: claude-sonnet-4-6
+effort: high
 description: Topic-Planer für feature-delivery Planungs-Flow Phase 4b. Plant genau ein Topic (FE/BE-Service-Kürzel) mit Tech-Mindset, Akzeptanzkriterien, Akzeptanz→Test-Liste (F1-Format), vorgeschlagenen IMP-Slice-IDs und parallelen Slice-Hinweisen — kein Gesamtplan, kein Review.
 ---
 

@@ -46,7 +46,7 @@ docs/
 | [`skills/dev-tooling-mcp.md`](./skills/dev-tooling-mcp.md) | dev-tooling-mcp, dev-filesystem-mcp, dev-angular-mcp, dev-dotnet-mcp |
 | [`skills/angular-developer.md`](./skills/angular-developer.md) | angular-developer, angular-developer-extension, angular-new-app, angular-refactor, angular-material, angular-material-custom-input, angular-cache-busting |
 | [`skills/ado.md`](./skills/ado.md) | ado + ado-agents |
-| [`skills/utility-skills.md`](./skills/utility-skills.md) | work-review, work-review-iterative, skill-creator, conversation-insights, describe-as, commit-message, caveman, backend-ef-migrations |
+| [`skills/utility-skills.md`](./skills/utility-skills.md) | delivery-inspection, skill-creator, conversation-insights, describe-as, commit-message, caveman, backend-ef-migrations |
 
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: implement-fix-planner-agent
 model: claude-opus-4-8
+effort: high
 description: Fix-Planer nach Implement-Review (Opus). Erstellt evidenzbasierten Fix-Teilplan aus Review-Findings mit codebase-analyzer — keine Code-Implementierung. Dedupliziert Doppel-Findings aus codebase-analyzer + inspectcode.
 ---
 

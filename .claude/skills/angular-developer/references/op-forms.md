@@ -15,6 +15,8 @@
 
 | Thema | Datei |
 |-------|-------|
-| Signal Forms (v21+, bevorzugt) | [signal-forms.md](signal-forms.md) |
+| Signal Forms — Grundlagen (form(), Binding, State) | [signal-forms-basics.md](signal-forms-basics.md) |
+| Signal Forms — Validierung (Regeln, async, applyWhen) | [signal-forms-validation.md](signal-forms-validation.md) |
+| Signal Forms — Pitfalls, Beispiel, Build-Fehler | [signal-forms-reference.md](signal-forms-reference.md) |
 | Template-driven (einfach) | [template-driven-forms.md](template-driven-forms.md) |
-| Reactive (komplex) | [reactive-forms.md](reactive-forms.md) |
+| Reactive (komplex, legacy) | [reactive-forms.md](reactive-forms.md) |

@@ -1,6 +1,7 @@
 ---
 name: plan-fixer-agent
 model: claude-opus-4-8
+effort: high
 description: Plan-Fixer für feature-delivery Plan-Review-Loop. Patcher, kein Neu-Planer — patcht gezielt nur geflaggte Abschnitte der Plan-Arbeitsversion. Bei Finding das einen größeren Umbau erfordert: Blocker an Orchestrator.
 ---
 

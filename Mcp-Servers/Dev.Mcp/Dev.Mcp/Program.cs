@@ -6,6 +6,22 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
+// Write crash log next to the exe so crashes are diagnosable without a debugger.
+static void WriteCrashLog(object exceptionObject)
+{
+    try
+    {
+        var dir = AppContext.BaseDirectory;
+        var file = Path.Combine(dir, "crash.log");
+        var line = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {exceptionObject}{Environment.NewLine}";
+        File.AppendAllText(file, line);
+    }
+    catch { /* never throw from a crash handler */ }
+}
+
+AppDomain.CurrentDomain.UnhandledException += (_, e) => WriteCrashLog(e.ExceptionObject);
+TaskScheduler.UnobservedTaskException += (_, e) => { WriteCrashLog(e.Exception); e.SetObserved(); };
+
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
@@ -55,4 +71,12 @@ builder.Services
     .WithTools<LintTools>()
     .WithTools<AngularArchTools>();
 
-await builder.Build().RunAsync();
+try
+{
+    await builder.Build().RunAsync();
+}
+catch (Exception ex)
+{
+    WriteCrashLog(ex);
+    throw;
+}

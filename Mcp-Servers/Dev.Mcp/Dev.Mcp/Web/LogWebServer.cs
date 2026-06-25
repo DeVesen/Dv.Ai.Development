@@ -1,18 +1,17 @@
-using System.Net;
-using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Dev.Mcp.Web;
 
-public sealed class LogWebServer : IHostedService, IDisposable
+public sealed class LogWebServer : IHostedService, IAsyncDisposable
 {
     private readonly ToolCallHistory _history;
     private readonly ILogger<LogWebServer> _logger;
-    private readonly HttpListener _listener = new();
-    private CancellationTokenSource? _cts;
-    private Task _listenTask = Task.CompletedTask;
+    private WebApplication? _app;
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -26,101 +25,52 @@ public sealed class LogWebServer : IHostedService, IDisposable
         _logger = logger;
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var port = int.TryParse(Environment.GetEnvironmentVariable("LOG_VIEWER_PORT"), out var p) && p is > 0 and <= 65535
+        var basePort = int.TryParse(Environment.GetEnvironmentVariable("LOG_VIEWER_PORT"), out var p) && p is > 0 and <= 65535
             ? p : 5050;
 
-        try
+        Exception? lastEx = null;
+        for (var port = basePort; port <= basePort + 9; port++)
         {
-            _listener.Prefixes.Add($"http://localhost:{port}/");
-            _listener.Start();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Log viewer could not start on port {Port} — continuing without it", port);
-            return Task.CompletedTask;
+            WebApplication? candidate = null;
+            try
+            {
+                var builder = WebApplication.CreateSlimBuilder();
+                builder.WebHost.UseUrls($"http://localhost:{port}");
+                builder.Logging.ClearProviders();
+                candidate = builder.Build();
+
+                candidate.MapGet("/", () => Results.Content(LogHtmlTemplate.GetHtml(), "text/html; charset=utf-8"));
+                candidate.MapGet("/api/calls", () => Results.Json(_history.GetAll(), JsonOpts));
+                candidate.MapDelete("/api/calls", () => { _history.Clear(); return Results.NoContent(); });
+                candidate.MapDelete("/api/calls/{id}", (string id) => { _history.Remove(id); return Results.NoContent(); });
+
+                await candidate.StartAsync(cancellationToken);
+                _app = candidate;
+                _logger.LogInformation("Dev.Mcp log viewer: http://localhost:{Port}/", port);
+                return;
+            }
+            catch (Exception ex)
+            {
+                lastEx = ex;
+                if (candidate is not null) await candidate.DisposeAsync();
+                _logger.LogDebug("Port {Port} busy, trying next", port);
+            }
         }
 
-        _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _listenTask = RunAsync(_cts.Token);
-        _logger.LogInformation("Dev.Mcp log viewer: http://localhost:{Port}/", port);
-        return Task.CompletedTask;
+        _logger.LogError(lastEx, "Log viewer could not start on ports {From}-{To} — continuing without it", basePort, basePort + 9);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_cts is null) return;
-        await _cts.CancelAsync();
-        _listener.Stop();
-        try { await _listenTask.WaitAsync(cancellationToken); } catch { }
+        if (_app is not null)
+            await _app.StopAsync(cancellationToken);
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _cts?.Dispose();
-        _listener.Close();
-    }
-
-    private async Task RunAsync(CancellationToken token)
-    {
-        while (!token.IsCancellationRequested)
-        {
-            HttpListenerContext ctx;
-            try { ctx = await _listener.GetContextAsync(); }
-            catch (HttpListenerException) when (token.IsCancellationRequested) { break; }
-            catch (ObjectDisposedException) when (token.IsCancellationRequested) { break; }
-            catch (Exception ex) { _logger.LogWarning(ex, "HttpListener error"); continue; }
-
-            _ = Task.Run(() => HandleAsync(ctx, token), token)
-                .ContinueWith(t => _logger.LogWarning(t.Exception, "Unhandled error in HTTP handler"),
-                    TaskContinuationOptions.OnlyOnFaulted);
-        }
-    }
-
-    private async Task HandleAsync(HttpListenerContext ctx, CancellationToken token)
-    {
-        var req = ctx.Request;
-        var resp = ctx.Response;
-        try
-        {
-            var path = req.Url?.AbsolutePath.TrimEnd('/') ?? string.Empty;
-            if (path == string.Empty) path = "/";
-
-            if (req.HttpMethod == "GET" && path == "/")
-                await WriteAsync(resp, 200, "text/html; charset=utf-8", LogHtmlTemplate.GetHtml(), token);
-            else if (req.HttpMethod == "GET" && path == "/api/calls")
-                await WriteAsync(resp, 200, "application/json", JsonSerializer.Serialize(_history.GetAll(), JsonOpts), token);
-            else if (req.HttpMethod == "DELETE" && path == "/api/calls")
-            {
-                _history.Clear();
-                resp.StatusCode = 204;
-                resp.Close();
-            }
-            else if (req.HttpMethod == "DELETE" && path.StartsWith("/api/calls/"))
-            {
-                _history.Remove(path["/api/calls/".Length..]);
-                resp.StatusCode = 204;
-                resp.Close();
-            }
-            else
-                await WriteAsync(resp, 404, "text/plain", "Not Found", token);
-        }
-        catch (Exception ex) when (!token.IsCancellationRequested)
-        {
-            _logger.LogWarning(ex, "Error handling HTTP request");
-            try { resp.StatusCode = 500; resp.Close(); } catch { }
-        }
-    }
-
-    private static async Task WriteAsync(HttpListenerResponse resp, int status, string contentType, string body, CancellationToken token)
-    {
-        var bytes = Encoding.UTF8.GetBytes(body);
-        resp.StatusCode = status;
-        resp.ContentType = contentType;
-        resp.ContentLength64 = bytes.Length;
-        resp.Headers["Cache-Control"] = "no-store";
-        await resp.OutputStream.WriteAsync(bytes, token);
-        resp.Close();
+        if (_app is not null)
+            await _app.DisposeAsync();
     }
 }

@@ -10,7 +10,7 @@ public sealed class GitService
 {
     // ── git_changed_files ──────────────────────────────────────────────────────
 
-    public GitChangedFilesResult GetChangedFiles(string repoRoot, string @base)
+    public async Task<GitChangedFilesResult> GetChangedFilesAsync(string repoRoot, string @base)
     {
         string gitArgs;
         if (@base == "staged")
@@ -34,7 +34,7 @@ public sealed class GitService
             return new GitChangedFilesResult([], repoRoot, @base);
         }
 
-        var output = RunGit(repoRoot, gitArgs);
+        var output = await RunGitAsync(repoRoot, gitArgs);
         var files = @base == "all"
             ? ParsePorcelain(output, repoRoot)
             : ParseNameStatus(output, repoRoot);
@@ -44,7 +44,7 @@ public sealed class GitService
 
     // ── git_diff_summary ───────────────────────────────────────────────────────
 
-    public GitDiffSummaryResult GetDiffSummary(IReadOnlyList<string> filePaths, string repoRoot)
+    public async Task<GitDiffSummaryResult> GetDiffSummaryAsync(IReadOnlyList<string> filePaths, string repoRoot)
     {
         var results = new List<FileDiffSummary>();
 
@@ -54,9 +54,9 @@ public sealed class GitService
                 ? Path.GetRelativePath(repoRoot, filePath).Replace('\\', '/')
                 : filePath.Replace('\\', '/');
 
-            var output = RunGit(repoRoot, $"diff HEAD -- \"{relativePath}\"");
+            var output = await RunGitAsync(repoRoot, $"diff HEAD -- \"{relativePath}\"");
             if (string.IsNullOrWhiteSpace(output))
-                output = RunGit(repoRoot, $"diff --cached HEAD -- \"{relativePath}\"");
+                output = await RunGitAsync(repoRoot, $"diff --cached HEAD -- \"{relativePath}\"");
 
             var summary = ParseDiff(filePath, output);
             results.Add(summary);
@@ -162,7 +162,9 @@ public sealed class GitService
         return new FileDiffSummary(filePath, added, removed, hunks);
     }
 
-    internal static string RunGit(string workDir, string args)
+    private static readonly TimeSpan GitTimeout = TimeSpan.FromSeconds(15);
+
+    internal static async Task<string> RunGitAsync(string workDir, string args)
     {
         try
         {
@@ -174,10 +176,35 @@ public sealed class GitService
             };
             using var proc = new Process { StartInfo = psi };
             if (!proc.Start()) return string.Empty;
-            var stdout = proc.StandardOutput.ReadToEnd();
-            proc.WaitForExit();
-            return stdout;
+            using var cts = new CancellationTokenSource(GitTimeout);
+            var stdoutTask = proc.StandardOutput.ReadToEndAsync(cts.Token);
+            var stderrTask = proc.StandardError.ReadToEndAsync(cts.Token);
+            try { await proc.WaitForExitAsync(cts.Token); }
+            catch (OperationCanceledException) { try { proc.Kill(entireProcessTree: true); } catch { } return string.Empty; }
+            return await stdoutTask;
         }
         catch { return string.Empty; }
+    }
+
+    internal static async Task<(string stdout, string stderr, int exitCode)> RunGitWithResultAsync(string workDir, string args)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "git", Arguments = args, WorkingDirectory = workDir,
+                RedirectStandardOutput = true, RedirectStandardError = true,
+                UseShellExecute = false, CreateNoWindow = true,
+            };
+            using var proc = new Process { StartInfo = psi };
+            if (!proc.Start()) return (string.Empty, "Failed to start git process", -1);
+            using var cts = new CancellationTokenSource(GitTimeout);
+            var stdoutTask = proc.StandardOutput.ReadToEndAsync(cts.Token);
+            var stderrTask = proc.StandardError.ReadToEndAsync(cts.Token);
+            try { await proc.WaitForExitAsync(cts.Token); }
+            catch (OperationCanceledException) { try { proc.Kill(entireProcessTree: true); } catch { } return (string.Empty, "git timeout", -1); }
+            return (await stdoutTask, await stderrTask, proc.ExitCode);
+        }
+        catch (Exception ex) { return (string.Empty, ex.Message, -1); }
     }
 }

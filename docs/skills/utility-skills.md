@@ -4,32 +4,49 @@ Kleine, fokussierte Skills für Kommunikation, Dokumentation und Meta-Arbeit.
 
 ---
 
-## work-review
+## delivery-inspection
 
-Automatischer Qualitäts-Review nach Abschluss eines Deliverables.
+Prüfung vor der Auslieferung — stellt sicher dass alle Anforderungen angegangen, korrekt verstanden
+und vollständig umgesetzt wurden. Universell: Code-Features, Skill-Dateien, Dokumentation, Analysen.
+Wird auch von `feature-delivery` als letzter Schritt vor Closure aufgerufen.
 
-**Trigger:** Automatisch nach jedem Deliverable — Skill-Paket, Dokumentation, Markdown, PDF, PPTX, Analyse  
-**Opt-out:** `kein-review`, `no-review`, `skip-review`
+**Trigger:** `delivery-inspection`, `auslieferung prüfen`, `pruef ob alles umgesetzt`, `delivery check`  
+**Opt-out:** `kein-delivery-inspection`, `no-delivery-inspection`, `skip-delivery-inspection`
 
-Vier parallele Reviewer-Agenten:
+Sechs parallele Reviewer-Perspektiven:
 
-| Agent | Fokus |
+| Rolle | Fokus |
 |-------|-------|
-| `implement-review-pessimist-agent` | Fehlende Details, Lücken, vergessene Edge Cases |
-| `implement-review-lehrer-agent` | Fachliche Fehler, falsche APIs, veraltete Infos |
-| `implement-review-normalo-agent` | Vollständigkeit, Pragmatik, Top-3-Empfehlungen |
-| `implement-review-professor-agent` | Tiefenanalyse auf Doktorarbeit-Niveau (Opus) |
+| **Revisor** | Anforderungs-Buchhalter: mappt jeden Request 1:1 auf Deliverable |
+| **Skeptiker** | Lückenjäger: was fehlt, was ist halbfertig, was wurde vergessen? |
+| **Normalo** | Pragmatische Abnahme: direkt produktiv einsetzbar? |
+| **Dolmetscher** | Wurden Anforderungen korrekt *verstanden*? Fehlinterpretationen? Unklarheiten still entschieden? |
+| **Auftraggeber** | Strengste Abnahme: würde ich das als Besteller unterschreiben? |
+| **Querdenker** | YAGNI-Wächter: zu viel gemacht? Scope Creep? Nicht beauftragter Boilerplate? |
 
-Alle vier Berichte abwarten → kritische Findings direkt fixen → Abschlussbericht.
+Iterativer Loop bis alle 6 Reviewer keine behebbaren Findings mehr melden.
 
 ---
 
-## work-review-iterative
+## prozess-retrospektive
 
-Iterativer Review-Fix-Loop: `work-review` ausführen → Findings fixen → wiederholen bis nichts mehr gemeldet.
+Analysiert den Arbeitsprozess einer Session und liefert konkrete Verbesserungsideen für den Harness.
 
-**Trigger:** `/work-review-iterative`  
-**Opt-out:** `kein-review`, `no-review`, `skip-review`
+**Trigger:** `prozess-retrospektive`, `retrospektive`, `prozess analyse`, `harness verbessern`, `wie lief das`  
+**Opt-out:** `kein-retrospektive`, `no-retrospektive`, `skip-retrospektive`  
+**Kein Auto-Trigger** — immer explizit aufgerufen.
+
+Fünf Analyse-Bereiche:
+
+| Bereich | Fokus |
+|---------|-------|
+| **MCP-Call-Qualität** | Timeouts, Fallbacks, Failures, unnötige Wiederholungen |
+| **Orchestrierungs-Effizienz** | Gates, Runden, Blockaden, sequenziell vs. parallel |
+| **Reviewer-Qualität** | Echte Findings vs. Rauschen — generisch, unabhängig von Reviewer-Anzahl/-Namen |
+| **Reibungspunkte** | Nutzer-Eingriffe, Klärungsbedarfe, Missverständnisse |
+| **Delivery-Inspection-Loop** | Iterations-Effizienz, Muster in Findings |
+
+Output: strukturierter Bericht mit priorisierten Harness-Verbesserungsideen inkl. konkreter Dateiverweise.
 
 ---
 
@@ -107,7 +124,8 @@ Enforcement: `docs/silent-shortcut-prevention.md`
 
 ## Zusammenspiel
 
-- `work-review` / `work-review-iterative` → nach jedem Deliverable aus anderen Skills
+- `delivery-inspection` → nach jedem Deliverable aus anderen Skills; automatisch letzter Schritt in `feature-delivery`
+- `prozess-retrospektive` → optional nach jeder längeren Session für Harness-Verbesserungsideen
 - `skill-creator` → wenn ein neuer Skill oder Agent-Profil benötigt wird
 - `describe-as` → für Handoff zwischen Agenten oder Sessions
 - `conversation-insights` → Learnings festhalten nach entscheidenden Gesprächen

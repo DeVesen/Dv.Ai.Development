@@ -2,28 +2,11 @@
 
 **Bei Widerspruch: SOLID + IODA überwiegen.**
 
+→ **IODA & IOSP:** siehe [software-design-principles/references/ioda-iosp.md](../../software-design-principles/references/ioda-iosp.md)
+
 ---
 
 ## Kern-Kanon
-
-### IODA (Integration Operation Decomposition Architecture)
-
-Westphals Architekturprinzip für klaren Bausteinschnitt und Dekomposition.
-
-- **Integration-Methoden** orchestrieren: sie rufen andere Methoden auf, enthalten aber selbst keine fachliche Logik.
-- **Operation-Methoden** verarbeiten: sie enthalten Logik (Transformationen, Berechnungen, Entscheidungen), rufen aber keine anderen Methoden innerhalb derselben Klasse auf.
-- **Decomposition** beschreibt den Prozess, Klassen und Methoden in Integration- und Operation-Einheiten aufzuteilen.
-- **PoMO (Point of Maximum Opportunity):** die höchste sinnvolle Abstraktionsebene je Klasse — wo Integration und Operationen klar getrennt sind.
-
-Wann verletzt: eine Methode delegiert UND verarbeitet gleichzeitig. Symptom: schwer testbar, hohe Kopplung.
-
-### IOSP (Integration Operation Segregation Principle)
-
-Keine Methode mischt Integration und Operation. Eine Methode macht **entweder** interne Aufrufe **oder** Logik/Ausdrücke — nicht beides.
-
-- Deterministische IOSP-Prüfung erfolgt nachgelagert via `codebase-analyzer analyze_iosp_compliance` (Strang 5 .NET / Strang 6 Angular).
-- ArchUnit-IOSP-Regel bleibt als **Backstop** aktiv — fängt grobe Verstöße auf Klassenebene, bis das deterministischere Tool verfügbar ist.
-- IOSP ist die operative Konkretisierung von IODA auf Methoden-Ebene.
 
 ### SOLID
 

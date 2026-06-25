@@ -140,9 +140,11 @@ public sealed class PatchService
             using var proc = new Process { StartInfo = psi };
             if (!proc.Start()) return new CompilerGateResult(false, 0, ["Failed to start compiler process"]);
 
-            var stdout = proc.StandardOutput.ReadToEnd();
-            var stderr = proc.StandardError.ReadToEnd();
-            proc.WaitForExit();
+            var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+            var stderrTask = proc.StandardError.ReadToEndAsync();
+            if (!proc.WaitForExit(60_000)) { try { proc.Kill(entireProcessTree: true); } catch { } return new CompilerGateResult(false, 0, ["compiler gate timeout"]); }
+            var stdout = stdoutTask.Result;
+            var stderr = stderrTask.Result;
 
             var output = (stdout + "\n" + stderr).Trim();
             var errorLines = output.Split('\n')

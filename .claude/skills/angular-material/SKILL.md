@@ -3,13 +3,13 @@ name: angular-material
 description: >
   Angular Material component guidance for Angular v22+. Use when working with Angular Material
   UI components: buttons, forms, dialogs, tables, navigation, theming, CDK.
+  Also covers: custom mat-form-field inputs (MatFormFieldControl, Shell + Direktive pattern,
+  multi-input form fields, label-placeholder overlap, Variante B directory layout).
   Trigger: Angular Material, mat-button, mat-form-field, mat-dialog, mat-table, mat-sidenav,
-  MatModule, MatTheme, CDK, Material Design, ng add @angular/material.
+  MatModule, MatTheme, CDK, Material Design, ng add @angular/material,
+  custom form input, MatFormFieldControl, custom-input-range-wrapper, number range field,
+  multi-input mat-form-field, shell directive pattern.
 ---
-
-# Angular Material
-
-Guidance for Angular Material v22+ components, theming, and CDK usage.
 
 ## Voraussetzungen
 
@@ -70,10 +70,16 @@ import { MatButtonHarness } from '@angular/material/button/testing';
 
 Referenz: `.claude/skills/angular-developer/references/component-harnesses.md`
 
-## Custom Inputs in mat-form-field
+## Operationen: Custom mat-form-field Inputs
 
-Für eigene Komponenten innerhalb von `mat-form-field`:
-→ `angular-material-custom-input` Skill laden
+**Vor Ausführung:** relevante Referenz vollständig lesen.
+
+| Trigger | Operation | Detail |
+|---------|-----------|--------|
+| `neues custom input`, `custom-input erstellen`, `mat-form-field mit mehreren inputs`, `number range field` | Neues Custom Input von Grund auf erstellen | [references/custom-input-op-create.md](references/custom-input-op-create.md) |
+| `reference/ layout`, `variante b`, `directory struktur`, `wo liegt die direktive` | Verzeichnisstruktur entscheiden (Standard vs. Variante B) | [references/custom-input-directory-layout.md](references/custom-input-directory-layout.md) |
+| `matformfieldcontrol contract`, `pflichtfelder direktive`, `statechanges`, `oncontainerclick` | MatFormFieldControl-Vertrag implementieren | [references/custom-input-contract.md](references/custom-input-contract.md) |
+| `snippet`, `gerüst`, `boilerplate`, `kopiervorlage` | Kopierbare TS/HTML-Gerüste für Shell und Direktive | [references/custom-input-snippet.md](references/custom-input-snippet.md) |
 
 ## Opt-out
 

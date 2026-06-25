@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature-Delivery Workflow</title>
+<style>
+:root{--text-primary:#e2e8f0;--text-secondary:#94a3b8;--cS:#60a5fa;--cP:#f59e0b;--cI:#22d3ee;--cD:#a78bfa;--cG:#34d399;--cSon:#60a5fa;--cOpx:#fbbf24;--cOk:rgba(52,211,153,.8);--cErr:rgba(248,113,113,.8);--cb:rgba(255,255,255,.07);--font-sans:-apple-system,'Segoe UI',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+body{background:#0f172a;padding:24px;min-height:100vh}
+@page{size:A3 portrait;margin:12mm}
+@media print{#dl-btn{display:none!important}body{padding:0}}
+#dl-btn{display:block;margin:0 auto 18px;padding:9px 22px;background:#1e293b;color:#94a3b8;border:1px solid rgba(255,255,255,.12);border-radius:6px;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:600;letter-spacing:.3px;transition:border-color .15s,color .15s}
+#dl-btn:hover{border-color:#60a5fa;color:#60a5fa}
+#dl-btn:disabled{opacity:.5;cursor:not-allowed}
+.w{font-family:var(--font-sans);font-size:12px;color:var(--text-primary);padding:16px}
+.w-hdr{text-align:center;margin-bottom:12px}
+.w-hdr h2{font-size:16px;font-weight:700;color:#e2e8f0}
+.w-hdr p{font-size:10px;color:var(--text-secondary);margin-top:2px}
+.grid{display:grid;grid-template-columns:1fr 262px;gap:12px;align-items:start}
+.col-main{display:flex;flex-direction:column;gap:5px}
+.col-dep{display:flex;flex-direction:column;gap:7px}
+.conn{display:flex;align-items:center;justify-content:center;font-size:18px;color:rgba(255,255,255,.2);height:20px}
+.conn-ok{display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 0}
+.conn-ok-a{font-size:16px;color:rgba(52,211,153,.8)}
+.conn-ok-t{font-size:9px;color:rgba(52,211,153,.6)}
+.blk{border-radius:8px;overflow:hidden}
+.bh{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:8px 12px}
+.bnum{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.bt{font-size:13px;font-weight:700}
+.bs{font-size:9px;color:var(--text-secondary);margin-left:auto}
+.bb{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.blk-spec{border:1px solid rgba(96,165,250,.3);background:rgba(96,165,250,.03)}
+.blk-spec .bh{background:rgba(96,165,250,.1);border-bottom:1px solid rgba(96,165,250,.2)}
+.blk-spec .bnum{background:rgba(96,165,250,.2);color:#60a5fa}
+.blk-spec .bt{color:#60a5fa}
+.blk-plan{border:1px solid rgba(245,158,11,.25);border-radius:7px;overflow:hidden}
+.blk-plan .bh{background:rgba(245,158,11,.1);border-bottom:1px solid rgba(245,158,11,.2)}
+.blk-plan .bnum{background:rgba(245,158,11,.2);color:#f59e0b}
+.blk-plan .bt{color:#f59e0b}
+.blk-impl{border:1px solid rgba(34,211,238,.25);border-radius:7px;overflow:hidden}
+.blk-impl .bh{background:rgba(34,211,238,.1);border-bottom:1px solid rgba(34,211,238,.2)}
+.blk-impl .bnum{background:rgba(34,211,238,.2);color:#22d3ee}
+.blk-impl .bt{color:#22d3ee}
+.blk-di{border:1px solid rgba(167,139,250,.3);border-radius:7px;overflow:hidden}
+.blk-di .bh{background:rgba(167,139,250,.1);border-bottom:1px solid rgba(167,139,250,.2)}
+.blk-di .bnum{background:rgba(167,139,250,.2);color:#a78bfa}
+.blk-di .bt{color:#a78bfa}
+.loop{border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.loop-plan{border:1px dashed rgba(245,158,11,.4);background:rgba(245,158,11,.02)}
+.loop-impl{border:1px dashed rgba(34,211,238,.4);background:rgba(34,211,238,.02)}
+.loop-bar{padding:5px 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.loop-plan .loop-bar{background:rgba(245,158,11,.12);color:rgba(245,158,11,.85)}
+.loop-impl .loop-bar{background:rgba(34,211,238,.12);color:rgba(34,211,238,.85)}
+.loop-inner{padding:9px;display:flex;flex-direction:column;gap:6px}
+.i-conn{display:flex;align-items:center;justify-content:center;height:16px;font-size:13px;color:rgba(255,255,255,.2)}
+.exit-row{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.ep{border-radius:6px;padding:7px 9px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+.ep-ok{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25)}
+.ep-err{background:rgba(248,113,113,.06);border:1px dashed rgba(248,113,113,.35)}
+.ep-icon{font-size:15px}
+.ep-ok .ep-icon{color:rgba(52,211,153,.8)}
+.ep-err .ep-icon{color:rgba(248,113,113,.8)}
+.ep-lbl{font-size:10px;font-weight:700}
+.ep-ok .ep-lbl{color:rgba(52,211,153,.9)}
+.ep-err .ep-lbl{color:rgba(248,113,113,.9)}
+.ep-desc{font-size:8px;color:var(--text-secondary);line-height:1.3}
+.al{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:rgba(255,255,255,.3);margin-bottom:1px}
+.ar{display:flex;align-items:flex-start;gap:5px;padding:1px 0}
+.ag{display:inline-flex;align-items:center;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700;flex-shrink:0}
+.son{background:rgba(96,165,250,.14);color:#60a5fa;border:1px solid rgba(96,165,250,.22)}
+.opx{background:rgba(251,191,36,.14);color:#fbbf24;border:1px solid rgba(251,191,36,.22)}
+.sm{font-size:9px;padding:2px 5px}
+.an{font-size:9px;color:var(--text-secondary);line-height:1.35;flex:1}
+.rr{display:flex;flex-wrap:wrap;gap:3px}
+.gsec{background:rgba(34,211,238,.05);border:1px solid rgba(34,211,238,.15);border-radius:5px;padding:7px 8px}
+.gl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:rgba(34,211,238,.7);margin-bottom:5px}
+.gg{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.gb{background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.15);border-radius:4px;padding:4px 5px;text-align:center}
+.gn{font-size:9px;font-weight:700;color:#22d3ee}
+.gnm{font-size:8px;color:var(--text-primary);line-height:1.2;margin-bottom:1px}
+.gt{font-size:7px;color:var(--text-secondary);font-family:monospace}
+.rcs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.rc{background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.18);border-radius:4px;padding:5px 6px}
+.rn{font-size:10px;font-weight:700;color:#a78bfa}
+.rr2{font-size:8px;color:var(--text-secondary);line-height:1.2}
+.refs{display:flex;align-items:center;gap:3px;flex-wrap:wrap;font-size:9px;color:rgba(255,255,255,.3);border-top:1px solid rgba(255,255,255,.07);padding-top:4px;margin-top:2px}
+.rc2{font-size:9px;padding:2px 5px;border-radius:3px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);color:rgba(255,255,255,.45)}
+.bphases{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px;margin-bottom:2px}
+.bp{font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);color:rgba(96,165,250,.9)}
+.bparr{font-size:11px;color:rgba(255,255,255,.2);align-self:center}
+.spec-out{display:flex;align-items:center;gap:6px;padding:5px 8px;background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.22);border-radius:5px;margin-top:2px}
+.so-icon{font-size:12px;color:#34d399}
+.so-txt{font-size:10px;color:rgba(52,211,153,.85);font-weight:600}
+.closure{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.3);border-radius:8px;padding:9px 13px;text-align:center}
+.cl-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(52,211,153,.6);margin-bottom:2px}
+.cl-title{font-size:13px;font-weight:700;color:#34d399;margin-bottom:3px}
+.cl-items{font-size:9px;color:var(--text-secondary)}
+.dt{border-radius:7px;overflow:hidden}
+.dt-hdr{padding:7px 10px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.dt-body{padding:8px 10px;display:flex;flex-direction:column;gap:3px}
+.dt-title{font-size:11px;font-weight:700}
+.dt-ref{font-size:8px;color:rgba(255,255,255,.3);font-style:italic;margin-left:auto}
+.dt-sub{font-size:9px;color:var(--text-secondary);line-height:1.35;margin-bottom:2px}
+.di2{font-size:9px;color:var(--text-secondary);display:flex;align-items:flex-start;gap:4px;line-height:1.3}
+.dd{color:rgba(255,255,255,.25);flex-shrink:0}
+.dt-acc{border:1px solid rgba(244,114,182,.25);background:rgba(244,114,182,.03)}
+.dt-acc .dt-hdr{background:rgba(244,114,182,.1);border-bottom:1px solid rgba(244,114,182,.15)}
+.dt-acc .dt-title{color:#f472b6}
+.dt-sdp{border:1px solid rgba(52,211,153,.25);background:rgba(52,211,153,.03)}
+.dt-sdp .dt-hdr{background:rgba(52,211,153,.1);border-bottom:1px solid rgba(52,211,153,.15)}
+.dt-sdp .dt-title{color:#34d399}
+.dt-td{border:1px solid rgba(96,165,250,.25);background:rgba(96,165,250,.03)}
+.dt-td .dt-hdr{background:rgba(96,165,210,.1);border-bottom:1px solid rgba(96,165,250,.15)}
+.dt-td .dt-title{color:#60a5fa}
+.dt-mcp{border:1px solid rgba(34,211,238,.25);background:rgba(34,211,238,.03)}
+.dt-mcp .dt-hdr{background:rgba(34,211,238,.1);border-bottom:1px solid rgba(34,211,238,.15)}
+.dt-mcp .dt-title{color:#22d3ee}
+.msrv{background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.12);border-radius:4px;padding:5px 7px;margin-top:3px}
+.msn{font-size:10px;font-weight:700;color:#22d3ee;font-family:monospace;margin-bottom:1px}
+.msc{font-size:8px;color:rgba(34,211,238,.6)}
+.msd{font-size:8px;color:var(--text-secondary)}
+/* Planning modes */
+.plan-modes-bar{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;padding:6px 9px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px}
+.pmode{font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px}
+.pmode-lean{background:rgba(245,158,11,.2);color:#f59e0b}
+.pmode-strong{background:rgba(239,68,68,.2);color:#f87171}
+.pmode-check{background:rgba(139,92,246,.2);color:#c4b5fd}
+.pmode-sep{font-size:10px;color:rgba(255,255,255,.15)}
+.pmode-desc{font-size:9px;color:rgba(255,255,255,.35)}
+.mode-cols{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.mc-col{border-radius:6px;overflow:hidden;display:flex;flex-direction:column}
+.mc-hdr{padding:6px 10px;display:flex;align-items:center;gap:7px}
+.lean-mc .mc-hdr{background:rgba(245,158,11,.12);border-bottom:1px solid rgba(245,158,11,.2)}
+.strong-mc .mc-hdr{background:rgba(239,68,68,.1);border-bottom:1px solid rgba(239,68,68,.2)}
+.lean-mc{border:1px solid rgba(245,158,11,.3)}
+.strong-mc{border:1px solid rgba(239,68,68,.3)}
+.mc-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px}
+.lean-mc .mc-badge{background:rgba(245,158,11,.2);color:#f59e0b}
+.strong-mc .mc-badge{background:rgba(239,68,68,.2);color:#f87171}
+.mc-tag{font-size:9px;color:var(--text-secondary)}
+.mc-body{padding:8px 10px;display:flex;flex-direction:column;gap:5px;flex:1}
+.mc-note{font-size:9px;color:var(--text-secondary);font-style:italic;line-height:1.35}
+.mc-cross{display:flex;flex-direction:column;gap:2px}
+.mc-cross-item{font-size:9px;color:rgba(255,255,255,.3);display:flex;align-items:center;gap:4px}
+.mc-cross-x{color:rgba(248,113,113,.5);font-weight:700}
+.mc-when{font-size:9px;color:rgba(255,255,255,.3);font-style:italic;border-top:1px solid rgba(255,255,255,.07);padding-top:4px;margin-top:2px}
+.mc-phase-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:rgba(248,113,113,.65);margin-top:3px;margin-bottom:1px}
+.mode-shared{background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:5px;padding:6px 9px}
+.mode-shared-lbl{font-size:9px;font-weight:700;color:rgba(52,211,153,.75);margin-bottom:3px}
+.mode-shared-row{display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px}
+.mode-shared-item{font-size:9px;color:rgba(52,211,153,.75)}
+.mode-shared-sep{font-size:9px;color:rgba(52,211,153,.35)}
+</style>
+</head>
+<body>
+
+<button id="dl-btn" onclick="downloadPng()">&#8681; Als PNG speichern (2×)</button>
+
+<div class="w" id="diagram">
+  <div class="w-hdr">
+    <h2>Feature-Delivery — Arbeitsvorgehensweise</h2>
+    <p>Spezifikation → Planungs-Loop (Lean / Strong) → Implementierungs-Loop → Closure</p>
+  </div>
+
+  <div class="grid">
+    <div class="col-main">
+
+      <!-- 1. SPEZIFIKATION -->
+      <div class="blk blk-spec">
+        <div class="bh">
+          <div class="bnum">1</div>
+          <div class="bt">Spezifikation</div>
+          <div class="bs">optional vorgelagert · Ziel: DoD-ready Spec</div>
+        </div>
+        <div class="bb">
+          <div class="ar">
+            <div class="ag son sm">ado (optional)</div>
+            <div class="an">load → analyse → save · liefert story.md / task.md als Ausgangsbasis</div>
+          </div>
+          <div class="ar">
+            <div class="ag son">buddy-agent</div>
+            <div class="an">Sparrings-Partner · klärt, verdichtet, prüft Repo, handoff</div>
+          </div>
+          <div class="bphases">
+            <span class="bp">intake</span><span class="bparr">→</span>
+            <span class="bp">compress</span><span class="bparr">→</span>
+            <span class="bp">repo-check</span><span class="bparr">→</span>
+            <span class="bp">diskussion</span><span class="bparr">→</span>
+            <span class="bp">plan-prompt</span>
+          </div>
+          <div class="spec-out">
+            <div class="so-icon">✓</div>
+            <div class="so-txt">Fertige Spezifikation — klare ACs, keine offenen Fragen, DoD-ready</div>
+          </div>
+          <div class="refs">Abhängigkeiten:
+            <span class="rc2" style="color:rgba(244,114,182,.8)">acceptance-design</span>
+            <span class="rc2" style="color:rgba(52,211,153,.8)">software-design-principles</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="conn">↓</div>
+
+      <!-- PLANUNGS-LOOP -->
+      <div class="loop loop-plan">
+        <div class="loop-bar">feature-delivery — Planungs-Loop</div>
+        <div class="loop-inner">
+
+          <!-- 2a Planung -->
+          <div class="blk blk-plan">
+            <div class="bh">
+              <div class="bnum">2a</div>
+              <div class="bt">Planung</div>
+              <div class="bs">Modus wird durch Trigger-Wort aktiviert</div>
+            </div>
+            <div class="bb">
+              <div class="plan-modes-bar">
+                <span class="pmode pmode-lean">LEAN</span>
+                <span class="pmode-desc">Default — ohne Zusatz</span>
+                <span class="pmode-sep">|</span>
+                <span class="pmode pmode-strong">STRONG</span>
+                <span class="pmode-desc">explizit „strong"</span>
+                <span class="pmode-sep">|</span>
+                <span class="pmode pmode-check">CHECK / CHECK+</span>
+                <span class="pmode-desc">Bewertung 1–7 → STOPP, kein Planning</span>
+              </div>
+
+              <div class="mode-cols">
+                <div class="mc-col lean-mc">
+                  <div class="mc-hdr">
+                    <span class="mc-badge">LEAN</span>
+                    <span class="mc-tag">Default — ohne Zusatz · schnell</span>
+                  </div>
+                  <div class="mc-body">
+                    <div class="ar">
+                      <div class="ag opx">Plan-Orchestrator (Opus)</div>
+                    </div>
+                    <div class="mc-note">Plant + prüft + reviewed solo — alles in einem Turn, kein Sub-Agent-Fan-out</div>
+                    <div class="mc-cross">
+                      <div class="mc-cross-item"><span class="mc-cross-x">✗</span> Kein Scout (Phase 3)</div>
+                      <div class="mc-cross-item"><span class="mc-cross-x">✗</span> Kein Topic-Planer (Phase 4b)</div>
+                      <div class="mc-cross-item"><span class="mc-cross-x">✗</span> Kein Review-Subagent-Loop</div>
+                    </div>
+                    <div class="mc-when">Für: klaren Scope · bekannte Codebasis · überschaubare Integration</div>
+                  </div>
+                </div>
+
+                <div class="mc-col strong-mc">
+                  <div class="mc-hdr">
+                    <span class="mc-badge">STRONG</span>
+                    <span class="mc-tag">Volles Arsenal · hohe Konfidenz</span>
+                  </div>
+                  <div class="mc-body">
+                    <div class="ar">
+                      <div class="ag opx">Plan-Orchestrator (Opus)</div>
+                    </div>
+                    <div class="mc-phase-lbl">Phase 3 — Scouts:</div>
+                    <div class="ar">
+                      <div class="ag son sm">Scout ×1–10 (Sonnet)</div>
+                      <div class="an">Code + Test-Coverage kartieren · MCP: codebase-analyzer + dev-mcp</div>
+                    </div>
+                    <div class="mc-phase-lbl">Phase 4b — Topic-Planer:</div>
+                    <div class="ar">
+                      <div class="ag son sm">Topic-Planer ×1–10 (Sonnet)</div>
+                      <div class="an">Teilpläne + Akzeptanz→Test-Liste je Topic (§8/F1)</div>
+                    </div>
+                    <div class="mc-phase-lbl">Plan-Review-Loop (max. 5 Iter.):</div>
+                    <div class="ar">
+                      <div class="rr">
+                        <span class="ag son sm">Guard</span>
+                        <span class="ag opx sm">Risk</span>
+                        <span class="ag son sm">Readiness</span>
+                        <span class="ag son sm">Craft</span>
+                        <span class="ag son sm">Auditor</span>
+                        <span class="ag opx sm">Design-Principles</span>
+                      </div>
+                    </div>
+                    <div class="ar">
+                      <div class="ag opx sm">Plan-Fixer (Opus)</div>
+                      <div class="an">iteratives Patchen · bei Blocker: Mini-Re-Planning</div>
+                    </div>
+                    <div class="mc-when">Für: viele Unbekannte · Cross-Service · hohes Risiko · komplexe Integration</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mode-shared">
+                <div class="mode-shared-lbl">Beide Modi — immer Pflicht:</div>
+                <div class="mode-shared-row">
+                  <span class="mode-shared-item">§8/F1 Akzeptanzliste (Testname + AAA-Stichpunkte)</span>
+                  <span class="mode-shared-sep">·</span>
+                  <span class="mode-shared-item">§UA Uncertainty Audit</span>
+                  <span class="mode-shared-sep">·</span>
+                  <span class="mode-shared-item">requests/plans/plan-*.md persistieren</span>
+                </div>
+              </div>
+
+              <div class="refs">Nordstern:
+                <span class="rc2" style="color:rgba(52,211,153,.8)">software-design-principles</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="i-conn">↓</div>
+
+          <!-- 2b DI Plan -->
+          <div class="blk blk-di">
+            <div class="bh">
+              <div class="bnum">2b</div>
+              <div class="bt">delivery-inspection — Plan</div>
+              <div class="bs">Plan als Deliverable · universell einsetzbar</div>
+            </div>
+            <div class="bb">
+              <div class="al">6 Reviewer parallel — iterativer Loop (max. 10 Runden):</div>
+              <div class="rcs">
+                <div class="rc"><div class="rn">Revisor</div><div class="rr2">Anforderungs-Buchhalter · 1:1 Mapping Anforderung → Plan</div></div>
+                <div class="rc"><div class="rn">Skeptiker</div><div class="rr2">Lückenjäger · Top-3 schlimmste Lücken</div></div>
+                <div class="rc"><div class="rn">Normalo</div><div class="rr2">Pragmatische Abnahme · sofort umsetzbar?</div></div>
+                <div class="rc"><div class="rn">Dolmetscher</div><div class="rr2">Fehlinterpretationen · stille Entscheidungen aufdecken</div></div>
+                <div class="rc"><div class="rn">Auftraggeber</div><div class="rr2">Finale Abnahme · würde ich das unterschreiben?</div></div>
+                <div class="rc"><div class="rn">Querdenker</div><div class="rr2">YAGNI-Wächter · Scope-Creep · Zuviel / Zuwenig</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="exit-row">
+            <div class="ep ep-ok">
+              <div class="ep-icon">↓</div>
+              <div class="ep-lbl">Sauber</div>
+              <div class="ep-desc">§UA leer → Auto-Handoff zur Implementierung</div>
+            </div>
+            <div class="ep ep-err">
+              <div class="ep-icon">↺</div>
+              <div class="ep-lbl">Findings</div>
+              <div class="ep-desc">→ Plan-Orchestrator (Opus) · eindeutig fixbar oder gebündelte User-Rückfrage · iteriert bis sauber</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conn-ok">
+        <div class="conn-ok-a">↓</div>
+        <div class="conn-ok-t">Sauber — §UA leer · Auto-Handoff zur Implementierung</div>
+      </div>
+
+      <!-- IMPLEMENTIERUNGS-LOOP -->
+      <div class="loop loop-impl">
+        <div class="loop-bar">feature-delivery — Implementierungs-Loop</div>
+        <div class="loop-inner">
+
+          <!-- 3a Implementierung -->
+          <div class="blk blk-impl">
+            <div class="bh">
+              <div class="bnum">3a</div>
+              <div class="bt">Implementierung</div>
+              <div class="bs">Test-First (§8) · max. 5 Fix-Runden</div>
+            </div>
+            <div class="bb">
+              <div class="ar">
+                <div class="ag opx">Impl-Loop-Orchestrator (Opus)</div>
+                <div class="an">Hard Gate (14 Readiness-Fragen) · Integration-Checkpoint · Slice-Coverage-Check · delegiert alles</div>
+              </div>
+              <div class="al">Scribes (Test-First: Red → Green):</div>
+              <div class="ar">
+                <div class="ag son sm">Scribe ×1–10 (Sonnet) R1–3</div>
+                <div class="an">Tests nach Akzeptanzliste (Red) → Implementierung (Green) · nur slice-scoped · BoyScout danach</div>
+              </div>
+              <div class="ar">
+                <div class="ag opx sm">Scribe ×1–10 (Opus) R4–5</div>
+                <div class="an">Eskalation bei hartnäckigen Findings</div>
+              </div>
+              <div class="gsec">
+                <div class="gl">Quality Gates (integrationsweit · via dev-tooling):</div>
+                <div class="gg">
+                  <div class="gb"><div class="gn">G1</div><div class="gnm">Build</div><div class="gt">dev-mcp</div></div>
+                  <div class="gb"><div class="gn">G2</div><div class="gnm">Lint · Inspect · review_git_diff · IOSP</div><div class="gt">dev-mcp + codebase-analyzer</div></div>
+                  <div class="gb"><div class="gn">G3</div><div class="gnm">Design-Principles Review</div><div class="gt">impl-review-agent (Opus)</div></div>
+                  <div class="gb"><div class="gn">G4</div><div class="gnm">Test-Suite</div><div class="gt">dev-mcp</div></div>
+                </div>
+              </div>
+              <div class="al">7 Impl-Reviewer parallel (readonly):</div>
+              <div class="ar">
+                <div class="rr">
+                  <span class="ag opx sm">Risk</span><span class="ag opx sm">Design-Principles</span>
+                  <span class="ag son sm">Verifier</span><span class="ag son sm">Readiness</span>
+                  <span class="ag son sm">Craft</span><span class="ag son sm">Auditor</span><span class="ag son sm">Guard</span>
+                </div>
+                <div class="an">Verifier: fachliche Korrektheit + AC-Map §8/F4 · review_git_diff als Evidenz</div>
+              </div>
+              <div class="ar">
+                <div class="ag opx">Fix-Planer (Opus)</div>
+                <div class="an">→ Fix-Scribes → Gates erneut · nach R5: Final-Gate + Rest-Findings-Bericht</div>
+              </div>
+              <div class="refs">Referenz-Skills:
+                <span class="rc2" style="color:rgba(96,165,250,.8)">test-design</span>
+                <span class="rc2" style="color:rgba(52,211,153,.8)">software-design-principles</span>
+                <span class="rc2">angular-developer</span>
+                <span class="rc2">code-intel-workflow</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="i-conn">↓</div>
+
+          <!-- 3b DI Impl -->
+          <div class="blk blk-di">
+            <div class="bh">
+              <div class="bnum">3b</div>
+              <div class="bt">delivery-inspection — Implementierung</div>
+              <div class="bs">Letzter Schritt vor Closure · Anforderungserfüllung aus Besteller-Perspektive</div>
+            </div>
+            <div class="bb">
+              <div class="al">6 Reviewer parallel — iterativer Loop (max. 10 Runden):</div>
+              <div class="rcs">
+                <div class="rc"><div class="rn">Revisor</div><div class="rr2">Anforderungs-Buchhalter · 1:1 Mapping</div></div>
+                <div class="rc"><div class="rn">Skeptiker</div><div class="rr2">Lückenjäger · was fehlt oder halbfertig?</div></div>
+                <div class="rc"><div class="rn">Normalo</div><div class="rr2">Pragmatische Abnahme · produktiv einsetzbar?</div></div>
+                <div class="rc"><div class="rn">Dolmetscher</div><div class="rr2">Fehlinterpretationen · stille Entscheidungen</div></div>
+                <div class="rc"><div class="rn">Auftraggeber</div><div class="rr2">Finale Abnahme · abnahmefähig?</div></div>
+                <div class="rc"><div class="rn">Querdenker</div><div class="rr2">YAGNI-Wächter · Scope-Creep</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="exit-row">
+            <div class="ep ep-ok">
+              <div class="ep-icon">↓</div>
+              <div class="ep-lbl">Sauber</div>
+              <div class="ep-desc">Alle 6 Perspektiven ohne Findings → Closure</div>
+            </div>
+            <div class="ep ep-err">
+              <div class="ep-icon">↺</div>
+              <div class="ep-lbl">Findings</div>
+              <div class="ep-desc">→ Impl-Loop-Orchestrator · Fix-Scribe oder gebündelte User-Rückfrage</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="conn-ok">
+        <div class="conn-ok-a">↓</div>
+        <div class="conn-ok-t">Sauber — Delivery-Inspection abgeschlossen</div>
+      </div>
+
+      <!-- 4. CLOSURE -->
+      <div class="closure">
+        <div class="cl-tag">4 — Closure</div>
+        <div class="cl-title">✓ Fertig</div>
+        <div class="cl-items">Plan-Alignment · Gate-Matrix pro Stack/Runde · 7 Reviews je Runde · Fix-Planer-Evidenz · MCP-Compliance · Rest-Findings-Bericht wenn nötig</div>
+      </div>
+
+    </div><!-- col-main -->
+
+    <!-- DEP TILES -->
+    <div class="col-dep">
+
+      <div class="dt dt-acc">
+        <div class="dt-hdr"><div class="dt-title">acceptance-design</div><div class="dt-ref">→ Spezifikation</div></div>
+        <div class="dt-body">
+          <div class="dt-sub">WAS testen — Anforderungen auf Testbarkeit prüfen</div>
+          <div class="di2"><span class="dd">·</span>ACs gegen Prüfkatalog abgleichen</div>
+          <div class="di2"><span class="dd">·</span>Untestbare Kriterien schärfen oder Rückfrage markieren</div>
+          <div class="di2"><span class="dd">·</span>Output: Testname + AAA-Stichpunkte + Status (F1)</div>
+          <div class="di2"><span class="dd">·</span>acceptance-design-agent · standalone · kein Auto-Trigger</div>
+        </div>
+      </div>
+
+      <div class="dt dt-sdp">
+        <div class="dt-hdr"><div class="dt-title">★ software-design-principles</div><div class="dt-ref">→ Spec · Plan · Impl</div></div>
+        <div class="dt-body">
+          <div class="dt-sub">Qualitätsnordstern — automatisch aktiv in allen Phasen</div>
+          <div class="di2"><span class="dd">·</span>sauber · funktional · getestet · wartbar · nachhaltig</div>
+          <div class="di2"><span class="dd">·</span>Flow Design · IODA/IOSP · SOLID · Clean Code</div>
+          <div class="di2"><span class="dd">·</span>YAGNI · DRY · KISS · keine Verschachtelung</div>
+          <div class="di2"><span class="dd">·</span>2 dedizierte Reviewer-Agents (Opus) in Plan + Impl</div>
+        </div>
+      </div>
+
+      <div class="dt dt-td">
+        <div class="dt-hdr"><div class="dt-title">test-design</div><div class="dt-ref">→ Scribes (Impl)</div></div>
+        <div class="dt-body">
+          <div class="dt-sub">WIE testen — Konventionen für Scribes</div>
+          <div class="di2"><span class="dd">·</span>MethodName_Situation_ErwartetesErgebnis</div>
+          <div class="di2"><span class="dd">·</span>Arrange / Act / Assert</div>
+          <div class="di2"><span class="dd">·</span>.NET: xUnit v3 · FluentAssertions · Moq</div>
+          <div class="di2"><span class="dd">·</span>Angular: Karma · Jasmine · TestBed</div>
+        </div>
+      </div>
+
+      <div class="dt dt-mcp">
+        <div class="dt-hdr"><div class="dt-title">dev-tooling — MCP Gateway</div><div class="dt-ref">→ Scouts · Gates</div></div>
+        <div class="dt-body">
+          <div class="dt-sub">Lesen/Bauen → dev-mcp · Analysieren → codebase-analyzer · Logs → build-log-filter</div>
+          <div class="msrv">
+            <div class="msn">dev-mcp</div><div class="msc">49 Tools · stdio</div>
+            <div class="msd">Filesystem · Build/Test · Scaffolding · Git · Patch · Inspect · Lint</div>
+          </div>
+          <div class="msrv">
+            <div class="msn">codebase-analyzer</div><div class="msc">43 Tools · Node · Port 5052</div>
+            <div class="msd">index · review_git_diff · analyze_iosp · find_in_index · Domain-Finder</div>
+          </div>
+          <div class="msrv">
+            <div class="msn">build-log-filter</div><div class="msc">Docker · Port 8089</div>
+            <div class="msd">ng serve · Shell-Logs verdichten · Shell-Fallback</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+  integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+function downloadPng() {
+  const btn = document.getElementById('dl-btn');
+  btn.disabled = true;
+  btn.textContent = 'Wird gerendert…';
+  const el = document.getElementById('diagram');
+  html2canvas(el, {
+    backgroundColor: '#0f172a',
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    windowWidth: el.scrollWidth + 64,
+    windowHeight: el.scrollHeight + 64
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'feature-delivery-workflow.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    btn.disabled = false;
+    btn.textContent = '✓ PNG gespeichert — nochmals speichern';
+  }).catch(err => {
+    alert('Fehler: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = '⚠ Fehler — nochmals versuchen';
+  });
+}
+</script>
+
+</body>
+</html>

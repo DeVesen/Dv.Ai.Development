@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Dev.Mcp.Models;
 using Dev.Mcp.Services;
 using Dev.Mcp.Web;
@@ -148,15 +149,69 @@ public sealed class DotnetTools
             return (JsonSerializer.Serialize(result, JsonOptions.Default), string.Empty);
         });
 
+    [McpServerTool(Name = "publish_dotnet_project")]
+    [Description("Runs dotnet publish for a .NET project. Replaces PowerShell(dotnet publish ...) shell commands. Returns {success, errors[], warnings[], summary}.")]
+    public async Task<string> PublishDotnetProject(
+        [Description("Absolute path to the .csproj file or project directory")] string project_path,
+        [Description("Build configuration, e.g. Release or Debug")] string? configuration = "Release",
+        [Description("Runtime identifier, e.g. win-x64, linux-x64")] string? runtime = null,
+        [Description("Absolute output directory path")] string? output_path = null,
+        [Description("Publish as self-contained executable")] bool? self_contained = null) =>
+        await ExecuteAsync("publish_dotnet_project", new { project_path, configuration, runtime, output_path, self_contained }, async () =>
+        {
+            var result = await _runner.PublishAsync(project_path, configuration, runtime, output_path, self_contained);
+            return (JsonSerializer.Serialize(result, JsonOptions.Default), result.ConsoleOutput ?? string.Empty);
+        });
+
+    [McpServerTool(Name = "list_processes")]
+    [Description("Lists running processes filtered by name pattern. Replaces PowerShell(Get-Process ...) for tooling diagnostics. Returns {processes:[{id, name, path}]}.")]
+    public string ListProcesses(
+        [Description("Optional regex pattern to filter process names, e.g. 'Dev|Mcp|node|npx'")] string? name_filter = null)
+    {
+        var sw = Stopwatch.StartNew();
+        var paramJson = JsonSerializer.Serialize(new { name_filter }, JsonOptions.Default);
+        try
+        {
+            var all = Process.GetProcesses();
+            var matching = string.IsNullOrWhiteSpace(name_filter)
+                ? all
+                : all.Where(p => Regex.IsMatch(p.ProcessName, name_filter, RegexOptions.IgnoreCase)).ToArray();
+
+            var processes = matching.Select(p =>
+            {
+                string path = string.Empty;
+                try { path = p.MainModule?.FileName ?? string.Empty; } catch { }
+                return new { id = p.Id, name = p.ProcessName, path };
+            }).OrderBy(p => p.name).ToArray();
+
+            foreach (var p in all) try { p.Dispose(); } catch { }
+
+            var result = JsonSerializer.Serialize(new { processes }, JsonOptions.Default);
+            sw.Stop();
+            _history.Record("list_processes", "utility", paramJson, result, string.Empty, sw.ElapsedMilliseconds);
+            _logger.LogInformation("=== list_processes ({DurationMs}ms, {Count} results) ===", sw.ElapsedMilliseconds, processes.Length);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            var errorJson = JsonOptions.Error(ex.Message);
+            _history.Record("list_processes", "utility", paramJson, errorJson, string.Empty, sw.ElapsedMilliseconds);
+            _logger.LogError(ex, "=== list_processes failed ===");
+            return errorJson;
+        }
+    }
+
     private async Task<string> ExecuteAsync(string toolName, object parameters, Func<Task<(string json, string consoleOutput)>> action)
     {
         var sw = Stopwatch.StartNew();
         var paramJson = JsonSerializer.Serialize(parameters, JsonOptions.Default);
+        var pendingId = _history.StartRecord(toolName, "dotnet", paramJson);
         try
         {
             var (result, consoleOutput) = await action();
             sw.Stop();
-            _history.Record(toolName, "dotnet", paramJson, result, consoleOutput, sw.ElapsedMilliseconds);
+            _history.Complete(pendingId, result, consoleOutput, sw.ElapsedMilliseconds);
             _logger.LogInformation("=== {Tool} ({DurationMs}ms) ===", toolName, sw.ElapsedMilliseconds);
             return result;
         }
@@ -164,7 +219,7 @@ public sealed class DotnetTools
         {
             sw.Stop();
             var errorJson = JsonOptions.Error(ex.Message);
-            _history.Record(toolName, "dotnet", paramJson, errorJson, string.Empty, sw.ElapsedMilliseconds);
+            _history.Complete(pendingId, errorJson, string.Empty, sw.ElapsedMilliseconds);
             _logger.LogError(ex, "=== {Tool} failed ===", toolName);
             return errorJson;
         }

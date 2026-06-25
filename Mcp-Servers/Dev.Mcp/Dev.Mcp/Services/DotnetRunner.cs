@@ -90,19 +90,47 @@ public sealed partial class DotnetRunner
         var noMatchLine = lines.Select(l => NoTestMatchesRegex().Match(l)).FirstOrDefault(m => m.Success);
         var abortLine = TestRunAbortedRegex().Match(string.Join("\n", lines));
 
+        // dotnet test fails at build phase: capture MSBuild errors as fallback
+        var buildErrors = failedTests.Length == 0
+            ? lines.Where(l => BuildErrorLineRegex().IsMatch(l)).Select(l => l.Trim())
+                .Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray()
+            : [];
+
+        // Last-resort fallback: last 10 non-empty lines when nothing else matched
+        var fallbackLines = (exitCode != 0 && failedTests.Length == 0 && buildErrors.Length == 0
+                             && noMatchLine is not { Success: true } && !abortLine.Success)
+            ? lines.Where(l => l.Trim().Length > 0).TakeLast(10).Select(l => l.Trim()).ToArray()
+            : [];
+
         var errors = failedTests.Length > 0 ? failedTests
+            : buildErrors.Length > 0 ? buildErrors
             : noMatchLine is { Success: true } ? [noMatchLine.Value.Trim()]
             : abortLine.Success ? ["Test Run Aborted."]
+            : fallbackLines.Length > 0 ? fallbackLines
             : [];
 
         var summary = summaryLine is { Success: true } ? summaryLine.Value.Trim()
             : exitCode == 0 ? "All tests passed."
             : failedTests.Length > 0 ? $"Tests failed: {failedTests.Length} failing test(s)."
+            : buildErrors.Length > 0 ? $"Build failed during test run: {buildErrors.Length} error(s)."
             : noMatchLine is { Success: true } ? "No tests matched the filter — run aborted."
             : abortLine.Success ? "Test run aborted — see Console output for details."
             : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
 
         return new DotnetBuildResult { Success = exitCode == 0, Command = "dotnet test", Errors = errors, Warnings = [], ExitCode = exitCode, Summary = summary };
+    }
+
+    public async Task<DotnetBuildResult> PublishAsync(string projectPath, string? configuration = null, string? runtime = null, string? outputPath = null, bool? selfContained = null, CancellationToken cancellationToken = default)
+    {
+        if (!ValidatePath(projectPath, out var error)) return MakeFailResult(error, "dotnet publish");
+        var fullPath = Path.GetFullPath(projectPath);
+        var args = $"publish {Quote(fullPath)}";
+        if (!string.IsNullOrWhiteSpace(configuration)) args += $" -c {configuration.Trim()}";
+        if (!string.IsNullOrWhiteSpace(runtime)) args += $" -r {runtime.Trim()}";
+        if (!string.IsNullOrWhiteSpace(outputPath)) args += $" -o {Quote(Path.GetFullPath(outputPath.Trim()))}";
+        if (selfContained.HasValue) args += $" --self-contained {selfContained.Value.ToString().ToLowerInvariant()}";
+        var workingDir = File.Exists(fullPath) ? Path.GetDirectoryName(fullPath)! : fullPath;
+        return await RunDotnetAsync("dotnet publish", args, workingDir, ParseBuildOutput, BuildTimeoutSeconds, cancellationToken);
     }
 
     private async Task<DotnetBuildResult> RunDotnetAsync(

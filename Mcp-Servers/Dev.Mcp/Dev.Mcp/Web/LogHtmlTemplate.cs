@@ -67,6 +67,9 @@ internal static class LogHtmlTemplate
             .id-chip { font-size: 0.7rem; color: #475569; font-family: monospace; flex-shrink: 0; }
             .chars { font-size: 0.78rem; color: #64748b; flex-shrink: 0; }
             .dur { font-size: 0.78rem; color: #10b981; font-weight: 600; flex-shrink: 0; }
+            .dur.pending { color: #f59e0b; animation: pulse 1.2s ease-in-out infinite; }
+            @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+            .item.pending { border-color: #78350f; }
             .spacer-h { flex: 1; }
             .btn-remove {
               background: none; border: 1px solid #374151; color: #6b7280;
@@ -114,7 +117,7 @@ internal static class LogHtmlTemplate
             <div class="spacer"></div>
             <label class="refresh-toggle">
               <input type="checkbox" id="autoRefresh" checked />
-              Auto-Refresh (5s)
+              <span id="refreshLabel">Auto-Refresh (5s)</span>
             </label>
             <button class="btn-clear" onclick="clearAll()">&#x1F5D1; Clear All</button>
           </header>
@@ -159,21 +162,29 @@ internal static class LogHtmlTemplate
               document.getElementById('count').textContent = items.length + (items.length === 1 ? ' Call' : ' Calls') + (activeFilter !== 'all' ? ' (' + activeFilter + ')' : '');
               if (items.length === 0) {
                 list.innerHTML = '<div class="empty">Noch kein Tool-Aufruf aufgezeichnet.</div>';
+                scheduleRefresh(false);
                 return;
               }
               var openIds = new Set(Array.from(document.querySelectorAll('.item.open')).map(function(el) { return el.getAttribute('data-id'); }));
+              var hasPending = items.some(function(it) { return it.durationMs === -1; });
               list.innerHTML = items.map(function(it) {
+                var isPending = it.durationMs === -1;
                 var open = openIds.has(it.id) ? ' open' : '';
+                var pendingClass = isPending ? ' pending' : '';
                 var srcClass = 'src-' + (it.source || 'unknown');
-                return '<div class="item' + open + '" data-id="' + esc(it.id) + '">'
+                var durHtml = isPending
+                  ? '<span class="dur pending">⟳ running…</span>'
+                  : '<span class="dur">' + it.durationMs + 'ms</span>';
+                var durationMeta = isPending ? '…' : it.durationMs + ' ms';
+                return '<div class="item' + open + pendingClass + '" data-id="' + esc(it.id) + '">'
                   + '<div class="item-header" onclick="toggle(this)">'
                   + '<span class="chevron">&#9658;</span>'
                   + '<span class="src-tag ' + srcClass + '">' + esc(it.source || '?') + '</span>'
                   + '<span class="tag">' + esc(it.tool) + '</span>'
                   + '<span class="ts">' + fmt(it.timestamp) + '</span>'
                   + '<span class="id-chip">#' + esc(it.id) + '</span>'
-                  + '<span class="chars">' + fmtNum(it.outputChars) + ' chars</span>'
-                  + '<span class="dur">' + it.durationMs + 'ms</span>'
+                  + (isPending ? '' : '<span class="chars">' + fmtNum(it.outputChars) + ' chars</span>')
+                  + durHtml
                   + '<div class="spacer-h"></div>'
                   + '<button class="btn-remove" title="Entfernen" data-remove-id="' + esc(it.id) + '" onclick="removeItem(this.getAttribute(&quot;data-remove-id&quot;), event)">&#215;</button>'
                   + '</div>'
@@ -182,14 +193,23 @@ internal static class LogHtmlTemplate
                   + '<div class="meta-cell"><div class="meta-label">Timestamp</div><div class="meta-value">' + fmt(it.timestamp) + '</div></div>'
                   + '<div class="meta-cell"><div class="meta-label">Source</div><div class="meta-value">' + esc(it.source) + '</div></div>'
                   + '<div class="meta-cell"><div class="meta-label">Tool</div><div class="meta-value">' + esc(it.tool) + '</div></div>'
-                  + '<div class="meta-cell"><div class="meta-label">Duration</div><div class="meta-value">' + it.durationMs + ' ms</div></div>'
-                  + '<div class="meta-cell"><div class="meta-label">Output Chars</div><div class="meta-value">' + fmtNum(it.outputChars) + '</div></div>'
+                  + '<div class="meta-cell"><div class="meta-label">Duration</div><div class="meta-value">' + durationMeta + '</div></div>'
+                  + (isPending ? '' : '<div class="meta-cell"><div class="meta-label">Output Chars</div><div class="meta-value">' + fmtNum(it.outputChars) + '</div></div>')
                   + '</div></div>'
                   + '<div class="section"><div class="section-header"><div class="section-title">Parameter</div>' + copyBtn(it.params) + '</div><pre>' + esc(it.params) + '</pre></div>'
-                  + '<div class="section"><div class="section-header"><div class="section-title">Output (Preview)</div>' + copyBtn(it.preview) + '</div><pre>' + esc(it.preview) + '</pre></div>'
+                  + (isPending ? '' : '<div class="section"><div class="section-header"><div class="section-title">Output (Preview)</div>' + copyBtn(it.preview) + '</div><pre>' + esc(it.preview) + '</pre></div>')
                   + (it.consoleOutput ? '<div class="section"><div class="section-header"><div class="section-title">Console Output</div>' + copyBtn(it.consoleOutput) + '</div><pre>' + esc(it.consoleOutput) + '</pre></div>' : '')
                   + '</div></div>';
               }).join('');
+              scheduleRefresh(hasPending);
+            }
+
+            function scheduleRefresh(hasPending) {
+              if (!document.getElementById('autoRefresh').checked) return;
+              clearInterval(timer);
+              var interval = hasPending ? 1000 : 5000;
+              document.getElementById('refreshLabel').textContent = 'Auto-Refresh (' + (hasPending ? '1s' : '5s') + ')';
+              timer = setInterval(load, interval);
             }
 
             function toggle(header) { header.closest('.item').classList.toggle('open'); }
@@ -212,8 +232,8 @@ internal static class LogHtmlTemplate
             }
 
             document.getElementById('autoRefresh').addEventListener('change', function() {
-              if (this.checked) { timer = setInterval(load, 5000); }
-              else { clearInterval(timer); timer = null; }
+              if (this.checked) { scheduleRefresh(allItems.some(function(it) { return it.durationMs === -1; })); }
+              else { clearInterval(timer); timer = null; document.getElementById('refreshLabel').textContent = 'Auto-Refresh (off)'; }
             });
 
             load();

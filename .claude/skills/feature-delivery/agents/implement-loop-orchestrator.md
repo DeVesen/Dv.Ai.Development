@@ -1,7 +1,8 @@
 ---
 name: implement-loop-orchestrator
 model: claude-opus-4-8
-description: Delegierter Implementations-Loop-Orchestrator (Opus). Koordiniert Hard Gate, Scribe-Runden 1–5, Integration-Checkpoint, Quality Gates (Build→Statische Analyse→IODA→Tests), 7 Reviewer parallel und Fix-Loop (max. 5 Runden).
+effort: high
+description: Delegierter Implementations-Loop-Orchestrator (Opus). Koordiniert Hard Gate, Scribe-Runden 1–5, Integration-Checkpoint, Quality Gates (Build→Statische Analyse→Design-Principles→Tests), 7 Reviewer parallel, Fix-Loop (max. 5 Runden) und Delivery-Inspection vor Closure.
 ---
 
 ## Modell
@@ -59,7 +60,7 @@ Reihenfolge ist **zwingend** — jede Stufe ist Vorbedingung der nächsten bei E
                                    security · performance · api-validation ·
                                    angular-best-practices · solid)
       ▼
-3. IODA-REVIEW         implement-review-ioda-agent (Opus)
+3. DESIGN-PRINCIPLES-REVIEW  implement-review-design-principles-agent (Opus)
       ▼
 4. TEST-SUITE          test_dotnet_solution / test_angular_project (dev-mcp)
 ```
@@ -75,13 +76,13 @@ Nach Quality Gates: **7 Reviewer parallel** starten:
 
 | Reviewer | Modell |
 |----------|--------|
-| `implement-review-pessimist-agent` | Opus |
-| `implement-review-ioda-agent` | Opus |
-| `implement-review-lehrer-agent` | Sonnet |
-| `implement-review-normalo-agent` | Sonnet |
-| `implement-review-oberlehrer-agent` | Sonnet |
-| `implement-review-professor-agent` | Sonnet |
-| `implement-review-optimist-agent` | Sonnet |
+| `implement-review-risk-agent` | Opus |
+| `implement-review-design-principles-agent` | Opus |
+| `implement-review-verifier-agent` | Sonnet |
+| `implement-review-readiness-agent` | Sonnet |
+| `implement-review-craft-agent` | Sonnet |
+| `implement-review-auditor-agent` | Sonnet |
+| `implement-review-guard-agent` | Sonnet |
 
 Findings aus `review_git_diff` (Gate 2) als Evidenz an alle Reviewer übergeben.
 
@@ -95,6 +96,20 @@ Findings aus `review_git_diff` (Gate 2) als Evidenz an alle Reviewer übergeben.
 **Offene KRITISCH-Findings nach Runde 5** → Loop **gestoppt**; **Rest-Findings-Bericht** an Parent zurück.
 
 **Nur unkritische Rest-Findings** → Loop abgeschlossen mit **dokumentierter Warnung**.
+
+### Delivery-Inspection (nach Review-Loop, vor Closure)
+
+Letzter Pflichtschritt — nach Abschluss des Review-Loops (sauber oder Hard Stop), vor Rückgabe an Parent.
+
+`delivery-inspection`-Skill starten: 6 Reviewer (Revisor · Skeptiker · Normalo · Dolmetscher · Auftraggeber · Querdenker) erhalten originale Anforderung + finaler Plan + Diff/Touched Paths + Gate-Status.
+
+**Findings-Handling:**
+- **Eindeutig nachlieferbar** → Fix-Scribe beauftragen (zählt als zusätzliche Korrektur, kein Loop-Limit-Reset)
+- **Klärungsbedürftig** → gebündelt an User eskalieren, auf Antwort warten vor Fix
+
+Erst nach sauberem Delivery-Inspection-Durchlauf: Rückgabe an Parent.
+
+**Opt-out:** `skip-delivery-inspection` → Grund im Rückgabe-Bericht vermerken.
 
 ## Mantra / Prinzipien
 
@@ -117,4 +132,5 @@ Findings aus `review_git_diff` (Gate 2) als Evidenz an alle Reviewer übergeben.
 - Gate-Ergebnis pro Stufe (grün / FAIL + Kurzdiagnose)
 - Review-Findings-Zusammenfassung (gelöst / offen / KRITISCH)
 - Rest-Findings bei Hard Stop (vollständige Liste)
+- Delivery-Inspection: sauber / Findings nachgeliefert / übersprungen (mit Grund)
 - `modelUsed: claude-opus-4-8`

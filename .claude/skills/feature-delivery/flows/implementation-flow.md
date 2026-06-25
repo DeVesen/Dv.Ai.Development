@@ -4,6 +4,10 @@ Verbindliche Prompt-Vorlagen und Review-Raster: [../references/subagent-prompts.
 
 ---
 
+*Architektur-Uebersicht: [../SKILL.md → Zwei-Schleifen-Architektur](../SKILL.md)*
+
+---
+
 ## ⚠️ MCP-First Build/Test — Anti-Shortcut-Regel (hoechste Prioritaet, ohne Ausnahme)
 
 **Kein Build- oder Test-Lauf als Shell-Kommando — immer MCP.**
@@ -59,13 +63,13 @@ Kein Shell-Fallback ohne explizite Nutzerfreigabe.
 | **Impl-Loop-Orchestrator** | Gesamter Flow | Opus | `../agents/implement-loop-orchestrator.md` |
 | **Scribe Runden 1-3** | Slice-Implementierung | Sonnet | `../agents/implement-scribe-agent.md` |
 | **Scribe Runden 4-5** | Eskalation | Opus | `../agents/implement-scribe-opus-agent.md` |
-| **Pessimist** | Review | Opus | `../agents/implement-review-pessimist-agent.md` |
-| **IODA-Reviewer** | Review | Opus | `../agents/implement-review-ioda-agent.md` |
-| **Lehrer** | Review | Sonnet | `../agents/implement-review-lehrer-agent.md` |
-| **Normalo** | Review | Sonnet | `../agents/implement-review-normalo-agent.md` |
-| **Oberlehrer** | Review | Sonnet | `../agents/implement-review-oberlehrer-agent.md` |
-| **Professor** | Review | Sonnet | `../agents/implement-review-professor-agent.md` |
-| **Optimist** | Review | Sonnet | `../agents/implement-review-optimist-agent.md` |
+| **Risk** | Review | Opus | `../agents/implement-review-risk-agent.md` |
+| **Design-Principles** | Review | Opus | `../agents/implement-review-design-principles-agent.md` |
+| **Verifier** | Review | Sonnet | `../agents/implement-review-verifier-agent.md` |
+| **Readiness** | Review | Sonnet | `../agents/implement-review-readiness-agent.md` |
+| **Craft** | Review | Sonnet | `../agents/implement-review-craft-agent.md` |
+| **Auditor** | Review | Sonnet | `../agents/implement-review-auditor-agent.md` |
+| **Guard** | Review | Sonnet | `../agents/implement-review-guard-agent.md` |
 | **Fix-Planer** | Fix-Planung | Opus | `../agents/implement-fix-planner-agent.md` |
 
 ---
@@ -89,15 +93,30 @@ Hard Gate (Readiness)              Impl-Loop-Orchestrator (Opus, delegierter Age
         Je Scribe: NUR slice-scoped Build/Test via dev-mcp
    │
    ▼  Integration-Checkpoint (nach Merge ALLER Scribes, NICHT pro Scribe)
+        - Slice-Coverage-Check (Pflicht, vor Gates): je IMP-* Slice mind. 1 Touched Path
+          → fehlender Slice = BLOCKER; kein Gate-Start, kein Review-Start
         - Subagent-Outputs sammeln (Summaries, Touched Paths)
         - Geaenderte Stacks klassifizieren → Gate-Scope
         - Interface-/Contract-Drift pruefen
    │
    ▼  QUALITY GATES (integrationsweit — NICHT pro Scribe):
 
+        Gate-Scope richtet sich nach den geaenderten Stacks (aus Integration-Checkpoint):
+
+        | Stack         | Gate 1 Build               | Gate 2 Statische Analyse                              | Gate 4 Tests                  |
+        |---------------|----------------------------|-------------------------------------------------------|-------------------------------|
+        | Angular only  | build_angular_project      | lint_angular_project, review_git_diff                 | test_angular_project          |
+        | .NET only     | build_dotnet_solution      | run_inspectcode, ArchUnitNET, review_git_diff          | test_dotnet_solution          |
+        | Angular + .NET| build_angular_project      | lint_angular_project, run_inspectcode,                | test_angular_project          |
+        |               | build_dotnet_solution      | ArchUnitNET, review_git_diff, analyze_iosp_compliance | test_dotnet_solution          |
+
+        Nur die zum Stack passenden Tools laufen — kein Stack ohne Aenderung wird gebaut oder getestet.
+
         1. BUILD (muss gruen — Vorbedingung)
              build_dotnet_solution / build_angular_project (dev-mcp)
              Ohne gruenen Build kein Gate 2/3/4
+             Nach Gate 1: `warnings`-Array aus Build-Response auslesen.
+             Nicht-leere Warnings → als Befunde sammeln, an alle 7 Reviewer + Fix-Planer als Evidenz weitergeben.
 
         2. STATISCHE ANALYSE (parallel, nach grunem Build):
              • run_inspectcode               (dev-mcp) → token-opt. JSON
@@ -110,26 +129,33 @@ Hard Gate (Readiness)              Impl-Loop-Orchestrator (Opus, delegierter Age
              • analyze_iosp_compliance       (codebase-analyzer, nachgelagert Strang 5/6)
                   IOSP-Befunde je Methode; ArchUnit-IOSP-Regel bleibt Backstop
 
-        3. IODA-REVIEW: implement-review-ioda-agent (Opus)
-             Prueft Code auf IODA-Architektur (Bausteinschnitt, Dekomposition, PoMO)
-             IOSP-Mechanik: bis Strang-6-Deployment prueft ioda-agent IOSP fuer Angular selbst
+        3. DESIGN-PRINCIPLES-REVIEW: implement-review-design-principles-agent (Opus)
+             Prueft Code auf vollstaendiges Design-Principles-Spektrum (IODA/IOSP, SOLID, persoenliche Regeln, DDD)
+             IOSP-Mechanik: bis Strang-6-Deployment prueft design-principles-agent IOSP fuer Angular selbst
 
         4. TEST-SUITE: test_dotnet_solution / test_angular_project (dev-mcp)
              Gruen = Akzeptanzkriterien erfuellt (§8/F2)
    │
    ▼  7 Reviewer parallel (readonly):
-        pessimist (O) · ioda (O) · lehrer (S) · normalo (S) · oberlehrer (S) · professor (S) · optimist (S)
+        risk (O) · design-principles (O) · verifier (S) · readiness (S) · craft (S) · auditor (S) · guard (S)
 
-        lehrer prueft zusaetzlich:
+        verifier prueft zusaetzlich:
           - Fachliche Korrektheit (kein anderer Reviewer)
-          - Deckt die finale Test-Suite alle Akzeptanzkriterien ab? (§8/F4)
+          - Explizite AC-Map: jedes Akzeptanzkriterium einzeln auf Test gemappt (§8/F4)
 
         codebase-analyzer review_git_diff-Befunde → speisen als Evidenz alle Reviewer
    │
    ▼  Findings → Fix-Planer (Opus, immer) → Fix-Scribes → Gates erneut
         Runden 4-5: implement-scribe-opus-agent + Fix-Planer-Opus
    │
-   ▼  Nach Runde 5 mit offenen Findings: Hard Stop + Rest-Findings-Bericht
+   ▼  Nach Runde 5 mit offenen Findings:
+        Final-Gate (wenn Fix-Scribes in Runde 5 liefen): Build + Test via dev-mcp
+        → Hard Stop + Rest-Findings-Bericht
+   │
+   ▼  Delivery-Inspection (nach Impl-Fix-Loop, vor Closure)
+        6 Reviewer parallel: Revisor · Skeptiker · Normalo · Dolmetscher · Auftraggeber · Querdenker
+        Findings → impl-loop-orchestrator → Fix-Scribe oder User-Eskalation
+        Erst nach sauberem Durchlauf: weiter zu Closure
 ```
 
 ---
@@ -178,6 +204,13 @@ Bedingte Zeilen (10-13): YES wenn Bedingung nicht zutrifft (N/A).
 
 ### Integration-Checkpoint (nach allen Scribes, vor Gates)
 
+**Slice-Coverage-Check (Pflicht — erster Schritt, vor Gates):**
+Fuer jeden IMP-* Slice aus der Plan-Topologie pruefen:
+- Liegt mindestens eine Datei in den Scribe-Touched-Paths, die zum erwarteten Slice-Scope passt?
+- Nein → BLOCKER: Slice [ID] hat keine Touched Paths. Gate-Start verboten. Fix-Scribe beauftragen, dann erneut pruefen.
+- Ausgabe: Tabelle `IMP-Slice | Erwarteter Scope | Touched Paths | OK / BLOCKER`
+
+Danach:
 - Subagent-Outputs sammeln (Summaries, Touched Paths, Diffs)
 - Geaenderte Stacks klassifizieren → Gate-Scope
 - Interface-/Contract-Drift zwischen Slices pruefen
@@ -205,7 +238,7 @@ Max. **5 Runden**. Impl-Loop-Orchestrator orchestriert; keine Rollensimulation s
 
 **3.1 Quality Gates (integrationsweit)**
 
-Gate-Reihenfolge einhalten (Build → Statische Analyse → IODA → Tests). Alle Gates dokumentiert rueckmelden.
+Gate-Reihenfolge einhalten (Build → Statische Analyse → Design-Principles → Tests). Alle Gates dokumentiert rueckmelden.
 
 **3.2 Sieben Impl-Reviews (parallel, readonly)**
 
@@ -231,7 +264,13 @@ Task-Prompts: jeweiliger Abschnitt in `../references/subagent-prompts.md`.
 1. Sauber: keine behebbaren Findings + alle Gates gruen.
 2. Maximum: nach Runde 5 — unabhaengig von offenen Findings.
 
-**3.10 Rest-Findings nach Maximum** — Vorlage in `../references/subagent-prompts.md`.
+**3.10 Rest-Findings nach Maximum**
+
+Wenn Fix-Scribes in Runde 5 gelaufen sind (Code wurde nach dem letzten Gate-Lauf noch geaendert):
+→ **Final-Gate**: Build + Test via dev-mcp ausfuehren, Ergebnis dokumentieren.
+→ Dann: Rest-Findings-Bericht (Vorlage in `../references/subagent-prompts.md`).
+
+Wenn Runde 5 sauber exitete (keine Fix-Scribes): kein Extra-Lauf — Gate 5 gilt als final.
 
 ---
 
@@ -244,7 +283,7 @@ Task-Prompts: jeweiliger Abschnitt in `../references/subagent-prompts.md`.
 |---|-----------|--------|
 | **F1** | **Plan-Deliverable: Akzeptanzliste** | 1:1 aus Planungs-Flow — Testname (test-design-Konvention) + AAA-Stichpunkte + Markierung (neu/erweitern/unberührt). Scribe implementiert 1:1 nach dieser Vorgabe. |
 | **F2** | **Roter Schritt erzwingen** | Scribe verifiziert: neue/erweiterte Tests fehlschlagen zuerst (Red), bevor Implementierung beginnt. Beweist dass der Test echt prueft. Unberuehrte Bestandstests ausgenommen. |
-| **F4** | **Akzeptanz-Coverage als Review-Check** | `lehrer`-Reviewer prueft: deckt die finale Test-Suite alle Akzeptanzkriterien ab? Kein neues Gate-Tool — nur Review-Check. |
+| **F4** | **Akzeptanz-Coverage als Review-Check** | `verifier`-Reviewer prueft: explizite AC-Map — jedes Akzeptanzkriterium einzeln auf Test gemappt. Kein neues Gate-Tool — nur Review-Check. |
 
 **Scribe-Ablauf (zweistufig, pro Slice):**
 1. Tests nach Plan-Akzeptanzliste schreiben/aktualisieren (Red fuer neu/erweitert)
@@ -292,7 +331,59 @@ Nach Rueckkehr jedes Scribes (sofern kein `kein boyscout`/`skip boyscout`):
 
 ---
 
-## Closure (nach Review-Loop)
+## Schritt 4 — Delivery-Inspection (5c — Outer Loop Gate)
+
+Letzter Schritt vor Closure — prueft ob alle Anforderungen erfuellt wurden.
+Kein Code-Qualitaets-Check (Gates und Reviews haben das erledigt) — sondern Anforderungserfuellung aus Besteller-Perspektive.
+
+Aufruf: `delivery-inspection` skill (siehe [../../delivery-inspection/SKILL.md](../../delivery-inspection/SKILL.md)).
+
+Jeder Reviewer erhaelt: originale Anforderung + finaler Plan + Diff/Touched Paths + Gate-Status.
+
+### Finding-Klassifikation (verbindlich)
+
+Impl-Loop-Orchestrator klassifiziert jeden Befund in eine von drei Kategorien:
+
+| Kategorie | Kriterium | Reaktion |
+|-----------|-----------|----------|
+| **Implementation-Gap** | Das Richtige wurde nicht korrekt umgesetzt (fehlendes Feature, falsches Verhalten, AC nicht erfuellt) | Fix-Scribe beauftragen → Inner Loop |
+| **Requirement-Gap** | Das Falsche wurde umgesetzt, oder neuer Scope entsteht (PO aendert Ziel, AC faellt weg, neues AC entsteht) | Delta-Protokoll erstellen → Outer Loop zurueck zu Schritt 1 |
+| **Unklar** | Produkt-/Design-Ambiguitaet, nicht eindeutig klassifizierbar | User eskalieren (gebuendelt, einmalige Frage) — warten vor Entscheidung |
+
+### Delta-Protokoll (bei Requirement-Gap)
+
+Wenn mindestens ein Requirement-Gap gefunden → Orchestrator erstellt Delta-Protokoll vor dem Rueckweg zu Schritt 1:
+
+```
+## Delta-Protokoll — Outer Loop Iteration [N]
+
+### PO/Stakeholder-Befunde
+- [Befund 1]: [Beschreibung]
+- [Befund 2]: [Beschreibung]
+
+### Aenderungen am Request
+- Neu: [neue Anforderung / neues AC]
+- Weggefallen: [AC oder Scope der entfernt wird]
+- Modifiziert: [bestehendes AC das sich aendert]
+
+### Betroffene Plan-Teile
+- [Topic / Slice / Bereich]: [wie betroffen]
+- Unveraendert (wird geerbt): [Liste]
+
+### Planungs-Empfehlung fuer Iteration [N+1]
+- Anzahl AC-Aenderungen: [N]
+- Empfehlung: [lean / strong]
+  (Automatisch strong wenn > 1 AC-Aenderung)
+```
+
+Dieses Protokoll wird in `requests/plans/plan-<feature>-delta-<N>.md` persistiert und ist die verbindliche Eingabe fuer Schritt 1 der naechsten Outer-Loop-Iteration.
+
+Erst nach sauberem Delivery-Inspection-Durchlauf (keine Requirement-Gaps, keine offenen Implementation-Gaps): weiter zu Closure.
+Opt-out: `skip-delivery-inspection` (Grund im Closure-Protokoll vermerken).
+
+---
+
+## Closure (nach Delivery-Inspection)
 
 1. Plan alignment: jeder Plan-Schritt und AC geprueft oder erklaert.
 2. Loop-Evidenz: Runden-Anzahl; Gate-Matrix pro Stack/Runde; 7 Reviews je Runde; Fix-Planer mit Evidenz-Basis; Fix-Scribes; Rest-Findings-Bericht wenn noetig.

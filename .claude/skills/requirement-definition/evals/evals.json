@@ -1,0 +1,23 @@
+{
+  "skill_name": "requirement-definition",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "ich brauch da was fuer die Benutzerverwaltung",
+      "expected_output": "Skill triggert ohne Slash-Befehl, startet auf Epic/Feature-Ebene, stellt Erkundungsfragen (CRUD? Rollen? Seite/Popup?) und legt sofort eine offene Datei unter requests/ an.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "schneide die drei Checkboxen in eine Story und schreib mir die Akzeptanzkriterien",
+      "expected_output": "Story-Level erkannt, Story-Datei (offen) angelegt, AC im F1-Format (Method_Situation_Expected + Arrange/Act/Assert + Status), 3-6 Szenarien mit mindestens einem Negativszenario, geschaerft nach pruefkatalog.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "weiter mit Epic User Management",
+      "expected_output": "Skill rekonstruiert den Status-Baum allein aus den Dateien (Epic + per ID referenzierte Kinder), meldet welche Items offen/final sind und fragt, womit weitergemacht wird. Kein In-Memory-State noetig.",
+      "files": []
+    }
+  ]
+}

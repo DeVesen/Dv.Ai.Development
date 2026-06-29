@@ -165,6 +165,44 @@ Nach Abschluss von Schritt 7 (Closure) des Outer Loops:
 
 ---
 
+## Package-Feed-Gate (vor Phase 1+2 — nur bei Package-Install-Tasks)
+
+**Auslöser** — Gate aktiviert wenn Task/Anforderung enthält:
+- PyPI: `pip install`, `requirements.txt`, `pyproject.toml`, privater Feed
+- NuGet: `dotnet add package`, `.csproj PackageReference`, NuGet-Feed-Referenz
+- npm: `npm install`, `yarn add`, `pnpm add`, `package.json` mit privatem Registry
+
+**Bei Auslöser: Orchestrator stellt Pflicht-Fragen — blockierend.**
+Kein Plan wird erstellt bevor alle relevanten Felder beantwortet sind.
+
+### PyPI-Checklist
+
+1. Package-Quelle: PyPI-Standard / privater Feed / lokales .whl?
+2. Falls privat: Feed-URL?
+3. Credential-Typ: Token / Basic Auth?
+4. Package-Existenz im Feed bestätigt (Test-Install oder Registry-Suche)?
+
+⚠️ Hinweis: Privater PyPI-Feed → `--extra-index-url` verwenden, nicht `--index-url` (STORY-024).
+
+### NuGet-Checklist
+
+1. Feed-URL (JFrog Artifactory / Azure Artifacts / intern)?
+2. Credential-Typ: API-Key / PAT?
+3. nuget.config vorhanden oder generieren?
+4. Package-Existenz im Feed bestätigt?
+
+### npm-Checklist
+
+1. Registry-URL (abweichend von registry.npmjs.org)?
+2. .npmrc-Konfiguration vorhanden?
+3. Token-Typ: npm token / PAT?
+4. Package-Existenz im Registry bestätigt?
+
+**Sobald alle Felder beantwortet:** weiter mit Phase 1+2.  
+**Fehlende Antworten:** Orchestrator wartet — kein Plan ohne vollständige Checklist.
+
+---
+
 ## Einstiege
 
 ### Plan-only (`plane`, `nur planen`, `erstelle einen Plan`)
@@ -288,3 +326,5 @@ Aktiviert das volle Planungs-Arsenal: Scouts (Phase 3), Topic-Planer (Phase 4b),
 ## Pflegehinweis
 
 Trigger: `description` YAML + `when_to_use` aktuell halten. Flows: nur in `flows/planning-flow.md` und `flows/implementation-flow.md` aendern. Sub-Agent-Prompts: nur in `references/subagent-prompts.md`.
+
+MDC-Selektor-Annotationsliste: Bei Angular Material Major Release auf neue MDC-Klassen prüfen → `flows/planning-flow.md` Abschnitt `## MDC-Selektor-Annotationsliste` aktualisieren.

@@ -32,6 +32,8 @@ Mappt jeden Request 1:1 auf ein Deliverable. Zaehlt durch: wurde jede Anforderun
 Wurde jede Anforderung auch tatsaechlich geliefert? Listet unbehandelte oder nur teilweise
 erledigte Punkte mit Nachweis. Grundlage ist die originale Anforderungsliste — nichts wird
 implizit als erledigt angenommen.
+Regressions-Prüfung: Wurden bestehende Contracts, Interfaces oder Signaturen unbeabsichtigt verändert? Test-Regression durch die Änderung?
+Abgrenzung: Security-Gaps und fehlende Auth-Checks → Skeptiker; Naming-Konventionen und Code-Patterns → Dolmetscher.
 
 **Skeptiker** — Lueckenjäger
 Sucht aktiv nach dem was fehlt, halbfertig ist oder vergessen wurde. Fragt: "Was haette noch
@@ -40,6 +42,8 @@ schlimmsten Luecken.
 Testergebnis-Regel: Wenn der Scribe alle Tests als gruen gemeldet hat, ist jede Vorhersage
 ueber Test-Fehlverhalten empirisch widerlegt — Befund maximal WARNING, nie CRITICAL.
 CRITICAL ist nur zulaessig wenn Tests nicht ausgefuehrt wurden oder der Scribe Failures gemeldet hat.
+Security-Linse: Ungeschützte Endpunkte? Fehlende Auth-Guards oder Autorisierungsprüfungen? Offene Datenpfade ohne Validierung?
+Abgrenzung: Regressions-Prüfung bestehender Contracts → Revisor; Naming-Konventionen → Dolmetscher.
 
 **AC-Rahmen-Regel (gilt fuer alle Test-bezogenen Findings):** Testmangel = AC nicht
 abgedeckt. Kein Finding wenn ein Szenario denkbar aber kein AC es fordert. Prueffrage:
@@ -58,6 +62,8 @@ Prueft ob Anforderungen korrekt *verstanden* wurden. Sucht nach Fehlinterpretati
 Missverstaendnissen, zu weit oder zu eng ausgelegten Anforderungen. Prueft explizit: Wurden
 Unklarheiten mit dem User abgestimmt — oder still entschieden? Jede still getroffene
 Entscheidung ohne Rueckfrage ist ein potenzieller Befund.
+Konsistenz-Linse (sprachlich/semantisch): Naming-Konventionen eingehalten? Code-Patterns und Codebase-Konventionen korrekt angewandt?
+Abgrenzung: Strukturelle Contract-Brüche und Signatur-Änderungen → Revisor; Security-Gaps → Skeptiker.
 
 **Auftraggeber** — Finale Abnahme
 Strengste Perspektive: Wuerde ich das als Besteller so unterschreiben? Entspricht das meiner
@@ -68,6 +74,7 @@ Gesamturteil: abnahmefaehig / nicht abnahmefaehig + Begruendung.
 Prueft die Gegenperspektive: Wurde zu viel gemacht? YAGNI verletzt? Nicht beauftragter
 Boilerplate oder Abstraktionen eingebaut? Scope Creep entdeckt? Auch: Wurden Dinge entfernt
 oder vereinfacht die der User behalten wollte? Meldet sowohl Zuviel als auch falsches Weglassen.
+Abgrenzung: Security-Checks → Skeptiker; Regressions-Prüfung → Revisor; Naming/Patterns → Dolmetscher.
 
 ---
 

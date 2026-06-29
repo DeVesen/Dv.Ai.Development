@@ -296,6 +296,24 @@ Scouts (Phase 3) kartieren die **bestehende Test-Abdeckung des Bereichs** mit �
 
 ---
 
+## MDC-Selektor-Annotationsliste (Angular Material)
+
+Angular Material MDC entfernt bestimmte DOM-Attribute zur Laufzeit und ersetzt sie durch CSS-Klassen.
+Planner MUSS bei mat-*-Selektoren diese Liste vor dem Aufnehmen in den Plan konsultieren.
+
+| Alter Selektor / Attribut | Korrekte MDC-Klasse / Selektor | Hinweis |
+|--------------------------|-------------------------------|---------|
+| `mat-hint[align="end"]` | `.mat-mdc-form-field-hint-end` | `align`-Attribut wird zur Laufzeit entfernt |
+| `mat-error` (direkter Tag-Selektor) | `.mat-mdc-form-field-error` | Tag bleibt, direkte Tag-Selektoren sind instabil |
+| `mat-label` | `.mat-mdc-floating-label` | MDC rendert floating label in Shadow-DOM-ähnlichem Pattern |
+| `mat-hint` (ohne align) | `.mat-mdc-form-field-hint-wrapper` | Allgemeiner Hint-Container |
+| `mat-form-field .mat-form-field-wrapper` | `.mat-mdc-form-field-flex` | Wrapper-Element wird umbenannt |
+
+**Wartung:** Beim Angular Material Major Release — Liste auf neue MDC-Klassen prüfen (siehe SKILL.md).
+**Unbekannte mat-*-Selektoren:** Nicht in Liste → aus Angular Material Quellcode / MDC-Doku ableiten, nicht raten.
+
+---
+
 ## §12 — Bounded-Context-Denken in Phase 4a
 
 Plan-Orchestrator denkt jeden Service als eigene Domaene:

@@ -4,9 +4,12 @@ description: >
   Orchestrator-Skill fuer vollstaendige Feature-Umsetzung (.NET + Angular): plane, nur planen,
   erstelle einen Plan, setze X um, implementiere X, liefere X, umsetzen, feature-delivery,
   fix, setze plan X um, fuehre plan X aus, implementiere plan X, schlank planen, lean planen,
-  kompakt planen, Solo-Planung. Drei Einstiege: Plan-only (plane/nur planen/erstelle Plan → STOPP),
+  kompakt planen, Solo-Planung. Akzeptiert ausschliesslich Stories (type: story, status: ready)
+  — Epics und Features werden verweigert, fehlendes Story-Format erfordert Bestaetigung.
+  Vier Einstiege: Plan-only (plane/nur planen/erstelle Plan → STOPP, setzt Story auf planned),
   End-to-end (implementiere/setze um/fix/liefere/feature-delivery → Plan+Umsetzung automatisch),
-  From-existing-plan (setze plan X um/implementiere plan X/fuehre plan X aus → ueberspringt Planung).
+  From-existing-plan (setze plan X um/fuehre plan X aus → ueberspringt Planung),
+  Already-Planned (Story status=planned → Plan automatisch laden, direkt Implementierung).
   Default-Planung ist Lean (ohne Zusatz): Orchestrator plant solo, keine Scouts, kein Review-Loop.
   Strong-Mode (strong) aktiviert volles Planning: Scouts, Topic-Planer, 6 Reviewer, Fix-Loop.
   Lean-Mode (schlank planen/lean planen/kompakt planen/Solo-Planung) ist identisch mit Default.
@@ -14,17 +17,21 @@ description: >
   Check-Plus-Mode (check plus/validate plus → Bewertung 1-7 mit Scouts, Code-gestuetzt, STOPP).
   Opt-out: ohne feature-delivery.
 when_to_use: >
-  Wenn der Nutzer ein Feature planen, umsetzen oder liefern will — .NET und Angular Stack.
-  Plan-only-Einstieg: plane/nur planen/erstelle einen Plan → voller Planungs-Flow, STOPP nach Plan.
-  End-to-end-Einstieg: implementiere/setze um/fix/liefere/feature-delivery → Plan und Umsetzung automatisch.
+  Wenn der Nutzer eine Story planen, umsetzen oder liefern will — .NET und Angular Stack.
+  Voraussetzung: Story-Datei mit type: story und status: ready (aus requirement-definition).
+  Epic oder Feature uebergeben → REFUSE. Kein Story-Format → STOP + Bestaetigung.
+  Story status=planned → Already-Planned-Path: verlinkten Plan laden, direkt Implementierung.
+  Plan-only-Einstieg: plane/nur planen/erstelle einen Plan → Planungs-Flow, Story auf planned setzen, STOPP.
+  End-to-end-Einstieg: implementiere/setze um/fix/liefere/feature-delivery → Plan+Umsetzung, Story auf implemented.
   From-existing-plan-Einstieg: setze plan X um/implementiere plan X/fuehre plan X aus →
-  ueberspringt Planungs-Flow, direkt in Implementations-Flow.
+  ueberspringt Planungs-Flow, direkt in Implementations-Flow, Story auf implemented.
   Default (ohne Zusatz): Lean-Planung — Orchestrator plant solo, schnell.
   Strong-Mode: strong → volles Planning mit Scouts (Phase 3), Topic-Planer (Phase 4b), 6 Reviewer + Fix-Loop.
   Lean-Mode: schlank planen/lean planen/kompakt planen/Solo-Planung → identisch mit Default.
   Check-Mode: check/validate → Bewertung 1-7 (lean vs. full), nur Anforderungsbeschreibung, kein Planning.
   Check-Plus-Mode: check plus/validate plus → wie Check, aber mit Scouts fuer Code-gestuetzte Bewertung.
   Nicht bei: reiner Erklaerung ohne Umsetzungsintent, ohne feature-delivery.
+  Story-Entscheidungen noch unklar vor dem Plan? → /grill-me <story.md> vorschalten.
 ---
 
 # feature-delivery
@@ -99,6 +106,62 @@ Wenn Ankuendigung nicht moeglich, weil Phase selbst ausgefuehrt wird → **STOPP
 `"⚠️ feature-delivery nicht konform: [Phase] ohne Subagent-Delegation. Neu starten."`
 
 *Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
+
+---
+
+## Story-Gate (vor jedem Einstieg — keine Ausnahme)
+
+feature-delivery akzeptiert **ausschliesslich Stories** als Eingabe-Anforderung.
+Pruefreihenfolge beim Start:
+
+### Schritt 1 — Input-Typ pruefen
+
+Liegt eine Datei vor, Frontmatter lesen (`type`-Feld). Liegt kein Frontmatter vor, Beschreibungstext
+auf Epic-/Feature-Signale pruefen (z. B. „mehrere Stories", „Funktionsbereich", „Saeulen A–D").
+
+| Befund | Reaktion |
+|--------|----------|
+| `type: epic` oder `type: feature` | **STOP + REFUSE:** *„⛔ feature-delivery verweigert die Ausführung: Die übergebene Anforderung ist ein [Epic/Feature], kein Story-Arbeitspaket. feature-delivery setzt eine ausgearbeitete Story (`type: story`, `status: ready`) voraus. Bitte erst /requirement-definition ausführen und die Story bis `ready` schärfen."* Keine Weiterarbeit. |
+| Kein `type`-Feld, kein Story-Format erkennbar | **STOP + Bestätigung erforderlich:** *„⚠️ Die Anforderung liegt nicht im Story-Format vor (kein `type: story` im Frontmatter erkennbar). Ohne ausgearbeitete Story fehlt die Spezifikationsbasis — das erhöht das Risiko von Fehlinterpretationen und Nacharbeiten erheblich. Trotzdem fortfahren? [Ja / Nein — zuerst /requirement-definition ausführen]"* Wartet auf explizites Ja. |
+| `type: story` | weiter mit Schritt 2 |
+
+### Schritt 2 — Status pruefen
+
+| `status`-Wert | Reaktion |
+|---------------|----------|
+| `planned` + `plan`-Referenz vorhanden | **Already-Planned-Path:** Plan-Datei laden → direkt in Implementations-Flow (Planungs-Flow komplett ueberspringen). Meldung: *„Story ist bereits geplant (`status: planned`). Lade Plan [plan-referenz] und starte direkt mit der Implementierung."* |
+| `ready` | Normaler Weg → Einstieg gemaess gewaehltem Modus (Plan-only / End-to-end / From-existing-plan) |
+| alles andere (`offen`, `implemented`, oder fehlend) | **STOP + REFUSE:** *„⛔ feature-delivery verweigert die Ausführung: Story hat Status `[wert]` — erwartet wird `ready`. Die Story muss zuerst in /requirement-definition bis `ready` geschärft werden."* Keine Weiterarbeit. |
+
+### Schritt 3 — Abhaengigkeiten pruefen
+
+Nur relevant wenn die Story ein `depends_on`-Feld im Frontmatter hat.
+
+Fuer jede referenzierte Story-ID in `depends_on`: die jeweilige Story-Datei lesen und `status`
+pruefen.
+
+| Befund | Reaktion |
+|--------|----------|
+| Alle `depends_on`-Stories haben `status: implemented` | Weiter — keine Blockierung |
+| Mindestens eine `depends_on`-Story hat anderen Status | **STOP + REFUSE:** *„⛔ feature-delivery verweigert die Ausführung: Diese Story hat eine unerfüllte Abhängigkeit. [STORY-XXX] hat Status `[wert]` — erwartet wird `implemented`. Die abhängige Story muss zuerst vollständig umgesetzt sein."* Bei mehreren blockierenden Stories alle auflisten. Keine Weiterarbeit. |
+| `depends_on`-Story-Datei nicht auffindbar | **STOP + REFUSE:** *„⛔ Abhängige Story [STORY-XXX] nicht gefunden — Pfad prüfen oder Abhängigkeit in der Story-Datei korrigieren."* |
+
+### Schritt 4 — Story-Status nach Planung setzen
+
+Nach erfolgreichem Abschluss des Planungs-Flows (Plan-Datei persistiert unter
+`requests/plans/plan-<slug>.md`):
+
+1. Story-Frontmatter aktualisieren:
+   - `status: ready` → `status: planned`
+   - Feld `plan` hinzufuegen: `plan: requests/plans/plan-<slug>.md`
+2. Meldung: *„Plan persistiert. Story-Status auf `planned` gesetzt, Plan-Referenz eingetragen."*
+
+### Schritt 5 — Story-Status nach Implementierung setzen
+
+Nach Abschluss von Schritt 7 (Closure) des Outer Loops:
+
+1. Story-Frontmatter aktualisieren: `status: planned` → `status: implemented`
+2. Meldung: *„Implementierung abgeschlossen. Story-Status auf `implemented` gesetzt."*
 
 ---
 

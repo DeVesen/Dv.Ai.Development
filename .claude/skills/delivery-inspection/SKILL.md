@@ -37,6 +37,16 @@ implizit als erledigt angenommen.
 Sucht aktiv nach dem was fehlt, halbfertig ist oder vergessen wurde. Fragt: "Was haette noch
 getan werden muessen?" Priorisiert nach Auswirkung auf den User. Liefert Top-3-Ranking der
 schlimmsten Luecken.
+Testergebnis-Regel: Wenn der Scribe alle Tests als gruen gemeldet hat, ist jede Vorhersage
+ueber Test-Fehlverhalten empirisch widerlegt — Befund maximal WARNING, nie CRITICAL.
+CRITICAL ist nur zulaessig wenn Tests nicht ausgefuehrt wurden oder der Scribe Failures gemeldet hat.
+
+**AC-Rahmen-Regel (gilt fuer alle Test-bezogenen Findings):** Testmangel = AC nicht
+abgedeckt. Kein Finding wenn ein Szenario denkbar aber kein AC es fordert. Prueffrage:
+"Welcher AC fordert diesen Test?" — wenn keiner: kein Finding. Die Frage "Was haette
+noch getan werden muessen?" bezieht sich auf fehlende AC-Abdeckung, nicht auf
+denkbare-aber-nicht-geforderte Szenarien. Fuer AC-widrige Szenarien: kein
+NICHT-BESTANDEN, hoechstens informativer Hinweis-Kommentar.
 
 **Normalo** — Pragmatische Abnahme
 Nimmt die Nutzerperspektive ein: Kann ich das Deliverable direkt produktiv einsetzen?

@@ -136,6 +136,23 @@ Hard Gate (Readiness)              Impl-Loop-Orchestrator (Opus, delegierter Age
         4. TEST-SUITE: test_dotnet_solution / test_angular_project (dev-mcp)
              Gruen = Akzeptanzkriterien erfuellt (§8/F2)
    │
+        **Parallel-Pattern (Pflicht nach Gate 1):** Tests (Gate 4) UND 7 Reviewer-Agents
+        starten im selben parallelen Message-Block — zeitgleich nach gruenem Build.
+        Tests haben null Abhaengigkeit vom Review-Output. Kein sequenzielles Warten:
+          ❌ Warte auf alle Reviewer → dann starte Tests
+          ✅ Starte Tests + Reviewer im selben Block → sammle alle Ergebnisse
+
+        **Change-Scope-Classifier (vor Reviewer-Start — Pflicht):**
+        Klassifiziere den Scope anhand der vom Scribe geaenderten Dateien:
+
+        | Scope | Erkennungszeichen | Reviewer-Set |
+        |-------|-------------------|--------------|
+        | CSS/HTML-only | Ausschliesslich `.html`/`.scss`/`.css`; kein `.ts`, kein Backend | 4 Reviewer: Structure · CSS-Logic · AC-Coverage · Regression |
+        | Single-Service | `.ts`-Dateien eines Angular-Services/Components oder eines .NET-Services | Standard-7-Reviewer |
+        | Cross-Service | Aenderungen in ≥2 Services, BE+FE gemeinsam, Migrations | Standard-7 + Integration-Reviewer |
+
+        → Scope einmal klassifizieren; Ensemble entsprechend starten; nicht nachjustieren.
+   │
    ▼  7 Reviewer parallel (readonly):
         risk (O) · design-principles (O) · verifier (S) · readiness (S) · craft (S) · auditor (S) · guard (S)
 
@@ -189,6 +206,20 @@ Bedingte Zeilen (10-13): YES wenn Bedingung nicht zutrifft (N/A).
 
 **Impl-Loop-Orchestrator implementiert nicht.** Alle Produkt-Edits nur durch Scribes.
 
+**Trivial-Edit-Ausnahme (Orchestrator darf direkt editen — strenge Positivliste):**
+Wenn ALLE Bedingungen gleichzeitig erfuellt sind:
+  1. Maximal 3 Dateien betroffen
+  2. Pro Datei genau 1 Aenderungszeile (kein Block, kein Umstrukturieren)
+  3. Zeilen-ID aus Plan eindeutig identifizierbar (Zeilennummer oder eindeutiger String)
+  4. Aenderungstyp aus Positivliste:
+     - Single-line typo fix (Tippfehler in String/Bezeichner)
+     - Import-only change (eine Import-Zeile ergaenzen/entfernen)
+     - Comment-change (Kommentar korrigieren)
+
+→ Orchestrator fuehrt Edit direkt aus — keine Scribe-Delegation.
+→ Ausserhalb der Positivliste: Scribe-Delegation gilt ohne Ausnahme.
+→ Bei Zweifel: Scribe delegieren.
+
 1. Ausfuehrungs-Topologie ausfuehren (aus finalem Plan Phase 6).
 2. **Scribes strikt:** nur zugewiesener Slice; kein Scope-Expand; keine stille Umplanung.
 3. Topologie explizit protokollieren: Anzahl (1-10), Grenzen aus Plan, sequenziell/parallel.
@@ -201,6 +232,10 @@ Bedingte Zeilen (10-13): YES wenn Bedingung nicht zutrifft (N/A).
    - Pflicht: passenden Abschnitt aus `../references/subagent-prompts.md` inkl. MCP-First-Pflicht
 5. Keine Abweichung vom finalen Plan ohne User-Freigabe.
 6. Scribe-Output ≠ done — erst nach Integration-Checkpoint + Quality Gates.
+
+**Kontext-Kompaktierung-Check (vor erstem Edit):**
+Wenn eine Kontext-Kompaktierung stattgefunden hat → Read-Welle fuer ALLE Impl-Target-Dateien
+parallel starten, dann erst Edit-Block ausfuehren. Im Zweifel: Read-Welle.
 
 ### Integration-Checkpoint (nach allen Scribes, vor Gates)
 

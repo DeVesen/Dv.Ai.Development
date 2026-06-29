@@ -66,6 +66,11 @@ when_to_use: >
 | `git mv` / `Bash(git mv *)` | `git_move` |
 | `PowerShell(Get-Process ...)` | `list_processes` |
 
+> **Angular-Tests: Absolutes Verbot ohne Ausnahme**
+> `ng test`, `npx ng test`, `PowerShell(ng test ...)` — vollständig verboten, null Ausnahmen.
+> Einziger erlaubter Weg: `mcp__dev-mcp__test_angular_project`.
+> MCP nicht erreichbar? → BLOCKER melden. Kein Shell-Fallback für ng test.
+
 ---
 
 ## Hard Stop — MCP nicht erreichbar

@@ -8,11 +8,11 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 
 ```
 .claude/                Claude Code — direkt nutzbar
-├── skills/             20 Skills (via /skill-name oder automatisch)
+├── skills/             21 Skills (via /skill-name oder automatisch)
 │   ├── feature-delivery/        Orchestrator: Planung + Implementierung, drei Einstiege
 │   ├── software-design-principles/         Persönliche Design-Philosophie: sauber·funktional·getestet·wartbar·nachhaltig
 │   ├── acceptance-design/       Anforderungen auf Testbarkeit prüfen und schärfen
-│   ├── ado/                     Azure DevOps Workflow
+│   ├── requirement-definition/  Epic→Feature→Story Breakdown: INVEST, Richard-Lawrence-Splitting, F1-Akzeptanzkriterien
 │   ├── angular-developer/       Angular Bundle: Language API, Projektstruktur, Signal-Architektur, Test-Policy, Migrationen
 │   ├── angular-new-app/         Angular New App Bundle: ng new, ng generate, Decision Gate, Implementierungsplan, Subagents
 │   ├── angular-material/        Angular Material Bundle: Komponenten, Theming, CDK, Custom mat-form-field Inputs
@@ -22,13 +22,15 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 │   ├── build-log-filter/        Build-Log-Kompression
 │   ├── codebase-analyzer/       Statische Analyse & Review
 │   ├── code-intel-workflow/     Code-Intel: narrow→read→impact→verify
+│   ├── grill-me/                Interaktives Verhoer einer Story/Plan: eine Frage+Empfehlung bis alle Entscheidungen klar sind
 │   ├── skill-creator/           Meta-skill: create/improve skills and agent profiles
 │   ├── delivery-inspection/     Delivery check: 6 Reviewer prüfen Anforderungserfüllung vor Auslieferung
 │   ├── test-design/             AAA · Namenskonvention · Magic Strings (interne Dep. feature-delivery)
 │   ├── describe-as/             Stil-Anpassung
 │   ├── commit-message/          Commit-Message-Generator
 │   ├── prozess-retrospektive/   Prozess-Analyse: Harness-Verbesserungsideen + Session-Erkenntnisse
-│   └── caveman/                 Kommunikationsstil: Caveman
+│   ├── caveman/                 Kommunikationsstil: Caveman
+│   └── de-en-communication/     Kommunikationsregeln: Deutsch/Englisch — Text DE, Code EN, Voice Mixed
 ├── agents/             Sub-Agent-Profile (auto-discovered) — acceptance-design-agent.md vorhanden; weitere Profile liegen noch unter skills/*/agents/
 └── references/         Shared references (compliance, output-style, boilerplate)
 
@@ -68,6 +70,7 @@ docs/                   Skill docs, MCP docs, enforcement references
 |-------|---------|---------|
 | `/feature-delivery` | `plane`, `implementiere`, `fix`, `feature-delivery` | Orchestrator: Planung + Implementierung, drei Einstiege |
 | `/acceptance-design` | `schärfe Anforderung`, `Akzeptanzkriterien prüfen` | Anforderungen auf Testbarkeit prüfen und schärfen |
+| `/requirement-definition` | `ich brauche ein Feature für…`, `schneide das in Stories`, `Anforderung erfassen` | Epic→Feature→Story Breakdown: INVEST, Splitting, F1-Akzeptanzkriterien → `requests/` |
 | `/dev-tooling` | `welcher MCP`, `MCP-Einstieg`, Dev-Tooling-Fragen | Gateway: Routing zu dev-mcp, codebase-analyzer, build-log-filter |
 | `/dev-mcp` | Dateien lesen/suchen, Scaffolding, Build, Test | 49 Tools — MCP-First-Gate für alle Dev-Operationen |
 | `/codebase-analyzer` | Code-Gespräch, Review, Analyse | 43 MCP-Tools für Angular/.NET (inkl. Composite/Domain-Finder) |
@@ -75,8 +78,10 @@ docs/                   Skill docs, MCP docs, enforcement references
 | `/build-log-filter` | `ng serve`, Shell-Fallback | Build/Test-Log-Filterung |
 | `/angular-developer` | Angular-Arbeit | Bundle: Language API, Projektstruktur, Signal-Architektur, Test-Policy, Migrationen |
 | `/software-design-principles` | `meine Prinzipien`, `@software-design-principles`, `beachte meine Designregeln`, `flow design` | Persönliche Design-Philosophie: 5 Werte + Flow Design + IODA/IOSP + SOLID + persönliche Regeln |
+| `/grill-me` | `grill mich`, `befrage diese Story`, `schärf den Plan`, `hinterfrage den Plan` | Interaktives Verhör einer Story/Plan: eine Frage+Empfehlung bis alle Entscheidungszweige klar |
 | `/skill-creator` | `create skill`, `agent profil` | Skills und Agents erstellen/verbessern |
 | `/delivery-inspection` | Vor jeder Auslieferung | 6-Reviewer Anforderungserfüllungs-Gate |
+| `/de-en-communication` | *(immer aktiv)* | Kommunikationsregeln: Text DE, Code EN, Voice Mixed |
 
 ---
 
@@ -125,6 +130,7 @@ Wenn Code oder Symbole im Repo nachgeschaut werden — MCP vor nativem Read/Grep
 | Symbol / Datei suchen | `dev-mcp`: `find_file`, `find_by_content` |
 | Klasse / Methode lesen | `dev-mcp`: `read_class_summary`, `read_signatures_only`, `read_method` |
 | Index / Abhaengigkeiten | `codebase-analyzer`: `find_in_index`, `index_project` |
+| Angular-Tests ausführen | `dev-mcp`: `test_angular_project` — ng test via Shell/PowerShell niemals erlaubt |
 | Native Read / Grep | nur als dokumentierter Fallback — nach MCP-Versuch |
 
 **Pfad-Format (verbindlich):** Windows-Absolutpfad `C:\Develop\...` — kein `/workspace/`, keine relativen Pfade.

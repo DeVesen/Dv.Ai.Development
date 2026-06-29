@@ -692,6 +692,16 @@ INTEGRATION-CHECKPOINT (nach Merge aller parallelen Scribes einer Welle):
 
 REVIEW-LOOP (nach Gates):
   7 Reviewer parallel: risk · design-principles · verifier · readiness · craft · auditor · guard
+
+  **CSS/HTML-only Set (4 Reviewer — wenn Scope = ausschliesslich .html/.scss/.css):**
+  - Structure: HTML-Semantik, Barrierefreiheit, Template-Korrektheit
+  - CSS-Logic: Style-Logik, Responsive, CSS-Custom-Properties
+  - AC-Coverage: Alle AC durch UI-Struktur abgedeckt?
+  - Regression: Bestehende Styles/Layouts nicht gebrochen?
+
+  **Standard-7-Set (Single-Service):** risk · design-principles · verifier · readiness · craft · auditor · guard
+
+  **Cross-Service-Set:** Standard-7 + Integration-Reviewer (Kontrakt-Drift, API-Boundaries, Shared-State)
   Vorlagen: Abschnitte "Impl-Review-*" in dieser Datei.
   review_git_diff-Befunde aus Gate 2 als Evidenz in Reviewer-Prompts einbetten.
   Findings? ja → Fix-Planer → Fix-Scribes → Gates erneut → nächste Iteration
@@ -738,6 +748,13 @@ Schritt 2 — Implementierung (GREEN):
     build_dotnet_solution / build_angular_project → test_dotnet_solution / test_angular_project
   KEIN stack-weites Technik-Gate (das läuft am Integration-Checkpoint).
 
+  **Angular Hard Rules — OnPush + async-Listen (Pflicht):**
+  In Komponenten mit `changeDetection: ChangeDetectionStrategy.OnPush` müssen
+  async-geladene Listen-Properties als Signal deklariert werden:
+    ✅ `readonly options = signal<OptionType[]>([])`  → `this.options.set(data)` im Subscribe
+    ❌ `options: OptionType[] = []`                  → `this.options = data` triggert keine CD
+  Gilt für jede Property die nach ngOnInit/Subscribe befüllt wird.
+
 Pfade: Windows-Absolutpfade (C:\...) für alle dev-mcp-Calls.
 Schema vor jedem MCP-Aufruf lesen.
 
@@ -774,6 +791,13 @@ Test-Design-Referenz: .claude/skills/test-design/
 Aufgabe: identisch zu implement-scribe-agent (ZWEISTUFIG: RED → GREEN).
 Zusatz Eskalations-Kontext: Fix-Teilplan und Rest-Findings sind verbindliche Vorgabe.
 Keine Eigeninitiative jenseits des Fix-Teilplans.
+
+**Angular Hard Rules — OnPush + async-Listen (Pflicht):**
+In Komponenten mit `changeDetection: ChangeDetectionStrategy.OnPush` müssen
+async-geladene Listen-Properties als Signal deklariert werden:
+  ✅ `readonly options = signal<OptionType[]>([])`  → `this.options.set(data)` im Subscribe
+  ❌ `options: OptionType[] = []`                  → `this.options = data` triggert keine CD
+Gilt für jede Property die nach ngOnInit/Subscribe befüllt wird.
 
 Pfade: Windows-Absolutpfade (C:\...) für alle dev-mcp-Calls.
 

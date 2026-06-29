@@ -17,6 +17,7 @@ when_to_use: >
   "break this down into stories". Auch wenn eine bestehende Epic_*/Feature_*/Story_*-Datei zum
   Weiterfuehren uebergeben wird. Abgrenzung: NICHT fuer Implementierung/Planung fertiger Stories
   (→ feature-delivery "plane/implementiere"); der tiefere, standalone AC-Audit ist acceptance-design.
+  Nach Abschluss: /grill-me fuer interaktives Befragen offener Entscheidungen vor feature-delivery.
 ---
 
 # Requirement Definition
@@ -34,7 +35,7 @@ tieferer Audit-Lauf am fertigen Text.)
 - **Skill-Dateien, `description`, Dateinamen, Frontmatter-Keys** → Englisch/ASCII.
 - **Artefakt-Inhalt** (`Epic_*`, `Feature_*`, `Story_*`) → **Deutsch** (Business-Doku fuer
   deutschsprachige Stakeholder).
-- **Dateiname** = ASCII-Slug (siehe Naming-Regel), **Status-Werte** `offen | final` deutsch.
+- **Dateiname** = ASCII-Slug (siehe Naming-Regel), **Status-Werte** `offen | ready` (Frontmatter-Keys Englisch).
 
 ## Trigger & Einstiegspunkte
 
@@ -62,15 +63,15 @@ Kontext-Kompaktierung und Session-Grenzen.
 - **Single Source of Truth:** Der Status steht **ausschliesslich** in der jeweiligen Datei.
   Eltern verweisen nur per **ID** auf ihre Kinder (siehe IDs) — sie speichern deren Status **nicht**
   (sonst Desync).
-- **Ein einziges Gate — `offen → final`:** Hat der Skill keine offenen Fragen mehr, schlaegt er den
-  Uebergang vor (z. B. *„Epic vollstaendig erfasst — auf final setzen und in Features schneiden?"*)
-  und wartet auf OK. Erst dann `final` + Anlegen der Kind-Files (`offen`). `offen` = aenderbar,
-  `final` = gesperrt.
+- **Ein einziges Gate — `offen → ready`:** Hat der Skill keine offenen Fragen mehr, schlaegt er den
+  Uebergang vor (z. B. *„Epic vollstaendig erfasst — auf ready setzen und in Features schneiden?"*)
+  und wartet auf OK. Erst dann `ready` + Anlegen der Kind-Files (`offen`). `offen` = aenderbar,
+  `ready` = gesperrt (bereit fuer naechste Stufe).
 - **Entsperr-Notausgang:** „Epic xyz wieder oeffnen" → `status: offen`, Inhalt wieder aenderbar.
 - **Wiedereinstieg (stateless):** „weiter mit Epic xyz" → Skill liest die Datei, traversiert ueber
-  die ID-Referenzen die Kinder und meldet den Status-Baum (z. B. *„Epic final. FEAT-001 offen,
-  FEAT-002 final aber dessen STORY-007 offen. Womit weiter?"*). „offene Punkte von Epic xyz" →
-  filtert auf `status ≠ final`.
+  die ID-Referenzen die Kinder und meldet den Status-Baum (z. B. *„Epic ready. FEAT-001 offen,
+  FEAT-002 ready aber dessen STORY-007 offen. Womit weiter?"*). „offene Punkte von Epic xyz" →
+  filtert auf `status ≠ ready`.
 
 > **Warum eager + Section-Anchors statt Diff-vor-jedem-Schreiben:** Eager-Schreiben macht den Zustand
 > crash-sicher und sessionfest. Damit das nie manuell editierte Prosa ueberschreibt, sind regenerier-
@@ -85,7 +86,7 @@ Kontext-Kompaktierung und Session-Grenzen.
    erweitert die Datei.
 3. Keine offenen Fragen → Skill schlaegt `final` + Feature-Schnitt vor (Trennung des Gesagten in
    1..N Features).
-4. Nach OK: Epic → `final`, Feature-Files (`offen`) angelegt, gegenseitig per ID referenziert.
+4. Nach OK: Epic → `ready`, Feature-Files (`offen`) angelegt, gegenseitig per ID referenziert.
 
 ### Feature-Phase
 1. Feature-Datei aufgreifen (vorhandene `Feature_*.md` **non-destruktiv**, siehe Idempotenz) oder neu.
@@ -93,7 +94,7 @@ Kontext-Kompaktierung und Session-Grenzen.
    Accessibility/i18n, soweit relevant). Jeder Input erweitert die Datei.
 3. Genug Kontext fuer Story-Schnitt → Skill schlaegt `final` + Story-Schnitt vor (INVEST-Pruefung +
    [Splitting-Pattern](references/splitting-patterns.md)-Hinweis).
-4. Nach OK: Feature → `final`, Story-Files (`offen`) angelegt und referenziert.
+4. Nach OK: Feature → `ready`, Story-Files (`offen`) angelegt und referenziert.
 
 ### Story-Phase
 1. Story-Datei anlegen/aufgreifen (`offen`).
@@ -103,10 +104,10 @@ Kontext-Kompaktierung und Session-Grenzen.
    Verletzung: Klaerung **oder** Splitting (bewusst akzeptierte Verletzung wird dokumentiert).
 4. **AC im F1-Format** definieren (3–6 Szenarien, immer **≥ 1 Negativszenario**).
 5. **AC schaerfen** — siehe [Akzeptanzkriterien](#akzeptanzkriterien--ein-kanon).
-6. **DoR erfuellt** → Skill schlaegt `final` vor und meldet:
+6. **DoR erfuellt** → Skill schlaegt `ready` vor und meldet:
    *„Story erfuellt die Definition of Ready — aus meiner Sicht bereit als Planning-Grundlage fuer
    feature-delivery. Offene Punkte bleiben verhandelbar."*
-7. Nach OK: Story → `final`.
+7. Nach OK: Story → `ready`.
 
 ## Definition of Ready (Abbruchkriterium)
 
@@ -194,11 +195,21 @@ gekuerzt. Beispiel: Feature „Benutzeruebersicht & Rollen" → `FEAT-003_benutz
 id: STORY-014
 parent: FEAT-003          # bei Epics weglassen
 type: story               # epic | feature | story
-status: offen             # offen | final
+status: offen             # offen | ready | planned | implemented
 slug: select-statt-checkboxen
 children: [STORY-014, STORY-015]   # nur Epic/Feature; Verweis per ID
+depends_on: [STORY-012, STORY-013] # nur wenn Abhaengigkeiten zu anderen Stories bestehen; sonst weglassen
 ---
 ```
+
+**Abhaengigkeits-Erkennung (Stories):** Waehrend des Story-Dialogs — sobald eine Abhaengigkeit zu
+einer anderen Story explizit genannt wird (z. B. „braucht STORY-001", „setzt STORY-003 voraus",
+„erst nach STORY-007") — wird `depends_on` mit den referenzierten IDs ins Frontmatter aufgenommen.
+Erkannte Abhaengigkeiten werden dem Nutzer bestaetigt: *„Abhaengigkeit zu STORY-001 erkannt —
+trage ich als `depends_on: [STORY-001]` ins Frontmatter ein."*
+Nicht-blockierende Abhaengigkeiten (z. B. „koennte parallel laufen") werden **nicht** als
+`depends_on` eingetragen — nur harte Voraussetzungen (Story X muss fertig sein bevor diese
+startbar ist). Zweifelsfaelle: explizit fragen.
 
 **Inhalte:**
 - **Epic** — Kurzbeschreibung + Motivation · Scope (drin / bewusst nicht drin) · Feature-Liste
@@ -226,10 +237,15 @@ Re-Run auf eine **existierende** Datei: **Merge statt Clobber.**
 
 ## Downstream — Handoff an feature-delivery
 
-Eine `final`-Story ist die Grundlage fuer **Phase 1 (Anforderung klaeren)** von `feature-delivery` —
+Eine `ready`-Story ist die Grundlage fuer **Phase 1 (Anforderung klaeren)** von `feature-delivery` —
 nicht fuer die Implementierung direkt. Der Handoff ist ein **Copy-Command/Prompt** (Muster wie das
 Intake von feature-delivery), **kein automatisches Datei-Einlesen**. Weil die AC bereits im F1-Format
 vorliegen, greift `feature-deliverys` §8/F1-Akzeptanzliste sie nahtlos auf.
+
+**Status-Lifecycle einer Story:**
+`offen` → `ready` (DoR erfuellt, freigegeben fuer feature-delivery) → `planned` (Plan erstellt, wird
+von feature-delivery gesetzt) → `implemented` (Umsetzung abgeschlossen, wird von feature-delivery
+gesetzt).
 
 ## Referenzdateien
 
@@ -247,9 +263,9 @@ vorliegen, greift `feature-deliverys` §8/F1-Akzeptanzliste sie nahtlos auf.
 2. „drei Checkboxen als Select" → Story-Level erkannt, Story-Phase, Datei `offen`.
 3. Vorhandene `FEAT-003_*.md` uebergeben → Feature-Phase greift Datei non-destruktiv auf.
 4. Epic ohne offene Fragen → Skill schlaegt `final` + Feature-Schnitt vor, schreibt nicht ohne OK.
-5. „offene Punkte von Epic xyz" → nur Files mit `status ≠ final`.
+5. „offene Punkte von Epic xyz" → nur Files mit `status = offen`.
 6. „weiter mit Epic xyz" in neuer Session → Status-Baum allein aus Dateien rekonstruiert.
-7. `final`-Datei ist gesperrt; „… wieder oeffnen" setzt zurueck auf `offen`.
+7. `ready`-Datei ist gesperrt; „… wieder oeffnen" setzt zurueck auf `offen`.
 8. Story mit nicht-blockierender Unklarheit → landet als „Offener Punkt", Story wird trotzdem ready.
 9. INVEST-Verletzung bewusst akzeptiert → dokumentiert, nicht erzwungen gesplittet.
 10. Feature „Benutzeruebersicht & Rollen" → Dateiname korrekt transliteriert, keine Umlaute/Sonderzeichen.

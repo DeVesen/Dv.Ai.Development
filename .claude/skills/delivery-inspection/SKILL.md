@@ -99,6 +99,14 @@ Abgrenzung: Security-Checks → Skeptiker; Regressions-Prüfung → Revisor; Nam
 
 ---
 
+## ⚠️ Foreground-Kontext: Notification-Trap
+
+Dieser Skill wird von `feature-delivery` als direkter **foreground** Sub-Agent aufgerufen — nicht als background-Task. Completion-Notifications der 6 internen Reviewer-Sub-Agents gehen an den **Main-Thread des rufenden Agents** (impl-loop-orchestrator), **nicht** zurück an den Delivery-Inspection-Orchestrator.
+
+Der Delivery-Inspection-Orchestrator muss daher nach dem parallelen Spawn der 6 Reviewer **aktiv auf alle 6 Antworten warten und zählen**, bevor er mit Schritt 2 fortfährt. **Count-Guard ist zwingend: erst bei N=6 weiter.**
+
+---
+
 ## Ablauf (iterativer Loop)
 
 Loop laeuft solange bis alle 6 Reviewer keine behebbaren Findings mehr melden.

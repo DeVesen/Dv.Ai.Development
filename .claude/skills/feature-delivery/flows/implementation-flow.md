@@ -152,14 +152,16 @@ Hard Gate (Readiness)              Impl-Loop-Orchestrator (Opus, delegierter Age
 
         | Scope | Erkennungszeichen | Reviewer-Set |
         |-------|-------------------|--------------|
+        | md-only | Ausschliesslich `.md`-Dateien; kein `.ts`, kein `.cs`, kein Code | 3 Reviewer: risk · guard · readiness |
         | CSS/HTML-only | Ausschliesslich `.html`/`.scss`/`.css`; kein `.ts`, kein Backend | 4 Reviewer: Structure · CSS-Logic · AC-Coverage · Regression |
         | Single-Service | `.ts`-Dateien eines Angular-Services/Components oder eines .NET-Services | Standard-7-Reviewer |
         | Cross-Service | Aenderungen in ≥2 Services, BE+FE gemeinsam, Migrations | Standard-7 + Integration-Reviewer |
 
         → Scope einmal klassifizieren; Ensemble entsprechend starten; nicht nachjustieren.
    │
-   ▼  7 Reviewer parallel (readonly):
-        risk (O) · design-principles (O) · verifier (S) · readiness (S) · craft (S) · auditor (S) · guard (S)
+   ▼  Reviewer parallel (readonly) — Anzahl laut Change-Scope-Classifier:
+        Standard-7: risk (O) · design-principles (O) · verifier (S) · readiness (S) · craft (S) · auditor (S) · guard (S)
+        md-only:    risk (O) · guard (S) · readiness (S)
 
         verifier prueft zusaetzlich:
           - Fachliche Korrektheit (kein anderer Reviewer)

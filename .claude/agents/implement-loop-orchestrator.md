@@ -103,9 +103,13 @@ Letzter Pflichtschritt — nach Abschluss des Review-Loops (sauber oder Hard Sto
 
 `delivery-inspection`-Skill starten: 6 Reviewer (Revisor · Skeptiker · Normalo · Dolmetscher · Auftraggeber · Querdenker) erhalten originale Anforderung + finaler Plan + Diff/Touched Paths + Gate-Status.
 
-> ⚠️ **FOREGROUND-MANDAT (STORY-031):** DI MUSS foreground laufen — kein background.
-> Completion-Contract: erwarte EINEN konsolidierten DI-Report — nicht einzelne Notifications.
-> Erst wenn der vollständige DI-Report (alle 6 Reviewer-Findings gebündelt) vorliegt, gilt DI als abgeschlossen.
+> ⚠️ **FOREGROUND-MANDAT + NOTIFICATION-TRAP (STORY-031):**
+>
+> **Notification-Trap:** DI spawnt intern 6 Reviewer-Sub-Agents parallel. Deren Completion-Notifications gehen an den Main-Thread — **nicht** zurück an den DI-Orchestrator. Ergebnis: Der DI-Orchestrator sieht ohne explizites Warten nur einen Teil der Reviewer-Ergebnisse und kann verfrüht "Fertig" melden.
+>
+> **Vollständigkeits-Check:** Vor dem Klassifikations-Schritt (Schritt 2) explizit prüfen: **"Habe ich Antworten von allen 6 Reviewern?"** — nicht fortfahren bevor N=6.
+>
+> **Foreground-Mandat:** DI MUSS foreground laufen — kein background. Completion-Contract: erwarte EINEN konsolidierten DI-Report (alle 6 Findings gebündelt), keine einzelnen Notifications.
 
 **Findings-Handling:**
 - **Eindeutig nachlieferbar** → Fix-Scribe beauftragen (zählt als zusätzliche Korrektur, kein Loop-Limit-Reset)

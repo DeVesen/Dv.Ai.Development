@@ -8,6 +8,19 @@ Skills **nicht nur laden — strikt einhalten**. Skills unter `.claude/skills/` 
 
 **Verboten:** Skill „gelesen" melden und den Prozess trotzdem abkürzen; parallele Umsetzungspfade (z. B. nur Vendor-Skill ohne Workflow); Roh-Konsolen-Output als Reasoning-Input bei in-scope Build/Test (siehe build-log-filter).
 
+## Deferred Tools
+
+**Vor jedem deferred Tool: `ToolSearch('select:<name>')` ausführen — kein direkter Aufruf ohne Schema-Load.**
+
+Deferred Tools sind in System-Reminder-Nachrichten aufgelistet, haben aber kein geladenes Schema. Ein direkter Aufruf ohne vorangehendes `ToolSearch` schlägt mit `InputValidationError` fehl.
+
+**Pflicht-Reihenfolge:**
+1. `ToolSearch` mit `query: "select:<toolname>"` aufrufen
+2. Schema aus dem Ergebnis bestätigen
+3. Tool aufrufen
+
+Gilt für Orchestrator und jeden Subagent — ohne Ausnahme.
+
 ## Workflow-Pflicht
 
 | Intent | Pflicht |

@@ -53,6 +53,31 @@ Primaerer Ausloeser ist die `description` (Auto-Trigger). Die explizite Form
 Klingt ein Epic eher nach Feature (oder Feature nach Story), schlaegt der Skill den Wechsel vor —
 **kein Downgrade ohne Nutzerbestaetigung.**
 
+## Micro-Change-Pfad (Opt-in)
+
+**Heuristik-Signale** — alle vier müssen zutreffen:
+1. Anforderung < 10 Zeilen (Beschreibung + Kontext)
+2. Genau eine Datei betroffen
+3. Rein visuell (CSS, HTML-Attribut, Farbe, Abstände) — kein Verhaltens-Delta
+4. Kein neues Verhalten (keine neue Interaktion, kein neuer Datenfluss)
+
+Treffen alle vier zu: Skill bietet vereinfachten 2-AC-Story-Draft an.
+
+**Ausgabe beim Erkennungsfall:**
+> „Das klingt nach einem Micro-Change (< 10 Zeilen, eine Datei, rein visuell, kein neues Verhalten).
+> Ich kann einen vereinfachten 2-AC-Draft erstellen — ohne INVEST-Prosa-Block, direkt auf `ready`
+> setzbar. Alternativ: volle Story-Zeremonie mit INVEST-Check und 3–6 ACs.
+> Vereinfachter Pfad? [Ja / Nein — volle Zeremonie]"
+
+**Nach Bestätigung (Ja):**
+- Story mit genau 2 ACs im F1-Format (1 Positiv + 1 Negativ)
+- Kein INVEST-Prosa-Block (INVEST gilt als trivial erfüllt, wird nicht dokumentiert)
+- Direkt auf `status: ready` setzbar ohne weiteren Dialog
+- Datei-Struktur identisch (Frontmatter, User-Story-Format, AC-Block)
+
+**Negativ-Pfad:**
+Fehlt auch nur ein Signal (z. B. zwei Dateien betroffen, oder neue Interaktion) → kein Micro-Change-Pfad angeboten; volle Story-Zeremonie läuft wie gewohnt.
+
 ## Zustandsmodell — die Dateien sind der Status
 
 Kein Statusblock in der Antwort. Der Zustand liegt vollstaendig in den Dateien — das uebersteht
@@ -271,3 +296,5 @@ gesetzt).
 10. Feature „Benutzeruebersicht & Rollen" → Dateiname korrekt transliteriert, keine Umlaute/Sonderzeichen.
 11. Re-Run auf Story mit manuell ergaenzten AC → vorhandene AC + „Offene Punkte" bleiben erhalten (kein Clobber).
 12. Story-AC liegen im F1-Format vor, ≥ 1 Negativszenario.
+13. Anforderung: 2 CSS-Properties, eine Datei, kein neues Verhalten → Micro-Change erkannt,
+    vereinfachter 2-AC-Draft angeboten mit Opt-in-Hinweis.

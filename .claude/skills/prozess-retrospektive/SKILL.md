@@ -79,6 +79,20 @@ Unabhaengig davon welche Reviewer liefen (Anzahl und Namen variieren je Skill):
 
 ---
 
+## Scope-Check vor Analyse
+
+Vor der Analyse die Tabelle auswerten: Jede zutreffende Bedingung reduziert den betroffenen Bereich auf je einen Satz — volle Tiefe nur in Bereichen, in denen tatsächlich etwas stattgefunden hat.
+
+| Wenn … | Bereiche | Ausgabe-Satz |
+|--------|----------|--------------|
+| Kein MCP aufgerufen | MCP-Call-Qualität | „Keine MCP-Calls in dieser Session." |
+| Keine Hard Stops | Orchestrierungs-Effizienz | „Keine Hard Stops — Flow lief ohne Blockaden." |
+| Kein Review gelaufen | Reviewer-Qualität + Delivery-Inspection-Loop | je 1 Satz: „Kein Review-Loop in dieser Session." / „Keine Delivery-Inspection in dieser Session." |
+
+Trifft keine Bedingung zu, werden alle Bereiche mit voller Tiefe analysiert.
+
+---
+
 ## Ablauf
 
 **Schritt 1 — Kontext sammeln**

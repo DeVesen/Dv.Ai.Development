@@ -1,4 +1,4 @@
----
+﻿---
 name: delivery-inspection
 description: >
   Pruefung vor der Auslieferung — prueft ob alle Anforderungen/Wuensche/Requests des Users
@@ -22,6 +22,27 @@ verstanden und vollstaendig umgesetzt wurden. Kein Code-Qualitaets-Gate (das ist
 feature-delivery) — sondern Anforderungserfuellung aus Besteller-Perspektive.
 
 Universell einsetzbar: Code-Features, Skill-Dateien, Dokumentation, Analysen, jede Art von Deliverable.
+
+---
+
+## ⚠️ Reviewer-Constraint: Kein eigenständiger Tool-Call
+
+**Gilt für alle 6 Reviewer-Agents ohne Ausnahme.**
+
+Der Orchestrator liefert den vollständigen Kontext im Prompt (Code, ACs, Testergebnisse, Diff).
+Du darfst KEINE eigenständigen Datei-Reads, Searches oder MCP-Calls ausführen.
+
+**Ist der Kontext unvollständig:** Finding formulieren — nicht suchen.
+Beispiel-Finding: `"Kontext unvollständig für [X] — kein Urteil möglich."`
+
+**Verboten:**
+- `Read`, `Grep`, `Glob` auf Repo-Dateien
+- `dev-mcp`, `codebase-analyzer` oder andere MCP-Tool-Calls
+- WebSearch, WebFetch
+- Jeder Tool-Call außer dem Schreiben des eigenen Review-Reports
+
+**Warum:** Eigenständige Suchen führen zu Budget/Context-Limit-Abbrüchen —
+kein Befund, kein Urteil. Reviewer ist Analyse-Agent, nicht Recherche-Agent.
 
 ---
 
@@ -87,6 +108,7 @@ Loop laeuft solange bis alle 6 Reviewer keine behebbaren Findings mehr melden.
 **Schritt 1 — 6 Reviewer parallel**
 Alle 6 Reviewer-Sub-Agents gleichzeitig beauftragen, unabhaengig voneinander.
 Jeder erhaelt: die originale Anforderung/Request-Liste + das Deliverable (Diff, Dateien, Beschreibung).
+Pflicht-Constraint fuer jeden Reviewer: Kein eigenstaendiger Tool-Call — nur Kontext-Analyse (Details: ## ⚠️ Reviewer-Constraint).
 Alle 6 Reports abwarten.
 
 **Schritt 2 — Findings klassifizieren**
@@ -112,6 +134,21 @@ Auf Antwort warten, bevor Fix beginnt.
 Eindeutig nachlieferbare Findings sofort beheben.
 Klaerungsbeduerftige Findings nach Erhalt der User-Antworten beheben.
 Keine halben Fixes, keine TODOs hinterlassen.
+
+**Schritt 4b — Override-Protokoll (nur bei Override-Entscheidung)**
+Wenn der Orchestrator ein Reviewer-NICHT-BESTANDEN ueberstimmt, muss folgender Eintrag explizit
+im Chat erscheinen — unmittelbar nach der Entscheidung, sichtbar als eigenstaendiger Block:
+
+> **Override: [Reviewer] [Finding-ID] — [Begruendung + Story-Referenz §X].**
+
+Beispiel:
+> **Override: Skeptiker F3 — Story §2 erlaubt Entweder-Oder-Verhalten; kein tatsaechlicher Mangel. (Ref: STORY-013)**
+
+Pflichten:
+- Jedes Override bekommt einen eigenen Eintrag (kein Sammeln mehrerer Overrides in einem Block)
+- Begruendung muss auf konkrete Story-Stelle oder AC-Referenz zeigen
+- Kein Override ohne expliziten Eintrag — unbegruendetes Ueberstimmen ist ein Regelverstoß
+- Sind alle Reviewer-Urteile akzeptiert, kein Override-Eintrag noetig (Schritt 4b entfaellt)
 
 **Schritt 5 — Iterations-Zusammenfassung**
 - Anzahl Findings je Reviewer-Rolle

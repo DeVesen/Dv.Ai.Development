@@ -660,6 +660,7 @@ SCRIBES (pro Welle/Slice):
   Subagent-Vorlage: "Scribe Runden 1-3" bzw. "Scribe Runden 4-5" aus dieser Datei.
   Parallel/sequenziell gemäß Wellen-Topologie aus Planpaket.
   Je Scribe: nur slice-scoped Build/Test — KEIN stack-weites Gate.
+  Post-Scribe-Verifikation: Orchestrator verifiziert via mcp__dev-mcp__read_files_batch([Touched Paths aus Scribe-Rückgabe]) — kein natives Read/Grep.
 
 INTEGRATION-CHECKPOINT (nach Merge aller parallelen Scribes einer Welle):
   SLICE-COVERAGE-CHECK (Pflicht — vor Gate 1, kein Skip erlaubt):
@@ -676,7 +677,11 @@ INTEGRATION-CHECKPOINT (nach Merge aller parallelen Scribes einer Welle):
     Gate 2 — STATISCHE ANALYSE (parallel, nach Gate 1 grün):
       run_inspectcode (dev-mcp)
       ArchUnitNET-Tests via test_dotnet_solution
-      lint_angular_project (dev-mcp — inkl. eslint-plugin-boundaries wenn konfiguriert)
+      lint_angular_project (dev-mcp) — nur wenn ESLint konfiguriert:
+        Vor Aufruf prüfen: `.eslintrc.*` ODER `eslint.config.{js,mjs,cjs}` vorhanden
+        ODER `eslint`-Eintrag in `angular.json`.
+        Wenn nicht konfiguriert: überspringen + Hinweis "ESLint nicht konfiguriert — Setup gehört ins §2-Bootstrap."
+        → ng lint inkl. eslint-plugin-boundaries
       review_git_diff mit allen 5 focusAreas: security · performance · api-validation ·
         angular-best-practices · solid (codebase-analyzer — rein statisch; speist LLM-Reviewer)
       analyze_iosp_compliance (codebase-analyzer — wenn Strang 5/6 verfügbar)
@@ -708,6 +713,23 @@ REVIEW-LOOP (nach Gates):
               nein / Max 5 erreicht → Abschluss
 
 Stopp nach Runde 5 mit offenen Findings: Hard Stop + Rest-Findings-Bericht.
+
+DELIVERY-INSPECTION → CLOSURE (Pflicht nach Inner-Loop — Notification-sicher):
+  ⚠️ Notification-Trap: Delivery-Inspection spawnt 6 Reviewer-Sub-Agents deren
+  Completion-Notifications an den Haupt-Thread gehen — NICHT zurück an diesen Orchestrator.
+  Background-Task + Notification-Wait führt zum Wait-Loop (Story bleibt auf "planned").
+  Schritt 1 — Delivery-Inspection starten (DIREKT, kein background-Task):
+    delivery-inspection als direkten Sub-Agent beauftragen (foreground, synchron).
+    Kontext: originale Story-ACs + finaler Diff/Touched-Paths + Gate-Status + Inner-Loop-Summary.
+    Auf DIREKTE Rückgabe warten — kein Notification-Wait, kein SendMessage-Poll.
+  Schritt 2 — Story-Status SELBST setzen (nach direkter Rückgabe, unabhängig von Notifications):
+    Story-Datei [story-path] lesen → status-Feld direkt schreiben.
+    OK (keine offenen Gaps) → status: implemented → Abschlussformat ausgeben.
+    Implementation-Gap → Fix-Scribe beauftragen → Inner Loop zurück.
+    Requirement-Gap → Delta-Protokoll erstellen → Outer Loop Schritt 1.
+    Unklar → gebuendelte User-Frage → auf Antwort warten → klassifizieren.
+  Opt-out (skip-delivery-inspection): Story-Status trotzdem auf implemented setzen,
+    Opt-out-Grund im Abschlussformat unter "## Closure" vermerken.
 
 Abschlussformat-Vorlage: "Abschlussformat (Orchestrator)" aus dieser Datei.
 ```
@@ -758,6 +780,10 @@ Schritt 2 — Implementierung (GREEN):
 Pfade: Windows-Absolutpfade (C:\...) für alle dev-mcp-Calls.
 Schema vor jedem MCP-Aufruf lesen.
 
+Post-Scribe-Verifikation (Pflicht — MCP-First):
+  mcp__dev-mcp__read_files_batch([alle Touched Paths]) — kein natives Read/Grep.
+  Verifikations-Ergebnis im Summary festhalten.
+
 Rückgabe:
 - Summary (Red-Phase: welche Tests fehlgeschlagen; Green-Phase: welche Tests grün)
 - Touched paths
@@ -800,6 +826,10 @@ async-geladene Listen-Properties als Signal deklariert werden:
 Gilt für jede Property die nach ngOnInit/Subscribe befüllt wird.
 
 Pfade: Windows-Absolutpfade (C:\...) für alle dev-mcp-Calls.
+
+Post-Scribe-Verifikation (Pflicht — MCP-First):
+  mcp__dev-mcp__read_files_batch([alle Touched Paths]) — kein natives Read/Grep.
+  Verifikations-Ergebnis im Summary festhalten.
 
 Rückgabe:
 - Summary (Red/Green-Phase-Ergebnis)
@@ -1124,4 +1154,8 @@ Liefern:
 
 ## Offene Punkte
 - [falls vorhanden; bei Rest-Findings hier Empfehlung]
+
+## Closure
+- Story-Status: implemented — [Story-Pfad]
+- Delivery-Inspection: [N Iteration(en) sauber | skip — Grund: ...]
 ```

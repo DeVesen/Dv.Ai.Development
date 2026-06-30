@@ -82,6 +82,24 @@ when_to_use: >
 
 ---
 
+## ToolSearch — Standard-Batch (Session-Start)
+
+**Einmaliger Batch-Load** vor dem ersten dev-mcp-Aufruf in der Session — statt 5 sequenzieller Calls:
+
+```
+select:mcp__dev-mcp__read_lines,mcp__dev-mcp__read_files_batch,mcp__dev-mcp__test_angular_project,mcp__dev-mcp__test_dotnet_solution,mcp__dev-mcp__find_file
+```
+
+| Muster | Ergebnis |
+|--------|----------|
+| ✅ Einziger `select:`-Batch (ein Call) | Alle 5 Standard-Tools gleichzeitig geladen |
+| ❌ 5 separate ToolSearch-Calls über Session verteilt | Akkumulierter Wartezeit-Overhead pro Call |
+
+> Nur diese 5 dokumentierten Standard-Tools laden — kein Preload selten genutzter Tools.
+> Stack-Hinweis: Reine Angular-Sessions können `test_dotnet_solution` weglassen; reine .NET-Sessions `test_angular_project` — dieser Vollbatch gilt für Angular+.NET-Projekte.
+
+---
+
 ## Pfad-Kanon (Pflicht)
 
 - Alle Pfade als **echte Windows-Absolutpfade**: `C:\Develop\MyProject\`

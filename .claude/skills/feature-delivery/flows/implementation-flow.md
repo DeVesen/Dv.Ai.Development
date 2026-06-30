@@ -121,7 +121,12 @@ Hard Gate (Readiness)              Impl-Loop-Orchestrator (Opus, delegierter Age
         2. STATISCHE ANALYSE (parallel, nach grunem Build):
              • run_inspectcode               (dev-mcp) → token-opt. JSON
              • ArchUnitNET-Tests             via test_dotnet_solution (dev-mcp)
-             • lint_angular_project          (dev-mcp) → ng lint inkl. eslint-plugin-boundaries
+             • lint_angular_project          (dev-mcp) — nur wenn ESLint konfiguriert:
+                  Vor Aufruf prüfen: `.eslintrc.*` ODER `eslint.config.{js,mjs,cjs}` vorhanden
+                  ODER `eslint`-Eintrag in `angular.json`.
+                  Wenn nicht konfiguriert: überspringen + Hinweis ausgeben:
+                  "ESLint nicht konfiguriert — Setup gehört ins §2-Bootstrap."
+                  → ng lint inkl. eslint-plugin-boundaries
              • review_git_diff               (codebase-analyzer)
                   alle 5 focusAreas: security · performance · api-validation
                                      angular-best-practices · solid
@@ -269,11 +274,23 @@ Max. **5 Runden**. Impl-Loop-Orchestrator orchestriert; keine Rollensimulation s
 - **Nur Warnings** → alle Gates durchlaufen; gebündelte Findings an Fix-Planer
 - **Security-Findings (severity `critical`)** → **immer blockierend** wie Errors — unabhaengig vom Kanal (codebase-analyzer / inspectcode), **nie** als Warning gebuendelt durchgewunken
 
+### Incomplete-Response-Policy (Reviewer-Retry)
+
+Wenn ein Reviewer-Agent kein Urteil und kein Finding liefert (Incomplete-Response):
+
+1. **1x Retry:** Orchestrator spawnt den Reviewer-Agent einmalig neu. Ergebnis abwarten.
+2. **Retry erfolgreich (Urteil vorhanden):** Review-Output normal auswerten. Kein Self-Assessment.
+3. **Retry ebenfalls incomplete:** Self-Assessment ist erlaubt — muss aber explizit als `"Reviewer unavailable after retry"` dokumentiert werden (kein normales Review-Urteil).
+
+*Hintergrund: STORY-026 — Session v4 (#7): Reviewer lieferte "Suche läuft — ich warte auf den Befund." ohne Urteil. Self-Assessment ohne Retry = blindes Urteil. 1x Retry trennt echte Timeouts von Regelbrüchen.*
+
 ### Jede Runde
 
 **3.1 Quality Gates (integrationsweit)**
 
 Gate-Reihenfolge einhalten (Build → Statische Analyse → Design-Principles → Tests). Alle Gates dokumentiert rueckmelden.
+
+**Prozess-Disziplin (Fix-Edit-Zyklen):** `review_git_diff` laeuft in Gate 2 nach **jedem** Fix-Edit-Zyklus — auch nach trivialen Fixes (1 Zeile). Kein Fix-Zyklus reduziert Gate 2 auf Build+Test allein. Zweck: unbeabsichtigte Whitespace- oder Seiteneffekt-Aenderungen werden vor dem naechsten Review-Loop erkannt.
 
 **3.2 Sieben Impl-Reviews (parallel, readonly)**
 
@@ -372,6 +389,14 @@ Letzter Schritt vor Closure — prueft ob alle Anforderungen erfuellt wurden.
 Kein Code-Qualitaets-Check (Gates und Reviews haben das erledigt) — sondern Anforderungserfuellung aus Besteller-Perspektive.
 
 Aufruf: `delivery-inspection` skill (siehe [../../delivery-inspection/SKILL.md](../../delivery-inspection/SKILL.md)).
+
+⚠️ **Notification-Routing-Constraint (STORY-031):**
+Delivery-Inspection spawnt 6 Reviewer-Sub-Agents. Deren Completion-Notifications gehen an den
+Haupt-Thread — NICHT zurück an den Impl-Loop-Orchestrator. Background-Task + Notification-Wait
+führt zum Wait-Loop (Story bleibt auf "planned" stecken).
+**Deshalb: Delivery-Inspection als DIREKTEN Sub-Agent beauftragen (foreground, kein background-Task).
+Auf direkte Rückgabe warten. Story-Status danach vom Orchestrator selbst setzen.**
+Details und Prompt-Vorlage: `../references/subagent-prompts.md` → "DELIVERY-INSPECTION → CLOSURE".
 
 Jeder Reviewer erhaelt: originale Anforderung + finaler Plan + Diff/Touched Paths + Gate-Status.
 

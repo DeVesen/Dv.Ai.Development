@@ -3,6 +3,9 @@
 > **Hinweis:** Diese Datei wird vom Harness NICHT automatisch geladen (auto-geladen werden nur `CLAUDE.md` und `SKILL.md`). Öffne diese Datei explizit, wenn du ein neues Kundenprojekt oder diesen Harness auf einem neuen Rechner einrichten willst.
 >
 > **Verwendung mit einer AI:** Öffne diese Datei, lass die AI jeden Abschnitt schrittweise durchführen — sie fragt vor jeder Maßnahme nach Bestätigung.
+>
+> **Beim ersten Setup:** alle Phasen (A–E) vollständig durchgehen.
+> **Beim Update** (Trigger: Nutzer sagt „update" oder „aktualisiert"): nur offene B-Fragen — Claude verifiziert welche Phase-B-Fragen bereits beantwortet wurden, stellt nur die noch offenen.
 
 ---
 
@@ -162,8 +165,10 @@ AI stellt die folgenden Fragen — eine nach der anderen, wartet jeweils auf Ant
 **B5 — Frontend-Architektur**
 > „Gibt es ein Frontend? Wenn ja: Single-SPA, mehrere Angular-Apps, Nx mit Libs?"
 
-**B6 — Test-Strategie**
+**B6 — Test-Strategie und Testframework**
 > „Welche Test-Ebenen sind aktiv? (Unit / Integration / E2E / ArchUnit / keine)"
+> „Welches Testframework gilt für .NET-Tests? (xUnit / NUnit / MSTest — welche Packages werden erwartet?)"
+> „Welches für Angular? (Jasmine / Jest)"
 
 **B7 — CI/CD und Deployment**
 > „Wie wird deployed? (Azure DevOps Pipelines / GitHub Actions / manuell / Docker)"
@@ -193,6 +198,7 @@ Basierend auf dem Steckbrief wählt die AI aus dem verfügbaren Skill-Katalog:
 | `backend-ef-migrations` | EF Core im .NET-Backend |
 | `ado` | Azure DevOps Work Items genutzt |
 | `acceptance-design` | Anforderungen kommen als Stories |
+| `grill-me` | Interaktive Story/Plan-Verfeinerung gewünscht |
 | `codebase-analyzer` | Code-Review / Analyse-Aufgaben |
 | `repo-scout-protocol` | Repo-Erkundung zu Beginn |
 | `build-log-filter` | `ng serve` / Build-Logs filtern |
@@ -397,6 +403,7 @@ Roher Stakeholder-Wunsch
 | `/requirement-definition` | `ich brauche ein Feature für…`, `schneide das in Stories`, `Anforderung erfassen` | Roher Stakeholder-Wunsch → entwicklungsfertige Arbeitspakete: Epic→Feature→Story Breakdown (INVEST, Richard-Lawrence-Splitting), F1-Akzeptanzkriterien, persistente Dateien unter `requests/`. |
 | `/feature-delivery` | `plane`, `implementiere`, `fix`, `setze um` | Vollständige Feature-Umsetzung (.NET + Angular): Plan + Umsetzung. Drei Einstiege: Plan-only, End-to-end, From-existing-plan. |
 | `/acceptance-design` | `schärfe Anforderung`, `Akzeptanzkriterien` | Anforderungen auf Testbarkeit prüfen und schärfen (tiefer, standalone AC-Audit). |
+| `/grill-me` | `grill mich`, `befrage diese Story`, `schärf den Plan`, `hinterfrage den Plan` | Interaktives Verhör einer Story/Plan: eine Frage + Empfehlung bis alle Entscheidungszweige klar. |
 
 #### Code & Analyse
 

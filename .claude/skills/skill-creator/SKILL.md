@@ -153,6 +153,54 @@ Write 2–3 realistic test prompts. Share with user for confirmation. Save to `e
 }
 ```
 
+### Info-Skills (Datei-Edit-Kategorie)
+
+Ein **Info-Skill** dokumentiert für ein konkretes Repo was, wo und wie geändert werden soll —
+ohne den Change selbst auszuführen. Er dient als Referenz für ein Modell das den Edit vornimmt.
+
+**Pflicht-Sektion: `## Verify`**
+
+Jeder Info-Skill der Datei-Edits auslöst muss eine `## Verify`-Sektion enthalten. Die Sektion
+ist immer vorhanden — sie kann eine Skip-Bedingung enthalten wenn der Build-Check nachweislich
+nicht nötig ist.
+
+Zweck: Das Modell soll explizit entscheiden ob ein Build-Check ausgeführt wird — kein stilles
+Übergehen (silent skip). HTML-Kommentare, Template-Änderungen und strukturelle Edits können
+Angular-Template-Syntax brechen (`@if`-Blöcke, `@else`-Zweige verschoben) — das bleibt ohne
+Build-Check unentdeckt.
+
+**Template:**
+
+```markdown
+## Verify
+`build_angular_project` auf `[Frontend-Pfad]` ausführen um Template-Syntaxfehler auszuschließen.
+Kann übersprungen werden wenn [konkrete Skip-Bedingung, z.B. "Änderungen ausschließlich innerhalb
+vollständiger Block-Grenzen — kein `@if`-Abschluss berührt"].
+```
+
+Wenn kein Skip-Pfad existiert, Sektion ohne Konditionalsatz:
+
+```markdown
+## Verify
+`build_angular_project` auf `[Frontend-Pfad]` ausführen um Template-Syntaxfehler auszuschließen.
+```
+
+**Bedingte Pflicht-Sektion: `## Rücknahme`**
+
+Deaktivierende Info-Skills (die z.B. HTML-Kommentare setzen um Elemente auszublenden) müssen
+eine `## Rücknahme`-Sektion enthalten. Die Sektion beschreibt **exakt** wie die Deaktivierung
+rückgängig gemacht wird — kein implizites Ableiten durch das Modell.
+
+Kanonische Formulierung für HTML-Kommentar-Deaktivierung:
+
+> Kommentarzeichen `<!-- ` und ` -->` entfernen. Keine weiteren Änderungen.
+
+**Warum:** Ohne explizite Rücknahme-Anweisung leitet das Modell den Rückweg eigenständig ab.
+Bei zwischenzeitlichen HTML-Änderungen entstehen falsch entfernte Kommentare oder
+Überänderungen — besonders wenn Monate zwischen Deaktivierung und Reaktivierung liegen.
+
+**Referenz:** [`references/info-skill-template.md`](references/info-skill-template.md) — vollständiges Info-Skill-Template mit allen Pflicht-Sektionen.
+
 ---
 
 ## Creating an Agent Profile

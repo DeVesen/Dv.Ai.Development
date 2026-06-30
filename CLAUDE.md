@@ -131,9 +131,54 @@ Wenn Code oder Symbole im Repo nachgeschaut werden — MCP vor nativem Read/Grep
 | Klasse / Methode lesen | `dev-mcp`: `read_class_summary`, `read_signatures_only`, `read_method` |
 | Index / Abhaengigkeiten | `codebase-analyzer`: `find_in_index`, `index_project` |
 | Angular-Tests ausführen | `dev-mcp`: `test_angular_project` — ng test via Shell/PowerShell niemals erlaubt |
+| .NET-Tests ausführen | `dev-mcp`: `test_dotnet_solution` — immer `test_project_path` für Primary-Target angeben (→ Verhaltensregeln) |
 | Native Read / Grep | nur als dokumentierter Fallback — nach MCP-Versuch |
 
 **Pfad-Format (verbindlich):** Windows-Absolutpfad `C:\Develop\...` — kein `/workspace/`, keine relativen Pfade.
+
+---
+
+## Verhaltensregeln
+
+### Konventionsentscheidungen transparent kommunizieren
+
+Wenn der Orchestrator oder ein Agent eine Konventionsentscheidung trifft, bei der **mehr als eine valide Option** existiert und die Wahl eine **User-sichtbare Auswirkung** hat: die getroffene Entscheidung direkt beim Fix in einem Halbsatz nennen — inklusive kurzem Alternativ-Hinweis.
+
+**Regel:** Entscheiden, umsetzen, in einem Halbsatz nennen. Nicht fragen, nicht schweigen.
+
+**Beispiel:** *„Nummerierung ab (2) — Windows-Konvention. Falls (1) gewünscht: ein Wort genügt."*
+
+**Ausnahme:** Triviale oder eindeutige Entscheidungen ohne echte Alternative und ohne User-sichtbare Auswirkung erhalten keinen Kommentar — kein unnötiger Kommentar-Overhead.
+
+*Hintergrund: STORY-010 — In Session v1 (#2) wurde ein Dedup-Counter bei `(2)` gestartet (Windows-Konvention) statt `(1)`. Der User bemerkte die Entscheidung erst im nächsten Turn. Diese Regel verhindert solche stillen Konventionsentscheidungen.*
+
+---
+
+### Git-Status-Check vor Statusaussagen
+
+Vor jeder Statusaussage über Dateiänderungen: `git status` und ggf. `git branch` prüfen. Erst wenn keine Branch-Divergenz vorliegt, darf eine Statusaussage raus.
+
+**Regel:** `git status` (und ggf. `git branch`) aufrufen bevor eine Aussage über den Änderungsstatus von Dateien formuliert wird. Bei erkannter Branch-Divergenz: korrekt kommunizieren — *„Edits auf Branch X vorhanden — nicht auf aktuellem Branch"*.
+
+**Ausnahme:** Wenn der Kontext eindeutig zeigt, dass kein Branch-Wechsel stattgefunden hat (z. B. frisch geklontes Repo in derselben Session), ist der Check optional.
+
+*Hintergrund: STORY-011 — In Session v1 (#1) führte ein Branch-Wechsel zu der falschen Aussage „Edits nicht gespeichert". Die Edits lagen auf Branch A, der aktuelle Branch war Branch B. Diese Regel verhindert aktiv falsches Vertrauen durch Branch-Divergenz.*
+
+---
+
+### .NET-Tests: test_project_path Pflichtangabe
+
+BE-Tests immer mit `test_project_path` aufrufen. Primary Target: `LAC.ExperimentService.Tests\*.csproj`.
+
+**Regel:** `test_dotnet_solution` ohne `test_project_path` auf `LAC.sln` läuft auf ApplicationLoggingService (26 Tests) — formal grün, aber nicht repräsentativ. Immer explizit angeben:
+
+```
+test_project_path="<solution-root>\LAC.ExperimentService.Tests\*.csproj"
+```
+
+**Ausnahme:** Gezielter Test einer anderen Komponente — dann das jeweilige Testprojekt explizit nennen, nie weglassen.
+
+*Hintergrund: STORY-018 — Session v7 (#03): ohne test_project_path liefen nur 26 ApplicationLoggingService-Tests (grün), nicht die 45 ExperimentService-Tests (5 pre-existing Failures). Zweiter Call nötig — vermeidbar.*
 
 ---
 
@@ -142,3 +187,10 @@ Wenn Code oder Symbole im Repo nachgeschaut werden — MCP vor nativem Read/Grep
 Silent-shortcut prevention and MCP-first policy: `docs/silent-shortcut-prevention.md`
 
 Agent compliance and output style: `.claude/references/agent-compliance.md`, `.claude/references/output-style-canon.md`
+
+---
+
+## Harness einrichten / aktualisieren
+
+Ersteinrichtung oder Harness-Update → **[StartUpClaude.md](StartUpClaude.md)** öffnen und schrittweise durchführen.
+**Update-Trigger:** Nutzer sagt „update" oder „aktualisiert" → AI geht nur offene Phase-B-Fragen durch (bereits beantwortete werden übersprungen).

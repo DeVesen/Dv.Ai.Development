@@ -110,6 +110,7 @@ Alle 6 Reviewer-Sub-Agents gleichzeitig beauftragen, unabhaengig voneinander.
 Jeder erhaelt: die originale Anforderung/Request-Liste + das Deliverable (Diff, Dateien, Beschreibung).
 Pflicht-Constraint fuer jeden Reviewer: Kein eigenstaendiger Tool-Call — nur Kontext-Analyse (Details: ## ⚠️ Reviewer-Constraint).
 Alle 6 Reports abwarten.
+**Count-Guard:** erhalten: N/6 — nicht weiter bevor N=6. Erst wenn alle 6 Reports vorliegen, konsolidierten Gesamt-Report zurückgeben.
 
 **Schritt 2 — Findings klassifizieren**
 Alle Findings aus 6 Reports zusammenfuehren:
@@ -188,6 +189,8 @@ Wenn von `feature-delivery` als letzter Schritt vor Closure aufgerufen:
 - Findings gehen **nicht direkt an den User** — sondern an den `impl-loop-orchestrator`
 - Orchestrator entscheidet: Fix-Scribe beauftragen oder an User eskalieren
 - Erst nach sauberem Delivery-Inspection-Durchlauf: Closure
+
+**Routing-Constraint (STORY-031):** Delivery-Inspection läuft immer im Foreground des aufrufenden Threads — Notifications und Reports gehen an den Main-Thread (impl-loop-orchestrator), **nicht** zurück an einen Background-Orchestrator. Kein eigenständiger Background-Spawn innerhalb von DI. (Ref: STORY-031)
 
 ---
 

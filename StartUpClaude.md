@@ -236,6 +236,11 @@ AI erstellt einen CLAUDE.md-Entwurf mit folgenden Abschnitten:
 ## Verhaltensregeln
 [Besonderheiten aus B9, ADO-Konfiguration, CI/CD-Hinweise]
 
+## Parallelisierungsregeln
+- Parallele Story-Agents NIEMALS mit `isolation: "worktree"` starten — direkt auf aktuellem Branch.
+- requirement-definition liefert `touches`-Annotation und Parallelgruppen — nur Stories ohne Überschneidung dürfen gleichzeitig laufen.
+- Stories mit überschneidenden `touches`: serialisieren.
+
 ## MCP-Konfiguration
 [Verweis auf .mcp.json, Pflicht-MCPs, optionale MCPs]
 ```
@@ -368,6 +373,7 @@ Was wurde eingerichtet — für spätere Referenz:
 - [ ] Resilience: nein / Polly (Retry/CB/Timeout) / ___
 - [ ] Inter-Service: nein / Bus: ___ / Event-Contracts: ___
 - [ ] Logging: Correlation-IDs: ja/nein / Tracing: ja/nein / Secrets: ___
+- [ ] Parallelisierungsregel in CLAUDE.md: kein `isolation: "worktree"` für parallele Story-Agents
 
 ---
 

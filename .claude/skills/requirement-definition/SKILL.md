@@ -224,6 +224,7 @@ status: offen             # offen | ready | planned | implemented
 slug: select-statt-checkboxen
 children: [STORY-014, STORY-015]   # nur Epic/Feature; Verweis per ID
 depends_on: [STORY-012, STORY-013] # nur wenn Abhaengigkeiten zu anderen Stories bestehen; sonst weglassen
+touches: [delivery-inspection/SKILL.md]  # primaerer Aenderungsbereich — Pflicht beim Feature-Schnitt (Parallelgruppen-Analyse)
 ---
 ```
 
@@ -235,6 +236,39 @@ trage ich als `depends_on: [STORY-001]` ins Frontmatter ein."*
 Nicht-blockierende Abhaengigkeiten (z. B. „koennte parallel laufen") werden **nicht** als
 `depends_on` eingetragen — nur harte Voraussetzungen (Story X muss fertig sein bevor diese
 startbar ist). Zweifelsfaelle: explizit fragen.
+
+**Parallelgruppen-Analyse (Stories im Feature-Schnitt):** Wann immer ein Feature in mehrere
+Stories geschnitten wird, analysiert der Skill fuer jede Story den primaeren Aenderungsbereich
+(`touches`) und gruppiert die Stories nach Parallelisierbarkeit.
+
+Vorgehen:
+1. Fuer jede Story den Bereich benennen, den sie aendert (Datei(en) / Skill-Abschnitt / Modul).
+   Eintrag ins Frontmatter: `touches: [<Bereich>]` (z. B. `delivery-inspection/SKILL.md`,
+   `agent-compliance.md`, `implement-loop-orchestrator.md`).
+2. Stories ohne ueberschneidende `touches` → **Parallelgruppe** (koennen gleichzeitig
+   implementiert werden, kein Worktree noetig).
+3. Stories mit ueberschneidenden `touches` → **Serielle Sequenz** (erst X, dann Y).
+4. Ausgabe am Ende des Feature-Schnitts:
+
+```
+Parallelgruppen:
+  Gruppe A (parallel): STORY-001, STORY-002, STORY-003
+    STORY-001 touches: implement-loop-orchestrator.md
+    STORY-002 touches: delivery-inspection/SKILL.md
+    STORY-003 touches: agent-compliance.md
+  → Keine Ueberschneidungen — alle drei koennen gleichzeitig implementiert werden.
+
+Serielle Abhaengigkeiten: keine
+```
+
+Falls Ueberschneidungen vorliegen:
+```
+  Gruppe A (parallel): STORY-001, STORY-003
+  Gruppe B (nach Gruppe A): STORY-002
+    STORY-002 touches: delivery-inspection/SKILL.md (auch von STORY-001 beruehrt)
+```
+
+Diese Ausgabe ist der direkte Input fuer den Nutzer, wenn er fragt „welche Stories koennen parallel laufen".
 
 **Inhalte:**
 - **Epic** — Kurzbeschreibung + Motivation · Scope (drin / bewusst nicht drin) · Feature-Liste

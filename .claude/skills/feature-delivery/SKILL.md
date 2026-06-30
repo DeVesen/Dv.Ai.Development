@@ -32,6 +32,9 @@ when_to_use: >
   Check-Plus-Mode: check plus/validate plus → wie Check, aber mit Scouts fuer Code-gestuetzte Bewertung.
   Nicht bei: reiner Erklaerung ohne Umsetzungsintent, ohne feature-delivery.
   Story-Entscheidungen noch unklar vor dem Plan? → /grill-me <story.md> vorschalten.
+  Parallele Stories: NIEMALS isolation: worktree verwenden — alle Agents arbeiten direkt auf dem
+  aktuellen Branch. Voraussetzung: requirement-definition hat touches-Annotation und Parallelgruppen
+  geprueft (keine Ueberschneidung). Stories mit ueberschneidenden touches serialisieren.
 ---
 
 # feature-delivery

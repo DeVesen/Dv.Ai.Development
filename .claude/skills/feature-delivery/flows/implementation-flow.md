@@ -54,23 +54,23 @@ Kein Shell-Fallback ohne explizite Nutzerfreigabe.
 
 ## Subagent-Typen und Agent-Definitionen
 
-**Modellwahl** ausschliesslich in `../agents/*.md` (Abschnitt `## Modell`) — nicht hier duplizieren.
+**Modellwahl** ausschliesslich in `.claude/agents/*.md` (Abschnitt `## Modell`) — nicht hier duplizieren.
 
 ### Rollen im Implementations-Flow
 
 | Rolle | Schritt | Modell | Agent-Datei |
 |-------|---------|--------|-------------|
-| **Impl-Loop-Orchestrator** | Gesamter Flow | Opus | `../agents/implement-loop-orchestrator.md` |
-| **Scribe Runden 1-3** | Slice-Implementierung | Sonnet | `../agents/implement-scribe-agent.md` |
-| **Scribe Runden 4-5** | Eskalation | Opus | `../agents/implement-scribe-opus-agent.md` |
-| **Risk** | Review | Opus | `../agents/implement-review-risk-agent.md` |
-| **Design-Principles** | Review | Opus | `../agents/implement-review-design-principles-agent.md` |
-| **Verifier** | Review | Sonnet | `../agents/implement-review-verifier-agent.md` |
-| **Readiness** | Review | Sonnet | `../agents/implement-review-readiness-agent.md` |
-| **Craft** | Review | Sonnet | `../agents/implement-review-craft-agent.md` |
-| **Auditor** | Review | Sonnet | `../agents/implement-review-auditor-agent.md` |
-| **Guard** | Review | Sonnet | `../agents/implement-review-guard-agent.md` |
-| **Fix-Planer** | Fix-Planung | Opus | `../agents/implement-fix-planner-agent.md` |
+| **Impl-Loop-Orchestrator** | Gesamter Flow | Opus | `.claude/agents/implement-loop-orchestrator.md` |
+| **Scribe Runden 1-3** | Slice-Implementierung | Sonnet | `.claude/agents/implement-scribe-agent.md` |
+| **Scribe Runden 4-5** | Eskalation | Opus | `.claude/agents/implement-scribe-opus-agent.md` |
+| **Risk** | Review | Opus | `.claude/agents/implement-review-risk-agent.md` |
+| **Design-Principles** | Review | Opus | `.claude/agents/implement-review-design-principles-agent.md` |
+| **Verifier** | Review | Sonnet | `.claude/agents/implement-review-verifier-agent.md` |
+| **Readiness** | Review | Sonnet | `.claude/agents/implement-review-readiness-agent.md` |
+| **Craft** | Review | Sonnet | `.claude/agents/implement-review-craft-agent.md` |
+| **Auditor** | Review | Sonnet | `.claude/agents/implement-review-auditor-agent.md` |
+| **Guard** | Review | Sonnet | `.claude/agents/implement-review-guard-agent.md` |
+| **Fix-Planer** | Fix-Planung | Opus | `.claude/agents/implement-fix-planner-agent.md` |
 
 ---
 

@@ -1,4 +1,4 @@
----
+﻿---
 name: implement-loop-orchestrator
 model: claude-opus-4-8
 effort: high
@@ -102,6 +102,10 @@ Findings aus `review_git_diff` (Gate 2) als Evidenz an alle Reviewer übergeben.
 Letzter Pflichtschritt — nach Abschluss des Review-Loops (sauber oder Hard Stop), vor Rückgabe an Parent.
 
 `delivery-inspection`-Skill starten: 6 Reviewer (Revisor · Skeptiker · Normalo · Dolmetscher · Auftraggeber · Querdenker) erhalten originale Anforderung + finaler Plan + Diff/Touched Paths + Gate-Status.
+
+> ⚠️ **FOREGROUND-MANDAT (STORY-031):** DI MUSS foreground laufen — kein background.
+> Completion-Contract: erwarte EINEN konsolidierten DI-Report — nicht einzelne Notifications.
+> Erst wenn der vollständige DI-Report (alle 6 Reviewer-Findings gebündelt) vorliegt, gilt DI als abgeschlossen.
 
 **Findings-Handling:**
 - **Eindeutig nachlieferbar** → Fix-Scribe beauftragen (zählt als zusätzliche Korrektur, kein Loop-Limit-Reset)

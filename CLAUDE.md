@@ -31,7 +31,7 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 │   ├── prozess-retrospektive/   Prozess-Analyse: Harness-Verbesserungsideen + Session-Erkenntnisse
 │   ├── caveman/                 Kommunikationsstil: Caveman
 │   └── de-en-communication/     Kommunikationsregeln: Deutsch/Englisch — Text DE, Code EN, Voice Mixed
-├── agents/             Sub-Agent-Profile (auto-discovered) — acceptance-design-agent.md vorhanden; weitere Profile liegen noch unter skills/*/agents/
+├── agents/             Sub-Agent-Profile (auto-discovered) — alle Agent-Profile zentral hier (22 Profile; 21 von skills/*/agents/ migriert via STORY-004)
 └── references/         Shared references (compliance, output-style, boilerplate)
 
 Mcp-Servers/            MCP server implementations
@@ -179,6 +179,18 @@ test_project_path="<solution-root>\LAC.ExperimentService.Tests\*.csproj"
 **Ausnahme:** Gezielter Test einer anderen Komponente — dann das jeweilige Testprojekt explizit nennen, nie weglassen.
 
 *Hintergrund: STORY-018 — Session v7 (#03): ohne test_project_path liefen nur 26 ApplicationLoggingService-Tests (grün), nicht die 45 ExperimentService-Tests (5 pre-existing Failures). Zweiter Call nötig — vermeidbar.*
+
+---
+
+### Parallele Story-Agents: kein Worktree
+
+Wenn mehrere Stories parallel implementiert werden, DÜRFEN die Agents NICHT mit `isolation: "worktree"` gestartet werden — sie arbeiten direkt auf dem aktuellen Branch.
+
+**Regel:** Parallele Story-Agents immer ohne `isolation: "worktree"` starten. Voraussetzung: `requirement-definition` hat die Parallelgruppen auf Datei-/Bereichsüberschneidungen geprüft (`touches`-Annotation je Story). Stories mit überschneidenden `touches` dürfen nicht parallel laufen.
+
+**Ausnahme:** Wenn zwei Stories nachweislich dieselbe Datei im selben Abschnitt ändern — serialisieren statt Worktree.
+
+*Hintergrund: Parallel-Session (STORY-001/002/003) — Worktree-Isolation erzeugte unnötigen Merge-Overhead und untracked-file-Konflikte bei Story-Status-Updates, obwohl die Stories unterschiedliche Dateien berührten.*
 
 ---
 

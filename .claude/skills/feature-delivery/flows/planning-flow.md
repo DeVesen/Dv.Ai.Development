@@ -55,7 +55,7 @@ Parallelitaet nur innerhalb derselben Stufe: Scouts parallel (Phase 3), Topic-Pl
 
 ## Subagent-Typen und Agent-Definitionen
 
-**Modellwahl** (Slugs) nur in `../agents/*.md` (Abschnitt `## Modell`) — nicht hier duplizieren.
+**Modellwahl** (Slugs) nur in `.claude/agents/*.md` (Abschnitt `## Modell`) — nicht hier duplizieren.
 
 **Verboten fuer Phase 3, 4b, Review:** `explore`, `generalPurpose`, `shell` oder Rollensimulation im Orchestrator-Turn.
 
@@ -63,16 +63,16 @@ Parallelitaet nur innerhalb derselben Stufe: Scouts parallel (Phase 3), Topic-Pl
 
 | Rolle | Phase | Parallel? | Max. Laeufe | Modell | Agent-Datei |
 |-------|-------|-----------|------------|--------|-------------|
-| **Plan-Orchestrator** | 1, 2, 4a, 4c, 6 | — | 1 | Opus | `../agents/plan-agent.md` |
-| **Scout** | 3 | bevorzugt | 10 | Sonnet | `../agents/plan-agent-scout.md` |
-| **Topic-Planer** | 4b | bevorzugt | 10 | Sonnet | `../agents/plan-agent-topic-planner.md` |
-| **Guard** | Review | bevorzugt | 1 | Sonnet | `../agents/plan-review-guard-agent.md` |
-| **Risk** | Review | bevorzugt | 1 | Opus | `../agents/plan-review-risk-agent.md` |
-| **Readiness** | Review | bevorzugt | 1 | Sonnet | `../agents/plan-review-readiness-agent.md` |
-| **Craft** | Review | bevorzugt | 1 | Sonnet | `../agents/plan-review-craft-agent.md` |
-| **Auditor** | Review | bevorzugt | 1 | Sonnet | `../agents/plan-review-auditor-agent.md` |
-| **Design-Principles** | Review | bevorzugt | 1 | Opus | `../agents/plan-review-design-principles-agent.md` |
-| **Plan-Fixer** | Review-Loop | — | 1/Iteration | Opus | `../agents/plan-fixer-agent.md` |
+| **Plan-Orchestrator** | 1, 2, 4a, 4c, 6 | — | 1 | Opus | `.claude/agents/plan-agent.md` |
+| **Scout** | 3 | bevorzugt | 10 | Sonnet | `.claude/agents/plan-agent-scout.md` |
+| **Topic-Planer** | 4b | bevorzugt | 10 | Sonnet | `.claude/agents/plan-agent-topic-planner.md` |
+| **Guard** | Review | bevorzugt | 1 | Sonnet | `.claude/agents/plan-review-guard-agent.md` |
+| **Risk** | Review | bevorzugt | 1 | Opus | `.claude/agents/plan-review-risk-agent.md` |
+| **Readiness** | Review | bevorzugt | 1 | Sonnet | `.claude/agents/plan-review-readiness-agent.md` |
+| **Craft** | Review | bevorzugt | 1 | Sonnet | `.claude/agents/plan-review-craft-agent.md` |
+| **Auditor** | Review | bevorzugt | 1 | Sonnet | `.claude/agents/plan-review-auditor-agent.md` |
+| **Design-Principles** | Review | bevorzugt | 1 | Opus | `.claude/agents/plan-review-design-principles-agent.md` |
+| **Plan-Fixer** | Review-Loop | — | 1/Iteration | Opus | `.claude/agents/plan-fixer-agent.md` |
 
 ### Ausfuehrung
 

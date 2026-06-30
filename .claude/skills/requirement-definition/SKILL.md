@@ -205,7 +205,20 @@ requests/
 ```
 
 **ID-Schema:** `EPIC-NNN` / `FEAT-NNN` / `STORY-NNN`, dreistellig nullgepolstert (`EPIC-001`).
-Vergabe: Verzeichnis nach `^(EPIC|FEAT|STORY)-(\d+)_` scannen, Max +1 (robust & stateless).
+
+**Vergabe — verpflichtender Pre-Write-Gate:**
+Unmittelbar vor jedem `Write`-Aufruf einer neuen `EPIC-*`, `FEAT-*` oder `STORY-*`-Datei MUSS ein
+`Glob` auf das jeweilige Verzeichnis ausgeführt werden:
+```
+Glob: requests/epics/EPIC-*.md   → höchste Nummer ermitteln → Max+1
+Glob: requests/features/FEAT-*.md
+Glob: requests/stories/STORY-*.md
+```
+Dieser Schritt ist **kein Hintergrundhinweis** — er ist ein blockierender Schritt im Prozess.
+Ohne frischen Glob-Aufruf darf keine neue Datei geschrieben werden. Zwischengespeicherte Kontextwerte
+aus dem Gesprächsverlauf (z. B. „STORY-010 war die höchste") gelten nicht — nur der aktuelle
+Verzeichnisstand zählt.
+
 **Cross-References laufen ueber IDs, nie ueber Namen** → Umbenennen bricht nichts; Kollisionen
 fuehren zur naechsten freien ID, nie zum stillen Ueberschreiben eines fremden Items.
 

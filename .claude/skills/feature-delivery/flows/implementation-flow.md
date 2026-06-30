@@ -36,6 +36,10 @@ Kein Shell-Fallback ohne explizite Nutzerfreigabe.
 - Orchestrator- und Implementierer-Rolle in einem Turn zusammenlegen
 - Kein Hard Gate / kein 7x Review-Loop trotz abgeschlossener Implementierung
 
+**Ausnahme: Micro-Change-Modus** — wenn Fastpath explizit aktiviert (s. SKILL.md `## Micro-Change-Modus`):
+Orchestrator editiert direkt, 1 Reviewer (risk), kein Plan-File, kein Scribe.
+Muss angekuendigt worden sein: *"Micro-Change erkannt — Fastpath aktiv."*
+
 **Transparenz-Pflicht vor Schritt 2:** Im Chat ausgeben:
 `"Starte jetzt implement-scribe-agent fuer Slice [IMP-*]…"`
 
@@ -152,6 +156,7 @@ Hard Gate (Readiness)              Impl-Loop-Orchestrator (Opus, delegierter Age
 
         | Scope | Erkennungszeichen | Reviewer-Set |
         |-------|-------------------|--------------|
+        | micro-change | Story `micro_change: true` ODER alle vier Signale: 1 Datei, < 10 Zeilen, rein visuell, kein Verhaltens-Delta | 1 Reviewer: risk (Fastpath — kein Scribe, kein Plan-File) |
         | md-only | Ausschliesslich `.md`-Dateien; kein `.ts`, kein `.cs`, kein Code | 3 Reviewer: risk · guard · readiness |
         | CSS/HTML-only | Ausschliesslich `.html`/`.scss`/`.css`; kein `.ts`, kein Backend | 4 Reviewer: Structure · CSS-Logic · AC-Coverage · Regression |
         | Single-Service | `.ts`-Dateien eines Angular-Services/Components oder eines .NET-Services | Standard-7-Reviewer |

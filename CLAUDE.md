@@ -4,6 +4,26 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 
 ---
 
+## Zweck dieses Repos: Start-Claude-Harness
+
+Dieses Repo ist das **zentrale Harness** — Vorlage und Ausgangsbasis für andere Test- und Kundenprojekte. Alles hier (`.claude/`, Skills, References, Agents, MCP-Server) wird in andere Projekte übertragen oder dort referenziert.
+
+### Entscheidungsregel für Änderungen
+
+Bevor eine Änderung an `.claude/`, Skills, References, Agents oder MCP-Servern übernommen wird, gilt:
+
+| Änderungstyp | Vorgehen |
+|---|---|
+| **Verbesserung / Schärfung von Bestehendem** — klarer, präziser, robuster | Direkt übernehmen |
+| **Etwas gänzlich Neues aus einem anderen Projekt** — Feature, Regel, Tool | Kritisch prüfen: Ist das harness-generisch oder projektspezifisch? Im Zweifel **nachfragen, bevor es übernommen wird** |
+
+**Leitfrage für Neues:** Würde das in *jedem* Projekt auf diesem Harness Sinn machen — oder löst es ein konkretes Problem aus Projekt X?
+
+- Ja → Harness-tauglich, kann aufgenommen werden
+- Nein / unklar → Projektspezifisch lassen, nicht übernehmen; User fragen
+
+---
+
 ## Repository Structure
 
 ```

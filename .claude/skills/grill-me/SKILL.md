@@ -39,13 +39,21 @@ Mehrere Fragen gleichzeitig ueberwältigen. Eine Frage + eine Empfehlung = ein k
 1. **Datei einlesen** — Story (`requests/**/*.md`) oder Plan-Datei.
    - Kein Argument: letzte besprochene Story / aktuellen Kontext nehmen.
 
-2. **Codebase-Kontext holen** — MCP-First vor jeder theoretischen Frage:
+2. **Codebase-Kontext holen** — MCP-First, blockierend:
+
+   > **Blocking-Regel:** Bevor eine Frage gestellt wird, die durch Lesen von vorhandenem Code
+   > beantwortet werden kann, MUSS der Code gelesen werden. Fragen an den Nutzer sind nur für
+   > Entscheidungen erlaubt, die nicht aus dem Code ableitbar sind.
+
    ```
    dev-mcp: find_file, read_class_summary, read_method, find_by_content
    → Bestehende Implementierungen finden bevor nach Ansatz gefragt wird
    ```
    Wenn etwas bereits existiert: nicht fragen, sondern zeigen — „hier ist die bestehende
    Implementierung in `FooService.cs` — sollen wir das erweitern oder neu?"
+
+   **Falsch:** „Ist der Copy-Button bereits gesperrt?"
+   **Richtig:** `action-cell-renderer.component.ts` lesen → dann zeigen was der Stand ist.
 
 3. **Entscheidungsbaum intern aufbauen** — nicht zeigen, nur priorisieren:
    - Blocking-Entscheidungen (andere haengen davon ab) → zuerst

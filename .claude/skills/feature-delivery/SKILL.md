@@ -100,7 +100,9 @@ Details: [flows/implementation-flow.md](flows/implementation-flow.md), [flows/pl
 - Impl-Flow: Scribes (implement-scribe-agent / implement-scribe-opus-agent) — Orchestrator schreibt keinen Produkt-Code selbst
 - Impl-Review: 7 Reviewer parallel — keine Rollensimulation
 
-**Verboten (haeufigster Fehler):** Agent schaetzt Scope als "klein und klar" ein und arbeitet direkt ohne Sub-Agents.
+**Ausnahme: Micro-Change-Modus** (s.u.) — Orchestrator editiert direkt, kein Scribe, kein Plan-File, 1 Reviewer (risk). Nur wenn Fastpath explizit aktiviert und angekuendigt.
+
+**Verboten (haeufigster Fehler):** Agent schaetzt Scope als "klein und klar" ein und arbeitet direkt ohne Sub-Agents — ohne den Micro-Change-Modus korrekt aktiviert zu haben.
 
 **Transparenz-Pflicht:** Vor jeder Delegation im Chat ankuendigen:
 `"Starte jetzt [Agent-Typ] fuer [Scope/Phase]…"`
@@ -277,10 +279,41 @@ Anti-Shortcut-Regel gilt: min. ein `plan-agent-scout` Task-Subagent (kein Grep/R
 |--------|-------|
 | Wer entscheidet | **Default.** Aktiv ohne Zusatz. `schlank planen`/`lean planen` etc. bleiben als explizite Synonyme gueltig. |
 | Was schrumpft | Nur Planung: Orchestrator (Opus) plant + prueft + reviewed in sich selbst — keine Scouts, keine Review-Subagent-Armee, kein 5er-Loop. |
-| Was bleibt voll | Implementation unangetastet — voller Scribe, alle Gates, voller Review-Loop. Test-First-Akzeptanzliste (§8/F1) bleibt Pflicht. Hier wird nie gespart. |
+| Was bleibt voll | Voller Scribe, alle Gates, Test-First (§8/F1) — immer. Impl-Review: Standard 7 Reviewer. |
+| `lean impl` (opt-in) | Reduziert Impl-Review auf 3 Reviewer (risk · craft · readiness) statt 7. Scribes, Gates, Test-First bleiben voll. Aktivierung: `implementiere lean impl …` — explizit anfordern, kein Standard. |
 | Kombinierbar mit | Plan-only und End-to-end. **NICHT** mit From-existing-plan. |
 
 *Framing:* Sicherer Default fuer den Normalfall. Fuer komplexe Features mit vielen Unbekannten explizit `strong` verwenden.
+
+---
+
+## Micro-Change-Modus (Fastpath)
+
+Aktiviert wenn **alle vier** Heuristik-Signale zutreffen (identisch mit requirement-definition):
+1. Aenderung < 10 Zeilen gesamt
+2. Genau eine Datei betroffen
+3. Rein visuell (Zahl, Farbe, CSS, HTML-Attribut, Abstand) — kein Verhaltens-Delta
+4. Kein neues Verhalten (keine neue Interaktion, kein Datenfluss-Delta)
+
+**Aktivierung:** Story hat `micro_change: true` im Frontmatter (von requirement-definition gesetzt)
+**oder** Orchestrator erkennt alle vier Signale und kuendigt explizit an:
+*"Erkenne Micro-Change — Fastpath aktiv."*
+
+| Aspekt | Normal | Micro-Change-Fastpath |
+|--------|--------|-----------------------|
+| Plan-File | Pflicht | entfaellt |
+| Story-Status | `ready → planned → implemented` | `ready → implemented` (direkt) |
+| Scribes | 1-10 Subagents | entfaellt — Orchestrator editiert direkt |
+| Reviewer | 7 (oder scope-adjusted) | 1 Reviewer: risk |
+| Delivery-Inspection | Pflicht | entfaellt |
+| Build + Test | Pflicht | Pflicht (unveraendert) |
+| Test-First §8/F1 | Pflicht | Pflicht (unveraendert) |
+
+**Grenze:** Trifft auch nur eines der vier Signale nicht zu → kein Fastpath; normaler Flow.
+Scope-Einschaetzung "klingt klein" reicht nicht — alle vier Kriterien muessen messbar zutreffen.
+
+**Transparenz-Pflicht:**
+`"Micro-Change erkannt — Fastpath aktiv: direkter Edit, 1 Reviewer (risk), kein Plan-File."`
 
 ---
 

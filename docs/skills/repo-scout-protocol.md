@@ -1,8 +1,8 @@
 # Repo Scout Protocol
 
-Verbindliche MCP-Recherche-Kette für Read-only-Erkundungen: Code-Landkarten, `repo-check`-Phasen und `plan-agent-scout`-Läufe. Verhindert vorzeitigen Grep-Fallback — erst MCP vollständig durchlaufen, dann Grep.
+Verbindliche MCP-Recherche-Kette für Read-only-Erkundungen: Code-Landkarten und `repo-check`-Phasen. Verhindert vorzeitigen Grep-Fallback — erst MCP vollständig durchlaufen, dann Grep.
 
-**Trigger:** `repo-check`, `buddy repo-check`, `Code-Scout`, `Code-Landkarte`, `plan-agent-scout`  
+**Trigger:** `repo-check`, `buddy repo-check`, `Code-Scout`, `Code-Landkarte`  
 **Opt-out:** `ohne repo-scout-protocol`
 
 ---

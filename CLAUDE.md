@@ -29,7 +29,7 @@ Bevor eine Änderung an `.claude/`, Skills, References, Agents oder MCP-Servern 
 ```
 .claude/                Claude Code — direkt nutzbar
 ├── skills/             21 Skills (via /skill-name oder automatisch)
-│   ├── feature-delivery/        Orchestrator: Planung + Implementierung, drei Einstiege
+│   ├── feature-delivery/        Orchestrator: Planung + Implementierung, fünf Einstiege + Review-on-Demand
 │   ├── software-design-principles/         Persönliche Design-Philosophie: sauber·funktional·getestet·wartbar·nachhaltig
 │   ├── acceptance-design/       Anforderungen auf Testbarkeit prüfen und schärfen
 │   ├── requirement-definition/  Epic→Feature→Story Breakdown: INVEST, Richard-Lawrence-Splitting, F1-Akzeptanzkriterien
@@ -88,7 +88,7 @@ docs/                   Skill docs, MCP docs, enforcement references
 
 | Skill | Trigger | Purpose |
 |-------|---------|---------|
-| `/feature-delivery` | `plane`, `implementiere`, `fix`, `feature-delivery` | Orchestrator: Planung + Implementierung, drei Einstiege |
+| `/feature-delivery` | `plane`, `implementiere`, `implementiere nur`, `code-inspection`, `delivery-inspection` | Orchestrator: Planung (immer lean/solo) + Implementierung (voll / nur) + Review-on-Demand; Branch-Guard aktiv |
 | `/acceptance-design` | `schärfe Anforderung`, `Akzeptanzkriterien prüfen` | Anforderungen auf Testbarkeit prüfen und schärfen |
 | `/requirement-definition` | `ich brauche ein Feature für…`, `schneide das in Stories`, `Anforderung erfassen` | Epic→Feature→Story Breakdown: INVEST, Splitting, F1-Akzeptanzkriterien → `requests/` |
 | `/dev-tooling` | `welcher MCP`, `MCP-Einstieg`, Dev-Tooling-Fragen | Gateway: Routing zu dev-mcp, codebase-analyzer, build-log-filter |

@@ -64,7 +64,6 @@ Fallback nur mit expliziter Zeile, welche MCP-Schritte vorher versucht wurden.
 | Workflow | Artefakt |
 |----------|----------|
 | Buddy repo-check | `skills/buddy-agent/SKILL.md` (`dependsOn`: repo-scout-protocol) |
-| Planning Phase 3 | `agents/plan-agent-scout.md`, `planning-workflow/SKILL.md` |
 | Code-Landkarte | `codebase-analyzer/references/op-code-map.md`, `rules/codebase-analyzer.mdc` |
 | Router | `mcps.md`, `skills/dev-tooling-mcp/SKILL.md` |
 

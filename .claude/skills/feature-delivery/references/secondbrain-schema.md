@@ -286,8 +286,10 @@ schließen (nächste Runde Pflicht). `Tier 🔴 offen == 0` ⇒ Inner-Exit mögl
 
 **Mechanischer Tier-Guard (Session):** Vor jedem Inner-Exit liest die Session den Index-Zähler
 `Tier 🔴 offen`. Meldet der PM einen Erbsenzählerei-Exit, während der Zähler `> 0` ist, weist die
-Session den Exit **deterministisch** zurück und erzwingt die nächste Inner-Runde. Der Guard ist reine
-Zähler-Arithmetik — kein Urteil, keine Auslegung.
+Session den Exit **deterministisch** zurück und erzwingt die nächste Inner-Runde. Der 🔴-Guard ist reine
+Zähler-Arithmetik — kein Urteil, keine Auslegung. Beim `erbsenzaehlerei-exit` kommt eine mechanische
+Vollständigkeitsprüfung hinzu (je offenes 🟡 eine Begründung im `pm-verdict-N.md`, sonst wird der
+Exit wie `fix` behandelt) — ebenfalls kein Urteil, nur Vorhandensein.
 
 **Am Max-5-Cap bleibt die 🔴-Invariante erhalten (kein stilles Durchwinken):** Der Cap begrenzt die
 Fix-**Runden**, nicht die 🔴-Regel. Greift der Cap bei `Tier 🔴 offen == 0`, ist der Abschluss ein
@@ -393,7 +395,7 @@ der Terminal-PM spannt **nicht** in die Folge-Iteration hinein).
 - [Topic / Slice / Bereich]: [wie betroffen]
 - Unverändert (wird geerbt): [Liste]
 
-### Planungs-Empfehlung für Iteration N+1
+### Planungs-Hinweis für Iteration N+1
 - Anzahl AC-Änderungen: [N]
-- Empfehlung: [lean / strong]   (automatisch strong wenn > 1 AC-Änderung)
+- Re-Planung läuft lean/solo (einziger Planungsmodus); nur die betroffenen Topics werden neu geplant.
 ```

@@ -1,5 +1,16 @@
 # feature-delivery — Design & Handoff-Protokoll
 
+> ⚠️ **VERALTET / HISTORISCH** (überholt durch FEAT-001 „feature-delivery Einstiege-Redesign").
+> Dieses Dokument beschreibt den **ursprünglichen** Entwurf und ist **nicht mehr die Wahrheit**.
+> Überholt: der `strong`-Planungsmodus, der `check`/`check plus`-Modus, der Plan-Review-Loop samt
+> `plan-fixer` / `plan-review-*` / `plan-agent-scout` / `plan-agent-topic-planner` (alle **gelöscht**),
+> sowie der **automatische** Plan→Umsetzung-Handoff. **Aktuell gültig:** Planung immer lean/solo, kein
+> Auto-Implement, Einstiege `plane` / `implementiere` / `implementiere nur`, Review-on-Demand
+> (`code-inspection` / `delivery-inspection`), Branch-Guard.
+> **Autoritative Quellen:** [`.claude/skills/feature-delivery/SKILL.md`](../.claude/skills/feature-delivery/SKILL.md)
+> und [`docs/skills/feature-delivery.md`](skills/feature-delivery.md). Dieses Protokoll bleibt nur als
+> Design-Historie erhalten.
+
 > **Skill-Name:** `feature-delivery` (ersetzt den Arbeitstitel „Skill-X").
 > **Status:** Design-Phase **abgeschlossen**. **NOCH NICHTS umgesetzt** — keine Skill-/Agent-/MCP-Dateien erstellt. Bereit für Umsetzung (sechs Bau-Stränge, §19).
 > **Working Tree:** Branch `claude/skill-x-agent-framework-xj2zi3`. Sven mergt selbst auf `master`, **erst wenn das Feature komplett fertig ist** — bis dahin keine Änderungen an `master`/Branch-Topologie.

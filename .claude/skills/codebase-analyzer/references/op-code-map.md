@@ -1,7 +1,7 @@
 # Code-Landkarte — Verbindliche Recherche-Reihenfolge
 
 Dieser Abschnitt gilt für **alle** Agenten und Workflows, die Code im Repo betreffen:
-Haupt-Chat, **buddy-agent**, **plan-agent**, **plan-agent-scout**, **plan-agent-topic-planner**,
+Haupt-Chat, **buddy-agent**, **plan-agent**,
 Implementierung/Review — sobald der Nutzer oder die Anforderung **programmierbare Symbole** meint.
 
 ## Grundsatz
@@ -153,8 +153,7 @@ Ergebnis nutzen für: Dateipfad, Zeile, Methodenliste, Abhängigkeiten — **bev
 | Agent | Landkarte intern | In Chat / Deliverable |
 |-------|------------------|------------------------|
 | **buddy-agent** | Pflicht bei explizitem Code-Wunsch oder Symbol-Fragen | **Keine** Code-Dumps im Standard; **Pfade + Symbolnamen + 1-Satz-Kette** |
-| **plan-agent-scout** | Pflicht Phase 3 | Strukturierte Liste: Dateien, Einstiegspunkte, Aufrufketten — **kurze** Zitate nur wenn nötig |
-| **plan-agent** | vor Scout-Delegation optional einmal `index_project` pro Stack | Scout-Auftrag enthält **bereits indexierte** Anker |
+| **plan-agent** | bei der solo-Planung: `index_project` pro Stack zur Code-Landkarte | Strukturierte Liste: Dateien, Einstiegspunkte, Aufrufketten — **kurze** Zitate nur wenn nötig |
 | **Haupt-Chat** | bei Code-Fragen des Nutzers | wie diese Rule |
 
 ## Checkliste vor „fertig recherchiert"

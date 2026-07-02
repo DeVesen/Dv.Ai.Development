@@ -49,6 +49,13 @@ Kein Shell-Fallback ohne explizite Nutzerfreigabe.
 Session-Treiber editiert direkt, 1 Reviewer (risk), kein Plan-File, kein Scribe, kein PL/PM-Split.
 Muss angekuendigt worden sein: *"Micro-Change erkannt — Fastpath aktiv."*
 
+**Ausnahme: `implementiere nur` (Lean Single-Pass)** — wenn der Nutzer `implementiere nur` triggert
+(s. Abschnitt „Implementiere-nur-Einstieg" unten): Der Session-Treiber dispatcht Scribes **direkt** fuer
+einen Einzeldurchlauf und faehrt Build/Test bis gruen (max. 5 Fix-Versuche) — **kein** PL, **kein** PM,
+**keine** Runden, **keine** Reviewer, **kein** SecondBrain, **keine** Delivery-Inspection. Der Verzicht
+auf PL/PM ist hier regelkonform; Scribes bleiben Pflicht (kein Session-eigener Produkt-Code ausser dem
+Trivial-Edit-Fastpath). Green → `implemented`, rot nach 5 Versuchen → `blocked`.
+
 **Transparenz-Pflicht vor Schritt 2:** Im Chat ausgeben:
 `"Starte jetzt implement-round-executor (PL) fuer Runde [M]…"` bzw. der PL:
 `"Starte jetzt implement-scribe-agent fuer Slice [IMP-*]…"`
@@ -62,7 +69,38 @@ Muss angekuendigt worden sein: *"Micro-Change erkannt — Fastpath aktiv."*
 - Laedt `requests/plans/plan-<feature>.md`
 - **Hard Gate laeuft trotzdem** — prueft Umsetzbarkeit des geladenen Plans
 - Ueberspringt den gesamten Planungs-Flow
-- Dann: direkt in den Implementations-Flow (ab Hard Gate)
+- Dann: direkt in den Implementations-Flow (ab Hard Gate) — **volle Loops** (Inner + Outer), Story → `reviewed`
+
+---
+
+## Implementiere-nur-Einstieg (Lean Single-Pass — ohne Reviewer/PL/PM/SecondBrain)
+
+**Trigger:** `implementiere nur <Story>`. Der bewusst schlanke Gegenpol zum vollen Impl-Fix-Loop:
+wendet den vorhandenen Plan Slice fuer Slice an und faehrt slice-scoped Build/Test bis gruen — **ohne**
+Inner-Loop-Runden, **ohne** die 7 Reviewer, **ohne** PL/PM-Rollen, **ohne** SecondBrain
+(`secondbrain-index.md` / `digest.md` / `finding-*.md`) und **ohne** Outer-Delivery-Inspection.
+
+**Getrieben vom Session-Treiber** (keine PL/PM-Instanzen — dokumentierte Ausnahme zur Rollen-Delegation-Pflicht, s. o. und SKILL.md Anti-Shortcut-Regel). Scribes bleiben Pflicht: **kein** Direkt-Edit durch die Session ausser dem Trivial-Edit-Fastpath (Schritt 2).
+
+**Voraussetzung:** Story `status: planned` mit `plan`-Referenz (oder expliziter Plan via From-existing-plan). Auf `status: ready` **ohne** Plan → STOPP + Hinweis „erst `plane` ausfuehren" (Gate in SKILL.md Story-Gate Schritt 2). Kein Auto-Planning.
+
+**Ablauf:**
+
+1. **Mini-Readiness (leichtgewichtig):** Plan geladen? Akzeptanz→Test-Liste (§8/F1) und Slice-Grenzen vorhanden? dev-mcp erreichbar? Nein → Stop mit Blocker-Bericht. **Kein SecondBrain anlegen** (kein `secondbrain-index.md`).
+2. **Scribe-Einzeldurchlauf:** je Slice genau **ein** Scribe (`implement-scribe-agent`, Sonnet), zweistufig Test-First (§8): (1) Tests nach Plan-Akzeptanzliste — zuerst Red (F2); (2) Implementierung bis gruen. Topologie aus Plan (sequenziell/parallel). **Kein** zweiter Scribe-Durchlauf, **keine** Review-Runde, **kein** Fix-Planer.
+3. **Slice-Coverage-Check:** je IMP-* Slice mindestens ein Touched Path (wie im vollen Flow) — fehlender Slice = BLOCKER; Fix-Scribe fuer genau diesen Slice, dann erneut pruefen (zaehlt noch nicht als Fix-Versuch — betrifft die Vollstaendigkeit, nicht Build/Test).
+4. **Build/Test bis gruen — max. 5 Fix-Versuche (Session-Zaehler):**
+   - Integrationsweiter Build + Test via dev-mcp; Stack-Scope wie im vollen Flow (Gate-1-Build + Gate-4-Tests). **Keine** statische Analyse, **keine** Reviewer, **kein** `review_git_diff`.
+   - Erster Build/Test-Lauf gruen → direkt zu Schritt 5 (0 Fix-Versuche noetig).
+   - Rot → **einen** Fix-Scribe (`implement-scribe-agent`) mit dem konkreten Build-/Testfehler beauftragen (kein Fix-Planer, kein PM-Urteil), Fix-Versuch-Zaehler +1, dann erneut Build/Test.
+   - Wiederholen bis gruen **oder** bis Fix-Versuch 5 gelaufen ist. **MCP-First bleibt Pflicht** — Build/Test niemals als Shell-Kommando (s. Anti-Shortcut-Regel oben).
+5. **Abschluss (Session-Treiber setzt Story-Status, SKILL.md Story-Gate Schritt 5 B):**
+   - Gruen innerhalb von ≤ 5 Fix-Versuchen → Story `status: implemented` (roh umgesetzt, nicht reviewed) + Kurz-Meldung.
+   - Nach dem 5. Fix-Versuch weiterhin rot → **STOPP**: Story `status: blocked` (**nicht** `implemented`) + Meldung an den Nutzer mit letztem Fehler und Kurz-Diagnose. Kein weiterer Versuch ohne neue Nutzer-Entscheidung.
+
+**Abgrenzung:**
+- `implementiere lean impl` reduziert die Impl-Review auf 3 Reviewer, behaelt aber PL/PM/SecondBrain/Inner-Loop. `implementiere nur` hat **gar keine** Review-Ebene und **keinen** Inner-Loop.
+- Volles `implementiere` laeuft mit Inner-Loop (max. 5 Runden, PL/PM, 7 Reviewer) + Outer-Delivery-Inspection → Story `reviewed`.
 
 ---
 
@@ -94,7 +132,7 @@ Muss angekuendigt worden sein: *"Micro-Change erkannt — Fastpath aktiv."*
 
 ```
 Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — persistent, thin)
-   │  (gilt fuer End-to-end UND From-existing-plan)
+   │  (gilt fuer volles `implementiere` UND From-existing-plan — NICHT fuer `implementiere nur`, s. Lean-Single-Pass-Abschnitt oben)
    │  Prueft Umsetzbarkeit des Plans (Scope, ACs, Akzeptanzliste, Slices)
    │  Legt requests/plans/<feature>/secondbrain-index.md an; setzt current_round=1
    │
@@ -216,7 +254,7 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
         fix + current_round = 5 → MAX-5-CAP greift: KEIN PL#6. Final-Gate (wenn Fix-Scribes in Runde 5 liefen): Build + Test via dev-mcp.
                     Aufteilung nach `Tier 🔴 offen`:
                       🔴 == 0 → cap-erzwungener erbsenzaehlerei-exit (Terminal-PM, DI, Closure + Rest-Findings-Bericht)
-                      🔴 > 0  → HARD-STOP + User-Eskalation, KEINE Closure, Story NICHT implemented (🔴 nie still durchwinken)
+                      🔴 > 0  → HARD-STOP + User-Eskalation, KEINE Closure, Story NICHT `reviewed` (bleibt `planned`; 🔴 nie still durchwinken)
    │
    ▼  TERMINAL-PM (die EINZIGE Instanz, die Inner-Close → Outer überspannt — dieselbe PM-Instanz, via SendMessage nach dem Guard):
         entsteht NUR bei Inner-Close mit `Tier 🔴 offen == 0` (PM-Urteil clean/erbsenzaehlerei-exit nach bestandenem Tier-Guard;
@@ -333,7 +371,7 @@ Die Session-Fenster-Disziplin ist das eigentliche Ziel: zwischen den Runden lieg
 **Frueherer Abbruch:** PM urteilt `clean` **oder** `erbsenzaehlerei-exit` (nach bestandenem Tier-Guard, `Tier 🔴 offen == 0`) → Inner-Loop sofort schließen → Terminal-PM.
 
 **Nach Runde 5 mit offenen Findings (PM = fix / zurückgewiesener Exit):** Session weist via Max-5-Cap zurück → kein PL#6.
-Aufteilung nach `Tier 🔴 offen` (s. 3.9.2): 🔴 == 0 → cap-erzwungener `erbsenzaehlerei-exit` (Terminal-PM, DI, Closure mit Rest-Findings-Bericht) · 🔴 > 0 → **Hard-Stop + User-Eskalation, KEINE Closure** (Story bleibt nicht `implemented`).
+Aufteilung nach `Tier 🔴 offen` (s. 3.9.2): 🔴 == 0 → cap-erzwungener `erbsenzaehlerei-exit` (Terminal-PM, DI, Closure mit Rest-Findings-Bericht) · 🔴 > 0 → **Hard-Stop + User-Eskalation, KEINE Closure** (Story bleibt `planned`, nicht `reviewed`).
 
 ### Quality-Gate-Sequenz-Logik
 
@@ -414,7 +452,7 @@ Der PM editiert **nur** `outer/pm-verdict-N.md` (und bei Requirement-Gap `outer/
 1. Sauber: PM-Verdikt `clean` **oder** `erbsenzaehlerei-exit` → **Tier-Guard**: `Tier 🔴 offen == 0`? (bei erbsenzaehlerei-exit zusätzlich: 🟡-Begründungen im pm-verdict-N.md vollständig?) → ja: Inner-Loop beenden, PM wird Terminal-PM → Delivery-Inspection. **Nein (🔴 > 0): Exit deterministisch zurückgewiesen → wie `fix` behandeln (current_round++).**
 2. Maximum (Max-5-Cap): `current_round = 5` **und** PM-Verdikt `fix` (oder ein vom Tier-Guard zurückgewiesener Exit) → Session weist den Fix-Zyklus zurück, **startet keinen PL#6**. Der Cap begrenzt die **Fix-Runden**, hebt aber die 🔴-Invariante NICHT auf — deshalb Aufteilung nach `Tier 🔴 offen`:
    - **`Tier 🔴 offen == 0`** (nur 🟡/🟢 Rest): cap-erzwungener `erbsenzaehlerei-exit` — der Terminal-PM schreibt `outer/pm-verdict-N.md` mit je offenem 🟡 einer Begründung („Cap erreicht — auf Folge-Story vertagt"), dann Delivery-Inspection → Closure mit Rest-Findings-Bericht.
-   - **`Tier 🔴 offen > 0`** (offenes 🔴, z. B. Security-`critical`): **KEINE Closure, KEIN Terminal-PM-DI-Span, Story NICHT `implemented`.** Hard-Stop → Rest-Findings-Bericht (inkl. Liste der offenen 🔴) → **gebündelte User-Eskalation** (waiven / Cap ausnahmsweise erhöhen / abbrechen). Damit kann ein offenes 🔴 nie still über den Cap durchgewunken werden (Aggregat-Regel + Security-Guardrail bleiben am Cap gewahrt).
+   - **`Tier 🔴 offen > 0`** (offenes 🔴, z. B. Security-`critical`): **KEINE Closure, KEIN Terminal-PM-DI-Span, Story NICHT `reviewed` (bleibt `planned`).** Hard-Stop → Rest-Findings-Bericht (inkl. Liste der offenen 🔴) → **gebündelte User-Eskalation** (waiven / Cap ausnahmsweise erhöhen / abbrechen). Damit kann ein offenes 🔴 nie still über den Cap durchgewunken werden (Aggregat-Regel + Security-Guardrail bleiben am Cap gewahrt).
 3. escalate: gebündelte Nutzerfrage; nach Antwort clean/erbsenzaehlerei-exit/fix — der Cap gilt weiterhin (escalate-Runden zählen mit).
 
 **3.10 Rest-Findings nach Maximum**
@@ -511,7 +549,7 @@ Der **Terminal-PM** klassifiziert (aus `di-digest.md`) jeden Befund in eine von 
 | **Requirement-Gap** | Das Falsche wurde umgesetzt, oder neuer Scope entsteht (PO aendert Ziel, AC faellt weg, neues AC entsteht) | Delta-Protokoll `outer/delta-N.md` erstellen → Outer Loop zurueck zu Schritt 1 (frischer PM) |
 | **Unklar** | Produkt-/Design-Ambiguitaet, nicht eindeutig klassifizierbar | User eskalieren (gebuendelt, einmalige Frage) — warten vor Entscheidung |
 
-Kein Gap → **OK** → Closure (Session setzt Story-Status).
+Kein Gap → **OK** → Closure (Session setzt Story-Status → `reviewed`, s. SKILL.md Story-Gate Schritt 5 A).
 
 ### Delta-Protokoll (bei Requirement-Gap)
 
@@ -533,10 +571,9 @@ Wenn mindestens ein Requirement-Gap gefunden → Terminal-PM erstellt das Delta-
 - [Topic / Slice / Bereich]: [wie betroffen]
 - Unveraendert (wird geerbt): [Liste]
 
-### Planungs-Empfehlung fuer Iteration [N+1]
+### Planungs-Hinweis fuer Iteration [N+1]
 - Anzahl AC-Aenderungen: [N]
-- Empfehlung: [lean / strong]
-  (Automatisch strong wenn > 1 AC-Aenderung)
+- Re-Planung laeuft lean/solo (einziger Planungsmodus); nur die betroffenen Topics werden neu geplant.
 ```
 
 `outer/delta-N.md` ist die verbindliche Eingabe fuer Schritt 1 der naechsten Outer-Loop-Iteration; diese startet mit **frischen** Rollen durchweg (harte Grenze).

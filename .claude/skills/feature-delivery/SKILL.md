@@ -1,37 +1,45 @@
 ---
 name: feature-delivery
 description: >
-  Orchestrator-Skill fuer vollstaendige Feature-Umsetzung (.NET + Angular): plane, nur planen,
-  erstelle einen Plan, setze X um, implementiere X, liefere X, umsetzen, feature-delivery,
+  Orchestrator-Skill fuer vollstaendige Feature-Umsetzung (.NET + Angular): plane, plan, plane nur,
+  plane only, nur planen, erstelle einen Plan, setze X um, implementiere X, implementiere nur X, liefere X, umsetzen, feature-delivery,
   fix, setze plan X um, fuehre plan X aus, implementiere plan X, implementiere lean impl, schlank planen, lean planen,
   kompakt planen, Solo-Planung. Akzeptiert ausschliesslich Stories (type: story, status: ready)
   — Epics und Features werden verweigert, fehlendes Story-Format erfordert Bestaetigung.
-  Vier Einstiege: Plan-only (plane/nur planen/erstelle Plan → STOPP, setzt Story auf planned),
-  End-to-end (implementiere/setze um/fix/liefere/feature-delivery → Plan+Umsetzung automatisch),
-  From-existing-plan (setze plan X um/fuehre plan X aus → ueberspringt Planung),
+  Fuenf Einstiege: Plan-only (plane/plan/plane nur/plane only/nur planen/erstelle Plan → immer lean/solo, kein Scout, kein Review-Loop, kein Auto-Implement, STOPP, setzt Story auf planned),
+  Implementieren-voll (implementiere/implement/setze um/liefere/umsetzen/feature-delivery/fix → setzt einen EXISTIERENDEN Plan um mit allen Schleifen: Scribes → Build/Test → Inner-Loop → Outer-Delivery-Inspection; plant NICHT mehr selbst, verlangt status=planned; Story → reviewed),
+  Implementieren-nur (implementiere nur → schlanker Scribe-Einzeldurchlauf + Build/Test bis gruen max. 5 Fix-Versuche, KEINE Reviewer/PL/PM/SecondBrain/Delivery-Inspection; gruen → implemented, sonst → blocked),
+  From-existing-plan (setze plan X um/fuehre plan X aus → ueberspringt Planung, volle Loops → reviewed),
   Already-Planned (Story status=planned → Plan automatisch laden, direkt Implementierung).
-  Default-Planung ist Lean (ohne Zusatz): Orchestrator plant solo, keine Scouts, kein Review-Loop.
-  Strong-Mode (strong) aktiviert volles Planning: Scouts, Topic-Planer, 6 Reviewer, Fix-Loop.
-  Lean-Mode (schlank planen/lean planen/kompakt planen/Solo-Planung) ist identisch mit Default.
-  Check-Mode (check/validate → Bewertung 1-7 lean vs. full, nur Beschreibungsanalyse, kein Planning, STOPP).
-  Check-Plus-Mode (check plus/validate plus → Bewertung 1-7 mit Scouts, Code-gestuetzt, STOPP).
+  implementiere auf status=ready ohne Plan → STOPP + Hinweis erst plane ausfuehren (kein Auto-Planning).
+  Zwei beratende Review-on-Demand-Trigger (kein Status-Flip, kein Auto-Fix, kein Auto-Implement):
+  code-inspection (6 implement-review-*-Agents ueber den uncommitteten Diff, kein Feature noetig, reiner Befund)
+  und delivery-inspection FEATURE-X (Anforderungserfuellung, Feature-Bezug PFLICHT+explizit, laedt Feature→Stories→ACs;
+  ohne Feature-Argument STOPP). Default-Scope beider: git diff HEAD + untracked, branch-unabhaengig;
+  Merge-Base-Alternative bei committetem Feature. Ausgabe: Requests/reviews/<feature>-<inspection>-<n>.md + Chat-Kurzfassung.
+  Planung ist immer Lean/solo: Orchestrator plant solo, keine Scouts, kein Review-Loop.
+  Lean-Synonyme (schlank planen/lean planen/kompakt planen/Solo-Planung) sind bedeutungsgleich.
   Opt-out: ohne feature-delivery.
 when_to_use: >
   Wenn der Nutzer eine Story planen, umsetzen oder liefern will — .NET und Angular Stack.
   Voraussetzung: Story-Datei mit type: story und status: ready (aus requirement-definition).
   Epic oder Feature uebergeben → REFUSE. Kein Story-Format → STOP + Bestaetigung.
   Story status=planned → Already-Planned-Path: verlinkten Plan laden, direkt Implementierung.
-  Plan-only-Einstieg: plane/nur planen/erstelle einen Plan → Planungs-Flow, Story auf planned setzen, STOPP.
-  End-to-end-Einstieg: implementiere/setze um/fix/liefere/feature-delivery → Plan+Umsetzung, Story auf implemented.
+  Plan-only-Einstieg: plane/plan/plane nur/plane only/nur planen/erstelle einen Plan → immer lean/solo (kein Scout, kein Topic-Planer, kein Plan-Review-Loop), kein Auto-Implement, Story auf planned setzen, STOPP. plane nur/plane only sind bedeutungsgleiche Aliase.
+  Implementieren-voll-Einstieg: implementiere/implement/setze um/liefere/umsetzen/feature-delivery/fix → setzt einen existierenden Plan um (verlangt status=planned; plant NICHT selbst), volle Loops (Scribes → Build/Test → Inner-Loop → Outer-Delivery-Inspection), Story auf reviewed. Auf status=ready ohne Plan → STOPP + Hinweis erst plane.
+  Implementieren-nur-Einstieg: implementiere nur → schlanker Scribe-Einzeldurchlauf + Build/Test bis gruen (max. 5 Fix-Versuche), keine Reviewer/PL/PM/SecondBrain/Delivery-Inspection; gruen → Story auf implemented, sonst → blocked.
   From-existing-plan-Einstieg: setze plan X um/implementiere plan X/fuehre plan X aus →
-  ueberspringt Planungs-Flow, direkt in Implementations-Flow, Story auf implemented.
-  Default (ohne Zusatz): Lean-Planung — Orchestrator plant solo, schnell.
-  Strong-Mode: strong → volles Planning mit Scouts (Phase 3), Topic-Planer (Phase 4b), 6 Reviewer + Fix-Loop.
-  Lean-Mode: schlank planen/lean planen/kompakt planen/Solo-Planung → identisch mit Default.
+  ueberspringt Planungs-Flow, direkt in Implementations-Flow (volle Loops), Story auf reviewed.
+  Review-on-Demand (beratend, kein Status-Flip, kein Fix): code-inspection → 6 implement-review-*-Agents ueber den uncommitteten Diff (git diff HEAD + untracked), kein Feature noetig;
+  delivery-inspection FEATURE-X → Anforderungserfuellung, Feature-Bezug Pflicht (ohne Feature STOPP), laedt Feature→Stories→ACs; Merge-Base-Alternative bei committetem Feature;
+  Ausgabe Requests/reviews/<feature>-<inspection>-<n>.md + Chat-Kurzfassung. Detail: flows/review-flow.md.
+  Planung: immer Lean/solo — Orchestrator plant solo, schnell. Lean-Synonyme (schlank planen/lean planen/kompakt planen/Solo-Planung) sind bedeutungsgleich.
   Lean-Impl-Mode: implementiere lean impl → Impl-Review auf 3 Reviewer (risk · craft · readiness) oder 1 impl-quality-review-agent (collapsed, alle Lenses intern, 1 Approval). Scribes, Gates, Test-First bleiben voll.
-  Check-Mode: check/validate → Bewertung 1-7 (lean vs. full), nur Anforderungsbeschreibung, kein Planning.
-  Check-Plus-Mode: check plus/validate plus → wie Check, aber mit Scouts fuer Code-gestuetzte Bewertung.
   Nicht bei: reiner Erklaerung ohne Umsetzungsintent, ohne feature-delivery.
+  Branch-Guard: erste Aktion aller schreibenden Einstiege (plane/implementiere/implementiere nur/from-existing-plan)
+  ist git rev-parse --abbrev-ref HEAD — auf Default-Branch (master/main) STOPP + Feature-Branch-Vorschlag
+  feat-<nnn>-<slug>, nach Bestaetigung anlegen+wechseln, erst dann Flow; Ablehnung → gestoppt, keine Arbeit auf master.
+  Review-Trigger (code-inspection/delivery-inspection) sind NICHT geblockt.
   Story-Entscheidungen noch unklar vor dem Plan? → /grill-me <story.md> vorschalten.
   Parallele Stories: NIEMALS isolation: worktree verwenden — alle Agents arbeiten direkt auf dem
   aktuellen Branch. Voraussetzung: requirement-definition hat touches-Annotation und Parallelgruppen
@@ -55,12 +63,10 @@ Deckt den gesamten Bogen: Anforderung → Plan → Umsetzung → Qualitaetssiche
 │             Iteration 2+: originaler Request + PO-Delta                │
 │                           (neue ACs, weggefallene ACs, Scope-Shift)   │
 │                                                                        │
-│  Schritt 2: Planen  ← lean / strong wirkt hier                        │
+│  Schritt 2: Planen  (immer lean/solo)                                 │
 │             Iteration 1:  Vollplan                                     │
 │             Iteration 2+: Delta-Plan (nur geaenderte/neue Topics)      │
 │                           Unveraenderter Plan-Teil wird geerbt         │
-│                           Auto-Empfehlung: strong wenn PO-Delta        │
-│                           > 1 AC-Aenderung                             │
 │                                                                        │
 │  Schritt 3: Tests setzen (neu/geaenderte ACs → neue Tests)            │
 │  Schritt 4: Umsetzen                                                   │
@@ -130,16 +136,15 @@ Details: [flows/implementation-flow.md](flows/implementation-flow.md), [flows/pl
 
 ## ⚠️ Anti-Shortcut-Regel (hoechste Prioritaet, ohne Ausnahme)
 
-**Kein Orchestrator überspringt Subagent-Phasen.** Gilt ohne Ausnahme — Plan Mode, Agent Mode:
+**Kein Orchestrator überspringt Subagent-Phasen im Implementations-Flow.** Gilt ohne Ausnahme — Plan Mode, Agent Mode. *(Planung läuft lean/solo — der `plan-agent` plant ohne Subagent-Phasen; das ist regelkonform, kein Shortcut.)*
 
-- Planungs-Flow Phase 3: min. ein `plan-agent-scout` — kein Grep/Read im Orchestrator-Turn als Ersatz
-- Planungs-Flow Phase 4b: min. ein `plan-agent-topic-planner` — auch bei Single-Topic, kein Orchestrator-Selbst-Plan
-- Plan-Review: 6 Reviewer parallel — keine Rollensimulation im Orchestrator-Turn
 - Impl-Flow: Scribes (implement-scribe-agent / implement-scribe-opus-agent) — der PL (implement-round-executor) schreibt keinen Produkt-Code selbst, der PM (implement-supervisor) urteilt nur
 - Impl-Review: 7 Reviewer parallel — keine Rollensimulation im PL-Thread
 - Impl-Fix-Loop: frischer PL UND frischer PM je Runde via Agent-Tool — kein SendMessage ueber Runden hinweg, keine lang lebende Orchestrator-Instanz
 
-**Ausnahme: Micro-Change-Modus** (s.u.) — Orchestrator editiert direkt, kein Scribe, kein Plan-File, 1 Reviewer (risk). Nur wenn Fastpath explizit aktiviert und angekuendigt.
+**Ausnahme: Micro-Change-Modus** (s.u.) — Session-Treiber editiert direkt, kein Scribe, kein Plan-File, 1 Reviewer (risk). Nur wenn Fastpath explizit aktiviert und angekuendigt.
+
+**Ausnahme: `implementiere nur` (Lean Single-Pass, s. Einstiege)** — der Session-Treiber dispatcht Scribes **direkt** fuer einen Einzeldurchlauf (kein PL, kein PM, keine Runden) und faehrt Build/Test bis gruen (max. 5 Fix-Versuche); **keine** Reviewer, **kein** SecondBrain, **keine** Delivery-Inspection. Scribes bleiben Pflicht — die Test-First-Scribe-Qualitaet (§8) gilt unveraendert; nur die Review-Ebene entfaellt. Nur wenn der Nutzer `implementiere nur` explizit triggert.
 
 **Verboten (haeufigster Fehler):** Agent schaetzt Scope als "klein und klar" ein und arbeitet direkt ohne Sub-Agents — ohne den Micro-Change-Modus korrekt aktiviert zu haben.
 
@@ -150,6 +155,47 @@ Wenn Ankuendigung nicht moeglich, weil Phase selbst ausgefuehrt wird → **STOPP
 `"⚠️ feature-delivery nicht konform: [Phase] ohne Subagent-Delegation. Neu starten."`
 
 *Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
+
+---
+
+## Branch-Guard (erste Aktion der schreibenden Einstiege — vor dem Story-Gate)
+
+Die **schreibenden Einstiege** duerfen nie versehentlich direkt auf dem Default-Branch arbeiten —
+sonst wird das Feature-Scoping (Merge-Base / uncommitted-Diff) unbrauchbar. **Erste Aktion** dieser
+Einstiege, noch **vor** dem Story-Gate:
+
+```
+git rev-parse --abbrev-ref HEAD
+```
+
+**Betroffene (schreibende) Einstiege:** `plane`/`plan`/`plane nur`/`plane only`/`nur planen`/`erstelle einen Plan`,
+`implementiere`/`implement`/`setze um`/`liefere`/`umsetzen`/`feature-delivery`/`fix`, `implementiere nur`
+sowie From-existing-plan (`setze plan X um`/`implementiere plan X`/`fuehre plan X aus`) — jeder Einstieg,
+der Plan-Dateien oder Code schreibt.
+
+**Nicht betroffen — Review-Trigger** (`code-inspection`, `delivery-inspection`, STORY-004): **kein
+Guard-Stopp.** Sie arbeiten uncommitted-scoped und branch-unabhaengig; auf dem Default-Branch nur ein
+Hinweis *„kein Feature-Delta"*.
+
+| Befund `HEAD` | Reaktion |
+|---|---|
+| Default-Branch (`master` oder `main`) | **STOPP — Flow startet nicht.** Kein Planungs-/Implementierungs-Start; Feature-Branch-Namen nach Konvention `feat-<nnn>-<slug>` vorschlagen und auf Bestaetigung warten. |
+| beliebiger anderer Branch | **Kein Guard-Stopp** — direkt weiter mit Story-Gate + Flow. |
+
+**Namensvorschlag `feat-<nnn>-<slug>`:**
+- `<nnn>` = naechste freie laufende Nummer nach den vorhandenen `feat-*`-Branches
+  (`git branch --list "feat-*"`), dreistellig.
+- `<slug>` = Slug der Story bzw. des Parent-Features (aus dem `slug`-Frontmatter der uebergebenen
+  Story-/Feature-Datei).
+
+**Nach Bestaetigung** — nicht-destruktiv, nur ein neuer Branch, kein Commit, kein Reset, kein Force:
+```
+git checkout -b feat-<nnn>-<slug>
+```
+Danach — und **erst** danach — laeuft der urspruengliche Flow (Story-Gate → Planung/Umsetzung) weiter.
+
+**Bei Ablehnung:** **keine** Planung/Umsetzung auf dem Default-Branch — der Flow bleibt gestoppt. Der
+Nutzer legt selbst einen Branch an oder bricht ab.
 
 ---
 
@@ -169,13 +215,19 @@ auf Epic-/Feature-Signale pruefen (z. B. „mehrere Stories", „Funktionsbereic
 | Kein `type`-Feld, kein Story-Format erkennbar | **STOP + Bestätigung erforderlich:** *„⚠️ Die Anforderung liegt nicht im Story-Format vor (kein `type: story` im Frontmatter erkennbar). Ohne ausgearbeitete Story fehlt die Spezifikationsbasis — das erhöht das Risiko von Fehlinterpretationen und Nacharbeiten erheblich. Trotzdem fortfahren? [Ja / Nein — zuerst /requirement-definition ausführen]"* Wartet auf explizites Ja. |
 | `type: story` | weiter mit Schritt 2 |
 
-### Schritt 2 — Status pruefen
+### Schritt 2 — Status + Trigger pruefen
 
-| `status`-Wert | Reaktion |
-|---------------|----------|
-| `planned` + `plan`-Referenz vorhanden | **Already-Planned-Path:** Plan-Datei laden → direkt in Implementations-Flow (Planungs-Flow komplett ueberspringen). Meldung: *„Story ist bereits geplant (`status: planned`). Lade Plan [plan-referenz] und starte direkt mit der Implementierung."* |
-| `ready` | Normaler Weg → Einstieg gemaess gewaehltem Modus (Plan-only / End-to-end / From-existing-plan) |
-| alles andere (`offen`, `implemented`, oder fehlend) | **STOP + REFUSE:** *„⛔ feature-delivery verweigert die Ausführung: Story hat Status `[wert]` — erwartet wird `ready`. Die Story muss zuerst in /requirement-definition bis `ready` geschärft werden."* Keine Weiterarbeit. |
+Der gewaehlte Trigger entscheidet mit. **Plan-Trigger** = `plane`/`plan`/`plane nur`/`plane only`/`nur planen`/`erstelle einen Plan`. **Implement-Trigger (voll)** = `implementiere`/`implement`/`setze um`/`liefere`/`umsetzen`/`feature-delivery`/`fix`. **Implement-Trigger (nur)** = `implementiere nur` (Lean Single-Pass). **From-existing-plan-Trigger** = `setze plan X um`/`implementiere plan X`/`fuehre plan X aus` (bringt Plan-Pfad explizit mit).
+
+| `status` | Trigger | Reaktion |
+|----------|---------|----------|
+| `planned` + `plan`-Referenz | Implement-Trigger (voll oder nur) | **Already-Planned-Path:** Plan-Datei aus der `plan`-Referenz laden → direkt in Implementations-Flow (Planungs-Flow komplett ueberspringen). **Das Verb entscheidet die Tiefe:** `implementiere`/Synonyme → volle Loops (Story → `reviewed`); `implementiere nur` → Lean Single-Pass (Story → `implemented`/`blocked`). Meldung: *„Story ist bereits geplant (`status: planned`). Lade Plan [plan-referenz] und starte [die volle Umsetzung | die schlanke Umsetzung ‚nur‘ ohne Reviewer]."* |
+| `planned` + `plan`-Referenz | Plan-Trigger | Plan liegt bereits vor → Hinweis + Nachfrage, ob neu geplant werden soll (kein stilles Ueberschreiben). |
+| `ready` | Plan-Trigger | Normaler Weg → Plan-only-Flow (immer lean/solo). |
+| `ready` | Implement-Trigger (voll oder nur) | **STOP + Hinweis:** *„⚠️ Story `[ID]` hat `status: ready` und noch keinen Plan. `implementiere` plant nicht selbst. Bitte zuerst `plane [ID]` ausfuehren; danach `implementiere [ID]` bzw. `implementiere nur [ID]`."* Kein Auto-Planning, keine Weiterarbeit. |
+| `ready` | From-existing-plan-Trigger | Expliziter Plan-Pfad vorhanden → Hard Gate prueft den Plan → Implementations-Flow (volle Loops). |
+| `blocked` + `plan`-Referenz | Implement-Trigger (voll oder nur) | Erneuter Versuch erlaubt (ein Plan liegt vor) → wie `planned` behandeln. |
+| alles andere (`offen`, `implemented`, `reviewed`, `blocked` ohne Plan, oder fehlend) | beliebig | **STOP + REFUSE:** *„⛔ feature-delivery verweigert die Ausführung: Story hat Status `[wert]` — erwartet wird `ready` (Plan-Trigger) bzw. `planned`/`blocked` mit Plan-Referenz (Implement-Trigger). Fuer eine neue Anforderung zuerst /requirement-definition bis `ready` schaerfen."* Keine Weiterarbeit. |
 
 ### Schritt 3 — Abhaengigkeiten pruefen
 
@@ -186,8 +238,8 @@ pruefen.
 
 | Befund | Reaktion |
 |--------|----------|
-| Alle `depends_on`-Stories haben `status: implemented` | Weiter — keine Blockierung |
-| Mindestens eine `depends_on`-Story hat anderen Status | **STOP + REFUSE:** *„⛔ feature-delivery verweigert die Ausführung: Diese Story hat eine unerfüllte Abhängigkeit. [STORY-XXX] hat Status `[wert]` — erwartet wird `implemented`. Die abhängige Story muss zuerst vollständig umgesetzt sein."* Bei mehreren blockierenden Stories alle auflisten. Keine Weiterarbeit. |
+| Alle `depends_on`-Stories sind fertig umgesetzt (`status` in {`implemented`, `reviewed`, `done`, `accepted`}) | Weiter — keine Blockierung |
+| Mindestens eine `depends_on`-Story hat anderen Status (z. B. `ready`, `planned`, `blocked`) | **STOP + REFUSE:** *„⛔ feature-delivery verweigert die Ausführung: Diese Story hat eine unerfüllte Abhängigkeit. [STORY-XXX] hat Status `[wert]` — erwartet wird `implemented` oder `reviewed`. Die abhängige Story muss zuerst vollständig umgesetzt sein."* Bei mehreren blockierenden Stories alle auflisten. Keine Weiterarbeit. |
 | `depends_on`-Story-Datei nicht auffindbar | **STOP + REFUSE:** *„⛔ Abhängige Story [STORY-XXX] nicht gefunden — Pfad prüfen oder Abhängigkeit in der Story-Datei korrigieren."* |
 
 ### Schritt 4 — Story-Status nach Planung setzen
@@ -199,13 +251,26 @@ Nach erfolgreichem Abschluss des Planungs-Flows (Plan-Datei persistiert unter
    - `status: ready` → `status: planned`
    - Feld `plan` hinzufuegen: `plan: requests/plans/plan-<slug>.md`
 2. Meldung: *„Plan persistiert. Story-Status auf `planned` gesetzt, Plan-Referenz eingetragen."*
+3. **Kein Auto-Implement.** Nach `planned` STOPP — Planung und Umsetzung sind getrennte, explizite
+   Schritte. Umsetzung erst auf expliziten Implement-Trigger (`implementiere [ID]` = volle Loops,
+   `implementiere nur [ID]` = Lean Single-Pass).
 
 ### Schritt 5 — Story-Status nach Implementierung setzen
 
-Nach Abschluss von Schritt 7 (Closure) des Outer Loops. **Den Story-Status setzt ausschließlich der Session-Treiber** — der Terminal-PM fällt den Outer-Verdikt (OK/Gap), berührt aber das Story-Frontmatter nie:
+**Den Story-Status setzt ausschließlich der Session-Treiber.** Welcher Endstatus gesetzt wird, haengt vom Einstieg ab:
 
-1. Story-Frontmatter aktualisieren: `status: planned` → `status: implemented` (nur bei Outer-Verdikt `OK`)
-2. Meldung: *„Implementierung abgeschlossen. Story-Status auf `implemented` gesetzt."*
+**A) Volles `implementiere` / From-existing-plan (volle Loops):** nach Abschluss von Schritt 7 (Closure) des Outer Loops. Der Terminal-PM faellt den Outer-Verdikt (OK/Gap), beruehrt aber das Story-Frontmatter nie.
+1. Nur bei Outer-Verdikt `OK`: Story-Frontmatter `status: planned` → `status: reviewed`.
+2. Meldung: *„Implementierung inkl. Inner-Loop + Delivery-Inspection abgeschlossen. Story-Status auf `reviewed` gesetzt."*
+3. Kein `OK` (Hard-Stop bei offenem 🔴 nach Cap): **kein** Statuswechsel — Story bleibt `planned` (nicht `reviewed`); Rest-Findings-Bericht + User-Eskalation (s. Implementations-Flow).
+
+**B) `implementiere nur` (Lean Single-Pass):** kein Inner-Loop, keine Reviewer, keine Delivery-Inspection — der Session-Treiber setzt direkt nach dem Build/Test-Ergebnis.
+1. Build/Test slice-scoped gruen (innerhalb von max. 5 Fix-Versuchen): `status: planned` → `status: implemented`.
+   Meldung: *„Schlanke Umsetzung abgeschlossen, Build/Test gruen. Story-Status auf `implemented` gesetzt (roh umgesetzt, nicht reviewed)."*
+2. Build/Test nach 5 Fix-Versuchen weiterhin rot: `status: planned` → `status: blocked` (**kein** `implemented`).
+   Meldung: *„⚠️ Build/Test bleibt nach 5 Fix-Versuchen rot. Story-Status auf `blocked` gesetzt — nicht `implemented`. [Letzter Fehler + Kurz-Diagnose]."*
+
+**Status-Maschine (Story):** `offen` → `ready` → `planned` (durch `plane`) → `implemented` (durch `implementiere nur`, gruen) / `reviewed` (durch volles `implementiere`) / `blocked` (durch `implementiere nur`, rot nach 5 Fix-Versuchen) → `done`/`accepted` (setzt der Nutzer als PM manuell). `implemented` und `reviewed` sind garantiert gruene Zustaende.
 
 ---
 
@@ -249,66 +314,91 @@ Kein Plan wird erstellt bevor alle relevanten Felder beantwortet sind.
 
 ## Einstiege
 
-### Plan-only (`plane`, `nur planen`, `erstelle einen Plan`)
+### Plan-only (`plane`, `plan`, `plane nur`, `plane only`, `nur planen`, `erstelle einen Plan`)
 
-Voller Planungs-Flow → Plan persistiert als `requests/plans/plan-<feature>.md` → **STOPP**.
-Nutzer reviewt die Datei, kann dann mit From-existing-plan fortsetzen.
+**Immer lean/solo.** Der Orchestrator (`plan-agent`, Opus) plant solo — **keine Scouts, kein
+Topic-Planer, kein Plan-Review-Loop, keine Reviewer-Subagents**. Plan persistiert als
+`requests/plans/plan-<feature>.md`, Story-Status → `planned` (Frontmatter `status: planned` +
+`plan`-Referenz, s. Story-Gate Schritt 4) → **STOPP**.
+
+**Kein Auto-Implement.** `plane` kettet **nie** automatisch in den Implementations-Flow. Nutzer
+reviewt die Datei und setzt bei Bedarf explizit mit From-existing-plan (`setze plan <X> um`) fort —
+Planung und Umsetzung sind getrennte, explizite Schritte.
+
+`plane nur` / `plane only` sind **bedeutungsgleiche Aliase** von `plane` — identisches Verhalten
+(lean, stoppt).
 
 *Warum:* Reiner Planungs-Use-Case ist real. `plane` erzeugt hier bewusst keinen Code — regelkonformer, nutzergetriggerter Ausstieg.
 
-### End-to-end (`setze X um`, `implementiere X`, `liefere X`, `umsetzen`, `feature-delivery`, `fix`)
+### Implementieren — volle Loops (`implementiere X`, `implement X`, `setze X um`, `liefere X`, `umsetzen`, `feature-delivery`, `fix`)
 
-Planungs-Flow → **automatisch** → Implementations-Flow → fertig.
-Kein manueller Gate zwischen Plan und Implementierung.
+Setzt einen **existierenden** Plan um — **mit allen Schleifen**: Scribes → Build/Test → Inner-Loop
+(max. 5 Runden, 7 Reviewer, PL/PM, SecondBrain) → Outer-Delivery-Inspection. Story-Status → `reviewed`
+(bei Outer-Verdikt `OK`, s. Story-Gate Schritt 5 A).
 
-*Warum:* Default-Verhalten; Plan ist Mittel zum Zweck, nicht Endprodukt.
+**Plant nicht mehr selbst.** Voraussetzung ist ein vorhandener Plan → Story `status: planned` mit
+`plan`-Referenz (Already-Planned-Path, Story-Gate Schritt 2). Auf `status: ready` **ohne** Plan →
+**STOPP + Hinweis** *„erst `plane [ID]` ausfuehren"* — kein Auto-Planning (Story-Gate Schritt 2).
+
+`implement` / `setze um` / `liefere` / `umsetzen` / `feature-delivery` / `fix` sind Synonyme —
+identisches Verhalten wie `implementiere`.
+
+*Warum:* Planung und Umsetzung sind entkoppelt; `implementiere` konsumiert nur einen fertigen Plan.
+
+### Implementieren nur — Lean Single-Pass (`implementiere nur X`)
+
+Schlanker **Scribe-Einzeldurchlauf**: wendet den vorhandenen Plan Slice fuer Slice an, faehrt
+slice-scoped Build/Test **bis gruen (max. 5 Fix-Versuche)** — **keine** Reviewer, **keine** PL-Runden,
+**kein** PM-Urteil, **kein** SecondBrain, **keine** Outer-Delivery-Inspection. Umgeht damit bewusst
+die gesamte Zwei-Schleifen-Architektur.
+
+- **Voraussetzung** wie beim vollen `implementiere`: Story `status: planned` mit Plan (auf `ready` ohne
+  Plan → STOPP + „erst `plane`").
+- **Erfolg** (Build/Test gruen ≤ 5 Versuche) → Story-Status → `implemented` (roh umgesetzt, nicht reviewed).
+- **Rot nach 5 Fix-Versuchen** → STOPP; Story-Status → `blocked` (nicht `implemented`) + Meldung an den Nutzer.
+- **Test-First-Scribe-Qualitaet (§8) bleibt voll** — nur die Review-Ebene entfaellt.
+
+Ablauf-Detail: [flows/implementation-flow.md → Implementiere-nur-Einstieg](flows/implementation-flow.md).
+
+*Warum:* Waehlbare Umsetzungstiefe pro Story; roher, schneller Durchlauf ohne Review-Overhead, wenn der
+Nutzer als PM den Review spaeter selbst (oder gar nicht) anstoesst. Abgrenzung zu `implementiere lean impl`
+(dort bleiben PL/PM/SecondBrain, nur die Reviewer-Zahl sinkt auf 3).
 
 ### From-existing-plan (`setze plan <X> um`, `implementiere plan <X>`, `fuehre plan <X> aus`)
 
-Laedt `requests/plans/plan-<feature>.md` → ueberspringt Planungs-Flow → direkt in Implementations-Flow.
-Hard Gate (Readiness) prueft trotzdem die Umsetzbarkeit des geladenen Plans.
+Laedt `requests/plans/plan-<feature>.md` → ueberspringt Planungs-Flow → direkt in Implementations-Flow
+(**volle Loops**, wie `implementiere`). Hard Gate (Readiness) prueft trotzdem die Umsetzbarkeit des
+geladenen Plans. Story-Status → `reviewed` (bei Outer-Verdikt `OK`).
 
 *Warum:* Schliesst Plan-only sauber ab; erbt den Zweck des alten `implementation-workflow`.
 
 ---
 
-### Check (`check`, `validate`)
+### Review-on-Demand — beratend (`code-inspection`, `delivery-inspection FEATURE-X`)
 
-Kein Planning gestartet — reiner Bewertungs-Turn basierend auf der Anforderungsbeschreibung.
+Zwei **beratende** Review-Trigger auf den aktuellen Arbeitsstand — **kein Auto-Fix, kein Status-Flip,
+kein Auto-Implement, kein SecondBrain, keine PL/PM-Runden.** Reiner Befund; der Nutzer bleibt PM und
+entscheidet nach dem Report selbst ueber Nachschaerfen oder Abnahme.
 
-Plan-Orchestrator (Opus) analysiert und gibt aus:
+- **`code-inspection`** — Code-Qualitaet/Korrektheit ueber den Diff. **Kein Feature noetig.** 6
+  `implement-review-*`-Agents (risk · design-principles · craft · auditor · guard · readiness) laufen
+  parallel im Vordergrund **ohne Fix-Anwendung**.
+- **`delivery-inspection FEATURE-X`** — Anforderungserfuellung. **Feature-Bezug PFLICHT und explizit**;
+  ohne Feature-Argument → **STOPP** + Aufforderung, das Feature anzugeben (keine Pruefung). Laedt das
+  Feature, folgt den referenzierten Stories, aggregiert deren ACs und prueft den Diff dagegen (Reuse des
+  `delivery-inspection`-Skills, advisory single-pass — nur die 6 Reviewer, ohne Fix-Loop).
+- **Default-Scope beider** = alle uncommitteten Aenderungen inkl. untracked (`git diff HEAD` +
+  untracked-Liste), branch-unabhaengig. **Merge-Base-Alternative** (`git diff <merge-base>..HEAD`) bei
+  bereits committetem Feature (uncommitted-Scope leer) oder auf explizite Anforderung.
+- **Kein Branch-Guard-Stopp** (s. Branch-Guard); auf dem Default-Branch ohne Delta nur Hinweis *„kein
+  Feature-Delta"*.
+- **Ausgabe:** Befund-Datei `Requests/reviews/<feature>-<inspection>-<n>.md` (nach Story bzw. Bereich
+  gruppiert, `<n>` = laufender Zaehler je Feature+Inspection-Typ) **+ Chat-Kurzfassung**. **Kein**
+  Story-Status geaendert, **kein** Auto-Fix. Nachschaerfen bleibt manuell: `implementiere STORY-X`.
 
-**Bewertungs-Skala 1–7:**
+Ablauf-Detail: [flows/review-flow.md](flows/review-flow.md).
 
-| Wert | Bedeutung |
-|------|-----------|
-| 1–2 | Full Planning zwingend — viele Unbekannte, Cross-Service-Integration, Datenmigration, kein Scope-Mapping moeglich |
-| 3 | Full Planning empfohlen — einige bekannte Bereiche, aber kritische offene Punkte |
-| 4 | Grauzone — Scouting koennte Einschaetzung noch kippen (`check plus` empfohlen) |
-| 5 | Lean sicher — Scope klar, bekannte Codebasis, ueberschaubare Integration |
-| 6–7 | Lean/Trivial — Single-Class oder -Methode, keine Integration, vollstaendig klar |
-
-**Ausgabe-Format:**
-1. Bewertung `N/7` mit Einstufungstext (z. B. "Lean sicher")
-2. Begruendung: Komplexitaets-Signale, Integrationspunkte, Bounded-Context-Risiken
-3. Einschraenkungshinweis: "Einschaetzung basiert auf Beschreibung — Faktoren, die erst Scouts aufdecken koennen: [Liste]"
-4. Empfehlung: welcher Einstieg (Plan-only/End-to-end + lean/full)
-
-→ **STOPP.** Nutzer entscheidet Einstieg.
-
-*Hint: Bei Bewertung 4 oder darunter ist `check plus` sinnvoll.*
-
----
-
-### Check-Plus (`check plus`, `validate plus`)
-
-Wie Check, aber mit Scouts: Phase 3 des Planungs-Flows wird ausgefuehrt (bis zu 10 Scouts parallel), Orchestrator merged Ergebnisse, gibt danach Code-gestuetzte Bewertung 1–7 aus.
-
-**Hoehere Konfidenz** — empfohlen wenn Beschreibung wenig Code-Kontext enthaelt oder Bewertung aus `check` auf 4 landet.
-
-Anti-Shortcut-Regel gilt: min. ein `plan-agent-scout` Task-Subagent (kein Grep/Read im Orchestrator-Turn).
-
-→ **STOPP nach Bewertung.** Nutzer entscheidet Einstieg.
+*Warum:* PM-Abnahme-Use-Case nach mehreren schlank umgesetzten Stories — Reviewer schauen auf Abruf ueber den Gesamtstand, ohne selbst nachzuschaerfen oder Status zu flippen.
 
 ---
 
@@ -320,9 +410,9 @@ Anti-Shortcut-Regel gilt: min. ein `plan-agent-scout` Task-Subagent (kein Grep/R
 | Was schrumpft | Nur Planung: Orchestrator (Opus) plant + prueft + reviewed in sich selbst — keine Scouts, keine Review-Subagent-Armee, kein 5er-Loop. |
 | Was bleibt voll | Voller Scribe, alle Gates, Test-First (§8/F1) — immer. Impl-Review: Standard 7 Reviewer. |
 | `lean impl` (opt-in) | Reduziert Impl-Review auf 3 Reviewer (risk · craft · readiness) statt 7 — oder collapsed via `impl-quality-review-agent` (1 Agent, alle Lenses intern, 1 Approval statt 7 parallele). Scribes, Gates, Test-First bleiben voll. Aktivierung: `implementiere lean impl …` — explizit anfordern, kein Standard. Collapsed: `implementiere lean impl collapsed`. |
-| Kombinierbar mit | Plan-only und End-to-end. **NICHT** mit From-existing-plan. |
+| Kombinierbar mit | Plan-Trigger (`plane`/`plan`/…). **NICHT** mit From-existing-plan (Plan liegt schon vor). |
 
-*Framing:* Sicherer Default fuer den Normalfall. Fuer komplexe Features mit vielen Unbekannten explizit `strong` verwenden.
+*Framing:* Planung ist immer lean/solo — schnell und fokussiert. Für Tiefe sorgen der Plan-Coverage-Check (delivery-inspection auf den Plan) und das Uncertainty Audit, nicht ein separater Strong-Modus.
 
 ---
 
@@ -348,7 +438,7 @@ Aktiviert durch zwei alternative Heuristiken:
 |--------|--------|----------------------|-----------------------|
 | Plan-File | Pflicht | entfaellt | entfaellt |
 | Story-Status | `ready → planned → implemented` | `ready → implemented` | `ready → implemented` |
-| Scribes | 1-10 Subagents | entfaellt — Orchestrator editiert direkt | Scribe bleibt (Scope kann > 10 Zeilen sein) |
+| Scribes | 1-10 Subagents | entfaellt — Session-Treiber editiert direkt | Scribe bleibt (Scope kann > 10 Zeilen sein) |
 | Reviewer | 7 (oder scope-adjusted) | 1 Reviewer: risk | 2 Reviewer: risk · craft |
 | Delivery-Inspection | Pflicht | entfaellt | entfaellt |
 | Build + Test | Pflicht | Pflicht | Pflicht |
@@ -363,25 +453,11 @@ Scope-Einschaetzung "klingt klein" reicht nicht — alle Kriterien muessen messb
 
 ---
 
-## Strong-Mode (`strong`)
-
-Aktiviert das volle Planungs-Arsenal: Scouts (Phase 3), Topic-Planer (Phase 4b), 6 Reviewer parallel + Fix-Loop.
-
-| Aspekt | Regel |
-|--------|-------|
-| Aktivierung | `strong` als expliziter Zusatz — z. B. `implementiere strong …` oder `plane strong …` |
-| Was laeuft | Vollstaendiger Planungs-Flow gemaess [flows/planning-flow.md](flows/planning-flow.md) |
-| Anti-Shortcut | Gilt vollstaendig — min. Scout, min. Topic-Planer, 6 Reviewer parallel |
-| Kombinierbar mit | Plan-only und End-to-end. **NICHT** mit From-existing-plan. |
-
-*Warum:* Fuer Features mit vielen Unbekannten, Cross-Service-Integration oder hohem Risiko — wenn mehr Konfidenz gebraucht wird als Lean liefert.*
-
----
-
 ## Flows
 
 → **Planungs-Flow:** [flows/planning-flow.md](flows/planning-flow.md)
 → **Implementations-Flow:** [flows/implementation-flow.md](flows/implementation-flow.md)
+→ **Review-on-Demand-Flow:** [flows/review-flow.md](flows/review-flow.md)
 
 ---
 
@@ -401,7 +477,6 @@ Aktiviert das volle Planungs-Arsenal: Scouts (Phase 3), Topic-Planer (Phase 4b),
 - [delivery-inspection](../delivery-inspection/SKILL.md) — Pruefung vor Auslieferung: 6 Reviewer pruefen Anforderungserfuellung (nach Impl-Fix-Loop, vor Closure)
 - [test-design](../test-design/SKILL.md) — AAA · Namenskonvention · Magic Strings (Pflicht fuer Scribes, alle implement-review-Agents, Fix-Planer)
 - [`dev-tooling`](../dev-tooling/SKILL.md) — MCP-Gateway: dev-mcp (Build, Test, Scaffolding, run_inspectcode, lint_angular_project), codebase-analyzer (Index, review_git_diff, statische Analyse), build-log-filter (ng serve, Shell-Fallback)
-- [scout-protocol](references/scout-protocol.md) — Routing-Matrix + Hard Rules + Scout-Protokoll-Tabelle (Pflicht fuer plan-agent-scout, Phase 3)
 
 ---
 

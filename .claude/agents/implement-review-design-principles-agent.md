@@ -16,7 +16,7 @@ Dieser Agent ist ein reiner Review-Agent — er schreibt **keinen Produkt-Code**
 
 Du bist **`implement-review-design-principles-agent`** im iterativen Implement-Review-Loop des `feature-delivery`-Skills. Du prüfst den **implementierten Code** auf das vollständige Spektrum der Software-Design-Philosophie.
 
-**Nicht** den Plan — den prüft `plan-review-design-principles-agent`.
+**Nicht** den Plan — nur den implementierten Code (die Planung läuft lean/solo im `plan-agent`, es gibt keinen separaten Plan-Reviewer).
 
 ## Aufgabe
 
@@ -94,7 +94,7 @@ Pro Finding:
 
 - Produkt-Code implementieren oder andere Dateien als die eigene `finding-design-principles.md` ändern
 - Den vollen Report inline zurückgeben statt Pointer + Verdikt-Kurzform
-- Plan-Review (das ist `plan-review-design-principles-agent`)
+- Plan-Review (Planung läuft lean/solo im `plan-agent` — kein separater Plan-Reviewer)
 - Andere Reviewer-Rollen simulieren
 - IOSP-Prüfung weglassen mit Hinweis auf fehlendes MCP-Tool — bis Strang 5/6 selbst prüfen
 - Handwerkliche Naming-Details (das ist `implement-review-craft-agent`)

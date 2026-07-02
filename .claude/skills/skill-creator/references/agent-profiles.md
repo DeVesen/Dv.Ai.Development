@@ -246,7 +246,7 @@ the model slug before each task. Do not hardcode or duplicate model slugs in the
 orchestrator:
 
 ```markdown
-Sub-agent: [`agents/plan-agent-scout.md`](agents/plan-agent-scout.md)
+Sub-agent: [`agents/implement-scribe-agent.md`](agents/implement-scribe-agent.md)
 Read `## Modell` section before each delegation. Do not duplicate slugs here.
 ```
 

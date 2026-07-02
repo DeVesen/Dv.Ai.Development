@@ -70,7 +70,7 @@ available MCPs for research. Come prepared with context to reduce burden on the 
 | `agent` | `Explore\|Plan\|general-purpose\|<custom-name>` |
 | `paths` | Glob — auto-activate only for matching files |
 | `hooks` | Skill lifecycle hooks (PreToolUse, PostToolUse, etc.) |
-| `shell` | `bash` (default) or `powershell` for `` !`cmd` `` blocks |
+| `shell` | `bash` (default) or `powershell` — interpreter for bang-injection blocks |
 
 **Naming:** Skill frontmatter uses kebab-case (`allowed-tools`, `disallowed-tools`). Agent profiles use camelCase (`tools`, `disallowedTools`). These are separate fields for separate systems.
 
@@ -78,15 +78,14 @@ available MCPs for research. Come prepared with context to reduce burden on the 
 
 #### Dynamic Context Injection (Claude Code)
 
-```
-!`git diff HEAD`           # inline — only at line start or after whitespace
-```!
-node --version
-git log --oneline -5
-```                         # multi-line block
-```
-Executed before Claude sees the skill. Output replaces the placeholder — Claude sees real data.
-`disable-model-invocation: true` blocks this for skills users haven't opted into.
+The harness runs shell commands and splices their stdout into the skill before Claude reads it — two forms:
+
+- **Inline:** at line start (or after whitespace), a bang placed directly before a backtick-quoted command (e.g. a `git diff HEAD` call) is replaced in place by that command's output.
+- **Multi-line block:** a fenced code block whose info string is a lone bang runs each contained line as a shell command (e.g. `node --version`, then `git log --oneline -5`).
+
+> ⚠️ **Never write a literal, runnable example of either form inside a skill file.** The injection pre-processor scans raw text and cannot tell an illustration from the real thing — the former sample here executed on every `/skill-creator` invocation and stalled the command on a Bash-permission prompt. Describe the syntax in prose, as above.
+
+`disable-model-invocation: true` blocks this injection for skills users haven't opted into.
 
 #### String Substitution
 

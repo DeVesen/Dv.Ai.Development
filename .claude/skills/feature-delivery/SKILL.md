@@ -3,7 +3,7 @@ name: feature-delivery
 description: >
   Orchestrator-Skill fuer vollstaendige Feature-Umsetzung (.NET + Angular): plane, nur planen,
   erstelle einen Plan, setze X um, implementiere X, liefere X, umsetzen, feature-delivery,
-  fix, setze plan X um, fuehre plan X aus, implementiere plan X, schlank planen, lean planen,
+  fix, setze plan X um, fuehre plan X aus, implementiere plan X, implementiere lean impl, schlank planen, lean planen,
   kompakt planen, Solo-Planung. Akzeptiert ausschliesslich Stories (type: story, status: ready)
   — Epics und Features werden verweigert, fehlendes Story-Format erfordert Bestaetigung.
   Vier Einstiege: Plan-only (plane/nur planen/erstelle Plan → STOPP, setzt Story auf planned),
@@ -28,6 +28,7 @@ when_to_use: >
   Default (ohne Zusatz): Lean-Planung — Orchestrator plant solo, schnell.
   Strong-Mode: strong → volles Planning mit Scouts (Phase 3), Topic-Planer (Phase 4b), 6 Reviewer + Fix-Loop.
   Lean-Mode: schlank planen/lean planen/kompakt planen/Solo-Planung → identisch mit Default.
+  Lean-Impl-Mode: implementiere lean impl → Impl-Review auf 3 Reviewer (risk · craft · readiness) oder 1 impl-quality-review-agent (collapsed, alle Lenses intern, 1 Approval). Scribes, Gates, Test-First bleiben voll.
   Check-Mode: check/validate → Bewertung 1-7 (lean vs. full), nur Anforderungsbeschreibung, kein Planning.
   Check-Plus-Mode: check plus/validate plus → wie Check, aber mit Scouts fuer Code-gestuetzte Bewertung.
   Nicht bei: reiner Erklaerung ohne Umsetzungsintent, ohne feature-delivery.
@@ -65,15 +66,20 @@ Deckt den gesamten Bogen: Anforderung → Plan → Umsetzung → Qualitaetssiche
 │  Schritt 4: Umsetzen                                                   │
 │                                                                        │
 │  ┌─ INNER LOOP (Code-Qualitaets-Schleife, max. 5 Runden) ───────┐    │
-│  │  5a: Code-Review (7 Reviewer — sehen vollen Plan + Delta)     │    │
-│  │  5b: Tests (Unit + Integration)                                │    │
-│  │  → Maengel? → Fix-Planer (gezielt) → Fix → zurueck zu 5a/5b  │    │
-│  │  → Alles gruen? → raus aus Inner Loop                         │    │
+│  │  Session-Treiber spawnt je Runde frisch: PL → PM              │    │
+│  │  PL: Fix-Scribes → Gates → 7 Reviewer → digest.md (Pointer)   │    │
+│  │      + autoritative Tiers 🔴/🟡/🟢 → Tier-Zaehler in Index     │    │
+│  │  PM: liest Index+Digest → clean / erbsenzaehlerei-exit /      │    │
+│  │      fix(Was+Wie) / escalate                                  │    │
+│  │  Session-Tier-Guard: 🔴 offen > 0 → Exit zurueckgewiesen      │    │
+│  │  → fix?        → naechste Runde (PL dispatcht Fix-Planer)      │    │
+│  │  → Inner-Close?→ PM wird TERMINAL-PM, raus aus Inner Loop      │    │
 │  └────────────────────────────────────────────────────────────────┘    │
 │                                                                        │
-│  5c: PO/Stakeholder Review (Delivery-Inspection)                       │
+│  5c: TERMINAL-PM (eine Instanz) — dispatcht Delivery-Inspection        │
+│      (Pointer-Handoff) → liest di-digest → Outer-Verdikt               │
 │  → OK?       → Schritt 7 Closure                                      │
-│  → Nicht OK? → Delta-Protokoll → zurueck zu Schritt 1                 │
+│  → Req-Gap?  → outer/delta-N.md → zurueck zu Schritt 1 (frischer PM)  │
 │                                                                        │
 │  Schritt 7: Closure                                                    │
 └────────────────────────────────────────────────────────────────────────┘
@@ -86,6 +92,38 @@ Deckt den gesamten Bogen: Anforderung → Plan → Umsetzung → Qualitaetssiche
 - Inner Loop (Maengel in *Wie* umgesetzt) → Fix-Planer → Fix-Scribes → Inner Loop erneut
 - Outer Loop (Maengel in *Was* geliefert, neuer Scope) → Delta-Protokoll → Schritt 1
 
+### Inner-Exit-Urteilslogik: 3-Tier + Terminal-PM + Tier-Guard (STORY-034)
+
+Der Uebergang Inner→Outer ist die kritischste Entscheidung des Flows — sie faellt nachvollziehbar, gegen Silent-Shortcut abgesichert und mit Audit-Trail:
+
+- **3-Tier-Erbsenzählerei** (autoritativ vom PL vergeben): 🔴 blockt den Inner-Exit (ein offenes 🔴 → naechste Runde Pflicht) · 🟡 nur mit **schriftlicher Begruendung je Finding** im `outer/pm-verdict-N.md` durchwinkbar · 🟢 frei. **Security-`critical` ist aus jedem Kanal immer 🔴 — nie als Erbsenzählerei einstufbar.**
+- **PM-Urteil**: `clean` (nichts offen) · `erbsenzaehlerei-exit` (nur 🟡/🟢 offen, 🟡 begruendet) · `fix` · `escalate`.
+- **Mechanischer Tier-Guard** (Session): liest `Tier 🔴 offen` aus dem Index; ein Inner-Close bei offenem 🔴 wird **deterministisch zurueckgewiesen** — reine Zaehler-Arithmetik, nicht durch ein PM-Fehlurteil aushebelbar.
+- **Terminal-PM**: der PM, der den Inner-Loop schliesst, ist die **einzige** Instanz, die Inner-Close → Delivery-Inspection-Dispatch → Outer-Verdikt in **einer** Instanz ueberspannt (DI-Reviewer geben Pointer statt Payload → Notification-Trap geloest). Danach **harte Grenze**: die Folge-Outer-Iteration bekommt einen frischen PM.
+
+### Rollenbild Impl-Fix-Loop — Wegwerf-Instanzen (STORY-033)
+
+Der Inner Loop laeuft **nicht** in einer durchgehend lebenden Orchestrator-Instanz (das erzeugte
+Kontext-Compact durch unbegrenztes Fenster-Wachstum, FEAT-001). Stattdessen drei Elemente,
+Kontinuitaet rein **datei-basiert** ueber das SecondBrain
+([references/secondbrain-schema.md](references/secondbrain-schema.md)):
+
+| Element | Lebensdauer | Aufgabe |
+|---------|-------------|---------|
+| **Session-Treiber** (die aufrufende Session) | persistent — einzige lebende Instanz | Haelt **nur** Index-Pointer + PM-Verdikt-Kurzform. Liest `current_round` + `Tier 🔴 offen` aus `secondbrain-index.md`, erzwingt den Max-5-Cap **und den mechanischen Tier-Guard**, spawnt je Runde frische Rollen. |
+| **PL** `implement-round-executor` | throwaway — frisch je Runde | Mechanisch: dispatcht (Fix-Planer →) Scribes → Integration-Checkpoint → Gates → Reviewer, liest die `finding-*.md`, baut `digest.md` **+ vergibt autoritative Tiers 🔴/🟡/🟢** und schreibt die Tier-Zaehler in den Index. Gibt **nur Pointer** zurueck. Implementiert keinen Code, urteilt nicht. |
+| **PM** `implement-supervisor` | throwaway — frisch je Runde; **Ausnahme: Terminal-PM** ueberspannt den Inner-Close→Outer-Span | Urteilsebene: liest Index+Digest → **ein** Inner-Urteil `clean` / `erbsenzaehlerei-exit` / `fix` (Was+Wie) / `escalate`. Schreibt **nur** `outer/pm-verdict-N.md` (+ bei Requirement-Gap `outer/delta-N.md`). Als Terminal-PM: DI-Dispatch + Outer-Verdikt in einer Instanz. |
+
+**Kadenz:** frischer PL **und** frischer PM je Runde via Agent-Tool — **kein SendMessage ueber
+Runden hinweg**. Kein Fenster waechst mehr unbegrenzt; kein Reviewer-Report und kein Digest-Body
+liegt je im Session-Fenster (nur Pointer + Verdikt). Der Fix-Planer bleibt erhalten, unter dem
+PM-Urteil — die naechste Runde dispatcht ihn, bevor Fix-Scribes laufen.
+
+**Einzige Ausnahme zur Wegwerf-Kadenz:** der **Terminal-PM** (der PM, der den Inner-Loop schliesst)
+setzt **dieselbe** Instanz ueber Inner-Close → Delivery-Inspection → Outer-Verdikt fort — kein
+Runden-Uebergang, sondern der Abschluss-Span einer Outer-Iteration. Danach harte Grenze. Details +
+3-Tier + Tier-Guard: s. Abschnitt oben und [flows/implementation-flow.md](flows/implementation-flow.md).
+
 Details: [flows/implementation-flow.md](flows/implementation-flow.md), [flows/planning-flow.md](flows/planning-flow.md)
 
 ---
@@ -97,8 +135,9 @@ Details: [flows/implementation-flow.md](flows/implementation-flow.md), [flows/pl
 - Planungs-Flow Phase 3: min. ein `plan-agent-scout` — kein Grep/Read im Orchestrator-Turn als Ersatz
 - Planungs-Flow Phase 4b: min. ein `plan-agent-topic-planner` — auch bei Single-Topic, kein Orchestrator-Selbst-Plan
 - Plan-Review: 6 Reviewer parallel — keine Rollensimulation im Orchestrator-Turn
-- Impl-Flow: Scribes (implement-scribe-agent / implement-scribe-opus-agent) — Orchestrator schreibt keinen Produkt-Code selbst
-- Impl-Review: 7 Reviewer parallel — keine Rollensimulation
+- Impl-Flow: Scribes (implement-scribe-agent / implement-scribe-opus-agent) — der PL (implement-round-executor) schreibt keinen Produkt-Code selbst, der PM (implement-supervisor) urteilt nur
+- Impl-Review: 7 Reviewer parallel — keine Rollensimulation im PL-Thread
+- Impl-Fix-Loop: frischer PL UND frischer PM je Runde via Agent-Tool — kein SendMessage ueber Runden hinweg, keine lang lebende Orchestrator-Instanz
 
 **Ausnahme: Micro-Change-Modus** (s.u.) — Orchestrator editiert direkt, kein Scribe, kein Plan-File, 1 Reviewer (risk). Nur wenn Fastpath explizit aktiviert und angekuendigt.
 
@@ -163,9 +202,9 @@ Nach erfolgreichem Abschluss des Planungs-Flows (Plan-Datei persistiert unter
 
 ### Schritt 5 — Story-Status nach Implementierung setzen
 
-Nach Abschluss von Schritt 7 (Closure) des Outer Loops:
+Nach Abschluss von Schritt 7 (Closure) des Outer Loops. **Den Story-Status setzt ausschließlich der Session-Treiber** — der Terminal-PM fällt den Outer-Verdikt (OK/Gap), berührt aber das Story-Frontmatter nie:
 
-1. Story-Frontmatter aktualisieren: `status: planned` → `status: implemented`
+1. Story-Frontmatter aktualisieren: `status: planned` → `status: implemented` (nur bei Outer-Verdikt `OK`)
 2. Meldung: *„Implementierung abgeschlossen. Story-Status auf `implemented` gesetzt."*
 
 ---
@@ -280,7 +319,7 @@ Anti-Shortcut-Regel gilt: min. ein `plan-agent-scout` Task-Subagent (kein Grep/R
 | Wer entscheidet | **Default.** Aktiv ohne Zusatz. `schlank planen`/`lean planen` etc. bleiben als explizite Synonyme gueltig. |
 | Was schrumpft | Nur Planung: Orchestrator (Opus) plant + prueft + reviewed in sich selbst — keine Scouts, keine Review-Subagent-Armee, kein 5er-Loop. |
 | Was bleibt voll | Voller Scribe, alle Gates, Test-First (§8/F1) — immer. Impl-Review: Standard 7 Reviewer. |
-| `lean impl` (opt-in) | Reduziert Impl-Review auf 3 Reviewer (risk · craft · readiness) statt 7. Scribes, Gates, Test-First bleiben voll. Aktivierung: `implementiere lean impl …` — explizit anfordern, kein Standard. |
+| `lean impl` (opt-in) | Reduziert Impl-Review auf 3 Reviewer (risk · craft · readiness) statt 7 — oder collapsed via `impl-quality-review-agent` (1 Agent, alle Lenses intern, 1 Approval statt 7 parallele). Scribes, Gates, Test-First bleiben voll. Aktivierung: `implementiere lean impl …` — explizit anfordern, kein Standard. Collapsed: `implementiere lean impl collapsed`. |
 | Kombinierbar mit | Plan-only und End-to-end. **NICHT** mit From-existing-plan. |
 
 *Framing:* Sicherer Default fuer den Normalfall. Fuer komplexe Features mit vielen Unbekannten explizit `strong` verwenden.
@@ -289,31 +328,38 @@ Anti-Shortcut-Regel gilt: min. ein `plan-agent-scout` Task-Subagent (kein Grep/R
 
 ## Micro-Change-Modus (Fastpath)
 
-Aktiviert wenn **alle vier** Heuristik-Signale zutreffen (identisch mit requirement-definition):
+Aktiviert durch zwei alternative Heuristiken:
+
+**Heuristik A — Visual-Micro (alle vier Signale):**
 1. Aenderung < 10 Zeilen gesamt
 2. Genau eine Datei betroffen
 3. Rein visuell (Zahl, Farbe, CSS, HTML-Attribut, Abstand) — kein Verhaltens-Delta
 4. Kein neues Verhalten (keine neue Interaktion, kein Datenfluss-Delta)
 
-**Aktivierung:** Story hat `micro_change: true` im Frontmatter (von requirement-definition gesetzt)
-**oder** Orchestrator erkennt alle vier Signale und kuendigt explizit an:
-*"Erkenne Micro-Change — Fastpath aktiv."*
+**Heuristik B — Service-Micro (alle drei Signale):**
+1. Aenderungen ausschliesslich in einem einzigen Service (ein Angular-Service/Component ODER ein .NET-Service)
+2. Kein Schema-Change: keine Migration, kein neues Interface, kein neues DTO/Modell
+3. Kein Cross-Service-Contract-Delta: keine API-Signatur-Aenderung, kein Shared-Model-Update
 
-| Aspekt | Normal | Micro-Change-Fastpath |
-|--------|--------|-----------------------|
-| Plan-File | Pflicht | entfaellt |
-| Story-Status | `ready → planned → implemented` | `ready → implemented` (direkt) |
-| Scribes | 1-10 Subagents | entfaellt — Orchestrator editiert direkt |
-| Reviewer | 7 (oder scope-adjusted) | 1 Reviewer: risk |
-| Delivery-Inspection | Pflicht | entfaellt |
-| Build + Test | Pflicht | Pflicht (unveraendert) |
-| Test-First §8/F1 | Pflicht | Pflicht (unveraendert) |
+**Aktivierung:** Story hat `micro_change: true` (Heuristik A) oder `micro_change: service` (Heuristik B) im Frontmatter
+**oder** Orchestrator erkennt alle Signale und kuendigt explizit an.
 
-**Grenze:** Trifft auch nur eines der vier Signale nicht zu → kein Fastpath; normaler Flow.
-Scope-Einschaetzung "klingt klein" reicht nicht — alle vier Kriterien muessen messbar zutreffen.
+| Aspekt | Normal | Heuristik A (Visual) | Heuristik B (Service) |
+|--------|--------|----------------------|-----------------------|
+| Plan-File | Pflicht | entfaellt | entfaellt |
+| Story-Status | `ready → planned → implemented` | `ready → implemented` | `ready → implemented` |
+| Scribes | 1-10 Subagents | entfaellt — Orchestrator editiert direkt | Scribe bleibt (Scope kann > 10 Zeilen sein) |
+| Reviewer | 7 (oder scope-adjusted) | 1 Reviewer: risk | 2 Reviewer: risk · craft |
+| Delivery-Inspection | Pflicht | entfaellt | entfaellt |
+| Build + Test | Pflicht | Pflicht | Pflicht |
+| Test-First §8/F1 | Pflicht | Pflicht | Pflicht |
+
+**Grenze:** Trifft auch nur eines der Signale der aktiven Heuristik nicht zu → kein Fastpath; normaler Flow.
+Scope-Einschaetzung "klingt klein" reicht nicht — alle Kriterien muessen messbar zutreffen.
 
 **Transparenz-Pflicht:**
-`"Micro-Change erkannt — Fastpath aktiv: direkter Edit, 1 Reviewer (risk), kein Plan-File."`
+- Heuristik A: `"Micro-Change erkannt (Visual) — Fastpath aktiv: direkter Edit, 1 Reviewer (risk), kein Plan-File."`
+- Heuristik B: `"Micro-Change erkannt (Service-Scope) — Fastpath aktiv: Scribe, 2 Reviewer (risk · craft), kein Plan-File."`
 
 ---
 

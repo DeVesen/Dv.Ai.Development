@@ -421,7 +421,7 @@ Wenn der Outer Loop einen Requirement-Gap zurueckmeldet (Delta-Protokoll vorhand
 ### Eingabe
 
 - Originaler Request (unveraendert — Reviewer behalten Gesamtkontext)
-- Delta-Protokoll (`requests/plans/plan-<feature>-delta-<N>.md`)
+- Delta-Protokoll (`requests/plans/<feature>/outer/delta-N.md` — vom Terminal-PM des Impl-Outer-Loops geschrieben, STORY-034)
 - Bestehender Plan (`requests/plans/plan-<feature>.md`) — geerbt als Basis
 
 ### Planungs-Umfang
@@ -456,7 +456,7 @@ Alle Plan-Reviewer (Phase Review-Loop) erhalten:
 ### Persistenz
 
 Aktualisierter Plan ueberschreibt `requests/plans/plan-<feature>.md`.
-Delta-Protokoll bleibt als `requests/plans/plan-<feature>-delta-<N>.md` erhalten (Audit-Trail).
+Delta-Protokoll bleibt als `requests/plans/<feature>/outer/delta-N.md` erhalten (Audit-Trail, SecondBrain — STORY-034).
 
 ---
 

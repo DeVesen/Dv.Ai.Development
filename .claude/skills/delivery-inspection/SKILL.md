@@ -101,9 +101,11 @@ Abgrenzung: Security-Checks → Skeptiker; Regressions-Prüfung → Revisor; Nam
 
 ## ⚠️ Foreground-Kontext: Notification-Trap
 
-Dieser Skill wird von `feature-delivery` als direkter **foreground** Sub-Agent aufgerufen — nicht als background-Task. Completion-Notifications der 6 internen Reviewer-Sub-Agents gehen an den **Main-Thread des rufenden Agents** (impl-loop-orchestrator), **nicht** zurück an den Delivery-Inspection-Orchestrator.
+Zwei Aufruf-Modi:
 
-Der Delivery-Inspection-Orchestrator muss daher nach dem parallelen Spawn der 6 Reviewer **aktiv auf alle 6 Antworten warten und zählen**, bevor er mit Schritt 2 fortfährt. **Count-Guard ist zwingend: erst bei N=6 weiter.**
+**A — Aufruf aus `feature-delivery` (STORY-034, Pointer-Handoff):** Der **Terminal-PM** dispatcht die 6 Reviewer-Rollen **direkt** als Vordergrund-Sub-Agents (kein zwischengeschalteter DI-Orchestrator). Jeder Reviewer **schreibt seine Befunde in `outer/di-N/di-finding-<rolle>.md` und gibt nur einen Pointer + Kurzform als direkte Rückgabe** zurück — **kein Report-Body**. Der Terminal-PM wartet auf die **6 direkten Pointer-Rückgaben** (Vordergrund, synchron), **nicht** auf Completion-Notifications, und baut daraus `outer/di-N/di-digest.md`. Weil kein Background-Task und kein Notification-Wait im Spiel ist, entsteht die frühere Notification-Trap (STORY-031) strukturell nicht. Die **Iteration** liefert in diesem Modus der **Outer Loop von feature-delivery** (eine Inspektions-Runde je Outer-Iteration); der iterative Loop unten (Schritt 1–6) ist der **Standalone-Modus**.
+
+**B — Standalone-Aufruf:** Wird der Skill als ein foreground Sub-Agent mit eigenem Orchestrator aufgerufen, spawnt dieser die 6 Reviewer und muss nach dem parallelen Spawn **aktiv auf alle 6 direkten Antworten warten und zählen**, bevor er mit Schritt 2 fortfährt. **Count-Guard: erst bei N=6 weiter** (auf direkte Rückgaben, kein Background/Notification-Wait).
 
 ---
 
@@ -193,12 +195,13 @@ Abschlussmeldung bei sauberem Abschluss:
 
 ## Integration mit feature-delivery
 
-Wenn von `feature-delivery` als letzter Schritt vor Closure aufgerufen:
-- Findings gehen **nicht direkt an den User** — sondern an den `impl-loop-orchestrator`
-- Orchestrator entscheidet: Fix-Scribe beauftragen oder an User eskalieren
-- Erst nach sauberem Delivery-Inspection-Durchlauf: Closure
+Wenn von `feature-delivery` als letzter Schritt vor Closure aufgerufen (STORY-034):
+- **Träger ist der Terminal-PM** (`implement-supervisor`) — nicht mehr der abgelöste `implement-loop-orchestrator`. Er dispatcht die 6 Reviewer-Rollen direkt (Modus A oben).
+- Jeder Reviewer schreibt `outer/di-N/di-finding-<rolle>.md` und gibt **nur einen Pointer** zurück (kein Report-Body). Der Terminal-PM baut daraus `outer/di-N/di-digest.md` und fällt den **Outer-Verdikt**.
+- Findings gehen **nicht direkt an den User** — der Terminal-PM klassifiziert (Implementation-Gap / Requirement-Gap / Unklar / OK); die **Session** setzt daraufhin den Story-Status bzw. leitet zurück in den Inner/Outer Loop.
+- Erst nach sauberem Durchlauf (keine Gaps): Closure.
 
-**Routing-Constraint (STORY-031):** Delivery-Inspection läuft immer im Foreground des aufrufenden Threads — Notifications und Reports gehen an den Main-Thread (impl-loop-orchestrator), **nicht** zurück an einen Background-Orchestrator. Kein eigenständiger Background-Spawn innerhalb von DI. (Ref: STORY-031)
+**Routing-Constraint (STORY-031 → STORY-034 aufgelöst):** Der Notification-Trap entstand durch Background-Task + Notification-Wait. In der feature-delivery-Integration läuft der DI-Dispatch im **Vordergrund mit Pointer-Handoff** (Reviewer schreiben Dateien, geben direkte Pointer-Rückgaben) — der Terminal-PM wartet auf direkte Rückgaben, nicht auf Notifications. Kein eigenständiger Background-Spawn innerhalb von DI. (Ref: STORY-031, aufgelöst in STORY-034)
 
 ---
 

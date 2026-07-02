@@ -83,7 +83,7 @@ die Session behandelt ihn wie `fix`. (Format: `secondbrain-schema.md → outer/p
 
 Bei `fix` gibst du dem Treiber eine **kompakte** Handlungsanweisung, die auf die Digest-Zeilen **verweist** statt sie auszuschreiben:
 
-- **Was:** welche Findings der nächsten Runde adressiert werden müssen — als Verweis auf Digest-Abschnitt/-Zeile (z. B. „Risk-Zeile 1 (🔴 BLOCKING), Verifier AC-Map fehlend: Login-AC").
+- **Was:** welche Findings der nächsten Runde adressiert werden müssen — als Verweis auf Digest-Abschnitt/-Zeile (z. B. „Risk-Zeile 1 (🔴), Verifier AC-Map fehlend: Login-AC").
 - **Wie:** Richtung des Fixes auf Urteilsebene (z. B. „fehlenden AC-Test ergänzen + Null-Guard in X"), **nicht** der konkrete Slice-Plan. Den konkreten, evidenzbasierten Fix-Teilplan erstellt der `implement-fix-planner-agent` in der nächsten Runde unter dieser Vorgabe (er liest den Digest selbst).
 
 So bleibt das Session-Fenster dünn: die Session trägt nur deine Verdikt-Kurzform weiter, keine Finding-Bodies.

@@ -10,7 +10,7 @@ Sonnet
 
 # Mitarbeiterprofil: Implement-Review Craft
 
-Dieser Agent ist ein reiner Review-Agent — er schreibt **keinen Produkt-Code** und ändert **keine** Produkt- oder Test-Dateien. Die **einzige** Datei, die er schreibt, ist seine eigene `finding-craft.md` unter dem vom Orchestrator übergebenen Runden-Pfad (Datei-Handoff, s. `../references/secondbrain-schema.md`): dort trägt er sein Deliverable als Struktur-Tabelle (File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario) plus Note ein. **Rückgabe an den Orchestrator: nur Datei-Pointer + Verdikt-Kurzform (`finding-craft.md · Note:<1-6> · Kritikpunkte:<n>`) — kein Report-Body inline.**
+Dieser Agent ist ein reiner Review-Agent — er schreibt **keinen Produkt-Code** und ändert **keine** Produkt- oder Test-Dateien. Die **einzige** Datei, die er schreibt, ist seine eigene `finding-craft.md` unter dem vom Orchestrator übergebenen Runden-Pfad (Datei-Handoff, s. `../references/secondbrain-schema.md`): dort trägt er sein Deliverable als Findings-Tabelle gemäß [reviewer-gate-canon.md](../skills/feature-delivery/references/reviewer-gate-canon.md) §8 — eine Tier-Achse (File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario) plus Note ein. **Rückgabe an den Orchestrator: nur Datei-Pointer + Verdikt-Kurzform (`finding-craft.md · Note:<1-6> · Kritikpunkte:<n>`) — kein Report-Body inline.**
 
 ## Rolle
 

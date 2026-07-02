@@ -10,7 +10,7 @@ Opus
 
 # Mitarbeiterprofil: Implement-Review Design-Principles
 
-Dieser Agent ist ein reiner Review-Agent — er schreibt **keinen Produkt-Code** und ändert **keine** Produkt- oder Test-Dateien. Die **einzige** Datei, die er schreibt, ist seine eigene `finding-design-principles.md` unter dem vom Orchestrator übergebenen Runden-Pfad (Datei-Handoff, s. `../references/secondbrain-schema.md`): dort trägt er sein Deliverable als Struktur-Tabelle (File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario) ein. **Rückgabe an den Orchestrator: nur Datei-Pointer + Verdikt-Kurzform (`finding-design-principles.md · KRITISCH:<n> WESENTLICH:<n> FORMAL:<n>`) — kein Report-Body inline.**
+Dieser Agent ist ein reiner Review-Agent — er schreibt **keinen Produkt-Code** und ändert **keine** Produkt- oder Test-Dateien. Die **einzige** Datei, die er schreibt, ist seine eigene `finding-design-principles.md` unter dem vom Orchestrator übergebenen Runden-Pfad (Datei-Handoff, s. `../references/secondbrain-schema.md`): dort trägt er sein Deliverable als Findings-Tabelle gemäß [reviewer-gate-canon.md](../skills/feature-delivery/references/reviewer-gate-canon.md) §8 — eine Tier-Achse (File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario) ein. **Rückgabe an den Orchestrator: nur Datei-Pointer + Verdikt-Kurzform (`finding-design-principles.md · 🔴:<n> 🟡:<n> 🟢:<n>`) — kein Report-Body inline.**
 
 ## Rolle
 
@@ -84,7 +84,7 @@ Fallback Read/Grep nur bei dokumentiertem MCP-Fehler (`MCP: fallback`).
 ## Findings-Format
 
 Pro Finding:
-- **Severity:** KRITISCH / WESENTLICH / FORMAL
+- **Tier-Vorschlag:** 🔴 / 🟡 / 🟢 (nach Konsequenz — [reviewer-gate-canon.md](../skills/feature-delivery/references/reviewer-gate-canon.md) §2/§4; strukturell binär, ästhetisch über den Tripwire §3)
 - **Typ:** IOSP-Verletzung / God-Class / SOLID-SRP / SOLID-DIP / SOLID-OCP / Verschachtelung / PoMO-Lücke / Bounded-Context
 - **Betroffene Klasse/Methode** (vollqualifiziert)
 - **Verbesserungsvorschlag** (konkret: Extract Method, Aufteilen, Guard Clause, etc.)
@@ -103,3 +103,4 @@ Pro Finding:
 
 - `../references/principles-cleancode.md` — IODA, IOSP, SOLID, DDD-Leitplanken
 - `../../software-design-principles/SKILL.md` — vollständiges Design-Principles-Spektrum
+- `../skills/feature-delivery/references/reviewer-gate-canon.md` — Einstufungs-Kanon (§4 strukturell/ästhetisch-Cut, IOSP-Zählkonvention, Tripwire, Tiers)

@@ -69,7 +69,7 @@ Reihenfolge **zwingend**: `1. BUILD` → `2. STATISCHE ANALYSE` (parallel) → `
 
 ### Schritt 4 — Reviewer (parallel, Datei-Handoff)
 
-Reviewer-Set laut Change-Scope-Classifier (Standard-7 / md-only / lean-3 / collapsed / Cross-Service — s. flow). Jeder Reviewer bekommt den Runden-Pfad + Slice-Coverage-Tabelle + `review_git_diff`-Befunde als Evidenz. Jeder schreibt seine **eigene** `finding-<reviewer>.md` (Struktur-Tabelle) und gibt **nur Pointer + Verdikt-Kurzform** zurück. **Kein Report-Body im Return** — inline zurückgegebene Reports sind ein Regelverstoß gegen das Pointer-only-Format.
+Reviewer-Set laut Change-Scope-Classifier (Standard-7 / md-only / lean-3 / collapsed / Cross-Service — s. flow). Jeder Reviewer bekommt den Runden-Pfad + Slice-Coverage-Tabelle + `review_git_diff`-Befunde als Evidenz + den Kanon-Pointer `../skills/feature-delivery/references/reviewer-gate-canon.md` (Linse = Rolle, bindend für Einstufung + Ausgabe). Jeder schreibt seine **eigene** `finding-<reviewer>.md` (Struktur-Tabelle) und gibt **nur Pointer + Verdikt-Kurzform** zurück. **Kein Report-Body im Return** — inline zurückgegebene Reports sind ein Regelverstoß gegen das Pointer-only-Format.
 
 ### Schritt 5 — Digest bauen + autoritative Tiers + Index aktualisieren
 
@@ -83,7 +83,7 @@ Kein Report-Body. Genau:
 
 ```
 Runde M · digest: iteration-N/round-M/digest.md · index: secondbrain-index.md
-Fixable:<n> · Klärungsbedürftig:<n> · offen BLOCKING/KRITISCH:<n>
+Fixable:<n> · Klärungsbedürftig:<n> · Tiers 🔴:<n> 🟡:<n> 🟢:<n>
 Gate: Build <ok|fail> · Statik <ok|warn|fail> · Design-Principles <ok|fail> · Tests <n/n>
 ```
 

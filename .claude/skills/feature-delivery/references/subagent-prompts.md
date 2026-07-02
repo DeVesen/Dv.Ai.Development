@@ -12,6 +12,12 @@ Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen.
 
 Vorlagen sind **Auftrags-Payloads** (Platzhalter) — kein Ersatz für Agent-Profile.
 
+**Einstufungs-Kanon (bindend für alle Reviewer-Templates unten — Impl-Review + Delivery-Inspection):**
+Jeder Reviewer liest und befolgt [reviewer-gate-canon.md](reviewer-gate-canon.md) (Linse = seine Rolle) —
+Beleg-Pflicht, 🔴/🟡/🟢-Einstufung nach Konsequenz, Präferenz-Tripwire, Ausgabe-Format. Die Templates unten
+spezifizieren nur die **linsen-spezifische** Prüfung + MCP-Pflichten; sie duplizieren den Kanon nicht. Der
+Dispatcher (PL bzw. Terminal-PM) hängt den Kanon-Pointer an jeden Reviewer-Prompt.
+
 ---
 
 ## Planungs-Agents
@@ -189,8 +195,9 @@ REVIEW-LOOP (parallel, Datei-Handoff — Set laut Change-Scope-Classifier, s. fl
   Standard-7: risk · design-principles · verifier · readiness · craft · auditor · guard
   md-only: risk · guard · readiness  ·  lean-3: risk · craft · readiness  ·  collapsed: 1× impl-quality-review-agent
   CSS/HTML-only (4): Structure · CSS-Logic · AC-Coverage · Regression  ·  Cross-Service: Standard-7 + Integration
-  Jeder Reviewer: Runden-Pfad + Slice-Coverage-Tabelle + review_git_diff-Befunde als Evidenz → schreibt EIGENE
-  finding-<reviewer>.md; Rückgabe = nur Pointer + Verdikt-Kurzform. Vorlagen: "Impl-Review-*".
+  Jeder Reviewer: Runden-Pfad + Slice-Coverage-Tabelle + review_git_diff-Befunde als Evidenz + Kanon-Pointer
+  reviewer-gate-canon.md (Linse = Rolle, bindend) → schreibt EIGENE finding-<reviewer>.md; Rückgabe = nur
+  Pointer + Verdikt-Kurzform. Vorlagen: "Impl-Review-*".
 
 DIGEST BAUEN + AUTORITATIVE TIERS + INDEX (nach Eingang aller Pointer):
   PL LIEST alle finding-<reviewer>.md → baut iteration-N/round-M/digest.md (Format "Review-Digest (Implement)").
@@ -207,7 +214,7 @@ DIGEST BAUEN + AUTORITATIVE TIERS + INDEX (nach Eingang aller Pointer):
 
 RÜCKGABE AN SESSION (NUR Pointer — kein Report-Body):
   Runde M · digest: iteration-N/round-M/digest.md · index: secondbrain-index.md
-  Fixable:<n> · Klärungsbedürftig:<n> · offen BLOCKING/KRITISCH:<n> · Tiers 🔴:<n> 🟡:<n> 🟢:<n>
+  Fixable:<n> · Klärungsbedürftig:<n> · Tiers 🔴:<n> 🟡:<n> 🟢:<n>
   Gate: Build <ok|fail> · Statik <ok|warn|fail> · Design-Principles <ok|fail> · Tests <n/n>
 ```
 
@@ -276,7 +283,7 @@ DELIVERY-INSPECTION → CLOSURE (Pflicht nach Inner-Loop — Pointer-Handoff, No
   Terminal-PM Schritt 1 — outer/di-N/ anlegen, dann 6 DI-Reviewer im Vordergrund dispatchen:
     Rollen: Revisor · Skeptiker · Normalo · Dolmetscher · Auftraggeber · Querdenker (s. delivery-inspection/SKILL.md).
     Kontext je Reviewer: originale Story-ACs + finaler Diff/Touched-Paths + Gate-Status + Inner-Loop-Summary
-      + Pfad outer/di-N/. Constraint (delivery-inspection): kein eigenständiger Tool-Call außer dem Schreiben
+      + Pfad outer/di-N/ + Kanon-Pointer reviewer-gate-canon.md (Linse = DI-Rolle; §1/§3/§6-Disziplin — di-finding-Format bleibt Kategorie). Constraint (delivery-inspection): kein eigenständiger Tool-Call außer dem Schreiben
       der eigenen di-finding-<rolle>.md. Rückgabe je Reviewer: Pointer + Kurzform (Kategorie-Vorschlag).
   Terminal-PM Schritt 2 — di-digest.md bauen + Outer-Verdikt:
     di-finding-*.md LESEN → outer/di-N/di-digest.md konsolidieren (Roll-up: Impl-Gaps/Req-Gaps/Unklar).
@@ -540,16 +547,17 @@ Fehlerbehandlung (IOSP-Konformität):
 Entity-Durchstecherei (DDD-B):
 - Erscheinen Persistence-Entities in Controller-Signaturen? (ArchUnit Regel 7 angesprochen?)
 
-Priorisierung:
-- [KRITISCH] — IODA/IOSP-Verstoß materialisiert, ArchUnit-Backstop angesprochen,
-  oder Entity-Durchstecherei in Controller-Signatur nachgewiesen
-- [WESENTLICH] — Mischung Integration/Operation erkennbar aber noch nicht vollständig
-- [FORMAL] — Stilistische Unschärfe, kein struktureller Verstoß
+Tier-Vorschlag nach Konsequenz (s. reviewer-gate-canon.md §2/§4):
+- 🔴 — struktureller Verstoß, der einen geforderten Test/eine geforderte Änderung konkret verhindert;
+  Entity-Durchstecherei in Controller-Signatur nachgewiesen; materialisierter IODA/IOSP-Verstoß mit
+  benennbarer Folge (ArchUnit-Backstop angesprochen)
+- 🟡 — Mischung Integration/Operation erkennbar, Zukunftskosten ohne akuten Defekt
+- 🟢 — stilistische Unschärfe, kein struktureller Verstoß (Tripwire §3)
 
 Datei-Handoff (Pflicht — s. secondbrain-schema.md):
 Schreibe [Runden-Pfad]/finding-design-principles.md: Kopf + Struktur-Tabelle
-(File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario); Severity = [KRITISCH]/[WESENTLICH]/[FORMAL].
-Rückgabe an den PL (Round-Executor): NUR Pointer + Kurzform `finding-design-principles.md · KRITISCH:<n> WESENTLICH:<n> FORMAL:<n>` — kein Report-Body inline.
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario).
+Rückgabe an den PL (Round-Executor): NUR Pointer + Kurzform `finding-design-principles.md · 🔴:<n> 🟡:<n> 🟢:<n>` — kein Report-Body inline.
 
 Stil:BULLET-TERSE. Priorisierte Liste. Kein Fix; nur Prüfergebnis.
 ```
@@ -572,14 +580,14 @@ Pflicht-MCP:
 
 Datei-Handoff (Pflicht — s. secondbrain-schema.md):
 Schreibe [Runden-Pfad]/finding-risk.md: Kopf (Reviewer/MCP/Verdikt) + Struktur-Tabelle
-(File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario).
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario).
 
 In die Datei (Tabellen-Inhalt):
 - Nummerierte Risiko-/Blocker-Liste (priorisiert)
-- Klar trennen: [KRITISCH] / [WESENTLICH] / [FORMAL]
+- Tier-Vorschlag je Finding: 🔴 / 🟡 / 🟢 (nach Konsequenz — reviewer-gate-canon.md §2)
 - Explizit: Bounded-Context-Verstöße, ungewollter Shared-Kernel, Entity-Durchstecherei
 
-Rückgabe an den PL (Round-Executor): NUR Pointer + Kurzform `finding-risk.md · BLOCKING:<n> RISK:<n>` — kein Report-Body inline.
+Rückgabe an den PL (Round-Executor): NUR Pointer + Kurzform `finding-risk.md · 🔴:<n> 🟡:<n>` — kein Report-Body inline.
 ```
 
 ---
@@ -597,15 +605,15 @@ Pflicht-MCP:
 
 Datei-Handoff (Pflicht — s. secondbrain-schema.md):
 Schreibe [Runden-Pfad]/finding-verifier.md: Kopf + Struktur-Tabelle
-(File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario); AC-Map als Block unter die Tabelle.
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); AC-Map als Block unter die Tabelle.
 
 In die Datei:
 - Nummerierte fachliche Fehlerliste, priorisiert nach Schaden.
 - Slice-Präsenz-Check: Sind alle IMP-* Slices aus der Slice-Coverage-Tabelle mit Status OK?
-  Slice mit Status BLOCKER → [KRITISCH] (zweites Netz nach Integration-Checkpoint).
+  Slice mit Status BLOCKER → 🔴 (zweites Netz nach Integration-Checkpoint).
 - Akzeptanz-Coverage (§8/F4): Deckt die finale Test-Suite **alle** Akzeptanzkriterien
   aus der Planpaket-Akzeptanz→Test-Liste ab? Jedes Kriterium einzeln prüfen.
-  Fehlende Coverage → [KRITISCH], fehlende Testfall-Skizze umgesetzt → [WESENTLICH].
+  Fehlende Coverage → 🔴, fehlende Testfall-Skizze umgesetzt → 🟡.
 
 Rückgabe an den PL (Round-Executor): NUR Pointer + Kurzform `finding-verifier.md · AC-Coverage:<vollständig|fehlend:Liste> · Fehler:<n>` — kein Report-Body inline.
 ```
@@ -622,7 +630,7 @@ Pflicht-MCP:
 
 Datei-Handoff (Pflicht — s. secondbrain-schema.md):
 Schreibe [Runden-Pfad]/finding-readiness.md: Kopf + Struktur-Tabelle
-(File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario); Ship-Entscheidung als Block unter die Tabelle.
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); Ship-Entscheidung als Block unter die Tabelle.
 
 In die Datei:
 - Nummerierte Punkte zu Alltagstauglichkeit, Ship-Readiness, fehlenden Details.
@@ -642,7 +650,7 @@ Pflicht-MCP:
 
 Datei-Handoff (Pflicht — s. secondbrain-schema.md):
 Schreibe [Runden-Pfad]/finding-craft.md: Kopf + Struktur-Tabelle
-(File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario); Note unter die Tabelle.
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); Note unter die Tabelle.
 
 In die Datei:
 - Mindestens 3 nummerierte Kritikpunkte + Note 1-6.
@@ -664,14 +672,14 @@ Pflicht-MCP:
 
 Datei-Handoff (Pflicht — s. secondbrain-schema.md):
 Schreibe [Runden-Pfad]/finding-auditor.md: Kopf + Struktur-Tabelle
-(File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario); Note + Go/No-Go unter die Tabelle.
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); Note + Go/No-Go unter die Tabelle.
 
 In die Datei:
-- Priorisierte Liste mit [KRITISCH]/[WESENTLICH]/[FORMAL]
+- Priorisierte Liste mit Tier-Vorschlag 🔴/🟡/🟢 (nach Konsequenz — reviewer-gate-canon.md §2)
 - Gesamtnote 1-5 mit Begründung.
 - Akzeptanz→Test-Vollständigkeit: Sind alle Testfall-Skizzen aus dem Planpaket umgesetzt?
 
-Rückgabe an den PL (Round-Executor): NUR Pointer + Kurzform `finding-auditor.md · Note:<1-5> · <GO|NO-GO> · KRITISCH:<n>` — kein Report-Body inline.
+Rückgabe an den PL (Round-Executor): NUR Pointer + Kurzform `finding-auditor.md · Note:<1-5> · <GO|NO-GO> · 🔴:<n>` — kein Report-Body inline.
 ```
 
 ---
@@ -685,7 +693,7 @@ Pflicht-MCP:
 
 Datei-Handoff (Pflicht — s. secondbrain-schema.md):
 Schreibe [Runden-Pfad]/finding-guard.md: Kopf + Struktur-Tabelle
-(File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario); PRESERVE-Liste + erfüllte ACs als Block unter die Tabelle.
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); PRESERVE-Liste + erfüllte ACs als Block unter die Tabelle.
 
 In die Datei:
 - Nummerierte Stärken, bereits erfüllte ACs, tragfähige Vereinfachungen.
@@ -705,12 +713,12 @@ persistiert. Nicht aus Agent-Returns zusammengesetzt. Der Fix-Planer der Folgeru
 ### Review-Digest (Iteration [N])
 
 #### Risk
-- [BLOCKING] Punkt 1: ...
-- [RISK] Punkt 2: ...
+- 🔴 Punkt 1: ...
+- 🟡 Punkt 2: ...
 
 #### Design-Principles
-- [KRITISCH] Punkt 1: ...
-- [WESENTLICH] Punkt 2: ...
+- 🔴 Punkt 1: ...
+- 🟡 Punkt 2: ...
 
 #### Verifier
 - Punkt 1: ...
@@ -724,7 +732,7 @@ persistiert. Nicht aus Agent-Returns zusammengesetzt. Der Fix-Planer der Folgeru
 - Punkt 1: ...
 
 #### Auditor
-- [KRITISCH] Punkt 1: ...
+- 🔴 Punkt 1: ...
 - Go/No-Go: ...
 - Note: ...
 

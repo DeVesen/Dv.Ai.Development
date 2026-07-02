@@ -33,11 +33,11 @@ Verdikt-Kurzform** (`finding-quality-review.md · Fixable:<n> · Klärung:<n> ·
 
 ## Ablauf — 7 Lenses sequenziell
 
-Durchlaufe alle Lenses in dieser Reihenfolge. Pro Lens: mindestens 3 konkrete Findings oder explizit "Keine Findings".
+Durchlaufe alle Lenses in dieser Reihenfolge. Pro Lens: mindestens 3 konkrete Findings oder explizit "Keine Findings". Einstufung aller Findings nach [reviewer-gate-canon.md](../skills/feature-delivery/references/reviewer-gate-canon.md) (§1 Beleg-Pflicht inkl. Security-Carve-out §1a, §2 Tiers 🔴/🟡/🟢, §3 Tripwire).
 
 ### Lens 1: Risk
 - Regressionen, ungetestete Public-API, Security-Schwachstellen, Contract-Drift, Bounded-Context-Verstösse
-- Severity: BLOCKING / RISK / OK
+- Tier-Vorschlag: 🔴 / 🟡 (— oder keine Findings)
 
 ### Lens 2: Design-Principles
 - IODA/IOSP, SOLID (SRP/DIP/OCP), persoenliche Regeln (keine Verschachtelung, Guard Clauses, kleine Funktionen), DDD-Grenzen
@@ -56,7 +56,7 @@ Durchlaufe alle Lenses in dieser Reihenfolge. Pro Lens: mindestens 3 konkrete Fi
 
 ### Lens 6: Auditor
 - Was haben alle anderen uebersehen? Vollstaendigkeitsluecken, Konsistenzbrueche, fehlende Planabdeckung
-- [KRITISCH]/[WESENTLICH]/[FORMAL] + Go/No-Go + Gesamtnote 1-5
+- 🔴/🟡/🟢 + Go/No-Go + Gesamtnote 1-5
 
 ### Lens 7: Guard
 - Was ist tragfaehig und schutzenswert? Explizite PRESERVE-Liste fuer den Fix-Agenten
@@ -68,7 +68,7 @@ Durchlaufe alle Lenses in dieser Reihenfolge. Pro Lens: mindestens 3 konkrete Fi
 ## Impl-Quality-Review (Collapsed) — Runde [N]
 
 ### Lens 1: Risk
-[Findings mit Severity BLOCKING/RISK — oder "Keine Risk-Findings"]
+[Findings mit Tier 🔴/🟡 — oder "Keine Risk-Findings"]
 
 ### Lens 2: Design-Principles
 [Findings — oder "Keine Design-Principles-Findings"]
@@ -81,7 +81,7 @@ Durchlaufe alle Lenses in dieser Reihenfolge. Pro Lens: mindestens 3 konkrete Fi
 ### Lens 4: Readiness
 Entscheidung: SHIP / CONDITIONAL / NO-SHIP
 Top-3:
-1. [BLOCKING/NICE-TO-HAVE]: ...
+1. [🔴 vor Ship | 🟢 nach Ship]: ...
 2. ...
 3. ...
 
@@ -93,9 +93,9 @@ Top-3:
 ### Lens 6: Auditor
 Gesamtnote: [1-5]
 Go/No-Go: GO / NO-GO
-[KRITISCH] ...
-[WESENTLICH] ...
-[FORMAL] ...
+🔴 ...
+🟡 ...
+🟢 ...
 
 ### Lens 7: Guard — PRESERVE-Liste
 - [Was schutzenswert ist]
@@ -121,3 +121,4 @@ Empfehlung: Fix-Planer noetig / Loop beenden
 - `../references/subagent-prompts.md` — Lens-Definitionen (als Referenz fuer Pruef-Schwerpunkte)
 - `../references/principles-cleancode.md` — IODA, IOSP, SOLID, Clean Code, YAGNI/DRY/KISS
 - `../../test-design/SKILL.md` — Namenskonvention, AAA (fuer Verifier-Lens)
+- `../skills/feature-delivery/references/reviewer-gate-canon.md` — Einstufungs-Kanon (Tiers 🔴/🟡/🟢, Beleg-Pflicht, Tripwire — gilt fuer alle 7 Lenses)

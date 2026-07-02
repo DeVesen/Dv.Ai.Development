@@ -78,12 +78,12 @@ den Runden-Pfad. Die Rolle hängt nur ihren Dateinamen an.
 
 | Rolle | Kurzform-Muster |
 |-------|-----------------|
-| risk | `finding-risk.md · BLOCKING:<n> RISK:<n>` |
-| design-principles | `finding-design-principles.md · KRITISCH:<n> WESENTLICH:<n> FORMAL:<n>` |
+| risk | `finding-risk.md · 🔴:<n> 🟡:<n>` |
+| design-principles | `finding-design-principles.md · 🔴:<n> 🟡:<n> 🟢:<n>` |
 | verifier | `finding-verifier.md · AC-Coverage:<vollständig\|fehlend:Liste> · Fehler:<n>` |
 | readiness | `finding-readiness.md · <SHIP\|CONDITIONAL\|NO-SHIP>` |
 | craft | `finding-craft.md · Note:<1-6> · Kritikpunkte:<n>` |
-| auditor | `finding-auditor.md · Note:<1-5> · <GO\|NO-GO> · KRITISCH:<n>` |
+| auditor | `finding-auditor.md · Note:<1-5> · <GO\|NO-GO> · 🔴:<n>` |
 | guard | `finding-guard.md · PRESERVE:<n> · erfüllte-ACs:<n>` |
 | quality-review (collapsed) | `finding-quality-review.md · Fixable:<n> · Klärung:<n> · <Fix-Planer nötig\|Loop beenden>` |
 | scribe | `scribe-<slice>.md · <RED\|GREEN> · Dateien:<n> · build:<ok\|fail> test:<ok\|fail>` |
@@ -105,10 +105,10 @@ Findings als Tabelle.
 - MCP: <ok | fallback (<Grund>)>
 - Verdikt: <Kurzform gemäß Tabelle oben>
 
-| File | Line | Severity | Tier-Vorschlag | Befund | Failure-Scenario |
-|------|------|----------|----------------|--------|------------------|
-| src/... | 42 | BLOCKING | 🔴 | <ein Satz> | <konkrete Eingabe/Zustand → falsches Ergebnis/Crash> |
-| ... | | | | | |
+| File | Line | Tier-Vorschlag | Befund | Failure-Scenario |
+|------|------|:--------------:|--------|------------------|
+| src/... | 42 | 🔴 | <ein Satz> | <konkrete Eingabe/Zustand → falsches Ergebnis/Crash> |
+| ... | | | | |
 ```
 
 Spalten:
@@ -117,8 +117,7 @@ Spalten:
 |--------|--------|
 | **File** | Repo-relativer Pfad der betroffenen Datei. Bei nicht-lokalisierbaren Befunden: `—`. |
 | **Line** | 1-basierte Zeile, wenn aus Diff/Datei bestimmbar; sonst `—`. |
-| **Severity** | Rollen-Vokabular: `BLOCKING`/`RISK` (risk), `KRITISCH`/`WESENTLICH`/`FORMAL` (design-principles, auditor), oder Freitext-Severity der jeweiligen Rolle. |
-| **Tier-Vorschlag** | 🔴 blockt · 🟡 begründungspflichtig · 🟢 frei — **Vorschlag** des Reviewers, nicht bindend. Die **autoritative** Tier-Vergabe (PL) und der mechanische Tier-Guard (Session) sind unten in `## Tier-Klassifikation` spezifiziert; der PL konsolidiert die Vorschläge beim Digest-Bau. Security-Findings `critical` sind immer 🔴. |
+| **Tier-Vorschlag** | Genau **🔴/🟡/🟢** — eine Achse, kein zweites Severity-Vokabular (`[KRITISCH]/[WESENTLICH]/[FORMAL]`, `BLOCKING/RISK` u. ä. entfallen). 🔴 blockt · 🟡 begründungspflichtig · 🟢 frei — **Vorschlag** des Reviewers, nicht bindend. Die **autoritative** Tier-Vergabe (PL) und der mechanische Tier-Guard (Session) sind unten in `## Tier-Klassifikation` spezifiziert; der PL konsolidiert die Vorschläge beim Digest-Bau. Security-Findings `critical` sind immer 🔴. |
 | **Befund** | Ein Satz: was ist falsch. |
 | **Failure-Scenario** | Konkrete Eingabe/Zustand → falsches Ergebnis oder Crash. Kein abstraktes „könnte Probleme geben". |
 
@@ -175,14 +174,14 @@ Quellen: finding-risk.md, finding-design-principles.md, … (gelesen)
 
 ## Roll-up
 - Fixable: <n> · Klärungsbedürftig: <n>
-- Offene BLOCKING/KRITISCH: <n>
+- Offene 🔴: <n>
 - Autoritative Tiers: 🔴 <n> · 🟡 <n> · 🟢 <n>   ← identisch mit den Index-Zählern
 - Gate-Status: Build <..> · Statik <..> · Tests <..>
 
 ## Risk
-- 🔴 [BLOCKING] … (Kanal: risk-review)
+- 🔴 … (Kanal: risk-review)
 ## Design-Principles
-- 🟡 [WESENTLICH] …
+- 🟡 …
 ## Verifier
 - AC-Map: <vollständig | fehlend: Liste>   (fehlender AC-Test → das Finding ist 🔴)
 ## Readiness
@@ -224,10 +223,6 @@ mechanischen Tier-Guards (die Session liest sie, s. u.).
 - Runden-Cap: <M>/5
 - Letzter Digest: iteration-N/round-M/digest.md
 
-## Offene Findings (Zähler)
-- BLOCKING/KRITISCH: <n>
-- RISK/WESENTLICH: <n>
-
 ## Tier-Zähler (autoritativ — vom PL vergeben; Grundlage des mechanischen Tier-Guards)
 - Tier 🔴 offen: <n>   — blockt Inner-Exit; ein offenes 🔴 → nächste Runde Pflicht
 - Tier 🟡 offen: <n>   — begründungspflichtig (Erbsenzählerei-Wave nur mit Begründung je Finding im pm-verdict-N.md)
@@ -267,11 +262,11 @@ Reviewer liefern nur einen `Tier-Vorschlag`. Der PL schreibt die offenen Zähler
    (`review_git_diff` security-focusArea, `run_inspectcode`, ein LLM-Reviewer) ist 🔴 — unabhängig
    vom Reviewer-`Tier-Vorschlag`. Es ist **nie** als Erbsenzählerei (🟡/🟢) einstufbar. Diese Regel
    ist nicht überstimmbar — weder vom PL noch vom PM.
-2. **Behebbar + verhaltens-/vertrags-/testrelevant → 🔴.** BLOCKING/KRITISCH-Severity, fehlender
+2. **Behebbar + verhaltens-/vertrags-/testrelevant → 🔴.** Correctness-Bug, fehlender
    AC-Test (Verifier AC-Map „fehlend"), Contract-Drift, Regression.
-3. **Behebbar, aber Wave vertretbar → 🟡.** WESENTLICH-Severity ohne Verhaltensrisiko, stilistische
+3. **Behebbar, aber Wave vertretbar → 🟡.** Struktur-/Design-Kosten ohne akuten Defekt, stilistische
    Rule-Violation mit lokalem Scope.
-4. **Kosmetisch → 🟢.** FORMAL-Severity, Namens-/Kommentar-Nuancen ohne Verhaltensbezug.
+4. **Kosmetisch → 🟢.** Namens-/Kommentar-Nuancen, reine Präferenz ohne Verhaltensbezug.
 
 **PM-Hochstufung (sichere Richtung):** Die PL-Tiers sind autoritativ, aber der PM darf ein Finding
 **verschärfen**, nie abschwächen: ein 🟢, das er für begründungspflichtig hält → als 🟡 behandeln

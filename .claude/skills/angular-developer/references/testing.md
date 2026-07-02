@@ -13,7 +13,6 @@ Portable **policy** for **unit tests** vs **integration-style tests**. Technique
 1. Read **`package.json`** (`@angular/core`). Do **not** assume APIs from a newer major than the repo uses.
 2. Related references — load when relevant:
    - [signal-architecture.md](signal-architecture.md) — state ownership and RxJS boundaries when testing facades/state services.
-   - [Angular Refactor](../../angular-refactor/SKILL.md) — refactor-time distinction between integration/behavior specs and unit specs.
 
 ## Unit tests
 

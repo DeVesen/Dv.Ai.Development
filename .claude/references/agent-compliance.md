@@ -25,16 +25,16 @@ Gilt für Orchestrator und jeden Subagent — ohne Ausnahme.
 
 | Intent | Pflicht |
 |--------|---------|
-| Planen (`plane`, Roadmap, Architektur, Vorgehen) | [planning-workflow](../skills/planning-workflow/SKILL.md) Phase 1–6 |
-| Umsetzen (`implementiere`, `fix`, Plan ausführen, IMP-*) | [implementation-workflow](../skills/implementation-workflow/SKILL.md) inkl. Hard Gate, Subagents, Review-Loop |
+| Planen (`plane`, Roadmap, Architektur, Vorgehen) | [feature-delivery](../skills/feature-delivery/SKILL.md) — Planungs-Flow (lean/solo) |
+| Umsetzen (`implementiere`, `fix`, Plan ausführen, IMP-*) | [feature-delivery](../skills/feature-delivery/SKILL.md) — Implementations-Flow inkl. Gates, Subagents, Inner-Loop |
 | Build/Test-Verifikation | Skill [build-log-filter](../skills/build-log-filter/SKILL.md) — MCP **vor** Diagnose |
-| Repo-Scout (repo-check, Planning Phase 3) | [repo-scout-protocol](../skills/repo-scout-protocol/SKILL.md) |
+| Repo-Scout (Symbol-/Code-Suche) | [code-intel-workflow](../skills/code-intel-workflow/SKILL.md) — narrow→read→impact→verify |
 
 ## Opt-out (nur explizit)
 
-`ohne planning-workflow`, `ohne implementation-skill` — nur bei **klarem User-Text** im Thread.
+`ohne feature-delivery` — nur bei **klarem User-Text** im Thread.
 
-**Kein Opt-out:** `ohne build-log-filter` bei in-scope Build/Test (Hard Stop laut Skill); `ohne Subagents`, `ohne Technik-Gate` — laut Implementation-Workflow **BLOCKER**. **`ohne Review`:** BLOCKER, außer dokumentierter Opt-out im Thread.
+**Kein Opt-out:** `ohne build-log-filter` bei in-scope Build/Test (Hard Stop laut Skill); `ohne Subagents`, `ohne Technik-Gate` — laut feature-delivery **BLOCKER**. **`ohne Review`:** BLOCKER, außer dokumentierter Opt-out im Thread.
 
 *Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
 

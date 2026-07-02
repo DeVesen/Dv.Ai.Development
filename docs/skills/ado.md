@@ -54,16 +54,16 @@ Schrittweise — niemals `load + analyse + save` in einem Schritt ohne User-Best
 
 ---
 
-## Abgrenzung zu Buddy Agent
+## Abgrenzung zu requirement-definition
 
 `ado` = Work Items in ADO laden/speichern  
-`buddy-agent` = Anforderungen schärfen und diskutieren (kein ADO-MCP)
+`requirement-definition` = Anforderungen erfassen/schneiden · `grill-me` = interaktiv schärfen (kein ADO-MCP)
 
-Typischer Flow: `ado load` → `buddy intake` → `planning-workflow`
+Typischer Flow: `ado load` → `requirement-definition` / `grill-me` → `feature-delivery` (`plane`)
 
 ---
 
 ## Zusammenspiel mit anderen Skills
 
-- **Vor der Planung:** [`buddy-agent`](./buddy-agent.md) für Task-Schärfung
-- **Danach:** [`planning-workflow`](./planning-workflow.md)
+- **Vor der Planung:** `requirement-definition` (Anforderung schneiden) / `grill-me` (interaktiv schärfen)
+- **Danach:** [`feature-delivery`](./feature-delivery.md) — `plane`

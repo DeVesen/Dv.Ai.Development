@@ -1,4 +1,11 @@
-# Umsetzungs-Auftrag — Strang 6: `analyze_iosp_compliance` (Angular/TypeScript, codebase-analyzer)
+# Umsetzungs-Auftrag — Strang 6: `analyze_iosp_compliance` (Angular/TypeScript, codebase-analyzer) · ARCHIV
+
+> ⚠️ **ARCHIVIERT / HISTORISCH — nachgelagert geplant, nie umgesetzt.**
+> Bau-Rezept aus dem ursprünglichen 6-Strang-Aufbau von `feature-delivery`. Dieses Tool
+> (`analyze_iosp_compliance` für Angular/TypeScript) war als „später" eingestuft und wurde
+> **nie gebaut**. Der Text bleibt als Design-Record erhalten, ist aber kein aktives Vorhaben.
+> Verweis auf [`feature-delivery-handoff.md`](../feature-delivery-handoff.md) (selbst archiviert)
+> und der Branch-Name sind veraltet.
 
 > **Source-of-Truth:** [docs/feature-delivery-handoff.md](../feature-delivery-handoff.md), v.a. **§12 (IOSP-Prinzip)** und **§20 (Strang-6-Prompt)**. Zuerst lesen.
 

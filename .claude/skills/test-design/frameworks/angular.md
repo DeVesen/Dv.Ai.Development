@@ -4,7 +4,7 @@ Gilt für **Frontend-Tests** (`*.spec.ts`, co-located neben der Quell-Datei).
 
 Gemeinsame Konventionen: [SKILL.md](../SKILL.md), [references/naming-and-aaa.md](../references/naming-and-aaa.md), [references/avoid-magic-strings.md](../references/avoid-magic-strings.md).
 
-**Mechanik** (TestBed-APIs, Harnesses, Router): [angular-developer](../../angular-developer/SKILL.md), [angular-developer-extension](../../angular-developer-extension/references/testing.md) — dort laden, hier nur LAC-Konventionen und Ist-Stack.
+**Mechanik** (TestBed-APIs, Harnesses, Router): [angular-developer](../../angular-developer/SKILL.md) und [angular-developer/references/testing.md](../../angular-developer/references/testing.md) — dort laden, hier nur LAC-Konventionen und Ist-Stack.
 
 ## Technologie-Stack (Ist-Zustand LAC)
 
@@ -31,7 +31,7 @@ Gemeinsame Konventionen: [SKILL.md](../SKILL.md), [references/naming-and-aaa.md]
 | Feature-Test-Helfer | optional `features/<feature>/testing/*-testing.helpers.ts` |
 | Kein separates Testprojekt | anders als Backend `tests/<Projekt>.Tests` |
 
-Jede Komponente: `*.component.spec.ts` — siehe [angular-developer-extension](../../angular-developer-extension/SKILL.md).
+Jede Komponente: `*.component.spec.ts` — siehe [angular-developer/references/testing.md](../../angular-developer/references/testing.md).
 
 ## Jasmine-Spies (Moq-Äquivalent)
 
@@ -70,7 +70,7 @@ Beides ist im Bestand erlaubt — nicht pauschal auf ein Muster umstellen.
 ## Unit vs. Integration-style
 
 - **Unit:** eine Komponente/Service/Pipe/Guard; Abhängigkeiten gemockt
-- **Integration-style:** mehrere echte Services + HTTP-Mock oder breites TestBed — Verhaltensspezifikation; bei Fehlern zuerst Produktionscode prüfen ([angular-developer-extension/testing.md](../../angular-developer-extension/references/testing.md))
+- **Integration-style:** mehrere echte Services + HTTP-Mock oder breites TestBed — Verhaltensspezifikation; bei Fehlern zuerst Produktionscode prüfen ([angular-developer/references/testing.md](../../angular-developer/references/testing.md))
 
 Kein Pflicht-Ordner `Integration-Tests/` — große Specs (z. B. `parameter-search.service.spec.ts`) sind Integration-style im selben File.
 

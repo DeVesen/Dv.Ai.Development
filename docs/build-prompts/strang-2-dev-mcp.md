@@ -1,4 +1,12 @@
-# Umsetzungs-Auftrag — Strang 2: dev-mcp Tools (`run_inspectcode`, `lint_angular_project`)
+# Umsetzungs-Auftrag — Strang 2: dev-mcp Tools (`run_inspectcode`, `lint_angular_project`) · ARCHIV
+
+> ⚠️ **ARCHIVIERT / HISTORISCH — ausgeführt, wird nicht gepflegt.**
+> Bau-Rezept aus dem ursprünglichen 6-Strang-Aufbau von `feature-delivery`. **Ausgeführt** —
+> die Tools `run_inspectcode` und `lint_angular_project` existieren heute im dev-mcp.
+> Aktuelle Referenz statt dieses Rezepts: [`docs/mcp/dev-mcp.md`](../mcp/dev-mcp.md). Der unten
+> genannte Branch, die Tool-Zählungen und der Verweis auf
+> [`feature-delivery-handoff.md`](../feature-delivery-handoff.md) (selbst archiviert) sind veraltet.
+> Der Body bleibt als Design-/Implementierungs-Record erhalten.
 
 > **Source-of-Truth:** [docs/feature-delivery-handoff.md](../feature-delivery-handoff.md), v.a. **§9 (Quality Gates)** und **§10 (dev-mcp Erweiterungen)**. Zuerst lesen.
 

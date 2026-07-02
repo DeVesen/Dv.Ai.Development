@@ -288,18 +288,6 @@ analyze_advanced_all(projectPath: "...", type: "...")
 
 ---
 
-## Buddy-Agent — Phasen-Ausnahme
-
-Wenn **buddy-agent** aktiv ist und die aktuelle Phase **intake**, **compress**, **diskussion** oder **plan-prompt** ist, diesen Skill **nicht** anwenden:
-
-- Kein `index_project`, kein `find_in_index`, kein Grep als Ersatz
-- Erkenntnisbedarf in intake/compress → `## Repo-Fragen` notieren
-- Nur in **repo-check** gilt dieser Skill normal (MCP aktiv)
-
-Phasen-State erkennbar an der Statuszeile `Phase: intake | compress | …` in Buddy-Antworten.
-
----
-
 ## Validierungs- & Contract-Reviews
 
 ### focusArea: `api-validation`

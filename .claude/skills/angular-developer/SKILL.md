@@ -33,8 +33,8 @@ Kein stiller Fallback auf Shell — Nutzer informieren; erst nach expliziter Fre
 
 ## Skill-Verbund
 
-- `angular-new-app` + `angular-new-app-extension` (nur bei `ng new` / neuem Projekt)
-- `angular-cache-busting` (nur bei Cache-Konfiguration nach Deploy)
+- `angular-new-app` (nur bei `ng new` / neuem Projekt)
+- `angular-material` (bei Angular Material UI / mat-form-field)
 
 **LAC-Override:** Projektspezifische `AGENTS.md` überschreibt diese Skill-Regeln (Tailwind-Verbot, Pflicht-UI-Lib, Styleguide).
 

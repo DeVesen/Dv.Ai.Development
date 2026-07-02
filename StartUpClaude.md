@@ -189,22 +189,30 @@ Basierend auf dem Steckbrief wählt die AI aus dem verfügbaren Skill-Katalog:
 
 | Skill | Aktivieren wenn… |
 |-------|-----------------|
-| `feature-delivery` | Immer — zentraler Orchestrator |
-| `angular-developer` + `angular-developer-extension` | Angular im Stack |
-| `angular-material` | Angular Material UI genutzt |
-| `angular-new-app` / `angular-new-app-extension` | Neue Angular-App wird aufgebaut |
-| `angular-refactor` | Refactoring-Tasks erwartet |
-| `angular-cache-busting` | Deployment mit Cache-Problemen |
-| `backend-ef-migrations` | EF Core im .NET-Backend |
-| `ado` | Azure DevOps Work Items genutzt |
-| `acceptance-design` | Anforderungen kommen als Stories |
+| `feature-delivery` | Immer — zentraler Orchestrator (Plan + Umsetzung) |
+| `software-design-principles` | Immer — Design-Nordstern; gilt automatisch für feature-delivery |
+| `de-en-communication` | Immer aktiv — Kommunikationsregeln (Text DE, Code EN, Voice Mixed) |
+| `requirement-definition` | Anforderungen als Epic→Feature→Story erfassen/schneiden |
+| `acceptance-design` | Akzeptanzkriterien auf Testbarkeit prüfen/schärfen |
 | `grill-me` | Interaktive Story/Plan-Verfeinerung gewünscht |
-| `codebase-analyzer` | Code-Review / Analyse-Aufgaben |
-| `repo-scout-protocol` | Repo-Erkundung zu Beginn |
-| `build-log-filter` | `ng serve` / Build-Logs filtern |
-| `buddy-agent` | Pre-Planning / Sparring gewünscht |
 | `delivery-inspection` | Anforderungserfüllungs-Gate vor Auslieferung |
-| `skill-creator` | Neue Skills / Agents im Projekt erstellen |
+| `test-design` | Test-Konventionen (interne Dep. von feature-delivery) |
+| `angular-developer` | Angular im Stack |
+| `angular-material` | Angular Material UI genutzt |
+| `angular-new-app` | Neue Angular-App wird aufgebaut |
+| `backend-ef-migrations` | EF Core im .NET-Backend |
+| `dev-tooling` | MCP-Auswahl-Einstieg (Gateway zu den drei Dev-MCPs) |
+| `dev-mcp` | Dateien lesen/suchen, Scaffolding, Build, Test (MCP-First) |
+| `codebase-analyzer` | Code-Review / statische Analyse / Index |
+| `code-intel-workflow` | Symbol-Suche, Rename-Impact, Post-Slice-Verifikation |
+| `build-log-filter` | `ng serve` / Shell-Build-Logs filtern |
+| `skill-creator` | Neue Skills / Agent-Profile im Projekt erstellen |
+| `commit-message` | Commit-Titel und -Beschreibung generieren |
+| `describe-as` | Handoff-Prompt / HTML-Zusammenfassung für Folge-Agent |
+| `prozess-retrospektive` | Prozess-Analyse / Harness-Verbesserungsideen |
+| `caveman` | Terser Kommunikationsstil (optional, opt-in) |
+
+> **ADO** ist in diesem Harness **kein** Skill — die optionale Azure-DevOps-Anbindung läuft über den ADO-MCP (s. §0 „Optional: ADO MCP").
 
 **AI gibt aus:** Empfohlene Skill-Liste mit Begründung. User streicht oder ergänzt.
 
@@ -393,7 +401,7 @@ Roher Stakeholder-Wunsch
 /software-design-principles  → Nordstern + Flow Design + IODA/IOSP + persönliche Regeln
      │
      ▼
-/feature-delivery → Plan + Umsetzung (.NET + Angular)  [lädt software-design automatisch]
+/feature-delivery → plane (Plan → stoppt)  ·  implementiere (setzt Plan um) — getrennte, explizite Schritte  [lädt software-design automatisch]
      │
      ▼
 /delivery-inspection → 6-Reviewer Anforderungserfüllungs-Gate
@@ -407,7 +415,7 @@ Roher Stakeholder-Wunsch
 |-------|---------|---------|
 | `/software-design-principles` | `meine Prinzipien`, `@software-design-principles`, `flow design`, `Entwurf erstellen` | **Nordstern**: sauber · funktional · getestet · wartbar · nachhaltig. Enthält Flow Design, IODA/IOSP, SOLID + persönliche Regeln. Gilt automatisch für feature-delivery. |
 | `/requirement-definition` | `ich brauche ein Feature für…`, `schneide das in Stories`, `Anforderung erfassen` | Roher Stakeholder-Wunsch → entwicklungsfertige Arbeitspakete: Epic→Feature→Story Breakdown (INVEST, Richard-Lawrence-Splitting), F1-Akzeptanzkriterien, persistente Dateien unter `requests/`. |
-| `/feature-delivery` | `plane`, `implementiere`, `fix`, `setze um` | Vollständige Feature-Umsetzung (.NET + Angular): Plan + Umsetzung. Drei Einstiege: Plan-only, End-to-end, From-existing-plan. |
+| `/feature-delivery` | `plane`, `implementiere`, `implementiere nur`, `code-inspection`, `delivery-inspection` | Orchestrator (.NET + Angular): Planung (immer lean/solo) + Implementierung (voll / nur). **Fünf Einstiege:** Plan-only, Implementieren-voll, Implementieren-nur, From-existing-plan, Already-Planned — plus zwei beratende Review-Trigger (code-inspection · delivery-inspection). Planung und Umsetzung sind getrennte, explizite Schritte (`implementiere` plant nicht mehr selbst, verlangt `status: planned`). Branch-Guard aktiv. |
 | `/acceptance-design` | `schärfe Anforderung`, `Akzeptanzkriterien` | Anforderungen auf Testbarkeit prüfen und schärfen (tiefer, standalone AC-Audit). |
 | `/grill-me` | `grill mich`, `befrage diese Story`, `schärf den Plan`, `hinterfrage den Plan` | Interaktives Verhör einer Story/Plan: eine Frage + Empfehlung bis alle Entscheidungszweige klar. |
 

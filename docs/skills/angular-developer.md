@@ -96,4 +96,4 @@ Scope: `angular.json`, `index.html`, Meta-Tags — kein nginx/IIS/Apache/CDN.
 
 - **Build/Test:** [`dev-tooling-mcp`](./dev-tooling-mcp.md) → `dev-angular-mcp`
 - **Code-Analyse:** [`codebase-analyzer`](./codebase-analyzer.md) für Angular-Index
-- **Planung:** [`planning-workflow`](./planning-workflow.md) für Feature-Planung
+- **Planung:** [`feature-delivery`](./feature-delivery.md) für Feature-Planung

@@ -370,7 +370,7 @@ Laedt `requests/plans/plan-<feature>.md` → ueberspringt Planungs-Flow → dire
 (**volle Loops**, wie `implementiere`). Hard Gate (Readiness) prueft trotzdem die Umsetzbarkeit des
 geladenen Plans. Story-Status → `reviewed` (bei Outer-Verdikt `OK`).
 
-*Warum:* Schliesst Plan-only sauber ab; erbt den Zweck des alten `implementation-workflow`.
+*Warum:* Schliesst Plan-only sauber ab; erbt den Zweck des frueheren End-to-End-Umsetzungspfads.
 
 ---
 

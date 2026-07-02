@@ -279,11 +279,11 @@ Delta-Protokoll bleibt als `requests/plans/<feature>/outer/delta-N.md` erhalten 
 
 ---
 
-## Abgrenzung ADO und buddy-agent
+## Abgrenzung requirement-definition und grill-me
 
-- **ado:** `load` → `analyse` → `save` — ADO ↔ Markdown; kein Planpaket.
-- **buddy-agent:** `buddy intake` / `buddy repo-check` — Sparring, Endprodukt Plan-Prompt.
-- **`plane Task …`:** dieser Planungs-Flow — bevorzugte Eingabe: Plan-Prompt aus Buddy.
+- **requirement-definition:** roher Wunsch → Epic/Feature/Story-Breakdown (Upstream — liefert die `ready`-Story).
+- **grill-me:** interaktives Verhoer einer Story/Plan — offene Entscheidungszweige vor der Planung aufloesen.
+- **`plane <Story>`:** dieser Planungs-Flow — bevorzugte Eingabe: eine `ready`-Story aus requirement-definition.
 
 ---
 

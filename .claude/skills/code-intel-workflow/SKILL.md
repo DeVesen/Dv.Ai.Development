@@ -9,8 +9,8 @@ description: >
 when_to_use: >
   Aktiviere wenn: Symbol suchen (scout_symbol/scout_scope), Datei-Bundle lesen (read_files_batch,
   read_component_bundle), Rename-Impact prüfen (rename_file_with_impact), Post-Slice
-  (slice_test_targets + analyze_slice_impact). Ergänzt repo-scout-protocol um Write-Operationen
-  und strukturierten MCP-Routing für Lese+Analyse+Patch-Ketten.
+  (slice_test_targets + analyze_slice_impact). Strukturierter MCP-Routing für Lese+Analyse+Patch-Ketten
+  — ergänzt dev-mcp und codebase-analyzer um Rename-/Write-Operationen.
 ---
 
 # Code-Intel-Workflow
@@ -23,7 +23,7 @@ MCP-Routing für **Code-Intelligence-Ketten** — ohne Planning/Implementation z
 |---------|-------|
 | Datei lesen/suchen | [dev-mcp/SKILL.md](../dev-mcp/SKILL.md) |
 | Index, Scout, Analyse | [codebase-analyzer/SKILL.md](../codebase-analyzer/SKILL.md) |
-| MCP-Routing-Übersicht | [dev-tooling-mcp/SKILL.md](../dev-tooling-mcp/SKILL.md) |
+| MCP-Routing-Übersicht | [dev-tooling/SKILL.md](../dev-tooling/SKILL.md) |
 
 ---
 
@@ -166,5 +166,5 @@ Für spezifische Code-Konstrukte ohne vollständigen Index-Scan:
 |----------|-----------|
 | Vollständige Sprint-Planung | feature-delivery |
 | Slice-basierte Implementierung | feature-delivery |
-| Repo-Scout (read-only) | repo-scout-protocol |
+| Repo-Scout (read-only) | codebase-analyzer (scout_symbol/scout_scope) · dev-mcp (find_*) |
 | Symbol-Suche + Patch-Kette | **code-intel-workflow** |

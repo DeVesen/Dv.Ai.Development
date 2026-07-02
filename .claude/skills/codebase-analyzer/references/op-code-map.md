@@ -1,7 +1,7 @@
 # Code-Landkarte — Verbindliche Recherche-Reihenfolge
 
 Dieser Abschnitt gilt für **alle** Agenten und Workflows, die Code im Repo betreffen:
-Haupt-Chat, **buddy-agent**, **plan-agent**,
+Haupt-Chat, **plan-agent**,
 Implementierung/Review — sobald der Nutzer oder die Anforderung **programmierbare Symbole** meint.
 
 ## Grundsatz
@@ -127,7 +127,7 @@ Ergebnis nutzen für: Dateipfad, Zeile, Methodenliste, Abhängigkeiten — **bev
 
 **Verboten:** Mehr als 2 Pfad-/Index-Versuche pro Stack ohne dokumentierten MCP-BLOCKER.
 
-**0 Treffer bei `find_in_index`:** mindestens `find_by_content` oder `find_file` (dev-mcp) — **bevor** natives Read/Grep. Scout-Kette: [repo-scout-protocol/SKILL.md](../../repo-scout-protocol/SKILL.md).
+**0 Treffer bei `find_in_index`:** mindestens `find_by_content` oder `find_file` (dev-mcp) — **bevor** natives Read/Grep. Scout-Kette: [code-intel-workflow/SKILL.md](../../code-intel-workflow/SKILL.md).
 
 **Schritt 3 — Vertiefung (optional, nach Bedarf):**
 
@@ -152,7 +152,6 @@ Ergebnis nutzen für: Dateipfad, Zeile, Methodenliste, Abhängigkeiten — **bev
 
 | Agent | Landkarte intern | In Chat / Deliverable |
 |-------|------------------|------------------------|
-| **buddy-agent** | Pflicht bei explizitem Code-Wunsch oder Symbol-Fragen | **Keine** Code-Dumps im Standard; **Pfade + Symbolnamen + 1-Satz-Kette** |
 | **plan-agent** | bei der solo-Planung: `index_project` pro Stack zur Code-Landkarte | Strukturierte Liste: Dateien, Einstiegspunkte, Aufrufketten — **kurze** Zitate nur wenn nötig |
 | **Haupt-Chat** | bei Code-Fragen des Nutzers | wie diese Rule |
 

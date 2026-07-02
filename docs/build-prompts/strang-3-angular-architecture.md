@@ -1,4 +1,11 @@
-# Umsetzungs-Auftrag — Strang 3: dev-mcp Tool `analyze_angular_architecture`
+# Umsetzungs-Auftrag — Strang 3: dev-mcp Tool `analyze_angular_architecture` · ARCHIV
+
+> ⚠️ **ARCHIVIERT / HISTORISCH — ausgeführt, wird nicht gepflegt.**
+> Bau-Rezept aus dem ursprünglichen 6-Strang-Aufbau von `feature-delivery`. **Ausgeführt** —
+> das Tool `analyze_angular_architecture` existiert heute im dev-mcp.
+> Aktuelle Referenz: [`docs/mcp/dev-mcp.md`](../mcp/dev-mcp.md). Branch-Name und der Verweis auf
+> [`feature-delivery-handoff.md`](../feature-delivery-handoff.md) (selbst archiviert) sind veraltet.
+> Der Body bleibt als Design-/Implementierungs-Record erhalten.
 
 > **Source-of-Truth:** [docs/feature-delivery-handoff.md](../feature-delivery-handoff.md), v.a. **§10 (dev-mcp Erweiterungen)** und **§20 (Strang-3-Prompt)**. Zuerst lesen.
 

@@ -1,4 +1,13 @@
-# Integrations-Schritt — Abschluss feature-delivery
+# Integrations-Schritt — Abschluss feature-delivery · ARCHIV
+
+> ⚠️ **ARCHIVIERT / HISTORISCH — ausgeführt, wird nicht gepflegt.**
+> Abschluss-Checkliste des ursprünglichen `feature-delivery`-Aufbaus (Aufräumen der geteilten
+> Index-Dateien, Ablösung der Vorgänger-Skills). **Ausgeführt** — der aktuelle Stand steht in
+> [`CLAUDE.md`](../../CLAUDE.md) und [`docs/skills/feature-delivery.md`](../skills/feature-delivery.md).
+> Die genannten Skill-Namen (`planning-workflow`, `implementation-workflow`) und die
+> `plan-agent-*`-Merge-Referenzen sind bewusst historisch — diese Skills/Agents wurden in
+> `feature-delivery` bzw. den `plan-agent` aufgelöst. Verweis auf
+> [`feature-delivery-handoff.md`](../feature-delivery-handoff.md) (selbst archiviert) ist veraltet.
 
 > **Source-of-Truth:** [docs/feature-delivery-handoff.md](../feature-delivery-handoff.md), v.a. **§19 (Parallelitäts-Modell)** und **§3 (Verzeichnisstruktur)**. Zuerst lesen.
 

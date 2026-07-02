@@ -65,5 +65,5 @@ Bevorzuge `format:compact` für große Ergebnismengen (reduziert Token).
 
 ## Zusammenspiel mit anderen Skills
 
-- **Scout-Routing:** [`repo-scout-protocol`](./repo-scout-protocol.md)
+- **Scout-Routing:** [`dev-tooling-mcp`](./dev-tooling-mcp.md) · Skill `code-intel-workflow` (narrow→read→impact→verify)
 - **MCP-Details:** [`docs/mcp/codebase-analyzer.md`](../mcp/codebase-analyzer.md)

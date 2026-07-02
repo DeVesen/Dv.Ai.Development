@@ -28,7 +28,7 @@ Bevor eine Änderung an `.claude/`, Skills, References, Agents oder MCP-Servern 
 
 ```
 .claude/                Claude Code — direkt nutzbar
-├── skills/             21 Skills (via /skill-name oder automatisch)
+├── skills/             22 Skills (via /skill-name oder automatisch)
 │   ├── feature-delivery/        Orchestrator: Planung + Implementierung, fünf Einstiege + Review-on-Demand
 │   ├── software-design-principles/         Persönliche Design-Philosophie: sauber·funktional·getestet·wartbar·nachhaltig
 │   ├── acceptance-design/       Anforderungen auf Testbarkeit prüfen und schärfen
@@ -51,7 +51,7 @@ Bevor eine Änderung an `.claude/`, Skills, References, Agents oder MCP-Servern 
 │   ├── prozess-retrospektive/   Prozess-Analyse: Harness-Verbesserungsideen + Session-Erkenntnisse
 │   ├── caveman/                 Kommunikationsstil: Caveman
 │   └── de-en-communication/     Kommunikationsregeln: Deutsch/Englisch — Text DE, Code EN, Voice Mixed
-├── agents/             Sub-Agent-Profile (auto-discovered) — alle Agent-Profile zentral hier (22 Profile; 21 von skills/*/agents/ migriert via STORY-004)
+├── agents/             Sub-Agent-Profile (auto-discovered) — alle Agent-Profile zentral hier (16 Profile; zentralisiert via STORY-004, Impl-Loop auf PL+PM konsolidiert via FEAT-001/STORY-033)
 └── references/         Shared references (compliance, output-style, boilerplate)
 
 Mcp-Servers/            MCP server implementations
@@ -76,8 +76,7 @@ docs/                   Skill docs, MCP docs, enforcement references
 ├── mcp/                MCP server reference docs
 │   ├── dev-mcp.md
 │   ├── codebase-analyzer.md
-│   ├── build-log-filter.md
-│   └── scout-fallback-chain.md
+│   └── build-log-filter.md
 ├── silent-shortcut-prevention.md
 └── output-style-enforcement.md
 ```

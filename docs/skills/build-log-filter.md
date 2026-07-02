@@ -53,4 +53,4 @@ Wenn `build-log-filter`-MCP nicht erreichbar:
 
 - **Ersetzt durch:** [`dev-tooling-mcp`](./dev-tooling-mcp.md) für Build/Test
 - **MCP-Details:** [`docs/mcp/build-log-filter.md`](../mcp/build-log-filter.md)
-- **Eingebettet in:** [`implementation-workflow`](./implementation-workflow.md) (Shell-Fallback)
+- **Eingebettet in:** [`feature-delivery`](./feature-delivery.md) (Shell-Fallback im Implementations-Flow)

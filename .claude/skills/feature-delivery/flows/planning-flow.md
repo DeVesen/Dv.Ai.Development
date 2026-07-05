@@ -2,6 +2,8 @@
 
 Verbindliche Prompt-Vorlagen: [../references/subagent-prompts.md](../references/subagent-prompts.md).
 
+Task-Contract (Schema, Topologie, Granularität, Kriterien): [../references/task-contract.md](../references/task-contract.md).
+
 ---
 
 ## Planung ist lean/solo

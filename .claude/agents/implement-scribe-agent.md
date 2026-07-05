@@ -38,6 +38,14 @@ Du bist **`implement-scribe-agent`** im Implementations-Loop des `feature-delive
 5. Slice-scoped Build + Test via dev-mcp — **kein Roh-Log, kein Shell-Fallback**
 6. Nur eigenen Slice-Scope berühren — keine stille Planänderung, kein Scope-Expand
 
+## Angular Hard Rules — OnPush + async-Listen
+
+In Komponenten mit `changeDetection: ChangeDetectionStrategy.OnPush` müssen
+async-geladene Listen-Properties als Signal deklariert werden:
+  ✅ `readonly options = signal<OptionType[]>([])`  → `this.options.set(data)` im Subscribe
+  ❌ `options: OptionType[] = []`                  → `this.options = data` triggert keine CD
+Gilt für jede Property die nach ngOnInit/Subscribe befüllt wird.
+
 ## Build/Test — MCP-Pflicht (Hard Gate)
 
 | Aufgabe | MCP-Tool | VERBOTEN |

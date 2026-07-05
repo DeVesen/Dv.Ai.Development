@@ -2,7 +2,7 @@
 id: STORY-001
 parent: FEAT-001
 type: story
-status: planned
+status: reviewed
 slug: profil-ssot-duenne-payloads
 touches: [subagent-prompts.md, plan-agent.md, implement-round-executor.md, implement-supervisor.md, implement-scribe-agent.md, implement-review-*.md]
 plan: requests/plans/plan-profil-ssot-duenne-payloads.md

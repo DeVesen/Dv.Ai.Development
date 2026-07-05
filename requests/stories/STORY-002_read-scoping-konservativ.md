@@ -2,7 +2,8 @@
 id: STORY-002
 parent: FEAT-001
 type: story
-status: ready
+status: planned
+plan: requests/plans/plan-read-scoping-konservativ.md
 slug: read-scoping-konservativ
 touches: [subagent-prompts.md]
 ---

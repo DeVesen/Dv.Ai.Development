@@ -201,9 +201,11 @@ Welle:[z.B. W1 — parallel mit IMP-BE-GW-Logging]
 Working directory:[absoluter Windows-Pfad C:\...]
 SecondBrain-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/ — vom PL]
 
-Planpaket (dieser Slice — vollständig):
-[Umsetzungsschritte + Akzeptanz→Test-Liste für diesen Slice]
+Task-Pointer:[tasks/task-NNN.md]
+Read-Scope: nur diese Task-Datei lesen — kein Ganzplan-Inline, tasks/index.md NICHT lesen
 ```
+
+⚠️ **Handoff-Regression:** Ein Handoff, der den vollständigen Plan-Text oder Task-Body inline überträgt (statt Task-ID-Pointer), verletzt den Umsetzer-Input-Contract (STORY-009) und gilt als Regelverstoß.
 
 ---
 
@@ -219,13 +221,13 @@ Welle:[Fix-Welle — Runde [4|5]]
 Working directory:[absoluter Windows-Pfad C:\...]
 SecondBrain-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/ — vom PL]
 
+Task-Pointer:[tasks/task-NNN.md]
+Read-Scope: nur diese Task-Datei lesen — kein Ganzplan-Inline, tasks/index.md NICHT lesen
+
 Kontext (Eskalation):
   Dies ist Runde [4|5] — Eskalation nach erfolgloser Runde 3.
   Fix-Teilplan (vom Fix-Planer): [vollständig]
   Rest-Findings aus vorheriger Runde: [vollständig]
-
-Planpaket (Akzeptanz→Test-Liste — vollständig):
-[Alle Testfall-Skizzen für diesen Slice]
 
 Test-Design-Referenz: .claude/skills/test-design/
 

@@ -2,7 +2,7 @@
 id: STORY-009
 parent: FEAT-002
 type: story
-status: ready
+status: implemented
 slug: umsetzer-input-contract
 touches: [subagent-prompts.md, implementation-flow.md]
 depends_on: [STORY-007, STORY-001, STORY-003]

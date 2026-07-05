@@ -41,8 +41,10 @@ Jede Task-Datei trägt **vier Pflichtsektionen** — keine darf fehlen:
 - Blocking-Abhängigkeiten zwischen Tasks
 - Aktueller Status je Task (`offen` / `in-arbeit` / `fertig`)
 
-Kein anderer Ort fasst die Topologie vollständig zusammen — Scribes und
-Reviewer lesen ausschließlich `tasks/index.md` für den Gesamtüberblick.
+Kein anderer Ort fasst die Topologie vollständig zusammen — **PL und Reviewer**
+lesen `tasks/index.md` für den Gesamtüberblick.
+**Scribes lesen ausschließlich ihre eigene `tasks/task-NNN.md`** — `tasks/index.md`
+ist für Scribes nicht erforderlich (Umsetzer-Input-Contract, STORY-009).
 
 ```markdown
 # tasks/index.md — Topologie

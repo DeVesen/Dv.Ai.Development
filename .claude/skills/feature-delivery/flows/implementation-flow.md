@@ -322,12 +322,12 @@ Wenn ALLE Bedingungen gleichzeitig erfuellt sind:
 2. **Scribes strikt:** nur zugewiesener Slice; kein Scope-Expand; keine stille Umplanung.
 3. Topologie explizit protokollieren: Anzahl (1-10), Grenzen aus Plan, sequenziell/parallel.
 4. Jeder Scribe-Brief enthaelt:
-   - Scope (was anfassen, was nicht)
-   - Deliverables + Mapping zu Plan-Schritten
-   - Akzeptanzliste (Testname + AAA-Stichpunkte) fuer diesen Slice (§8/F1)
-   - Test-First-Pflicht: Neue/erweiterte Tests zuerst RED, dann GREEN (§8/F2)
+   - **Task-ID-Pointer** (`tasks/task-NNN.md` — Scribe liest **nur** seine eigene Task-Datei)
+   - **Read-Scope-Pflicht:** Scribe liest ausschliesslich seine `tasks/task-NNN.md` — `tasks/index.md` und Ganzplan NICHT lesen (Umsetzer-Input-Contract STORY-009)
+   - Test-First-Pflicht: Neue/erweiterte Tests zuerst RED, dann GREEN (§8/F2) — Testfall-Stichpunkte stehen in der Task-Datei
    - Non-Goals: keine Produkt-/Design-Entscheidungen ausserhalb Plan
    - Pflicht: passenden Abschnitt aus `../references/subagent-prompts.md` inkl. MCP-First-Pflicht
+   - ⚠️ **Regression:** Ganzplan-Inline an den Scribe (vollständiger Plan-Text statt Task-Pointer) verletzt den Umsetzer-Input-Contract (STORY-009).
 5. Keine Abweichung vom finalen Plan ohne User-Freigabe.
 6. Scribe-Output ≠ done — erst nach Integration-Checkpoint + Quality Gates.
 

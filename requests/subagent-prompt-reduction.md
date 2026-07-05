@@ -45,6 +45,10 @@ Sub-Agent auf Befehl **liest** (agent-compliance + Profil + „genannte Skills v
 - Outer DI-Reviewer: **6 → 5** (Normalo+Auftraggeber → Abnahme)
 - Tier-Achse: **3-stufig → binär** (🟢 weg)
 
+> **Konsolidierung ist selektiv (zum Teil):** nur ①-Merge (DI 6→5) + ③-Auflösung (inner 7→6). Weitere
+> Merges (② Revisor+Skeptiker, ④ craft+design-principles) bewusst **geparkt**; **kein** Wholesale-Collapse
+> (⑤ 7→1 bleibt geparkt). Die Genauigkeit der verbleibenden Linsen ist unangetastet.
+
 ---
 
 ## Strang C · Task-normalisierter Planner-Output-Contract (⑧) — eigenes, größeres Feature
@@ -113,6 +117,7 @@ sondern ein **eigener, größerer Strang** (eigene requirement-definition). Syne
 | **③ Rollen-Varianten der Boilerplate** | Reviewer-Variante ohne Build/Test-Punkte 4/6 — weicht die „nicht weglassen"-Anti-Shortcut-Regel auf. Erst wenn Grundtaktung sitzt. |
 | **(b) Sektions-Scoping als genereller Default** | Aggressiver als ④ — Under-Reading-Gefahr. |
 | **(X) DI-×6-Inline / `kein-Tool-Call` aufweichen** | Ein geteilter Read für DI würde ① auch dort bringen, kauft aber die Budget-/Context-Abbrüche ein, gegen die der Constraint (`SKILL.md:44`) gebaut ist. Seltenster Pfad, kleiner Payoff. |
+| **⑨ Skill-Dokumente selbst verschlanken/verdichten** | Nicht den *Read* scopen (das ist ④), sondern die **Skills selbst** kürzen: `angular-developer`, `angular-material`, `angular-new-app`, `dev-mcp`, `codebase-analyzer`, `backend-ef-migrations`, `test-design`, `build-log-filter` …. Reduziert per-Read-Kosten an der **Wurzel** — aber **harness-weit wirksam** (jeder Konsument, nicht nur feature-delivery-Sub-Agents). **CLAUDE.md-Vorbehalt:** harness-generisch prüfen, bevor gekürzt wird. Klar getrennt von ④ halten. |
 
 ### Merge-Scorecard (geschätzt, 1–10, 10 = überragend gut)
 | Merge | Ersparnis | Sicherheit | Status |

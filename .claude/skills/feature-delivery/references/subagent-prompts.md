@@ -14,7 +14,7 @@ Vorlagen sind **Auftrags-Payloads** (Platzhalter) — kein Ersatz für Agent-Pro
 
 **Einstufungs-Kanon (bindend für alle Reviewer-Templates unten — Impl-Review + Delivery-Inspection):**
 Jeder Reviewer liest und befolgt [reviewer-gate-canon.md](reviewer-gate-canon.md) (Linse = seine Rolle) —
-Beleg-Pflicht, 🔴/🟡/🟢-Einstufung nach Konsequenz, Präferenz-Tripwire, Ausgabe-Format. Die Templates unten
+Beleg-Pflicht, 🔴/🟡-Einstufung nach Konsequenz, Präferenz-Tripwire, Ausgabe-Format. Die Templates unten
 spezifizieren nur die **linsen-spezifische** Prüfung + MCP-Pflichten; sie duplizieren den Kanon nicht. Der
 Dispatcher (PL bzw. Terminal-PM) hängt den Kanon-Pointer an jeden Reviewer-Prompt.
 
@@ -76,7 +76,7 @@ INNER LOOP — je Runde M (frische Instanzen, datei-basierte Kontinuität):
   2. Verzeichnis iteration-N/round-M/ anlegen.
   3. FRISCHEN PL spawnen: Agent(implement-round-executor) — Payload s. "PL — Round-Executor".
      Übergabe: Runden-Pfad, N/M, Planpaket-Pointer + Slice-IDs, (Fix-Runde:) PM-Was+Wie + Vorrunden-Digest-Pointer.
-     PL-Rückgabe: NUR Pointer (digest.md + index) + Verdikt-Kurzform (inkl. Tier-Zähler 🔴/🟡/🟢). PL wird verworfen.
+     PL-Rückgabe: NUR Pointer (digest.md + index) + Verdikt-Kurzform (inkl. Tier-Zähler 🔴/🟡). PL wird verworfen.
   4. FRISCHEN PM spawnen: Agent(implement-supervisor) — Payload s. "PM — Supervisor".
      Übergabe: index-Pointer + digest-Pointer + Story-Pfad + Iteration N. PM-Rückgabe: Verdikt-Kurzform. PM wird verworfen.
   5. Verdikt auswerten (Session hält nur Pointer + Verdikt):
@@ -137,7 +137,7 @@ wird dieselbe Instanz zum **Terminal-PM** (s. DELIVERY-INSPECTION → CLOSURE).
 Profil:implement-supervisor  (frisch je Runde — kein Vorrunden-Kontext; bei Inner-Close: Terminal-PM)
 Ablauf tier-gesteuertes Urteil (clean/erbsenzaehlerei-exit/fix/escalate), Terminal-PM-Span, Verboten-Liste: `implement-supervisor.md`
 
-Index-Pointer:[requests/plans/<feature>/secondbrain-index.md]  (inkl. Tier-Zähler Tier 🔴/🟡/🟢 offen)
+Index-Pointer:[requests/plans/<feature>/secondbrain-index.md]  (inkl. Tier-Zähler Tier 🔴/🟡 offen)
 Digest-Pointer:[requests/plans/<feature>/iteration-N/round-M/digest.md]  (jede Finding-Zeile mit autoritativem Tier)
 Story-Pfad:[requests/stories/STORY-XXX.md — für AC-Adressierung]
 Iteration:[N — für den Pfad outer/pm-verdict-N.md]

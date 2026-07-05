@@ -2,7 +2,7 @@
 id: STORY-005
 parent: FEAT-001
 type: story
-status: ready
+status: planned
 slug: auditor-aufloesen-inner-7-auf-6
 touches: [implement-review-auditor-agent.md, implement-review-verifier-agent.md, implementation-flow.md, subagent-prompts.md]
 ---

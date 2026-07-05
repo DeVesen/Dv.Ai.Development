@@ -1,7 +1,7 @@
 # SecondBrain-Index — profil-ssot-duenne-payloads
 
-- Aktuell: Iteration 1 · Runde 1
-- Runden-Cap: 1/5
+- Aktuell: Iteration 1 · Runde 2
+- Runden-Cap: 2/5
 - Letzter Digest: requests/plans/profil-ssot-duenne-payloads/iteration-1/round-1/digest.md
 
 ## Tier-Zähler (autoritativ — vom PL vergeben; Grundlage des mechanischen Tier-Guards)

@@ -2,17 +2,17 @@
 
 - Aktuell: Iteration 1 · Runde 1
 - Runden-Cap: 1/5
-- Letzter Digest: —
+- Letzter Digest: requests/plans/profil-ssot-duenne-payloads/iteration-1/round-1/digest.md
 
 ## Tier-Zähler (autoritativ — vom PL vergeben; Grundlage des mechanischen Tier-Guards)
-- Tier 🔴 offen: — (noch nicht vergeben)
-- Tier 🟡 offen: — (noch nicht vergeben)
-- Tier 🟢 offen: — (noch nicht vergeben)
+- Tier 🔴 offen: 1
+- Tier 🟡 offen: 1
+- Tier 🟢 offen: 1
 
 ## Runden-Historie
 | Iteration | Runde | Reviewer | Fixable | 🔴 | 🟡 | 🟢 | Digest | Status |
 |-----------|-------|----------|---------|----|----|----|--------|--------|
-| — | — | — | — | — | — | — | — | ausstehend |
+| 1 | 1 | risk · guard · readiness | 2 | 1 | 1 | 1 | iteration-1/round-1/digest.md | offen |
 
 ## Kontext (Session-Treiber)
 - Feature/Slug: profil-ssot-duenne-payloads

@@ -2,9 +2,10 @@
 id: STORY-001
 parent: FEAT-001
 type: story
-status: ready
+status: planned
 slug: profil-ssot-duenne-payloads
 touches: [subagent-prompts.md, plan-agent.md, implement-round-executor.md, implement-supervisor.md, implement-scribe-agent.md, implement-review-*.md]
+plan: requests/plans/plan-profil-ssot-duenne-payloads.md
 ---
 
 # STORY-001 · ② Profil = Single Source of Truth, dünne Payloads

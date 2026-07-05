@@ -47,6 +47,47 @@ Sub-Agent auf Befehl **liest** (agent-compliance + Profil + „genannte Skills v
 
 ---
 
+## Strang C · Task-normalisierter Planner-Output-Contract (⑧) — eigenes, größeres Feature
+
+**Herkunft:** ⑦ „Plan als Pointer" (Plan-Text nicht mehr in Scribe/Fix-Planer/Reviewer inlinen, sondern
+Pointer + Slice-ID). ⑦ spart bei Reviewern/Ganzplan-Lesern aber nur *dispatcher-seitig*. **⑧ subsumiert ⑦**
+und macht es beidseitig.
+
+**Idee:** Planner-Output ist nicht *ein* Plan-Dokument, sondern eine **normalisierte Task-„Datenbank"**:
+`tasks/task-NNN.md` pro Task + `tasks/index.md` (Topologie). Handoff überträgt in Iteration 1 **nur Verweise**
+(Task-ID-Pointer), jeder Agent liest **nur seine winzige Task-Datei** → spart auf **beiden** Seiten.
+**Kopplung:** Output-Contract des Planners = Input-Contract des Umsetzers → gemeinsam zu betrachten/definieren.
+
+### Granularität — Zwei-Ebenen-Modell (beschlossen: testbar, kein Kontextverlust)
+- **Task-Atom = eine vertikale, eigenständig test-first-verifizierbare Verhaltenseinheit** (≈ heutiger IMP-Slice),
+  eine Datei je Task. **Grenze an der Vertragsnaht, nicht an der Uhr.**
+- **3–5-Min-Granularität = Schritt-Checkliste *im* Task**, nicht als Task-Grenze. (Harte 3–5-Min-als-Task
+  verworfen: zerschneidet den Test-First-Zyklus, Datei-Explosion, Kontextverlust.)
+- Task-Kriterien: (1) ≥1 Akzeptanztest rot→grün *im* Task · (2) eine Verantwortung (kein „und") ·
+  (3) unabhängig verifizierbar (sonst explizite `depends-on`) · (4) Naht = neuer Endpoint/DTO/Komponenten-Vertrag/Regel.
+
+### Task-Datei-Schema
+```
+tasks/task-007.md
+  ## Vertrag/Refs      ← Pointer auf Interface-Kontrakt (Kontext gewahrt)
+  ## Akzeptanz→Test    ← ≥1 Test, rot→grün (F1)
+  ## Schritte          ← 3–5-Min-Checkliste
+  ## touches / depends-on / wave
+tasks/index.md         ← Topologie (Wellen/Blocking) = einziger Ganzblick für PL/Reviewer
+```
+
+### Cut-Prozedur (Planner, mechanisch)
+1. Von Topic-Map / IMP-Slices ausgehen. 2. Je Slice an jeder Vertragsnaht schneiden → ein Task je Naht.
+3. Akzeptanzkriterien (§8/F1) → Tasks mappen (1:n); Kriterium über 2 Tasks → Abhängigkeit notieren.
+4. Task ohne eigenen Test → Schritt, hochfalten; Task mit „und" → splitten.
+5. Annotieren: `id · wave · touches · depends-on · acceptance-tests · contract-refs`. 6. `tasks/index.md` = Topologie.
+
+**Scope-Abgrenzung:** ⑧ ändert den **Planner-Output-Contract** → **nicht** Teil des A/B-Prompt-Diät-Features,
+sondern ein **eigener, größerer Strang** (eigene requirement-definition). Synergien: `touches`-Parallelisierung,
+`implementiere nur`-Pfad, Resumability (Status je Task-Datei), erleichtert später ⑤.
+
+---
+
 ## Betroffene Dateien (grobe Karte für die spätere Planung)
 
 | Datei | Änderung |
@@ -85,8 +126,12 @@ Sub-Agent auf Befehl **liest** (agent-compliance + Profil + „genannte Skills v
 
 ## Nächster Schritt
 
-Entscheidungsreif. Natürliche Story-Schnitte für `/requirement-definition` bzw. `/feature-delivery plane`:
+Entscheidungsreif. Drei Stränge:
 1. **A · Prompt-Diät** (②④①) — mechanisch, risikoarm, betrifft Payloads + Profile.
 2. **B · Reviewer-Struktur** (①-Merge, ③-Auflösung, ⑥-🟢-Abschaffung) — Kanon + DI + Reviewer-Profile.
+3. **C · Task-normalisierter Planner-Output-Contract** (⑧, subsumiert ⑦) — **eigenes, größeres Feature**,
+   eigene requirement-definition; ändert Planner- + Umsetzer-Contract.
 
-(A und B berühren teils dieselben Dateien — bei Parallelisierung `touches`-Überschneidung von `subagent-prompts.md` beachten.)
+- A und B: ein Feature mit Stories (Handoff-Prompt für `/requirement-definition` bereits erstellt).
+- C: separat, weil Planner-Contract-Umbau.
+- A/B berühren teils dieselben Dateien — bei Parallelisierung `touches`-Überschneidung von `subagent-prompts.md` beachten.

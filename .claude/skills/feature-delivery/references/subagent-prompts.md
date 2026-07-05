@@ -318,13 +318,12 @@ Reply with: summary, touched paths, Build/Test-Matrix per run (Pflicht), blocker
 Profil: implement-fix-planner-agent.
 Du erstellst einen Fix-Teilplan, implementierst NICHT.
 
-Pflicht-Rules (0-5):
+Pflicht-Rules (0-4):
 0) agent-compliance.md
 1) feature-delivery/flows/implementation-flow.md
 2) codebase-analyzer/SKILL.md
-3) codebase-analyzer/SKILL.md (Analyse-Abschnitt)
-4) angular-developer/SKILL.md / backend-ef-migrations/SKILL.md (falls Scope passt)
-5) test-design/SKILL.md (Testfall-Reparaturen)
+3) angular-developer/SKILL.md / backend-ef-migrations/SKILL.md (falls Scope passt)
+4) test-design/SKILL.md (Testfall-Reparaturen)
 
 Input:
 - Finales Planpaket + Akzeptanz→Test-Liste

@@ -2,9 +2,10 @@
 id: STORY-006
 parent: FEAT-001
 type: story
-status: ready
+status: planned
 slug: gruen-tier-abschaffen-binaere-achse
 touches: [reviewer-gate-canon.md, secondbrain-schema.md, subagent-prompts.md, implementation-flow.md]
+plan: requests/plans/plan-gruen-tier-abschaffen-binaere-achse.md
 ---
 
 # STORY-006 · ⑥ 🟢 abgeschafft — Tier-Achse binär 🔴/🟡

@@ -41,11 +41,11 @@ requests/plans/<feature>/
 - `iteration-N` — Outer-Loop-Iteration (Stakeholder-Schleife). Für STORY-032 genügt `iteration-1`.
 - `round-M` — Inner-Loop-Runde (Impl-Fix-Loop, 1–5).
 - `<reviewer>` — Impl-Reviewer-Rollen-Slug in kebab-case: `risk`, `design-principles`, `verifier`, `readiness`,
-  `craft`, `auditor`, `guard`. Cross-Service zusätzlich `integration`. Collapsed-Modus:
+  `craft`, `guard`. Cross-Service zusätzlich `integration`. Collapsed-Modus:
   `quality-review` (ein Reviewer, alle Lenses).
 - `<slice>` — IMP-Slice-ID in lowercase kebab (z. B. `imp-fe-search-rules`).
-- `<rolle>` (DI) — Delivery-Inspection-Rollen-Slug in kebab-case: `revisor`, `skeptiker`, `normalo`,
-  `dolmetscher`, `auftraggeber`, `querdenker`.
+- `<rolle>` (DI) — Delivery-Inspection-Rollen-Slug in kebab-case: `revisor`, `skeptiker`, `abnahme`,
+  `dolmetscher`, `querdenker`.
 - `outer/di-N/` und `outer/pm-verdict-N.md` und `outer/delta-N.md` sind **je Outer-Iteration N** (nicht je Runde);
   der Terminal-PM legt `outer/di-N/` an, bevor er die DI dispatcht.
 
@@ -83,7 +83,6 @@ den Runden-Pfad. Die Rolle hängt nur ihren Dateinamen an.
 | verifier | `finding-verifier.md · AC-Coverage:<vollständig\|fehlend:Liste> · Fehler:<n>` |
 | readiness | `finding-readiness.md · <SHIP\|CONDITIONAL\|NO-SHIP>` |
 | craft | `finding-craft.md · Note:<1-6> · Kritikpunkte:<n>` |
-| auditor | `finding-auditor.md · Note:<1-5> · <GO\|NO-GO> · 🔴:<n>` |
 | guard | `finding-guard.md · PRESERVE:<n> · erfüllte-ACs:<n>` |
 | quality-review (collapsed) | `finding-quality-review.md · Fixable:<n> · Klärung:<n> · <Fix-Planer nötig\|Loop beenden>` |
 | scribe | `scribe-<slice>.md · <RED\|GREEN> · Dateien:<n> · build:<ok\|fail> test:<ok\|fail>` |
@@ -230,9 +229,9 @@ mechanischen Tier-Guards (die Session liest sie, s. u.).
 ## Runden-Historie
 | Iteration | Runde | Reviewer | Fixable | 🔴 | 🟡 | Digest | Status |
 |-----------|-------|----------|---------|----|-----|--------|--------|
-| 1 | 1 | 7 | 3 | 2 | 1 | …/digest.md | fix-loop |
-| 1 | 2 | 7 | 0 | 0 | 1 | …/digest.md | Erbsenzählerei-Exit |
-| 2 | 5 | 7 | 1 | 1 | 0 | …/digest.md | Hard-Stop (Cap, 🔴 offen → User-Eskalation, NICHT implemented) |
+| 1 | 1 | 6 | 3 | 2 | 1 | …/digest.md | fix-loop |
+| 1 | 2 | 6 | 0 | 0 | 1 | …/digest.md | Erbsenzählerei-Exit |
+| 2 | 5 | 6 | 1 | 1 | 0 | …/digest.md | Hard-Stop (Cap, 🔴 offen → User-Eskalation, NICHT implemented) |
 ```
 
 (Zeile 3 illustriert den Cap-Sonderfall: Runde 5 mit offenem 🔴 → kein Terminal-PM, keine Closure, User-Eskalation — die 🔴-Invariante wird am Cap nicht durchbrochen.)

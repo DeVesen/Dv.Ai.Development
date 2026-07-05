@@ -72,7 +72,6 @@ Prüft den Diff auf handwerkliche Qualität und Korrektheit — unabhängig von 
   | `implement-review-risk-agent` | BLOCKING/RISK — Regressionen, ungetestete Public-API, Security, Contract-Drift |
   | `implement-review-design-principles-agent` | IODA/IOSP, SOLID, persönliche Design-Regeln, DDD-Grenzen |
   | `implement-review-craft-agent` | Naming, Verschachtelung/Guard Clauses, toter Code, Fehler-Verschlucken |
-  | `implement-review-auditor-agent` | Unabhängige Tiefenanalyse — Vollständigkeitslücken, Konsistenzbrüche |
   | `implement-review-guard-agent` | PRESERVE-Liste — was ist tragfähig und schützenswert |
   | `implement-review-readiness-agent` | Ship-Readiness — SHIP/CONDITIONAL/NO-SHIP + Top-3 |
 
@@ -81,9 +80,9 @@ Prüft den Diff auf handwerkliche Qualität und Korrektheit — unabhängig von 
   **Auftrag:** reiner Befund — **kein** Fix, **keine** Fix-Anwendung, **kein** Digest-Bau,
   **keine** Tier-Autorität (das ist Inner-Loop-Sache).
 
-> **Konventionsentscheidung (User-sichtbar):** `code-inspection` nutzt die **6** registrierten
-> `implement-review-*`-Agents (risk · design-principles · craft · auditor · guard · readiness). Der
-> 7. Inner-Loop-Reviewer **`verifier`** entfällt bewusst — sein Kern-Deliverable ist die AC-Map
+> **Konventionsentscheidung (User-sichtbar):** `code-inspection` nutzt die **5** registrierten
+> `implement-review-*`-Agents (risk · design-principles · craft · guard · readiness). Der
+> 6. Inner-Loop-Reviewer **`verifier`** entfällt bewusst — sein Kern-Deliverable ist die AC-Map
 > (jedes Akzeptanzkriterium auf einen Test gemappt), und `code-inspection` hat **keinen** AC-Kontext.
 > AC-/Anforderungsprüfung ist Aufgabe von `delivery-inspection`. Falls `verifier` doch mitlaufen soll:
 > ein Wort genügt.

@@ -70,7 +70,7 @@ Reihenfolge **zwingend**: `1. BUILD` → `2. STATISCHE ANALYSE` (parallel) → `
 
 ### Schritt 4 — Reviewer (parallel, Datei-Handoff)
 
-Reviewer-Set laut Change-Scope-Classifier (Standard-7 / md-only / lean-3 / collapsed / Cross-Service — s. flow). Jeder Reviewer bekommt den Runden-Pfad + **Evidenz-Pointer `round-M/evidence.md`** (enthält: Slice-Coverage-Tabelle + `review_git_diff`-Befunde; vom PL in Schritt 2 geschrieben) + den Kanon-Pointer `../skills/feature-delivery/references/reviewer-gate-canon.md` (Linse = Rolle, bindend für Einstufung + Ausgabe). Jeder schreibt seine **eigene** `finding-<reviewer>.md` (Struktur-Tabelle) und gibt **nur Pointer + Verdikt-Kurzform** zurück. **Kein Report-Body im Return** — inline zurückgegebene Reports sind ein Regelverstoß gegen das Pointer-only-Format.
+Reviewer-Set laut Change-Scope-Classifier (Standard-6 / md-only / lean-3 / collapsed / Cross-Service — s. flow). Jeder Reviewer bekommt den Runden-Pfad + **Evidenz-Pointer `round-M/evidence.md`** (enthält: Slice-Coverage-Tabelle + `review_git_diff`-Befunde; vom PL in Schritt 2 geschrieben) + den Kanon-Pointer `../skills/feature-delivery/references/reviewer-gate-canon.md` (Linse = Rolle, bindend für Einstufung + Ausgabe). Jeder schreibt seine **eigene** `finding-<reviewer>.md` (Struktur-Tabelle) und gibt **nur Pointer + Verdikt-Kurzform** zurück. **Kein Report-Body im Return** — inline zurückgegebene Reports sind ein Regelverstoß gegen das Pointer-only-Format.
 
 ### Schritt 5 — Digest bauen + autoritative Tiers + Index aktualisieren
 

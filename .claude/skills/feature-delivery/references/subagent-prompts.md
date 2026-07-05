@@ -425,19 +425,6 @@ Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 
 ---
 
-### Impl-Review-Auditor
-
-```text
-Profil: implement-review-auditor-agent (schreibt nur die eigene finding-Datei)
-Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Auditor, bindend)
-Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-auditor-agent.md`
-
-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
-```
-
----
-
 ### Impl-Review-Guard
 
 ```text

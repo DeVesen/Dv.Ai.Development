@@ -77,7 +77,7 @@ Trivial-Edit-Fastpath). Green → `implemented`, rot nach 5 Versuchen → `block
 
 **Trigger:** `implementiere nur <Story>`. Der bewusst schlanke Gegenpol zum vollen Impl-Fix-Loop:
 wendet den vorhandenen Plan Slice fuer Slice an und faehrt slice-scoped Build/Test bis gruen — **ohne**
-Inner-Loop-Runden, **ohne** die 7 Reviewer, **ohne** PL/PM-Rollen, **ohne** SecondBrain
+Inner-Loop-Runden, **ohne** die 6 Reviewer, **ohne** PL/PM-Rollen, **ohne** SecondBrain
 (`secondbrain-index.md` / `digest.md` / `finding-*.md`) und **ohne** Outer-Delivery-Inspection.
 
 **Getrieben vom Session-Treiber** (keine PL/PM-Instanzen — dokumentierte Ausnahme zur Rollen-Delegation-Pflicht, s. o. und SKILL.md Anti-Shortcut-Regel). Scribes bleiben Pflicht: **kein** Direkt-Edit durch die Session ausser dem Trivial-Edit-Fastpath (Schritt 2).
@@ -100,7 +100,7 @@ Inner-Loop-Runden, **ohne** die 7 Reviewer, **ohne** PL/PM-Rollen, **ohne** Seco
 
 **Abgrenzung:**
 - `implementiere lean impl` reduziert die Impl-Review auf 3 Reviewer, behaelt aber PL/PM/SecondBrain/Inner-Loop. `implementiere nur` hat **gar keine** Review-Ebene und **keinen** Inner-Loop.
-- Volles `implementiere` laeuft mit Inner-Loop (max. 5 Runden, PL/PM, 7 Reviewer) + Outer-Delivery-Inspection → Story `reviewed`.
+- Volles `implementiere` laeuft mit Inner-Loop (max. 5 Runden, PL/PM, 6 Reviewer) + Outer-Delivery-Inspection → Story `reviewed`.
 
 ---
 
@@ -122,7 +122,6 @@ Inner-Loop-Runden, **ohne** die 7 Reviewer, **ohne** PL/PM-Rollen, **ohne** Seco
 | **Verifier** | Review | Sonnet | `.claude/agents/implement-review-verifier-agent.md` |
 | **Readiness** | Review | Sonnet | `.claude/agents/implement-review-readiness-agent.md` |
 | **Craft** | Review | Sonnet | `.claude/agents/implement-review-craft-agent.md` |
-| **Auditor** | Review | Sonnet | `.claude/agents/implement-review-auditor-agent.md` |
 | **Guard** | Review | Sonnet | `.claude/agents/implement-review-guard-agent.md` |
 | **Fix-Planer** | Fix-Planung | Opus | `.claude/agents/implement-fix-planner-agent.md` |
 
@@ -174,7 +173,7 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
              build_dotnet_solution / build_angular_project (dev-mcp)
              Ohne gruenen Build kein Gate 2/3/4
              Nach Gate 1: `warnings`-Array aus Build-Response auslesen.
-             Nicht-leere Warnings → als Befunde sammeln, an alle 7 Reviewer + Fix-Planer als Evidenz weitergeben.
+             Nicht-leere Warnings → als Befunde sammeln, an alle 6 Reviewer + Fix-Planer als Evidenz weitergeben.
 
         2. STATISCHE ANALYSE (parallel, nach grunem Build):
              • run_inspectcode               (dev-mcp) → token-opt. JSON
@@ -188,7 +187,7 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
              • review_git_diff               (codebase-analyzer)
                   alle 5 focusAreas: security · performance · api-validation
                                      angular-best-practices · solid
-                  Befunde speisen als Evidenz die 7 LLM-Reviewer
+                  Befunde speisen als Evidenz die 6 LLM-Reviewer
              • analyze_iosp_compliance       (codebase-analyzer, nachgelagert Strang 5/6)
                   IOSP-Befunde je Methode; ArchUnit-IOSP-Regel bleibt Backstop
 
@@ -199,7 +198,7 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
         4. TEST-SUITE: test_dotnet_solution / test_angular_project (dev-mcp)
              Gruen = Akzeptanzkriterien erfuellt (§8/F2)
    │
-        **Parallel-Pattern (Pflicht nach Gate 1):** Tests (Gate 4) UND 7 Reviewer-Agents
+        **Parallel-Pattern (Pflicht nach Gate 1):** Tests (Gate 4) UND 6 Reviewer-Agents
         starten im selben parallelen Message-Block — zeitgleich nach gruenem Build.
         Tests haben null Abhaengigkeit vom Review-Output. Kein sequenzielles Warten:
           ❌ Warte auf alle Reviewer → dann starte Tests
@@ -215,13 +214,13 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
         | lean impl | `implementiere lean impl` Trigger aktiv | 3 Reviewer: risk · craft · readiness — ODER 1 `impl-quality-review-agent` (collapsed, bei `lean impl collapsed`) |
         | md-only | Ausschliesslich `.md`-Dateien; kein `.ts`, kein `.cs`, kein Code | 3 Reviewer: risk · guard · readiness |
         | CSS/HTML-only | Ausschliesslich `.html`/`.scss`/`.css`; kein `.ts`, kein Backend | 4 Reviewer: Structure · CSS-Logic · AC-Coverage · Regression |
-        | Single-Service | `.ts`-Dateien eines Angular-Services/Components oder eines .NET-Services | Standard-7-Reviewer |
-        | Cross-Service | Aenderungen in ≥2 Services, BE+FE gemeinsam, Migrations | Standard-7 + Integration-Reviewer |
+        | Single-Service | `.ts`-Dateien eines Angular-Services/Components oder eines .NET-Services | Standard-6-Reviewer |
+        | Cross-Service | Aenderungen in ≥2 Services, BE+FE gemeinsam, Migrations | Standard-6 + Integration-Reviewer |
 
         → Scope einmal klassifizieren; Ensemble entsprechend starten; nicht nachjustieren.
    │
    ▼  Reviewer parallel (schreiben je eine finding-<reviewer>.md, Rückgabe nur Pointer) — Anzahl laut Change-Scope-Classifier:
-        Standard-7:          risk (O) · design-principles (O) · verifier (S) · readiness (S) · craft (S) · auditor (S) · guard (S)
+        Standard-6:          risk (O) · design-principles (O) · verifier (S) · readiness (S) · craft (S) · guard (S)
         md-only:             risk (O) · guard (S) · readiness (S)
         lean-impl-3:         risk (O) · craft (S) · readiness (S)
         lean-impl-collapsed: 1× impl-quality-review-agent (S) — alle Lenses intern, 1 Approval
@@ -417,9 +416,9 @@ Gate-Reihenfolge einhalten (Build → Statische Analyse → Design-Principles �
 
 **Prozess-Disziplin (Fix-Edit-Zyklen):** `review_git_diff` laeuft in Gate 2 nach **jedem** Fix-Edit-Zyklus — auch nach trivialen Fixes (1 Zeile). Kein Fix-Zyklus reduziert Gate 2 auf Build+Test allein. Zweck: unbeabsichtigte Whitespace- oder Seiteneffekt-Aenderungen werden vor dem naechsten Review-Loop erkannt.
 
-**3.2 Sieben Impl-Reviews (parallel, Datei-Handoff — vom PL dispatcht)**
+**3.2 Sechs Impl-Reviews (parallel, Datei-Handoff — vom PL dispatcht)**
 
-7 Subagents, je eine Rolle. Verboten: Rollensimulation im PL-Thread.
+6 Subagents, je eine Rolle. Verboten: Rollensimulation im PL-Thread.
 Jeder erhaelt: finaler Plan + ACs + Akzeptanzliste, aktueller Diff/Touched Paths, Gate-Status pro Stack, codebase-analyzer review_git_diff-Befunde als Evidenz, **den Runden-Pfad `iteration-N/round-M/`**.
 Jeder Reviewer schreibt seine EIGENE `finding-<reviewer>.md` (Struktur-Tabelle, s. secondbrain-schema.md) und gibt **nur Pointer + Verdikt-Kurzform** zurueck — **kein Report-Body im Return**.
 Task-Prompts: jeweiliger Abschnitt in `../references/subagent-prompts.md`.

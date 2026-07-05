@@ -2,7 +2,7 @@
 id: STORY-008
 parent: FEAT-002
 type: story
-status: ready
+status: implemented
 slug: planner-cut-prozedur
 touches: [plan-agent.md, planning-flow.md]
 depends_on: [STORY-007]

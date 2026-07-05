@@ -56,6 +56,37 @@ Für jedes Topic den Teilplan selbst ausarbeiten: konkrete Umsetzungsschritte, b
 - **IMP-Slices** aus den Teilplan-Deliverables konsolidieren (keine neuen erfinden).
 - Wellen und Blocking für Phase 6 vorbereiten (W0 contract-first, W1 parallele Slices, W2 Integration).
 
+### Cut-Prozedur — Task-Normalisierung (Pflicht nach Phase 4c)
+
+Ausgehend von Topic-Map und konsolidierten IMP-Slices erzeugt der `plan-agent` normalisierte
+Task-Dateien (`tasks/task-NNN.md`) und die Topologie-Datei (`tasks/index.md`) gemäß
+`task-contract.md`. Die 6 Schritte sind mechanisch und in dieser Reihenfolge einzuhalten:
+
+1. **Von Topic-Map / IMP-Slices ausgehen.** Die in Phase 4a entworfene Topic-Map und die in
+   Phase 4c konsolidierten IMP-Slices sind die alleinigen Eingangsgrößen — keine neuen Slices erfinden.
+
+2. **Je Slice an jeder Vertragsnaht schneiden — ein Task je Naht.** Jede Naht (neuer Endpoint,
+   DTO, Komponenten-Vertrag, Regel) ergibt genau einen Task. Ein Slice mit mehreren Nähten erzeugt
+   mehrere Tasks — kein Slice bleibt ungeschnitten, wenn er mehrere Nähte enthält.
+
+3. **ACs (§8/F1) → Tasks mappen (1:n); AC über 2 Tasks → `depends-on` notieren.** Jedes
+   Akzeptanzkriterium wird mindestens einem Task zugeordnet. Reicht ein AC über zwei Tasks, trägt
+   der abhängige Task ein explizites `depends-on`.
+
+4. **Task ohne eigenen Test → hochfalten; Task mit „und" → splitten.** Kein Task darf testlos
+   bleiben (→ in den nächsthöheren Schritt hochfalten). Kein Task-Titel mit „und" (→ splitten,
+   bis der Titel ohne „und" formulierbar ist).
+
+5. **Annotieren: `id · wave · touches · depends-on · acceptance-tests · contract-refs`.** Jede
+   Task-Datei trägt alle Pflichtfelder aus `task-contract.md` vollständig.
+
+6. **`tasks/index.md` erzeugen — Topologie als Pflicht-Output.** Abschluss ist die Topologie-Datei
+   mit allen Tasks, Wellen und Blocking-Abhängigkeiten. Ohne `tasks/index.md` ist der
+   Planner-Output unvollständig.
+
+**Schema-Referenz:** `../references/task-contract.md` — verbindlich für Datei-Schema, Kriterien und
+Granularitätsregeln.
+
 ### Phase 6 — Synthese und Finale Konsolidierung
 
 Reihenfolge einhalten:

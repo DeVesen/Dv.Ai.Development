@@ -2,7 +2,7 @@
 id: STORY-007
 parent: FEAT-002
 type: story
-status: ready
+status: implemented
 slug: task-contract-schema-granularitaet
 touches: [planning-flow.md, tasks-contract (neu)]
 ---
@@ -48,32 +48,32 @@ Endpoint/DTO/Komponenten-Vertrag/Regel.
 - Arrange: Task-Datei-Schema-Definition
 - Act: Pflichtsektionen prüfen
 - Assert: `## Vertrag/Refs`, `## Akzeptanz→Test`, `## Schritte`, `## touches / depends-on / wave` vorhanden
-Status: neu
+Status: implementiert
 
 `IndexDatei_TraegtTopologie`
 - Arrange: `tasks/index.md`-Definition
 - Act: Inhalt prüfen
 - Assert: Wellen/Blocking-Topologie als einziger Ganzblick definiert
-Status: neu
+Status: implementiert
 
 `TaskKriterien_VierPunkte_Definiert`
 - Arrange: Task-Kriterien im Contract
 - Act: Kriterien zählen/prüfen
 - Assert: (1) ≥1 Test rot→grün · (2) eine Verantwortung · (3) unabhängig verifizierbar sonst depends-on ·
   (4) Naht = Endpoint/DTO/Komponenten-Vertrag/Regel — alle vier vorhanden
-Status: neu
+Status: implementiert
 
 `Granularitaet_ZweiEbenen_TaskAtomUndSchritt`
 - Arrange: Granularitäts-Definition
 - Act: Ebenen prüfen
 - Assert: Task-Atom = Vertragsnaht; 3–5-Min = Schritt-Checkliste im Task (nicht Task-Grenze)
-Status: neu
+Status: implementiert
 
 `HarteDreiFuenfMinAlsTaskGrenze_IstUngueltig`   (Negativ)
 - Arrange: ein Task-Schnitt, der 3–5-Min als Task-Grenze verwendet
 - Act: gegen die Granularitäts-Regel prüfen
 - Assert: ungültig — 3–5-Min ist Schritt-Ebene, nicht Task-Grenze (zerschneidet Test-First, Datei-Explosion)
-Status: neu
+Status: implementiert
 <!-- rd:ac:end -->
 
 ## Annahmen / Offene Punkte

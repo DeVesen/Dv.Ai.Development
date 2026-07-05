@@ -56,9 +56,10 @@ Jeder Scribe: **nur slice-scoped** Build/Test (kein integrationsweites Gate im S
 ### Schritt 2 — Integration-Checkpoint
 
 Nach Merge **aller** Scribes der Runde:
-- **Slice-Coverage-Check (Pflicht, vor Gates):** Touched Paths je Slice aus den `scribe-<slice>.md` **lesen**; je IMP-* Slice mind. 1 passender Touched Path. Fehlender Slice = **BLOCKER** → Fix-Scribe nachbeauftragen, dann erneut prüfen. Diese Slice-Coverage-Tabelle geht als Pflicht-Evidenz in jeden Reviewer-Prompt.
+- **Slice-Coverage-Check (Pflicht, vor Gates):** Touched Paths je Slice aus den `scribe-<slice>.md` **lesen**; je IMP-* Slice mind. 1 passender Touched Path. Fehlender Slice = **BLOCKER** → Fix-Scribe nachbeauftragen, dann erneut prüfen.
 - Geänderte Stacks klassifizieren → Gate-Scope.
 - Interface-/Contract-Drift zwischen Slices prüfen.
+- **Evidence-Datei schreiben (Pflicht, nach Slice-Coverage-Check + `review_git_diff`):** Schreibe `round-M/evidence.md` mit: Slice-Coverage-Tabelle (IMP-Slice → Touched Paths, aus den `scribe-<slice>.md` aggregiert) + `review_git_diff`-Befunde (alle focusAreas). Diese Datei ist die **einzige** Evidenz-Quelle aller Impl-Reviewer dieser Runde — kein N×-Block im PL-Output (Schritt 4 übergibt nur noch den Pointer).
 
 ### Schritt 3 — Quality Gates (integrationsweit, sequenziell)
 
@@ -69,7 +70,7 @@ Reihenfolge **zwingend**: `1. BUILD` → `2. STATISCHE ANALYSE` (parallel) → `
 
 ### Schritt 4 — Reviewer (parallel, Datei-Handoff)
 
-Reviewer-Set laut Change-Scope-Classifier (Standard-7 / md-only / lean-3 / collapsed / Cross-Service — s. flow). Jeder Reviewer bekommt den Runden-Pfad + Slice-Coverage-Tabelle + `review_git_diff`-Befunde als Evidenz + den Kanon-Pointer `../skills/feature-delivery/references/reviewer-gate-canon.md` (Linse = Rolle, bindend für Einstufung + Ausgabe). Jeder schreibt seine **eigene** `finding-<reviewer>.md` (Struktur-Tabelle) und gibt **nur Pointer + Verdikt-Kurzform** zurück. **Kein Report-Body im Return** — inline zurückgegebene Reports sind ein Regelverstoß gegen das Pointer-only-Format.
+Reviewer-Set laut Change-Scope-Classifier (Standard-7 / md-only / lean-3 / collapsed / Cross-Service — s. flow). Jeder Reviewer bekommt den Runden-Pfad + **Evidenz-Pointer `round-M/evidence.md`** (enthält: Slice-Coverage-Tabelle + `review_git_diff`-Befunde; vom PL in Schritt 2 geschrieben) + den Kanon-Pointer `../skills/feature-delivery/references/reviewer-gate-canon.md` (Linse = Rolle, bindend für Einstufung + Ausgabe). Jeder schreibt seine **eigene** `finding-<reviewer>.md` (Struktur-Tabelle) und gibt **nur Pointer + Verdikt-Kurzform** zurück. **Kein Report-Body im Return** — inline zurückgegebene Reports sind ein Regelverstoß gegen das Pointer-only-Format.
 
 ### Schritt 5 — Digest bauen + autoritative Tiers + Index aktualisieren
 

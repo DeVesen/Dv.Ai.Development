@@ -2,9 +2,10 @@
 id: STORY-003
 parent: FEAT-001
 type: story
-status: ready
+status: planned
 slug: geteilte-evidenz-als-pointer
 touches: [implement-round-executor.md, subagent-prompts.md]
+plan: requests/plans/plan-geteilte-evidenz-als-pointer.md
 ---
 
 # STORY-003 · ① Geteilte Evidenz als Pointer

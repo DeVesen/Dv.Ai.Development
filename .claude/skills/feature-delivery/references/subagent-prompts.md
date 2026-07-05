@@ -363,7 +363,7 @@ Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Design-Principles, bindend)
 Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-design-principles-agent.md`
 
 Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Aktueller Diff / betroffene Pfade:[…]
+Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 Gate-2-Status (inkl. analyze_iosp_compliance-Befunde):[…]
 ```
 
@@ -377,7 +377,7 @@ Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Risk, bindend)
 Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-risk-agent.md`
 
 Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Aktueller Diff / betroffene Pfade:[…]
+Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 Gate-Status (Build, Statische Analyse, Tests):[…]
 ```
 
@@ -391,8 +391,7 @@ Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Verifier, bindend)
 Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-verifier-agent.md`
 
 Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Aktueller Diff / betroffene Pfade:[…]
-Slice-Coverage-Tabelle (Pflicht-Input vom PL):[…]
+Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 ```
 
 ---
@@ -405,6 +404,7 @@ Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Readiness, bindend)
 Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-readiness-agent.md`
 
 Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
+Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 Gate-Status:[…]
 ```
 
@@ -418,7 +418,7 @@ Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Craft, bindend)
 Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-craft-agent.md`
 
 Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Aktueller Diff / betroffene Pfade:[…]
+Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 ```
 
 ---
@@ -431,7 +431,7 @@ Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Auditor, bindend)
 Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-auditor-agent.md`
 
 Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Aktueller Diff / betroffene Pfade:[…]
+Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 ```
 
 ---
@@ -444,7 +444,7 @@ Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Guard, bindend)
 Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-guard-agent.md`
 
 Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Aktueller Diff / betroffene Pfade:[…]
+Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 ```
 
 ---

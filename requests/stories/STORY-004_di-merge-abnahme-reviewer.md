@@ -2,9 +2,10 @@
 id: STORY-004
 parent: FEAT-001
 type: story
-status: ready
+status: implemented
 slug: di-merge-abnahme-reviewer
 touches: [delivery-inspection/SKILL.md, subagent-prompts.md]
+plan: requests/plans/plan-di-merge-abnahme-reviewer.md
 ---
 
 # STORY-004 · ①-Merge · DI Normalo + Auftraggeber → „Abnahme" (6→5)

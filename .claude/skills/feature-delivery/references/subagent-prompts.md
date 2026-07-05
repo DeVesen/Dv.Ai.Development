@@ -95,7 +95,7 @@ INNER LOOP — je Runde M (frische Instanzen, datei-basierte Kontinuität):
       • Session ↔ PM = SendMessage: die Session reaktiviert die in Schritt 5 pausierte, NOCH NICHT verworfene
         PM-Instanz per SendMessage (die EINZIGE Ausnahme zur Wegwerf-Kadenz — kein Runden-Übergang, sondern der
         Abschluss-Span DIESER Outer-Iteration; so liegt der Guard aus 5a nachweislich VOR dem Span, eine Instanz bleibt).
-      • Terminal-PM → 6 DI-Reviewer = Vordergrund-Dispatch: der reaktivierte PM dispatcht die Reviewer SELBST als
+      • Terminal-PM → 5 DI-Reviewer = Vordergrund-Dispatch: der reaktivierte PM dispatcht die Reviewer SELBST als
         Vordergrund-Sub-Agents (identisch zum PL→Impl-Reviewer-Muster), sie schreiben di-finding-*.md + geben nur Pointer
         als direkte Rückgabe → di-digest bauen → Outer-Verdikt. NICHT die Session dispatcht die DI.
       Payload + Ablauf: "DELIVERY-INSPECTION → CLOSURE" in dieser Datei.
@@ -162,8 +162,8 @@ DELIVERY-INSPECTION → CLOSURE (Pflicht nach Inner-Loop — Pointer-Handoff, No
      wartet auf DIREKTE Pointer-Rückgaben — kein Background-Task, keine Completion-Notification, kein Poll.
      Der frühere Trap (STORY-031) war Background + Notification-Wait; entfällt hier per Konstruktion.
 
-  Terminal-PM Schritt 1 — outer/di-N/ anlegen, dann 6 DI-Reviewer im Vordergrund dispatchen:
-    Rollen: Revisor · Skeptiker · Normalo · Dolmetscher · Auftraggeber · Querdenker (s. delivery-inspection/SKILL.md).
+  Terminal-PM Schritt 1 — outer/di-N/ anlegen, dann 5 DI-Reviewer im Vordergrund dispatchen:
+    Rollen: Revisor · Skeptiker · Abnahme · Dolmetscher · Querdenker (s. delivery-inspection/SKILL.md).
     Kontext je Reviewer: originale Story-ACs + finaler Diff/Touched-Paths + Gate-Status + Inner-Loop-Summary
       + Pfad outer/di-N/ + Kanon-Pointer reviewer-gate-canon.md (Linse = DI-Rolle; §1/§3/§6-Disziplin — di-finding-Format bleibt Kategorie). Constraint (delivery-inspection): kein eigenständiger Tool-Call außer dem Schreiben
       der eigenen di-finding-<rolle>.md. Rückgabe je Reviewer: Pointer + Kurzform (Kategorie-Vorschlag).

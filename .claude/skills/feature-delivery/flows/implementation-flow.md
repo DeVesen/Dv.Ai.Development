@@ -38,7 +38,7 @@ Kein Shell-Fallback ohne explizite Nutzerfreigabe.
 **Verboten:**
 - PL schreibt Produkt-Code statt an Scribe/Fix-Planer zu delegieren
 - PM editiert Produkt-Code, `finding-*.md`, Digest oder Index (seine einzigen Schreib-Dateien sind `outer/pm-verdict-N.md` + `outer/delta-N.md`)
-- PM stuft ein 🔴 herab / behandelt ein Security-`critical` als 🟡/🟢
+- PM stuft ein 🔴 herab / behandelt ein Security-`critical` als 🟡
 - Session weist einen Erbsenzählerei-Exit bei offenem 🔴 **nicht** zurück (Tier-Guard übersprungen)
 - PL- und Implementierer-Rolle in einem Turn zusammenlegen
 - Session-Treiber uebernimmt PL- oder PM-Arbeit inline statt frische Instanzen zu spawnen
@@ -113,7 +113,7 @@ Inner-Loop-Runden, **ohne** die 7 Reviewer, **ohne** PL/PM-Rollen, **ohne** Seco
 | Rolle | Schritt | Modell | Agent-Datei |
 |-------|---------|--------|-------------|
 | **Session-Treiber** | Treiber: Hard Gate, Rundenzähler, Max-5-Cap, **mechanischer Tier-Guard** (weist Exit bei offenem 🔴 zurück), Closure, Story-Status | — (die aufrufende Session, kein Agent-Profil) | dokumentiert in SKILL.md + diesem Flow |
-| **PL — Round-Executor** | je Runde: (Fix-Planer →) Scribes → Integration-Checkpoint → Gates → Reviewer → digest.md **+ autoritative Tier-Vergabe (🔴/🟡/🟢) + Tier-Zähler in Index** | Opus | `.claude/agents/implement-round-executor.md` |
+| **PL — Round-Executor** | je Runde: (Fix-Planer →) Scribes → Integration-Checkpoint → Gates → Reviewer → digest.md **+ autoritative Tier-Vergabe (🔴/🟡) + Tier-Zähler in Index** | Opus | `.claude/agents/implement-round-executor.md` |
 | **PM — Supervisor** | je Runde: Urteil clean / erbsenzaehlerei-exit / fix (Was+Wie) / escalate. **Terminal-PM** (bei Inner-Close): DI-Dispatch + Outer-Verdikt in einer Instanz | Opus | `.claude/agents/implement-supervisor.md` |
 | **Scribe Runden 1-3** | Slice-Implementierung | Sonnet | `.claude/agents/implement-scribe-agent.md` |
 | **Scribe Runden 4-5** | Eskalation — nur wenn > 30 LOC oder Komplexitaets-Fehlschlag | Opus | `.claude/agents/implement-scribe-opus-agent.md` |
@@ -233,7 +233,7 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
         codebase-analyzer review_git_diff-Befunde → speisen als Evidenz alle Reviewer
    │
    ▼  Digest: PL LIEST finding-*.md → baut iteration-N/round-M/digest.md
-        (kein Report-Body im PL-Return; autoritative Tiers 🔴/🟡/🟢 vergeben; secondbrain-index.md aktualisieren: current_round=M, Cap M/5, Zähler + Tier-Zähler)
+        (kein Report-Body im PL-Return; autoritative Tiers 🔴/🟡 vergeben; secondbrain-index.md aktualisieren: current_round=M, Cap M/5, Zähler + Tier-Zähler)
    │
    ▼  PL-Rückgabe an Session: NUR Pointer (digest.md + index) + Verdikt-Kurzform (inkl. Tier-Zähler). PL wird verworfen.
    │  └────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -361,7 +361,7 @@ Instanz aus `secondbrain-index.md` + dem Vorrunden-Digest. Keine Rollensimulatio
 
 **Pro Runde:**
 1. **Session** spawnt PL#M → PL: (Fix-Planer bei M≥2 →) Scribes → Integration-Checkpoint → Quality Gates
-   → Reviewer → liest `finding-*.md` → baut `digest.md` **+ vergibt autoritative Tiers 🔴/🟡/🟢** → aktualisiert Index (inkl. Tier-Zähler) → gibt nur Pointer zurück.
+   → Reviewer → liest `finding-*.md` → baut `digest.md` **+ vergibt autoritative Tiers 🔴/🟡** → aktualisiert Index (inkl. Tier-Zähler) → gibt nur Pointer zurück.
 2. **Session** spawnt PM#M auf Index+Digest-Pointer → PM urteilt `clean` / `erbsenzaehlerei-exit` / `fix` (Was+Wie) / `escalate`.
 3. **Session** hält nur Pointer + PM-Verdikt, führt bei Inner-Close den Tier-Guard aus und entscheidet den nächsten Schritt (s. 3.9).
 
@@ -388,10 +388,9 @@ Gewaltenteilung entscheiden darüber:
 |------|-----------|----------------------------|
 | 🔴 | Blockierend — Correctness-Bug, fehlender AC-Test, Contract-Drift, Regression, **Security-`critical`** | Blockt den Exit. **Ein offenes 🔴 → nächste Runde Pflicht.** |
 | 🟡 | Begründungspflichtig — behebbar, Wave vertretbar | Wave nur mit **schriftlicher Begründung je Finding** im `outer/pm-verdict-N.md`. |
-| 🟢 | Frei — kosmetisch | Frei durchwinkbar. |
 
 **Gewaltenteilung:**
-- **PL** vergibt die **autoritative** Tier-Einstufung beim Digest-Bau (Reviewer liefern nur `Tier-Vorschlag`) und schreibt die offenen Zähler `Tier 🔴/🟡/🟢 offen` in den Index. Regeln: `../references/secondbrain-schema.md → ## Tier-Klassifikation`.
+- **PL** vergibt die **autoritative** Tier-Einstufung beim Digest-Bau (Reviewer liefern nur `Tier-Vorschlag`) und schreibt die offenen Zähler `Tier 🔴/🟡 offen` in den Index. Regeln: `../references/secondbrain-schema.md → ## Tier-Klassifikation`.
 - **PM** urteilt auf Basis der Tiers: `Tier 🔴 offen > 0` → `fix` (Pflicht); `== 0` → `clean` oder **`erbsenzaehlerei-exit`** (bei erbsenzaehlerei-exit: je offenes 🟡 eine Begründung ins `pm-verdict-N.md`).
 - **Session** führt den **mechanischen Tier-Guard** aus: liest `Tier 🔴 offen` aus dem Index; meldet der PM einen Inner-Close (clean/erbsenzaehlerei-exit) bei `🔴 offen > 0`, **weist die Session den Exit deterministisch zurück** und erzwingt die nächste Runde (bis der Cap greift). Kein Urteil, reine Zähler-Arithmetik — deshalb nicht durch ein PM-Fehlurteil aushebelbar.
 
@@ -428,8 +427,8 @@ Task-Prompts: jeweiliger Abschnitt in `../references/subagent-prompts.md`.
 **3.3 Review-Digest (PL):** Der **PL liest** die `finding-*.md` der Runde und baut daraus `iteration-N/round-M/digest.md` (Review-Digest Runde N). Er empfaengt **keine** vollen Reports als Agent-Rueckgabe. Weil der PL throwaway ist, transitieren die finding-Bodies **einmal** durch das PL-Fenster (nicht durch die Session). `secondbrain-index.md` (current_round, Cap, Zaehler, Runden-Historie, letzter Digest-Pointer) aktualisieren. PL-Rückgabe an die Session: nur Pointer + Verdikt-Kurzform.
 
 **3.4 PM-Urteil (frische Instanz, tier-gesteuert):** Nach dem PL spawnt die Session einen **frischen** `implement-supervisor` (PM) auf Index+Digest-Pointer. Der PM liest **zuerst `Tier 🔴 offen`** und fällt **ein** Urteil:
-- `clean` — `Tier 🔴/🟡/🟢 offen` alle 0, Gates gruen, ACs adressiert → Inner-Loop schließbar.
-- `erbsenzaehlerei-exit` — `Tier 🔴 offen == 0`, aber ≥1 🟡/🟢 offen; Restfindings keiner Runde wert → Inner-Loop schließbar. **Pflicht:** je offenes 🟡 eine schriftliche Begründung im `outer/pm-verdict-N.md`.
+- `clean` — `Tier 🔴/🟡 offen` alle 0, Gates gruen, ACs adressiert → Inner-Loop schließbar.
+- `erbsenzaehlerei-exit` — `Tier 🔴 offen == 0`, aber ≥1 🟡 offen; Restfindings keiner Runde wert → Inner-Loop schließbar. **Pflicht:** je offenes 🟡 eine schriftliche Begründung im `outer/pm-verdict-N.md`.
 - `fix` — `Tier 🔴 offen > 0` (Pflicht), oder der PM entscheidet, ein 🟡 doch zu fixen → kompaktes **Was+Wie** (Verweis auf Digest-Zeilen).
 - `escalate` — Produkt-/Design-Ambiguität, konfligierende AC-Interpretation → gebündelte Nutzerfrage.
 
@@ -451,7 +450,7 @@ Der PM editiert **nur** `outer/pm-verdict-N.md` (und bei Requirement-Gap `outer/
 **3.9 Abbruchbedingung (Session entscheidet, liest `current_round` + `Tier 🔴 offen` aus `secondbrain-index.md` VOR jedem Spawn):**
 1. Sauber: PM-Verdikt `clean` **oder** `erbsenzaehlerei-exit` → **Tier-Guard**: `Tier 🔴 offen == 0`? (bei erbsenzaehlerei-exit zusätzlich: 🟡-Begründungen im pm-verdict-N.md vollständig?) → ja: Inner-Loop beenden, PM wird Terminal-PM → Delivery-Inspection. **Nein (🔴 > 0): Exit deterministisch zurückgewiesen → wie `fix` behandeln (current_round++).**
 2. Maximum (Max-5-Cap): `current_round = 5` **und** PM-Verdikt `fix` (oder ein vom Tier-Guard zurückgewiesener Exit) → Session weist den Fix-Zyklus zurück, **startet keinen PL#6**. Der Cap begrenzt die **Fix-Runden**, hebt aber die 🔴-Invariante NICHT auf — deshalb Aufteilung nach `Tier 🔴 offen`:
-   - **`Tier 🔴 offen == 0`** (nur 🟡/🟢 Rest): cap-erzwungener `erbsenzaehlerei-exit` — der Terminal-PM schreibt `outer/pm-verdict-N.md` mit je offenem 🟡 einer Begründung („Cap erreicht — auf Folge-Story vertagt"), dann Delivery-Inspection → Closure mit Rest-Findings-Bericht.
+   - **`Tier 🔴 offen == 0`** (nur 🟡 Rest): cap-erzwungener `erbsenzaehlerei-exit` — der Terminal-PM schreibt `outer/pm-verdict-N.md` mit je offenem 🟡 einer Begründung („Cap erreicht — auf Folge-Story vertagt"), dann Delivery-Inspection → Closure mit Rest-Findings-Bericht.
    - **`Tier 🔴 offen > 0`** (offenes 🔴, z. B. Security-`critical`): **KEINE Closure, KEIN Terminal-PM-DI-Span, Story NICHT `reviewed` (bleibt `planned`).** Hard-Stop → Rest-Findings-Bericht (inkl. Liste der offenen 🔴) → **gebündelte User-Eskalation** (waiven / Cap ausnahmsweise erhöhen / abbrechen). Damit kann ein offenes 🔴 nie still über den Cap durchgewunken werden (Aggregat-Regel + Security-Guardrail bleiben am Cap gewahrt).
 3. escalate: gebündelte Nutzerfrage; nach Antwort clean/erbsenzaehlerei-exit/fix — der Cap gilt weiterhin (escalate-Runden zählen mit).
 

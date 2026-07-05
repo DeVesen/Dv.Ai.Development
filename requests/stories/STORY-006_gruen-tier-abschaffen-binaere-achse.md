@@ -2,7 +2,7 @@
 id: STORY-006
 parent: FEAT-001
 type: story
-status: planned
+status: implemented
 slug: gruen-tier-abschaffen-binaere-achse
 touches: [reviewer-gate-canon.md, secondbrain-schema.md, subagent-prompts.md, implementation-flow.md]
 plan: requests/plans/plan-gruen-tier-abschaffen-binaere-achse.md

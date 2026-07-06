@@ -2,7 +2,7 @@
 id: FEAT-001
 parent: EPIC-001
 type: feature
-status: ready
+status: reviewed
 slug: prompt-diaet-reviewer-struktur
 children: [STORY-001, STORY-002, STORY-003, STORY-004, STORY-005, STORY-006]
 touches: [subagent-prompts.md, reviewer-gate-canon.md, secondbrain-schema.md, delivery-inspection/SKILL.md, implementation-flow.md, agents/*.md]

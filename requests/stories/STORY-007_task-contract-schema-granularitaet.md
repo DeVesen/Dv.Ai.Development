@@ -2,7 +2,7 @@
 id: STORY-007
 parent: FEAT-002
 type: story
-status: implemented
+status: reviewed
 slug: task-contract-schema-granularitaet
 touches: [planning-flow.md, tasks-contract (neu)]
 ---

@@ -2,7 +2,7 @@
 id: FEAT-002
 parent: EPIC-001
 type: feature
-status: ready
+status: reviewed
 slug: task-normalisierter-planner-output-contract
 children: [STORY-007, STORY-008, STORY-009]
 touches: [planning-flow.md, plan-agent.md, subagent-prompts.md, implementation-flow.md, tasks-contract (neu)]

@@ -1,7 +1,7 @@
 ---
 id: EPIC-001
 type: epic
-status: ready
+status: reviewed
 slug: subagent-token-reduktion-feature-delivery
 children: [FEAT-001, FEAT-002]
 ---

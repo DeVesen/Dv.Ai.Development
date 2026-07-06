@@ -2,7 +2,7 @@
 id: STORY-004
 parent: FEAT-001
 type: story
-status: implemented
+status: reviewed
 slug: di-merge-abnahme-reviewer
 touches: [delivery-inspection/SKILL.md, subagent-prompts.md]
 plan: requests/plans/plan-di-merge-abnahme-reviewer.md

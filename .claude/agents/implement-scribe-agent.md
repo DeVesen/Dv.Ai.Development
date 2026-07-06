@@ -38,6 +38,14 @@ Du bist **`implement-scribe-agent`** im Implementations-Loop des `feature-delive
 5. Slice-scoped Build + Test via dev-mcp — **kein Roh-Log, kein Shell-Fallback**
 6. Nur eigenen Slice-Scope berühren — keine stille Planänderung, kein Scope-Expand
 
+### Angular Hard Rules — OnPush + async-Listen
+
+In Komponenten mit `changeDetection: ChangeDetectionStrategy.OnPush` müssen
+async-geladene Listen-Properties als Signal deklariert werden:
+  ✅ `readonly options = signal<OptionType[]>([])`  → `this.options.set(data)` im Subscribe
+  ❌ `options: OptionType[] = []`                  → `this.options = data` triggert keine CD
+Gilt für jede Property die nach ngOnInit/Subscribe befüllt wird.
+
 ## Build/Test — MCP-Pflicht (Hard Gate)
 
 | Aufgabe | MCP-Tool | VERBOTEN |
@@ -65,15 +73,23 @@ Du bist **`implement-scribe-agent`** im Implementations-Loop des `feature-delive
 - Red-Schritt überspringen: Tests erst nach Implementierung schreiben
 - Test-First-Vorgabe aus dem Plan frei umformulieren
 
-## Rückgabe an Orchestrator
+## Post-Scribe-Verifikation (Pflicht — MCP-First)
 
-- Slice-ID (IMP-*)
-- Summary der Implementierung
-- Touched paths
-- Red-Phase: neue/erweiterte Tests + Fehlschlag-Nachweis (Test-Run-Ergebnis)
-- Green-Phase: Build/Test via dev-mcp (`success`, `errors[]`-Zusammenfassung)
-- MCP-Build/Test eingehalten: ja / BLOCKER (Grund)
-- Open risks / blockers
+Nach Green-Phase (alle Tests grün):
+`mcp__dev-mcp__read_files_batch([alle Touched Paths])` — kein natives Read/Grep.
+Verifikations-Ergebnis im Summary festhalten.
+
+## Datei-Handoff (Pflicht — s. secondbrain-schema.md)
+
+Schreibe `[SecondBrain-Runden-Pfad]/scribe-<slice>.md` mit:
+- Summary (Red-Phase: welche Tests fehlgeschlagen; Green-Phase: welche Tests grün)
+- Touched Paths
+- Build/Test-Matrix (eine Zeile pro Lauf — Pflicht)
+- Offene Risiken/Blocker
+
+**Rückgabe an den PL (Round-Executor): NUR Pointer + Verdikt-Kurzform**
+`scribe-<slice>.md · <RED|GREEN> · Dateien:<n> · build:<ok|fail> test:<ok|fail>` — kein Summary-Body inline.
+(Touched Paths liest der PL aus der Datei.)
 
 ## Pflicht-Dokumente / Referenzen
 

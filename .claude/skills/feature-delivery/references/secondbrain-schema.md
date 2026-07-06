@@ -41,11 +41,11 @@ requests/plans/<feature>/
 - `iteration-N` — Outer-Loop-Iteration (Stakeholder-Schleife). Für STORY-032 genügt `iteration-1`.
 - `round-M` — Inner-Loop-Runde (Impl-Fix-Loop, 1–5).
 - `<reviewer>` — Impl-Reviewer-Rollen-Slug in kebab-case: `risk`, `design-principles`, `verifier`, `readiness`,
-  `craft`, `auditor`, `guard`. Cross-Service zusätzlich `integration`. Collapsed-Modus:
+  `craft`, `guard`. Cross-Service zusätzlich `integration`. Collapsed-Modus:
   `quality-review` (ein Reviewer, alle Lenses).
 - `<slice>` — IMP-Slice-ID in lowercase kebab (z. B. `imp-fe-search-rules`).
-- `<rolle>` (DI) — Delivery-Inspection-Rollen-Slug in kebab-case: `revisor`, `skeptiker`, `normalo`,
-  `dolmetscher`, `auftraggeber`, `querdenker`.
+- `<rolle>` (DI) — Delivery-Inspection-Rollen-Slug in kebab-case: `revisor`, `skeptiker`, `abnahme`,
+  `dolmetscher`, `querdenker`.
 - `outer/di-N/` und `outer/pm-verdict-N.md` und `outer/delta-N.md` sind **je Outer-Iteration N** (nicht je Runde);
   der Terminal-PM legt `outer/di-N/` an, bevor er die DI dispatcht.
 
@@ -79,11 +79,10 @@ den Runden-Pfad. Die Rolle hängt nur ihren Dateinamen an.
 | Rolle | Kurzform-Muster |
 |-------|-----------------|
 | risk | `finding-risk.md · 🔴:<n> 🟡:<n>` |
-| design-principles | `finding-design-principles.md · 🔴:<n> 🟡:<n> 🟢:<n>` |
+| design-principles | `finding-design-principles.md · 🔴:<n> 🟡:<n>` |
 | verifier | `finding-verifier.md · AC-Coverage:<vollständig\|fehlend:Liste> · Fehler:<n>` |
 | readiness | `finding-readiness.md · <SHIP\|CONDITIONAL\|NO-SHIP>` |
 | craft | `finding-craft.md · Note:<1-6> · Kritikpunkte:<n>` |
-| auditor | `finding-auditor.md · Note:<1-5> · <GO\|NO-GO> · 🔴:<n>` |
 | guard | `finding-guard.md · PRESERVE:<n> · erfüllte-ACs:<n>` |
 | quality-review (collapsed) | `finding-quality-review.md · Fixable:<n> · Klärung:<n> · <Fix-Planer nötig\|Loop beenden>` |
 | scribe | `scribe-<slice>.md · <RED\|GREEN> · Dateien:<n> · build:<ok\|fail> test:<ok\|fail>` |
@@ -117,7 +116,7 @@ Spalten:
 |--------|--------|
 | **File** | Repo-relativer Pfad der betroffenen Datei. Bei nicht-lokalisierbaren Befunden: `—`. |
 | **Line** | 1-basierte Zeile, wenn aus Diff/Datei bestimmbar; sonst `—`. |
-| **Tier-Vorschlag** | Genau **🔴/🟡/🟢** — eine Achse, kein zweites Severity-Vokabular (`[KRITISCH]/[WESENTLICH]/[FORMAL]`, `BLOCKING/RISK` u. ä. entfallen). 🔴 blockt · 🟡 begründungspflichtig · 🟢 frei — **Vorschlag** des Reviewers, nicht bindend. Die **autoritative** Tier-Vergabe (PL) und der mechanische Tier-Guard (Session) sind unten in `## Tier-Klassifikation` spezifiziert; der PL konsolidiert die Vorschläge beim Digest-Bau. Security-Findings `critical` sind immer 🔴. |
+| **Tier-Vorschlag** | Genau **🔴/🟡** — eine Achse, kein zweites Severity-Vokabular (`[KRITISCH]/[WESENTLICH]/[FORMAL]`, `BLOCKING/RISK` u. ä. entfallen). 🔴 blockt · 🟡 begründungspflichtig — **Vorschlag** des Reviewers, nicht bindend. Die **autoritative** Tier-Vergabe (PL) und der mechanische Tier-Guard (Session) sind unten in `## Tier-Klassifikation` spezifiziert; der PL konsolidiert die Vorschläge beim Digest-Bau. Security-Findings `critical` sind immer 🔴. |
 | **Befund** | Ein Satz: was ist falsch. |
 | **Failure-Scenario** | Konkrete Eingabe/Zustand → falsches Ergebnis oder Crash. Kein abstraktes „könnte Probleme geben". |
 
@@ -175,7 +174,7 @@ Quellen: finding-risk.md, finding-design-principles.md, … (gelesen)
 ## Roll-up
 - Fixable: <n> · Klärungsbedürftig: <n>
 - Offene 🔴: <n>
-- Autoritative Tiers: 🔴 <n> · 🟡 <n> · 🟢 <n>   ← identisch mit den Index-Zählern
+- Autoritative Tiers: 🔴 <n> · 🟡 <n>   ← identisch mit den Index-Zählern
 - Gate-Status: Build <..> · Statik <..> · Tests <..>
 
 ## Risk
@@ -187,14 +186,14 @@ Quellen: finding-risk.md, finding-design-principles.md, … (gelesen)
 ## Readiness
 - <SHIP | CONDITIONAL | NO-SHIP>
 ## Craft
-- 🟢 …
+- 🟡 …
 ## Auditor
 - Go/No-Go: … · Note: …
 ## Guard
 - PRESERVE: … · erfüllte ACs: …
 ```
 
-Jede Finding-Zeile trägt das **autoritative** Tier-Symbol (🔴/🟡/🟢) als erstes Zeichen. Security-Findings
+Jede Finding-Zeile trägt das **autoritative** Tier-Symbol (🔴/🟡) als erstes Zeichen. Security-Findings
 Severity `critical` sind im Digest **immer** 🔴 — unabhängig vom Reviewer-Vorschlag und vom Kanal.
 
 Der Fix-Planer erhält den **Pointer auf `digest.md`** (und bei Bedarf die finding-Datei-Pfade) und
@@ -226,14 +225,13 @@ mechanischen Tier-Guards (die Session liest sie, s. u.).
 ## Tier-Zähler (autoritativ — vom PL vergeben; Grundlage des mechanischen Tier-Guards)
 - Tier 🔴 offen: <n>   — blockt Inner-Exit; ein offenes 🔴 → nächste Runde Pflicht
 - Tier 🟡 offen: <n>   — begründungspflichtig (Erbsenzählerei-Wave nur mit Begründung je Finding im pm-verdict-N.md)
-- Tier 🟢 offen: <n>   — frei durchwinkbar
 
 ## Runden-Historie
-| Iteration | Runde | Reviewer | Fixable | 🔴 | 🟡 | 🟢 | Digest | Status |
-|-----------|-------|----------|---------|----|----|----|--------|--------|
-| 1 | 1 | 7 | 3 | 2 | 1 | 0 | …/digest.md | fix-loop |
-| 1 | 2 | 7 | 0 | 0 | 1 | 2 | …/digest.md | Erbsenzählerei-Exit |
-| 2 | 5 | 7 | 1 | 1 | 0 | 0 | …/digest.md | Hard-Stop (Cap, 🔴 offen → User-Eskalation, NICHT implemented) |
+| Iteration | Runde | Reviewer | Fixable | 🔴 | 🟡 | Digest | Status |
+|-----------|-------|----------|---------|----|-----|--------|--------|
+| 1 | 1 | 6 | 3 | 2 | 1 | …/digest.md | fix-loop |
+| 1 | 2 | 6 | 0 | 0 | 1 | …/digest.md | Erbsenzählerei-Exit |
+| 2 | 5 | 6 | 1 | 1 | 0 | …/digest.md | Hard-Stop (Cap, 🔴 offen → User-Eskalation, NICHT implemented) |
 ```
 
 (Zeile 3 illustriert den Cap-Sonderfall: Runde 5 mit offenem 🔴 → kein Terminal-PM, keine Closure, User-Eskalation — die 🔴-Invariante wird am Cap nicht durchbrochen.)
@@ -254,29 +252,28 @@ Reviewer liefern nur einen `Tier-Vorschlag`. Der PL schreibt die offenen Zähler
 |------|-----------|----------------------------|
 | 🔴 | Blockierend — Correctness-Bug, ungetestete Public-API/fehlender AC-Test, Contract-Drift, Regression, **Security-`critical`** | Blockt den Inner-Exit. **Ein offenes 🔴 → nächste Runde Pflicht.** |
 | 🟡 | Begründungspflichtig — behebbar, aber ein Wave ist vertretbar | Darf nur mit **schriftlicher Begründung je Finding** im `pm-verdict-N.md` gewaved werden (sonst Fix nötig). |
-| 🟢 | Frei — kosmetisch, kein Verhaltens-/Vertragseinfluss | Frei durchwinkbar, keine Begründung nötig. |
+
 
 **Einstufungsregeln (deterministisch, in dieser Reihenfolge):**
 
 1. **Security-`critical` → immer 🔴.** Ein Finding mit Severity `critical` aus **jedem** Kanal
    (`review_git_diff` security-focusArea, `run_inspectcode`, ein LLM-Reviewer) ist 🔴 — unabhängig
-   vom Reviewer-`Tier-Vorschlag`. Es ist **nie** als Erbsenzählerei (🟡/🟢) einstufbar. Diese Regel
+   vom Reviewer-`Tier-Vorschlag`. Es ist **nie** als Erbsenzählerei (🟡) einstufbar. Diese Regel
    ist nicht überstimmbar — weder vom PL noch vom PM.
 2. **Behebbar + verhaltens-/vertrags-/testrelevant → 🔴.** Correctness-Bug, fehlender
    AC-Test (Verifier AC-Map „fehlend"), Contract-Drift, Regression.
 3. **Behebbar, aber Wave vertretbar → 🟡.** Struktur-/Design-Kosten ohne akuten Defekt, stilistische
    Rule-Violation mit lokalem Scope.
-4. **Kosmetisch → 🟢.** Namens-/Kommentar-Nuancen, reine Präferenz ohne Verhaltensbezug.
+
 
 **PM-Hochstufung (sichere Richtung):** Die PL-Tiers sind autoritativ, aber der PM darf ein Finding
-**verschärfen**, nie abschwächen: ein 🟢, das er für begründungspflichtig hält → als 🟡 behandeln
-(Begründung) oder fixen; ein 🟡/🟢, das er für blockierend hält → `fix`. So wird eine PL-Unter-Einstufung
+**verschärfen**, nie abschwächen: ein 🟡, das er für blockierend hält → `fix`. So wird eine PL-Unter-Einstufung
 abgefangen, ohne je die 🔴-schützende Richtung zu verletzen. Der PM schreibt den Index-Zähler nicht — die
 Hochstufung wirkt über sein Urteil, nicht über den mechanischen 🔴-Guard.
 
 **Aggregat-Regel:** `Tier 🔴 offen > 0` ⇒ der Inner-Loop **kann nicht** als clean/erbsenzaehlerei-exit
 schließen (nächste Runde Pflicht). `Tier 🔴 offen == 0` ⇒ Inner-Exit möglich, entweder als
-`clean` (auch 🟡/🟢 == 0) oder als **Erbsenzählerei-Exit** (🟡/🟢 offen, jedes offene 🟡 im
+`clean` (auch 🟡 == 0) oder als **Erbsenzählerei-Exit** (🟡 offen, jedes offene 🟡 im
 `pm-verdict-N.md` begründet).
 
 **Mechanischer Tier-Guard (Session):** Vor jedem Inner-Exit liest die Session den Index-Zähler
@@ -305,7 +302,7 @@ Inner-Close-Urteils **und** des Outer-Verdikts (beides in einer PM-Instanz, s. `
 
 ## Inner-final-Verdikt
 - Modus: <clean | erbsenzaehlerei-exit>
-- Basis: Index-Tier-Zähler 🔴:<n> 🟡:<n> 🟢:<n> (aus secondbrain-index.md gelesen)
+- Basis: Index-Tier-Zähler 🔴:<n> 🟡:<n> (aus secondbrain-index.md gelesen)
 - Runde bei Close: M
 
 ### 🟡-Begründungen (Pflicht bei erbsenzaehlerei-exit — je offenes 🟡 eine Zeile)

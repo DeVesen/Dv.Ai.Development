@@ -2,6 +2,8 @@
 
 Verbindliche Prompt-Vorlagen: [../references/subagent-prompts.md](../references/subagent-prompts.md).
 
+Task-Contract (Schema, Topologie, Granularität, Kriterien): [../references/task-contract.md](../references/task-contract.md).
+
 ---
 
 ## Planung ist lean/solo
@@ -30,9 +32,11 @@ Phase 4a   Interface-Design / Topic-Map + Teilplaene     plan-agent (Opus, solo)
               + Service als eigene Bounded-Context-Domaene denken (§12)
               + je Topic Akzeptanz→Test-Liste (§8/F1)
 
-Phase 4c   Konsolidierung zur Arbeitsversion             plan-agent (Opus, solo)
+Phase 4c   Konsolidierung → Cut-Prozedur                 plan-agent (Opus, solo)
               Schnittstellen vs. Teilplaene: Drift/Luecken aufloesen
               IMP-Slices konsolidieren, Wellen/Blocking vorbereiten
+              → Cut-Prozedur (6 Schritte, s. plan-agent.md §Cut-Prozedur)
+                → tasks/task-NNN.md + tasks/index.md
 
 Phase 6    Synthese                                      plan-agent (Opus, solo)
               - Komplexitaets- und Executor-Empfehlung
@@ -188,6 +192,16 @@ Planner MUSS bei mat-*-Selektoren diese Liste vor dem Aufnehmen in den Plan kons
 - FE-Analogon: Feature-Zonierung (`features/a` kennt nicht `features/b`)
 
 **Der `plan-agent` prueft selbst (Teil des Plan-Coverage-Checks):** Bounded-Context-Grenzen verletzt? Ungewollter Shared-Kernel?
+
+---
+
+## Cut-Prozedur — Verweis
+
+Die 6-Schritt-Cut-Prozedur (Topic-Map → Vertragsnaht-Schnitt → AC-Mapping → Hochfalten/Splitten →
+Annotieren → `tasks/index.md`) ist vollständig in `plan-agent.md` (§ Cut-Prozedur —
+Task-Normalisierung) definiert und dort nach Phase 4c einzuhalten.
+
+Task-Schema und Kriterien: [`../references/task-contract.md`](../references/task-contract.md).
 
 ---
 

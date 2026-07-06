@@ -51,7 +51,7 @@ Bevor eine Änderung an `.claude/`, Skills, References, Agents oder MCP-Servern 
 │   ├── prozess-retrospektive/   Prozess-Analyse: Harness-Verbesserungsideen + Session-Erkenntnisse
 │   ├── caveman/                 Kommunikationsstil: Caveman
 │   └── de-en-communication/     Kommunikationsregeln: Deutsch/Englisch — Text DE, Code EN, Voice Mixed
-├── agents/             Sub-Agent-Profile (auto-discovered) — alle Agent-Profile zentral hier (16 Profile; zentralisiert via STORY-004, Impl-Loop auf PL+PM konsolidiert via FEAT-001/STORY-033)
+├── agents/             Sub-Agent-Profile (auto-discovered) — alle Agent-Profile zentral hier (15 Profile; zentralisiert via STORY-004, Impl-Loop auf PL+PM konsolidiert via FEAT-001/STORY-033)
 └── references/         Shared references (compliance, output-style, boilerplate)
 
 Mcp-Servers/            MCP server implementations

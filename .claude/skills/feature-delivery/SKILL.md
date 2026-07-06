@@ -73,8 +73,8 @@ Deckt den gesamten Bogen: Anforderung → Plan → Umsetzung → Qualitaetssiche
 │                                                                        │
 │  ┌─ INNER LOOP (Code-Qualitaets-Schleife, max. 5 Runden) ───────┐    │
 │  │  Session-Treiber spawnt je Runde frisch: PL → PM              │    │
-│  │  PL: Fix-Scribes → Gates → 7 Reviewer → digest.md (Pointer)   │    │
-│  │      + autoritative Tiers 🔴/🟡/🟢 → Tier-Zaehler in Index     │    │
+│  │  PL: Fix-Scribes → Gates → 6 Reviewer → digest.md (Pointer)   │    │
+│  │      + autoritative Tiers 🔴/🟡 → Tier-Zaehler in Index        │    │
 │  │  PM: liest Index+Digest → clean / erbsenzaehlerei-exit /      │    │
 │  │      fix(Was+Wie) / escalate                                  │    │
 │  │  Session-Tier-Guard: 🔴 offen > 0 → Exit zurueckgewiesen      │    │
@@ -139,7 +139,7 @@ Details: [flows/implementation-flow.md](flows/implementation-flow.md), [flows/pl
 **Kein Orchestrator überspringt Subagent-Phasen im Implementations-Flow.** Gilt ohne Ausnahme — Plan Mode, Agent Mode. *(Planung läuft lean/solo — der `plan-agent` plant ohne Subagent-Phasen; das ist regelkonform, kein Shortcut.)*
 
 - Impl-Flow: Scribes (implement-scribe-agent / implement-scribe-opus-agent) — der PL (implement-round-executor) schreibt keinen Produkt-Code selbst, der PM (implement-supervisor) urteilt nur
-- Impl-Review: 7 Reviewer parallel — keine Rollensimulation im PL-Thread
+- Impl-Review: 6 Reviewer parallel — keine Rollensimulation im PL-Thread
 - Impl-Fix-Loop: frischer PL UND frischer PM je Runde via Agent-Tool — kein SendMessage ueber Runden hinweg, keine lang lebende Orchestrator-Instanz
 
 **Ausnahme: Micro-Change-Modus** (s.u.) — Session-Treiber editiert direkt, kein Scribe, kein Plan-File, 1 Reviewer (risk). Nur wenn Fastpath explizit aktiviert und angekuendigt.
@@ -333,7 +333,7 @@ Planung und Umsetzung sind getrennte, explizite Schritte.
 ### Implementieren — volle Loops (`implementiere X`, `implement X`, `setze X um`, `liefere X`, `umsetzen`, `feature-delivery`, `fix`)
 
 Setzt einen **existierenden** Plan um — **mit allen Schleifen**: Scribes → Build/Test → Inner-Loop
-(max. 5 Runden, 7 Reviewer, PL/PM, SecondBrain) → Outer-Delivery-Inspection. Story-Status → `reviewed`
+(max. 5 Runden, 6 Reviewer, PL/PM, SecondBrain) → Outer-Delivery-Inspection. Story-Status → `reviewed`
 (bei Outer-Verdikt `OK`, s. Story-Gate Schritt 5 A).
 
 **Plant nicht mehr selbst.** Voraussetzung ist ein vorhandener Plan → Story `status: planned` mit
@@ -380,13 +380,13 @@ Zwei **beratende** Review-Trigger auf den aktuellen Arbeitsstand — **kein Auto
 kein Auto-Implement, kein SecondBrain, keine PL/PM-Runden.** Reiner Befund; der Nutzer bleibt PM und
 entscheidet nach dem Report selbst ueber Nachschaerfen oder Abnahme.
 
-- **`code-inspection`** — Code-Qualitaet/Korrektheit ueber den Diff. **Kein Feature noetig.** 6
-  `implement-review-*`-Agents (risk · design-principles · craft · auditor · guard · readiness) laufen
+- **`code-inspection`** — Code-Qualitaet/Korrektheit ueber den Diff. **Kein Feature noetig.** 5
+  `implement-review-*`-Agents (risk · design-principles · craft · guard · readiness) laufen
   parallel im Vordergrund **ohne Fix-Anwendung**.
 - **`delivery-inspection FEATURE-X`** — Anforderungserfuellung. **Feature-Bezug PFLICHT und explizit**;
   ohne Feature-Argument → **STOPP** + Aufforderung, das Feature anzugeben (keine Pruefung). Laedt das
   Feature, folgt den referenzierten Stories, aggregiert deren ACs und prueft den Diff dagegen (Reuse des
-  `delivery-inspection`-Skills, advisory single-pass — nur die 6 Reviewer, ohne Fix-Loop).
+  `delivery-inspection`-Skills, advisory single-pass — nur die 5 DI-Reviewer, ohne Fix-Loop).
 - **Default-Scope beider** = alle uncommitteten Aenderungen inkl. untracked (`git diff HEAD` +
   untracked-Liste), branch-unabhaengig. **Merge-Base-Alternative** (`git diff <merge-base>..HEAD`) bei
   bereits committetem Feature (uncommitted-Scope leer) oder auf explizite Anforderung.
@@ -408,8 +408,8 @@ Ablauf-Detail: [flows/review-flow.md](flows/review-flow.md).
 |--------|-------|
 | Wer entscheidet | **Default.** Aktiv ohne Zusatz. `schlank planen`/`lean planen` etc. bleiben als explizite Synonyme gueltig. |
 | Was schrumpft | Nur Planung: Orchestrator (Opus) plant + prueft + reviewed in sich selbst — keine Scouts, keine Review-Subagent-Armee, kein 5er-Loop. |
-| Was bleibt voll | Voller Scribe, alle Gates, Test-First (§8/F1) — immer. Impl-Review: Standard 7 Reviewer. |
-| `lean impl` (opt-in) | Reduziert Impl-Review auf 3 Reviewer (risk · craft · readiness) statt 7 — oder collapsed via `impl-quality-review-agent` (1 Agent, alle Lenses intern, 1 Approval statt 7 parallele). Scribes, Gates, Test-First bleiben voll. Aktivierung: `implementiere lean impl …` — explizit anfordern, kein Standard. Collapsed: `implementiere lean impl collapsed`. |
+| Was bleibt voll | Voller Scribe, alle Gates, Test-First (§8/F1) — immer. Impl-Review: Standard 6 Reviewer. |
+| `lean impl` (opt-in) | Reduziert Impl-Review auf 3 Reviewer (risk · craft · readiness) statt 6 — oder collapsed via `impl-quality-review-agent` (1 Agent, alle Lenses intern, 1 Approval statt 6 parallele). Scribes, Gates, Test-First bleiben voll. Aktivierung: `implementiere lean impl …` — explizit anfordern, kein Standard. Collapsed: `implementiere lean impl collapsed`. |
 | Kombinierbar mit | Plan-Trigger (`plane`/`plan`/…). **NICHT** mit From-existing-plan (Plan liegt schon vor). |
 
 *Framing:* Planung ist immer lean/solo — schnell und fokussiert. Für Tiefe sorgen der Plan-Coverage-Check (delivery-inspection auf den Plan) und das Uncertainty Audit, nicht ein separater Strong-Modus.

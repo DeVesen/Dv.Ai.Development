@@ -38,7 +38,7 @@ Kein Shell-Fallback ohne explizite Nutzerfreigabe.
 **Verboten:**
 - PL schreibt Produkt-Code statt an Scribe/Fix-Planer zu delegieren
 - PM editiert Produkt-Code, `finding-*.md`, Digest oder Index (seine einzigen Schreib-Dateien sind `outer/pm-verdict-N.md` + `outer/delta-N.md`)
-- PM stuft ein 🔴 herab / behandelt ein Security-`critical` als 🟡/🟢
+- PM stuft ein 🔴 herab / behandelt ein Security-`critical` als 🟡
 - Session weist einen Erbsenzählerei-Exit bei offenem 🔴 **nicht** zurück (Tier-Guard übersprungen)
 - PL- und Implementierer-Rolle in einem Turn zusammenlegen
 - Session-Treiber uebernimmt PL- oder PM-Arbeit inline statt frische Instanzen zu spawnen
@@ -77,7 +77,7 @@ Trivial-Edit-Fastpath). Green → `implemented`, rot nach 5 Versuchen → `block
 
 **Trigger:** `implementiere nur <Story>`. Der bewusst schlanke Gegenpol zum vollen Impl-Fix-Loop:
 wendet den vorhandenen Plan Slice fuer Slice an und faehrt slice-scoped Build/Test bis gruen — **ohne**
-Inner-Loop-Runden, **ohne** die 7 Reviewer, **ohne** PL/PM-Rollen, **ohne** SecondBrain
+Inner-Loop-Runden, **ohne** die 6 Reviewer, **ohne** PL/PM-Rollen, **ohne** SecondBrain
 (`secondbrain-index.md` / `digest.md` / `finding-*.md`) und **ohne** Outer-Delivery-Inspection.
 
 **Getrieben vom Session-Treiber** (keine PL/PM-Instanzen — dokumentierte Ausnahme zur Rollen-Delegation-Pflicht, s. o. und SKILL.md Anti-Shortcut-Regel). Scribes bleiben Pflicht: **kein** Direkt-Edit durch die Session ausser dem Trivial-Edit-Fastpath (Schritt 2).
@@ -100,7 +100,7 @@ Inner-Loop-Runden, **ohne** die 7 Reviewer, **ohne** PL/PM-Rollen, **ohne** Seco
 
 **Abgrenzung:**
 - `implementiere lean impl` reduziert die Impl-Review auf 3 Reviewer, behaelt aber PL/PM/SecondBrain/Inner-Loop. `implementiere nur` hat **gar keine** Review-Ebene und **keinen** Inner-Loop.
-- Volles `implementiere` laeuft mit Inner-Loop (max. 5 Runden, PL/PM, 7 Reviewer) + Outer-Delivery-Inspection → Story `reviewed`.
+- Volles `implementiere` laeuft mit Inner-Loop (max. 5 Runden, PL/PM, 6 Reviewer) + Outer-Delivery-Inspection → Story `reviewed`.
 
 ---
 
@@ -113,7 +113,7 @@ Inner-Loop-Runden, **ohne** die 7 Reviewer, **ohne** PL/PM-Rollen, **ohne** Seco
 | Rolle | Schritt | Modell | Agent-Datei |
 |-------|---------|--------|-------------|
 | **Session-Treiber** | Treiber: Hard Gate, Rundenzähler, Max-5-Cap, **mechanischer Tier-Guard** (weist Exit bei offenem 🔴 zurück), Closure, Story-Status | — (die aufrufende Session, kein Agent-Profil) | dokumentiert in SKILL.md + diesem Flow |
-| **PL — Round-Executor** | je Runde: (Fix-Planer →) Scribes → Integration-Checkpoint → Gates → Reviewer → digest.md **+ autoritative Tier-Vergabe (🔴/🟡/🟢) + Tier-Zähler in Index** | Opus | `.claude/agents/implement-round-executor.md` |
+| **PL — Round-Executor** | je Runde: (Fix-Planer →) Scribes → Integration-Checkpoint → Gates → Reviewer → digest.md **+ autoritative Tier-Vergabe (🔴/🟡) + Tier-Zähler in Index** | Opus | `.claude/agents/implement-round-executor.md` |
 | **PM — Supervisor** | je Runde: Urteil clean / erbsenzaehlerei-exit / fix (Was+Wie) / escalate. **Terminal-PM** (bei Inner-Close): DI-Dispatch + Outer-Verdikt in einer Instanz | Opus | `.claude/agents/implement-supervisor.md` |
 | **Scribe Runden 1-3** | Slice-Implementierung | Sonnet | `.claude/agents/implement-scribe-agent.md` |
 | **Scribe Runden 4-5** | Eskalation — nur wenn > 30 LOC oder Komplexitaets-Fehlschlag | Opus | `.claude/agents/implement-scribe-opus-agent.md` |
@@ -122,7 +122,6 @@ Inner-Loop-Runden, **ohne** die 7 Reviewer, **ohne** PL/PM-Rollen, **ohne** Seco
 | **Verifier** | Review | Sonnet | `.claude/agents/implement-review-verifier-agent.md` |
 | **Readiness** | Review | Sonnet | `.claude/agents/implement-review-readiness-agent.md` |
 | **Craft** | Review | Sonnet | `.claude/agents/implement-review-craft-agent.md` |
-| **Auditor** | Review | Sonnet | `.claude/agents/implement-review-auditor-agent.md` |
 | **Guard** | Review | Sonnet | `.claude/agents/implement-review-guard-agent.md` |
 | **Fix-Planer** | Fix-Planung | Opus | `.claude/agents/implement-fix-planner-agent.md` |
 
@@ -174,7 +173,7 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
              build_dotnet_solution / build_angular_project (dev-mcp)
              Ohne gruenen Build kein Gate 2/3/4
              Nach Gate 1: `warnings`-Array aus Build-Response auslesen.
-             Nicht-leere Warnings → als Befunde sammeln, an alle 7 Reviewer + Fix-Planer als Evidenz weitergeben.
+             Nicht-leere Warnings → als Befunde sammeln, an alle 6 Reviewer + Fix-Planer als Evidenz weitergeben.
 
         2. STATISCHE ANALYSE (parallel, nach grunem Build):
              • run_inspectcode               (dev-mcp) → token-opt. JSON
@@ -188,7 +187,7 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
              • review_git_diff               (codebase-analyzer)
                   alle 5 focusAreas: security · performance · api-validation
                                      angular-best-practices · solid
-                  Befunde speisen als Evidenz die 7 LLM-Reviewer
+                  Befunde speisen als Evidenz die 6 LLM-Reviewer
              • analyze_iosp_compliance       (codebase-analyzer, nachgelagert Strang 5/6)
                   IOSP-Befunde je Methode; ArchUnit-IOSP-Regel bleibt Backstop
 
@@ -199,7 +198,7 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
         4. TEST-SUITE: test_dotnet_solution / test_angular_project (dev-mcp)
              Gruen = Akzeptanzkriterien erfuellt (§8/F2)
    │
-        **Parallel-Pattern (Pflicht nach Gate 1):** Tests (Gate 4) UND 7 Reviewer-Agents
+        **Parallel-Pattern (Pflicht nach Gate 1):** Tests (Gate 4) UND 6 Reviewer-Agents
         starten im selben parallelen Message-Block — zeitgleich nach gruenem Build.
         Tests haben null Abhaengigkeit vom Review-Output. Kein sequenzielles Warten:
           ❌ Warte auf alle Reviewer → dann starte Tests
@@ -215,13 +214,13 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
         | lean impl | `implementiere lean impl` Trigger aktiv | 3 Reviewer: risk · craft · readiness — ODER 1 `impl-quality-review-agent` (collapsed, bei `lean impl collapsed`) |
         | md-only | Ausschliesslich `.md`-Dateien; kein `.ts`, kein `.cs`, kein Code | 3 Reviewer: risk · guard · readiness |
         | CSS/HTML-only | Ausschliesslich `.html`/`.scss`/`.css`; kein `.ts`, kein Backend | 4 Reviewer: Structure · CSS-Logic · AC-Coverage · Regression |
-        | Single-Service | `.ts`-Dateien eines Angular-Services/Components oder eines .NET-Services | Standard-7-Reviewer |
-        | Cross-Service | Aenderungen in ≥2 Services, BE+FE gemeinsam, Migrations | Standard-7 + Integration-Reviewer |
+        | Single-Service | `.ts`-Dateien eines Angular-Services/Components oder eines .NET-Services | Standard-6-Reviewer |
+        | Cross-Service | Aenderungen in ≥2 Services, BE+FE gemeinsam, Migrations | Standard-6 + Integration-Reviewer |
 
         → Scope einmal klassifizieren; Ensemble entsprechend starten; nicht nachjustieren.
    │
    ▼  Reviewer parallel (schreiben je eine finding-<reviewer>.md, Rückgabe nur Pointer) — Anzahl laut Change-Scope-Classifier:
-        Standard-7:          risk (O) · design-principles (O) · verifier (S) · readiness (S) · craft (S) · auditor (S) · guard (S)
+        Standard-6:          risk (O) · design-principles (O) · verifier (S) · readiness (S) · craft (S) · guard (S)
         md-only:             risk (O) · guard (S) · readiness (S)
         lean-impl-3:         risk (O) · craft (S) · readiness (S)
         lean-impl-collapsed: 1× impl-quality-review-agent (S) — alle Lenses intern, 1 Approval
@@ -233,7 +232,7 @@ Hard Gate (Readiness)              SESSION-TREIBER (die aufrufende Session — p
         codebase-analyzer review_git_diff-Befunde → speisen als Evidenz alle Reviewer
    │
    ▼  Digest: PL LIEST finding-*.md → baut iteration-N/round-M/digest.md
-        (kein Report-Body im PL-Return; autoritative Tiers 🔴/🟡/🟢 vergeben; secondbrain-index.md aktualisieren: current_round=M, Cap M/5, Zähler + Tier-Zähler)
+        (kein Report-Body im PL-Return; autoritative Tiers 🔴/🟡 vergeben; secondbrain-index.md aktualisieren: current_round=M, Cap M/5, Zähler + Tier-Zähler)
    │
    ▼  PL-Rückgabe an Session: NUR Pointer (digest.md + index) + Verdikt-Kurzform (inkl. Tier-Zähler). PL wird verworfen.
    │  └────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -322,12 +321,12 @@ Wenn ALLE Bedingungen gleichzeitig erfuellt sind:
 2. **Scribes strikt:** nur zugewiesener Slice; kein Scope-Expand; keine stille Umplanung.
 3. Topologie explizit protokollieren: Anzahl (1-10), Grenzen aus Plan, sequenziell/parallel.
 4. Jeder Scribe-Brief enthaelt:
-   - Scope (was anfassen, was nicht)
-   - Deliverables + Mapping zu Plan-Schritten
-   - Akzeptanzliste (Testname + AAA-Stichpunkte) fuer diesen Slice (§8/F1)
-   - Test-First-Pflicht: Neue/erweiterte Tests zuerst RED, dann GREEN (§8/F2)
+   - **Task-ID-Pointer** (`tasks/task-NNN.md` — Scribe liest **nur** seine eigene Task-Datei)
+   - **Read-Scope-Pflicht:** Scribe liest ausschliesslich seine `tasks/task-NNN.md` — `tasks/index.md` und Ganzplan NICHT lesen (Umsetzer-Input-Contract STORY-009)
+   - Test-First-Pflicht: Neue/erweiterte Tests zuerst RED, dann GREEN (§8/F2) — Testfall-Stichpunkte stehen in der Task-Datei
    - Non-Goals: keine Produkt-/Design-Entscheidungen ausserhalb Plan
    - Pflicht: passenden Abschnitt aus `../references/subagent-prompts.md` inkl. MCP-First-Pflicht
+   - ⚠️ **Regression:** Ganzplan-Inline an den Scribe (vollständiger Plan-Text statt Task-Pointer) verletzt den Umsetzer-Input-Contract (STORY-009).
 5. Keine Abweichung vom finalen Plan ohne User-Freigabe.
 6. Scribe-Output ≠ done — erst nach Integration-Checkpoint + Quality Gates.
 
@@ -361,7 +360,7 @@ Instanz aus `secondbrain-index.md` + dem Vorrunden-Digest. Keine Rollensimulatio
 
 **Pro Runde:**
 1. **Session** spawnt PL#M → PL: (Fix-Planer bei M≥2 →) Scribes → Integration-Checkpoint → Quality Gates
-   → Reviewer → liest `finding-*.md` → baut `digest.md` **+ vergibt autoritative Tiers 🔴/🟡/🟢** → aktualisiert Index (inkl. Tier-Zähler) → gibt nur Pointer zurück.
+   → Reviewer → liest `finding-*.md` → baut `digest.md` **+ vergibt autoritative Tiers 🔴/🟡** → aktualisiert Index (inkl. Tier-Zähler) → gibt nur Pointer zurück.
 2. **Session** spawnt PM#M auf Index+Digest-Pointer → PM urteilt `clean` / `erbsenzaehlerei-exit` / `fix` (Was+Wie) / `escalate`.
 3. **Session** hält nur Pointer + PM-Verdikt, führt bei Inner-Close den Tier-Guard aus und entscheidet den nächsten Schritt (s. 3.9).
 
@@ -388,10 +387,9 @@ Gewaltenteilung entscheiden darüber:
 |------|-----------|----------------------------|
 | 🔴 | Blockierend — Correctness-Bug, fehlender AC-Test, Contract-Drift, Regression, **Security-`critical`** | Blockt den Exit. **Ein offenes 🔴 → nächste Runde Pflicht.** |
 | 🟡 | Begründungspflichtig — behebbar, Wave vertretbar | Wave nur mit **schriftlicher Begründung je Finding** im `outer/pm-verdict-N.md`. |
-| 🟢 | Frei — kosmetisch | Frei durchwinkbar. |
 
 **Gewaltenteilung:**
-- **PL** vergibt die **autoritative** Tier-Einstufung beim Digest-Bau (Reviewer liefern nur `Tier-Vorschlag`) und schreibt die offenen Zähler `Tier 🔴/🟡/🟢 offen` in den Index. Regeln: `../references/secondbrain-schema.md → ## Tier-Klassifikation`.
+- **PL** vergibt die **autoritative** Tier-Einstufung beim Digest-Bau (Reviewer liefern nur `Tier-Vorschlag`) und schreibt die offenen Zähler `Tier 🔴/🟡 offen` in den Index. Regeln: `../references/secondbrain-schema.md → ## Tier-Klassifikation`.
 - **PM** urteilt auf Basis der Tiers: `Tier 🔴 offen > 0` → `fix` (Pflicht); `== 0` → `clean` oder **`erbsenzaehlerei-exit`** (bei erbsenzaehlerei-exit: je offenes 🟡 eine Begründung ins `pm-verdict-N.md`).
 - **Session** führt den **mechanischen Tier-Guard** aus: liest `Tier 🔴 offen` aus dem Index; meldet der PM einen Inner-Close (clean/erbsenzaehlerei-exit) bei `🔴 offen > 0`, **weist die Session den Exit deterministisch zurück** und erzwingt die nächste Runde (bis der Cap greift). Kein Urteil, reine Zähler-Arithmetik — deshalb nicht durch ein PM-Fehlurteil aushebelbar.
 
@@ -418,9 +416,9 @@ Gate-Reihenfolge einhalten (Build → Statische Analyse → Design-Principles �
 
 **Prozess-Disziplin (Fix-Edit-Zyklen):** `review_git_diff` laeuft in Gate 2 nach **jedem** Fix-Edit-Zyklus — auch nach trivialen Fixes (1 Zeile). Kein Fix-Zyklus reduziert Gate 2 auf Build+Test allein. Zweck: unbeabsichtigte Whitespace- oder Seiteneffekt-Aenderungen werden vor dem naechsten Review-Loop erkannt.
 
-**3.2 Sieben Impl-Reviews (parallel, Datei-Handoff — vom PL dispatcht)**
+**3.2 Sechs Impl-Reviews (parallel, Datei-Handoff — vom PL dispatcht)**
 
-7 Subagents, je eine Rolle. Verboten: Rollensimulation im PL-Thread.
+6 Subagents, je eine Rolle. Verboten: Rollensimulation im PL-Thread.
 Jeder erhaelt: finaler Plan + ACs + Akzeptanzliste, aktueller Diff/Touched Paths, Gate-Status pro Stack, codebase-analyzer review_git_diff-Befunde als Evidenz, **den Runden-Pfad `iteration-N/round-M/`**.
 Jeder Reviewer schreibt seine EIGENE `finding-<reviewer>.md` (Struktur-Tabelle, s. secondbrain-schema.md) und gibt **nur Pointer + Verdikt-Kurzform** zurueck — **kein Report-Body im Return**.
 Task-Prompts: jeweiliger Abschnitt in `../references/subagent-prompts.md`.
@@ -428,8 +426,8 @@ Task-Prompts: jeweiliger Abschnitt in `../references/subagent-prompts.md`.
 **3.3 Review-Digest (PL):** Der **PL liest** die `finding-*.md` der Runde und baut daraus `iteration-N/round-M/digest.md` (Review-Digest Runde N). Er empfaengt **keine** vollen Reports als Agent-Rueckgabe. Weil der PL throwaway ist, transitieren die finding-Bodies **einmal** durch das PL-Fenster (nicht durch die Session). `secondbrain-index.md` (current_round, Cap, Zaehler, Runden-Historie, letzter Digest-Pointer) aktualisieren. PL-Rückgabe an die Session: nur Pointer + Verdikt-Kurzform.
 
 **3.4 PM-Urteil (frische Instanz, tier-gesteuert):** Nach dem PL spawnt die Session einen **frischen** `implement-supervisor` (PM) auf Index+Digest-Pointer. Der PM liest **zuerst `Tier 🔴 offen`** und fällt **ein** Urteil:
-- `clean` — `Tier 🔴/🟡/🟢 offen` alle 0, Gates gruen, ACs adressiert → Inner-Loop schließbar.
-- `erbsenzaehlerei-exit` — `Tier 🔴 offen == 0`, aber ≥1 🟡/🟢 offen; Restfindings keiner Runde wert → Inner-Loop schließbar. **Pflicht:** je offenes 🟡 eine schriftliche Begründung im `outer/pm-verdict-N.md`.
+- `clean` — `Tier 🔴/🟡 offen` alle 0, Gates gruen, ACs adressiert → Inner-Loop schließbar.
+- `erbsenzaehlerei-exit` — `Tier 🔴 offen == 0`, aber ≥1 🟡 offen; Restfindings keiner Runde wert → Inner-Loop schließbar. **Pflicht:** je offenes 🟡 eine schriftliche Begründung im `outer/pm-verdict-N.md`.
 - `fix` — `Tier 🔴 offen > 0` (Pflicht), oder der PM entscheidet, ein 🟡 doch zu fixen → kompaktes **Was+Wie** (Verweis auf Digest-Zeilen).
 - `escalate` — Produkt-/Design-Ambiguität, konfligierende AC-Interpretation → gebündelte Nutzerfrage.
 
@@ -451,7 +449,7 @@ Der PM editiert **nur** `outer/pm-verdict-N.md` (und bei Requirement-Gap `outer/
 **3.9 Abbruchbedingung (Session entscheidet, liest `current_round` + `Tier 🔴 offen` aus `secondbrain-index.md` VOR jedem Spawn):**
 1. Sauber: PM-Verdikt `clean` **oder** `erbsenzaehlerei-exit` → **Tier-Guard**: `Tier 🔴 offen == 0`? (bei erbsenzaehlerei-exit zusätzlich: 🟡-Begründungen im pm-verdict-N.md vollständig?) → ja: Inner-Loop beenden, PM wird Terminal-PM → Delivery-Inspection. **Nein (🔴 > 0): Exit deterministisch zurückgewiesen → wie `fix` behandeln (current_round++).**
 2. Maximum (Max-5-Cap): `current_round = 5` **und** PM-Verdikt `fix` (oder ein vom Tier-Guard zurückgewiesener Exit) → Session weist den Fix-Zyklus zurück, **startet keinen PL#6**. Der Cap begrenzt die **Fix-Runden**, hebt aber die 🔴-Invariante NICHT auf — deshalb Aufteilung nach `Tier 🔴 offen`:
-   - **`Tier 🔴 offen == 0`** (nur 🟡/🟢 Rest): cap-erzwungener `erbsenzaehlerei-exit` — der Terminal-PM schreibt `outer/pm-verdict-N.md` mit je offenem 🟡 einer Begründung („Cap erreicht — auf Folge-Story vertagt"), dann Delivery-Inspection → Closure mit Rest-Findings-Bericht.
+   - **`Tier 🔴 offen == 0`** (nur 🟡 Rest): cap-erzwungener `erbsenzaehlerei-exit` — der Terminal-PM schreibt `outer/pm-verdict-N.md` mit je offenem 🟡 einer Begründung („Cap erreicht — auf Folge-Story vertagt"), dann Delivery-Inspection → Closure mit Rest-Findings-Bericht.
    - **`Tier 🔴 offen > 0`** (offenes 🔴, z. B. Security-`critical`): **KEINE Closure, KEIN Terminal-PM-DI-Span, Story NICHT `reviewed` (bleibt `planned`).** Hard-Stop → Rest-Findings-Bericht (inkl. Liste der offenen 🔴) → **gebündelte User-Eskalation** (waiven / Cap ausnahmsweise erhöhen / abbrechen). Damit kann ein offenes 🔴 nie still über den Cap durchgewunken werden (Aggregat-Regel + Security-Guardrail bleiben am Cap gewahrt).
 3. escalate: gebündelte Nutzerfrage; nach Antwort clean/erbsenzaehlerei-exit/fix — der Cap gilt weiterhin (escalate-Runden zählen mit).
 

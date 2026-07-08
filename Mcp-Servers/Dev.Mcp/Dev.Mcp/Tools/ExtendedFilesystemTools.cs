@@ -154,7 +154,7 @@ public sealed class ExtendedFilesystemTools
 
     [McpServerTool(Name = "apply_text_patch")]
     [Description("Patches a file by line range (start_line+end_line+new_text) or anchor (old_text+new_text). Optionally runs compiler gate. dry_run=true previews without writing.")]
-    public string ApplyTextPatch(
+    public Task<string> ApplyTextPatch(
         [Description("Absolute path to the file")] string file_path,
         [Description("Replacement text")] string new_text,
         [Description("First line to replace (1-based, line-range mode)")] int? start_line = null,
@@ -163,18 +163,18 @@ public sealed class ExtendedFilesystemTools
         [Description("Run dotnet build / tsc --noEmit after patch on .cs/.ts (default true)")] bool run_compiler_gate = true,
         [Description("Preview only, do not write file (default false)")] bool dry_run = false,
         [Description("Restore original if compiler gate fails (default false)")] bool rollback_on_error = false) =>
-        Execute("apply_text_patch", "filesystem", new { file_path, start_line, end_line, old_text, run_compiler_gate, dry_run }, () =>
+        ExecuteAsync("apply_text_patch", "filesystem", new { file_path, start_line, end_line, old_text, run_compiler_gate, dry_run }, async () =>
         {
             if (!TryResolveFile(file_path, out var normalized, out var err)) return JsonOptions.Error(err);
 
             ApplyPatchResult result;
             if (old_text is not null)
             {
-                result = _patch.ApplyAnchorPatch(normalized, old_text, new_text, run_compiler_gate, dry_run, rollback_on_error);
+                result = await _patch.ApplyAnchorPatchAsync(normalized, old_text, new_text, run_compiler_gate, dry_run, rollback_on_error);
             }
             else if (start_line.HasValue && end_line.HasValue)
             {
-                result = _patch.ApplyLinePatch(normalized, start_line.Value, end_line.Value, new_text, run_compiler_gate, dry_run, rollback_on_error);
+                result = await _patch.ApplyLinePatchAsync(normalized, start_line.Value, end_line.Value, new_text, run_compiler_gate, dry_run, rollback_on_error);
             }
             else
             {
@@ -416,6 +416,23 @@ public sealed class ExtendedFilesystemTools
         var sw = Stopwatch.StartNew();
         string output;
         try { output = action(); }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Tool {Tool} failed", toolName);
+            output = JsonOptions.Error(ex.Message);
+        }
+        sw.Stop();
+        var paramsJson = JsonSerializer.Serialize(parameters, JsonOptions.Default);
+        _history.Record(toolName, source, paramsJson, output, string.Empty, sw.ElapsedMilliseconds);
+        _logger.LogInformation("=== {Tool} ({Duration}ms) ===", toolName, sw.ElapsedMilliseconds);
+        return output;
+    }
+
+    private async Task<string> ExecuteAsync(string toolName, string source, object parameters, Func<Task<string>> action)
+    {
+        var sw = Stopwatch.StartNew();
+        string output;
+        try { output = await action(); }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Tool {Tool} failed", toolName);

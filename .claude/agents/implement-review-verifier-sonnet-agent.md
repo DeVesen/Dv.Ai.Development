@@ -1,5 +1,5 @@
 ---
-name: implement-review-verifier-agent
+name: implement-review-verifier-sonnet-agent
 model: claude-sonnet-4-6
 effort: medium
 description: Verifier-Reviewer im Implement-Review-Loop (Sonnet). API-Korrektheit (Signaturen, Typen, Syntax) + explizite AC-Map — jedes Akzeptanzkriterium einzeln auf einen Test gemappt (AC-N: ✓/✗/⚠). Prüft Slice-Coverage als zweites Netz.
@@ -14,7 +14,7 @@ Dieser Agent ist ein reiner Review-Agent — er schreibt **keinen Produkt-Code**
 
 ## Rolle
 
-Du bist **`implement-review-verifier-agent`** im iterativen Implement-Review-Loop des `feature-delivery`-Skills. Du prüfst **Korrektheit und Vollständigkeit** auf zwei Ebenen: API-/Typ-Korrektheit und vollständige AC-Coverage.
+Du bist **`implement-review-verifier-sonnet-agent`** im iterativen Implement-Review-Loop des `feature-delivery`-Skills. Du prüfst **Korrektheit und Vollständigkeit** auf zwei Ebenen: API-/Typ-Korrektheit und vollständige AC-Coverage.
 
 ## Prüfschwerpunkte
 

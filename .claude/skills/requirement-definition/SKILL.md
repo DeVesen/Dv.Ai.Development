@@ -35,7 +35,7 @@ tieferer Audit-Lauf am fertigen Text.)
 - **Skill-Dateien, `description`, Dateinamen, Frontmatter-Keys** → Englisch/ASCII.
 - **Artefakt-Inhalt** (`Epic_*`, `Feature_*`, `Story_*`) → **Deutsch** (Business-Doku fuer
   deutschsprachige Stakeholder).
-- **Dateiname** = ASCII-Slug (siehe Naming-Regel), **Status-Werte** `offen | ready` (Frontmatter-Keys Englisch).
+- **Dateiname** = ASCII-Slug (siehe Naming-Regel), **Status-Werte** `offen | ready | planned | implemented | reviewed | blocked_<status>` (Frontmatter-Keys Englisch).
 
 ## Trigger & Einstiegspunkte
 
@@ -48,6 +48,10 @@ Primaerer Ausloeser ist die `description` (Auto-Trigger). Die explizite Form
 | **Feature** | Abgegrenzter Funktionsbereich | Feature-Datei aufgreifen/anlegen → Dialog → bei Reife Story-Schnitt |
 | **Story** | Kleinstes Arbeitspaket | Story-Datei anlegen → auf DoR-Niveau bringen → AC (F1) definieren & schaerfen |
 | **kein Level** | Unklar | Startet als Epic, prueft sofort, ob Feature/Story passender |
+
+**Name-Grammatik (RD2):** `feature "<name>" [prompt]` — der gequotete `<name>` wird direkt als Titel
+und Slug-Quelle uebernommen; `[prompt]` ist optionaler Ersteingabe-Kontext fuer den Feature-Phase-Dialog.
+Gilt ausschliesslich auf Feature-Level. Story und Epic haben keine analoge Kurzform.
 
 **Level-Erkennung** (Rubrik: [`references/level-detection.md`](references/level-detection.md)):
 Klingt ein Epic eher nach Feature (oder Feature nach Story), schlaegt der Skill den Wechsel vor —
@@ -78,6 +82,31 @@ Treffen alle vier zu: Skill bietet vereinfachten 2-AC-Story-Draft an.
 **Negativ-Pfad:**
 Fehlt auch nur ein Signal (z. B. zwei Dateien betroffen, oder neue Interaktion) → kein Micro-Change-Pfad angeboten; volle Story-Zeremonie läuft wie gewohnt.
 
+## Feature-Zwang — Keine Waisen-Story (RD1)
+
+Jede Story-Datei bekommt einen `parent` (Feature-ID) gesetzt, **bevor** sie geschrieben wird. Gilt
+auch bei Story-Direkteinstieg und Micro-Change-Pfad.
+
+**Pruef-Gate (Pre-Write):** Liegt kein Feature-Kontext vor → Dialog:
+
+> *„Diese Story braucht ein uebergeordnetes Feature. Bestehendes auswaehlen oder neues anlegen?"*
+> 1. Bestehendes Feature auswaehlen (Auswahl aus `offen`- und `ready`-Features)
+> 2. Neues Minimal-Feature-Stub anlegen
+
+**Bestehende Feature-Auswahl:**
+- `offen`-Features → direkt waehlbar.
+- `ready`-Features (gesperrt) → nach Auswahl kurze Bestaetigung: *„FEAT-003 ist ready (gesperrt).
+  Entsperren und Story anhaengen? [Ja / Nein]"* → bei Ja: Feature → `offen`, dann Story anhaengen.
+
+**Minimal-Feature-Stub (Option 2):**
+- Inhalt: Frontmatter (`id`, `type: feature`, `status: offen`, `slug`, `title`) + leere `children`-Liste.
+- Feature-Phase-Dialog wird **nicht** ausgeloest — Stub bleibt minimal.
+- Story-Erstellung laeuft sofort weiter; Stub kann spaeter per Feature-Phase ausgebaut werden.
+- ID-Vergabe: Glob `requests/features/FEAT-*.md` → Max+1 (verpflichtender Pre-Write-Gate).
+
+**Ausnahme:** Feature-Phase ist aktiv (Skill befuellt gerade ein Feature) → parent-Kontext ist bereits
+bekannt, Guard feiert nicht redundant.
+
 ## Zustandsmodell — die Dateien sind der Status
 
 Kein Statusblock in der Antwort. Der Zustand liegt vollstaendig in den Dateien — das uebersteht
@@ -93,6 +122,11 @@ Kontext-Kompaktierung und Session-Grenzen.
   und wartet auf OK. Erst dann `ready` + Anlegen der Kind-Files (`offen`). `offen` = aenderbar,
   `ready` = gesperrt (bereit fuer naechste Stufe).
 - **Entsperr-Notausgang:** „Epic xyz wieder oeffnen" → `status: offen`, Inhalt wieder aenderbar.
+- **Blocked-Zustand:** Nutzer setzt explizit *„Story xyz ist blockiert"* → `status: blocked_<aktueller-status>`
+  (z. B. `blocked_ready`, `blocked_planned`). Der Skill setzt diesen Zustand **nie automatisch**. Recovery:
+  *„Story xyz entsperren"* → Praefix entfernen, Status zurueck auf Ausgangswert (z. B. `blocked_ready` → `ready`).
+- **Reviewed:** Terminaler Zustand nach Delivery-Inspection-Abnahme. Wird von `feature-delivery` nach
+  bestandener DI gesetzt — oder auf explizite Nutzeranfrage. Kein automatischer Uebergang durch diesen Skill.
 - **Wiedereinstieg (stateless):** „weiter mit Epic xyz" → Skill liest die Datei, traversiert ueber
   die ID-Referenzen die Kinder und meldet den Status-Baum (z. B. *„Epic ready. FEAT-001 offen,
   FEAT-002 ready aber dessen STORY-007 offen. Womit weiter?"*). „offene Punkte von Epic xyz" →
@@ -233,7 +267,7 @@ gekuerzt. Beispiel: Feature „Benutzeruebersicht & Rollen" → `FEAT-003_benutz
 id: STORY-014
 parent: FEAT-003          # bei Epics weglassen
 type: story               # epic | feature | story
-status: offen             # offen | ready | planned | implemented
+status: offen             # offen | ready | planned | implemented | reviewed | blocked_<status>
 slug: select-statt-checkboxen
 children: [STORY-014, STORY-015]   # nur Epic/Feature; Verweis per ID
 depends_on: [STORY-012, STORY-013] # nur wenn Abhaengigkeiten zu anderen Stories bestehen; sonst weglassen
@@ -315,9 +349,15 @@ Intake von feature-delivery), **kein automatisches Datei-Einlesen**. Weil die AC
 vorliegen, greift `feature-deliverys` §8/F1-Akzeptanzliste sie nahtlos auf.
 
 **Status-Lifecycle einer Story:**
-`offen` → `ready` (DoR erfuellt, freigegeben fuer feature-delivery) → `planned` (Plan erstellt, wird
-von feature-delivery gesetzt) → `implemented` (Umsetzung abgeschlossen, wird von feature-delivery
-gesetzt).
+`offen` (in Diskussion) → `ready` (DoR erfuellt, freigegeben fuer feature-delivery) → `planned`
+(Plan erstellt, von feature-delivery gesetzt) → `implemented` (Umsetzung abgeschlossen, von
+feature-delivery gesetzt) → `reviewed` (DI-Reviewer-Abnahme bestanden, terminaler Zustand).
+
+**Blocked-Zustand:** Von jedem Status per expliziter Nutzeranfrage erreichbar:
+`blocked_<status>` (z. B. `blocked_ready`, `blocked_planned`). Recovery entfernt das Praefix.
+
+**Single Source of Truth:** Alle Status-Werte — inkl. `reviewed` und `blocked_*` — liegen
+ausschliesslich im Frontmatter der jeweiligen Datei. Kein Status in Eltern-Dateien oder Chat.
 
 ## Referenzdateien
 
@@ -345,3 +385,12 @@ gesetzt).
 12. Story-AC liegen im F1-Format vor, ≥ 1 Negativszenario.
 13. Anforderung: 2 CSS-Properties, eine Datei, kein neues Verhalten → Micro-Change erkannt,
     vereinfachter 2-AC-Draft angeboten mit Opt-in-Hinweis.
+14. Story-Direkteinstieg ohne Feature-Kontext → parent-Guard fires → Dialog → bestehendes
+    `offen`-Feature gewaehlt → Story mit `parent: FEAT-NNN` geschrieben.
+15. Micro-Change-Pfad ohne Feature-Kontext → parent-Guard fires → Minimal-Feature-Stub angelegt
+    (Frontmatter + Titel, `status: offen`) → Story sofort mit `parent: FEAT-NNN` geschrieben.
+16. `ready`-Feature gewaehlt → Bestaetigung: „Entsperren?" → Ja → Feature `offen` → Story angehaengt.
+17. `feature "Benutzersuche"` → Titel: „Benutzersuche", Slug: `benutzersuche`, Feature-Phase laeuft.
+18. „Story xyz ist blockiert" (bei `status: ready`) → `status: blocked_ready`.
+19. „Story xyz entsperren" (bei `status: blocked_ready`) → `status: ready`.
+20. Story nach DI-Abnahme → `status: reviewed` (terminaler Zustand, kein weiterer Uebergang).

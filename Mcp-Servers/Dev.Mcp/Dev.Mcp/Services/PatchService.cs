@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using Dev.Mcp.Models;
@@ -13,7 +12,7 @@ public sealed class PatchService
     // ── public API ─────────────────────────────────────────────────────────────
 
     /// <summary>Anchor-based patch (old_text → new_text). EOL-agnostic match; preserves the file's original EOL.</summary>
-    public ApplyPatchResult ApplyAnchorPatch(
+    public async Task<ApplyPatchResult> ApplyAnchorPatchAsync(
         string filePath, string oldText, string newText,
         bool runCompilerGate, bool dryRun, bool rollbackOnError)
     {
@@ -47,11 +46,11 @@ public sealed class PatchService
         var newLineCount = newText.Count(c => c == '\n') + 1;
         var linesChanged = Math.Abs(newLineCount - oldLineCount);
 
-        return CommitPatch(filePath, raw, patched, linesChanged, "anchor", runCompilerGate, dryRun, rollbackOnError);
+        return await CommitPatchAsync(filePath, raw, patched, linesChanged, "anchor", runCompilerGate, dryRun, rollbackOnError);
     }
 
     /// <summary>Line-range patch (replaces lines start_line..end_line with new_text).</summary>
-    public ApplyPatchResult ApplyLinePatch(
+    public async Task<ApplyPatchResult> ApplyLinePatchAsync(
         string filePath, int startLine, int endLine, string newText,
         bool runCompilerGate, bool dryRun, bool rollbackOnError)
     {
@@ -70,7 +69,7 @@ public sealed class PatchService
 
         var linesChanged = Math.Abs(newLines.Length - (end - start + 1));
 
-        return CommitPatch(filePath, original, patched, linesChanged, "line_range", runCompilerGate, dryRun, rollbackOnError);
+        return await CommitPatchAsync(filePath, original, patched, linesChanged, "line_range", runCompilerGate, dryRun, rollbackOnError);
     }
 
     // ── private helpers ────────────────────────────────────────────────────────
@@ -115,7 +114,7 @@ public sealed class PatchService
         return eol == "\n" ? lf : lf.Replace("\n", "\r\n");
     }
 
-    private static ApplyPatchResult CommitPatch(
+    private static async Task<ApplyPatchResult> CommitPatchAsync(
         string filePath, string original, string patched,
         int linesChanged, string mode,
         bool runCompilerGate, bool dryRun, bool rollbackOnError)
@@ -128,7 +127,7 @@ public sealed class PatchService
         CompilerGateResult? gateResult = null;
         if (runCompilerGate && ShouldRunGate(filePath))
         {
-            gateResult = RunCompilerGate(filePath);
+            gateResult = await RunCompilerGateAsync(filePath);
             if (!gateResult.Ran || gateResult.ErrorCount > 0)
             {
                 if (rollbackOnError)
@@ -149,7 +148,7 @@ public sealed class PatchService
         return ext is ".cs" or ".ts";
     }
 
-    private static CompilerGateResult RunCompilerGate(string filePath)
+    private static async Task<CompilerGateResult> RunCompilerGateAsync(string filePath)
     {
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
         var workDir = Path.GetDirectoryName(filePath) ?? ".";
@@ -160,11 +159,11 @@ public sealed class PatchService
             if (csproj is null)
                 return new CompilerGateResult(false, 0, ["No .csproj found near file"]);
 
-            return RunProcess("dotnet", $"build \"{csproj}\" --no-restore -v quiet", Path.GetDirectoryName(csproj)!);
+            return await RunGateAsync("dotnet", $"build \"{csproj}\" --no-restore -v quiet", Path.GetDirectoryName(csproj)!);
         }
         else // .ts
         {
-            return RunProcess("tsc", "--noEmit", workDir);
+            return await RunGateAsync("tsc", "--noEmit", workDir);
         }
     }
 
@@ -181,40 +180,37 @@ public sealed class PatchService
         return null;
     }
 
-    private static CompilerGateResult RunProcess(string exe, string args, string workDir)
+    // Runs the compiler through the shared ProcessRunner: full-path resolution (so a
+    // bare tsc.cmd/ng.cmd wrapper is launched correctly on Windows instead of
+    // misresolving its %~dp0) and an exit code captured independently of stdout/stderr
+    // drain (a lingering child can no longer force a false timeout).
+    private static async Task<CompilerGateResult> RunGateAsync(string exe, string args, string workDir)
     {
+        ProcessRunResult run;
         try
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = exe, Arguments = args, WorkingDirectory = workDir,
-                RedirectStandardOutput = true, RedirectStandardError = true,
-                UseShellExecute = false, CreateNoWindow = true,
-            };
-            using var proc = new Process { StartInfo = psi };
-            if (!proc.Start()) return new CompilerGateResult(false, 0, ["Failed to start compiler process"]);
-
-            var stdoutTask = proc.StandardOutput.ReadToEndAsync();
-            var stderrTask = proc.StandardError.ReadToEndAsync();
-            if (!proc.WaitForExit(60_000)) { try { proc.Kill(entireProcessTree: true); } catch { } return new CompilerGateResult(false, 0, ["compiler gate timeout"]); }
-            var stdout = stdoutTask.Result;
-            var stderr = stderrTask.Result;
-
-            var output = (stdout + "\n" + stderr).Trim();
-            var errorLines = output.Split('\n')
-                .Where(l => Regex.IsMatch(l, @"error\s+[A-Z]+\d+:|error TS\d+:", RegexOptions.IgnoreCase))
-                .Select(l => l.Trim())
-                .Where(l => l.Length > 0)
-                .Distinct()
-                .Take(20)
-                .ToList();
-
-            return new CompilerGateResult(true, errorLines.Count, errorLines);
+            run = await ProcessRunner.RunAsync(exe, args, workDir, timeoutSeconds: 60);
         }
         catch (Exception ex)
         {
             return new CompilerGateResult(false, 0, [$"Compiler gate error: {ex.Message}"]);
         }
+
+        if (run.TimedOut)
+            return new CompilerGateResult(false, 0, ["compiler gate timeout"]);
+
+        // Pass/fail policy unchanged: the gate is driven by parsed compiler errors,
+        // not the raw exit code — preserving the existing CompilerGateResult contract.
+        var output = (run.Stdout + "\n" + run.Stderr).Trim();
+        var errorLines = output.Split('\n')
+            .Where(l => Regex.IsMatch(l, @"error\s+[A-Z]+\d+:|error TS\d+:", RegexOptions.IgnoreCase))
+            .Select(l => l.Trim())
+            .Where(l => l.Length > 0)
+            .Distinct()
+            .Take(20)
+            .ToList();
+
+        return new CompilerGateResult(true, errorLines.Count, errorLines);
     }
 
     private static ApplyPatchResult Fail(string filePath, string error, bool dryRun) =>

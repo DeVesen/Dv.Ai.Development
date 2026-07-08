@@ -26,11 +26,11 @@ public sealed class PatchServiceAnchorEolTests : IDisposable
     }
 
     [Fact]
-    public void MultiLineAnchor_OnCrlfFile_MatchesAndKeepsCrlf()
+    public async Task MultiLineAnchor_OnCrlfFile_MatchesAndKeepsCrlf()
     {
         var path = WriteBytes("crlf.txt", "foo\r\nbar\r\nbaz\r\n");
 
-        var result = _patch.ApplyAnchorPatch(path, "foo\nbar", "FOO\nBAR",
+        var result = await _patch.ApplyAnchorPatchAsync(path, "foo\nbar", "FOO\nBAR",
             runCompilerGate: false, dryRun: false, rollbackOnError: false);
 
         Assert.True(result.Success, result.Error);
@@ -38,11 +38,11 @@ public sealed class PatchServiceAnchorEolTests : IDisposable
     }
 
     [Fact]
-    public void MultiLineAnchor_OnLfFile_MatchesAndKeepsLf()
+    public async Task MultiLineAnchor_OnLfFile_MatchesAndKeepsLf()
     {
         var path = WriteBytes("lf.txt", "foo\nbar\nbaz\n");
 
-        var result = _patch.ApplyAnchorPatch(path, "foo\nbar", "FOO\nBAR",
+        var result = await _patch.ApplyAnchorPatchAsync(path, "foo\nbar", "FOO\nBAR",
             runCompilerGate: false, dryRun: false, rollbackOnError: false);
 
         Assert.True(result.Success, result.Error);
@@ -50,12 +50,12 @@ public sealed class PatchServiceAnchorEolTests : IDisposable
     }
 
     [Fact]
-    public void MultiLineAnchor_OnMixedEolFile_UsesDominantAndLeavesUnrelatedLineUntouched()
+    public async Task MultiLineAnchor_OnMixedEolFile_UsesDominantAndLeavesUnrelatedLineUntouched()
     {
         // 3x CRLF vs 1x lone LF -> dominant is CRLF; the lone-LF "keep" line is unrelated and must stay LF.
         var path = WriteBytes("mixed.txt", "foo\r\nbar\r\nkeep\nbaz\r\n");
 
-        var result = _patch.ApplyAnchorPatch(path, "foo\nbar", "FOO\nBAR",
+        var result = await _patch.ApplyAnchorPatchAsync(path, "foo\nbar", "FOO\nBAR",
             runCompilerGate: false, dryRun: false, rollbackOnError: false);
 
         Assert.True(result.Success, result.Error);
@@ -63,11 +63,11 @@ public sealed class PatchServiceAnchorEolTests : IDisposable
     }
 
     [Fact]
-    public void SingleLineAnchor_OnCrlfFile_StillWorks()
+    public async Task SingleLineAnchor_OnCrlfFile_StillWorks()
     {
         var path = WriteBytes("single.txt", "foo\r\nbar\r\nbaz\r\n");
 
-        var result = _patch.ApplyAnchorPatch(path, "bar", "BAR",
+        var result = await _patch.ApplyAnchorPatchAsync(path, "bar", "BAR",
             runCompilerGate: false, dryRun: false, rollbackOnError: false);
 
         Assert.True(result.Success, result.Error);

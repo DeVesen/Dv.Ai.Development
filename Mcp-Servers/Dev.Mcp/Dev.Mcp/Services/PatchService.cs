@@ -104,6 +104,7 @@ public sealed class PatchService
             if (raw[i] == '\r' && raw[i + 1] == '\n') crlf++;
         var lfOnly = raw.Count(c => c == '\n') - crlf;
         if (crlf == 0 && lfOnly == 0) return "\n";
+        // Tie (equal non-zero counts) resolves to CRLF.
         return crlf >= lfOnly ? "\r\n" : "\n";
     }
 

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text;
 
 namespace Dev.Mcp.Services;
 
@@ -73,13 +72,26 @@ public static class ProcessRunner
         {
             await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(TimeSpan.FromSeconds(StreamGraceSeconds));
         }
-        catch (TimeoutException) { /* child still holds pipe; take whatever arrived */ }
+        catch (TimeoutException)
+        {
+            // Child still holds the pipe; take whatever arrived. The reader tasks are
+            // abandoned here — observe a later fault so it can't surface as an
+            // unobserved task exception (e.g. IOException after the tree-kill).
+            ObserveIfPending(stdoutTask);
+            ObserveIfPending(stderrTask);
+        }
         catch (OperationCanceledException) { /* reads cancelled */ }
         catch (Exception) { /* a read faulted (e.g. killed); take whatever arrived */ }
 
         var stdout = stdoutTask.IsCompletedSuccessfully ? stdoutTask.Result : string.Empty;
         var stderr = stderrTask.IsCompletedSuccessfully ? stderrTask.Result : string.Empty;
         return (stdout, stderr);
+    }
+
+    private static void ObserveIfPending(Task t)
+    {
+        if (!t.IsCompleted)
+            _ = t.ContinueWith(static x => _ = x.Exception, TaskContinuationOptions.OnlyOnFaulted);
     }
 
     private static string ResolveExecutable(string executable, string workingDirectory)

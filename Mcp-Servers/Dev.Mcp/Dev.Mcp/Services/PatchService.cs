@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 using Dev.Mcp.Models;
 
@@ -11,29 +12,42 @@ public sealed class PatchService
 {
     // ── public API ─────────────────────────────────────────────────────────────
 
-    /// <summary>Anchor-based patch (old_text → new_text).</summary>
+    /// <summary>Anchor-based patch (old_text → new_text). EOL-agnostic match; preserves the file's original EOL.</summary>
     public ApplyPatchResult ApplyAnchorPatch(
         string filePath, string oldText, string newText,
         bool runCompilerGate, bool dryRun, bool rollbackOnError)
     {
-        var content = File.ReadAllText(filePath);
+        var raw = File.ReadAllText(filePath);
 
-        var firstIdx = content.IndexOf(oldText, StringComparison.Ordinal);
-        if (firstIdx < 0)
+        // Match in LF space so a \n-joined anchor matches \r\n content, keeping a
+        // map from each LF-space index back to its raw offset.
+        var (rawLf, map) = NormalizeWithMap(raw);
+        var anchorLf = oldText.Replace("\r\n", "\n");
+
+        var firstLf = rawLf.IndexOf(anchorLf, StringComparison.Ordinal);
+        if (firstLf < 0)
             return Fail(filePath, "anchor_not_found: old_text not found in file", dryRun);
 
-        var secondIdx = content.IndexOf(oldText, firstIdx + 1, StringComparison.Ordinal);
-        if (secondIdx >= 0)
+        var secondLf = rawLf.IndexOf(anchorLf, firstLf + 1, StringComparison.Ordinal);
+        if (secondLf >= 0)
             return Fail(filePath, "ambiguous_anchor: old_text appears more than once", dryRun);
 
-        var original = content;
-        var patched = content[..firstIdx] + newText + content[(firstIdx + oldText.Length)..];
+        // Map the matched LF span back to raw offsets. rawEnd is one past the LAST
+        // matched char (map[last] + 1) — NOT map[firstLf + len], which would swallow
+        // a trailing '\r' at a CRLF boundary.
+        var rawStart = map[firstLf];
+        var lastLf = firstLf + anchorLf.Length - 1;
+        var rawEnd = map[lastLf] + 1;
+
+        var dominantEol = DominantEol(raw);
+        var newTextEol = ToEol(newText, dominantEol);
+        var patched = raw[..rawStart] + newTextEol + raw[rawEnd..];
 
         var oldLineCount = oldText.Count(c => c == '\n') + 1;
         var newLineCount = newText.Count(c => c == '\n') + 1;
         var linesChanged = Math.Abs(newLineCount - oldLineCount);
 
-        return CommitPatch(filePath, original, patched, linesChanged, "anchor", runCompilerGate, dryRun, rollbackOnError);
+        return CommitPatch(filePath, raw, patched, linesChanged, "anchor", runCompilerGate, dryRun, rollbackOnError);
     }
 
     /// <summary>Line-range patch (replaces lines start_line..end_line with new_text).</summary>
@@ -60,6 +74,45 @@ public sealed class PatchService
     }
 
     // ── private helpers ────────────────────────────────────────────────────────
+
+    // Returns an LF-normalized copy of raw plus a map: map[i] = raw offset of the
+    // i-th char of the LF-normalized string. Only the '\r' of each "\r\n" pair is
+    // dropped; lone '\r' and lone '\n' are preserved.
+    private static (string lf, int[] map) NormalizeWithMap(string raw)
+    {
+        var sb = new StringBuilder(raw.Length);
+        var map = new int[raw.Length];
+        var n = 0;
+        for (var i = 0; i < raw.Length; i++)
+        {
+            if (raw[i] == '\r' && i + 1 < raw.Length && raw[i + 1] == '\n')
+                continue; // drop CR of CRLF; the following LF is emitted next iteration
+            map[n] = i;
+            sb.Append(raw[i]);
+            n++;
+        }
+        var trimmed = new int[n];
+        Array.Copy(map, trimmed, n);
+        return (sb.ToString(), trimmed);
+    }
+
+    // Dominant EOL by frequency; defaults to "\n" for a file with no newline.
+    private static string DominantEol(string raw)
+    {
+        var crlf = 0;
+        for (var i = 0; i + 1 < raw.Length; i++)
+            if (raw[i] == '\r' && raw[i + 1] == '\n') crlf++;
+        var lfOnly = raw.Count(c => c == '\n') - crlf;
+        if (crlf == 0 && lfOnly == 0) return "\n";
+        return crlf >= lfOnly ? "\r\n" : "\n";
+    }
+
+    // Rewrites text to the given EOL style (normalize to LF first, then expand).
+    private static string ToEol(string text, string eol)
+    {
+        var lf = text.Replace("\r\n", "\n");
+        return eol == "\n" ? lf : lf.Replace("\n", "\r\n");
+    }
 
     private static ApplyPatchResult CommitPatch(
         string filePath, string original, string patched,

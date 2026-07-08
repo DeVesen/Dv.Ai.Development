@@ -116,7 +116,7 @@ public sealed class AngularTools
         await ExecuteBuildAsync("run_npm_script", new { working_directory, script, args },
             () => RunNpmInternalAsync(working_directory, script, args));
 
-    private static async Task<AngularBuildResult> RunNpmInternalAsync(string workingDirectory, string script, string? extraArgs)
+    internal static async Task<AngularBuildResult> RunNpmInternalAsync(string workingDirectory, string script, string? extraArgs)
     {
         if (string.IsNullOrWhiteSpace(workingDirectory)) return NpmFail("npm", "working_directory is required");
         if (!Directory.Exists(workingDirectory)) return NpmFail("npm", $"Directory not found: {workingDirectory}");
@@ -129,33 +129,19 @@ public sealed class AngularTools
         if (!string.IsNullOrWhiteSpace(extraArgs)) scriptArgs += $" {extraArgs.Trim()}";
         var command = $"npm {scriptArgs}";
 
-        var psi = new ProcessStartInfo
-        {
-            FileName = npmExe, Arguments = scriptArgs, WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true
-        };
-
-        using var process = new Process { StartInfo = psi };
-        try { if (!process.Start()) return NpmFail(command, "Failed to start npm process"); }
-        catch (Exception ex) { return NpmFail(command, $"Failed to start npm: {ex.Message}"); }
-
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(300));
-        string stdout, stderr;
+        ProcessRunResult run;
         try
         {
-            var stdoutTask = process.StandardOutput.ReadToEndAsync(cts.Token);
-            var stderrTask = process.StandardError.ReadToEndAsync(cts.Token);
-            await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(cts.Token));
-            stdout = await stdoutTask;
-            stderr = await stderrTask;
+            run = await ProcessRunner.RunAsync(npmExe, scriptArgs, workingDirectory, timeoutSeconds: 300);
         }
-        catch (OperationCanceledException)
+        catch (Exception ex)
         {
-            try { process.Kill(entireProcessTree: true); } catch { }
-            return NpmFail(command, "npm timed out after 300s");
+            return NpmFail(command, $"Failed to start npm: {ex.Message}");
         }
 
-        var combined = (stdout + "\n" + stderr).Trim();
+        if (run.TimedOut) return NpmFail(command, "npm timed out after 300s");
+
+        var combined = (run.Stdout + "\n" + run.Stderr).Trim();
         var lines = combined.Split('\n');
         var errors = lines
             .Where(l => l.StartsWith("npm ERR!", StringComparison.OrdinalIgnoreCase) ||
@@ -164,17 +150,17 @@ public sealed class AngularTools
         var warnings = lines
             .Where(l => l.StartsWith("npm warn", StringComparison.OrdinalIgnoreCase))
             .Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(10).ToArray();
-        var summary = process.ExitCode == 0
+        var summary = run.ExitCode == 0
             ? $"npm {script} succeeded."
-            : errors.Length > 0 ? errors[0] : $"npm {script} failed (exit code {process.ExitCode}).";
+            : errors.Length > 0 ? errors[0] : $"npm {script} failed (exit code {run.ExitCode}).";
 
         const int MaxOutput = 3000;
         var output = combined.Length > MaxOutput ? combined[..MaxOutput] + "\n... (truncated)" : combined;
 
         return new AngularBuildResult
         {
-            Success = process.ExitCode == 0, Command = command,
-            Errors = errors, Warnings = warnings, ExitCode = process.ExitCode, Summary = summary,
+            Success = run.ExitCode == 0, Command = command,
+            Errors = errors, Warnings = warnings, ExitCode = run.ExitCode, Summary = summary,
             ConsoleOutput = output
         };
     }

@@ -39,4 +39,23 @@ public sealed class ProcessRunnerTests
         // is decoupled from stream drain). Generous ceiling for npm startup + grace.
         Assert.True(sw.Elapsed < TimeSpan.FromSeconds(20), $"took {sw.Elapsed}");
     }
+
+    [Fact]
+    public async Task RunAsync_LingeringChild_IsReapedNotLeaked()
+    {
+        // The Job Object teardown that reaps a detached/orphaned grandchild is
+        // Windows-only; on other OSes Process.Kill(tree) can't reach the orphan.
+        if (!OperatingSystem.IsWindows()) return;
+
+        using var fx = new NpmScriptFixture();
+        var result = await ProcessRunner.RunAsync(NpmScriptFixture.Npm, "run reapmark", fx.Dir, timeoutSeconds: 60);
+        Assert.Equal(0, result.ExitCode);
+
+        // The orphaned grandchild would write its marker 4s after spawn. RunAsync
+        // reaps the whole job before returning, so the marker must never appear.
+        // Wait comfortably past that 4s deadline to prove the child was killed.
+        await Task.Delay(TimeSpan.FromSeconds(6));
+        Assert.False(File.Exists(fx.MarkerPath),
+            "orphaned grandchild survived the Job Object reap and wrote its marker");
+    }
 }

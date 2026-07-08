@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Dev.Mcp.Models;
 
@@ -133,50 +132,29 @@ public sealed partial class DotnetRunner
         return await RunDotnetAsync("dotnet publish", args, workingDir, ParseBuildOutput, BuildTimeoutSeconds, cancellationToken);
     }
 
-    private async Task<DotnetBuildResult> RunDotnetAsync(
+    private static async Task<DotnetBuildResult> RunDotnetAsync(
         string commandLabel, string arguments, string workingDirectory,
         Func<string, string, int, DotnetBuildResult> parser, int timeoutSeconds, CancellationToken cancellationToken)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = "dotnet", Arguments = arguments, WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true,
-        };
-
-        using var process = new Process { StartInfo = psi };
-        try { if (!process.Start()) return MakeFailResult("Failed to start dotnet process.", commandLabel); }
-        catch (Exception ex) { return MakeFailResult($"Failed to start dotnet: {ex.Message}", commandLabel); }
-
-        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
-        var stderrTask = process.StandardError.ReadToEndAsync(linkedCts.Token);
-
-        string stdout, stderr;
+        // Route through the shared ProcessRunner: it decouples the real exit code
+        // from stdout/stderr drain and reaps the whole descendant subtree, so a test
+        // that spawns a lingering child (npm -> detached node) can no longer hold the
+        // pipe open and hang the run to its ceiling.
+        ProcessRunResult run;
         try
         {
-            await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(linkedCts.Token));
-            stdout = await stdoutTask;
-            stderr = await stderrTask;
-        }
-        catch (OperationCanceledException)
-        {
-            try { process.Kill(entireProcessTree: true); } catch { }
-            using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            try { await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(drainCts.Token); } catch { }
-            var reason = timeoutCts.IsCancellationRequested ? $"Process timed out after {timeoutSeconds}s." : "Process was cancelled.";
-            return MakeFailResult(reason, commandLabel);
+            run = await ProcessRunner.RunAsync("dotnet", arguments, workingDirectory, timeoutSeconds, cancellationToken);
         }
         catch (Exception ex)
         {
-            using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            try { await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(drainCts.Token); } catch { }
-            return MakeFailResult($"Process communication error: {ex.Message}", commandLabel);
+            return MakeFailResult($"Failed to start dotnet: {ex.Message}", commandLabel);
         }
 
-        var result = parser(stdout, stderr, process.ExitCode);
-        result.ConsoleOutput = $"> dotnet {arguments}\n\n{StripAnsi(stdout + "\n" + stderr).Trim()}";
+        if (run.TimedOut)
+            return MakeFailResult($"Process timed out after {timeoutSeconds}s.", commandLabel);
+
+        var result = parser(run.Stdout, run.Stderr, run.ExitCode);
+        result.ConsoleOutput = $"> dotnet {arguments}\n\n{StripAnsi(run.Stdout + "\n" + run.Stderr).Trim()}";
         return result;
     }
 

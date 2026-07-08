@@ -174,46 +174,24 @@ public sealed partial class AngularRunner
         string commandLabel, string projectRoot, List<string> args,
         Func<string, string, int, AngularBuildResult> parser, int timeoutSeconds, CancellationToken cancellationToken)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = NgExecutable, Arguments = string.Join(' ', args),
-            WorkingDirectory = Path.GetFullPath(projectRoot),
-            RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true,
-        };
+        var arguments = string.Join(' ', args);
+        var root = Path.GetFullPath(projectRoot);
 
-        using var process = new Process { StartInfo = psi };
-        try { if (!process.Start()) return MakeFailResult("Failed to start ng process.", commandLabel); }
-        catch (Exception ex) { return MakeFailResult($"Failed to start ng: {ex.Message}", commandLabel); }
-
-        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(linkedCts.Token);
-        var stderrTask = process.StandardError.ReadToEndAsync(linkedCts.Token);
-
-        string stdout, stderr;
+        ProcessRunResult run;
         try
         {
-            await Task.WhenAll(stdoutTask, stderrTask, process.WaitForExitAsync(linkedCts.Token));
-            stdout = await stdoutTask; stderr = await stderrTask;
-        }
-        catch (OperationCanceledException)
-        {
-            try { process.Kill(entireProcessTree: true); } catch { }
-            using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            try { await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(drainCts.Token); } catch { }
-            var reason = timeoutCts.IsCancellationRequested ? $"Process timed out after {timeoutSeconds}s." : "Process was cancelled.";
-            return MakeFailResult(reason, commandLabel);
+            run = await ProcessRunner.RunAsync(NgExecutable, arguments, root, timeoutSeconds, cancellationToken);
         }
         catch (Exception ex)
         {
-            using var drainCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            try { await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(drainCts.Token); } catch { }
-            return MakeFailResult($"Process communication error: {ex.Message}", commandLabel);
+            return MakeFailResult($"Failed to start ng: {ex.Message}", commandLabel);
         }
 
-        var result = parser(stdout, stderr, process.ExitCode);
-        result.ConsoleOutput = $"> {NgExecutable} {string.Join(' ', args)}\n\n{StripAnsi(stdout + "\n" + stderr).Trim()}";
+        if (run.TimedOut)
+            return MakeFailResult($"Process timed out after {timeoutSeconds}s.", commandLabel);
+
+        var result = parser(run.Stdout, run.Stderr, run.ExitCode);
+        result.ConsoleOutput = $"> {NgExecutable} {arguments}\n\n{StripAnsi(run.Stdout + "\n" + run.Stderr).Trim()}";
         return result;
     }
 

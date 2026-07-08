@@ -100,7 +100,7 @@ Single-line anchors take the same path (no regression). `ApplyLinePatch` is unto
 ## 4. Tests & verification
 
 ### 4.1 New test project
-- `Mcp-Servers/Dev.Mcp/Dev.Mcp.Tests/` — xUnit v3 + FluentAssertions (repo convention), `ProjectReference` to `Dev.Mcp`. `ProcessRunner` and `PatchService` are `public`.
+- `Mcp-Servers/Dev.Mcp/Dev.Mcp.Tests/` — xUnit `2.9.2` + plain `Assert` (**the repo's actual established test stack**, mirroring `Build.Log.Filter.Mcp.Tests`; the earlier "xUnit v3 + FluentAssertions" note was inaccurate for this repo). `ProjectReference` to `Dev.Mcp`. `ProcessRunner` and `PatchService` are `public`.
 - Add a minimal `.sln` tying `Dev.Mcp` + `Dev.Mcp.Tests` together.
 
 ### 4.2 ProcessRunner regression tests (core Bug-1 net)

@@ -23,7 +23,7 @@
 **Paths** (all under `C:\Develop\Dv.Ai.Development\`):
 - Main project: `Mcp-Servers/Dev.Mcp/Dev.Mcp/Dev.Mcp.csproj`
 - New test project: `Mcp-Servers/Dev.Mcp/Dev.Mcp.Tests/`
-- New solution: `Mcp-Servers/Dev.Mcp/Dev.Mcp.sln`
+- Solution: `Mcp-Servers/Dev.Mcp/Dev.Mcp.slnx` (EXISTS already — canonical, referenced by run_inspectcode/build-prompts; register the test project here, do NOT create a new `.sln`)
 
 ---
 
@@ -37,7 +37,7 @@
 - `Mcp-Servers/Dev.Mcp/Dev.Mcp.Tests/RunNpmScriptTests.cs` — npm call-site fails-before/passes-after.
 - `Mcp-Servers/Dev.Mcp/Dev.Mcp.Tests/AngularParserMappingTests.cs` — build/test parser exit-code→success mapping.
 - `Mcp-Servers/Dev.Mcp/Dev.Mcp.Tests/PatchServiceAnchorEolTests.cs` — Bug-2 CRLF/LF/mixed/single-line.
-- `Mcp-Servers/Dev.Mcp/Dev.Mcp.sln` — ties main + test.
+- (Solution: register the test project in the EXISTING `Mcp-Servers/Dev.Mcp/Dev.Mcp.slnx` — no new `.sln`.)
 
 **Modified:**
 - `Mcp-Servers/Dev.Mcp/Dev.Mcp/Dev.Mcp.csproj` — add `InternalsVisibleTo`.

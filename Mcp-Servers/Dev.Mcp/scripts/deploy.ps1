@@ -43,10 +43,10 @@ dotnet publish $CsprojPath `
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed (exit $LASTEXITCODE)" }
 
 # appsettings.json is NOT part of the default content globs for Microsoft.NET.Sdk
-# (non-Web), so publish does not emit it. Ship it explicitly.
+# (non-Web), so publish does not emit it. It is shipped directly into the target
+# after the copy step below (unambiguous file->file copy).
 if (-not (Test-Path $AppSettings)) { throw "appsettings.json not found at $AppSettings" }
-Copy-Item $AppSettings $publishDir -Force
-Write-Host "      Publish OK (+ appsettings.json)" -ForegroundColor Green
+Write-Host "      Publish OK" -ForegroundColor Green
 
 # --- Clean target ---
 Write-Host "[2/4] Cleaning target..." -ForegroundColor Yellow
@@ -64,8 +64,11 @@ Write-Host "      Target cleaned" -ForegroundColor Green
 # --- Copy to target ---
 Write-Host "[3/4] Copying to target..." -ForegroundColor Yellow
 Copy-Item "$publishDir\*" $Target -Recurse -Force
+# Ship appsettings.json directly into the target root (publish does not emit it
+# for a non-Web SDK; a direct file->file copy is robust regardless of layout).
+Copy-Item -LiteralPath $AppSettings -Destination (Join-Path $Target "appsettings.json") -Force
 Remove-Item $publishDir -Recurse -Force
-Write-Host "      Copy OK" -ForegroundColor Green
+Write-Host "      Copy OK (+ appsettings.json)" -ForegroundColor Green
 
 # --- Verify ---
 Write-Host "[4/4] Verifying..." -ForegroundColor Yellow

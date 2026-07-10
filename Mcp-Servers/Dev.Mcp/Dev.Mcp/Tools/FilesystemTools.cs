@@ -63,7 +63,7 @@ public sealed class FilesystemTools
                     .Select(g => new { file = g.Key, matches = g.Select(m => new { m.Line, m.Match }).ToList() })
                     .ToList());
 
-            return JsonOptions.Serialize(matches.Results);
+            return JsonOptions.Serialize(matches);
         });
 
     [McpServerTool(Name = "find_implementations")]

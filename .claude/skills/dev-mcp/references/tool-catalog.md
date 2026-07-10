@@ -113,6 +113,24 @@ Vollständige Parameter aller 49 Tools. Lesen wenn Tool-Aufruf unklar oder Param
 - `errors[]` = Fehler mit Datei/Zeile/Meldung
 - `success: true` bei exitCode 0
 
+### Suche (find_file, find_by_content, find_implementations)
+```json
+{
+  "results": [{...}],
+  "meta": {
+    "truncated": false,
+    "reason": "none",
+    "filesScanned": 47
+  }
+}
+```
+- `results`: Array der Treffer — Shape je Tool: `{path,relative,sizeBytes}` / `{file,line,match}` / `{className,file,line}`
+- `meta.truncated`: `true` wenn `max_results` erreicht — weitere Ergebnisse können existieren
+- `meta.reason`: `"max_results_reached"` | `"none"`
+- `meta.filesScanned`: Anzahl tatsächlich geprüfter Dateien. Disambiguiert echtes „nicht gefunden" (`filesScanned > 0, results []`) von „gar nicht gesucht" (`filesScanned = 0`)
+- `meta.hint`: bei `truncated: true` — Hinweistext; sonst nicht serialisiert (null wird weggelassen)
+```
+
 ### Scaffolding (scaffold_spec_for, scaffold_dotnet_test_class, scaffold_angular_*)
 ```
 { success, createdFiles[], exitCode, error }

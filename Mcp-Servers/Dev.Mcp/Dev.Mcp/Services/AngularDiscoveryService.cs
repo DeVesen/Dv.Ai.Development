@@ -27,7 +27,7 @@ public sealed class AngularDiscoveryService
         var matches = _content.FindByContent(root, pattern, "*.ts", max + 5);
 
         var routes = new List<AngularRouteMatch>();
-        foreach (var m in matches)
+        foreach (var m in matches.Results)
         {
             if (routes.Count >= max) break;
             var routePathMatch = Regex.Match(m.Match, @"path\s*:\s*['""]([^'""]*)['""]");
@@ -40,7 +40,7 @@ public sealed class AngularDiscoveryService
             routes.Add(new AngularRouteMatch(routePathMatch.Groups[1].Value, component, m.File, m.Line, null));
         }
 
-        return new FindAngularRouteResult(routes, matches.Count > max);
+        return new FindAngularRouteResult(routes, matches.Meta.Truncated);
     }
 
     // ── find_angular_guard ────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ public sealed class AngularDiscoveryService
 
         var nameMatches = _content.FindByContent(root, escaped, "*.ts", max + 5);
 
-        var combined = matches.Concat(nameMatches)
+        var combined = matches.Results.Concat(nameMatches.Results)
             .GroupBy(m => m.File)
             .SelectMany(g => g)
             .Take(max + 5)
@@ -87,11 +87,11 @@ public sealed class AngularDiscoveryService
         var pattern = $@"providers\s*:\s*\[.*{escaped}.*\]|provide\s*:\s*{escaped}";
         var matches = _content.FindByContent(root, pattern, "*.ts", max + 5);
 
-        var regs = matches.Take(max).Select(m => new DiRegistrationMatch(
+        var regs = matches.Results.Take(max).Select(m => new DiRegistrationMatch(
             serviceName, "angular_provider", m.File, m.Line, m.Match.Trim()
         )).ToList();
 
-        return new FindDiRegistrationResult(regs, matches.Count > max);
+        return new FindDiRegistrationResult(regs, matches.Meta.Truncated);
     }
 
     // ── read_component_bundle ─────────────────────────────────────────────────

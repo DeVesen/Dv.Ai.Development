@@ -28,13 +28,13 @@ public sealed class FileOperationsService
 
         var matches = _content.FindByContent(repoRoot, Regex.Escape(baseNameNoExt), null, 50);
 
-        var refs = matches
+        var refs = matches.Results
             .Where(m => m.File != filePath)
             .Select(m => new FileReferenceMatch(m.File, m.Line, m.Match.Trim()))
             .ToList();
 
         var fileNameMatches = _content.FindByContent(repoRoot, Regex.Escape(baseName), null, 20);
-        foreach (var m in fileNameMatches)
+        foreach (var m in fileNameMatches.Results)
         {
             if (m.File == filePath) continue;
             if (!refs.Any(r => r.FilePath == m.File && r.Line == m.Line))

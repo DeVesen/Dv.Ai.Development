@@ -26,7 +26,7 @@ public sealed class DotnetDiscoveryService
         var endpoints = new List<DotnetEndpointMatch>();
         var seenLines = new HashSet<string>();
 
-        foreach (var m in matches)
+        foreach (var m in matches.Results)
         {
             if (endpoints.Count >= max) break;
 
@@ -52,7 +52,7 @@ public sealed class DotnetDiscoveryService
             endpoints.Add(new DotnetEndpointMatch(controller, action, httpMethod, routeTemplate, m.File, m.Line));
         }
 
-        return new FindDotnetEndpointResult(endpoints, matches.Count > max);
+        return new FindDotnetEndpointResult(endpoints, matches.Meta.Truncated);
     }
 
     // ── find_di_registration (C#) ─────────────────────────────────────────────
@@ -64,7 +64,7 @@ public sealed class DotnetDiscoveryService
         var matches = _content.FindByContent(root, pattern, "*.cs", max + 5);
 
         var nameMatches = _content.FindByContent(root, escaped, "*.cs", max + 5);
-        var allMatches = matches.Concat(nameMatches.Where(m => IsRegistrationLine(m.Match)))
+        var allMatches = matches.Results.Concat(nameMatches.Results.Where(m => IsRegistrationLine(m.Match)))
             .GroupBy(m => $"{m.File}:{m.Line}").Select(g => g.First())
             .Take(max + 5).ToList();
 

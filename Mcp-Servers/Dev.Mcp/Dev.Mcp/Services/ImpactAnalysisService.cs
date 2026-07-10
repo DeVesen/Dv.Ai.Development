@@ -28,17 +28,17 @@ public sealed class ImpactAnalysisService
         {
             var tsPattern = $@"from\s+['""][^'""]*{System.Text.RegularExpressions.Regex.Escape(baseName)}['""]";
             var tsMatches = _contentSearch.FindByContent(repoRoot, tsPattern, "*.ts", 50);
-            importers.AddRange(tsMatches.Select(m => m.File).Distinct());
+            importers.AddRange(tsMatches.Results.Select(m => m.File).Distinct());
 
             var indexPattern = $@"export\s+.*from\s+['""][^'""]*{System.Text.RegularExpressions.Regex.Escape(baseName)}['""]";
             var indexMatches = _contentSearch.FindByContent(repoRoot, indexPattern, "*.ts", 50);
-            importers.AddRange(indexMatches.Select(m => m.File).Distinct());
+            importers.AddRange(indexMatches.Results.Select(m => m.File).Distinct());
         }
         else if (ext is ".cs")
         {
             var csPattern = System.Text.RegularExpressions.Regex.Escape(baseName);
             var csMatches = _contentSearch.FindByContent(repoRoot, csPattern, "*.cs", 50);
-            importers.AddRange(csMatches.Select(m => m.File).Where(f => f != filePath).Distinct());
+            importers.AddRange(csMatches.Results.Select(m => m.File).Where(f => f != filePath).Distinct());
         }
 
         importers = importers.Where(f => f != filePath).Distinct().ToList();
@@ -61,7 +61,7 @@ public sealed class ImpactAnalysisService
             var fileName = Path.GetFileName(filePath);
             var csprojMatches = _contentSearch.FindByContent(repoRoot,
                 System.Text.RegularExpressions.Regex.Escape(fileName), "*.csproj", 20);
-            csprojRefs.AddRange(csprojMatches.Select(m => m.File).Distinct());
+            csprojRefs.AddRange(csprojMatches.Results.Select(m => m.File).Distinct());
         }
 
         return new RenameImpact(importers, specRefs, csprojRefs);

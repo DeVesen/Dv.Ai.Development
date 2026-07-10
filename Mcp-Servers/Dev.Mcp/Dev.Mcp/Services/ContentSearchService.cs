@@ -5,7 +5,7 @@ namespace Dev.Mcp.Services;
 
 public sealed class ContentSearchService
 {
-    public IReadOnlyList<ContentMatchResult> FindByContent(
+    public SearchResult<ContentMatchResult> FindByContent(
         string root, string pattern, string? fileGlob, int maxResults)
     {
         maxResults = Math.Clamp(maxResults, 1, 100);
@@ -13,6 +13,8 @@ public sealed class ContentSearchService
         var fileFilter = string.IsNullOrWhiteSpace(fileGlob) ? null : GlobMatcher.NormalizePattern(fileGlob);
         var results = new List<ContentMatchResult>(maxResults);
         var rootPrefix = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var filesScanned = 0;
+        var truncated = false;
 
         foreach (var file in GlobMatcher.EnumerateFiles(root))
         {
@@ -30,6 +32,8 @@ public sealed class ContentSearchService
                 if (!GlobMatcher.IsMatch(relative.Replace('\\', '/'), fileFilter)) continue;
             }
 
+            filesScanned++;
+
             string[] lines;
             try { lines = File.ReadAllLines(file); }
             catch { continue; }
@@ -43,11 +47,13 @@ public sealed class ContentSearchService
                 if (string.IsNullOrEmpty(match)) match = line.Trim();
 
                 results.Add(new ContentMatchResult(file, i + 1, match));
-                if (results.Count >= maxResults) return results;
+                if (results.Count >= maxResults) { truncated = true; break; }
             }
+
+            if (truncated) break;
         }
 
-        return results;
+        return new SearchResult<ContentMatchResult>(results, SearchMeta.Build(truncated, filesScanned, maxResults));
     }
 
     private static Regex BuildRegex(string pattern)

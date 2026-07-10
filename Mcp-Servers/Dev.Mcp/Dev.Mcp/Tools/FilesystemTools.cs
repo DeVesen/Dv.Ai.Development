@@ -56,14 +56,14 @@ public sealed class FilesystemTools
             var matches = _contentSearch.FindByContent(normalizedRoot, pattern, file_glob, max_results);
 
             if (format == "paths_only")
-                return JsonOptions.Serialize(matches.Select(m => new { filePath = m.File, line = m.Line }).ToList());
+                return JsonOptions.Serialize(matches.Results.Select(m => new { filePath = m.File, line = m.Line }).ToList());
 
             if (group_by_file)
-                return JsonOptions.Serialize(matches.GroupBy(m => m.File)
+                return JsonOptions.Serialize(matches.Results.GroupBy(m => m.File)
                     .Select(g => new { file = g.Key, matches = g.Select(m => new { m.Line, m.Match }).ToList() })
                     .ToList());
 
-            return JsonOptions.Serialize(matches);
+            return JsonOptions.Serialize(matches.Results);
         });
 
     [McpServerTool(Name = "find_implementations")]

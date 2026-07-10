@@ -46,12 +46,12 @@ public sealed class ImpactAnalysisService
         // ── spec refs ──────────────────────────────────────────────────────────
         var specRefs = new List<string>();
         var specFiles = _globSearch.FindFile(repoRoot, $"{baseName}.spec.ts", 10);
-        specRefs.AddRange(specFiles.Select(f => f.Path));
+        specRefs.AddRange(specFiles.Results.Select(f => f.Path));
 
         var testFiles = _globSearch.FindFile(repoRoot, $"{baseName}Test*.cs", 10);
-        specRefs.AddRange(testFiles.Select(f => f.Path));
+        specRefs.AddRange(testFiles.Results.Select(f => f.Path));
         var testFiles2 = _globSearch.FindFile(repoRoot, $"{baseName}Tests.cs", 10);
-        specRefs.AddRange(testFiles2.Select(f => f.Path));
+        specRefs.AddRange(testFiles2.Results.Select(f => f.Path));
         specRefs = specRefs.Distinct().ToList();
 
         // ── csproj refs ────────────────────────────────────────────────────────

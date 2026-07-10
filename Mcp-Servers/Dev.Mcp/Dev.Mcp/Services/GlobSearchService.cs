@@ -4,16 +4,19 @@ namespace Dev.Mcp.Services;
 
 public sealed class GlobSearchService
 {
-    public IReadOnlyList<FileMatchResult> FindFile(string root, string pattern, int maxResults)
+    public SearchResult<FileMatchResult> FindFile(string root, string pattern, int maxResults)
     {
         maxResults = Math.Clamp(maxResults, 1, 100);
         var globPattern = GlobMatcher.NormalizePattern(pattern);
         var results = new List<FileMatchResult>(maxResults);
         var rootPrefix = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var filesScanned = 0;
+        var truncated = false;
 
         foreach (var file in GlobMatcher.EnumerateFiles(root))
         {
             if (!PathValidator.IsUnderRoot(file, root)) continue;
+            filesScanned++;
 
             var relative = file.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase)
                 ? file[rootPrefix.Length..]
@@ -26,9 +29,9 @@ public sealed class GlobSearchService
             catch { size = 0; }
 
             results.Add(new FileMatchResult(file, relative.Replace('\\', '/'), size));
-            if (results.Count >= maxResults) break;
+            if (results.Count >= maxResults) { truncated = true; break; }
         }
 
-        return results;
+        return new SearchResult<FileMatchResult>(results, SearchMeta.Build(truncated, filesScanned, maxResults));
     }
 }

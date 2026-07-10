@@ -11,29 +11,34 @@ public sealed class ImplementationSearchService
         @"(?:export\s+)?(?:abstract\s+)?class\s+(\w+)\s+implements\s+([^{]+)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-    public IReadOnlyList<ImplementationMatchResult> FindImplementations(
+    public SearchResult<ImplementationMatchResult> FindImplementations(
         string root, string interfaceName, string language, int maxResults)
     {
         maxResults = Math.Clamp(maxResults, 1, 100);
         var normalizedInterface = NormalizeInterfaceName(interfaceName);
         var lang = language.Trim().ToLowerInvariant();
         var results = new List<ImplementationMatchResult>(maxResults);
+        var filesScanned = 0;
+        var truncated = false;
 
         if (lang is "auto" or "csharp" or "cs" or "c#")
-            ScanCSharp(root, normalizedInterface, results, maxResults);
+            ScanCSharp(root, normalizedInterface, results, maxResults, ref filesScanned, ref truncated);
 
-        if (results.Count < maxResults && lang is "auto" or "typescript" or "ts")
-            ScanTypeScript(root, normalizedInterface, results, maxResults);
+        if (!truncated && results.Count < maxResults && lang is "auto" or "typescript" or "ts")
+            ScanTypeScript(root, normalizedInterface, results, maxResults, ref filesScanned, ref truncated);
 
-        return results;
+        return new SearchResult<ImplementationMatchResult>(results, SearchMeta.Build(truncated, filesScanned, maxResults));
     }
 
-    private static void ScanCSharp(string root, string interfaceName, List<ImplementationMatchResult> results, int maxResults)
+    private static void ScanCSharp(string root, string interfaceName,
+        List<ImplementationMatchResult> results, int maxResults,
+        ref int filesScanned, ref bool truncated)
     {
         foreach (var file in GlobMatcher.EnumerateFiles(root))
         {
             if (!file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)) continue;
             if (!PathValidator.IsUnderRoot(file, root)) continue;
+            filesScanned++;
 
             string text;
             try { text = File.ReadAllText(file); }
@@ -54,17 +59,20 @@ public sealed class ImplementationSearchService
 
                 var line = typeDecl.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
                 results.Add(new ImplementationMatchResult(typeDecl.Identifier.Text, file, line));
-                if (results.Count >= maxResults) return;
+                if (results.Count >= maxResults) { truncated = true; return; }
             }
         }
     }
 
-    private static void ScanTypeScript(string root, string interfaceName, List<ImplementationMatchResult> results, int maxResults)
+    private static void ScanTypeScript(string root, string interfaceName,
+        List<ImplementationMatchResult> results, int maxResults,
+        ref int filesScanned, ref bool truncated)
     {
         foreach (var file in GlobMatcher.EnumerateFiles(root))
         {
             if (!file.EndsWith(".ts", StringComparison.OrdinalIgnoreCase)) continue;
             if (!PathValidator.IsUnderRoot(file, root)) continue;
+            filesScanned++;
 
             string text;
             try { text = File.ReadAllText(file); }
@@ -80,7 +88,7 @@ public sealed class ImplementationSearchService
 
                 var line = text[..match.Index].Count(c => c == '\n') + 1;
                 results.Add(new ImplementationMatchResult(className, file, line));
-                if (results.Count >= maxResults) return;
+                if (results.Count >= maxResults) { truncated = true; return; }
             }
         }
     }

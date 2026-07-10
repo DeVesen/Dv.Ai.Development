@@ -40,7 +40,7 @@ public sealed class AngularDiscoveryService
             routes.Add(new AngularRouteMatch(routePathMatch.Groups[1].Value, component, m.File, m.Line, null));
         }
 
-        return new FindAngularRouteResult(routes, matches.Meta.Truncated);
+        return new FindAngularRouteResult(routes, matches.Results.Count > max);
     }
 
     // ── find_angular_guard ────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ public sealed class AngularDiscoveryService
             serviceName, "angular_provider", m.File, m.Line, m.Match.Trim()
         )).ToList();
 
-        return new FindDiRegistrationResult(regs, matches.Meta.Truncated);
+        return new FindDiRegistrationResult(regs, matches.Results.Count > max);
     }
 
     // ── read_component_bundle ─────────────────────────────────────────────────

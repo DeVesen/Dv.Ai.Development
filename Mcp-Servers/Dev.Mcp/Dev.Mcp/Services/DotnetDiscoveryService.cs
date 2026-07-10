@@ -52,7 +52,7 @@ public sealed class DotnetDiscoveryService
             endpoints.Add(new DotnetEndpointMatch(controller, action, httpMethod, routeTemplate, m.File, m.Line));
         }
 
-        return new FindDotnetEndpointResult(endpoints, matches.Meta.Truncated);
+        return new FindDotnetEndpointResult(endpoints, matches.Results.Count > max);
     }
 
     // ── find_di_registration (C#) ─────────────────────────────────────────────

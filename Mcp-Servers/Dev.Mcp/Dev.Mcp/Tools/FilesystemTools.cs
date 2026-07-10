@@ -42,7 +42,7 @@ public sealed class FilesystemTools
         });
 
     [McpServerTool(Name = "find_by_content")]
-    [Description("Finds files containing a regex or literal pattern. Searches text files only (.cs .ts .tsx .js .jsx .json .md .xml .html .css .scss). Skips: bin, obj, node_modules, dist, .git, .vs, coverage. Returns {results:[{file,line,match}], meta:{truncated,reason,filesScanned,hint}}. For stack-wide symbol search use codebase-analyzer:find_in_index.")]
+    [Description("Finds files containing a regex or literal pattern. Searches text files only (.cs .ts .tsx .js .jsx .json .md .xml .html .css .scss). Skips: bin, obj, node_modules, dist, .git, .vs, coverage. Returns {results:[{file,line,match}], meta:{truncated,reason,filesScanned,hint}} (default format). format='paths_only' or group_by_file=true return a bare array instead. For stack-wide symbol search use codebase-analyzer:find_in_index.")]
     public string FindByContent(
         [Description("Root directory (absolute path, must be under an AllowedDirectory)")] string root,
         [Description("Regex or literal pattern")] string pattern,

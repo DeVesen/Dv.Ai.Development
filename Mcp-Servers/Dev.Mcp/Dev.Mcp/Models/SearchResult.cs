@@ -32,3 +32,14 @@ public sealed record DirectoryEntry(string Name, string Type, string Path, long?
 public sealed record TestPatternMatch(string FilePath, string Snippet, string SimilarityReason);
 
 public sealed record TestPatternResult(IReadOnlyList<TestPatternMatch> Patterns);
+
+public record SearchMeta(bool Truncated, string Reason, int FilesScanned, string? Hint)
+{
+    public static SearchMeta Build(bool truncated, int filesScanned, int maxResults) =>
+        new(truncated,
+            truncated ? "max_results_reached" : "none",
+            filesScanned,
+            truncated ? $"Results capped at {maxResults}. Increase max_results or narrow root." : null);
+}
+
+public record SearchResult<T>(IReadOnlyList<T> Results, SearchMeta Meta);

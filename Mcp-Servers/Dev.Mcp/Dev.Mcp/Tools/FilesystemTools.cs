@@ -30,7 +30,7 @@ public sealed class FilesystemTools
     }
 
     [McpServerTool(Name = "find_file")]
-    [Description("Finds files by name or glob. Returns JSON array: [{path, relative, sizeBytes}].")]
+    [Description("Finds files by name or glob within root. Supports ** (e.g. **/*Service.cs); plain name is auto-expanded to **/<name>. Skips: bin, obj, node_modules, dist, .git, .vs, coverage. Returns {results:[{path,relative,sizeBytes}], meta:{truncated,reason,filesScanned,hint}}. When truncated: increase max_results or narrow root. For index-based symbol search use codebase-analyzer:find_in_index.")]
     public string FindFile(
         [Description("Root directory (absolute path, must be under an AllowedDirectory)")] string root,
         [Description("Filename or glob, e.g. 'UserService.ts' or '**/*Service.cs'")] string pattern,
@@ -42,7 +42,7 @@ public sealed class FilesystemTools
         });
 
     [McpServerTool(Name = "find_by_content")]
-    [Description("Finds files containing a regex/literal. Returns JSON array: [{file, line, match}]. format: 'full'|'compact'|'paths_only'. group_by_file=true aggregates per file.")]
+    [Description("Finds files containing a regex or literal pattern. Searches text files only (.cs .ts .tsx .js .jsx .json .md .xml .html .css .scss). Skips: bin, obj, node_modules, dist, .git, .vs, coverage. Returns {results:[{file,line,match}], meta:{truncated,reason,filesScanned,hint}}. For stack-wide symbol search use codebase-analyzer:find_in_index.")]
     public string FindByContent(
         [Description("Root directory (absolute path, must be under an AllowedDirectory)")] string root,
         [Description("Regex or literal pattern")] string pattern,
@@ -67,7 +67,7 @@ public sealed class FilesystemTools
         });
 
     [McpServerTool(Name = "find_implementations")]
-    [Description("Finds all classes implementing an interface in .cs or .ts files. Returns JSON array: [{className, file, line}].")]
+    [Description("Finds classes implementing an interface in .cs and .ts files. Scans C# first, then TypeScript (auto mode). Skips: bin, obj, node_modules, dist, .git, .vs, coverage. Returns {results:[{className,file,line}], meta:{truncated,reason,filesScanned,hint}}. For full type-hierarchy use codebase-analyzer:find_type_hierarchy.")]
     public string FindImplementations(
         [Description("Root directory (absolute path)")] string root,
         [Description("Interface name, e.g. 'IOrderService'")] string interface_name,

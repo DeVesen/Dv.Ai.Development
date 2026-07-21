@@ -1,15 +1,3 @@
----
-name: angular-material
-description: >
-  Angular Material component guidance for Angular v22+. Use when working with Angular Material
-  UI components: buttons, forms, dialogs, tables, navigation, theming, CDK.
-  Also covers: custom mat-form-field inputs (MatFormFieldControl, Shell + Direktive pattern,
-  multi-input form fields, label-placeholder overlap, Variante B directory layout).
-  Trigger: Angular Material, mat-button, mat-form-field, mat-dialog, mat-table, mat-sidenav,
-  MatModule, MatTheme, CDK, Material Design, ng add @angular/material,
-  custom form input, MatFormFieldControl, custom-input-range-wrapper, number range field,
-  multi-input mat-form-field, shell directive pattern.
----
 
 ## Voraussetzungen
 

@@ -1,18 +1,3 @@
----
-name: angular-new-app
-description: >
-  Angular-Experte für TypeScript, Angular und skalierbare Web-Apps.
-  Erstellt neue Angular-Apps und generiert Artefakte nach Angular-Best-Practices.
-  Includes: documentation-first validation, mandatory Decision Gate (questionnaire),
-  written implementation plan before any CLI execution, narrow subagent tasks.
-  Trigger: neue App, ng new, Angular-Projekt erstellen, ng generate, Komponente erstellen,
-  new Angular workspace, greenfield scaffolding, ng new flags, Decision Gate, Implementierungsplan.
-license: MIT
-compatibility: Requires node, npm, and access to the internet
-metadata:
-  author: Angular Team @ Google
-  version: '2.0'
----
 
 ## Voraussetzungen
 

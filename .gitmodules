@@ -1,3 +1,6 @@
 [submodule ".claude/plugins/superpowers"]
 	path = .claude/plugins/superpowers
 	url = https://github.com/obra/superpowers.git
+[submodule ".claude/plugins/caveman"]
+	path = .claude/plugins/caveman
+	url = https://github.com/JuliusBrussee/caveman.git

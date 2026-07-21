@@ -1,18 +1,3 @@
----
-name: backend-ef-migrations
-description: >
-  EF-Core-Migrationen im Datenbank-Projekt (Postgres): ausschließlich dotnet ef migrations add;
-  Triplet-Pflicht (.cs, .Designer.cs, {DbContext}ModelSnapshot); View-SQL in Up/Down;
-  database update mit --connection (leere {DbContext}Factory).
-  Lesson Learned: manuelle Migration ohne Designer → 42703 column does not exist zur Laufzeit.
-  Trigger: EF migration, dotnet ef migrations add, Migrations-Ordner, ModelSnapshot,
-  Schema/Spalte/View im Backend, @backend-ef-migrations.
-  Opt-out: ohne ef-migration-skill, ohne backend-ef-migrations-skill.
-when_to_use: >
-  Aktiviere sobald EF-Migrationen, Datenbankschema, neue Spalten/Tabellen/Views oder
-  dotnet ef Befehle im Spiel sind. Auch bei Postgres-Fehler 42703 oder PendingModelChangesWarning.
-  Nicht bei reinen Lese-Fragen ohne Schema-Änderung.
----
 
 ## Hard Rules (zuerst lesen)
 

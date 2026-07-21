@@ -1,18 +1,3 @@
----
-name: angular-developer
-description: >
-  Generates Angular code and provides architectural guidance. Trigger when creating
-  projects, components, or services, or for best practices on reactivity (signals,
-  linkedSignal, resource), forms, dependency injection, routing, SSR, accessibility
-  (ARIA), animations, styling (component styles, Tailwind CSS), testing, or CLI tooling.
-  Also covers: project structure (feature facades, smart/dumb, page components),
-  test policy (unit vs integration), signal architecture (state ownership, RxJS boundaries),
-  and migrations (legacy @Input/@Output/ngIf/ngFor/ngSwitch → modern syntax).
-license: MIT
-metadata:
-  author: Copyright 2026 Google LLC
-  version: '2.0'
----
 
 ## Voraussetzungen
 

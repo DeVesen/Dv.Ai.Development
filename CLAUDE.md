@@ -57,10 +57,14 @@ Beim Entwickeln eigener Skills zuerst die relevante Superpowers-Quelldatei lesen
 ```
 .claude/
 ├── skills/           Eigene domänenspezifische Skills
+│   ├── angular/      Angular (developer + material + new-app) — SKILL.md = ToC
+│   ├── dotnet/       .NET (EF Migrations) — SKILL.md = ToC
+│   └── ...           Weitere Skills (acceptance-design, requirement-definition, …)
 ├── agents/           Eigene Sub-Agent-Profile
 ├── references/       Geteilte Referenzen
 └── plugins/
-    └── superpowers/  Git-Submodul obra/superpowers (Lese-Referenz)
+    ├── superpowers/  Git-Submodul obra/superpowers (Lese-Referenz)
+    └── caveman/      Git-Submodul JuliusBrussee/caveman (Lese-Referenz)
 
 Mcp-Servers/          MCP-Server Implementierungen
 ├── Build.Log.Filter.Mcp/

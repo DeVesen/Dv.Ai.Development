@@ -726,7 +726,7 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 | Interface-Implementierungen finden | dev-mcp |
 | Komplexität, Refactoring-Safety | codebase-analyzer |
 | Symbol-Index über ganzen Stack | codebase-analyzer |
-| Build-Output analysieren | codebase-analyzer / build-log-filter |
+| Build-Output analysieren | codebase-analyzer (`analyze_compiler_diagnostics`) |
 | Nullability, Duplikate, Coverage | codebase-analyzer |
 
 **Faustregel: Lesen → dev-mcp (`C:\...`). Analysieren → codebase-analyzer (`C:\...`).**

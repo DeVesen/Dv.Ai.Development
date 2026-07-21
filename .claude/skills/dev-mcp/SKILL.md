@@ -19,7 +19,7 @@ description: >
   Utilities (slice_test_targets, delete_file_safe, list_processes).
   Pfade: echte Windows-Absolutpfade (C:\...). Nicht für Index/Review/Metriken — codebase-analyzer.
   Routing-Trigger (welcher MCP wann): welcher Dev-MCP, welcher MCP, dev-mcp vs codebase-analyzer,
-  codebase-analyzer vs dev-mcp, routing zwischen MCPs, dev-tooling.
+  codebase-analyzer vs dev-mcp, routing zwischen MCPs.
 when_to_use: >
   Aktiviere für: Dateien lesen/suchen (.cs/.ts/.json/.md), Angular oder .NET Scaffolding,
   ng build, ng test, dotnet build, dotnet test, dotnet publish, Test anlegen (spec/Testklasse),

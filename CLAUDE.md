@@ -4,6 +4,61 @@ This repository contains **AI workflow artifacts** (skills, agents, references) 
 
 ---
 
+## Pflicht: Superpowers global installieren
+
+Dieses Repo baut auf dem [Superpowers-Plugin](https://github.com/obra/superpowers) auf. Superpowers muss **global** installiert sein — es wird **nicht** aus diesem Repo geladen:
+
+```
+/plugin install superpowers@claude-plugins-official
+```
+
+Das Submodul unter `.claude/plugins/superpowers/` ist eine **reine Referenz** (Read-only) — damit ich beim Schreiben eigener Skills in die Superpowers-Quelldateien reinschauen kann. Es ersetzt nicht die globale Installation.
+
+### Superpowers-Skills (global, via Plugin)
+
+| Skill | Trigger |
+|-------|---------|
+| `brainstorming` | Vor jeder neuen Feature-Idee / Anforderung |
+| `writing-plans` | Vor der Implementierung — Spec liegt vor |
+| `executing-plans` | Plan vorhanden, Umsetzung startet |
+| `finishing-a-development-branch` | Implementierung fertig |
+| `test-driven-development` | Vor jedem Feature/Bugfix |
+| `systematic-debugging` | Bei Bug / unerwartetem Verhalten |
+| `verification-before-completion` | Vor Commit / PR / Fertigmeldung |
+| `requesting-code-review` | Nach Implementierung |
+| `receiving-code-review` | Review-Feedback erhalten |
+| `subagent-driven-development` | Mehrere unabhängige Tasks in einer Session |
+| `dispatching-parallel-agents` | 2+ unabhängige Aufgaben parallel |
+| `using-git-worktrees` | Vor Feature-Arbeit die Isolation braucht |
+| `writing-skills` | Neuen Skill erstellen / bestehenden verbessern |
+
+### Skill-Integration: Superpowers + eigene Skills
+
+Eigene Skills in diesem Repo sind **Ergänzungen** zu Superpowers, keine Ersätze. Die Superpowers-Skills bilden den Prozess-Rahmen — eigene Skills liefern den Domänen-Kontext:
+
+| Workflow | Superpowers-Skill | Eigener Skill (Domäne) |
+|----------|-------------------|------------------------|
+| Angular Feature bauen | `brainstorming` → `writing-plans` → `executing-plans` | `angular-developer`, `angular-material` |
+| Angular App neu aufsetzen | `writing-plans` | `angular-new-app` |
+| Bug finden | `systematic-debugging` | `codebase-analyzer`, `dev-mcp` |
+| Code untersuchen | — | `code-intel-workflow`, `dev-tooling` |
+| EF Migration | `writing-plans` | `backend-ef-migrations` |
+| Anforderung aufnehmen | `brainstorming` | `requirement-definition`, `acceptance-design` |
+| Fertigstellung prüfen | `verification-before-completion` | `dev-mcp` (Tests ausführen) |
+
+### Superpowers-Quelldateien lesen (für Skill-Entwicklung)
+
+Wenn ein neuer eigener Skill geschrieben wird der auf einen Superpowers-Skill aufbaut, zuerst die Quelldatei lesen:
+
+```
+.claude/plugins/superpowers/skills/<skill-name>/SKILL.md
+```
+
+Beispiel: Eigener Skill soll `writing-plans` erweitern →
+zuerst `.claude/plugins/superpowers/skills/writing-plans/SKILL.md` lesen, dann den eigenen Skill so formulieren dass er nahtlos in den Superpowers-Workflow greift.
+
+---
+
 ## Zweck dieses Repos: Start-Claude-Harness
 
 Dieses Repo ist das **zentrale Harness** — Vorlage und Ausgangsbasis für andere Test- und Kundenprojekte. Alles hier (`.claude/`, Skills, References, Agents, MCP-Server) wird in andere Projekte übertragen oder dort referenziert.
@@ -28,31 +83,29 @@ Bevor eine Änderung an `.claude/`, Skills, References, Agents oder MCP-Servern 
 
 ```
 .claude/                Claude Code — direkt nutzbar
-├── skills/             22 Skills (via /skill-name oder automatisch)
-│   ├── feature-delivery/        Orchestrator: Planung + Implementierung, fünf Einstiege + Review-on-Demand
-│   ├── software-design-principles/         Persönliche Design-Philosophie: sauber·funktional·getestet·wartbar·nachhaltig
-│   ├── acceptance-design/       Anforderungen auf Testbarkeit prüfen und schärfen
-│   ├── requirement-definition/  Epic→Feature→Story Breakdown: INVEST, Richard-Lawrence-Splitting, F1-Akzeptanzkriterien
-│   ├── angular-developer/       Angular Bundle: Language API, Projektstruktur, Signal-Architektur, Test-Policy, Migrationen
-│   ├── angular-new-app/         Angular New App Bundle: ng new, ng generate, Decision Gate, Implementierungsplan, Subagents
-│   ├── angular-material/        Angular Material Bundle: Komponenten, Theming, CDK, Custom mat-form-field Inputs
-│   ├── backend-ef-migrations/   EF Core Migrations
-│   ├── dev-tooling/             MCP-Gateway: Routing-Einstieg fuer dev-mcp, codebase-analyzer, build-log-filter
-│   ├── dev-mcp/                 49 Tools: filesystem, dotnet, angular, git, patch
-│   ├── build-log-filter/        Build-Log-Kompression
-│   ├── codebase-analyzer/       Statische Analyse & Review
-│   ├── code-intel-workflow/     Code-Intel: narrow→read→impact→verify
-│   ├── grill-me/                Interaktives Verhoer einer Story/Plan: eine Frage+Empfehlung bis alle Entscheidungen klar sind
-│   ├── skill-creator/           Meta-skill: create/improve skills and agent profiles
-│   ├── delivery-inspection/     Delivery check: 6 Reviewer prüfen Anforderungserfüllung vor Auslieferung
-│   ├── test-design/             AAA · Namenskonvention · Magic Strings (interne Dep. feature-delivery)
-│   ├── describe-as/             Stil-Anpassung
-│   ├── commit-message/          Commit-Message-Generator
-│   ├── prozess-retrospektive/   Prozess-Analyse: Harness-Verbesserungsideen + Session-Erkenntnisse
-│   ├── caveman/                 Kommunikationsstil: Caveman
-│   └── de-en-communication/     Kommunikationsregeln: Deutsch/Englisch — Text DE, Code EN, Voice Mixed
-├── agents/             Sub-Agent-Profile (auto-discovered) — alle Agent-Profile zentral hier (15 Profile; zentralisiert via STORY-004, Impl-Loop auf PL+PM konsolidiert via FEAT-001/STORY-033)
-└── references/         Shared references (compliance, output-style, boilerplate)
+├── skills/             Eigene domänenspezifische Skills (Ergänzung zu Superpowers)
+│   ├── software-design-principles/  Persönliche Design-Philosophie: sauber·funktional·getestet·wartbar·nachhaltig
+│   ├── acceptance-design/           Anforderungen auf Testbarkeit prüfen und schärfen
+│   ├── requirement-definition/      Epic→Feature→Story Breakdown: INVEST, Richard-Lawrence-Splitting, F1-Akzeptanzkriterien
+│   ├── angular-developer/           Angular Bundle: Language API, Projektstruktur, Signal-Architektur, Test-Policy, Migrationen
+│   ├── angular-new-app/             Angular New App Bundle: ng new, ng generate, Decision Gate, Implementierungsplan, Subagents
+│   ├── angular-material/            Angular Material Bundle: Komponenten, Theming, CDK, Custom mat-form-field Inputs
+│   ├── backend-ef-migrations/       EF Core Migrations
+│   ├── dev-tooling/                 MCP-Gateway: Routing-Einstieg fuer dev-mcp, codebase-analyzer, build-log-filter
+│   ├── dev-mcp/                     49 Tools: filesystem, dotnet, angular, git, patch
+│   ├── build-log-filter/            Build-Log-Kompression
+│   ├── codebase-analyzer/           Statische Analyse & Review
+│   ├── code-intel-workflow/         Code-Intel: narrow→read→impact→verify
+│   ├── describe-as/                 Stil-Anpassung
+│   ├── commit-message/              Commit-Message-Generator
+│   ├── prozess-retrospektive/       Prozess-Analyse: Harness-Verbesserungsideen + Session-Erkenntnisse
+│   ├── caveman/                     Kommunikationsstil: Caveman
+│   └── de-en-communication/         Kommunikationsregeln: Deutsch/Englisch — Text DE, Code EN, Voice Mixed
+├── agents/             Sub-Agent-Profile (auto-discovered)
+├── references/         Shared references (compliance, output-style, boilerplate)
+└── plugins/
+    └── superpowers/    Git-Submodul (obra/superpowers) — NUR Referenz, nicht geladen
+                        Pfad für Skill-Entwicklung: .claude/plugins/superpowers/skills/<name>/SKILL.md
 
 Mcp-Servers/            MCP server implementations
 ├── Build.Log.Filter.Mcp/       build-log-filter — Build/Test log compression (Docker)
@@ -85,9 +138,11 @@ docs/                   Skill docs, MCP docs, enforcement references
 
 ## Key Skills
 
+> Superpowers-Skills (Prozess-Rahmen) werden global via Plugin bereitgestellt — siehe Abschnitt oben.
+> Die Skills hier sind **eigene domänenspezifische Ergänzungen**.
+
 | Skill | Trigger | Purpose |
 |-------|---------|---------|
-| `/feature-delivery` | `plane`, `implementiere`, `implementiere nur`, `code-inspection`, `delivery-inspection` | Orchestrator: Planung (immer lean/solo) + Implementierung (voll / nur) + Review-on-Demand; Branch-Guard aktiv |
 | `/acceptance-design` | `schärfe Anforderung`, `Akzeptanzkriterien prüfen` | Anforderungen auf Testbarkeit prüfen und schärfen |
 | `/requirement-definition` | `ich brauche ein Feature für…`, `schneide das in Stories`, `Anforderung erfassen` | Epic→Feature→Story Breakdown: INVEST, Splitting, F1-Akzeptanzkriterien → `requests/` |
 | `/dev-tooling` | `welcher MCP`, `MCP-Einstieg`, Dev-Tooling-Fragen | Gateway: Routing zu dev-mcp, codebase-analyzer, build-log-filter |
@@ -97,9 +152,6 @@ docs/                   Skill docs, MCP docs, enforcement references
 | `/build-log-filter` | `ng serve`, Shell-Fallback | Build/Test-Log-Filterung |
 | `/angular-developer` | Angular-Arbeit | Bundle: Language API, Projektstruktur, Signal-Architektur, Test-Policy, Migrationen |
 | `/software-design-principles` | `meine Prinzipien`, `@software-design-principles`, `beachte meine Designregeln`, `flow design` | Persönliche Design-Philosophie: 5 Werte + Flow Design + IODA/IOSP + SOLID + persönliche Regeln |
-| `/grill-me` | `grill mich`, `befrage diese Story`, `schärf den Plan`, `hinterfrage den Plan` | Interaktives Verhör einer Story/Plan: eine Frage+Empfehlung bis alle Entscheidungszweige klar |
-| `/skill-creator` | `create skill`, `agent profil` | Skills und Agents erstellen/verbessern |
-| `/delivery-inspection` | Vor jeder Auslieferung | 6-Reviewer Anforderungserfüllungs-Gate |
 | `/de-en-communication` | *(immer aktiv)* | Kommunikationsregeln: Text DE, Code EN, Voice Mixed |
 
 ---
@@ -108,11 +160,12 @@ docs/                   Skill docs, MCP docs, enforcement references
 
 | Step | File |
 |------|------|
-| 1. Edit content | `.claude/skills/<name>/SKILL.md` + `references/` |
-| 2. Edit agent | `.claude/agents/<name>.md` |
-| 3. Update shared refs | `.claude/references/` |
+| 1. Superpowers-Skill lesen (falls Basis) | `.claude/plugins/superpowers/skills/<name>/SKILL.md` |
+| 2. Eigenen Skill erstellen / editieren | `.claude/skills/<name>/SKILL.md` + `references/` |
+| 3. Agent editieren (falls nötig) | `.claude/agents/<name>.md` |
+| 4. Shared refs aktualisieren | `.claude/references/` |
 
-Use `/skill-creator` to create new skills or agent profiles.
+Use `/writing-skills` (Superpowers) to create or improve skills and agent profiles.
 
 ---
 

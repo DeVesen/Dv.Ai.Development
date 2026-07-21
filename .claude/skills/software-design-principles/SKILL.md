@@ -4,7 +4,7 @@ description: >
   Persoenliche Software-Design-Philosophie: sauber · funktional · getestet · wartbar · nachhaltig.
   Konsolidiert alle Design-Prinzipien: Flow Design (Lieser/Westphal), IODA/IOSP, SOLID, Clean Code,
   DRY/KISS/YAGNI sowie persoenliche Code-Regeln (keine Verschachtelung, Lesbarkeit auf einen Blick).
-  Gilt als Qualitaetsnordstern fuer alle Gespraeche und automatisch fuer feature-delivery.
+  Gilt als Qualitaetsnordstern fuer alle Gespraeche.
   Trigger: software design principles, software-design-principles, meine Prinzipien, Design-Philosophie,
   mein Mantra, sauber wartbar nachhaltig, beachte meine Prinzipien, design principles, persoenliche
   Regeln, wie ich Software schreibe, meine Designregeln, @software-design-principles.
@@ -12,7 +12,6 @@ description: >
 when_to_use: >
   Immer wenn Designentscheidungen, Code-Reviews, Anforderungsanalyse oder Implementierungsplanung
   im Kontext dieser persoenlichen Software-Design-Philosophie stattfinden sollen.
-  Automatisch relevant fuer feature-delivery (Planning + Implementation).
 ---
 
 # Software Design
@@ -179,8 +178,7 @@ Wenn du sagst:
 | **Zustand** — innerhalb/über Interaktionen/im Portal | [references/state-management.md](references/state-management.md) |
 | **Fehlerbehandlung** — Bedienfehler vs. technische Fehler vs. Programmierfehler | [references/error-handling.md](references/error-handling.md) |
 | **IODA/IOSP/PoMO/Testpyramide** — vollständige Referenz | [references/ioda-iosp.md](references/ioda-iosp.md) |
-| SOLID/Clean Code/DRY/KISS/YAGNI/DDD | [../feature-delivery/references/principles-cleancode.md](../feature-delivery/references/principles-cleancode.md) |
-| Feature-Umsetzung | [../feature-delivery/SKILL.md](../feature-delivery/SKILL.md) |
+| SOLID/Clean Code/DRY/KISS/YAGNI/DDD | Inline oben — Clean Code Kernregeln + Pragmatische Gegengewichte |
 
 ---
 

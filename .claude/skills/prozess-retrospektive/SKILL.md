@@ -5,7 +5,7 @@ description: >
   fuer den Harness. Prueft: MCP-Call-Qualitaet (Timeouts, Fallbacks, Failures), Orchestrierungs-
   Effizienz (Gates, Runden, Blockaden), Reviewer-Qualitaet (Findings vs. Rauschen — generisch,
   unabhaengig von Anzahl/Namen der Reviewer), Reibungspunkte (Nutzer-Eingriffe, Klaerungs-
-  bedarfe), Delivery-Inspection-Loop-Effizienz, Session-Erkenntnisse (was war entscheidend,
+  bedarfe), Review- und Inspektions-Loop-Effizienz, Session-Erkenntnisse (was war entscheidend,
   ueberraschend, welche Muster zeigen sich). Output: strukturierter Bericht mit priorisierten,
   umsetzbaren Harness-Verbesserungsideen inkl. Verweis auf konkrete Skill/Agent-Dateien.
   Opt-out: kein-retrospektive, no-retrospektive, skip-retrospektive.
@@ -14,7 +14,7 @@ when_to_use: >
   Tooling erhalten moechte. Trigger: "prozess-retrospektive", "retrospektive", "prozess analyse",
   "harness verbessern", "was koennen wir verbessern", "prozess pruefen", "wie lief das",
   "was haben wir gelernt", "was war ueberraschend", "erkenntnisse", "learnings", "session insights".
-  Sinnvoll nach feature-delivery, delivery-inspection oder jeder anderen laengeren Session.
+  Sinnvoll nach jeder laengeren Implementierungs- oder Planungs-Session.
   Kein automatischer Trigger — immer explizit aufgerufen.
 ---
 
@@ -63,7 +63,7 @@ Unabhaengig davon welche Reviewer liefen (Anzahl und Namen variieren je Skill):
 - Gab es Missverstaendnisse zwischen Anforderung und Umsetzung die sich haetten vermeiden lassen?
 - Wo hat der Nutzer Entscheidungen getroffen die eigentlich der Harness haette antizipieren koennen?
 
-### 5 — Delivery-Inspection-Loop
+### 5 — Review- und Inspektions-Loop
 
 - Wie viele Iterationen liefen?
 - Welche Reviewer-Rollen fanden die meisten Findings?
@@ -87,7 +87,7 @@ Vor der Analyse die Tabelle auswerten: Jede zutreffende Bedingung reduziert den 
 |--------|----------|--------------|
 | Kein MCP aufgerufen | MCP-Call-Qualität | „Keine MCP-Calls in dieser Session." |
 | Keine Hard Stops | Orchestrierungs-Effizienz | „Keine Hard Stops — Flow lief ohne Blockaden." |
-| Kein Review gelaufen | Reviewer-Qualität + Delivery-Inspection-Loop | je 1 Satz: „Kein Review-Loop in dieser Session." / „Keine Delivery-Inspection in dieser Session." |
+| Kein Review gelaufen | Reviewer-Qualität + Review- und Inspektions-Loop | je 1 Satz: „Kein Review-Loop in dieser Session." / „Kein Inspektions-Loop in dieser Session." |
 
 Trifft keine Bedingung zu, werden alle Bereiche mit voller Tiefe analysiert.
 
@@ -134,8 +134,8 @@ Aus jedem Befund eine konkrete, umsetzbare Idee ableiten:
 #### Reibungspunkte
 [Befunde + Bewertung]
 
-#### Delivery-Inspection-Loop
-[Befunde + Bewertung — nur wenn delivery-inspection in der Session lief]
+#### Review- und Inspektions-Loop
+[Befunde + Bewertung — nur wenn ein Review- oder Inspektions-Loop in der Session lief]
 
 #### Session-Erkenntnisse
 [Was war entscheidend / ueberraschend — Muster die sich zeigen — was naechstes Mal anders]

@@ -56,7 +56,6 @@ Schlüsselwörter: "Tests laufen", "Feature fertig", "vor dem Merge", "Sprint-En
 
 **VERBOTEN als MCP-Argument:** `/workspace/`-Pfade, relative Pfade, `{frontend-path}`, `{backend-path}`.
 
-*Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
 
 ---
 
@@ -741,7 +740,6 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 - Kein Build nötig erwähnen wenn der User fragt ob er erst bauen muss
 - Coverage-Tools immer mit dem Hinweis versehen dass zuerst ein Test-Run nötig ist
 
-Weiterführende Dokumentation: `docs/mcp/codebase-analyzer.md`
 
 ## Opt-out
 

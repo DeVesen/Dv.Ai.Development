@@ -149,7 +149,6 @@ select:mcp__dev-mcp__read_lines,mcp__dev-mcp__read_files_batch,mcp__dev-mcp__tes
 ## Abgrenzung
 
 - **codebase-analyzer:** Index, Review, Metriken, AST, `detect_untested_public_api` — separater MCP
-- **build-log-filter:** Nur für `ng serve`/`npm start` oder Shell-Fallback nach BLOCKER
 - Keine Überschneidung: dev-mcp liest/schreibt/baut, codebase-analyzer analysiert
 
 ---

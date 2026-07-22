@@ -127,6 +127,30 @@ select:mcp__dev-mcp__read_lines,mcp__dev-mcp__read_files_batch,mcp__dev-mcp__tes
 
 ---
 
+## Init — `.mcp.json` einrichten
+
+**Trigger:** `dev-mcp init`
+
+1. Frage den User: *„Wo liegt `Dev.Mcp.exe`? (z. B. `C:\Develop\.apps\dev-mcp\Dev.Mcp.exe`)"*
+2. Lies die lokale `.mcp.json` im aktuellen Arbeitsverzeichnis (falls vorhanden).
+3. Füge den `dev-mcp`-Eintrag hinzu (oder ersetze ihn wenn er bereits existiert):
+
+```json
+"dev-mcp": {
+  "command": "<Pfad zur Dev.Mcp.exe>",
+  "env": {
+    "LOG_VIEWER_PORT": "51011"
+  }
+}
+```
+
+4. Schreibe die aktualisierte `.mcp.json` zurück.
+5. Bestätige: *„`dev-mcp` wurde in `.mcp.json` eingetragen. Claude Code neu starten damit der Server geladen wird."*
+
+**Hinweis:** Die `.mcp.json` liegt im Projekt-Root (neben `CLAUDE.md`). Falls sie nicht existiert, anlegen mit `{ "mcpServers": { ... } }`.
+
+---
+
 ## Referenzen (on-demand lesen)
 
 | Bedarf | Datei |

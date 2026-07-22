@@ -22,6 +22,7 @@ Install the Superpowers plugin globally in Claude Code before using this repo:
 │   ├── software-design-principles/  Personal design philosophy
 │   ├── prozess-retrospektive/  Session process analysis
 │   ├── regression-audit/       Change regression detection
+│   ├── ado-mcp/                Azure DevOps work item operations + analysis
 │   ├── dev-mcp/                Routing skill for dev-mcp MCP server
 │   └── codebase-analyzer/      Routing skill for codebase-analyzer MCP server
 ├── agents/                     Custom sub-agent profiles
@@ -160,6 +161,31 @@ Audits recent git commits for silent regressions, broken behavior, or test drift
 | "regression prüfen" · "hat etwas gebrochen" | Natural language trigger |
 | "stille regression" · "test drift" · "wöchentlicher audit" | Natural language trigger |
 | `ohne regression-audit` | Opt-out |
+
+---
+
+#### `ado-mcp`
+
+`Azure DevOps` `Work Items` `ADO` `MCP` `Tasks` `Status Marker`
+
+Routes all Azure DevOps work item operations to the official Microsoft ADO MCP Server (`@azure-devops/mcp`). Covers reading work items by ID or URL, querying lists, updating fields and comments, and a dedicated analysis operation that decomposes work items into structured `docs/ado/<id>.md` files. Supports multi-task detection (numbered lists and bullet points) and tracks per-task implementation status via inline markers.
+
+| Command / Trigger | Purpose |
+|---|---|
+| `ado-mcp init` | Configure `.mcp.json` entry (asks org + auth method) |
+| Work item ID or URL in chat | Auto-loaded for work item read/update operations |
+| "analysiere Workitem #1234" | Decompose WI into `docs/ado/<id>.md` |
+| "Status aller Tasks" / "bist du schon umgesetzt" | Query per-task implementation status from ADO |
+| "ich fange Task X an" / "Task X ist fertig" | Set `(sr-active)` / `(sr-done)` marker in ADO description |
+
+**Status markers** — the skill reads and writes two inline markers in ADO work item descriptions:
+
+| Marker | Background | Meaning |
+|---|---|---|
+| `(sr-done)` | green | Task completed |
+| `(sr-active)` | yellow | Task currently in progress |
+
+**Setup:** Run `ado-mcp init` and Claude will write the `.mcp.json` entry for you.
 
 ---
 

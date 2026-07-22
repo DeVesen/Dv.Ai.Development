@@ -730,6 +730,33 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 - Coverage-Tools immer mit dem Hinweis versehen dass zuerst ein Test-Run nötig ist
 
 
+## Init — `.mcp.json` einrichten
+
+**Trigger:** `codebase-analyzer init`
+
+1. Frage den User: *„Wo liegt `index.js`? (z. B. `C:\Develop\.apps\codebase-analyzer\index.js`)"*
+2. Lies die lokale `.mcp.json` im aktuellen Arbeitsverzeichnis (falls vorhanden).
+3. Füge den `codebase-analyzer`-Eintrag hinzu (oder ersetze ihn wenn er bereits existiert):
+
+```json
+"codebase-analyzer": {
+  "command": "node",
+  "args": [
+    "<Pfad zu index.js>"
+  ],
+  "env": {
+    "LOG_VIEWER_PORT": "51012"
+  }
+}
+```
+
+4. Schreibe die aktualisierte `.mcp.json` zurück.
+5. Bestätige: *„`codebase-analyzer` wurde in `.mcp.json` eingetragen. Claude Code neu starten damit der Server geladen wird."*
+
+**Hinweis:** Die `.mcp.json` liegt im Projekt-Root (neben `CLAUDE.md`). Falls sie nicht existiert, anlegen mit `{ "mcpServers": { ... } }`.
+
+---
+
 ## Opt-out
 
 `kein codebase-analyzer` → Skill nicht laden.

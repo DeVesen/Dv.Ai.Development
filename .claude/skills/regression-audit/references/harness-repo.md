@@ -9,11 +9,14 @@ Dieses Playbook greift, wenn:
 
 ---
 
-## Kernmechanismus: Referenzintegrität statt Tests
+## Kernmechanismus: Theoretische Verhaltens-Verifikation
 
-Ohne klassische Tests lautet die Prüffrage:
+Ohne ausführbare Tests lautet die Prüffrage:
 
-> Wurde Definition X geändert, ohne alle Stellen zu aktualisieren, die X referenzieren?
+> Spiegelt der heutige Zustand der Datei / des Eintrags noch den zuletzt intendierten Soll-Zustand wider?
+
+Intent-Evolution gilt auch hier (→ `commit-intent.md`): Commits können bewusst den
+Soll-Zustand ändern. Der **aktuellste Commit eines Bereichs** definiert, was heute gelten soll.
 
 ---
 
@@ -23,48 +26,75 @@ Ohne klassische Tests lautet die Prüffrage:
 git log --oneline --since="N days ago" --name-only --diff-filter=ACMRD
 ```
 
-Dateitypen mit Regressions-Relevanz in diesem Kontext:
+Dateitypen mit Regressions-Relevanz:
 
 | Dateityp | Regressions-Risiko |
 |----------|--------------------|
 | `SKILL.md` | Trigger, Opt-out, Dateinamen in ToC-Tabellen geändert? |
-| `references/op-*.md` | Ablauf geändert ohne SKILL.md-ToC-Update? |
-| `CLAUDE.md` | Verweise auf Skills/MCPs/Pfade noch aktuell? |
+| `references/*.md` | Ablauf geändert ohne SKILL.md-ToC-Update? |
+| `CLAUDE.md` | Verweise auf Skills / MCPs / Pfade noch aktuell? |
 | `*.json` (Settings, MCP-Config) | Feld umbenannt → alle referenzierenden Stellen geprüft? |
 | Prompt-Templates | Variable oder Platzhalter umbenannt → alle Verwender mitgezogen? |
 
 ---
 
-## Schritt 2: Referenzintegrität prüfen
+## Schritt 2: Verhaltens-Verifikation (theoretisch, kumulativ)
 
-Für jede geänderte Definitions-Datei:
+Pro geändertem Bereich: Intent aus letztem Commit bestimmen (→ `commit-intent.md`),
+dann aktuellen Zustand dagegen prüfen.
 
-1. **Wer referenziert diese Datei?** (Grep auf Dateinamen / Symbol / Key)
-2. **Wurden diese referenzierenden Stellen ebenfalls angepasst?**
-3. **Sind alle Links in ToC-Tabellen (SKILL.md) noch gültig?**
-
-```bash
-# Beispiel: Wurde eine references/-Datei umbenannt?
-grep -r "references/alter-name.md" .claude/skills/
-```
+| Intent-Typ | Prüffrage heute |
+|------------|----------------|
+| Skill-Trigger geändert | Werden die neuen Trigger korrekt im Frontmatter beschrieben? Ist CLAUDE.md konsistent? |
+| Ablauf in `references/*.md` geändert | Stimmt der SKILL.md-ToC noch mit den tatsächlich vorhandenen Dateien überein? |
+| Config-Wert geändert | Ist der Wert heute so gesetzt wie intendiert? Kein widersprüchlicher Eintrag anderswo? |
+| Doku-Abschnitt ergänzt | Ist der Abschnitt vollständig und noch aktuell vorhanden? |
+| Datei umbenannt | Sind alle Referenzierenden angepasst? (Grep — siehe unten) |
 
 ---
 
-## Schritt 3: Test-Drift-Äquivalent (Skill-Drift)
+## Schritt 3: Referenzintegrität prüfen
 
-Wurde eine `SKILL.md` geändert, ohne dass die Änderung durch eine erkennbare
-Anforderung aus einem Issue, einer Konversation oder einem Kommentar begründet ist?
-→ gelb im Test-Drift-Abschnitt des Reports (Bezeichnung: „Skill-Drift-Signal").
+Für jede umbenannte oder gelöschte Datei:
 
-Wurde ein `references/op-*.md` geändert, das Abläufe beschreibt, ohne dass die
-übergeordnete `SKILL.md` angepasst wurde?
-→ gelb (Ablauf und ToC sind auseinander gedriftet).
+```bash
+# Alle Stellen finden die auf den alten Namen verweisen
+grep -r "<alter-dateiname>" .
+```
+
+Für jede geänderte SKILL.md ToC-Tabelle: Links prüfen ob alle referenzierten Dateien existieren.
+
+---
+
+## Schritt 4: TDD-Verletzungs-Äquivalent (Skill-Drift-Signal)
+
+Analog zum TDD-Verletzungs-Signal: Eine Definition wurde geändert, aber die
+„begleitende Stelle" (Gegenstück) wurde nicht mitgezogen.
+
+| Änderung X | Erwartetes Gegenstück Y |
+|------------|------------------------|
+| Neuer Skill angelegt | Eintrag in CLAUDE.md vorhanden? |
+| `references/*.md` neu angelegt | Zeigt SKILL.md-ToC auf diese Datei? |
+| Frontmatter-`name` geändert | Alle `@<skill-name>`-Referenzen anderswo angepasst? |
+| MCP-Konfiguration geändert | Alle Skill-Dateien die diesen MCP referenzieren, konsistent? |
+
+Fehlendes Y → gelb. Fehlendes Y bei zentralen Einstiegspunkten (CLAUDE.md, SKILL.md) → rot.
+
+---
+
+## Schritt 5: Test-Drift-Äquivalent (Intentionsdrift-Signal)
+
+Wurde eine Definitions-Datei geändert, ohne dass die Änderung durch einen erkennbaren
+Auslöser begründet ist (Issue, Konversation, Commit-Message-Kontext)?
+
+→ gelb im Intentionsdrift-Abschnitt des Reports.
 
 ---
 
 ## Report-Hinweise für Harness- / Doku-Repos
 
-- Umbenannte Dateien ohne Grep auf alle Referenzierenden → immer rot.
-- Geänderte Frontmatter-Felder (`name`, Trigger) ohne CLAUDE.md-Update → gelb.
-- Neue Skills ohne Eintrag in CLAUDE.md → gelb.
-- Broken Links in ToC-Tabellen explizit auflisten, nicht pauschal erwähnen.
+- Umbenannte Dateien ohne vollständigen Grep → immer rot.
+- Geänderte Frontmatter-Felder (`name`, Trigger) ohne CLAUDE.md-Konsistenzprüfung → gelb.
+- Neue Skills ohne CLAUDE.md-Eintrag → gelb.
+- Broken Links in ToC-Tabellen explizit auflisten — nicht pauschal erwähnen.
+- Theoretische Verifikation klar als solche kennzeichnen: *„Kein ausführbarer Test — theoretische Analyse."*

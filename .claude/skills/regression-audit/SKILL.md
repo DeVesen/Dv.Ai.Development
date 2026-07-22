@@ -16,26 +16,42 @@ Referenzen on-demand lesen — nicht alle vorab laden.
 
 1. **Git-Log einlesen** — letzte N Tage (Default: 7; überschreibbar per Parameter).
    Commits nach Bereich / Subsystem gruppieren.
-2. **Stack erkennen** — lies [`references/stack-detection.md`](references/stack-detection.md).
+
+2. **Intent extrahieren** — lies [`references/commit-intent.md`](references/commit-intent.md).
+   Pro Bereich: Was war die Absicht der Commits? Intent darf sich über die Zeit wandeln —
+   der **aktuellste Commit eines Bereichs** ist maßgeblich für den heutigen Soll-Zustand.
+
+3. **Stack erkennen** — lies [`references/stack-detection.md`](references/stack-detection.md).
    Passendes Playbook laden, falls unter `references/<stack>.md` vorhanden.
-   Falls kein Playbook existiert: generischen Fallback verwenden **und** explizit im Report
-   vermerken, dass für diesen Stack noch kein Playbook angelegt ist.
-3. **Regressions-Signal pro Bereich** — Kernfrage: *Änderung X gemacht, aber Y nicht
-   mitgezogen?* Was Y konkret ist, bestimmt das Stack-Playbook.
-4. **Test-Drift-Signal separat auswerten** — Testdatei geändert ohne erkennbare
+   Falls kein Playbook existiert: generischen Fallback nutzen **und** im Report explizit
+   vermerken, dass noch kein Playbook für diesen Stack angelegt ist.
+
+4. **Verhaltens-Verifikation pro Bereich** — Kernfrage: *Ist der zuletzt intendierte Zustand
+   heute noch present?* Details im Stack-Playbook.
+   - Kumulative Prüfung: alle in N Tagen berührten Bereiche **einmalig** gegen den
+     aktuellen Stand prüfen — nicht isoliert pro Commit.
+   - Software: Tests ausführen + Code-Review für betroffene Bereiche.
+   - Nicht-Software: theoretische Analyse (Definition, Referenz, Konfiguration).
+
+5. **TDD-Verletzungs-Signal** (separat) — Feature hinzugefügt ohne begleitenden Test,
+   weder im selben noch in einem unmittelbaren Folge-Commit?
+   → gesondert im Report, nie mit Test-Drift vermischen.
+
+6. **Test-Drift-Signal** (separat) — Testdatei geändert ohne erkennbare
    Anforderungsänderung in Commit-Message oder PR-Beschreibung?
-   → separat im Report ausweisen, nie im allgemeinen Regressions-Abschnitt verstecken.
-5. **Report ausgeben** — grün / gelb / rot pro Bereich.
+   → gesondert im Report, nie im allgemeinen Verhaltens-Abschnitt verstecken.
+
+7. **Report ausgeben** — grün / gelb / rot pro Bereich.
    Unsicherheiten explizit benennen. Kein pauschales „alles ok".
 
 ## Referenzen
 
 | Bereich | Datei |
 |---------|-------|
-| Stack-Erkennung & Fallback-Regeln | [references/stack-detection.md](references/stack-detection.md) |
+| Intent-Extraktion | [references/commit-intent.md](references/commit-intent.md) |
+| Stack-Erkennung & Fallback | [references/stack-detection.md](references/stack-detection.md) |
 | Angular | [references/angular.md](references/angular.md) |
 | .NET | [references/dotnet.md](references/dotnet.md) |
 | Harness- / Config- / Doku-Repo | [references/harness-repo.md](references/harness-repo.md) |
 
-Neue Stack-Playbooks können als `references/<stack>.md` ergänzt werden,
-ohne diese SKILL.md anzufassen.
+Neue Stack-Playbooks als `references/<stack>.md` ergänzen — SKILL.md bleibt unberührt.

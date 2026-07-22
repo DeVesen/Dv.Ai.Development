@@ -1,14 +1,18 @@
 # Dv.Ai.Development
 
-A Claude Code harness repository for Angular and .NET development. Provides custom skills and MCP servers that sit on top of the [Superpowers](https://github.com/obra/superpowers) plugin framework and extend it with domain-specific workflows, file system tooling, and deep code analysis.
+A Claude Code harness repository for Angular and .NET development. Provides custom skills and MCP servers that sit on top of the [Superpowers](https://github.com/obra/superpowers) plugin framework and extend it with domain-specific workflows, file system tooling, and deep code analysis. [Context7](https://claudedirectory.org/plugins/context7) keeps library documentation current at inference time.
 
 ## Prerequisites
 
-Install the Superpowers plugin globally in Claude Code before using this repo:
+Install both plugins globally in Claude Code before using this repo:
 
 ```
 /plugin install superpowers@claude-plugins-official
+/plugin install context7@claude-plugins-official
 ```
+
+**Superpowers** — process framework (planning, TDD, debugging, review).  
+**Context7** — up-to-date library documentation (Angular, .NET, and other dependencies).
 
 ## Repository Structure
 

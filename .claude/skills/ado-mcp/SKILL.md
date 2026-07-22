@@ -41,7 +41,7 @@ Falls Tool-Namen abweichen: `ToolSearch("ado work item")` — der Server heißt 
 | Work Item analysieren → docs/ado/ | `references/op-analyze-workitem.md` |
 | Status eines Tasks abfragen | `references/op-status-marker.md` |
 | Status aller Tasks abfragen | `references/op-status-marker.md` |
-| Task als aktiv / erledigt markieren | `references/op-status-marker.md` |
+| Task als 🔄 / ✅ markieren | `references/op-status-marker.md` |
 
 Tool-Parameter-Details: `references/tool-catalog.md`
 

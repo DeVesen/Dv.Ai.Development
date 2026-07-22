@@ -191,10 +191,10 @@ und in der Kopfzeile des Task-Blocks ergänzen:
 ### Task 2 — Logout-Button entfernen  🔄 aktiv
 ```
 
-| Marker im HTML | Symbol | Label |
-|---------------|--------|-------|
-| `(sr-done)` | ✅ | erledigt |
-| `(sr-active)` | 🔄 | aktiv |
+| Marker im Text | Symbol | Label |
+|----------------|--------|-------|
+| ✅ | ✅ | erledigt |
+| 🔄 | 🔄 | aktiv |
 | *(kein Marker)* | ⬜ | offen |
 
 ---

@@ -182,6 +182,23 @@ Nach dem Schreiben der Datei:
 
 ---
 
+## Schritt 4b — Status-Marker in die Task-Liste aufnehmen (nur bei Auflistung)
+
+Beim Schreiben von Template B: für jeden Task den aktuellen Marker aus dem Work-Item-HTML auslesen
+und in der Kopfzeile des Task-Blocks ergänzen:
+
+```markdown
+### Task 2 — Logout-Button entfernen  🔄 aktiv
+```
+
+| Marker im HTML | Symbol | Label |
+|---------------|--------|-------|
+| `(sr-done)` | ✅ | erledigt |
+| `(sr-active)` | 🔄 | aktiv |
+| *(kein Marker)* | ⬜ | offen |
+
+---
+
 ## Qualitätsregeln
 
 - **1:1-Originaltexte** in der „Work Item (Original)"-Sektion — nichts paraphrasieren, nichts weglassen

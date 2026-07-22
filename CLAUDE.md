@@ -1,10 +1,12 @@
 # Dv.Ai.Development — Claude Code Guide
 
-Dieses Repo enthält **eigene Skills / MCP-Server** für Angular/.NET-Entwicklung, aufbauend auf dem Superpowers-Plugin.
+Dieses Repo enthält **eigene Skills / MCP-Server** für Angular/.NET-Entwicklung, aufbauend auf dem Superpowers-Plugin und Context7.
 
 ---
 
-## Voraussetzung: Superpowers global installieren
+## Voraussetzung: Plugins global installieren
+
+### Superpowers
 
 ```
 /plugin install superpowers@claude-plugins-official
@@ -16,6 +18,15 @@ Die Skills in `.claude/skills/` sind domänenspezifische Ergänzungen dazu.
 Das Submodul `.claude/plugins/superpowers/` ist eine **reine Lese-Referenz** — nicht von Claude geladen.
 Beim Entwickeln eigener Skills zuerst die relevante Superpowers-Quelldatei lesen:
 `.claude/plugins/superpowers/skills/<name>/SKILL.md`
+
+### Context7
+
+```
+/plugin install context7@claude-plugins-official
+```
+
+Context7 liefert aktuelle Bibliotheks-Dokumentation direkt in den Kontext — verhindert veraltetes API-Wissen bei Angular, .NET, und weiteren Abhängigkeiten.
+Details: https://claudedirectory.org/plugins/context7
 
 ---
 

@@ -178,12 +178,12 @@ Routes all Azure DevOps work item operations to the official Microsoft ADO MCP S
 | "Status aller Tasks" / "bist du schon umgesetzt" | Query per-task implementation status from ADO |
 | "ich fange Task X an" / "Task X ist fertig" | Set `(sr-active)` / `(sr-done)` marker in ADO description |
 
-**Status markers** — the skill reads and writes two inline markers in ADO work item descriptions:
+**Status markers** — the skill reads and writes two inline emoji markers in ADO work item descriptions:
 
-| Marker | Background | Meaning |
-|---|---|---|
-| `(sr-done)` | green | Task completed |
-| `(sr-active)` | yellow | Task currently in progress |
+| Marker | Meaning |
+|---|---|
+| ✅ | Task completed |
+| 🔄 | Task currently in progress |
 
 **Setup:** Run `ado-mcp init` and Claude will write the `.mcp.json` entry for you.
 

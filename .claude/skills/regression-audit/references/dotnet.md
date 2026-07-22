@@ -29,15 +29,19 @@ Alle in N Tagen berührten Projekte **als Gesamtmenge** notieren — nicht pro C
 Die Verifikation läuft **einmalig pro Bereich** gegen den aktuellen Stand — nicht isoliert
 pro Commit. Intent aus `commit-intent.md` ist der Maßstab.
 
-| Aktueller Intent (aus letztem Commit) | Was zu prüfen ist |
-|---------------------------------------|-------------------|
-| „add <Feature>" | Feature vorhanden + Test deckt es ab |
-| „extend <Klasse/Service>" | **Gesamte** Klasse testen — nicht nur die neue Methode |
-| „fix <Problem>" | Fehler-Szenario tritt nicht mehr auf |
-| „refactor <Bereich>" | Alle bisherigen Tests noch grün, kein Verhalten-Delta |
+Pro Bereich die akkumulierte Verhaltenserwartung aus `commit-intent.md` nehmen —
+alle Aspekte aus allen Commits des Bereichs, nicht nur den letzten:
 
-**Kumulativ bedeutet:** Ein Service, der in 3 verschiedenen Commits berührt wurde,
-wird **einmal** vollständig getestet — nicht dreimal mit Teilscope.
+| Commit-Typ im Bereich | Was zu prüfen ist |
+|-----------------------|-------------------|
+| Enthält `add <Feature>` | Feature vorhanden + Test deckt es ab |
+| Enthält `extend <Klasse/Service>` | **Gesamten** Service testen — Neues und Bestehendes |
+| Enthält `fix <Problem>` | Fehler-Szenario tritt nicht mehr auf |
+| Enthält `refactor <Bereich>` | Alle bisherigen Tests noch grün, kein Verhalten-Delta |
+| Mehrere Typen kombiniert | Prüfliste = **Union** aller obigen Erwartungen |
+
+**Kumulativ bedeutet:** Ein Service, der in 3 Commits berührt wurde (add → extend → fix),
+wird **einmal vollständig** getestet — alle drei Verhaltenserwartungen zusammen, nicht isoliert.
 
 **Tests ausführen** — welches Test-Framework (MSTest, xUnit, NUnit, …) bestimmt das Projekt:
 

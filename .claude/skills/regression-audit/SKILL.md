@@ -18,8 +18,9 @@ Referenzen on-demand lesen — nicht alle vorab laden.
    Commits nach Bereich / Subsystem gruppieren.
 
 2. **Intent extrahieren** — lies [`references/commit-intent.md`](references/commit-intent.md).
-   Pro Bereich: Was war die Absicht der Commits? Intent darf sich über die Zeit wandeln —
-   der **aktuellste Commit eines Bereichs** ist maßgeblich für den heutigen Soll-Zustand.
+   Pro Bereich: Was war die Absicht aller Commits zusammen? Der Soll-Zustand ergibt sich aus der
+   **Summe aller Commits** im Bereich — spätere Commits verfeinern einzelne Aspekte, löschen
+   aber nicht die übrigen Verhaltenserwartungen früherer Commits.
 
 3. **Stack erkennen** — lies [`references/stack-detection.md`](references/stack-detection.md).
    Passendes Playbook laden, falls unter `references/<stack>.md` vorhanden.

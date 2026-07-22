@@ -27,15 +27,19 @@ Alle in N Tagen berührten Bereiche **als Gesamtmenge** notieren — nicht pro C
 Die Verifikation läuft **einmalig pro Bereich** gegen den aktuellen Stand — nicht isoliert
 pro Commit. Intent aus `commit-intent.md` ist der Maßstab.
 
-| Aktueller Intent (aus letztem Commit) | Was zu prüfen ist |
-|---------------------------------------|-------------------|
-| „add <Feature>" | Feature vorhanden + Test deckt es ab |
-| „extend <Komponente>" | **Gesamte** Komponente testen — nicht nur der neue Teil |
-| „fix <Problem>" | Fehler-Szenario tritt nicht mehr auf |
-| „refactor <Bereich>" | Alle bisherigen Tests noch grün, kein Verhalten-Delta |
+Pro Bereich die akkumulierte Verhaltenserwartung aus `commit-intent.md` nehmen —
+alle Aspekte aus allen Commits des Bereichs, nicht nur den letzten:
 
-**Kumulativ bedeutet:** Eine Komponente, die in 3 verschiedenen Commits berührt wurde,
-wird **einmal** vollständig geprüft — nicht dreimal mit Teilscope.
+| Commit-Typ im Bereich | Was zu prüfen ist |
+|-----------------------|-------------------|
+| Enthält `add <Feature>` | Feature vorhanden + Test deckt es ab |
+| Enthält `extend <Komponente>` | **Gesamte** Komponente testen — Neues und Bestehendes |
+| Enthält `fix <Problem>` | Fehler-Szenario tritt nicht mehr auf |
+| Enthält `refactor <Bereich>` | Alle bisherigen Tests noch grün, kein Verhalten-Delta |
+| Mehrere Typen kombiniert | Prüfliste = **Union** aller obigen Erwartungen |
+
+**Kumulativ bedeutet:** Eine Komponente, die in 3 Commits berührt wurde (add → extend → fix),
+wird **einmal vollständig** geprüft — alle drei Verhaltenserwartungen zusammen, nicht isoliert.
 
 **Tests ausführen** — welches Test-Framework (Jest, Karma, …) bestimmt das Projekt:
 

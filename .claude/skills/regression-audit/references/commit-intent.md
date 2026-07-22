@@ -5,15 +5,21 @@ wurde, sondern warum, und was heute der intendierte Zustand sein soll.
 
 ---
 
-## Grundprinzip: Intent-Evolution
+## Grundprinzip: Akkumulierte Intent-Evolution
 
-Intent darf sich über die Zeit bewusst wandeln.
+Der intendierte Soll-Zustand eines Bereichs ergibt sich aus der **Summe aller Commits**
+in diesem Bereich — nicht nur aus dem aktuellsten.
 
-> Commit A: „Hintergrundfarbe grün" → damaliger Intent: grüner Hintergrund.
-> Commit B: „Hintergrundfarbe zu Gelb geändert auf Kundenwunsch" → aktueller Intent: gelber Hintergrund.
+> Commit A: „Suche zum Grid hinzufügen" → erwartet: Suche vorhanden
+> Commit B: „Sortierfunktion hinzufügen" → erwartet: Suche **und** Sortierung vorhanden
+> Commit C: „Suche auf case-insensitiv umstellen" → erwartet: Suche (case-insensitiv) **und** Sortierung vorhanden
 
-**Der aktuellste Commit zu einem Bereich liefert den maßgeblichen Soll-Zustand.**
-Frühere Commits desselben Bereichs beschreiben die Entwicklungshistorie, nicht den heutigen Soll-Zustand.
+Commit C verfeinert den Aspekt „Suche" — es löscht nicht die Erwartung aus Commit B,
+dass Sortierung vorhanden und funktionsfähig ist.
+
+**Regel:** Spätere Commits überschreiben nur die spezifischen Aspekte, die sie explizit
+adressieren. Alle übrigen, nicht widersprochenen Verhaltenserwartungen aus früheren
+Commits bleiben vollständig gültig und müssen ebenfalls verifiziert werden.
 
 ---
 
@@ -53,8 +59,10 @@ git log --oneline --since="N days ago" -- <Bereich-Pfad>
 
 1. Alle Commits chronologisch auflisten
 2. Jeden Commit klassifizieren (Tabelle oben)
-3. Aktuellsten nicht-revertierten Intent als maßgeblich festhalten
-4. Widersprüche erkennen:
+3. Verhaltenserwartungen **akkumulieren**: jeder Commit fügt Aspekte hinzu oder verfeinert
+   spezifische bestehende Aspekte — er löscht nie die gesamte bisherige Erwartung.
+   Ergebnis: eine vollständige Liste aller heute geltenden Verhaltenserwartungen für diesen Bereich.
+4. Widersprüche innerhalb desselben Aspekts erkennen:
 
 | Situation | Bewertung |
 |-----------|-----------|

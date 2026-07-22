@@ -44,6 +44,20 @@ Beim Entwickeln eigener Skills zuerst die relevante Superpowers-Quelldatei lesen
 
 ---
 
+## Skill-Erstellung
+
+Neue Skills nach den Konventionen von Superpowers `writing-skills` erstellen:
+**https://github.com/obra/superpowers/blob/main/skills/writing-skills/SKILL.md**
+
+Pflicht-Konventionen (Kurzfassung):
+
+- Frontmatter: nur `name` + `description`; `description` beginnt mit „Use when…" — **nie** Ablauf zusammenfassen
+- SKILL.md-Body: schlank (ToC + generischer Ablauf); Details in `references/` auslagern
+- Token-Effizienz: < 500 Wörter für normale Skills; häufig geladene Skills < 200 Wörter
+- Kein `@`-Link auf andere Dateien im Skill-Body (lädt sofort und verbrennt Kontext)
+
+---
+
 ## Verhaltensregeln
 
 **Git-Status vor Statusaussagen:** `git status` und `git branch` prüfen bevor über Dateiänderungen gesprochen wird. Bei Branch-Divergenz korrekt kommunizieren.

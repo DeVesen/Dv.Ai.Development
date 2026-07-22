@@ -23,6 +23,7 @@ Install the Superpowers plugin globally in Claude Code before using this repo:
 │   ├── prozess-retrospektive/  Session process analysis
 │   ├── regression-audit/       Change regression detection
 │   ├── ado-mcp/                Azure DevOps work item operations + analysis
+│   ├── microsoft-learn/        Routing skill for Microsoft Learn MCP server
 │   ├── dev-mcp/                Routing skill for dev-mcp MCP server
 │   └── codebase-analyzer/      Routing skill for codebase-analyzer MCP server
 ├── agents/                     Custom sub-agent profiles
@@ -186,6 +187,31 @@ Routes all Azure DevOps work item operations to the official Microsoft ADO MCP S
 | 🔄 | Task currently in progress |
 
 **Setup:** Run `ado-mcp init` and Claude will write the `.mcp.json` entry for you.
+
+---
+
+#### `microsoft-learn`
+
+`Microsoft` `Azure` `.NET` `ASP.NET Core` `EF Core` `C#` `Blazor` `Bicep` `MS Graph` `NuGet` `MCP`
+
+Routes Microsoft and Azure documentation lookups to the official Microsoft Learn remote MCP server (`https://learn.microsoft.com/api/mcp`). Auto-triggers on questions about .NET APIs, Azure SDK usage, EF Core, ASP.NET Core configuration, Bicep templates, MS Graph, SignalR, and any other Microsoft technology where up-to-date official documentation matters more than training-knowledge.
+
+| Command / Trigger | Purpose |
+|---|---|
+| `microsoft-learn init` | Configure `.mcp.json` entry (remote HTTP — no path needed) |
+| `.NET API`, `Azure SDK`, `EF Core` queries | Auto-loaded on Microsoft tech context |
+| "wie funktioniert X in .NET" / "Azure SDK Beispiel" | Natural language trigger |
+| "ASP.NET config" / "EF Core migration syntax" | Natural language trigger |
+
+**Tools available via this skill:**
+
+| Tool | Purpose |
+|---|---|
+| `microsoft_docs_search` | Semantic search across all Microsoft Learn documentation |
+| `microsoft_docs_fetch` | Fetch a full documentation page as Markdown |
+| `microsoft_code_sample_search` | Find official code snippets — supports `language` filter |
+
+**Setup:** Run `microsoft-learn init` and Claude will write the `.mcp.json` entry for you. No path required — the server is remote.
 
 ---
 

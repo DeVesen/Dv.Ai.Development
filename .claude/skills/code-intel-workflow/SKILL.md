@@ -1,16 +1,10 @@
 ---
 name: code-intel-workflow
 description: >
-  MCP-Routing für Code-Intelligence-Workflows: narrow (symbol suchen), read (token-sparend lesen),
-  impact (rename preview, referenzen), verify (compiler + slice tests).
-  Phasen: narrow → read → impact → verify.
-  Trigger: Symbol suchen, Datei lesen, Umbenennen mit Impact, Post-Slice-Verifikation, Batch-Scout.
-  Nicht für Planning/Implementation-Orchestrierung (→ Superpowers writing-plans/executing-plans).
-when_to_use: >
-  Aktiviere wenn: Symbol suchen (scout_symbol/scout_scope), Datei-Bundle lesen (read_files_batch,
-  read_component_bundle), Rename-Impact prüfen (rename_file_with_impact), Post-Slice
-  (slice_test_targets + analyze_slice_impact). Strukturierter MCP-Routing für Lese+Analyse+Patch-Ketten
-  — ergänzt dev-mcp und codebase-analyzer um Rename-/Write-Operationen.
+  Use when searching for a symbol (scout_symbol/scout_scope), reading file bundles
+  (read_files_batch, read_component_bundle), previewing rename impact (rename_file_with_impact),
+  or running post-slice verification (slice_test_targets + analyze_slice_impact).
+  Not for planning/implementation orchestration — use Superpowers writing-plans/executing-plans.
 ---
 
 # Code-Intel-Workflow

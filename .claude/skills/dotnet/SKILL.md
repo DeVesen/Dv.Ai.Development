@@ -1,11 +1,10 @@
 ---
 name: dotnet
 description: >
-  .NET / C# backend development: EF Core migrations (Postgres), schema changes,
-  Views, ModelSnapshot, PendingModelChanges. Trigger: EF migration, dotnet ef
-  migrations add, Migrations-Ordner, ModelSnapshot, Schema/Spalte/View im Backend,
-  42703 column does not exist, @dotnet, @ef-migration.
-  Opt-out: ohne dotnet.
+  Use when working with .NET/C# backend or EF Core migrations (Postgres): schema changes,
+  Views, ModelSnapshot, PendingModelChanges, column errors.
+  Triggers: @dotnet, @ef-migration, dotnet ef migrations add, Migrations-Ordner,
+  42703 column does not exist, Schema/Spalte/View im Backend. Opt-out: ohne dotnet.
 ---
 
 # .NET

@@ -1,12 +1,10 @@
 ---
 name: angular
 description: >
-  Angular development reference (v22+): components, signals, routing, forms, DI,
-  testing, CLI, styling, accessibility, migrations, and architecture (developer);
-  Material UI components, theming, CDK, and custom mat-form-field inputs (material);
-  new app scaffolding with ng new, Decision Gate, and implementation plan (new-app).
-  Use for any Angular/TypeScript work. Build/Test exclusively via dev-mcp.
-  Opt-out: ohne angular.
+  Use for any Angular/TypeScript work: components, signals, routing, forms, DI, testing,
+  CLI, Material UI, CDK, ng new scaffolding, accessibility, migrations, architecture.
+  Triggers: @angular, ng generate, ng new, Angular errors, ohne angular.
+  Build/Test exclusively via dev-mcp.
 ---
 
 # Angular

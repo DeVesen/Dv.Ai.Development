@@ -1,21 +1,10 @@
 ---
 name: prozess-retrospektive
 description: >
-  Analysiert den Arbeitsprozess der aktuellen Session und liefert konkrete Verbesserungsideen
-  fuer den Harness. Prueft: MCP-Call-Qualitaet (Timeouts, Fallbacks, Failures), Orchestrierungs-
-  Effizienz (Gates, Runden, Blockaden), Reviewer-Qualitaet (Findings vs. Rauschen — generisch,
-  unabhaengig von Anzahl/Namen der Reviewer), Reibungspunkte (Nutzer-Eingriffe, Klaerungs-
-  bedarfe), Review- und Inspektions-Loop-Effizienz, Session-Erkenntnisse (was war entscheidend,
-  ueberraschend, welche Muster zeigen sich). Output: strukturierter Bericht mit priorisierten,
-  umsetzbaren Harness-Verbesserungsideen inkl. Verweis auf konkrete Skill/Agent-Dateien.
-  Opt-out: kein-retrospektive, no-retrospektive, skip-retrospektive.
-when_to_use: >
-  Wenn der Nutzer den Arbeitsprozess einer Session analysieren und Verbesserungsideen fuer das
-  Tooling erhalten moechte. Trigger: "prozess-retrospektive", "retrospektive", "prozess analyse",
-  "harness verbessern", "was koennen wir verbessern", "prozess pruefen", "wie lief das",
-  "was haben wir gelernt", "was war ueberraschend", "erkenntnisse", "learnings", "session insights".
-  Sinnvoll nach jeder laengeren Implementierungs- oder Planungs-Session.
-  Kein automatischer Trigger — immer explizit aufgerufen.
+  Use when analyzing the current session's work process to get improvement ideas for the harness.
+  Triggers: "retrospektive", "prozess analyse", "harness verbessern", "was koennen wir verbessern",
+  "wie lief das", "was haben wir gelernt", "erkenntnisse", "learnings", "session insights".
+  Always explicit — never auto-triggers. Opt-out: kein-retrospektive, no-retrospektive.
 ---
 
 # prozess-retrospektive

@@ -1,12 +1,10 @@
 ---
 name: commit-message
 description: >
-  Erstellt eine Conventional-Commits-Nachricht aus dem aktuellen Git-Diff und
-  Kontext. Work-Item (AB#123, JIRA-456, #78) ist immer Pflicht im Scope.
-  Gibt nur einen Code-Block aus — führt niemals git commit aus.
-when_to_use: >
-  Aktiviere bei: /commit, "commit message schreiben", "schreib den commit",
-  "was soll ich committen", "commit text", "commit für die Änderungen".
+  Use when creating a git commit message: /commit, "commit message schreiben",
+  "schreib den commit", "was soll ich committen", "commit text", "commit fuer die Aenderungen".
+  Conventional Commits with mandatory work-item scope (AB#123, JIRA-456, #78).
+  Outputs a code block only — never executes git commit.
 ---
 
 ## Ablauf

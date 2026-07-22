@@ -1,22 +1,11 @@
 ---
 name: codebase-analyzer
 description: >
-  Aktiviere diesen Skill sobald der User über Code spricht — egal ob er plant,
-  gerade schreibt oder fertig ist. Der MCP hat 43 Tools für Angular und .NET.
-  Bei Code-Symbolen (Klasse, Methode, Property, Service, Route): zuerst
-  index_project/index_solution/find_in_index, Grep nur ergänzend. UI-Labels ohne Symbol:
-  keine Landkarte. Trigger: Review, Analyse, Planung, Implementierung, Merge,
-  index_project, index_solution, find_in_index, Code-Landkarte, Validierung, API-Contract,
-  compare_validation_rules, api-validation, DTO, DataAnnotations,
-  find_api_callers, HTTP-Calls, format:compact, analyze_compiler_diagnostics,
-  Compiler-Fehler, Build-Fehler, detect_untested_public_api,
-  ungetestete API, Test-Coverage-Proxy, find_symbol_references, Aufrufstellen,
-  Call-Sites, analyze_method_extraction_candidates, Extract-Method, Refactoring-Hotspot,
-  detect_god_classes, God Class, SRP, Single-Responsibility.
-when_to_use: >
-  Aktiviere sobald User über Code spricht — Planung, Implementierung, Nach-Implementierung,
-  Review, Merge, Sprint-End. Bei Code-Symbolen (Klasse, Methode, Service, Route) immer
-  index_project/find_in_index zuerst statt Grep. Nicht bei reinem UI-Wortschatz.
+  Use whenever the user talks about code — planning, writing, reviewing, merging, sprint-end.
+  For code symbols (class, method, service, route): use index_project/find_in_index first, not Grep.
+  Triggers: Review, Analyse, Refactoring, Compiler-Fehler, detect_untested_public_api,
+  God Class, SRP, API-Contract, DTO, compare_validation_rules, find_symbol_references,
+  analyze_method_extraction_candidates. Not for pure UI text without code symbols.
 ---
 
 ## Phase erkennen und MCP-First

@@ -1,17 +1,11 @@
 ---
 name: software-design-principles
 description: >
-  Persoenliche Software-Design-Philosophie: sauber · funktional · getestet · wartbar · nachhaltig.
-  Konsolidiert alle Design-Prinzipien: Flow Design (Lieser/Westphal), IODA/IOSP, SOLID, Clean Code,
-  DRY/KISS/YAGNI sowie persoenliche Code-Regeln (keine Verschachtelung, Lesbarkeit auf einen Blick).
-  Gilt als Qualitaetsnordstern fuer alle Gespraeche.
-  Trigger: software design principles, software-design-principles, meine Prinzipien, Design-Philosophie,
-  mein Mantra, sauber wartbar nachhaltig, beachte meine Prinzipien, design principles, persoenliche
-  Regeln, wie ich Software schreibe, meine Designregeln, @software-design-principles.
+  Use when making design decisions, doing code reviews, or when personal design philosophy
+  should apply (Flow Design, IODA/IOSP, SOLID, Clean Code, DRY/KISS/YAGNI).
+  Triggers: @software-design-principles, meine Prinzipien, Design-Philosophie, mein Mantra,
+  beachte meine Prinzipien, wie ich Software schreibe, sauber wartbar nachhaltig.
   Opt-out: ohne software-design-principles.
-when_to_use: >
-  Immer wenn Designentscheidungen, Code-Reviews, Anforderungsanalyse oder Implementierungsplanung
-  im Kontext dieser persoenlichen Software-Design-Philosophie stattfinden sollen.
 ---
 
 # Software Design

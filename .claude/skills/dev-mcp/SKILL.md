@@ -1,37 +1,11 @@
 ---
 name: dev-mcp
 description: >
-  Kanon für MCP dev-mcp: 49 Dev-Tools in einem stdio-Prozess —
-  Filesystem (find_file, find_by_content, find_implementations, read_signatures_only, read_method, read_class_summary,
-  read_file_raw, list_directory, find_test_pattern, read_lines, read_files_batch, read_component_bundle),
-  Filesystem-Intelligence (find_angular_route, find_angular_guard, find_dotnet_endpoint, find_di_registration,
-  read_related_files, update_imports),
-  Git (git_changed_files, git_diff_summary, git_move),
-  Patch/Write (apply_text_patch, replace_in_files, insert_member),
-  Move/Rename (rename_file, rename_file_with_impact),
-  .NET-Scaffolding (create_dotnet_solution, scaffold_dotnet_project, scaffold_dotnet_test_class,
-  create_directory_structure, build_dotnet_solution, test_dotnet_solution, publish_dotnet_project,
-  scaffold_dto, scaffold_api_action),
-  Angular+npm (create_angular_project, scaffold_angular_component, scaffold_angular_service,
-  scaffold_angular_directive, scaffold_spec_for, build_angular_project, test_angular_project,
-  lint_angular_project, run_npm_script),
-  Statische Analyse (run_inspectcode, analyze_angular_architecture),
-  Utilities (slice_test_targets, delete_file_safe, list_processes).
-  Pfade: echte Windows-Absolutpfade (C:\...). Nicht für Index/Review/Metriken — codebase-analyzer.
-  Routing-Trigger (welcher MCP wann): welcher Dev-MCP, welcher MCP, dev-mcp vs codebase-analyzer,
-  codebase-analyzer vs dev-mcp, routing zwischen MCPs.
-when_to_use: >
-  Aktiviere für: Dateien lesen/suchen (.cs/.ts/.json/.md), Angular oder .NET Scaffolding,
-  ng build, ng test, dotnet build, dotnet test, dotnet publish, Test anlegen (spec/Testklasse),
-  npm run, npm install, git mv (Dateien verschieben mit Git-History),
-  Verzeichnisinhalt erkunden, laufende Prozesse prüfen.
-  build_dotnet_solution / test_dotnet_solution / publish_dotnet_project ersetzen Shell-dotnet-Kommandos vollständig.
-  build_angular_project / test_angular_project ersetzen Shell-ng-Kommandos vollständig.
-  run_npm_script ersetzt Bash(npm run *) und Bash(npm install *) vollständig.
-  git_move ersetzt Bash(git mv *) vollständig.
-  Bei MCP nicht erreichbar: BLOCKER melden, kein stiller Shell-Fallback.
-  Nicht für Code-Review, Index, Metriken — codebase-analyzer.
-  Bei Routing-Fragen (welcher MCP): references/routing.md laden.
+  Use when reading/searching files (.cs/.ts/.json/.md), Angular or .NET scaffolding,
+  ng build/test, dotnet build/test/publish, npm run/install, git mv, creating specs/test classes,
+  exploring directories, or checking running processes.
+  Replaces all Shell dotnet/ng/npm/git-mv commands. BLOCKER if unreachable — no silent fallback.
+  Not for index/review/metrics (→ codebase-analyzer). Routing questions: references/routing.md.
 ---
 
 ## MCP-FIRST — Dateizugriff (Hard Gate)

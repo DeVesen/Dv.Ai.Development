@@ -1,17 +1,34 @@
 # Operation: Status-Marker lesen & setzen
 
-## Konzept
+## Status-Ermittlungslogik
 
-Wenn ein Work Item eine **Auflistung** enthält, kennzeichnet der User erledigte
-oder aktiv bearbeitete Punkte direkt im ADO-Beschreibungstext mit Emojis:
+```
+IF Einzel-Task:
+    Status = WI-State-Feld
+        Active           → 🔄 in Bearbeitung
+        Resolved / Done  → ✅ erledigt
+        sonst            → ⬜ noch offen
 
-| Marker | Bedeutung |
-|--------|-----------|
+IF Auflistung:
+    IF WI-State = Resolved OR Done:
+        Alle Tasks → ✅ erledigt  (WI-State überschreibt Emoji-Marker)
+    ELSE:
+        Status je Task = Emoji-Marker in der Beschreibung (✅ / 🔄 / ⬜)
+```
+
+**Immer beide Quellen laden:** `System.State` + `System.Description`
+
+---
+
+## Marker-Konzept (Auflistung, WI-State ≠ Resolved/Done)
+
+| Marker im Text | Bedeutung |
+|----------------|-----------|
 | ✅ | Punkt abgeschlossen |
 | 🔄 | Punkt wird gerade bearbeitet |
 | *(kein Marker)* | Noch nicht begonnen |
 
-Die Marker stehen direkt im Text — kein HTML, keine Spans:
+Die Marker stehen direkt im Beschreibungstext — kein HTML, keine Spans:
 ```
 1. Login-Button hinzufügen ✅
 2. Logout-Button entfernen 🔄
@@ -22,16 +39,15 @@ Die Marker stehen direkt im Text — kein HTML, keine Spans:
 
 ## Kontext ermitteln
 
-Bevor Status gelesen oder gesetzt wird:
-- Work-Item-ID aus dem laufenden Gesprächskontext nehmen (zuletzt genanntes WI / `docs/ado/<id>.md`)
+- Work-Item-ID aus dem laufenden Gesprächskontext (zuletzt genanntes WI / `docs/ado/<id>.md`)
 - Falls unklar: *„Für welches Work Item? (#ID)"* fragen
-- Task-Nummer: aus „Task 1", „Task 2" ableiten, oder aus `docs/ado/<id>.md`-Nummerierung, oder durch Textmatch
+- Task-Nummer: aus „Task 1", „Task 2" ableiten, aus `docs/ado/<id>.md`-Nummerierung, oder Textmatch
 
 ---
 
 ## Status lesen
 
-### Trigger-Phrasen (Beispiele)
+### Trigger-Phrasen
 - „bist du schon umgesetzt?"
 - „wie ist dein Status?"
 - „Status von Task 2"
@@ -40,18 +56,27 @@ Bevor Status gelesen oder gesetzt wird:
 
 ### Ablauf
 
-1. `wit_get_work_items_batch_by_ids` — Feld: `System.Description`
-2. ✅ und 🔄 im Text suchen (direkt als Unicode-Zeichen oder HTML-Entity `&#x2705;` / `&#x1F504;`)
-3. Liste aller Punkte (nummeriert `^\d+\.` oder Bullets `^[•\-\*]`) durchgehen, Marker je Punkt erfassen
+1. `wit_get_work_items_batch_by_ids` — Felder: **`System.State`** + `System.Description`
+2. WI-Typ aus `docs/ado/<id>.md` oder Gesprächskontext bestimmen (Einzel-Task / Auflistung)
+3. Status-Logik (s. oben) anwenden
 
 ### Ausgabe-Format
 
-**Einzelner Task:**
-> Task 2 — „Logout-Button entfernen": 🔄 in Bearbeitung
+**Einzel-Task:**
+> #1234 — „Feature XY": 🔄 in Bearbeitung *(WI-State: Active)*
 
-**Alle Tasks:**
+**Auflistung, WI-State = Resolved:**
 ```
-#1234 — Titel des Work Items
+#1234 — Titel  [WI-State: Resolved → alle Tasks erledigt]
+
+  Task 1: Login-Button hinzufügen       ✅ erledigt
+  Task 2: Logout-Button entfernen       ✅ erledigt
+  Task 3: Header-Farbe ändern           ✅ erledigt
+```
+
+**Auflistung, WI-State = Active:**
+```
+#1234 — Titel  [WI-State: Active]
 
   Task 1: Login-Button hinzufügen       ✅ erledigt
   Task 2: Logout-Button entfernen       🔄 in Bearbeitung
@@ -60,7 +85,10 @@ Bevor Status gelesen oder gesetzt wird:
 
 ---
 
-## Marker setzen
+## Marker setzen (nur Auflistung)
+
+Emoji-Marker werden nur bei **Auflistungs-Work-Items** geschrieben.
+Bei Einzel-Tasks ergibt sich der Status aus dem WI-State — kein Marker nötig.
 
 ### Trigger-Phrasen
 
@@ -72,15 +100,13 @@ Bevor Status gelesen oder gesetzt wird:
 
 ### Ablauf
 
-1. **Description-HTML laden** via `wit_get_work_items_batch_by_ids` (Feld `System.Description`)
-2. **Ziel-Zeile finden**: Die Zeile/den Block mit dem genannten Task
-   - Nummeriert: passende `<li>`-Zeile oder `^\d+\.`-Pattern
-   - Fallback: Textmatch auf Schlagwörter des Task-Titels aus `docs/ado/<id>.md`
-3. **Marker bereinigen**: Bestehende ✅ und 🔄 aus der Ziel-Zeile entfernen (als Unicode und als HTML-Entity)
-4. **Neuen Marker einfügen** am Ende des sichtbaren Textes der Ziel-Zeile, vor `</li>` oder `</p>`:
+1. **Description-HTML laden** via `wit_get_work_items_batch_by_ids`
+2. **Ziel-Zeile finden**: passende `<li>`-Zeile oder `^\d+\.`-Pattern; Fallback: Textmatch
+3. **Marker bereinigen**: ✅ und 🔄 aus der Ziel-Zeile entfernen (Unicode + HTML-Entity)
+4. **Neuen Marker einfügen** am Ende des sichtbaren Textes, vor `</li>` oder `</p>`:
    - ✅ → ` ✅`
    - 🔄 → ` 🔄`
-5. **Sonderregel 🔄**: Wenn eine andere Zeile bereits 🔄 trägt → dort den Marker ebenfalls entfernen (nur ein Task kann gleichzeitig aktiv sein).
+5. **Sonderregel 🔄**: Bestehende 🔄 in anderen Zeilen ebenfalls entfernen (nur ein Task aktiv)
 6. **Zurückschreiben** via `wit_work_item_write` (update):
 ```json
 {
@@ -96,7 +122,8 @@ Bevor Status gelesen oder gesetzt wird:
 
 | Problem | Reaktion |
 |---------|---------|
-| Task-Nummer im WI nicht gefunden | User fragen: „Welcher Punkt genau?" + Liste der erkannten Punkte zeigen |
-| Description ist leer | „Keine Beschreibung im Work Item — Marker kann nicht gesetzt werden." |
-| WI ist kein Auflistungs-Typ | Hinweis: „Dieses Work Item beschreibt einen Einzel-Task, keine Auflistung." |
-| Marker bereits identisch | „Task 2 ist bereits als ✅ markiert — keine Änderung nötig." |
+| Task-Nummer nicht gefunden | User fragen + erkannte Punkte auflisten |
+| Description ist leer | „Keine Beschreibung — Marker kann nicht gesetzt werden." |
+| WI ist Einzel-Task | „Status ergibt sich aus WI-State — kein Emoji-Marker nötig." |
+| Marker bereits identisch | „Task 2 ist bereits ✅ — keine Änderung nötig." |
+| WI-State = Resolved/Done | Marker setzen sinnlos; Hinweis: „Work Item ist bereits Resolved." |

@@ -182,20 +182,41 @@ Nach dem Schreiben der Datei:
 
 ---
 
-## Schritt 4b — Status-Marker in die Task-Liste aufnehmen (nur bei Auflistung)
+## Schritt 4b — Status in die Task-Liste aufnehmen
 
-Beim Schreiben von Template B: für jeden Task den aktuellen Marker aus dem Work-Item-HTML auslesen
-und in der Kopfzeile des Task-Blocks ergänzen:
+### Einzel-Task (Template A)
+
+Status aus `System.State` ableiten und in der Metazeile ergänzen:
 
 ```markdown
-### Task 2 — Logout-Button entfernen  🔄 aktiv
+> **Typ:** User Story | **Status:** Active 🔄 | **Bereich:** …
 ```
 
-| Marker im Text | Symbol | Label |
-|----------------|--------|-------|
-| ✅ | ✅ | erledigt |
-| 🔄 | 🔄 | aktiv |
-| *(kein Marker)* | ⬜ | offen |
+| WI-State | Symbol |
+|----------|--------|
+| Active | 🔄 |
+| Resolved / Done | ✅ |
+| sonst | ⬜ |
+
+### Auflistung (Template B)
+
+Für jeden Task-Block den Status ermitteln — **Priorität:**
+
+1. `System.State` = `Resolved` oder `Done` → alle Tasks **✅** (WI-State überschreibt Marker)
+2. Sonst: Emoji-Marker ✅ / 🔄 aus dem Beschreibungstext je Zeile lesen
+
+Task-Überschrift mit Status-Symbol:
+
+```markdown
+### Task 2 — Logout-Button entfernen  🔄
+```
+
+| Quelle | Symbol | Label |
+|--------|--------|-------|
+| WI-State Resolved/Done | ✅ | erledigt |
+| ✅ im Text | ✅ | erledigt |
+| 🔄 im Text | 🔄 | in Bearbeitung |
+| kein Marker | ⬜ | noch offen |
 
 ---
 

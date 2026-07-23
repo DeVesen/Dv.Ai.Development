@@ -22,37 +22,24 @@ Alle in N Tagen berührten Bereiche **als Gesamtmenge** notieren — nicht pro C
 
 ---
 
-## Schritt 2: Verhaltens-Verifikation (kumulativ)
+## Schritt 2: Verhaltens-Verifikation via analyze_slice_impact
 
-Die Verifikation läuft **einmalig pro Bereich** gegen den aktuellen Stand — nicht isoliert
-pro Commit. Intent aus `commit-intent.md` ist der Maßstab.
+Index-Check und Tool-Aufruf: → [`slice-impact.md`](slice-impact.md)
 
-Pro Bereich die akkumulierte Verhaltenserwartung aus `commit-intent.md` nehmen —
-alle Aspekte aus allen Commits des Bereichs, nicht nur den letzten:
+`filePaths[]` = alle geänderten `.ts`-Dateien aus Schritt 1, Windows-Absolutpfade.
 
-| Commit-Typ im Bereich | Was zu prüfen ist |
-|-----------------------|-------------------|
-| Enthält `add <Feature>` | Feature vorhanden + Test deckt es ab |
-| Enthält `extend <Komponente>` | **Gesamte** Komponente testen — Neues und Bestehendes |
-| Enthält `fix <Problem>` | Fehler-Szenario tritt nicht mehr auf |
-| Enthält `refactor <Bereich>` | Alle bisherigen Tests noch grün, kein Verhalten-Delta |
-| Mehrere Typen kombiniert | Prüfliste = **Union** aller obigen Erwartungen |
+Intent aus `commit-intent.md` als Maßstab für die Bewertung der Findings:
 
-**Kumulativ bedeutet:** Eine Komponente, die in 3 Commits berührt wurde (add → extend → fix),
-wird **einmal vollständig** geprüft — alle drei Verhaltenserwartungen zusammen, nicht isoliert.
-
-**Tests ausführen** — welches Test-Framework (Jest, Karma, …) bestimmt das Projekt:
-
-```bash
-# Scoped auf betroffene Komponenten/Module
-npm run test -- --testPathPattern=<Bereich>
-
-# Nx: alle betroffenen Projekte auf einmal
-nx affected:test
-```
+| Commit-Typ im Bereich | Erwartetes analyze_slice_impact Ergebnis |
+|-----------------------|-----------------------------------------|
+| `add <Feature>` | Kein Untested-API-Finding für neue Symbole |
+| `extend <Komponente>` | Kein Refactoring-Safety-Warning für vorhandene Consumers |
+| `fix <Problem>` | Keine Compiler Errors |
+| `refactor <Bereich>` | Kein Compiler Error + kein Refactoring-Safety-Warning |
+| Mehrere Typen kombiniert | Union aller obigen Erwartungen |
 
 Falls Playwright MCP verfügbar und UI-Flows betroffen (Grid, Suchtabelle, View-Persistierung):
-Playwright für kritische Pfade ausführen. Nicht verfügbar → im Report als Lücke benennen.
+Playwright für kritische Pfade zusätzlich ausführen. Nicht verfügbar → im Report als Lücke benennen.
 
 ---
 

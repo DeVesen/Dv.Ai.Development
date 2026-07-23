@@ -27,12 +27,16 @@ Referenzen on-demand lesen — nicht alle vorab laden.
    Falls kein Playbook existiert: generischen Fallback nutzen **und** im Report explizit
    vermerken, dass noch kein Playbook für diesen Stack angelegt ist.
 
+3.5 **Index prüfen (nur Software-Stacks)** — wenn Angular oder .NET erkannt:
+    Ablauf in [`references/slice-impact.md`](references/slice-impact.md).
+    Bei veraltetem / fehlendem Index: Skill anhält und User fragen.
+
 4. **Verhaltens-Verifikation pro Bereich** — Kernfrage: *Ist der zuletzt intendierte Zustand
-   heute noch present?* Details im Stack-Playbook.
+   heute noch present?*
    - Kumulative Prüfung: alle in N Tagen berührten Bereiche **einmalig** gegen den
      aktuellen Stand prüfen — nicht isoliert pro Commit.
-   - Software: Tests ausführen + Code-Review für betroffene Bereiche.
-   - Nicht-Software: theoretische Analyse (Definition, Referenz, Konfiguration).
+   - **Angular / .NET:** `analyze_slice_impact` ersetzt die manuelle Prüfung — Ablauf im Stack-Playbook.
+   - **Nicht-Software:** theoretische Analyse (Definition, Referenz, Konfiguration).
 
 5. **TDD-Verletzungs-Signal** (separat) — Feature hinzugefügt ohne begleitenden Test,
    weder im selben noch in einem unmittelbaren Folge-Commit?

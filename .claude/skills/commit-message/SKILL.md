@@ -19,6 +19,18 @@ git diff --staged
 
 Alle drei ausführen — staged und unstaged zusammen ergeben das vollständige Bild.
 
+### 1.5 — Auto-Review (entfällt bei `ohne review`)
+
+Wenn der Trigger `ohne review` oder `--no-review` enthält → Schritt 1.5 überspringen.
+
+Tool: `codebase-analyzer` → `review_git_diff` mit `staged: true`.
+
+| Ergebnis | Verhalten |
+|----------|-----------|
+| **Blocker** vorhanden | Findings ausgeben — kein Commit-Text generieren. Skill endet hier. |
+| Nur **Warnings** | Mit Schritt 2–4 fortfahren; Warnings als `### ⚠️ Review-Hinweise`-Block *nach* dem Commit-Codeblock ausgeben. |
+| Keine Findings | Direkt weiter mit Schritt 2. |
+
 ### 2 — Work-Item ermitteln
 
 Reihenfolge (erster Treffer gewinnt):
@@ -96,3 +108,4 @@ in Blob Storage; URL written to the user record on save.
 - [ ] Subject ≤72 Zeichen?
 - [ ] Imperativ-Formulierung?
 - [ ] Body nur wenn nötig?
+- [ ] Review gelaufen oder Opt-out (`ohne review`) dokumentiert?

@@ -24,36 +24,24 @@ Alle in N Tagen berührten Projekte **als Gesamtmenge** notieren — nicht pro C
 
 ---
 
-## Schritt 2: Verhaltens-Verifikation (kumulativ)
+## Schritt 2: Verhaltens-Verifikation via analyze_slice_impact
 
-Die Verifikation läuft **einmalig pro Bereich** gegen den aktuellen Stand — nicht isoliert
-pro Commit. Intent aus `commit-intent.md` ist der Maßstab.
+Index-Check und Tool-Aufruf: → [`slice-impact.md`](slice-impact.md)
 
-Pro Bereich die akkumulierte Verhaltenserwartung aus `commit-intent.md` nehmen —
-alle Aspekte aus allen Commits des Bereichs, nicht nur den letzten:
+`filePaths[]` = alle geänderten `.cs`-Dateien aus Schritt 1, Windows-Absolutpfade.
 
-| Commit-Typ im Bereich | Was zu prüfen ist |
-|-----------------------|-------------------|
-| Enthält `add <Feature>` | Feature vorhanden + Test deckt es ab |
-| Enthält `extend <Klasse/Service>` | **Gesamten** Service testen — Neues und Bestehendes |
-| Enthält `fix <Problem>` | Fehler-Szenario tritt nicht mehr auf |
-| Enthält `refactor <Bereich>` | Alle bisherigen Tests noch grün, kein Verhalten-Delta |
-| Mehrere Typen kombiniert | Prüfliste = **Union** aller obigen Erwartungen |
+Intent aus `commit-intent.md` als Maßstab für die Bewertung der Findings:
 
-**Kumulativ bedeutet:** Ein Service, der in 3 Commits berührt wurde (add → extend → fix),
-wird **einmal vollständig** getestet — alle drei Verhaltenserwartungen zusammen, nicht isoliert.
+| Commit-Typ im Bereich | Erwartetes analyze_slice_impact Ergebnis |
+|-----------------------|-----------------------------------------|
+| `add <Feature>` | Kein Untested-API-Finding für neue Klassen/Methoden |
+| `extend <Klasse/Service>` | Kein Refactoring-Safety-Warning für vorhandene Consumer |
+| `fix <Problem>` | Keine Compiler Errors |
+| `refactor <Bereich>` | Kein Compiler Error + kein Refactoring-Safety-Warning |
+| Mehrere Typen kombiniert | Union aller obigen Erwartungen |
 
-**Tests ausführen** — welches Test-Framework (MSTest, xUnit, NUnit, …) bestimmt das Projekt:
-
-```bash
-# Scoped auf betroffene Projekte
-dotnet test <PfadZumTestProjekt> --filter <Namespace-oder-Klasse>
-
-# Gesamte Solution
-dotnet test <Solution.sln>
-```
-
-Filter-Strategie: Geänderte `OrderService.cs` → Filter auf `OrderServiceTests` oder Namespace.
+Shared-/Core-Projekte: Compiler Errors und Refactoring-Safety-Warnings besonders prüfen —
+eine geänderte Interface-Signatur hier betrifft alle abhängigen Projekte.
 
 ---
 

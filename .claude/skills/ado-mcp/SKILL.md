@@ -42,6 +42,7 @@ Falls Tool-Namen abweichen: `ToolSearch("ado work item")` — der Server heißt 
 | Status eines Tasks abfragen | `references/op-status-marker.md` |
 | Status aller Tasks abfragen | `references/op-status-marker.md` |
 | Task als 🔄 / ✅ markieren | `references/op-status-marker.md` |
+| Sprint analysieren | `references/op-sprint-analyse.md` |
 
 Tool-Parameter-Details: `references/tool-catalog.md`
 
@@ -55,3 +56,4 @@ Tool-Parameter-Details: `references/tool-catalog.md`
 | Vollständige Tool-Parameter | `references/tool-catalog.md` |
 | Work Item analysieren & docs/ado/ befüllen | `references/op-analyze-workitem.md` |
 | Status-Marker lesen & setzen | `references/op-status-marker.md` |
+| Sprint-Analyse Workflow | `references/op-sprint-analyse.md` |

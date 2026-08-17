@@ -110,6 +110,11 @@ Entwurf vor Implementation — grafisch, nicht textuell.
 
 ## Architektur & Prinzipien-Kanon
 
+> Architektur-**Stile** (Layered, Onion, Clean, Hexagonal, Vertical Slice, Monolith,
+> Modulith, Microservices, CQRS, Event Sourcing) stehen im Skill `architecture-styles`.
+> Der ist Nachschlagewerk, nicht Vorgabe — die verbindliche Wahl steht in der Projekt-CLAUDE.md.
+> Der DDD-Schnitt hat Vorrang vor jedem Stil-Etikett.
+
 ### DDD — Domain-Driven Design
 
 → [references/ddd.md](references/ddd.md)

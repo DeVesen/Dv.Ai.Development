@@ -23,6 +23,8 @@ flowchart TD
 
 ## SQL-Muster in `Up()`
 
+**Vorlage-Quelle:** immer die tatsächlich letzte View-Migration im `Migrations`-Ordner (per Timestamp/`ls` verifiziert), **niemals** ein Plan-/Brief-/Spec-Dokument — solche Dokumente werden oft vor einer späteren, unabhängigen View-Änderung geschrieben und sind dann selbst veraltet. Vor dem Schreiben der neuen `Up()`: SELECT-Spaltenliste der neuen Migration Spalte-für-Spalte gegen die Vorlage diffen, nicht nur "sieht ähnlich aus" prüfen. Ein 2026-08-10 tatsächlich passierter Fall: eine Migration wurde aus einer älteren Vorlage kopiert und entfernte dabei stillschweigend eine Spalte + einen `WHERE`-Filter, die eine spätere Migration bereits hinzugefügt hatte — Backend-Tests liefen weiter grün (sie laufen gegen einen In-Memory-Testcontext, nicht gegen die echte SQL-View), der Fehler zeigte sich erst zur Laufzeit gegen Postgres.
+
 Kanon aus vorhandener View-Migration (projektspezifischen letzten Stand als Vorlage nehmen):
 
 ```csharp
@@ -60,6 +62,18 @@ Referenz: letzte View-Migration im Migrations-Ordner als Vorlage verwenden.
 | SQL in CLI-generierter `{Name}.cs` nach `migrations add` | Neues Migrations-Paar komplett von Hand ohne CLI |
 | Entity + Search-Service-Spalten konsistent halten | Nur Snapshot ändern |
 | Designer + Snapshot durch CLI erzeugt lassen | Nur `.cs` mit selbst gewähltem Timestamp |
+
+## Fehlerhafte, bereits angewendete Migration reparieren
+
+Reicht **nicht**: nur die `.cs`-Datei der fehlerhaften Migration nachträglich korrigieren.
+EF Core merkt sich angewendete Migrationen per Name in `__EFMigrationsHistory` und führt
+eine bereits verzeichnete Migration nicht erneut aus — der Code-Edit hat auf eine DB, die
+diese Migration schon angewendet hat, keine Wirkung.
+
+Richtig: **neue** Migration erstellen, deren `Up()` die korrekte View-Definition erneut
+anlegt. `Down()` dieser neuen Migration stellt den tatsächlichen (fehlerhaften) Vorzustand
+wieder her — nicht einen "guten" Zustand, der so nie in der DB existierte — damit die
+Migrationshistorie konsistent bleibt.
 
 ## Nach der Migration
 

@@ -18,6 +18,8 @@ Migriert Legacy-Angular-Patterns auf moderne Syntax (Signals, Control Flow, etc.
 | `*ngFor` + `trackBy` → `@for` + `track` | [migration-for.md](migration-for.md) |
 | `*ngSwitch` → `@switch` | [migration-switch.md](migration-switch.md) |
 | Vollständiges Komponenten-Beispiel | [migration-component-example.md](migration-component-example.md) |
+| Layer-First → Feature-First (Ordnerstruktur) | [feature-first-layout.md](feature-first-layout.md) — Abschnitt *Migration* |
+| Datei-Suffix-Schema (`< v20` → `≥ v20`) | [feature-first-layout.md](feature-first-layout.md) — Abschnitt *Naming* |
 
 ---
 

@@ -21,7 +21,7 @@
 
 **Hard Stop wenn MCP nicht erreichbar:** `BLOCKER: dev-angular-mcp nicht erreichbar` — kein Shell-Fallback ohne explizite Nutzerfreigabe.
 
-*Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
+
 
 ## Dev Angular MCP — Scaffolding
 
@@ -47,6 +47,6 @@ Output Build/Test: JSON mit `success`, `errors[]`, `warnings[]`, `summary`, `exi
 
 Nach dem Scaffolding: erstellte Dateien lesen und projektspezifisch anpassen.
 
-Referenz: `docs/mcp-dev-angular.md`
+Referenz: [mcp.md](mcp.md) — Tool-Katalog und Aufrufregeln.
 
 > **Abgrenzung:** `@angular/cli mcp` (siehe [mcp.md](mcp.md)) ist der offizielle Angular-Dokumentations-MCP — **dev-angular-mcp** führt `ng`-Kommandos im Container aus.

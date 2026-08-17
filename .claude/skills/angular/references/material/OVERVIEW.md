@@ -7,8 +7,7 @@
 
 ## Vollständige Komponenten-Referenz
 
-Alle verfügbaren Komponenten, APIs und Verwendungsbeispiele:
-→ `docs/angular-material-v22-components.md`
+Alle verfügbaren Komponenten, APIs und Verwendungsbeispiele: https://material.angular.dev/components — Version im Doku-Switcher auf die des Projekts stellen.
 
 ## Schnellübersicht: Häufige Komponenten
 
@@ -56,7 +55,7 @@ Für Tests immer Material-spezifische Harnesses verwenden (robuster als DOM-Quer
 import { MatButtonHarness } from '@angular/material/button/testing';
 ```
 
-Referenz: `.claude/skills/angular-developer/references/component-harnesses.md`
+Referenz: [../developer/component-harnesses.md](../developer/component-harnesses.md)
 
 ## Operationen: Custom mat-form-field Inputs
 
@@ -64,10 +63,10 @@ Referenz: `.claude/skills/angular-developer/references/component-harnesses.md`
 
 | Trigger | Operation | Detail |
 |---------|-----------|--------|
-| `neues custom input`, `custom-input erstellen`, `mat-form-field mit mehreren inputs`, `number range field` | Neues Custom Input von Grund auf erstellen | [references/custom-input-op-create.md](references/custom-input-op-create.md) |
-| `reference/ layout`, `variante b`, `directory struktur`, `wo liegt die direktive` | Verzeichnisstruktur entscheiden (Standard vs. Variante B) | [references/custom-input-directory-layout.md](references/custom-input-directory-layout.md) |
-| `matformfieldcontrol contract`, `pflichtfelder direktive`, `statechanges`, `oncontainerclick` | MatFormFieldControl-Vertrag implementieren | [references/custom-input-contract.md](references/custom-input-contract.md) |
-| `snippet`, `gerüst`, `boilerplate`, `kopiervorlage` | Kopierbare TS/HTML-Gerüste für Shell und Direktive | [references/custom-input-snippet.md](references/custom-input-snippet.md) |
+| `neues custom input`, `custom-input erstellen`, `mat-form-field mit mehreren inputs`, `number range field` | Neues Custom Input von Grund auf erstellen | [references/custom-input-op-create.md](custom-input-op-create.md) |
+| `reference/ layout`, `variante b`, `directory struktur`, `wo liegt die direktive` | Verzeichnisstruktur entscheiden (Standard vs. Variante B) | [references/custom-input-directory-layout.md](custom-input-directory-layout.md) |
+| `matformfieldcontrol contract`, `pflichtfelder direktive`, `statechanges`, `oncontainerclick` | MatFormFieldControl-Vertrag implementieren | [references/custom-input-contract.md](custom-input-contract.md) |
+| `snippet`, `gerüst`, `boilerplate`, `kopiervorlage` | Kopierbare TS/HTML-Gerüste für Shell und Direktive | [references/custom-input-snippet.md](custom-input-snippet.md) |
 
 ## Opt-out
 

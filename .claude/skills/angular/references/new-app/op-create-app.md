@@ -32,7 +32,7 @@ Build via **dev-angular-mcp** ausführen: `build_angular_project` zum Fehler-Che
 
 **VERBOTEN:** `ng build` als Shell-Kommando.
 
-*Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
+
 
 ### 4. Tailwind (optional)
 `npx ng add tailwindcss`. Danach direkt Tailwind-Classes nutzen (Best Practices v4).

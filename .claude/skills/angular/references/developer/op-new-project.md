@@ -5,7 +5,7 @@
 ## Verhalten bei fehlenden Vorgaben
 
 1. Neueste stabile Angular-Version verwenden.
-2. Signal Forms für neue Formulare (Angular v21+) → [signal-forms.md](signal-forms.md).
+2. Signal Forms für neue Formulare (Angular v21+) → [signal-forms-basics.md](signal-forms-basics.md).
 
 ## `ng new`-Ausführungsregel
 
@@ -20,9 +20,9 @@
 - Build via **dev-angular-mcp** ausführen: `build_angular_project` — Fehler analysieren und beheben — Pflicht.
 - **VERBOTEN:** `ng build` als Shell-Kommando.
 
-*Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
+
 
 ## Relevante Referenzen
 
 - CLI-Optionen → [cli.md](cli.md)
-- Signal Forms (v21+) → [signal-forms.md](signal-forms.md)
+- Signal Forms (v21+) → [signal-forms-basics.md](signal-forms-basics.md)

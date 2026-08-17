@@ -33,24 +33,24 @@ Kein stiller Fallback auf Shell — Nutzer informieren; erst nach expliziter Fre
 
 | Trigger | Operation | Detail |
 |---------|-----------|--------|
-| `ng new`, neues Projekt | Projekt erstellen | [references/op-new-project.md](references/op-new-project.md) |
-| `component`, `input`, `output`, `host binding` | Komponenten | [references/op-components.md](references/op-components.md) |
-| `signal`, `computed`, `linkedSignal`, `resource`, `effect` | Reaktivität / State | [references/op-reactivity.md](references/op-reactivity.md) |
-| `form`, `Formular`, `signal forms`, `reactive forms` | Formulare | [references/op-forms.md](references/op-forms.md) |
-| `inject`, `DI`, `service`, `provider`, `InjectionToken` | Dependency Injection | [references/op-di.md](references/op-di.md) |
-| `ARIA`, `accessibility`, `a11y` | Accessibility | [references/op-accessibility.md](references/op-accessibility.md) |
-| `route`, `router`, `guard`, `lazy loading`, `SSR` | Routing | [references/op-routing.md](references/op-routing.md) |
-| `style`, `CSS`, `Tailwind`, `animation` | Styling & Animations | [references/op-styling.md](references/op-styling.md) |
-| `test`, `Vitest`, `TestBed`, `Cypress`, `E2E`, `flaky test` | Testing | [references/op-testing.md](references/op-testing.md) |
-| `CLI`, `ng generate`, `migration`, `MCP` | Tooling | [references/op-tooling.md](references/op-tooling.md) |
+| `ng new`, neues Projekt | Projekt erstellen | [references/op-new-project.md](op-new-project.md) |
+| `component`, `input`, `output`, `host binding` | Komponenten | [references/op-components.md](op-components.md) |
+| `signal`, `computed`, `linkedSignal`, `resource`, `effect` | Reaktivität / State | [references/op-reactivity.md](op-reactivity.md) |
+| `form`, `Formular`, `signal forms`, `reactive forms` | Formulare | [references/op-forms.md](op-forms.md) |
+| `inject`, `DI`, `service`, `provider`, `InjectionToken` | Dependency Injection | [references/op-di.md](op-di.md) |
+| `ARIA`, `accessibility`, `a11y` | Accessibility | [references/op-accessibility.md](op-accessibility.md) |
+| `route`, `router`, `guard`, `lazy loading`, `SSR` | Routing | [references/op-routing.md](op-routing.md) |
+| `style`, `CSS`, `Tailwind`, `animation` | Styling & Animations | [references/op-styling.md](op-styling.md) |
+| `test`, `Vitest`, `TestBed`, `Cypress`, `E2E`, `flaky test` | Testing | [references/op-testing.md](op-testing.md) |
+| `CLI`, `ng generate`, `migration`, `MCP` | Tooling | [references/op-tooling.md](op-tooling.md) |
 
 ### Architektur & Konventionen
 
 | Trigger | Operation | Detail |
 |---------|-----------|--------|
-| Projektstruktur, Feature anlegen, Smart/Dumb, Page-Komponente, Naming | Projektstruktur | [references/op-layout.md](references/op-layout.md) |
-| signal architecture, feature facade state, BehaviorSubject migration, RxJS boundary | Signal-Architektur | [references/op-signal-architecture.md](references/op-signal-architecture.md) |
-| `@Input` migration, `@Output` migration, `ngIf`, `ngFor`, `ngSwitch`, legacy → modern | Migration | [references/op-migration.md](references/op-migration.md) |
+| Projektstruktur, Feature-First, Feature anlegen, Import-Grenzen, `core`/`shared`, Path-Alias, Barrel, Smart/Dumb, Page-Komponente, Naming, Datei-Suffix | Projektstruktur | [op-layout.md](op-layout.md) |
+| signal architecture, feature facade state, BehaviorSubject migration, RxJS boundary | Signal-Architektur | [references/op-signal-architecture.md](op-signal-architecture.md) |
+| `@Input` migration, `@Output` migration, `ngIf`, `ngFor`, `ngSwitch`, legacy → modern | Migration | [references/op-migration.md](op-migration.md) |
 
 ## Opt-out
 

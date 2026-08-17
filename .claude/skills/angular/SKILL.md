@@ -1,10 +1,11 @@
 ---
 name: angular
 description: >
-  Use for any Angular/TypeScript work: components, signals, routing, forms, DI, testing,
-  CLI, Material UI, CDK, ng new scaffolding, accessibility, migrations, architecture.
-  Triggers: @angular, ng generate, ng new, Angular errors, ohne angular.
-  Build/Test exclusively via dev-mcp.
+  Use when working on Angular or TypeScript — components, signals, routing, forms, DI,
+  testing, CLI, Material UI, CDK, accessibility, migrations, or project structure
+  (feature-first layout, import boundaries, core/shared, path aliases, file naming).
+  Also for Angular build, test, or compile errors and new-project scaffolding.
+  Triggers: @angular, ng generate, ng new, ng build. Opt-out: ohne angular.
 ---
 
 # Angular
@@ -30,7 +31,7 @@ Build/Test via `dev-mcp` Pflicht. Angular-Version vor Antwort prüfen.
 | Migrationen (Legacy → Modern) | [references/developer/op-migration.md](references/developer/op-migration.md) |
 | Neues Projekt | [references/developer/op-new-project.md](references/developer/op-new-project.md) |
 | Signal-Architektur | [references/developer/op-signal-architecture.md](references/developer/op-signal-architecture.md) |
-| Layout | [references/developer/op-layout.md](references/developer/op-layout.md) |
+| Projektstruktur (Feature-First) | [references/developer/op-layout.md](references/developer/op-layout.md) |
 | MCP-Referenz | [references/developer/mcp.md](references/developer/mcp.md) |
 
 ## Material — UI Components

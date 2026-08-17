@@ -2,147 +2,140 @@
 
 MCP-Server-Name in Claude Code: **`ado`** → Präfix `mcp__ado__`
 
-> Tool-Namen via `ToolSearch("ado work item")` verifizieren falls ein Aufruf fehlschlägt.
+> Verifiziert 2026-08-10 gegen laufenden Server (`@azure-devops/mcp`, org `TrumpfCorp`).
+> Tool-Namen via `ToolSearch("ado work item")` erneut verifizieren falls ein Aufruf fehlschlägt — der Server nennt seine Tools anders als man erwarten würde (`wit_work_item` statt `wit_get_work_items_batch_by_ids` etc.).
+
+**Projektname für `project`-Parameter:** `Laser Application Database` (nicht der Repo-Name `lac-db`).
 
 ---
 
 ## Work Item lesen
 
-### `wit_get_work_items_batch_by_ids`
-Liest ein oder mehrere Work Items per ID.
+### `wit_work_item` (action: `get`)
+Liest ein einzelnes Work Item per ID.
 
 | Parameter | Typ | Pflicht | Beschreibung |
 |-----------|-----|---------|--------------|
-| `projectName` | string | ✅ | ADO-Projektname |
-| `workItemIds` | number[] | ✅ | Array von IDs (max. 200) |
-| `fields` | string[] | — | Felderauswahl; ohne Angabe: Standard-Set |
+| `action` | string | ✅ | `"get"` |
+| `id` | number | ✅ | Work Item ID |
+| `project` | string | — | Projektname; ohne Angabe kommt Auswahl-Prompt/Fehler |
+| `expand` | string | — | `None`\|`Relations`\|`Fields`\|`Links`\|`All` (nicht kombinierbar mit `fields`) |
+| `fields` | string[] | — | Felderauswahl (nicht kombinierbar mit `expand`) |
+| `asOf` | date-time | — | Historischer Stand |
 
 **ID aus URL extrahieren:**
 `https://dev.azure.com/org/project/_workitems/edit/1234` → ID = `1234`
 
-**Vollständige Felder für Analyse:**
-```json
-["System.Id", "System.Title", "System.Description",
- "Microsoft.VSTS.Common.AcceptanceCriteria",
- "System.WorkItemType", "System.State", "System.AssignedTo",
- "System.AreaPath", "System.IterationPath",
- "Microsoft.VSTS.Common.Priority"]
-```
-
----
-
-### `wit_work_item_list_comments`
-Liest alle Kommentare / Diskussionen eines Work Items.
+### `wit_work_item` (action: `get_batch`)
+Liest mehrere Work Items per ID.
 
 | Parameter | Typ | Pflicht |
 |-----------|-----|---------|
+| `action` | string | ✅ `"get_batch"` |
+| `ids` | number[] | ✅ |
+| `project` | string | — |
+| `fields` | string[] | — |
+
+### `wit_work_item` (action: `list_comments`)
+Liest Kommentare/Diskussion eines Work Items.
+
+| Parameter | Typ | Pflicht |
+|-----------|-----|---------|
+| `action` | string | ✅ `"list_comments"` |
 | `workItemId` | number | ✅ |
-| `projectName` | string | — |
+| `project` | string | — |
 | `top` | number | — |
+
+### `wit_work_item` (action: `my` \| `list_revisions` \| `list_for_iteration` \| `get_type`)
+Weitere Read-Varianten desselben Tools — siehe Tool-Beschreibung per `ToolSearch`.
 
 ---
 
-### `wit_query_wiql`
-WIQL-Query ausführen (flexibel für eigene Abfragen).
+### `wit_query` (action: `wiql`)
+WIQL-Query ausführen.
 
 | Parameter | Typ | Pflicht | Beschreibung |
 |-----------|-----|---------|--------------|
-| `wiql` | string | ✅ | WIQL-Statement |
-| `projectName` | string | — | Projektkontext |
-| `top` | number | — | Max. Ergebnisse |
+| `action` | string | ✅ | `"wiql"` |
+| `wiql` | string | ✅ | WIQL-Statement (max 32768 Zeichen) |
+| `project` | string | — | Projektkontext |
+| `team` | string | — | |
+| `top` | number | — | Default 50 |
+| `responseType` | string | — | `"full"` (default) oder `"ids"` |
 
 **Beispiel — Offene Bugs:**
 ```sql
 SELECT [System.Id], [System.Title]
 FROM WorkItems
-WHERE [System.TeamProject] = 'MyProject'
+WHERE [System.TeamProject] = 'Laser Application Database'
   AND [System.WorkItemType] = 'Bug'
   AND [System.State] <> 'Closed'
 ORDER BY [System.ChangedDate] DESC
 ```
 
----
-
-### `wit_my_work_items`
-Liefert Work Items des aktuell authentifizierten Users.
-
-| Parameter | Typ | Pflicht |
-|-----------|-----|---------|
-| `projectName` | string | — |
-| `includeCompleted` | boolean | — |
-| `top` | number | — |
+`wit_query` kennt außerdem `action: "get"` (gespeicherte Query per ID/Pfad) und `action: "get_results"` (gespeicherte Query ausführen).
 
 ---
 
 ## Work Item schreiben
 
-### `wit_work_item_write` (update)
-Aktualisiert Felder eines bestehenden Work Items.
+### `wit_work_item_write` (action: `update`)
+Aktualisiert Felder eines bestehenden Work Items — als JSON-Patch-Liste, nicht als Objekt.
 
 | Parameter | Typ | Pflicht | Beschreibung |
 |-----------|-----|---------|--------------|
+| `action` | string | ✅ | `"update"` |
 | `id` | number | ✅ | Work Item ID |
-| `updates` | object | ✅ | Felder die geändert werden sollen |
-| `format` | string | — | `"Markdown"` für HTML-Textfelder |
+| `updates` | object[] | ✅ | `[{ path, value, op? }]` — `path` z.B. `/fields/System.Title` |
+| `project` | string | — | |
 
-**`updates`-Objekt — Beispiele:**
+**Beispiel:**
 ```json
 {
-  "System.State": "Active",
-  "Microsoft.VSTS.Scheduling.StoryPoints": 5,
-  "System.AssignedTo": "user@domain.com",
-  "System.Description": "Neuer Beschreibungstext"
+  "action": "update",
+  "id": 296821,
+  "updates": [
+    { "path": "/fields/System.State", "value": "Active" },
+    { "path": "/fields/System.Description", "value": "Neuer Text" }
+  ]
 }
 ```
 
----
-
-### `wit_work_item_write` (create)
+### `wit_work_item_write` (action: `create`)
 Legt ein neues Work Item an.
 
 | Parameter | Typ | Pflicht | Beschreibung |
 |-----------|-----|---------|--------------|
-| `projectName` | string | ✅ | Ziel-Projekt |
+| `action` | string | ✅ | `"create"` |
 | `workItemType` | string | ✅ | z. B. `"User Story"`, `"Bug"`, `"Task"` |
-| `fields` | object | ✅ | Felder (mind. `System.Title`) |
-| `format` | string | — | `"Markdown"` für HTML-Textfelder |
+| `fields` | object[] | ✅ | `[{ name, value, format? }]` — mind. `System.Title` |
+| `project` | string | — | Ziel-Projekt |
+
+### `wit_work_item_write` (action: `update_batch` \| `add_child`)
+- `update_batch`: `batchUpdates: [{ id, path, value, op? }]`
+- `add_child`: `parentId`, `workItemType`, `items: [{ title, description, areaPath?, iterationPath?, format? }]`
 
 ---
 
-### `wit_work_item_comment_write` (add)
+### `wit_work_item_comment_write` (action: `add`)
 Fügt einen Kommentar zu einem Work Item hinzu.
 
 | Parameter | Typ | Pflicht | Beschreibung |
 |-----------|-----|---------|--------------|
-| `projectName` | string | ✅ | |
+| `action` | string | ✅ | `"add"` |
 | `workItemId` | number | ✅ | |
 | `text` | string | ✅ | Kommentartext |
-| `format` | string | — | `"Markdown"` |
+| `project` | string | — | |
+| `format` | string | — | `"Markdown"` (default) oder `"Html"` |
 
----
-
-### `wit_work_item_comment_write` (update)
-Aktualisiert einen bestehenden Kommentar.
+### `wit_work_item_comment_write` (action: `update`)
 
 | Parameter | Typ | Pflicht |
 |-----------|-----|---------|
-| `projectName` | string | ✅ |
-| `workItemId` | number | ✅ |
+| `action` | string | ✅ `"update"` |
 | `commentId` | number | ✅ |
 | `text` | string | ✅ |
-
----
-
-### `wit_add_child_work_items`
-Erzeugt Kind-Work-Items unter einem Parent.
-
-| Parameter | Typ | Pflicht | Beschreibung |
-|-----------|-----|---------|--------------|
-| `projectName` | string | ✅ | |
-| `workItemType` | string | ✅ | Typ der Kind-Items |
-| `parentId` | number | ✅ | ID des Parent-Work-Items |
-| `items` | object[] | ✅ | Array mit `{ title, fields? }` |
-| `format` | string | — | `"Markdown"` |
+| `workItemId` | number | ✅ |
 
 ---
 

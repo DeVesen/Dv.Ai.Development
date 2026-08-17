@@ -12,15 +12,16 @@ User nennt Sprint explizit: „analysiere Sprint 42", „Sprint-Analyse Sprint 4
 Vor dem ersten ADO-MCP-Aufruf Tools laden (falls nicht bereits geschehen):
 
 ```
-ToolSearch("select:mcp__ado__wit_query_wiql,mcp__ado__wit_get_work_items_batch_by_ids")
+ToolSearch("select:mcp__ado__wit_query,mcp__ado__wit_work_item")
 ```
 
 WIQL-Query für alle Tasks des genannten Sprints:
 
 ```
-wit_query_wiql(
-  projectName: "<project>",
-  query: "SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State],
+wit_query(
+  action: "wiql",
+  project: "<project>",
+  wiql: "SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State],
           [System.Description], [Microsoft.VSTS.Common.AcceptanceCriteria]
           FROM WorkItems
           WHERE [System.IterationPath] UNDER '<project>\\Sprint <n>'

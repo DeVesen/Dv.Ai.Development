@@ -17,9 +17,10 @@ und das Ergebnis als strukturierten Markdown-Report in `docs/ado/<id>.md` ablege
 ## Schritt 2 — Daten laden (parallel)
 
 ```
-wit_get_work_items_batch_by_ids(
-  projectName: "<project>",
-  workItemIds: [<id>],
+wit_work_item(
+  action: "get",
+  id: <id>,
+  project: "<project>",
   fields: [
     "System.Id", "System.Title", "System.WorkItemType", "System.State",
     "System.Description", "Microsoft.VSTS.Common.AcceptanceCriteria",
@@ -27,7 +28,7 @@ wit_get_work_items_batch_by_ids(
   ]
 )
 
-wit_work_item_list_comments(workItemId: <id>, projectName: "<project>")
+wit_work_item(action: "list_comments", workItemId: <id>, project: "<project>")
 ```
 
 HTML in `Description` / `AcceptanceCriteria`: als Plaintext lesen — Tags ignorieren.

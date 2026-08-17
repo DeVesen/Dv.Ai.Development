@@ -56,7 +56,7 @@ Die Marker stehen direkt im Beschreibungstext — kein HTML, keine Spans:
 
 ### Ablauf
 
-1. `wit_get_work_items_batch_by_ids` — Felder: **`System.State`** + `System.Description`
+1. `wit_work_item` (action `get`) — Felder: **`System.State`** + `System.Description`
 2. WI-Typ aus `docs/ado/<id>.md` oder Gesprächskontext bestimmen (Einzel-Task / Auflistung)
 3. Status-Logik (s. oben) anwenden
 
@@ -100,18 +100,21 @@ Bei Einzel-Tasks ergibt sich der Status aus dem WI-State — kein Marker nötig.
 
 ### Ablauf
 
-1. **Description-HTML laden** via `wit_get_work_items_batch_by_ids`
+1. **Description-HTML laden** via `wit_work_item` (action `get`)
 2. **Ziel-Zeile finden**: passende `<li>`-Zeile oder `^\d+\.`-Pattern; Fallback: Textmatch
 3. **Marker bereinigen**: ✅ und 🔄 aus der Ziel-Zeile entfernen (Unicode + HTML-Entity)
 4. **Neuen Marker einfügen** am Ende des sichtbaren Textes, vor `</li>` oder `</p>`:
    - ✅ → ` ✅`
    - 🔄 → ` 🔄`
 5. **Sonderregel 🔄**: Bestehende 🔄 in anderen Zeilen ebenfalls entfernen (nur ein Task aktiv)
-6. **Zurückschreiben** via `wit_work_item_write` (update):
+6. **Zurückschreiben** via `wit_work_item_write` (action `update`):
 ```json
 {
+  "action": "update",
   "id": <id>,
-  "updates": { "System.Description": "<aktualisiertes HTML>" }
+  "updates": [
+    { "path": "/fields/System.Description", "value": "<aktualisiertes HTML>" }
+  ]
 }
 ```
 7. **Bestätigen:** „Task 2 als 🔄 markiert — Work Item #1234 wurde aktualisiert."

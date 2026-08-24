@@ -11,6 +11,10 @@
     {
       "name": "dv-craft",
       "source": "./plugins/craft"
+    },
+    {
+      "name": "dv-dotnet",
+      "source": "./plugins/dotnet"
     }
   ]
 }

@@ -2126,9 +2126,14 @@ server.tool(
 server.tool(
   "analyze_test_health",
   "Combines coverage report + static test quality in one shot. Shows overall test health: what is covered, what is tested well, and what is missing. Best run after 'ng test --code-coverage' or 'dotnet test --collect:\"XPlat Code Coverage\"'.",
-  { projectPath: projectPathSchema, type: projectTypeSchema },
-  async ({ projectPath, type }) => {
+  {
+    projectPath: projectPathSchema,
+    type: projectTypeSchema,
+    topN: z.number().int().min(1).max(200).default(10).describe("Max entries per list in both the prose summary and the JSON payload. Truncated lists carry a `<key>Truncated`/`<key>Count` marker."),
+  },
+  async ({ projectPath, type, topN }) => {
     const abs = resolve(projectPath);
+    const severityRank = (sev: string) => sev === "critical" ? 0 : sev === "warning" ? 1 : 2;
 
     const coverage = type === "angular" ? parseLcov(abs) : parseCobertura(abs);
     const quality = type === "angular"
@@ -2171,15 +2176,25 @@ server.tool(
     const allRecs = [
       ...("recommendations" in quality ? quality.recommendations ?? [] : []),
     ];
-    allRecs.slice(0, 5).forEach((r) => lines.push(`  • ${r}`));
+    allRecs.slice(0, topN).forEach((r) => lines.push(`  • ${r}`));
 
     if (coverage.source === "none")
       lines.push(`\n  ⚠️ No coverage report found — run tests with coverage first`);
 
+    const cappedCoverage = capArrays(coverage, topN, ["files", "uncoveredFiles", "lowCoverageFiles"]);
+
+    const sortedAntiPatterns = "antiPatterns" in quality ? [...(quality.antiPatterns ?? [])].sort((a, b) => severityRank(a.severity) - severityRank(b.severity)) : [];
+    const sortedCoverageGaps = "coverageGaps" in quality ? [...(quality.coverageGaps ?? [])].sort((a, b) => Number(a.testFileExists) - Number(b.testFileExists)) : [];
+    const cappedQuality = capArrays(
+      { ...quality, antiPatterns: sortedAntiPatterns, coverageGaps: sortedCoverageGaps },
+      topN,
+      ["antiPatterns", "coverageGaps"]
+    );
+
     return {
       content: [{
         type: "text",
-        text: lines.join("\n") + "\n\n" + JSON.stringify({ coverage, quality }, null, 2),
+        text: lines.join("\n") + "\n\n" + JSON.stringify({ coverage: cappedCoverage, quality: cappedQuality }, null, 2),
       }],
     };
   }

@@ -28,4 +28,3 @@ Passenden Skill unten per Skill-Tool aufrufen — nicht alle vorab laden.
 | Neues Projekt (ng new, Scaffolding) | angular-new-project |
 | Projektstruktur / Datei-Platzierung | angular-project-layout |
 | Migration Legacy → Modern | angular-migration |
-| TypeScript-Sprachkern (Typsystem, generics, tsconfig, tsc) | angular-microsoft-learn |

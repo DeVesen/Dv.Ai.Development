@@ -39,6 +39,7 @@ import {
 } from "./features/ts-code-intelligence.js";
 import { runDotnetIntelligence } from "./features/dotnet-intelligence-runner.js";
 import { parseLcov, parseCobertura } from "./features/coverage-parser.js";
+import { capArrays } from "./features/report-cap.js";
 import { analyzeAngularTestQuality } from "./features/test-quality-analyzer.js";
 import { runDotnetTestQuality } from "./features/dotnet-test-quality-runner.js";
 import { runDotnetDiagnostics } from "./features/dotnet-diagnostics-runner.js";
@@ -1707,8 +1708,12 @@ server.tool(
 server.tool(
   "analyze_coverage",
   "Parses existing coverage reports — lcov.info (Angular/Jest/Karma) or coverage.cobertura.xml (.NET/Coverlet). Shows line/branch/function coverage per file, uncovered files, low-coverage hotspots, and uncovered method names. Run 'ng test --code-coverage' or 'dotnet test --collect:\"XPlat Code Coverage\"' first to generate the report.",
-  { projectPath: projectPathSchema, type: projectTypeSchema },
-  async ({ projectPath, type }) => {
+  {
+    projectPath: projectPathSchema,
+    type: projectTypeSchema,
+    topN: z.number().int().min(1).max(200).default(10).describe("Max entries per list in both the prose summary and the JSON payload. Truncated lists carry a `<key>Truncated`/`<key>Count` marker."),
+  },
+  async ({ projectPath, type, topN }) => {
     const abs = resolve(projectPath);
     const report = type === "angular" ? parseLcov(abs) : parseCobertura(abs);
 
@@ -1726,25 +1731,33 @@ server.tool(
       `Covered: ${s.coveredLines}/${s.totalLines} lines  |  ${s.coveredFunctions}/${s.totalFunctions} functions\n`,
     ];
 
-    if (report.uncoveredFiles.length > 0)
-      lines.push(`### 🔴 Uncovered Files (0%):\n${report.uncoveredFiles.slice(0, 8).map((f) => `  - ${f}`).join("\n")}`);
+    if (report.uncoveredFiles.length > 0) {
+      lines.push(`### 🔴 Uncovered Files (0%):\n${report.uncoveredFiles.slice(0, topN).map((f) => `  - ${f}`).join("\n")}`);
+      if (report.uncoveredFiles.length > topN)
+        lines.push(`  … and ${report.uncoveredFiles.length - topN} more (full list capped in the JSON below — increase topN to see more).`);
+    }
 
     if (report.lowCoverageFiles.length > 0) {
       lines.push(`\n### ⚠️ Low Coverage Files (<60%):`);
-      report.lowCoverageFiles.slice(0, 10).forEach((f) => {
+      report.lowCoverageFiles.slice(0, topN).forEach((f) => {
         lines.push(`  [${f.severity}] ${f.lineCoverage}% — ${f.file}`);
         if (f.uncoveredFunctions.length > 0)
           lines.push(`    Untested: ${f.uncoveredFunctions.slice(0, 5).join(", ")}`);
       });
+      if (report.lowCoverageFiles.length > topN)
+        lines.push(`  … and ${report.lowCoverageFiles.length - topN} more (full list capped in the JSON below — increase topN to see more).`);
     }
 
-    lines.push(`\n### Top 10 Files by Coverage:`);
-    report.files.slice(0, 10).forEach((f) => {
+    lines.push(`\n### Top ${topN} Files by Coverage:`);
+    report.files.slice(0, topN).forEach((f) => {
       const bar = "█".repeat(Math.round(f.lineCoverage / 10)) + "░".repeat(10 - Math.round(f.lineCoverage / 10));
       lines.push(`  ${bar} ${f.lineCoverage}% — ${f.file} (${f.coveredFunctions}/${f.totalFunctions} fn)`);
     });
+    if (report.files.length > topN)
+      lines.push(`  … and ${report.files.length - topN} more (full list capped in the JSON below — increase topN to see more).`);
 
-    return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(report, null, 2) }] };
+    const cappedReport = capArrays(report, topN, ["files", "uncoveredFiles", "lowCoverageFiles"]);
+    return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(cappedReport, null, 2) }] };
   }
 );
 

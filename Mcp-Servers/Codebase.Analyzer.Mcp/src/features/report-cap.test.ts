@@ -72,10 +72,10 @@ describe("sortAntiPatternsBySeverity", () => {
     });
 
     it("Sort_OriginalArrayBleibtUnveraendert_KeineInPlaceMutation", () => {
-        const input = [{ severity: "critical", id: 1 }, { severity: "suggestion", id: 2 }];
+        const input = [{ severity: "suggestion", id: 1 }, { severity: "critical", id: 2 }];
         sortAntiPatternsBySeverity(input);
-        assert.equal(input[0].severity, "critical");
-        assert.equal(input[1].severity, "suggestion");
+        assert.equal(input[0].severity, "suggestion");
+        assert.equal(input[1].severity, "critical");
     });
 });
 
@@ -87,10 +87,17 @@ describe("sortCoverageGapsByMissingFirst", () => {
             { testFileExists: true, id: 3 },
         ];
         const result = sortCoverageGapsByMissingFirst(input);
-        assert.equal(result[0].id, 2);
+        assert.deepEqual(result.map((r) => r.id), [2, 1, 3]);
     });
 
     it("Sort_LeeresArray_GibtLeeresArrayZurueck", () => {
         assert.deepEqual(sortCoverageGapsByMissingFirst([]), []);
+    });
+
+    it("Sort_OriginalArrayBleibtUnveraendert_KeineInPlaceMutation", () => {
+        const input = [{ testFileExists: true, id: 1 }, { testFileExists: false, id: 2 }];
+        sortCoverageGapsByMissingFirst(input);
+        assert.equal(input[0].testFileExists, true);
+        assert.equal(input[1].testFileExists, false);
     });
 });

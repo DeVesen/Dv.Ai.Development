@@ -1,9 +1,9 @@
-export function capArrays<T extends Record<string, unknown>>(
+export function capArrays<T extends object>(
     obj: T,
     topN: number,
     arrayKeys: (keyof T)[]
 ): T {
-    const result: Record<string, unknown> = { ...obj };
+    const result: Record<string, unknown> = { ...obj } as Record<string, unknown>;
     for (const key of arrayKeys) {
         const arr = result[key as string];
         if (Array.isArray(arr) && arr.length > topN) {

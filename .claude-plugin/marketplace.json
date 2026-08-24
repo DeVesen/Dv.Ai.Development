@@ -7,6 +7,10 @@
     {
       "name": "dv-angular",
       "source": "./plugins/angular"
+    },
+    {
+      "name": "dv-craft",
+      "source": "./plugins/craft"
     }
   ]
 }

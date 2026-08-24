@@ -1765,13 +1765,21 @@ server.tool(
 server.tool(
   "analyze_test_quality",
   "Statically analyzes test files without running them. Detects: tests without assertions, tautological assertions (expect(true).toBe(true)), mock-heavy tests, happy-path-only tests, missing error/null scenarios, unhandled async, real timers, no Arrange/Act/Assert structure (.NET), focused/skipped tests. Also finds source files with no test counterpart. Works for Angular (Jest/Jasmine .spec.ts) and .NET (xUnit/NUnit/MSTest).",
-  { projectPath: projectPathSchema, type: projectTypeSchema },
-  async ({ projectPath, type }) => {
+  {
+    projectPath: projectPathSchema,
+    type: projectTypeSchema,
+    topN: z.number().int().min(1).max(200).default(10).describe("Max entries per list in both the prose summary and the JSON payload. Truncated lists carry a `<key>Truncated`/`<key>Count` marker."),
+  },
+  async ({ projectPath, type, topN }) => {
     const abs = resolve(projectPath);
+    const severityRank = (sev: string) => sev === "critical" ? 0 : sev === "warning" ? 1 : 2;
 
     if (type === "angular") {
       const report = analyzeAngularTestQuality(abs);
       const s = report.summary;
+
+      const sortedAntiPatterns = [...report.antiPatterns].sort((a, b) => severityRank(a.severity) - severityRank(b.severity));
+      const sortedCoverageGaps = [...report.coverageGaps].sort((a, b) => Number(a.testFileExists) - Number(b.testFileExists));
 
       const lines = [
         `## Test Quality Report (Angular)`,
@@ -1780,22 +1788,27 @@ server.tool(
         `Without assertions: ${s.testsWithoutAssertions}  |  Weak assertions: ${s.testsWithWeakAssertions}  |  Happy-path-only: ${s.testsWithOnlyHappyPath}\n`,
       ];
 
-      const critical = report.antiPatterns.filter((p) => p.severity === "critical");
+      const critical = sortedAntiPatterns.filter((p) => p.severity === "critical");
       if (critical.length > 0) {
         lines.push(`### 🔴 Critical Issues (${critical.length}):`);
-        critical.slice(0, 8).forEach((p) => {
+        critical.slice(0, topN).forEach((p) => {
           lines.push(`  ${p.file} — "${p.testName}" (line ${p.line})`);
           lines.push(`  → ${p.description}`);
           lines.push(`  Fix: ${p.fix}\n`);
         });
+        if (critical.length > topN)
+          lines.push(`  … and ${critical.length - topN} more (full list capped in the JSON below — increase topN to see more).\n`);
       }
 
-      if (report.coverageGaps.filter((g) => !g.testFileExists).length > 0) {
+      const noTest = sortedCoverageGaps.filter((g) => !g.testFileExists);
+      if (noTest.length > 0) {
         lines.push(`\n### ⚠️ Source Files Without Tests:`);
-        report.coverageGaps.filter((g) => !g.testFileExists).slice(0, 8).forEach((g) => {
+        noTest.slice(0, topN).forEach((g) => {
           lines.push(`  ${g.sourceFile} → create ${g.suggestedTestFile}`);
           lines.push(`  Untested: ${g.untestedMethods.slice(0, 4).join(", ")}`);
         });
+        if (noTest.length > topN)
+          lines.push(`  … and ${noTest.length - topN} more (full list capped in the JSON below — increase topN to see more).`);
       }
 
       if (report.recommendations.length > 0) {
@@ -1803,13 +1816,21 @@ server.tool(
         report.recommendations.forEach((r) => lines.push(`  • ${r}`));
       }
 
-      return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(report, null, 2) }] };
+      const cappedReport = capArrays(
+        { ...report, antiPatterns: sortedAntiPatterns, coverageGaps: sortedCoverageGaps },
+        topN,
+        ["antiPatterns", "coverageGaps"]
+      );
+      return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(cappedReport, null, 2) }] };
 
     } else {
       const report = runDotnetTestQuality(abs);
       if (report.error) return { content: [{ type: "text", text: `⚠️ ${report.error}` }] };
 
       const s = report.summary!;
+      const sortedAntiPatterns = [...(report.antiPatterns ?? [])].sort((a, b) => severityRank(a.severity) - severityRank(b.severity));
+      const sortedCoverageGaps = [...(report.coverageGaps ?? [])].sort((a, b) => Number(a.testFileExists) - Number(b.testFileExists));
+
       const lines = [
         `## Test Quality Report (.NET)`,
         `**Quality Score: ${s.qualityScore}/100 (${s.grade})**`,
@@ -1817,23 +1838,27 @@ server.tool(
         `Without assertions: ${s.testsWithoutAssertions}  |  Weak: ${s.testsWithWeakAssertions}  |  Happy-path-only: ${s.testsWithOnlyHappyPath}\n`,
       ];
 
-      const critical = (report.antiPatterns ?? []).filter((p) => p.severity === "critical");
+      const critical = sortedAntiPatterns.filter((p) => p.severity === "critical");
       if (critical.length > 0) {
         lines.push(`### 🔴 Critical Issues (${critical.length}):`);
-        critical.slice(0, 8).forEach((p) => {
+        critical.slice(0, topN).forEach((p) => {
           lines.push(`  ${p.file} — "${p.testName}" (line ${p.line})`);
           lines.push(`  → ${p.description}`);
           lines.push(`  Fix: ${p.fix}\n`);
         });
+        if (critical.length > topN)
+          lines.push(`  … and ${critical.length - topN} more (full list capped in the JSON below — increase topN to see more).\n`);
       }
 
-      const noTestFile = (report.coverageGaps ?? []).filter((g) => !g.testFileExists);
+      const noTestFile = sortedCoverageGaps.filter((g) => !g.testFileExists);
       if (noTestFile.length > 0) {
         lines.push(`\n### ⚠️ Classes Without Test Files:`);
-        noTestFile.slice(0, 8).forEach((g) => {
+        noTestFile.slice(0, topN).forEach((g) => {
           lines.push(`  ${g.sourceFile} → create ${g.suggestedTestFile}`);
           lines.push(`  Untested: ${g.untestedMethods.slice(0, 4).join(", ")}`);
         });
+        if (noTestFile.length > topN)
+          lines.push(`  … and ${noTestFile.length - topN} more (full list capped in the JSON below — increase topN to see more).`);
       }
 
       if ((report.recommendations ?? []).length > 0) {
@@ -1841,7 +1866,12 @@ server.tool(
         (report.recommendations ?? []).forEach((r) => lines.push(`  • ${r}`));
       }
 
-      return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(report, null, 2) }] };
+      const cappedReport = capArrays(
+        { ...report, antiPatterns: sortedAntiPatterns, coverageGaps: sortedCoverageGaps },
+        topN,
+        ["antiPatterns", "coverageGaps"]
+      );
+      return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(cappedReport, null, 2) }] };
     }
   }
 );

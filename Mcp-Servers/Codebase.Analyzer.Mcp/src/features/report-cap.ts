@@ -14,3 +14,12 @@ export function capArrays<T extends object>(
     }
     return result as T;
 }
+
+export function sortAntiPatternsBySeverity<T extends { severity: string }>(items: T[]): T[] {
+    const rank = (sev: string) => sev === "critical" ? 0 : sev === "warning" ? 1 : 2;
+    return [...items].sort((a, b) => rank(a.severity) - rank(b.severity));
+}
+
+export function sortCoverageGapsByMissingFirst<T extends { testFileExists: boolean }>(items: T[]): T[] {
+    return [...items].sort((a, b) => Number(a.testFileExists) - Number(b.testFileExists));
+}

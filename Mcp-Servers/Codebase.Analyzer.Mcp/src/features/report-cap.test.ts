@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { capArrays } from "./report-cap.js";
+import { capArrays, sortAntiPatternsBySeverity, sortCoverageGapsByMissingFirst } from "./report-cap.js";
 
 describe("capArrays", () => {
     it("Cap_ArrayLaengerAlsTopN_WirdGekuerztMitMarkern", () => {
@@ -53,5 +53,44 @@ describe("capArrays", () => {
         const input = { files: [1, 2, 3, 4] };
         capArrays(input, 2, ["files"]);
         assert.deepEqual(input.files, [1, 2, 3, 4]);
+    });
+});
+
+describe("sortAntiPatternsBySeverity", () => {
+    it("Sort_CriticalWarningSuggestionGemischt_CriticalZuerst", () => {
+        const input = [
+            { severity: "suggestion", id: 1 },
+            { severity: "critical", id: 2 },
+            { severity: "warning", id: 3 },
+        ];
+        const result = sortAntiPatternsBySeverity(input);
+        assert.deepEqual(result.map((r) => r.id), [2, 3, 1]);
+    });
+
+    it("Sort_LeeresArray_GibtLeeresArrayZurueck", () => {
+        assert.deepEqual(sortAntiPatternsBySeverity([]), []);
+    });
+
+    it("Sort_OriginalArrayBleibtUnveraendert_KeineInPlaceMutation", () => {
+        const input = [{ severity: "critical", id: 1 }, { severity: "suggestion", id: 2 }];
+        sortAntiPatternsBySeverity(input);
+        assert.equal(input[0].severity, "critical");
+        assert.equal(input[1].severity, "suggestion");
+    });
+});
+
+describe("sortCoverageGapsByMissingFirst", () => {
+    it("Sort_TestFileExistsGemischt_FalseZuerst", () => {
+        const input = [
+            { testFileExists: true, id: 1 },
+            { testFileExists: false, id: 2 },
+            { testFileExists: true, id: 3 },
+        ];
+        const result = sortCoverageGapsByMissingFirst(input);
+        assert.equal(result[0].id, 2);
+    });
+
+    it("Sort_LeeresArray_GibtLeeresArrayZurueck", () => {
+        assert.deepEqual(sortCoverageGapsByMissingFirst([]), []);
     });
 });

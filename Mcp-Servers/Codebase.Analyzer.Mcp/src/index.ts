@@ -39,7 +39,7 @@ import {
 } from "./features/ts-code-intelligence.js";
 import { runDotnetIntelligence } from "./features/dotnet-intelligence-runner.js";
 import { parseLcov, parseCobertura } from "./features/coverage-parser.js";
-import { capArrays } from "./features/report-cap.js";
+import { capArrays, sortAntiPatternsBySeverity, sortCoverageGapsByMissingFirst } from "./features/report-cap.js";
 import { analyzeAngularTestQuality } from "./features/test-quality-analyzer.js";
 import { runDotnetTestQuality } from "./features/dotnet-test-quality-runner.js";
 import { runDotnetDiagnostics } from "./features/dotnet-diagnostics-runner.js";
@@ -1772,14 +1772,13 @@ server.tool(
   },
   async ({ projectPath, type, topN }) => {
     const abs = resolve(projectPath);
-    const severityRank = (sev: string) => sev === "critical" ? 0 : sev === "warning" ? 1 : 2;
 
     if (type === "angular") {
       const report = analyzeAngularTestQuality(abs);
       const s = report.summary;
 
-      const sortedAntiPatterns = [...report.antiPatterns].sort((a, b) => severityRank(a.severity) - severityRank(b.severity));
-      const sortedCoverageGaps = [...report.coverageGaps].sort((a, b) => Number(a.testFileExists) - Number(b.testFileExists));
+      const sortedAntiPatterns = sortAntiPatternsBySeverity(report.antiPatterns);
+      const sortedCoverageGaps = sortCoverageGapsByMissingFirst(report.coverageGaps);
 
       const lines = [
         `## Test Quality Report (Angular)`,
@@ -1819,7 +1818,7 @@ server.tool(
       const cappedReport = capArrays(
         { ...report, antiPatterns: sortedAntiPatterns, coverageGaps: sortedCoverageGaps },
         topN,
-        ["antiPatterns", "coverageGaps"]
+        ["antiPatterns", "coverageGaps", "testFiles"]
       );
       return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(cappedReport, null, 2) }] };
 
@@ -1828,8 +1827,8 @@ server.tool(
       if (report.error) return { content: [{ type: "text", text: `⚠️ ${report.error}` }] };
 
       const s = report.summary!;
-      const sortedAntiPatterns = [...(report.antiPatterns ?? [])].sort((a, b) => severityRank(a.severity) - severityRank(b.severity));
-      const sortedCoverageGaps = [...(report.coverageGaps ?? [])].sort((a, b) => Number(a.testFileExists) - Number(b.testFileExists));
+      const sortedAntiPatterns = sortAntiPatternsBySeverity(report.antiPatterns ?? []);
+      const sortedCoverageGaps = sortCoverageGapsByMissingFirst(report.coverageGaps ?? []);
 
       const lines = [
         `## Test Quality Report (.NET)`,
@@ -1869,7 +1868,7 @@ server.tool(
       const cappedReport = capArrays(
         { ...report, antiPatterns: sortedAntiPatterns, coverageGaps: sortedCoverageGaps },
         topN,
-        ["antiPatterns", "coverageGaps"]
+        ["antiPatterns", "coverageGaps", "testFiles"]
       );
       return { content: [{ type: "text", text: lines.join("\n") + "\n\n" + JSON.stringify(cappedReport, null, 2) }] };
     }
@@ -2133,7 +2132,6 @@ server.tool(
   },
   async ({ projectPath, type, topN }) => {
     const abs = resolve(projectPath);
-    const severityRank = (sev: string) => sev === "critical" ? 0 : sev === "warning" ? 1 : 2;
 
     const coverage = type === "angular" ? parseLcov(abs) : parseCobertura(abs);
     const quality = type === "angular"
@@ -2183,12 +2181,12 @@ server.tool(
 
     const cappedCoverage = capArrays(coverage, topN, ["files", "uncoveredFiles", "lowCoverageFiles"]);
 
-    const sortedAntiPatterns = "antiPatterns" in quality ? [...(quality.antiPatterns ?? [])].sort((a, b) => severityRank(a.severity) - severityRank(b.severity)) : [];
-    const sortedCoverageGaps = "coverageGaps" in quality ? [...(quality.coverageGaps ?? [])].sort((a, b) => Number(a.testFileExists) - Number(b.testFileExists)) : [];
+    const sortedAntiPatterns = "antiPatterns" in quality ? sortAntiPatternsBySeverity(quality.antiPatterns ?? []) : [];
+    const sortedCoverageGaps = "coverageGaps" in quality ? sortCoverageGapsByMissingFirst(quality.coverageGaps ?? []) : [];
     const cappedQuality = capArrays(
       { ...quality, antiPatterns: sortedAntiPatterns, coverageGaps: sortedCoverageGaps },
       topN,
-      ["antiPatterns", "coverageGaps"]
+      ["antiPatterns", "coverageGaps", "testFiles"]
     );
 
     return {

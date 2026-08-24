@@ -41,6 +41,13 @@ public sealed partial class AngularRunner
     [GeneratedRegex(@"^(?:FAIL|PASS)\s+.+", RegexOptions.Multiline)]
     private static partial Regex JestSuiteLineRegex();
 
+    // Vitest output patterns (@angular/build:unit-test with runner: "vitest")
+    [GeneratedRegex(@"^\s*(?:×|✗)\s+(.+)", RegexOptions.Multiline)]
+    private static partial Regex VitestFailedTestRegex();
+
+    [GeneratedRegex(@"^\s*(?:Test Files|Tests)\s+.+", RegexOptions.Multiline)]
+    private static partial Regex VitestSummaryRegex();
+
     public async Task<AngularBuildResult> BuildAsync(string projectRoot, string? configuration = null, CancellationToken cancellationToken = default)
     {
         if (!ValidateRoot(projectRoot, out var error)) return MakeFailResult(error, "ng build");
@@ -59,38 +66,57 @@ public sealed partial class AngularRunner
         if (!ValidateRoot(projectRoot, out var error)) return MakeFailResult(error, "ng test");
 
         var preStep = await EnsureCompatibleEsbuildAsync(projectRoot, cancellationToken);
-        var isJest = IsJestBuilder(projectRoot);
+        var builderKind = DetectTestBuilder(projectRoot);
         var args = new List<string> { "test" };
-        if (!isJest) args.Add("--watch=false");
+        if (builderKind != TestBuilderKind.Jest) args.Add("--watch=false");
         if (!string.IsNullOrWhiteSpace(options)) args.AddRange(options.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
-        var result = await RunAsync("ng test", projectRoot, args, isJest ? ParseJestOutput : ParseTestOutput, TestTimeoutSeconds, cancellationToken);
+        var parser = builderKind switch
+        {
+            TestBuilderKind.Jest => ParseJestOutput,
+            TestBuilderKind.Vitest => ParseVitestOutput,
+            _ => (Func<string, string, int, AngularBuildResult>)ParseTestOutput,
+        };
+
+        var result = await RunAsync("ng test", projectRoot, args, parser, TestTimeoutSeconds, cancellationToken);
         if (preStep != null) result.ConsoleOutput = preStep + "\n\n" + result.ConsoleOutput;
         return result;
     }
 
-    private static bool IsJestBuilder(string projectRoot)
+    private enum TestBuilderKind { Karma, Jest, Vitest }
+
+    private static TestBuilderKind DetectTestBuilder(string projectRoot)
     {
         var angularJsonPath = Path.Combine(projectRoot, "angular.json");
-        if (!File.Exists(angularJsonPath)) return false;
+        if (!File.Exists(angularJsonPath)) return TestBuilderKind.Karma;
         try
         {
             var json = File.ReadAllText(angularJsonPath);
             using var doc = System.Text.Json.JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty("projects", out var projects)) return false;
+            if (!doc.RootElement.TryGetProperty("projects", out var projects)) return TestBuilderKind.Karma;
             foreach (var project in projects.EnumerateObject())
             {
-                if (project.Value.TryGetProperty("architect", out var arch) &&
-                    arch.TryGetProperty("test", out var test) &&
-                    test.TryGetProperty("builder", out var builder))
+                if (!project.Value.TryGetProperty("architect", out var arch) ||
+                    !arch.TryGetProperty("test", out var test) ||
+                    !test.TryGetProperty("builder", out var builder)) continue;
+
+                var builderValue = builder.GetString() ?? string.Empty;
+                if (builderValue.Contains("jest", StringComparison.OrdinalIgnoreCase)) return TestBuilderKind.Jest;
+
+                // @angular/build:unit-test (v20+) defaults to the vitest runner; the
+                // "runner" option makes it explicit when set.
+                if (builderValue.Contains("unit-test", StringComparison.OrdinalIgnoreCase))
                 {
-                    var builderValue = builder.GetString() ?? string.Empty;
-                    if (builderValue.Contains("jest", StringComparison.OrdinalIgnoreCase)) return true;
+                    if (test.TryGetProperty("options", out var testOptions) &&
+                        testOptions.TryGetProperty("runner", out var runner) &&
+                        (runner.GetString() ?? string.Empty).Contains("karma", StringComparison.OrdinalIgnoreCase))
+                        return TestBuilderKind.Karma;
+                    return TestBuilderKind.Vitest;
                 }
             }
         }
         catch { /* fall through */ }
-        return false;
+        return TestBuilderKind.Karma;
     }
 
     public static AngularBuildResult ParseBuildOutput(string stdout, string stderr, int exitCode)
@@ -162,6 +188,34 @@ public sealed partial class AngularRunner
         else errors = [];
 
         var summary = jestSummaryLine is { Success: true } ? jestSummaryLine.Value.Trim()
+            : exitCode == 0 ? "All tests passed."
+            : failedTests.Length > 0 ? $"Tests failed: {failedTests.Length} failing test(s)."
+            : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
+            : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
+
+        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = [], ExitCode = exitCode, Summary = summary };
+    }
+
+    public static AngularBuildResult ParseVitestOutput(string stdout, string stderr, int exitCode)
+    {
+        var combined = StripAnsi(stdout + "\n" + stderr);
+        var lines = combined.Split('\n');
+
+        var failedTests = lines.Select(l => VitestFailedTestRegex().Match(l)).Where(m => m.Success)
+            .Select(m => m.Groups[1].Value.Trim()).Where(t => t.Length > 0).Distinct().Take(MaxErrors).ToArray();
+
+        var tsErrors = lines.Where(l => BuildErrorLineRegex().IsMatch(l)).Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray();
+
+        var summaryLines = lines.Where(l => VitestSummaryRegex().IsMatch(l)).Select(l => l.Trim()).ToArray();
+
+        string[] errors;
+        if (failedTests.Length > 0) errors = failedTests;
+        else if (tsErrors.Length > 0) errors = tsErrors;
+        else if (exitCode != 0 && !string.IsNullOrWhiteSpace(stderr))
+            errors = StripAnsi(stderr).Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).Take(MaxErrors).ToArray();
+        else errors = [];
+
+        var summary = summaryLines.Length > 0 ? string.Join(" | ", summaryLines)
             : exitCode == 0 ? "All tests passed."
             : failedTests.Length > 0 ? $"Tests failed: {failedTests.Length} failing test(s)."
             : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."

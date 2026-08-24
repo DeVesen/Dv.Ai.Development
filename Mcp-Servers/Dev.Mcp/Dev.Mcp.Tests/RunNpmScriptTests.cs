@@ -23,4 +23,13 @@ public sealed class RunNpmScriptTests
         Assert.False(result.Success);
         Assert.Equal(1, result.ExitCode);
     }
+
+    [Fact]
+    public async Task RunNpmInternalAsync_Ci_UsesNpmCiCommand()
+    {
+        using var fx = new NpmScriptFixture();
+        var result = await AngularTools.RunNpmInternalAsync(fx.Dir, "ci", null);
+
+        Assert.Equal("npm ci", result.Command);
+    }
 }

@@ -1,6 +1,6 @@
 # dev-mcp Tool-Katalog
 
-Vollständige Parameter aller 49 Tools. Lesen wenn Tool-Aufruf unklar oder Parameter-Namen gefragt.
+Vollständige Parameter aller 50 Tools. Lesen wenn Tool-Aufruf unklar oder Parameter-Namen gefragt.
 
 ---
 
@@ -55,7 +55,7 @@ Vollständige Parameter aller 49 Tools. Lesen wenn Tool-Aufruf unklar oder Param
 | `rename_file` | `old_path`, `new_path` | — |
 | `rename_file_with_impact` | `old_path`, `new_path` | `execute` (false=Preview, true=Umbenennen) |
 
-## .NET (9 Tools)
+## .NET (10 Tools)
 
 | Tool | Pflicht-Parameter | Optional |
 |------|------------------|---------|
@@ -66,6 +66,7 @@ Vollständige Parameter aller 49 Tools. Lesen wenn Tool-Aufruf unklar oder Param
 | `build_dotnet_solution` | `path` (.sln/.csproj/Verzeichnis) | `configuration` |
 | `test_dotnet_solution` | `path` | `options`, `filter`, `test_project_path` |
 | `publish_dotnet_project` | `project_path` | `configuration` (default: Release), `runtime`, `output_path`, `self_contained` |
+| `run_ef_migration` | `action` (add/list/remove/database-update/has-pending-model-changes), `backend_path`, `database_project`, `startup_project` | `name` (Pflicht bei action=add), `target_migration`, `connection` (nie geloggt/echoed) |
 | `scaffold_dto` | `output_path`, `class_name`, `namespace`, `properties` (JSON) | `class_type` (record/class) |
 | `scaffold_api_action` | `controller_file_path`, `http_method`, `route_template`, `action_name` | `request_dto`, `response_dto` |
 

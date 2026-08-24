@@ -33,6 +33,7 @@ description: >
 | `dotnet build` (Shell) | `build_dotnet_solution` |
 | `dotnet test` (Shell) | `test_dotnet_solution` |
 | `dotnet publish` / `PowerShell(dotnet publish ...)` | `publish_dotnet_project` |
+| `dotnet ef migrations add/list/remove/...` (Shell) | `run_ef_migration` |
 | `ng build` (Shell) | `build_angular_project` |
 | `ng test` (Shell) | `test_angular_project` |
 | `npm run *` / `Bash(npm run *)` | `run_npm_script` |
@@ -108,6 +109,7 @@ select:mcp__dev-mcp__read_lines,mcp__dev-mcp__read_files_batch,mcp__dev-mcp__tes
 | .NET bauen | `build_dotnet_solution` |
 | .NET testen | `test_dotnet_solution` |
 | .NET veröffentlichen | `publish_dotnet_project` |
+| EF-Migration anlegen/auflisten/entfernen/DB aktualisieren | `run_ef_migration` → Workflow: [dotnet-Skill ef-migrations](../dotnet/references/ef-migrations/OVERVIEW.md) |
 | Datei verschieben (mit Git-History) | `git_move` |
 | Datei umbenennen (mit Impact-Analyse) | `rename_file_with_impact` |
 | Geänderte Dateien ermitteln | `git_changed_files` |

@@ -108,10 +108,10 @@ public sealed class AngularTools
     }
 
     [McpServerTool(Name = "run_npm_script")]
-    [Description("Runs 'npm run <script>' or 'npm install' in a directory. Replaces Bash(npm run *) and Bash(npm install *) shell commands. Returns {success, command, errors[], warnings[], summary}.")]
+    [Description("Runs 'npm run <script>', 'npm install' or 'npm ci' in a directory. Replaces Bash(npm run *), Bash(npm install *) and Bash(npm ci *) shell commands. Returns {success, command, errors[], warnings[], summary}.")]
     public async Task<string> RunNpmScript(
         [Description("Absolute path to the directory containing package.json")] string working_directory,
-        [Description("Script name (e.g. 'build', 'test', 'start') or 'install' for npm install")] string script,
+        [Description("Script name (e.g. 'build', 'test', 'start'), 'install' for npm install, or 'ci' for npm ci")] string script,
         [Description("Optional extra arguments, e.g. '--prod'")] string? args = null) =>
         await ExecuteBuildAsync("run_npm_script", new { working_directory, script, args },
             () => RunNpmInternalAsync(working_directory, script, args));
@@ -123,9 +123,12 @@ public sealed class AngularTools
         if (string.IsNullOrWhiteSpace(script)) return NpmFail("npm", "script is required");
 
         var npmExe = OperatingSystem.IsWindows() ? "npm.cmd" : "npm";
-        var scriptArgs = string.Equals(script, "install", StringComparison.OrdinalIgnoreCase)
-            ? "install"
-            : $"run {script.Trim()}";
+        var scriptArgs = script.Trim().ToLowerInvariant() switch
+        {
+            "install" => "install",
+            "ci" => "ci",
+            _ => $"run {script.Trim()}",
+        };
         if (!string.IsNullOrWhiteSpace(extraArgs)) scriptArgs += $" {extraArgs.Trim()}";
         var command = $"npm {scriptArgs}";
 
@@ -148,13 +151,14 @@ public sealed class AngularTools
                         Regex.IsMatch(l, @"error\s+TS\d+:|✘\s*\[ERROR\]", RegexOptions.IgnoreCase))
             .Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(20).ToArray();
         var warnings = lines
-            .Where(l => l.StartsWith("npm warn", StringComparison.OrdinalIgnoreCase))
-            .Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(10).ToArray();
+            .Where(l => l.StartsWith("npm warn", StringComparison.OrdinalIgnoreCase) &&
+                        !l.Contains("deprecated", StringComparison.OrdinalIgnoreCase))
+            .Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(5).ToArray();
         var summary = run.ExitCode == 0
             ? $"npm {script} succeeded."
             : errors.Length > 0 ? errors[0] : $"npm {script} failed (exit code {run.ExitCode}).";
 
-        const int MaxOutput = 3000;
+        const int MaxOutput = 1500;
         var output = combined.Length > MaxOutput ? combined[..MaxOutput] + "\n... (truncated)" : combined;
 
         return new AngularBuildResult

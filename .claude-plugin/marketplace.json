@@ -1,0 +1,12 @@
+{
+  "name": "dv-ai-development",
+  "owner": {
+    "name": "DeVesen"
+  },
+  "plugins": [
+    {
+      "name": "dv-angular",
+      "source": "./plugins/angular"
+    }
+  ]
+}

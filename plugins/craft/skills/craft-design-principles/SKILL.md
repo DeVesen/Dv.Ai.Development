@@ -96,6 +96,36 @@ IODA/IOSP auf Komponentenebene:
 
 Keine Komponente macht beides.
 
+### 6 Erklärender Kommentar als Extraktionssignal
+
+Ein Kommentarblock mitten in einer Methode, der das **Warum** eines Abschnitts erklärt
+(nicht-offensichtliche Invariante, Verweis auf eine andere Stelle die synchron bleiben muss,
+Grund für eine sonst unklare Design-Entscheidung) und mehr als 2–3 Zeilen umfasst
+→ Abschnitt in eigene, sprechend benannte Funktion extrahieren; Kommentar unverändert
+als Docstring/Summary dieser Funktion übernehmen — nicht als Inline-Kommentar über dem
+Aufruf stehen lassen.
+
+```csharp
+// Schlecht: Kommentar mitten in der Methode vergraben
+// Gruppierung muss über den stabilen Key laufen, nicht über den Freitext-Namen,
+// sonst entstehen an anderer Stelle doppelte/fragmentierte Einträge.
+var grouped = entries.GroupBy(e => e.Key)...
+
+// Gut: Kommentar wandert 1:1 als Docstring zur extrahierten Funktion
+/// <summary>
+/// Gruppierung muss über den stabilen Key laufen, nicht über den Freitext-Namen,
+/// sonst entstehen an anderer Stelle doppelte/fragmentierte Einträge.
+/// </summary>
+List<Group> BuildGroupsByStableKey(IEnumerable<Entry> entries) => ...
+```
+
+Lässt sich der Kommentar in einem Satz als abgeschlossenes Verhalten zusammenfassen,
+ist das faktisch schon Funktionsname + Docstring — der Kommentar hat die Extraktion
+selbst schon vorgeschlagen. Zusätzlicher Effekt: Kommentar erscheint per Hover/IntelliSense
+an jeder Aufrufstelle, nicht nur an der einen Fundstelle.
+
+Verwandt: Regel 3 (Kleine Funktionen), Comments-Taxonomie in `craft-clean-code`.
+
 ---
 
 ## Entwurfsmethode: Flow Design

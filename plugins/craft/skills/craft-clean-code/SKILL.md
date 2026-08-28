@@ -53,6 +53,17 @@ Größe/"Eine Sache"-Regel: siehe `craft-design-principles` Regel 3.
   ```
 - **Good Comments**: Legal, Informative (regex intent), Clarification (external libraries), TODOs.
 - **Bad Comments**: Mumbling, Redundant, Misleading, Mandated, Noise, Position Markers.
+- **Docstring an der Funktionssignatur**: Öffentliche/exportierte Funktion und jede nicht-triviale private Funktion bekommt Summary-Docstring (XML-Doc/JSDoc/…) — was die Funktion tut, was jeder Parameter bedeutet, was der Rückgabewert ist. Trivialer Helper mit sprechendem Namen (z. B. `IsOrderEligibleForDiscount`) braucht keinen — sonst Redundant-Comment-Smell.
+
+  ```csharp
+  /// <summary>Prüft, ob die Bestellung für den Mengenrabatt qualifiziert.</summary>
+  /// <param name="order">Zu prüfende Bestellung.</param>
+  /// <param name="threshold">Mindestbestellwert in EUR für den Rabatt.</param>
+  /// <returns>true, wenn Bestellwert den Threshold erreicht oder überschreitet.</returns>
+  bool IsEligibleForBulkDiscount(Order order, decimal threshold)
+  ```
+
+Erklärender Kommentar mitten in einer Methode (>2-3 Zeilen, erklärt WARUM) als Extraktionssignal: siehe `craft-design-principles` Regel 6.
 
 ## 4 Formatting
 
@@ -96,6 +107,7 @@ Fehler-*Kategorien* (Bedienfehler vs. technischer Fehler vs. Programmierfehler):
 - [ ] Sind alle Namen searchable und intention-revealing?
 - [ ] Ein Level of Abstraction pro Funktion?
 - [ ] Kommentare durch klareren Code ersetzt, wo möglich?
+- [ ] Öffentliche/nicht-triviale Funktion mit Summary-Docstring (Zweck, Parameter, Rückgabewert)?
 - [ ] Zu viele Argumente?
 - [ ] Exceptions statt Return-Codes/Null?
 - [ ] Law of Demeter verletzt (`a.getB().getC()`)?

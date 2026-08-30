@@ -1,6 +1,6 @@
 ---
 name: relay-reviewing-plan
-description: Use when a plan has been written and work is about to be handed out, estimated or started against it, when someone asks for a plan to be signed off or hurried through ("two people are free tomorrow", "the team lead wrote it", "don't hold this up over process"), or when a plan that was sent back has come round again. Also use when about to approve a plan whose own coverage table or self-check you have not tested against its actual task cards.
+description: Use when a plan has been written and work is about to be handed out, estimated or started against it, when someone asks for a plan to be signed off or hurried through ("two people are free tomorrow", "the team lead wrote it", "don't hold this up over process"), or when a plan that was sent back has come round again. Also use when about to approve a plan whose coverage you have not derived yourself from its actual task cards.
 ---
 
 # Relay Reviewing Plan
@@ -12,10 +12,12 @@ is handed a single card out of — before anything is built from it.
 
 Core principle:
 
-> A plan asserts its own coverage, its own seams, and its own freedom from
-> placeholders. All three are claims. This is the only stage that tests them
-> against the actual task cards, and under test a plan whose self-check made all
-> three claims had all three of them false.
+> A plan's coverage, its seams and its freedom from placeholders are properties
+> nobody has established until this stage establishes them. `relay-planning`
+> checks its own draft once and writes none of that down, precisely so there is
+> no claim here to be talked into trusting. Derive all three yourself from the
+> actual task cards — under test, a plan that asserted all three had all three
+> false.
 
 And the rule that decides the hard findings:
 
@@ -130,8 +132,10 @@ Every one of these was produced by an agent under test:
   card's holder is left to guess; the repair is `relay-planning`'s.
 - **Classifying by who can fix a finding, or by what it costs the schedule**,
   rather than by which document is wrong. See *Classifying Every Finding*.
-- **Accepting the plan's coverage table as the coverage check**, or its
-  `## Self-check` as evidence that anything was checked.
+- **Treating any coverage table, self-check or "checked" note the plan happens
+  to carry as evidence anything was checked.** `04-plan.md` is not supposed to
+  contain one; if it does, it is a plan that wrote something with no reader, and
+  the coverage check is still yours to derive from the cards.
 - **Editing `04-plan.md` or `02-spec.md`**, writing a corrected requirement or task
   anywhere, settling an open question, choosing between two readings you found, or
   drafting the message the requester gets.
@@ -152,7 +156,7 @@ are indistinguishable.
 One row per requirement in `02-spec.md`'s `## Behaviour` (or, in Standalone
 Mode, the plan's own `## Requirements (standalone...)` section) **and one row
 per entry in its `## Acceptance`**. For each, name the **task step or done-when that actually
-carries it** — not the task the plan's coverage table names. Three results per row:
+carries it**, derived from the cards themselves. Three results per row:
 the step that carries it; **DROPPED**, no step carries it; **NARROWED**, a step
 carries less than the requirement says.
 
@@ -502,7 +506,7 @@ for an approval. See *The Verdict Names What Carries It*.>
 ### Coverage
 <A row per requirement in `## Behaviour` and per entry in `## Acceptance`: the task
 step or done-when carrying it, or DROPPED, or NARROWED — <how>. Then the reverse
-direction, then the gap between this table and the plan's own.>
+direction: a task carrying no requirement.>
 
 ### Run-through
 <One paragraph: the data as it passes card to card in run order, and where it stops
@@ -606,7 +610,7 @@ Every excuse in the left column was produced by an agent under test.
 | "Calling those four minor lets me write them up briefly." | Severity is not what unlocks the short form — the `carried by` line is, and it is written before you get to choose. Downgrading a finding to write less is downgrading the verdict quietly. |
 | "It's internal wiring, it cites a source, and it's explicitly reversible — correctly the plan's decision to take." | It cited a source it never opened. A source cited is not a source read, and the requirement resting on that field name is not implemented if the name is wrong. |
 | "It admits it guessed the field name and says it's a one-line change if wrong." | Then it was a fact somebody could have read in a minute, and not reading it is the finding — including because that same fact may decide whether a requirement-level question exists at all. |
-| "The plan's coverage table maps that requirement to Task 4, so it's carried." | Task 4 only composes and sends a message; the requirement needs something to receive a reply and write a mark, and no card does either. The row was not short, it was false. |
+| "Task 4 is named for that requirement, so it's carried." | Task 4 only composes and sends a message; the requirement needs something to receive a reply and write a mark, and no card does either. A name is not a step; read what the card actually does. |
 | "Every card is defensible on its own." | They were, and the run was broken: every booker got told their booking was released, including the ones whose release the API refused. Walk one run through the cards in order. |
 | "It's recorded as reversible and flagged for her return." | A reversibility label is a finding, not a mitigation. Check it too — a decision reversible through a config key the plan never defines is not reversible at all. |
 | "The file table is missing one filename — doesn't block anything." | That is the easy direction. The row nobody checked made a task responsible for the whole-run abort behaviour, on a card that never mentions the file. |
@@ -628,7 +632,7 @@ Each of these means you are mid-violation, not about to be.
 - "Rejected, but these cards can start tomorrow." / "What can start clean at 09:00."
 - "The fix is to…" / "I'd recommend…" / "Pick a default and record it as reversible."
 - "It cites a source." / "It's a one-line change if wrong."
-- "The plan's coverage table maps it to Task N." (as the coverage check)
+- "Task N is the one for that requirement." (without reading what Task N does)
 - "Every card reads fine on its own."
 - "No `02-spec.md`, so I'll skip the coverage check." (without checking for the
   Standalone Mode marker first)
@@ -650,8 +654,9 @@ Each of these means you are mid-violation, not about to be.
 ## Worked Example
 
 A plan for releasing meeting-room bookings that went unused: eight requirements,
-eight acceptance entries, an approved spec, eight task cards with a files table, a
-decisions table and a self-check claiming all three of its checks pass. Review
+eight acceptance entries, an approved spec, eight task cards with a files table
+and a decisions table, and nothing in the plan saying whether it was ever
+checked — because nothing in a plan ever does. Review
 requested at 17:00 with two implementers free from 09:00, the plan written by the
 team lead, the requester on leave for two weeks, and *"don't hold this up over
 process."*

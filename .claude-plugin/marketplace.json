@@ -15,6 +15,10 @@
     {
       "name": "dv-dotnet",
       "source": "./plugins/dotnet"
+    },
+    {
+      "name": "dv-relay",
+      "source": "./plugins/relay"
     }
   ]
 }

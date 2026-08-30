@@ -191,8 +191,8 @@ checked, not assumed.
 
 One row for every requirement in `02-spec.md`'s `## Behaviour` **and** one for
 every entry in its `## Acceptance`. Answer each from what the software did when
-you ran it — not from a test name, not from the log, not from the plan's coverage
-table. Three results: **met**, **NOT MET**, or **not checkable here**, with the
+you ran it — not from a test name, not from the log, not from a task card's
+*Done when*. Three results: **met**, **NOT MET**, or **not checkable here**, with the
 reason.
 
 The two directions are not the same check and this is where the second defect

@@ -37,9 +37,17 @@ decide them, and does not write requirements.
 
 ## Load the Ground Truth First
 
-Default artifact home: `docs/relay/<request-id>-<slug>/` — default only,
-overridden by any project/user preference (check first). `<request-id>`:
-`YYYY-MM-DD`, your environment's current date — never computed or invented.
+Default artifact home: `docs/relay/<request-id>-<slug>/`.
+
+This is a **default**, and so is the language the artifacts are written in.
+Where the project's always-loaded instruction file names an artifact home or
+an artifact language in its `## Relay process discipline` section — installed
+by `relay-init` — that binds. Absent it, use the path above and the language
+of this conversation, say in your first message which language you are writing
+in, and never infer it from files that already exist. Anything quoted from the
+requester is recorded in the words they used, never translated.
+`<request-id>`: `YYYY-MM-DD`, your environment's current date — never computed
+or invented.
 
 Read all of these from disk before writing a line of review, and never assume
 live session memory of any earlier stage: `02-spec.md` (the subject);
@@ -377,6 +385,44 @@ And **never downgrade a capped finding to make the cap go away** — no critical
 reclassified as moderate, no merging it into another, no approving "with the
 finding noted".
 
+## The Verdict Names What Carries It
+
+A round can produce sixteen findings and hang on three. Written at the same
+length in the same shape, those three are invisible, and a report that has to be
+mined for its own conclusion gets skimmed — which costs the same as not writing
+it.
+
+Two mechanisms, locked to each other:
+
+1. **`### Verdict` names the ids it rests on.** The findings that would have to
+   be closed for the verdict to come out differently — their ids, not a summary
+   of them, on the `carried by:` line. Naming every finding there is the same as
+   naming none. An approval writes `carried by: none` in as many words.
+2. **A finding not named there may use the short form.** Id, severity,
+   classification with its one sentence of why, and one sentence of what is
+   wrong with the quote that shows it. Nothing else. The rest of the
+   apparatus — what a reader is left to guess, the round a continuation started
+   in, the question as you would put it — belongs to the findings the verdict
+   rests on.
+
+**The lock is keyed to the verdict list, not to severity.** You cannot buy
+yourself less writing by calling a finding minor: the `carried by` line is
+written first, and a finding on it never qualifies for the short form whatever
+its severity. A `minor` finding the verdict rests on is written in full.
+
+**This is not a summary covering several findings.** That remains forbidden, and
+so does a finding with no classification. Every finding keeps its own id, its
+own severity, its own classification with its own sentence, and its own quote.
+What shrinks is the apparatus around the findings that are not deciding
+anything — never the number of findings, and never what any one of them is
+identified as.
+
+Two ways this goes wrong, both worse than the length problem it fixes. Moving a
+finding off the `carried by` line so it can be written shorter is downgrading
+the verdict quietly, and it is the same act as the forbidden second verdict.
+Putting a finding on it that would change nothing is padding the line until it
+carries no information, which is the state this section exists to leave.
+
 ## Write `03-spec-review.md`
 
 Append-only across rounds: one `## Round <n>` section per round, newest last,
@@ -396,7 +442,9 @@ Every heading is **required**, in this order.
   `rejected — routed to relay-refining`
   `rejected — round cap reached` — escalated to <person or role>
 Then one sentence saying what makes it that one. No second verdict, no partial
-go-ahead, no praise.>
+go-ahead, no praise. Then, on its own line, `carried by: <ids>` — the findings
+this verdict rests on, or `carried by: none` for an approval. See *The Verdict
+Names What Carries It*.>
 
 ### Coverage
 <One row per item in the intake's `## In scope`, `## Constraints`,
@@ -419,7 +467,8 @@ what it found. A check that found nothing says so in as many words.>
 (requirement-level / layer-level) with one sentence of why; what is wrong, quoting
 the spec; and what a reader of the spec is left to guess. For a continuation, the
 round it started in. For anything only the requester can answer, the question as
-you would put it.>
+you would put it. A finding not named in `carried by` may instead use the short
+form — see *The Verdict Names What Carries It*.>
 
 ### Capped
 <Only in a `rejected — round cap reached` verdict. Omit the heading otherwise.>
@@ -489,6 +538,8 @@ Every excuse in the left column was produced by an agent under test.
 | "Fourteen findings need a human decision, so the policy says immediate stop, no round consumed." | That predicate is for what no round could close. A finding needing the requester's answer is the ordinary case; read that way the predicate stops every review ever written. |
 | "Rejected — but planning isn't blocked on the two clean requirements, that slot isn't lost." | Two verdicts. The reader acts on the permissive one, and the plan comes back derived from a spec you rejected. |
 | "A fifth identical rejection would just repeat the mistake, so I routed it differently." | Right about the fifth rejection, wrong about the remedy. That is what the round cap is for, and it ends with a named human, not a destination you invented. |
+| "Sixteen findings, all of them real, all written up to the same standard." | Real is the bar for including a finding, not for how much of the report it gets. Three of them decide the verdict; say which three on the `carried by` line and let the other thirteen be short. |
+| "Calling those four minor lets me write them up briefly." | Severity is not what unlocks the short form — the `carried by` line is, and it is written before you get to choose. Downgrading a finding to write less is downgrading the verdict quietly. |
 | "I'll note it as something worth a sentence when the spec is next touched." | Nobody touches a spec on the strength of a note. Either it is a finding this round or it is not a finding. |
 | "I'll draft the five questions as a message you can send straight to the requester." | That is the next stage's work. Put the questions in your findings; writing the requester's message is where a review starts deciding. |
 | "There's no acceptance criterion for that one, but what it means is obvious." | Obvious to you, today, with the intake open. `## Acceptance` exists so the requester can check it with you not in the room. |
@@ -510,6 +561,11 @@ Each of these means you are mid-violation, not about to be.
 - Writing a corrected requirement, anywhere.
 - Reaching the verdict without a coverage row for every intake item.
 - Adding a finding because the review looked short.
+- "They're all findings, so they all get the same write-up." (with a verdict that
+  hangs on three of them)
+- Reclassifying a finding, or leaving it off `carried by`, so it can be written
+  shorter.
+- A `carried by` line naming every finding in the round.
 
 ## Worked Example
 
@@ -549,6 +605,12 @@ has to be true?"* Then checks 2 through 8, each producing its line. The verdict
 is one value:
 
 > Round 1 — 2026-08-28 — rejected — routed to `relay-refining`
+> carried by: F-1, F-4
+
+The round produced eleven findings. Two of them decide it: the dropped
+constraint and the reversed in-scope item. The other nine are real, classified,
+quoted — and written in the short form, because closing any of them would not
+have changed the verdict.
 
 Not "rejected, but R-2 and R-3 are clean, so the 16:00 slot is not lost". Clean
 requirements are clean; they are not a partial approval, and a plan derived from

@@ -42,10 +42,16 @@ written for engineers into a page written for the person waiting.
 
 ## Read the State First
 
-Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a **default** —
-a project or user preference for a different location overrides it, so check for
-one and honour it. `<request-id>` defaults to `YYYY-MM-DD` using the date already
-present in your environment; never invent one.
+Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a
+**default**, and so is the language the artifacts are written in. Where the
+project's always-loaded instruction file names an artifact home or an artifact
+language in its `## Relay process discipline` section — installed by
+`relay-init` — that binds. Absent it, use the path above and the language of
+this conversation, say in your first message which language you are writing
+in, and never infer it from files that already exist. Anything quoted from the
+requester is recorded in the words they used, never translated. `<request-id>`
+defaults to `YYYY-MM-DD` using the date already present in your environment;
+never invent one.
 
 Read from disk; never assume live session memory of an earlier stage. You need
 `01-intake.md` for the requester's own words, `02-spec.md` for what was promised

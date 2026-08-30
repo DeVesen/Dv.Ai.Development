@@ -161,10 +161,16 @@ this plan.
 This section assumes the relay chain applies. If Standalone Mode applies
 instead, skip it — there is nothing on disk yet to read.
 
-Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a **default** — a
-project or user preference for a different location overrides it, so check for one
-and honour it. `<request-id>` defaults to `YYYY-MM-DD` using the current date
-already present in your environment; never compute or invent one.
+Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a
+**default**, and so is the language the artifacts are written in. Where the
+project's always-loaded instruction file names an artifact home or an artifact
+language in its `## Relay process discipline` section — installed by
+`relay-init` — that binds. Absent it, use the path above and the language of
+this conversation, say in your first message which language you are writing
+in, and never infer it from files that already exist. Anything quoted from the
+requester is recorded in the words they used, never translated. `<request-id>`
+defaults to `YYYY-MM-DD` using the current date already present in your
+environment; never compute or invent one.
 
 Read all of these from disk, and never assume live session memory of any earlier
 stage: `03-spec-review.md` first (the gate), then `02-spec.md` (the subject),

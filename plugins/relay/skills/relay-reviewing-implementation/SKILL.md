@@ -88,10 +88,16 @@ own appended section of `00-journal.md`. Nothing else, ever — see below.
 
 ## Load the Ground Truth First
 
-Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a **default** —
-a project or user preference for a different location overrides it, so check for
-one and honour it. `<request-id>` defaults to `YYYY-MM-DD` using the current date
-already present in your environment; never compute or invent one.
+Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a
+**default**, and so is the language the artifacts are written in. Where the
+project's always-loaded instruction file names an artifact home or an artifact
+language in its `## Relay process discipline` section — installed by
+`relay-init` — that binds. Absent it, use the path above and the language of
+this conversation, say in your first message which language you are writing
+in, and never infer it from files that already exist. Anything quoted from the
+requester is recorded in the words they used, never translated. `<request-id>`
+defaults to `YYYY-MM-DD` using the current date already present in your
+environment; never compute or invent one.
 
 Read all of these from disk before writing a line of review, and never assume
 live session memory of any earlier stage: `06-implementation-log.md`, the account
@@ -316,6 +322,42 @@ consumes no round.
 3. The open question travels in the handoff and condensed in the journal.
 4. The journal section says the cap was reached.
 
+## The Verdict Names What Carries It
+
+A round can produce sixteen findings and hang on three. Written at the same
+length in the same shape, those three are invisible, and a report that has to be
+mined for its own conclusion gets skimmed — which costs the same as not writing
+it.
+
+Two mechanisms, locked to each other:
+
+1. **`### Verdict` names the ids it rests on.** The findings that would have to
+   be closed for the verdict to come out differently — their ids, not a summary
+   of them, on the `carried by:` line. Naming every finding there is the same as
+   naming none. An approval writes `carried by: none` in as many words.
+2. **A finding not named there may use the short form.** Id, severity,
+   bucket with its one sentence of why, and one sentence of what is
+   wrong with the quote that shows it. Nothing else. The rest of the
+   apparatus — what a reader of the log alone would have believed instead, and the round a continuation started in — belongs to the findings the verdict rests on.
+
+**The lock is keyed to the verdict list, not to severity.** You cannot buy
+yourself less writing by calling a finding minor: the `carried by` line is
+written first, and a finding on it never qualifies for the short form whatever
+its severity. A `minor` finding the verdict rests on is written in full.
+
+**This is not a summary covering several findings.** That remains forbidden, and
+so does a finding with no bucket. Every finding keeps its own id, its own
+severity, its own bucket with its own sentence, and its own quote.
+What shrinks is the apparatus around the findings that are not deciding
+anything — never the number of findings, and never what any one of them is
+identified as.
+
+Two ways this goes wrong, both worse than the length problem it fixes. Moving a
+finding off the `carried by` line so it can be written shorter is downgrading
+the verdict quietly, and it is the same act as the forbidden second verdict.
+Putting a finding on it that would change nothing is padding the line until it
+carries no information, which is the state this section exists to leave.
+
 ## Write `07-implementation-review.md`
 
 Append-only across rounds: one `## Round <n>` section per round, newest last.
@@ -339,7 +381,9 @@ The verdict is one of exactly six values:
 
 ### Verdict
 <One of the six values, with the successor named, then one sentence saying what
-makes it that one. No second verdict, no partial go-ahead.>
+makes it that one. No second verdict, no partial go-ahead. Then, on its own line,
+`carried by: <ids>` — the findings this verdict rests on, or `carried by: none`
+for an approval. See *The Verdict Names What Carries It*.>
 
 ### What was reviewed
 <The change as delivered: whatever this project uses to identify it, or the file
@@ -371,7 +415,9 @@ the one the log assigned, and why. "None recorded" if the section was empty.>
 ### Findings
 <Each: an id; severity; bucket with one sentence of why; what is wrong, quoting
 the requirement or card it contradicts and naming what the software actually did;
-and what a reader of the log alone would have believed instead.>
+and what a reader of the log alone would have believed instead. A finding not
+named in `carried by` may instead use the short form — see *The Verdict Names
+What Carries It*.>
 
 ### Capped
 <Only in a `rejected — round cap reached` verdict. Omit the heading otherwise.>
@@ -451,6 +497,8 @@ Every excuse in the left column was produced by an agent under test.
 | "That crash is pre-existing and outside the three conditions the spec names." | Then it is not a finding against this change. Say so once and leave it out. |
 | "The plan's justification for skipping the documentation is process-shaped, not user-shaped." | It is a decision the plan recorded with a reason. Reviewing the reason is not this stage. |
 | "Nothing was built, so the useful thing I can do is work out the questions to put to the requester." | That is the work of the stage the gate names. Confirm the blocker, write the verdict, hand off. |
+| "Sixteen findings, all of them real, all written up to the same standard." | Real is the bar for including a finding, not for how much of the report it gets. Three of them decide the verdict; say which three on the `carried by` line and let the other thirteen be short. |
+| "Calling those four minor lets me write them up briefly." | Severity is not what unlocks the short form — the `carried by` line is, and it is written before you get to choose. Downgrading a finding to write less is downgrading the verdict quietly. |
 | "It is a nit, so severity does not matter much." | The cap counts critical, moderate and minor and nothing else, and the thing filed as a nit was an exit status a requirement fixed. |
 | "Two days have gone into this and Finance are in the room in half an hour." | Neither is evidence about a finding. Both are reasons the finding matters more. |
 
@@ -473,6 +521,11 @@ Each of these means you are mid-violation, not about to be.
   having run the thing yourself, or without having opened a single test.
 - Reaching for a file-writing tool on anything but
   `07-implementation-review.md` and `00-journal.md`.
+- "They're all findings, so they all get the same write-up." (with a verdict that
+  hangs on three of them)
+- Reclassifying a finding, or leaving it off `carried by`, so it can be written
+  shorter.
+- A `carried by` line naming every finding in the round.
 - Adding a finding because the review looked short.
 
 ## Worked Example

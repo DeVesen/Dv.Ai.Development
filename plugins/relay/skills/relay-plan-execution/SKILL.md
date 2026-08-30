@@ -83,10 +83,16 @@ the next person under the same pressure repeats the round.
 
 ## Load the Ground Truth First
 
-Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a **default**
-— a project or user preference for a different location overrides it, so check
-for one and honour it. `<request-id>` defaults to `YYYY-MM-DD` using the current
-date already present in your environment; never compute or invent one.
+Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a
+**default**, and so is the language the artifacts are written in. Where the
+project's always-loaded instruction file names an artifact home or an artifact
+language in its `## Relay process discipline` section — installed by
+`relay-init` — that binds. Absent it, use the path above and the language of
+this conversation, say in your first message which language you are writing
+in, and never infer it from files that already exist. Anything quoted from the
+requester is recorded in the words they used, never translated. `<request-id>`
+defaults to `YYYY-MM-DD` using the current date already present in your
+environment; never compute or invent one.
 
 Read from disk, and never assume live session memory of an earlier stage:
 `05-plan-review.md` first, because it decides whether you do anything at all;

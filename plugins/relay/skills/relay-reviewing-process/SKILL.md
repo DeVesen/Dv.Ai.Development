@@ -55,10 +55,16 @@ the wrong stage, months of context too late.
 
 ## The Source Is the Journal, and Only the Journal
 
-Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a **default** —
-a project or user preference for a different location overrides it, so check for
-one and honour it. `<request-id>` defaults to `YYYY-MM-DD` using the date already
-in your environment; never invent one.
+Default artifact home: `docs/relay/<request-id>-<slug>/`. This is a
+**default**, and so is the language the artifacts are written in. Where the
+project's always-loaded instruction file names an artifact home or an artifact
+language in its `## Relay process discipline` section — installed by
+`relay-init` — that binds. Absent it, use the path above and the language of
+this conversation, say in your first message which language you are writing
+in, and never infer it from files that already exist. Anything quoted from the
+requester is recorded in the words they used, never translated. `<request-id>`
+defaults to `YYYY-MM-DD` using the date already in your environment; never
+invent one.
 
 You read `00-journal.md`. Nothing else. Not the spec, not the plan, not the
 reviews, not `08-report.md`, not the source, not the tests, and you do not run

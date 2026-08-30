@@ -118,9 +118,17 @@ requiring it. It may appear in `## Decisions and who made them`, never in
 
 ### 1. Load the ground truth
 
-Default artifact home: `docs/relay/<request-id>-<slug>/` — default only,
-overridden by any project/user preference (check first). `<request-id>`:
-`YYYY-MM-DD`, your environment's current date — never computed or invented.
+Default artifact home: `docs/relay/<request-id>-<slug>/`.
+
+This is a **default**, and so is the language the artifacts are written in.
+Where the project's always-loaded instruction file names an artifact home or
+an artifact language in its `## Relay process discipline` section — installed
+by `relay-init` — that binds. Absent it, use the path above and the language
+of this conversation, say in your first message which language you are writing
+in, and never infer it from files that already exist. Anything quoted from the
+requester is recorded in the words they used, never translated.
+`<request-id>`: `YYYY-MM-DD`, your environment's current date — never computed
+or invented.
 
 Read, before asking anything: `01-intake.md`, `00-journal.md`, and — if you
 were routed back — the current `02-spec.md` and the review file. Say what you
@@ -172,6 +180,10 @@ its own edges.
 
 A batch of five questions gets four shallow answers and buries the one that
 mattered. It also produces a transcript instead of a decision.
+
+Where the options in the question you are about to ask differ in cost or
+consequence, your assessment of that difference travels in the same message,
+ahead of the question — see *An Assessment Is Not a Decision*, below.
 
 ### 4. Stop condition
 
@@ -255,6 +267,46 @@ offering three ways forward — continue with `relay-reviewing-spec` / go to a
 different step instead / stop here.
 
 Never invoke the successor yourself, and never write the review's verdict.
+
+## An Assessment Is Not a Decision
+
+Neutrality about **what gets decided** is what this stage is for. Neutrality
+about **what you found out while reading** is not neutrality at all — it is the
+requester choosing without the knowledge they came to you for.
+
+So whenever the options in a question you are about to ask differ in cost or
+consequence in a way you can name:
+
+> Say which one you hold to be the more expensive and why. Same message, ahead
+> of the question, on its own lines, one or two sentences, visibly separate
+> from the question itself.
+
+Three limits, and they are the whole difference between this and the failure
+the rest of this document is about:
+
+1. **It does not narrow the options.** Every option you found still goes to
+   them, including the one you argued against.
+2. **It does not pre-fill an answer.** No default, no "unless you say
+   otherwise", no option written as already taken.
+3. **You say it once.** Their answer settles it whichever way it falls, and it
+   enters the spec as a requirement like any other. Arguing the assessment a
+   second time is deciding for them, slowly.
+
+Under test the opposite failure was observed. Resolving a collision between two
+already-confirmed requirements, an agent put both readings to the requester
+evenly, with their consequences — while holding a view on which one was worse,
+and never saying it, because this document argues hard against deciding for the
+requester. The requester chose the reading the agent held to be worse, on the
+strength of a summary the agent had written and edited down to neutrality.
+
+Withholding an assessment does not leave the decision untouched. It makes the
+decision worse-informed, and it does so invisibly, because a balanced message
+reads like diligence.
+
+Same idiom as `relay-discussing`'s own step 6, which offers two or three
+directions and names the one it would pick. An assessment is evidence you are
+handing over; a decision is an answer you are supplying. Only the second is
+forbidden here.
 
 ## Two Topics Wearing One Request
 
@@ -505,6 +557,8 @@ Rendered in English; the intent is verbatim.
 | "The reviewer didn't flag those sections, so I left them." | A reviewer names what they caught. The bar is the bar, and it applies to the document you hand on, not to the parts that were quoted at you. |
 | "I left the retired assumption's label in place so references to it stay traceable." | The spec is the current binding text. Traceability is what the journal and the review file are for; a stub in the spec is rejected content still in the document. |
 | "I found it in the code, so it's a finding for the meeting rather than a question." | You found that two confirmed items contradict each other. Only the requester can say which one gives way. Reading the code told you the question, not the answer. |
+| "I laid both readings out evenly, so I wasn't deciding it for them." | Even-handed presentation of options you can rank is not neutrality; it is withholding the one thing you were asked to supply. Name the more expensive one and why, then take their answer as final. |
+| "Saying which one I'd pick would be putting my thumb on the scale." | The scale is already yours — you wrote the message, chose the wording and cut the summary. A stated assessment can be argued with. An unstated one cannot. |
 | "It's one word from them to flip it back." | Then it is one message from you to ask. You chose the version where the wrong thing gets built first. |
 | "It hangs on both halves of the request." | You have just said it is two topics. Two success criteria that could ship independently are two specs — say so now, before the next answer gets applied to the wrong scope. |
 | "It's really one feature: data leaves the tool, so the tool should know it left." | That is the requester's framing, which is the thing you are testing, not the answer to it. Check whether either half could be delivered and checked while the other does not exist. |
@@ -520,6 +574,9 @@ Each of these means you are mid-violation, not about to be.
 - "I'll tag which requirements depend on it." / "I'll note what it costs to
   reverse."
 - "They said use their judgement, so this one's mine."
+- "I'll put both options fairly and let them choose." (said while holding a view
+  on which one is worse)
+- "Which one I'd pick isn't mine to say." / "Better to stay neutral on this."
 - "They're not available, so…" / "The meeting needs something to work from."
 - "I'll flag it for the reviewer." / "This is a finding, not a question."
 - "The reviewer didn't mention that part." / "I'll keep the old wording in for
@@ -570,6 +627,11 @@ anything."* → **reshaped** from a format choice into a behavioural requirement
 and **created** a question the list did not contain: whose machines the promise
 covers.
 
+> Before the question, what I think it costs: keeping the offline requirement is
+> the expensive one. It means a second copy of the data that has to be kept in
+> step with the share, and every requirement below it changes shape. Dropping it
+> from this request costs a sentence.
+>
 > Something you and I both confirmed can't both be true: you need this to work
 > with the VPN down, and the data lives on the share. With the share
 > unreachable there is nothing to read, so no choice of output location helps.
@@ -578,7 +640,10 @@ covers.
 *"Ah. Drop the VPN thing from this — I meant the output file. If the share is
 down it should say so, not print zeros. Offline is a separate job."* → a
 contradiction resolved by the only person entitled to resolve it. Under test
-this became a paragraph in the spec instead.
+this became a paragraph in the spec instead. The assessment went in the same
+message and the decision stayed theirs; had they kept the offline requirement,
+that would have been the answer, and the next question would have been about
+keeping the copy in step.
 
 > Where does the file go, and what happens when it can't be written there?
 

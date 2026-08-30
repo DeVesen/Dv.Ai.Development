@@ -18,6 +18,12 @@ once per relay upgrade): it installs one short, exact standing rule into the
 project's always-loaded instruction file, so the check happens without
 anyone having to remember to look.
 
+The same block carries the two project values every stage skill needs and
+none of them can settle for itself: **where relay's artifacts live** and
+**what language they are written in**. Both are asked here, once, and every
+stage reads its answer off the installed rule instead of inferring it from
+whatever files happen to exist.
+
 This is **setup, not a stage**. It has no predecessor artifact, produces no
 `docs/relay/` output, and is not part of the discussing → refining → … →
 reviewing-process chain. It is invoked once per project, and again only if
@@ -63,6 +69,35 @@ or if none of the candidates look like an always-loaded file at all, ask
 which one before writing anything. Do not guess and do not install into more
 than one without being told to.
 
+## The Two Project Values
+
+The block carries two values that are the project's to set and relay's to
+obey. Each has a default worth proposing. Neither is ever guessed.
+
+| Value | Default to propose | Why it is asked rather than assumed |
+|---|---|---|
+| Artifact home | `docs/relay/<request-id>-<slug>/` | Projects keep process documents in their own places, and a stage skill that guesses wrong writes a spec nobody finds. |
+| Artifact language | the language this conversation is being held in | The artifacts' `## Behaviour` and `## Acceptance` sections exist to be checked by the requester. A team that does not work in English cannot check an English spec, and the choice is permanent from the first request onward. |
+
+Ask for both in one message, naming the proposed default for each, and wait
+for an answer before writing anything. Two values that each arrive with a
+proposed answer close in a single round. This skill is setup rather than a
+stage, so the one-question-per-message rule that governs `relay-discussing`
+and `relay-refining` does not apply to it.
+
+**Never read the artifact language off files that already exist.** Not off
+earlier relay artifacts, not off the repository's own documents, not off the
+language the code comments are written in. The very first request in a
+project has nothing to read, and a language inferred once is the language of
+every artifact after it — which is the whole reason this is a value and not
+a default. Same for the artifact home: an existing folder is evidence about
+what happened before, never an answer about what this project wants.
+
+If either answer does not come, nothing is installed. Report which value is
+outstanding and that the block is not in place. A block installed with a
+slot left as a placeholder is worse than no block, because every stage
+downstream reads it as settled.
+
 ## The Rule — Exact Text, Never Recomposed
 
 Every install uses this block, character-for-character, changing only the
@@ -70,7 +105,7 @@ version tag and the eleven skill names if the installed bundle's own names no
 longer match:
 
 ```
-<!-- relay-init:standing-rule v2 -->
+<!-- relay-init:standing-rule v3 -->
 ## Relay process discipline
 
 This project uses relay, an eleven-skill process for taking a request from
@@ -88,8 +123,20 @@ relay-reporting, relay-reviewing-process.
    dispatched to execute one specific, already-bounded task (for example,
    one relay-subagent-driven-development task card). That agent proceeds
    directly with the task it was given.
+3. **Artifact home.** Relay's stage artifacts for this project are written
+   to `<ARTIFACT-HOME>`. This overrides the default each stage skill names
+   for itself.
+4. **Artifact language.** Relay's stage artifacts for this project are
+   written in <ARTIFACT-LANGUAGE>. This governs the artifact files only:
+   the language of the conversation is unaffected, and anything quoted from
+   the requester is recorded in the words they used, never translated.
 <!-- /relay-init:standing-rule -->
 ```
+
+`<ARTIFACT-HOME>` and `<ARTIFACT-LANGUAGE>` are the two slots from *The Two
+Project Values*, and they are the only part of the block that differs between
+projects. They are filled with the answers, never with a placeholder and
+never with a value you chose.
 
 **Do not compose this from the two numbered ideas by hand, even once.**
 Four separate installs, each asked only to "write a rule covering these two
@@ -101,21 +148,25 @@ one fixed block removes that dependency: presence of the exact opening
 comment `<!-- relay-init:standing-rule` is the whole test for "is this
 installed", checkable by a plain text search, no judgment required.
 
-The only edit ever permitted to the block's wording: if the project's actual
-installed skill set does not match the names above — one is missing,
-renamed, or an extra stage exists — replace the name list with the real,
-current one before installing. Never install a name list that does not
-match what is actually on disk in that project.
+Two edits are permitted to the block, and no others. **The skill name list**:
+if the project's actual installed skill set does not match the names above —
+one is missing, renamed, or an extra stage exists — replace the list with the
+real, current one before installing. Never install a name list that does not
+match what is actually on disk in that project. **The two slots**: filled with
+the answers from *The Two Project Values*. Everything else is copied
+character-for-character.
 
 ## Decide What to Do
 
-Read the target file. Exactly one row applies:
+Read the target file. Exactly one row applies. Every row that writes anything
+needs both values from *The Two Project Values* answered first; a row that
+writes nothing needs neither.
 
 | Found in the target file | Do this |
 |---|---|
-| No file, or file exists but is empty | Create it with the block above (plus a one-line title if creating fresh). Nothing existing is at risk — write it directly, no confirmation needed. |
-| The exact opening marker `<!-- relay-init:standing-rule` is present, and its version and skill list already match | Nothing to do. Report that it is already installed; make no edit. |
-| The exact opening marker is present, but the version tag is older or the skill list no longer matches what is on disk | Stale, not missing. Show the old block and the new block side by side and get an explicit yes before replacing — only the text between the two markers changes; nothing outside them is touched. |
+| No file, or file exists but is empty | Once both values are answered, create it with the block above (plus a one-line title if creating fresh). Nothing existing is at risk, so no confirmation is needed beyond those two answers. |
+| The exact opening marker `<!-- relay-init:standing-rule` is present, its version and skill list already match, and both slots carry real values | Nothing to do. Report that it is already installed, and report the artifact home and artifact language it names — later stages are about to obey them. Make no edit and ask for nothing. |
+| The exact opening marker is present, but the version tag is older, the skill list no longer matches what is on disk, or either slot is empty or still a placeholder | Stale, not missing. Ask for whichever of the two values the installed block does not already answer — an existing filled slot is an answer, and re-asking a settled value is how a project ends up with two homes. Then show the old block and the new block side by side and get an explicit yes before replacing — only the text between the two markers changes; nothing outside them is touched. |
 | No marker, but the file already talks about relay or its stage skills in some other, unmarked way (a prior hand-written attempt, a loose reminder) | Do not assume it is equivalent and do not silently duplicate it. Point out what exists, state that it is not the marked, checkable form, and ask whether to replace it, leave it standing alongside the new block, or stop. |
 | No marker, no relay-shaped content, but the file has other real content | Show exactly what will be added and exactly where (e.g. "append this as a new section at the end, after `## Contacts`"), and wait for an explicit yes before writing anything. |
 
@@ -149,7 +200,8 @@ do not proceed on an assumed answer.
 |---|---|
 | Not a stage | No predecessor artifact, no `docs/relay/` output, not part of the chain. |
 | Target | The project's always-loaded instruction file — commonly `CLAUDE.md`, but confirm rather than assume; ask if more than one candidate exists. |
-| Rule text | One exact block, copied verbatim. Never composed by hand from the two requirements. |
+| Rule text | One exact block, copied verbatim. Never composed by hand from the numbered requirements. |
+| Project values | Two slots: artifact home and artifact language. Asked once, with a default proposed for each. Never guessed, and never read off files that already exist. |
 | Idempotency check | Exact-match search for `<!-- relay-init:standing-rule`. Not a prose judgment call. |
 | Confirmation | Required before any edit to a file that already has real content in it. Only a missing or empty file skips it. |
 | Scope | Touches only its own marked block. Everything else in the file is left alone. |
@@ -172,6 +224,15 @@ do not proceed on an assumed answer.
   unclear which file is the project's real always-loaded one, that is a
   question for the person who knows the project, not something to solve by
   writing to every candidate.
+- **Installing the block with a slot left as a placeholder**, or filled with
+  a value nobody was asked for. Every stage downstream reads the installed
+  block as settled, so an unanswered slot does not stay visible as a
+  question — it becomes a decision with nobody's name on it.
+- **Reading the artifact language off files that happen to exist.** An
+  existing English spec is evidence that somebody once wrote in English,
+  not evidence that this project wants its artifacts in English. The first
+  request in a project has nothing to read at all, which is exactly the
+  case the value exists for.
 - **Naming stage skills that are not actually installed.** The block's name
   list must match what is really on disk in that project; a bundle that has
   dropped or renamed a stage should never ship a rule that still names the
@@ -179,6 +240,12 @@ do not proceed on an assumed answer.
 
 ## Disclosed, Not Tested
 
+- **The two project values.** Asking for the artifact home and the artifact
+  language, and carrying them as slots in the block, was added on the
+  strength of an observed failure downstream — artifacts written in a
+  language nobody chose, inferred from files that happened to exist. The
+  asking behavior itself, the stale-slot row of the decide table, and the
+  no-answer-no-install rule have not been put in front of a test run.
 - **Ambiguous target-file detection.** Every scenario this skill was tested
   against handed it one clear, unambiguous target file. The "ask which one"
   behavior for a project with more than one candidate file is included on

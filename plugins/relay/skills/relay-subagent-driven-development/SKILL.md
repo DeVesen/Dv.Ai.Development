@@ -75,7 +75,17 @@ case. For those, stop and ask.
 
 ## Load the Ground Truth First
 
-Default artifact home: `docs/relay/<request-id>-<slug>/`. Read `04-plan.md`,
+Default artifact home: `docs/relay/<request-id>-<slug>/`.
+
+This is a **default**, and so is the language the artifacts are written in.
+Where the project's always-loaded instruction file names an artifact home or
+an artifact language in its `## Relay process discipline` section — installed
+by `relay-init` — that binds. Absent it, use the path above and the language
+of this conversation, say in your first message which language you are writing
+in, and never infer it from files that already exist. Anything quoted from the
+requester is recorded in the words they used, never translated.
+
+Read `04-plan.md`,
 `02-spec.md`, and `00-journal.md` (including `relay-plan-execution`'s section
 confirming the gate was open and this path chosen) from disk. Do not re-check
 the gate — that already happened; arriving here means it is open.

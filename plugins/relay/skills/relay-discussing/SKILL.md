@@ -152,9 +152,15 @@ Default artifact home:
 docs/relay/<request-id>-<slug>/
 ```
 
-Default only — project/user preference for a different location overrides
-it, check first. Neither `docs/relay/` nor this request's folder existing
-yet is normal, not a blocker — create both as needed.
+This is a **default**, and so is the language the artifacts are written in.
+Where the project's always-loaded instruction file names an artifact home or
+an artifact language in its `## Relay process discipline` section — installed
+by `relay-init` — that binds. Absent it, use the path above and the language
+of this conversation, say in your first message which language you are writing
+in, and never infer it from files that already exist. Anything quoted from the
+requester is recorded in the words they used, never translated. Neither
+`docs/relay/` nor this request's folder existing yet is normal, not a blocker
+— create both as needed.
 
 If a folder for this request already exists with an `01-intake.md` in it,
 read it before asking anything, and say what you found. Do not silently

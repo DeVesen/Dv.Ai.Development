@@ -72,7 +72,9 @@ manufacture a decomposition.
 
 Four slots per task, all required, because the implementer has nothing else:
 
-- **Files** — every file this task touches, by exact, verified path.
+- **Files** — every file this task touches, by exact, verified path, tagged
+  `Create:`, `Modify:`, or `Test:` so the implementer knows what already exists
+  and what they are adding.
 - **Consumes** — exact names and signatures taken from earlier tasks, written out in
   full; or "nothing".
 - **Produces** — exact names and signatures later tasks consume; copy them verbatim
@@ -80,10 +82,31 @@ Four slots per task, all required, because the implementer has nothing else:
 - **Done when** — checkable today, by that implementer, with only this card.
 
 **Steps** use checkbox syntax (`- [ ] Step N: ...`), each one action of a few
-minutes. A step whose deliverable is code **is** the code, in a fenced block: the
-actual failing test, run it, the actual minimal implementation, run it. No commit
-step — how the plan is executed (and whether/when to commit) is
-`relay-plan-execution`'s choice, not this stage's.
+minutes, following the test cycle: write the failing test, run it and confirm the
+failure, implement, run it again and confirm the pass.
+
+- A step whose deliverable is code **is** the code, in a fenced block — never a
+  description of what the code should do.
+- A step that runs something names the exact command and the exact result to
+  expect, literally, not "run it and check":
+
+  ```
+  - [ ] Step 2: Run the test
+  Run: `dotnet test --filter FullyQualifiedName~ReconcileTests.Rejects_UnknownStatus`
+  Expected: FAIL — `Rejects_UnknownStatus` not found (test not yet compiled)
+  ```
+
+  and, after the implementation step:
+
+  ```
+  - [ ] Step 4: Run the test again
+  Run: `dotnet test --filter FullyQualifiedName~ReconcileTests.Rejects_UnknownStatus`
+  Expected: PASS
+  ```
+
+No commit step: how the plan is executed — and whether or when to commit — is
+`relay-plan-execution`'s choice, not this stage's. The step cycle stops at the
+verified pass.
 
 ## Forbidden in the Plan
 
@@ -92,8 +115,9 @@ handling written out; "write tests" without the test content; "same shape as Tas
 (its holder never sees Task N — repeat it); a reference to anything no task defines;
 a fact-finding task later tasks depend on; a value that "goes in configuration"; "the
 implementer proposes it at review"; a blocked or parked task; a timebox standing in
-for a decomposition. The test underneath: **read each card as the only thing you can
-see — could you finish it today, alone?**
+for a decomposition; a run step with no exact command or no stated expected result.
+The test underneath: **read each card as the only thing you can see — could you
+finish it today, alone?**
 
 ## Check Your Own Draft, Once
 
@@ -117,6 +141,12 @@ next.
 ## What is being built
 <One short paragraph, in behavioural terms.>
 
+**Architecture** — <2-3 sentences: how the tasks fit together, the approach in
+outline>
+**Tech Stack** — <libraries, frameworks, runtimes the tasks depend on; "unchanged
+from the existing stack" if nothing new>
+**Spec** — `02-spec.md`
+
 ## Global Constraints
 <Copied verbatim from `02-spec.md`'s `## Constraints` section; "none stated" if the
 spec has none. Never invented. The plan reviewer checks every card against these.>
@@ -130,10 +160,11 @@ changes anything the requester can observe.>
 ## Tasks
 
 ### Task <n> — <name>
-**Files** — ...
+**Files** — Create: / Modify: / Test: ... (exact, verified paths)
 **Consumes** — ...
 **Produces** — ...
-**Steps** — checkbox steps; code steps contain the actual code
+**Steps** — checkbox steps; code steps contain the actual code; a step that runs
+something states the exact command and the expected result
 **Done when** — ...
 ```
 
@@ -155,12 +186,15 @@ successor `relay-reviewing-plan`; (3) one question — continue with the success
 different step / stop. Never invoke the successor yourself. When the gate closed,
 same shape with the gate's stage as successor.
 
-**Sent back by the review:** read `05-plan-review.md`'s findings and the current
-plan; bring every named finding to closure (fixed, or explained as not a defect);
-findings marked "needs the requester" go to the requester or their proxy before the
-plan is rewritten around them. Then run the one draft pass over the whole plan and
-hand off again. The plan is only ever the current text — no superseded tasks kept
-for traceability.
+**Sent back by the review — or re-entered by the orchestrator with a list of
+findings:** read `05-plan-review.md`'s findings (or the supplied finding list) and
+the current plan; bring every named finding to closure. Report back one line per
+finding id: `closed` (fixed, plus what changed), `cannot-close` (plus the reason —
+usually the spec does not say what happens here, so it routes to the resolver at
+once), or `not-a-defect` (plus why the finding does not hold). Never guess an
+answer nobody can check just to mark something `closed`. Then run the one draft
+pass over the whole plan and hand off again. The plan is only ever the current
+text — no superseded tasks kept for traceability.
 
 ## Red Flags — Stop, You Are Mid-Violation
 
@@ -169,7 +203,10 @@ for traceability.
 - "The implementer can propose that at review." / "Fill in the host before hand-out."
 - "Task 1 finds that out." (and later tasks are already written)
 - "Same shape as Task N." / A code step with no actual code in it.
+- "Run it and check it works" — no exact command, no stated expected result.
 - "There's no review file, so I'll review the spec myself."
+- A fixer response with no `closed` / `cannot-close` / `not-a-defect` line for one
+  of the findings it was handed.
 - Writing any file other than `04-plan.md` and `00-journal.md`.
 
 A full worked example — an approved spec, a requirement-level gap found during

@@ -45,7 +45,9 @@ Derive the weight from the table, never from your own reading:
   failed attempt did not close the gap.
 - **B — already attempted.** Advisory finding whose `root` matches a ledger entry:
   dropped. Match the thing, not the wording — would the fix be the same one?
-- **C — first sighting.** New advisory finding: goes out once.
+- **C — first sighting.** New advisory finding: goes out once — unless its `guess`
+  is `nothing`, meaning no card holder is left guessing. Then it is dropped and
+  recorded like a B drop: nobody building is blocked by it.
 
 `route: requester` skips the filter entirely and goes to the resolver.
 

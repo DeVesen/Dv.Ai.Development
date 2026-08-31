@@ -14,7 +14,7 @@ rests_on  B4                  only on `fact`; the requirement resting on the cla
 route     planning | requester
 root      <one line, in fix form>
 problem   <what is wrong, quoting the plan>
-guess     <what the card holder would have to guess>
+guess     <what the card holder would have to guess, or `nothing`>
 ```
 
 `root` is the field the ledger matches on. Write it as the fix, not as the
@@ -36,6 +36,10 @@ root: Task 3 defines clearLayers, Task 7 consumes clearFullLayers
 | `other` | Everything else |
 
 Categories are observations. A finding that fits two takes the earlier row.
+
+`guess` is what routing rule C turns on, so it is never left blank: write what the
+implementer cannot answer from the card, or `nothing` when the finding costs them
+nothing to build against.
 
 ## Review coverage report
 

@@ -75,7 +75,11 @@ make the review faster — a right verdict by a skipped route got lucky.
 ## Write `05-plan-review.md`
 
 Append-only across rounds: one `## Round <n> — <date> — <verdict>` section per pass,
-newest last, never editing an earlier round. Two verdict values:
+newest last, never editing an earlier round. **Enforced, not just stated:** read
+the file's current full content before writing this round's section. Your edit
+must be a pure addition — every byte already in the file must still be there,
+unchanged, afterward. Never use a full-file overwrite tool for this file; use an
+append-style edit. Two verdict values:
 
 | Condition | Verdict | Successor |
 |---|---|---|
@@ -96,11 +100,25 @@ or a question needs a human who is not answering, stop the loop — hand the ope
 question to the requester or their proxy in the hand-off and say the chain waits
 there.
 
+**Reconcile the previous round's named gaps.** After the five checks above are
+otherwise done, check your results against the immediately preceding round's
+Coverage check (Check 1) for every `DROPPED` or `NARROWED` row. One that this
+round's fresh check did not independently re-surface does not simply go
+unmentioned — state whether it is now **closed** (naming the task or step that
+now carries it) or still **open** (filed as a finding this round like any
+other). The five checks above still run in full regardless of what the last
+round found; this only catches what a fresh pass missed the second time.
+
 ## Journal and Hand-Off
 
 Append 2–4 sentences of prose to `00-journal.md` under
 `## <date> — relay-reviewing-plan`: the verdict, what decided it, anything
 escalated.
+
+**Enforced, not just stated:** read the file's current full content before
+writing. Your edit must be a pure addition — every byte already in the file
+must still be there, unchanged, afterward. Never use a full-file overwrite
+tool for this file; use an append-style edit.
 
 End with exactly: (1) status line — review written, verdict, exact path; (2) the
 successor per the verdict table; (3) one question — continue with the successor /
@@ -120,3 +138,5 @@ while you wait.
 - "Every card reads fine on its own." — without having walked one run end to end.
 - Reaching a verdict without a row for every acceptance entry.
 - Writing any file other than `05-plan-review.md` and `00-journal.md`.
+- A prior round's `DROPPED`/`NARROWED` row just isn't mentioned this round.
+- Overwriting `05-plan-review.md` or `00-journal.md` instead of appending to it.

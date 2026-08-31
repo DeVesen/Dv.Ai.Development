@@ -145,6 +145,11 @@ Append 2–4 sentences of prose to `00-journal.md` under `## <date> — relay-pl
 how the work was cut, which decisions planning took, anything that turned out to be
 a readable fact.
 
+**Enforced, not just stated:** read the file's current full content before
+writing. Your edit must be a pure addition — every byte already in the file
+must still be there, unchanged, afterward. Never use a full-file overwrite
+tool for this file; use an append-style edit.
+
 End with exactly: (1) status line — plan written, task count, exact path; (2) the
 successor `relay-reviewing-plan`; (3) one question — continue with the successor /
 different step / stop. Never invoke the successor yourself. When the gate closed,

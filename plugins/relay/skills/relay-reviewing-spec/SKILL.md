@@ -60,6 +60,26 @@ Say in your first message which you found and which are missing. If
 `01-intake.md` does not exist, say so and stop: an approval without it is an
 approval of a document against nothing.
 
+### Read Scope by Round
+
+**Full-reread rounds: 1–2. Scoped rounds: 3+.** The first two rounds read
+`01-intake.md` in full for Check 1 — that is where the large structural gaps
+get caught, and nothing less than the whole intake catches them.
+
+From round 3 onward, default Check 1's scope to: the diff in `02-spec.md` and
+`01-intake.md` since the version this stage last reviewed; the specific
+intake rows and requirements named in the most recently closed findings; and
+a full coverage sweep restricted to whichever single section of the intake is
+closest to the area just changed. Say in your first message which scope you
+used and why.
+
+**Escape hatch, always available:** if a changed requirement is referenced by,
+or interacts with, requirements outside the just-changed area, run the full
+sweep for those interacting areas regardless of round number. The threshold
+lowers the default cost once the process has converged past its early,
+high-yield rounds — it never licenses skipping a check that could still catch
+something.
+
 **This stage writes exactly two files:** `03-spec-review.md`, and its own
 appended section of `00-journal.md`. It creates no others, and it never edits
 `02-spec.md`. Open questions and blocked decisions go in your handoff message,
@@ -303,6 +323,22 @@ not *how bad it is*.
   layer-level finding here is a note about a stage that has not run, and it does
   not gate the verdict.
 
+Within requirement-level, one further distinction, because the two need
+different handling once found:
+
+- **Requirement-level defect** — the requirement itself is missing, reversed,
+  ambiguous, contradictory, unattributed, or not what the intake confirmed.
+  May need requester input; may interact with other findings; gets its own
+  focused round the way *The Verdict Names What Carries It* describes.
+- **Acceptance-coverage-only gap** — the requirement's own wording is already
+  correct and complete. Nothing about the requirement text is missing or
+  wrong. Only a `## Acceptance` entry is missing for one sub-case the
+  requirement's own wording already describes — a different mode, trigger, or
+  closing cause named in a cascade the requirement already states in full.
+  No requester input is needed and the requirement text does not change. See
+  *Batching Acceptance-Coverage Gaps*, below — these are handled differently
+  from defects, not folded into the same one-at-a-time caution.
+
 Because this review only ever looks at the spec and the intake, **essentially
 every real finding is requirement-level.** A layer-level section with several
 entries in it is the signal that the axis slipped. Under test, two reviewers
@@ -327,6 +363,22 @@ stage does.
 Naming who you think has to answer a finding is useful and belongs in the
 finding. It is not the classification and it is not a second destination.
 
+### Batching Acceptance-Coverage Gaps
+
+A requirement-level defect gets found and routed one focused round at a
+time — right, because a defect can interact with others and may need the
+requester's own answer before it is safe to close. An acceptance-coverage-only
+gap needs neither: it is mechanically fixable, and one such gap on one
+requirement has no bearing on another gap on a different requirement.
+
+So: when this review's checks surface an acceptance-coverage-only gap, do not
+stop at the first one and let the rest wait for a future round to be noticed.
+Sweep for every sub-case of every cascade requirement in `## Behaviour` that
+lacks its own `## Acceptance` entry, and list every gap you find, together, as
+one batched list in this round's findings — whether or not any of them ends
+up on the `carried by` line. `relay-refining` closes the whole batch in a
+single pass; see its *Re-entry* section.
+
 ## Rounds: When the Same Finding Comes Back
 
 A spec can arrive here more than once for the same underlying issue. Before
@@ -339,6 +391,25 @@ writing any finding, read `00-journal.md` and every prior round in
 > still missing its final step is a continuation.
 
 A continuation does not start a fresh count. Say which round it started in.
+
+### Closing or Reconfirming What the Last Round Named
+
+Run this once the fresh review above is otherwise complete. Check your
+results against the **immediately preceding round's** `### Coverage` and
+`### Checkability` tables — not every round ever written. If either table
+there named a partial or missing item — a `DROPPED`/`REVERSED` row, a `NONE`
+row — that this round's own fresh checks did not independently re-surface as
+one of this round's findings, it does not simply go unmentioned. State one of
+two things, for that exact item: **closed**, naming the requirement or
+acceptance text that now carries it; or **still open**, filed as a finding in
+this round like any other requirement-level finding.
+
+This is reconciliation, not trust — the fresh, independent review above still
+runs in full regardless of what the last round's tables said. This step only
+catches the case where a fresh pass, run as if for the first time, happens
+not to notice something a previous round had already named. A prior round's
+named gap may never simply disappear from the record without an explicit
+closing statement.
 
 ### Caps
 
@@ -429,6 +500,11 @@ Append-only across rounds: one `## Round <n>` section per round, newest last,
 and never edit a section written by an earlier round. A prior round's wording is
 the evidence for the continuation test.
 
+**Enforced, not just stated.** Read the file's current full content before
+writing this round's section. Your edit must be a pure addition — every byte
+already in the file must still be there, unchanged, afterward. Never use a
+full-file overwrite tool for this file; use an append-style edit.
+
 Every heading is **required**, in this order.
 
 ```markdown
@@ -468,7 +544,9 @@ what it found. A check that found nothing says so in as many words.>
 the spec; and what a reader of the spec is left to guess. For a continuation, the
 round it started in. For anything only the requester can answer, the question as
 you would put it. A finding not named in `carried by` may instead use the short
-form — see *The Verdict Names What Carries It*.>
+form — see *The Verdict Names What Carries It*. A requirement-level finding that
+is an acceptance-coverage-only gap is marked as such, and every one found this
+round is listed together — see *Batching Acceptance-Coverage Gaps*.>
 
 ### Capped
 <Only in a `rejected — round cap reached` verdict. Omit the heading otherwise.>
@@ -495,6 +573,10 @@ contradicting itself, is finished. Its author's style is not yours to review.
 ## Append to `00-journal.md`
 
 Append-only. Never edit a section written by an earlier stage or round.
+**Enforced, not just stated:** read the file's current full content before
+writing. Your edit must be a pure addition — every byte already in the file
+must still be there, unchanged, afterward. Never use a full-file overwrite
+tool for this file; use an append-style edit.
 
 ```markdown
 ## <date> — relay-reviewing-spec
@@ -566,6 +648,9 @@ Each of these means you are mid-violation, not about to be.
 - Reclassifying a finding, or leaving it off `carried by`, so it can be written
   shorter.
 - A `carried by` line naming every finding in the round.
+- A prior round's Coverage or Checkability gap just isn't mentioned this round.
+- One acceptance-coverage gap fixed this round, the rest left for "next time".
+- Overwriting `03-spec-review.md` or `00-journal.md` instead of appending to it.
 
 ## Worked Example
 

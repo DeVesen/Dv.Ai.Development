@@ -245,7 +245,11 @@ a binding document as the confirmer of decisions that person had never seen.
 
 ### 6. Append to `00-journal.md`
 
-Append-only. Never edit a section written by an earlier stage.
+Append-only. Never edit a section written by an earlier stage. **Enforced,
+not just stated:** read the file's current full content before writing. Your
+edit must be a pure addition — every byte already in the file must still be
+there, unchanged, afterward. Never use a full-file overwrite tool for this
+file; use an append-style edit.
 
 ```markdown
 ## <date> — relay-refining
@@ -511,12 +515,18 @@ the destination for the first kind. This is a full entry path, not a patch job:
    reviewer names what they caught. Under test, an agent removed the three
    hedge words the review had quoted and left the `## Assumptions` and
    `## Open questions` sections standing, because nobody had named those.
-4. **The spec is only ever the current binding text.** Do not keep a rejected
+4. **Close every batched acceptance-coverage-only gap in one pass.** When the
+   review names several of these together — see `relay-reviewing-spec`'s
+   *Batching Acceptance-Coverage Gaps* — add every missing `## Acceptance`
+   entry the same time you touch the document. None of them need the
+   requester's input and none change requirement text, so nothing about
+   closing all of them together needs to wait for a later round.
+5. **The spec is only ever the current binding text.** Do not keep a rejected
    requirement, a retired assumption, or a previous revision's wording for
    traceability — under test, an agent kept a deleted assumption as a stub "so
    references to it remain traceable". Traceability lives in `00-journal.md`
    and in the review file, both still there.
-5. **Say what changed and why it was sent back**, in the journal section and in
+6. **Say what changed and why it was sent back**, in the journal section and in
    the handoff. Silently producing a better spec loses the reason the loop ran
    twice — which is what the relay's last stage reviews.
 

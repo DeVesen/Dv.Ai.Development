@@ -30,6 +30,40 @@ fresh read is the point, and the ledger carries continuity. Stage 2 never gets
 `04-plan.md`, so the resolver reads the spec without knowing how someone already
 wanted to build it.
 
+## After Every Dispatch: Verify, Then Checkpoint
+
+Two mandatory steps between one subagent returning and the next one being
+dispatched, whenever that subagent's contract touched `00-journal.md` or a
+numbered review file (`03-spec-review.md`, `05-plan-review.md`). Skip neither,
+whatever the round's own outcome was — this runs on rejections and approvals
+alike.
+
+**1. Verify the write grew the file, never shrank it.** Before dispatch,
+record that file's current line count (0 if it does not exist yet). After the
+subagent returns, reread the file and check two things: the new count is
+`>=` the old one, and the old content still appears verbatim inside the new
+file — a plain substring check is enough, nothing fancier is needed. If
+either check fails: **stop.** Do not dispatch the next stage. Surface it to
+the user as a data-loss event — name the file, the count before, the count
+after — and do not attempt to silently continue past it or silently repair
+it yourself.
+
+**2. Commit the bundle directory.** Once the check passes, commit only
+`docs/relay/<request-id>-<slug>/` — `git add <bundle-dir>`, never `-A`, never
+the whole repo — with a mechanical message:
+`relay(<request-id>): round <n> — <stage-skill>`. You run this yourself; the
+subagent that just returned should not need git access. Do this
+unconditionally, every round, regardless of whether the working repository as
+a whole is mid-feature-branch, carries unrelated uncommitted changes
+elsewhere, or is otherwise nowhere near ready to ship — this commit is a
+checkpoint of the relay process's own artifacts, not a statement about the
+feature branch's readiness.
+
+Skipping either step because "the round obviously went fine" is the exact
+failure these steps exist to catch: the incident that motivated them produced
+no error, no warning, and no sign anything was wrong until a much later round
+noticed files the journal still referenced no longer existed on disk.
+
 ## Routing a finding
 
 Each finding carries a `category` — an observation, not a verdict — and a `route`.
@@ -70,9 +104,17 @@ you dropped, with why**. Without that last block your filtering is the one decis
 nobody can check. Template: `references/ledger.md`. Record formats:
 `references/agent-contracts.md`.
 
+You also run the git checkpoint after every dispatch — see *After Every
+Dispatch: Verify, Then Checkpoint*, above. That commit is yours to make, not a
+subagent's.
+
 ## Red flags
 
 - Judging whether a finding is worth passing on. That call was made upstream.
 - Downgrading an A finding, or dropping one because it came back.
 - Giving a subagent a file it does not need "for context".
 - Reaching the cap with A findings open and approving anyway.
+- Skipping the post-dispatch integrity check or the git checkpoint because the
+  round obviously went fine.
+- Treating unrelated uncommitted changes elsewhere in the repo as a reason to
+  skip or delay the bundle-directory commit.

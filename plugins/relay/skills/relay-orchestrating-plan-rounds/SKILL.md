@@ -66,17 +66,28 @@ noticed files the journal still referenced no longer existed on disk.
 
 ## Routing a finding
 
-Each finding carries a `category` — an observation, not a verdict — and a `route`.
-Derive the weight from the table, never from your own reading:
+Each finding carries a `category` and a `stage` — both observations, not verdicts —
+and a `route`. Derive the weight from the stage, never from your own reading:
 
-| category  | Weight |
+| stage | Weight |
 |---|---|
-| `coverage`, `seam`, `card`, `run` | **A** |
-| `fact` with `rests_on` filled | **A** |
-| `fact` without `rests_on`, `other` | advisory |
+| `build` | **A** |
+| `acceptance` | **T** |
+| `note` | advisory |
+| any stage, `fact` with `rests_on` filled | **A** |
+| missing `stage` | fall back to the category table below, and record the fallback |
+
+Category table, for a finding that arrived without a `stage`:
+`coverage`, `seam`, `card`, `run` → **A**; `fact` with `rests_on` → **A**;
+`fact` without `rests_on`, `other` → advisory.
 
 - **A — goes out every round**, including one a previous round already attempted: a
-  failed attempt did not close the gap.
+  failed attempt did not close the gap. An A entry is the only kind that holds a
+  plan.
+- **T — travels.** Goes out with the round the way an A does, and never holds the
+  plan: on approval it rides to `relay-reviewing-implementation` as an
+  implementation note, where one test run settles in seconds what a plan reader can
+  only argue about.
 - **B — already attempted.** Advisory finding whose `root` matches a ledger entry:
   dropped. Match the thing, not the wording — would the fix be the same one?
 - **C — first sighting.** New advisory finding: goes out once — unless its `guess`
@@ -141,7 +152,12 @@ subagent's.
 ## Red flags
 
 - Judging whether a finding is worth passing on. That call was made upstream.
-- Downgrading an A finding, or dropping one because it came back.
+- Downgrading an A finding, or dropping one because it came back. A reviewer
+  calling something advisory, or staging it `note`, does not make it advisory if
+  its own fields say otherwise — the table decides, and it reads the fields.
+- Reading a finding's text and settling its `stage` yourself. The reviewer observed
+  it. A finding that arrived without one falls back to the category table and gets
+  a line in the journal's *caps and weights* slot; it does not become your call.
 - Giving a subagent a file it does not need "for context".
 - Reaching the cap with A findings open and approving anyway.
 - Ending a round with a miss named in the coverage report and no ledger entry for

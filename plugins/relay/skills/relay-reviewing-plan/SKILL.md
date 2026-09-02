@@ -91,12 +91,21 @@ append-style edit. Two verdict values:
 
 Per round: the verdict with one sentence of what decides it; one result line per
 check (also "no finding"); then the findings — each with an id, **blocking** or
-**advisory**, one sentence of what is wrong with a quote from the plan, what the
-card's holder is left to guess, and a mark: **planning defect** (planning fixes it)
+**advisory**, **its stage**, one sentence of what is wrong with a quote from the
+plan, what the card's holder is left to guess, and a mark: **planning defect**
+(planning fixes it)
 or **needs the requester** (travels as an open question, put the way you would ask
 it — `relay-planning` takes it to the requester or their proxy before rewriting).
 Never write the fix, never split the verdict into "clean, start now" and "needs a
 patch first" — a reader acts on the permissive half.
+
+**Every finding states its stage**, which answers one question: what happens if
+this goes out unrepaired? **build** — it does not compile, it does not run, or a
+requirement is implemented in no card at all. **acceptance** — an `## Acceptance`
+entry no card carries; the code may be right, nothing checks that it is. **note** —
+a `Done when` that claims more than its steps assert, an internal no card asserts.
+The stage is an observation like the finding itself: you state what breaks, and
+whoever routes it decides what that is worth.
 
 **Escalation instead of round caps:** if the same root cause survives a second pass,
 or a question needs a human who is not answering, stop the loop — hand the open
@@ -140,6 +149,7 @@ while you wait.
 - "Task N is named for that requirement." — read what the card actually does.
 - "Every card reads fine on its own." — without having walked one run end to end.
 - Reaching a verdict without a row for every acceptance entry.
+- A finding with no stage on it.
 - Writing any file other than `05-plan-review.md` and `00-journal.md`.
 - A prior round's `DROPPED`/`NARROWED` row just isn't mentioned this round.
 - Overwriting `05-plan-review.md` or `00-journal.md` instead of appending to it.

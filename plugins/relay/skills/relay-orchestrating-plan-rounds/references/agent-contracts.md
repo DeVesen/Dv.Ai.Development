@@ -5,11 +5,12 @@ What each subagent returns, so routing stays a lookup instead of a judgment.
 ## Review finding record
 
 One block per finding. The reviewer states what it observed; the orchestrator
-derives the weight from `category`.
+derives the weight from `stage`.
 
 ```
 id        PR2-03              round-local, assigned by the reviewer
 category  coverage | seam | card | run | fact | other
+stage     build | acceptance | note
 rests_on  B4                  only on `fact`; the requirement resting on the claim
 route     planning | requester
 root      <one line, in fix form>
@@ -23,6 +24,22 @@ complaint:
 ```
 root: Task 3 defines clearLayers, Task 7 consumes clearFullLayers
 ```
+
+### The stages
+
+`stage` is the second observation, and it answers one question only: **what happens
+if this goes out unrepaired?** Like `category` it is an observation, not a verdict —
+you are not saying how much it matters, you are saying what breaks.
+
+| stage | Observed condition |
+|---|---|
+| `build` | it does not compile, it does not run, or a requirement is implemented in no card at all |
+| `acceptance` | an `## Acceptance` entry with no card carrying it — the code may well be right, nothing checks that it is |
+| `note` | a `Done when` that claims more than its steps assert; an internal the cards do not assert |
+
+A finding that fits two takes the earlier row. `stage` and `category` are
+independent: a `coverage` finding is `build` when nothing implements the
+requirement and `acceptance` when the requirement is implemented but untested.
 
 ### The categories
 

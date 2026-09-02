@@ -93,17 +93,28 @@ One block per question. The resolver answers only from what it can point at.
 
 ```
 id        PR2-05
-herkunft  spec | fakt | spec-defekt | requester
+herkunft  spec | fakt | default | spec-defekt | requester
 answer    <the answer; empty for spec-defekt and requester>
-evidence  <verbatim quote for `spec`; file:line or command for `fakt`>
+evidence  <verbatim quote for `spec`; file:line or command for `fakt`; for
+           `default`, the convention and the line that reverses it>
 question  <only for `requester`: the question as it should be put>
 ```
 
-The test the resolver applies to every question:
+The test the resolver applies to every question has two halves, and both get asked:
 
-> Would two different answers change anything the requester can see or check?
+1. **Would two different answers change anything the requester can see or check?**
+   **No** — it is a technical decision and belongs to planning, not to the
+   resolver.
+2. **Yes — then what does being wrong cost?** Two conditions, both required: the
+   reversal is a one-line change, *and* one of the answers is the conventional one
+   in this kind of software. Then it is `default`: answer it, name the convention
+   as the reason, name the line that reverses it, and it travels as a note the
+   requester can overrule rather than a question that stops the chain. If either
+   condition fails — the reversal touches more than a line, or no answer is the
+   conventional one — it is `requester`, and the resolver never answers it,
+   whatever it could argue.
 
-**Yes** — `requester`. It never answers, whatever it could argue. **No** — it is a
-technical decision and belongs to planning, not to the resolver. Applied honestly,
-the resolver has no bucket for a guess of its own: it resolves what a document or a
-file already answers, and routes the rest.
+A `default` is not a bucket for guesses. It requires a convention you can name and
+a reversal you can point at, and the answer is recorded where the requester will
+see it: `06-clarifications.md`'s `## Defaults the requester can overrule`. If you
+find yourself writing "probably" or "most likely", the question was `requester`.

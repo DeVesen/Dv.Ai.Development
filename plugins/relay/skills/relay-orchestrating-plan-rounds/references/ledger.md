@@ -72,6 +72,13 @@ Written by the orchestrator only. One file per request, appended across rounds.
 <Per entry: the question as it should be put, who has to answer it, and what it
 blocks. Includes every `spec-defekt` and every standoff.>
 
+## Defaults the requester can overrule
+| lid | question | the answer taken | the convention it rests on | the line that reverses it |
+|-----|----------|------------------|----------------------------|---------------------------|
+<Every `default` answer record. These block nothing — the chain went on. The block
+exists so the requester sees what was settled on their behalf while it is still a
+one-line change.>
+
 ## Dropped
 | lid | root | rounds seen | why dropped |
 |-----|------|-------------|-------------|

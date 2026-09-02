@@ -85,8 +85,24 @@ Four slots per task, all required, because the implementer has nothing else:
 minutes, following the test cycle: write the failing test, run it and confirm the
 failure, implement, run it again and confirm the pass.
 
-- A step whose deliverable is code **is** the code, in a fenced block — never a
-  description of what the code should do.
+- An implementation step whose deliverable is code **is** the code, in a fenced
+  block — never a description of what the code should do.
+- A step that writes tests is **one line per test**, and that line has two parts:
+  the test's own name, and the assertion in words — the state it starts from, the
+  act, and the one thing it asserts. That line plus the run step's exact command
+  is the whole test step:
+
+  ```
+  - [ ] Step 1: Write the failing tests
+  `Rejects_UnknownStatus` — a payload whose status is "frobnicated" gets a 400
+  back and writes no row.
+  `Accepts_KnownStatus` — a payload whose status is "settled" gets a 200 back and
+  writes exactly one row.
+  ```
+
+  Test lines are the one place where reading is not the check that counts: the
+  reviewer cannot compile them, and running them can. So they stay one line each,
+  and the test run in `relay-subagent-driven-development` is what proves them.
 - A step that runs something names the exact command and the exact result to
   expect, literally, not "run it and check":
 
@@ -111,7 +127,7 @@ verified pass.
 ## Forbidden in the Plan
 
 `TBD` in any wording; "add appropriate error handling / validation" without the
-handling written out; "write tests" without the test content; "same shape as Task N"
+handling written out; "write tests" without the test lines; "same shape as Task N"
 (its holder never sees Task N — repeat it); a reference to anything no task defines;
 a fact-finding task later tasks depend on; a value that "goes in configuration"; "the
 implementer proposes it at review"; a blocked or parked task; a timebox standing in
@@ -163,7 +179,8 @@ changes anything the requester can observe.>
 **Files** — Create: / Modify: / Test: ... (exact, verified paths)
 **Consumes** — ...
 **Produces** — ...
-**Steps** — checkbox steps; code steps contain the actual code; a step that runs
+**Steps** — checkbox steps; implementation steps contain the actual code; a test
+step is one line per test — its name plus the assertion in words; a step that runs
 something states the exact command and the expected result
 **Done when** — ...
 ```
@@ -202,7 +219,7 @@ text — no superseded tasks kept for traceability.
 - "That goes in configuration." / "Reversible — confirm on her return."
 - "The implementer can propose that at review." / "Fill in the host before hand-out."
 - "Task 1 finds that out." (and later tasks are already written)
-- "Same shape as Task N." / A code step with no actual code in it.
+- "Same shape as Task N." / An implementation step with no actual code in it.
 - "Run it and check it works" — no exact command, no stated expected result.
 - "There's no review file, so I'll review the spec myself."
 - A fixer response with no `closed` / `cannot-close` / `not-a-defect` line for one

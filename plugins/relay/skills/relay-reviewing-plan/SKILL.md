@@ -59,9 +59,12 @@ and "not checked" are indistinguishable.
    mitigation. A fact asserted from a source nobody opened ("per the docs index") is
    a finding: **did anybody actually open the thing?** Also check the cards against
    `## Global Constraints`.
-5. **Code steps.** Every step whose deliverable is code contains actual code in a
-   fenced block, not a description. Structural only — correctness is
-   `relay-reviewing-implementation`'s job.
+5. **Steps carry their deliverable.** Two shapes, one per kind of step. An
+   implementation step contains actual code in a fenced block. A test step
+   contains one line per test, and that line names the test and states its
+   assertion in words — the starting state, the act, the one thing asserted; the
+   run step next to it names the command. Structural only — whether a test is
+   right is settled by running it, in `relay-reviewing-implementation`.
 
 ## Calibration
 

@@ -91,6 +91,13 @@ Derive the weight from the table, never from your own reading:
 - `## Behaviour` points with a test step **or a stated reason none is possible**:
   **90 %**. The review reports both fractions and names every miss; you compare the
   numbers.
+- **Every miss the coverage report names becomes a ledger entry** — with a finding
+  record or without one. Open it on the miss's own wording as `root`, `category
+  coverage`, and route it like any other entry of that category. Copying the
+  report's wording is a transcription, not a quality call: you are not deciding
+  the miss is real, the review already did. A miss named in the report and carried
+  by no record is the case this exists for — it is the one gap that, unrecorded,
+  no round after this one can see.
 - **Four rounds.** With A findings open at the cap, the run ends, no plan approved.
 
 Some findings leave the loop before the cap — see the ledger states in
@@ -137,6 +144,8 @@ subagent's.
 - Downgrading an A finding, or dropping one because it came back.
 - Giving a subagent a file it does not need "for context".
 - Reaching the cap with A findings open and approving anyway.
+- Ending a round with a miss named in the coverage report and no ledger entry for
+  it, because no finding record came with it.
 - Skipping the post-dispatch integrity check or the git checkpoint because the
   round obviously went fine.
 - Closing a round with no `00-journal.md` section of your own, or with a slot in it

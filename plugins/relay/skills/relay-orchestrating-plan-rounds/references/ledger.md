@@ -15,6 +15,13 @@ attempts  1                   failed attempts, counted — not inferred
 status    see below
 ```
 
+An entry is opened from either of two sources: a finding record, or a miss named
+in the round's coverage report. A named miss with no finding record still gets its
+entry — `root` is the report's own wording for it, `category` is `coverage`, and
+`seen` stays empty for that round because no round-local finding id exists. This
+is the only entry you author yourself, and it is transcription: the review decided
+the miss was real, you record that it was named.
+
 Round-local finding ids restart each round (`PR1-01`, `PR2-01`), so every incoming
 finding has to be mapped onto an `lid` first. Map on `root`, using the root-cause
 test: **would the answer that closes it be the same answer as last time?** Identical

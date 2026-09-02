@@ -98,11 +98,34 @@ Some findings leave the loop before the cap — see the ledger states in
 
 ## What you write
 
-`06-clarifications.md`, yours alone — no subagent touches it. It carries resolver
-answers with their provenance, what is still open for a human, and **every finding
-you dropped, with why**. Without that last block your filtering is the one decision
-nobody can check. Template: `references/ledger.md`. Record formats:
-`references/agent-contracts.md`.
+Two files. Both are yours alone — no subagent touches either.
+
+`06-clarifications.md` carries resolver answers with their provenance, what is
+still open for a human, and **every finding you dropped, with why**. Without that
+last block your filtering is the one decision nobody can check. Template:
+`references/ledger.md`. Record formats: `references/agent-contracts.md`.
+
+`00-journal.md` gets one section per round, appended under
+`## <date> — relay-orchestrating-plan-rounds`. Five slots, all **REQUIRED**, every
+round, including a round where a slot's answer is "none":
+
+- **lids out** — which ledger ids went to which stage.
+- **came back** — which findings returned, and the lid each mapped onto.
+- **dropped** — every finding you dropped this round and the rule that dropped it.
+- **caps and weights** — every change to the round cap, and every finding whose
+  weight came out other than its table row says, each with the reason.
+- **off contract** — every deviation from a stage's contract this round: a stage
+  dispatched with less than its contract's inputs, a full check replaced by a
+  narrow one, a round deliberately narrowed to fewer findings than were open.
+
+**Enforced, not just stated:** read the file's current full content before
+writing. Your edit must be a pure addition — every byte already in the file must
+still be there, unchanged, afterward. Never use a full-file overwrite tool for
+this file; use an append-style edit.
+
+`relay-reviewing-process` may read `00-journal.md` and nothing else. A decision
+that shaped the loop and lives only in `06-clarifications.md` or in your own
+ledger did not happen as far as that stage can tell.
 
 You also run the git checkpoint after every dispatch — see *After Every
 Dispatch: Verify, Then Checkpoint*, above. That commit is yours to make, not a
@@ -116,5 +139,7 @@ subagent's.
 - Reaching the cap with A findings open and approving anyway.
 - Skipping the post-dispatch integrity check or the git checkpoint because the
   round obviously went fine.
+- Closing a round with no `00-journal.md` section of your own, or with a slot in it
+  left off because the answer was "none".
 - Treating unrelated uncommitted changes elsewhere in the repo as a reason to
   skip or delay the bundle-directory commit.

@@ -19,6 +19,10 @@
     {
       "name": "dv-relay",
       "source": "./plugins/relay"
+    },
+    {
+      "name": "dv-working-capturing",
+      "source": "./plugins/working-capturing"
     }
   ]
 }

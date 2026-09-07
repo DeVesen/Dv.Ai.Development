@@ -19,6 +19,7 @@ Passenden Skill unten per Skill-Tool aufrufen — nicht alle vorab laden.
 | Spec vor Planung/Bau reviewen | relay-reviewing-spec |
 | Spec zu Plan mit Task Cards machen | relay-planning |
 | Plan vor Ausfuehrung reviewen | relay-reviewing-plan |
+| Plan-Review-Runden ohne Person in der Schleife steuern | relay-orchestrating-plan-rounds |
 | Ausfuehrungsweg fuer freigegebenen Plan waehlen (solo vs. Subagent) | relay-plan-execution |
 | Plan solo in einer Session bauen, ohne Card-Reviewer | relay-executing-plans |
 | Plan mit Subagent pro Card + unabhaengigem Reviewer bauen | relay-subagent-driven-development |

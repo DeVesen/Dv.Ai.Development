@@ -74,22 +74,30 @@ observable at runtime"). A criterion the planner derived must be traceable to th
 behaviour's own wording; if deriving it means deciding what a user sees or which
 case counts as an error, that is a `route: requester` finding instead.
 
-## Fixer report
+## Re-planner report
 
-`relay-planning` on re-entry returns one line per ledger id it received:
+`relay-planning` on re-entry (stage 4) receives `04-plan.md`, `02-spec.md`, the
+round's routed findings **and the resolver's answers to them**, and returns one line
+per ledger id it received:
 
 | Status | Meaning | Orchestrator does |
 |---|---|---|
 | `closed` | fixed, plus one line on what changed | ledger to "claimed closed" — the next review checks it independently |
-| `cannot-close` | plus the reason, e.g. the spec does not say what happens at X | route to the resolver at once |
-| `not-a-defect` | plus why the fixer disagrees | if the next review raises the same `root`, it is a standoff — out of the loop |
+| `cannot-close` | plus the reason | the resolver already answered this one in the same round, so no lane is left: record it under `## Open for a human`, entry stays open |
+| `not-a-defect` | plus why the re-planner disagrees | if the next review raises the same `root`, it is a standoff — out of the loop |
 
 A `closed` is never believed. If the next review reports the same `root`, that
 is the evidence of a failed attempt, and the attempt count rises.
 
+The re-planner never settles a question the spec left open — that answer arrived with
+its inputs. A `cannot-close` that reads like a decision it could have made is a
+finding the resolver failed to answer, not a licence to answer it at stage 4.
+
 ## Resolver answer record
 
-One block per question. The resolver answers only from what it can point at.
+Stage 3 receives `02-spec.md` and the round's routed findings — never `04-plan.md`.
+One block per question. The resolver answers only from what it can point at, and it
+writes no file: its answers travel to stage 4 and into `06-clarifications.md`.
 
 ```
 id        PR2-05

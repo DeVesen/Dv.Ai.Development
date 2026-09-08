@@ -31,26 +31,30 @@ wording is not the test, and neither is a rewritten finding a new one.
 
 ```
 open
- ├─ A, every round ──────────────> attempts 1 ──> attempts 2 ──> resolver
+ ├─ A, every round ──────────────> attempts 1 ──> attempts 2 ──> open for a human
  ├─ advisory, seen before ───────> dropped (rule B)
- ├─ fixer: cannot-close ──────────> resolver                       (at once)
- ├─ fixer: not-a-defect,
- │   raised again by the review ─> standoff, out of the loop       (at once)
- └─ fixer: closed,
+ ├─ resolver: requester
+ │   or spec-defekt ────────────> open for a human, entry stays open
+ ├─ re-planner: cannot-close ────> open for a human, entry stays open  (at once)
+ ├─ re-planner: not-a-defect,
+ │   raised again by the review ─> standoff, out of the loop           (at once)
+ └─ re-planner: closed,
      not raised again ──────────> done
 ```
 
-`attempts` rises only when the fixer reported `closed` and the next review
+`attempts` rises only when the re-planner reported `closed` and the next review
 raised the same `root` again. A finding nobody worked on stays at its count — it
 never burns the escalation budget.
 
-An A entry reaching the resolver keeps going out to the fixer as well: the spec
-question and the planning defect are worked in parallel, and only the human ends the
-loop early.
+Every routed entry reaches stage 3 and then stage 4 inside the same round — the spec
+question and the planning defect are never worked in separate rounds. `open for a
+human` is a record, not a pause: the entry stays open, the loop runs on, and only the
+cap or a standoff ends it.
 
 ## Round accounting
 
-One round is one pass of stage 3 plus stage 4. Four rounds is the cap. At the cap:
+A round ends with a plan review: round 1 is stage 1 plus stage 2, every round after
+it is stages 3, 4 and 2. Four rounds is the cap. At the cap:
 
 - no A entries open → the plan is approved, successor `relay-plan-execution`
 - any A entry open → the run ends with no approved plan; the plan, the open entries

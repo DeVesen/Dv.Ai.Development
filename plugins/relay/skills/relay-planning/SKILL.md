@@ -205,10 +205,14 @@ same shape with the gate's stage as successor.
 
 **Sent back by the review — or re-entered by the orchestrator with a list of
 findings:** read `05-plan-review.md`'s findings (or the supplied finding list) and
-the current plan; bring every named finding to closure. Report back one line per
-finding id: `closed` (fixed, plus what changed), `cannot-close` (plus the reason —
-usually the spec does not say what happens here, so it routes to the resolver at
-once), or `not-a-defect` (plus why the finding does not hold). Never guess an
+the current plan; bring every named finding to closure. When the orchestrator ran a
+resolver first, the answers to those findings arrive with them — they are inputs, not
+suggestions: a finding whose answer came with it is closed against that answer, never
+against a reading of your own. Report back one line per finding id: `closed` (fixed,
+plus what changed), `cannot-close` (plus the reason — typically that nothing you were
+handed says what happens here, which puts it in front of a human rather than back
+into another planning pass), or `not-a-defect` (plus why the finding does not
+hold). Never guess an
 answer nobody can check just to mark something `closed`. Then run the one draft
 pass over the whole plan and hand off again. The plan is only ever the current
 text — no superseded tasks kept for traceability.
@@ -222,8 +226,10 @@ text — no superseded tasks kept for traceability.
 - "Same shape as Task N." / An implementation step with no actual code in it.
 - "Run it and check it works" — no exact command, no stated expected result.
 - "There's no review file, so I'll review the spec myself."
-- A fixer response with no `closed` / `cannot-close` / `not-a-defect` line for one
-  of the findings it was handed.
+- A re-entry response with no `closed` / `cannot-close` / `not-a-defect` line for
+  one of the findings it was handed.
+- Answering a question the spec left open because a resolver answer for it was
+  missing. That is a `cannot-close`, not a decision to make here.
 - Writing any file other than `04-plan.md` and `00-journal.md`.
 
 A full worked example — an approved spec, a requirement-level gap found during

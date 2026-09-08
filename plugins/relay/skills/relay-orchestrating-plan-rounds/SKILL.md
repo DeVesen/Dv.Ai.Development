@@ -1,6 +1,6 @@
 ---
 name: relay-orchestrating-plan-rounds
-description: Use when a spec has to reach an approved plan with no person in the loop, when planning and plan review run as separate subagents that share no session or memory, when a plan review has come back with findings and something has to decide which of them go back out, or when a review-and-fix loop has already run more than once on the same plan.
+description: Use when an already-approved spec has to reach an approved plan with no person in the loop, when planning and plan review run as separate subagents that share no session or memory, when a plan review has come back with findings and something has to decide which of them go back out, or when a review-and-fix loop has already run more than once on the same plan.
 ---
 
 # Relay Orchestrating Plan Rounds
@@ -16,19 +16,58 @@ category to a table, `root` to the ledger, round number to the cap.
 
 ## The pipeline
 
-Stages 1 and 2 run once, before the first plan.
+The spec arrives **already approved by the requester**. No spec review runs inside
+this loop — your first act is to record that approval so the planner's gate can read
+it.
 
 | Stage | Subagent | Receives | Writes |
 |---|---|---|---|
-| 1 | `relay-reviewing-spec` | `02-spec.md`, `01-intake.md` | `03-spec-review.md` |
-| 2 | resolver | `02-spec.md`, `01-intake.md`, the open questions | nothing — returns answers |
-| 3 | `relay-planning` | `02-spec.md`; on re-entry also `04-plan.md` + findings | `04-plan.md`, journal |
-| 4 | `relay-reviewing-plan` | `04-plan.md`, `02-spec.md` | `05-plan-review.md`, journal |
+| 0 | none — you | the requester's approval | `03-spec-review.md` |
+| 1 | `relay-planning` | `02-spec.md` | `04-plan.md`, journal |
+| 2 | `relay-reviewing-plan` | `04-plan.md`, `02-spec.md` | `05-plan-review.md`, journal |
+| 3 | resolver | `02-spec.md`, the round's routed findings | nothing — returns answers |
+| 4 | `relay-planning` on re-entry | `04-plan.md`, `02-spec.md`, the routed findings **and stage 3's answers** | `04-plan.md`, journal |
 
-Every subagent reads code; none writes code. Stage 4 never gets a prior round — a
-fresh read is the point, and the ledger carries continuity. Stage 2 never gets
-`04-plan.md`, so the resolver reads the spec without knowing how someone already
-wanted to build it.
+Stages 0 and 1 run once. Then 2 → 3 → 4 → 2 loops until a verdict or the cap. A round
+ends with a plan review, so round 1 is stage 1 plus stage 2, and every round after it
+is stages 3, 4 and 2.
+
+Every subagent reads code; none writes code. Four input rules, none of them a matter
+of convenience:
+
+- **Stage 1 gets `02-spec.md` and nothing else.** No plan exists yet that could
+  narrow how the spec is read.
+- **Stage 2 never gets a prior round.** A fresh read is the point, and the ledger
+  carries the continuity.
+- **Stage 3 never gets `04-plan.md`.** Findings quote the plan where it matters, so
+  the resolver answers out of the spec instead of being argued into the approach
+  someone already chose.
+- **Stage 4 is the only stage that edits the plan.** The resolver answers and never
+  fixes; the re-planner fixes and never settles what the spec left open.
+
+### Stage 0 — recording the approval
+
+`relay-planning` writes no plan unless the latest `## Round <n>` section of
+`03-spec-review.md` reads `approved`. That gate stays. You satisfy it by recording
+the approval you were handed, once, before stage 1:
+
+```markdown
+# Spec review — <request-id>-<slug>
+
+## Round 0 — <date> — approved
+
+### Verdict
+`approved` — successor `relay-planning`. Approved directly by the requester; no
+`relay-reviewing-spec` pass ran for this request.
+carried by: none
+
+### Checks run
+none — this is a recorded human approval, not a review.
+```
+
+Write it only when an approval was actually handed to you. Writing this section to
+unblock a spec nobody signed off forges the gate rather than passing it — with no
+approval in hand, stop and ask for one.
 
 ## After Every Dispatch: Verify, Then Checkpoint
 
@@ -94,7 +133,12 @@ Category table, for a finding that arrived without a `stage`:
   is `nothing`, meaning no card holder is left guessing. Then it is dropped and
   recorded like a B drop: nobody building is blocked by it.
 
-`route: requester` skips the filter entirely and goes to the resolver.
+`route: requester` skips the weight filter entirely — rules B and C cannot reach it.
+It goes out with the rest.
+
+**Goes out** means one thing throughout: into stage 3's question set, and from there
+into stage 4's fix list together with the answer stage 3 returned for it. There is no
+route that reaches the re-planner without passing the resolver first.
 
 ## Gates and exits
 
@@ -109,6 +153,9 @@ Category table, for a finding that arrived without a `stage`:
   the miss is real, the review already did. A miss named in the report and carried
   by no record is the case this exists for — it is the one gap that, unrecorded,
   no round after this one can see.
+- **A question the resolver cannot answer does not stop the run.** It comes back
+  `requester` or `spec-defekt`, goes into `06-clarifications.md`'s `## Open for a
+  human`, and its ledger entry stays open. Recording it is not pausing on it.
 - **Four rounds.** With A findings open at the cap, the run ends, no plan approved.
 
 Some findings leave the loop before the cap — see the ledger states in
@@ -116,7 +163,8 @@ Some findings leave the loop before the cap — see the ledger states in
 
 ## What you write
 
-Two files. Both are yours alone — no subagent touches either.
+Two files across the run, plus `03-spec-review.md` once at stage 0. All three are
+yours alone — no subagent touches any of them.
 
 `06-clarifications.md` carries resolver answers with their provenance, what is
 still open for a human, and **every finding you dropped, with why**. Without that
@@ -152,6 +200,13 @@ subagent's.
 ## Red flags
 
 - Judging whether a finding is worth passing on. That call was made upstream.
+- Reviewing the spec, or sending it back. It was approved before you were called;
+  reopening it undoes a decision the requester already closed.
+- Writing stage 0's approval section for a spec nobody signed off.
+- Letting the resolver edit `04-plan.md`, or letting the re-planner settle a question
+  the spec left open. Stage 3 answers, stage 4 fixes.
+- Halting the run because the resolver returned `requester`. Record it, run on, let
+  the cap decide what it costs.
 - Downgrading an A finding, or dropping one because it came back. A reviewer
   calling something advisory, or staging it `note`, does not make it advisory if
   its own fields say otherwise — the table decides, and it reads the fields.

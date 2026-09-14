@@ -14,6 +14,12 @@ description: >
 
 > **Mantra:** Software soll *sauber*, *funktional*, *getestet*, *wartbar* und *nachhaltig* sein.
 
+**Zwei getrennte Fragen.** `craft-modulith-thinking`, `craft-architecture-styles` und die zwei
+Framework-Brücken (`craft-dotnet-modulith-bridge`, `craft-angular-modulith-bridge`) beantworten die
+**Struktur-Frage**: wie ist geschnitten — Abteilung, Zimmer, Deploy-Einheit. Dieser Skill
+beantwortet die **Code-Frage**: was passiert *innerhalb* einer Einheit — Methode, Klasse,
+Komponente. Ein sauberer Struktur-Schnitt ersetzt keinen sauberen Code, und umgekehrt.
+
 ---
 
 ## Prinzipien-Hierarchie
@@ -138,6 +144,11 @@ Entwurf vor Implementation — grafisch, nicht textuell.
 
 ## Architektur & Prinzipien-Kanon
 
+> Architektur-**Stile** (Layered, Onion, Clean, Hexagonal, Vertical Slice, Monolith,
+> Modulith, Microservices, CQRS, Event Sourcing) stehen im Skill `craft-architecture-styles`.
+> Der ist Nachschlagewerk, nicht Vorgabe — die verbindliche Wahl steht in der Projekt-CLAUDE.md.
+> Der DDD-Schnitt hat Vorrang vor jedem Stil-Etikett.
+
 ### DDD — Domain-Driven Design
 
 → [references/ddd.md](references/ddd.md)
@@ -196,6 +207,9 @@ Error-Handling-Mechanik, Smells-Taxonomie → Skill `craft-clean-code`.
 | **Clean Code** — Naming/Comments/Formatting/Error-Handling-Mechanik/Smells | Skill `craft-clean-code` |
 | **Unit-Testing** — Testnaming, AAA, TDD | Skill `craft-unit-testing` |
 | **Integration-Testing** — Cleanup, Testinfrastruktur | Skill `craft-integration-testing` |
+| **Architektur-Stile** — Layering/Deployment/Data-Flow-Achse | Skill `craft-architecture-styles` |
+| **Modulith-Denken** — Unternehmensbild, Konzern/Tochterunternehmen | Skill `craft-modulith-thinking` |
+| **Modulith in .NET / Angular** — Projekt-/Feature-Zuschnitt | Skill `craft-dotnet-modulith-bridge` / `craft-angular-modulith-bridge` |
 
 ---
 

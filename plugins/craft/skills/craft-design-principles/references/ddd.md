@@ -45,7 +45,17 @@ Integration zwischen Contexts = Integrationsmethode. Jeder Context selbst = gesc
 | **Context Map** | Beziehungen und Abhängigkeiten zwischen Contexts dokumentieren |
 | **Anti-Corruption Layer (ACL)** | Übersetzungsschicht an Bounded-Context-Grenze — schützt die Domänensprache |
 | **Published Language** | Geteiltes Format für Context-zu-Context-Kommunikation (z.B. Events, DTOs) |
-| **Shared Kernel** | Gemeinsam gepflegter Code-Kern zwischen zwei Contexts — sparsam einsetzen |
+| **Shared Kernel** | Gemeinsam gepflegter *Domänen*-Code-Kern zwischen zwei Contexts — sparsam einsetzen |
+| **Separate Ways** | Zwei Contexts ohne sinnvolle Beziehung — bewusst *nicht* integrieren, keine gemeinsame Abstraktion erzwingen |
+
+> **Namenskollision, kein Widerspruch:** `craft-dotnet-modulith-bridge`s `SharedKernel`-Projekt
+> heißt genauso wie das DDD-Muster oben, meint aber das Gegenteil — reines technisches Plumbing
+> (`IDomainEvent`, `IClock`), Domänensprache dort ist ausdrücklich verboten. Das DDD-Muster
+> „Shared Kernel" (gemeinsamer *Domänen*-Code) ist damit nicht gemeint.
+>
+> **Separate Ways** ist der Fachbegriff für `craft-modulith-thinking`s Konzern/Tochterunternehmen-Bild:
+> zwei Systeme, die nie eins waren, verdienen keine gemeinsame Abstraktion nur um der
+> Einheitlichkeit willen.
 
 ---
 
@@ -181,3 +191,8 @@ Wann einsetzen: Wenn Logik mehrere Aggregates betrifft und in keinem natürlich 
 | **Presentation** | Controller, Minimal API Endpoints — dünn, delegieren an Application |
 
 Projekte/Assemblies nach Bounded Context schneiden, nicht nach technischer Ebene.
+
+Für den konkreten Ordner-/Projekt-Zuschnitt im jeweiligen Projekt (Feature-Ordner,
+`.csproj`-Zuschnitt, Zimmertiefe, Contracts-Grenze): `craft-angular-modulith-bridge` bzw.
+`craft-dotnet-modulith-bridge`. Diese Tabellen bleiben die generische DDD-Übersetzung, die
+Brücken machen sie projektkonkret.

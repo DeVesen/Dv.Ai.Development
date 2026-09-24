@@ -8,6 +8,7 @@ public sealed partial class AngularRunner
 {
     private const int MaxErrors = 50;
     private const int MaxWarnings = 20;
+    private const int FallbackLineCount = 10;
     private const int BuildTimeoutSeconds = 300;
     private const int TestTimeoutSeconds = 600;
 
@@ -21,6 +22,10 @@ public sealed partial class AngularRunner
 
     [GeneratedRegex(@"(?:WARNING in |warning\s+TS\d+:|⚠\s*\[WARNING\])", RegexOptions.IgnoreCase)]
     private static partial Regex BuildWarningLineRegex();
+
+    // esbuild prints the file location on its own line below the "[ERROR]" header: "src/app/x.ts:10:9:"
+    [GeneratedRegex(@"^(.+:\d+:\d+):$")]
+    private static partial Regex EsbuildLocationLineRegex();
 
     [GeneratedRegex(@"Executed\s+\d+\s+of\s+\d+.*", RegexOptions.IgnoreCase)]
     private static partial Regex KarmaExecutedRegex();
@@ -122,12 +127,17 @@ public sealed partial class AngularRunner
     public static AngularBuildResult ParseBuildOutput(string stdout, string stderr, int exitCode)
     {
         var lines = StripAnsi(stdout + "\n" + stderr).Split('\n');
-        var errors = lines.Where(l => BuildErrorLineRegex().IsMatch(l)).Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray();
+        var recognizedErrors = ExtractBuildErrors(lines);
         var warnings = lines.Where(l => BuildWarningLineRegex().IsMatch(l)).Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(MaxWarnings).ToArray();
 
+        // The caller never sees the raw console: a failure without a recognized error line
+        // still has to carry something actionable, so hand back the tail of the output.
+        var useFallback = exitCode != 0 && recognizedErrors.Length == 0;
+        var errors = useFallback ? LastNonEmptyLines(lines) : recognizedErrors;
+
         var summary = exitCode == 0 ? $"Build successful. {warnings.Length} warning(s)."
-            : errors.Length > 0 ? $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s)."
-            : $"Build failed (exitCode {exitCode}) — see Console output for details.";
+            : useFallback ? $"Build failed (exitCode {exitCode}) with no recognized error line — errors holds the last {errors.Length} output line(s)."
+            : $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s).";
 
         return new AngularBuildResult { Success = exitCode == 0, Command = "ng build", Errors = errors, Warnings = warnings, ExitCode = exitCode, Summary = summary };
     }
@@ -291,4 +301,23 @@ public sealed partial class AngularRunner
     };
 
     private static string StripAnsi(string input) => AnsiRegex().Replace(input, string.Empty);
+
+    private static string[] ExtractBuildErrors(string[] lines) =>
+        lines.Select((line, index) => (line, index))
+            .Where(x => BuildErrorLineRegex().IsMatch(x.line))
+            .Select(x => WithEsbuildLocation(lines, x.index))
+            .Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray();
+
+    private static string WithEsbuildLocation(string[] lines, int headerIndex)
+    {
+        var header = lines[headerIndex].Trim();
+        if (!header.Contains("[ERROR]", StringComparison.OrdinalIgnoreCase)) return header;
+
+        var nextLine = lines.Skip(headerIndex + 1).Select(l => l.Trim()).FirstOrDefault(l => l.Length > 0) ?? string.Empty;
+        var location = EsbuildLocationLineRegex().Match(nextLine);
+        return location.Success ? $"{location.Groups[1].Value}: {header}" : header;
+    }
+
+    private static string[] LastNonEmptyLines(IEnumerable<string> lines) =>
+        lines.Select(l => l.Trim()).Where(l => l.Length > 0).TakeLast(FallbackLineCount).ToArray();
 }

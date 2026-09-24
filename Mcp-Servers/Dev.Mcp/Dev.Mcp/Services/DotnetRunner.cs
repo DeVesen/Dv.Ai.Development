@@ -8,16 +8,17 @@ public sealed partial class DotnetRunner
 {
     private const int MaxErrors = 50;
     private const int MaxWarnings = 20;
+    private const int FallbackLineCount = 10;
     private const int BuildTimeoutSeconds = 300;
     private const int TestTimeoutSeconds = 600;
 
     [GeneratedRegex(@"\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07\x1B]*(?:\x07|\x1B\\))")]
     private static partial Regex AnsiRegex();
 
-    [GeneratedRegex(@"\): error\s+[A-Z]+\d+:", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?:\)|\s): error\s+[A-Z]+\d+:", RegexOptions.IgnoreCase)]
     private static partial Regex BuildErrorLineRegex();
 
-    [GeneratedRegex(@"\): warning\s+[A-Z]+\d+:", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?:\)|\s): warning\s+[A-Z]+\d+:", RegexOptions.IgnoreCase)]
     private static partial Regex BuildWarningLineRegex();
 
     [GeneratedRegex(@"Build\s+(succeeded|FAILED)\.", RegexOptions.IgnoreCase)]
@@ -82,17 +83,24 @@ public sealed partial class DotnetRunner
         var combined = StripAnsi(stdout + "\n" + stderr);
         var lines = combined.Split('\n');
 
-        var errors = lines.Where(l => BuildErrorLineRegex().IsMatch(l)).Select(l => l.Trim())
+        var recognizedErrors = lines.Where(l => BuildErrorLineRegex().IsMatch(l)).Select(l => l.Trim())
             .Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray();
         var warnings = lines.Where(l => BuildWarningLineRegex().IsMatch(l)).Select(l => l.Trim())
             .Where(l => l.Length > 0).Distinct().Take(MaxWarnings).ToArray();
+
+        // The caller never sees the raw console: a failure without a recognized error line
+        // still has to carry something actionable, so hand back the tail of the output.
+        var useFallback = exitCode != 0 && recognizedErrors.Length == 0;
+        var errors = useFallback ? LastNonEmptyLines(lines) : recognizedErrors;
 
         var summaryLine = lines.Select(l => BuildSummaryLineRegex().Match(l)).FirstOrDefault(m => m.Success);
         var summary = summaryLine is { Success: true }
             ? summaryLine.Value.Trim()
             : exitCode == 0
                 ? $"Build succeeded. {warnings.Length} warning(s)."
-                : $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s).";
+                : useFallback
+                    ? $"Build failed (exitCode {exitCode}) with no recognized error line — errors holds the last {errors.Length} output line(s)."
+                    : $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s).";
 
         return new DotnetBuildResult { Success = exitCode == 0, Command = "dotnet build", Errors = errors, Warnings = warnings, ExitCode = exitCode, Summary = summary };
     }
@@ -117,7 +125,7 @@ public sealed partial class DotnetRunner
         // Last-resort fallback: last 10 non-empty lines when nothing else matched
         var fallbackLines = (exitCode != 0 && failedTests.Length == 0 && buildErrors.Length == 0
                              && noMatchLine is not { Success: true } && !abortLine.Success)
-            ? lines.Where(l => l.Trim().Length > 0).TakeLast(10).Select(l => l.Trim()).ToArray()
+            ? LastNonEmptyLines(lines)
             : [];
 
         var errors = failedTests.Length > 0 ? failedTests
@@ -321,6 +329,9 @@ public sealed partial class DotnetRunner
     }
 
     private static string StripAnsi(string input) => AnsiRegex().Replace(input, string.Empty);
+
+    private static string[] LastNonEmptyLines(IEnumerable<string> lines) =>
+        lines.Select(l => l.Trim()).Where(l => l.Length > 0).TakeLast(FallbackLineCount).ToArray();
 
     private static bool ValidatePath(string path, out string error)
     {

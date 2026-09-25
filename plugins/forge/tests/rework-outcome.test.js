@@ -70,6 +70,26 @@ test('evaluate_BareJsonWithoutFence_IsParsed', () => {
   assert.deepEqual(result.escalated, ['AC-04']);
 });
 
+test('evaluate_BareJsonFollowedByResultsShapedExample_Throws', () => {
+  const findings = [finding('AC-04', 'red')];
+  const text = `=== AGGREGATE ===\n${aggregateText(findings)}\n=== REWORK-RESULT ===\n`
+    + `${JSON.stringify({ results: [{ location: 'AC-04', status: 'spec-question' }] })}\n`
+    + `Format-Beispiel: ${JSON.stringify({ results: [{ location: 'AC-04', status: 'unchanged' }] })}\n`;
+  assert.throws(() => outcome.evaluate(text, 'spec-question'), /Mehrdeutig/);
+});
+
+test('evaluate_BareJsonWithNestedObjectsAndBracesInStrings_IsParsed', () => {
+  const findings = [finding('Kopf {Ziel}', 'red')];
+  const results = [{ location: 'Kopf {Ziel}', status: 'spec-question' }];
+  const text = `=== AGGREGATE ===\n${aggregateText(findings)}\n=== REWORK-RESULT ===\n`
+    + `Siehe Vorlage {foo: 1} zur Orientierung.\n`
+    + `${JSON.stringify({ results })}\n`
+    + `Nachtrag: {bar} bleibt unveraendert.\n`;
+  const result = outcome.evaluate(text, 'spec-question');
+  assert.equal(result.allRedEscalated, true);
+  assert.deepEqual(result.escalated, ['Kopf {Ziel}']);
+});
+
 test('evaluate_NoJsonAtAll_Throws', () => {
   const text = `=== AGGREGATE ===\n${aggregateText([finding('Task 1', 'red')])}\n=== REWORK-RESULT ===\nNur Text, kein JSON.\n`;
   assert.throws(() => outcome.evaluate(text, 'spec-question'), /Kein JSON-Block/);

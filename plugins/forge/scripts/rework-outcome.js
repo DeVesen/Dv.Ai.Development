@@ -35,7 +35,7 @@ function isValidEntry(entry) {
     && typeof entry.status === 'string' && entry.status !== '';
 }
 
-function parseBalancedObjectAt(text, start) {
+function findBalancedObjectEnd(text, start) {
   let depth = 0;
   let inString = false;
   let escape = false;
@@ -51,28 +51,33 @@ function parseBalancedObjectAt(text, start) {
     if (ch === '{') depth++;
     else if (ch === '}') {
       depth--;
-      if (depth === 0) {
-        try {
-          return JSON.parse(text.slice(start, i + 1));
-        } catch {
-          return undefined;
-        }
-      }
+      if (depth === 0) return i;
     }
   }
-  return undefined;
+  return -1;
 }
 
-function findLastBareResultsObject(text) {
-  for (let i = text.length - 1; i >= 0; i--) {
-    if (text[i] !== '{') continue;
-    const parsed = parseBalancedObjectAt(text, i);
-    if (parsed !== undefined && parsed !== null && typeof parsed === 'object'
-      && Object.prototype.hasOwnProperty.call(parsed, 'results')) {
-      return parsed;
+function findBareResultsObjects(text) {
+  const found = [];
+  let i = 0;
+  while (i < text.length) {
+    if (text[i] !== '{') { i++; continue; }
+    const end = findBalancedObjectEnd(text, i);
+    if (end === -1) { i++; continue; }
+    let parsed;
+    try {
+      parsed = JSON.parse(text.slice(i, end + 1));
+    } catch {
+      parsed = undefined;
     }
+    if (parsed === undefined) { i++; continue; }
+    if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
+      && Object.prototype.hasOwnProperty.call(parsed, 'results')) {
+      found.push(parsed);
+    }
+    i = end + 1;
   }
-  return undefined;
+  return found;
 }
 
 function parseResults(result) {
@@ -82,8 +87,10 @@ function parseResults(result) {
   if (blocks.length > 0) {
     parsed = JSON.parse(blocks[blocks.length - 1][1]);
   } else {
-    parsed = findLastBareResultsObject(text);
-    if (parsed === undefined) throw new Error('Kein JSON-Block in der Rückgabe des Nacharbeiters');
+    const bareObjects = findBareResultsObjects(text);
+    if (bareObjects.length === 0) throw new Error('Kein JSON-Block in der Rückgabe des Nacharbeiters');
+    if (bareObjects.length > 1) throw new Error('Mehrdeutige Rückgabe: mehrere JSON-Objekte mit "results" ohne json-Fence');
+    parsed = bareObjects[0];
   }
   const valid = parsed !== null && typeof parsed === 'object' && Array.isArray(parsed.results)
     && parsed.results.every(isValidEntry);

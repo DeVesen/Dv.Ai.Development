@@ -242,6 +242,7 @@ Drucktests nach `superpowers:writing-skills`, jeweils Baseline ohne Skill gegen 
 - Test 3 (domain-modeling Konflikt): Baseline fragte „erledigt“ ab, übersah „Ticket“ gegen das Glossar · mit Skill bestanden — Widerspruch „Ticket“/„Aufgabe“ benannt, kanonischer Begriff vorgeschlagen, drei Grenzfall-Szenarien.
 - Test 4 (domain-modeling Ziel): mit verfügbarem Glossar-Skill nannten Baseline und Skill-Lauf den Aufruf von `dv-working-capturing:glossary`, der Skill-Lauf zusätzlich Synonym und Szenarien, keine `CONTEXT.md` · ohne Glossar-Skill legte die Baseline nichts an; mit Skill bestanden — `CONTEXT.md` im Format aus Abschnitt 7 mit **Serie** sofort angelegt.
 - Test 5 (with-docs Verbund): Baseline stellte freie Fragen ohne Begriffsprüfung und schrieb eine Spec mit „Ticket“ außerhalb jedes Formats · mit Skill bestanden — Begriffskonflikt als Q1 der kompletten Frontier im Rundenformat; die erzeugte Spec nennt „Ticket“ nur im W-Eintrag zum Begriff, Beleg-Tag `Historie`.
+- Test 6 (Verbund mit Review, Spec aus Test 2): completeness kein 🔴 zu AC-IDs, ein 🟡 zu fehlendem AC für ausgeblendete Spalten (inhaltlich) · consistency keine Findings, kein 🔴 zu Verweisen · keiner der beiden meldete einen W-Eintrag als Finding.
 
 ## 11. Nachtrag Spec-Review-Spec
 

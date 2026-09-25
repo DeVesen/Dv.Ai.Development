@@ -51,3 +51,16 @@ test('skill_Body_GermanQuotesArePaired', () => {
   const closing = (body.match(/“/g) || []).length;
   assert.equal(opening, closing);
 });
+
+test('skill_Body_RunsScoutAfterLastReview', () => {
+  const { body } = readSkill();
+  assert.ok(body.includes('dv-forge:spec-review-scout'));
+  assert.ok(body.includes('## Scout-Vorschläge'));
+  assert.ok(body.includes('Scout ausgefallen'));
+});
+
+test('reportFormat_HasScoutSection', () => {
+  const text = fs.readFileSync(path.join(__dirname, '..', 'skills', 'spec-review', 'references', 'report-format.md'), 'utf8');
+  assert.ok(text.includes('### Scout-Vorschläge'));
+  assert.ok(text.includes('Scout ausgefallen'));
+});

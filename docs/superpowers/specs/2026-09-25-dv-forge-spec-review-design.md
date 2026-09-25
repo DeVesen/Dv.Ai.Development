@@ -66,7 +66,8 @@ plugins/forge/
 │   ├── spec-review-feasibility.md        Machbarkeit, rein aus der Spec         (sonnet)
 │   ├── spec-review-clarity.md            Lücken/Randfälle + WAS-statt-WIE       (sonnet)
 │   ├── spec-review-profiles.md           Abgleich mit working-capturing-Profilen (sonnet)
-│   └── spec-rework.md                    Nacharbeiter                           (opus)
+│   ├── spec-rework.md                    Nacharbeiter                           (opus)
+│   └── spec-review-scout.md              Lösungsvorschläge nach letztem Review  (opus)
 ├── hooks/hooks.json
 ├── scripts/
 │   ├── aggregate-findings.js             Deduplizierung, Stufen, Hochstufung
@@ -135,13 +136,32 @@ Chatverlauf.
      Nacharbeit; es folgt direkt das nächste Review. Es zählt gegen die N+1 Reviews.
 5. r = r+1, zurück zu Schritt 1.
 
-### 6.3 Abschluss
+### 6.3 Abschluss-Scout
+
+Nach dem **letzten** Review eines Laufs — unabhängig vom Grund des Endes — und vor dem
+Abschlussbericht läuft einmal der Agent `spec-review-scout` (`opus`, `Read, Grep, Glob`). Er ist rein
+beratend: Er ändert keine Datei und löst keine weitere Runde aus.
+
+- **Auslöser:** Die letzte `STATUS`-Zeile zeigt `red` > 0 oder `yellow` > 0. Sonst entfällt der Scout.
+- **Eingabe:** `Spec:`, `Repo:` (Projektwurzel) und `Findings:` mit dem REWORK-Abschnitt der letzten
+  Aggregation, unverändert. Der Scout bearbeitet nur 🔴- und 🟡-Gruppen; 🟢 lässt er weg.
+- **Auftrag pro Gruppe:** 1 bis 3 konkrete Vorschläge, wie die Spec geändert werden soll, abgeleitet
+  aus Spec und vorhandenem Code. Genau einer ist bevorzugt und begründet. W-Einträge ändert kein
+  Vorschlag; berührt ein Finding einen W-Eintrag, lautet ein Vorschlag „Mit dem Menschen klären: …“.
+- **Ausgabe:** beginnt mit `## Scout-Vorschläge`, danach je Gruppe `### <Stufe> <Stelle>`, nummerierte
+  Vorschläge und genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`.
+- **Prüfung durch den Orchestrator (mechanisch):** Fehlt `## Scout-Vorschläge`, einmal neu starten;
+  fehlt die Zeile wieder, steht im Bericht „Scout ausgefallen“. Den Abschnitt übernimmt der
+  Orchestrator unverändert in den Bericht.
+
+### 6.4 Abschluss
 
 Abschlussbericht im Chat (Format in `references/report-format.md`):
 - Status: `sauber nach Review r` | `Cap erreicht, k × 🔴 offen` | `Stillstand in Runde r`
 - Anzahl Reviews und Nacharbeiten
 - ausgefallene Reviewer, falls vorhanden
 - Tabelle der aggregierten Findings des **letzten** Reviews
+- Scout-Vorschläge aus 6.3 oder „Scout ausgefallen“, wenn der Scout lief
 - Pfad der Spec
 
 Es werden keine Review-Dateien geschrieben und nichts committet. Der Mensch entscheidet über
@@ -304,12 +324,16 @@ Nachtrag Umsetzung: Der Guard lässt Shell-Aufrufe der plugin-eigenen Skripte `f
 - **AC-12** Ohne `--rounds` gilt N = 3; mit `--rounds N` gilt der übergebene Wert.
 - **AC-13** Die Schleife endet nie mit einer ungeprüften Nacharbeit.
 - **AC-14** Der Nacharbeiter schreibt pro bearbeitetem aggregiertem Finding genau einen Eintrag in `## Entscheidungen` im Format aus Abschnitt 10.
-- **AC-15** Es entstehen keine Review-Dateien; der Abschlussbericht erscheint nur im Chat mit den Inhalten aus 6.3.
+- **AC-15** Es entstehen keine Review-Dateien; der Abschlussbericht erscheint nur im Chat mit den Inhalten aus 6.4.
 - **AC-16** Der Skill committet nichts.
 - **AC-17** Ein ungültig formatierter Reviewer wird genau einmal neu gestartet und danach als ausgefallen gemeldet; eine Runde mit Ausfall ist nicht sauber.
 - **AC-18** Bei Weg A blockt der Guard Lese-, Schreib- und Shell-Zugriffe der Main-Session auf die Spec, außer Aufrufen von `file-hash.js` und `aggregate-findings.js`; SubAgents werden nicht geblockt.
 - **AC-19** Ein Marker wirkt nur in der Session, deren `session_id` er trägt, und wird am Turn-Ende entfernt.
 - **AC-20** Alle Node-Tests aus Abschnitt 14 laufen grün mit `node --test "plugins/forge/tests/*.test.js"`.
+- **AC-21** Nach dem letzten Review eines Laufs startet genau dann einmal `spec-review-scout`, wenn die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0 zeigt.
+- **AC-22** `spec-review-scout` hat `model: opus` und die Tools `Read`, `Grep`, `Glob`; er ändert keine Datei.
+- **AC-23** Die Scout-Antwort beginnt mit `## Scout-Vorschläge` und enthält pro 🔴- und 🟡-Gruppe 1 bis 3 nummerierte Vorschläge und genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`; 🟢-Gruppen erscheinen nicht.
+- **AC-24** Der Abschlussbericht enthält den Scout-Abschnitt unverändert oder den Vermerk „Scout ausgefallen“, nachdem ein Scout ohne `## Scout-Vorschläge` genau einmal neu gestartet wurde.
 
 ## 16. Entscheidungen
 
@@ -321,7 +345,7 @@ Nachtrag Umsetzung: Der Guard lässt Shell-Aufrufe der plugin-eigenen Skripte `f
 - **B6 · Abbruch** — sauber oder Cap; N = maximale Nacharbeiten, Default 3; Stillstand per Hash zusätzlich.
 - **B7 · Schweregrad** — Hybrid: Reviewer nach Konsequenz, Aggregation mechanisch, Hochstufung 🟡 → 🔴 bei ≥ 2 Reviewern.
 - **B8 · Doku-Input** — `dv-working-capturing`-Profile, falls vorhanden; Quelle der Anfrage nur als optionales Argument. Die Spec selbst enthält keine Verweise.
-- **B9 · Code-Input** — kein Code im Spec-Review-Loop.
+- **B9 · Code-Input** — kein Code im Spec-Review-Loop. Präzisiert durch B18: gilt für Reviewer und Nacharbeiter; der Scout nach dem Loop liest Code.
 - **B10 · Reviewer-Set** — fünf Reviewer; AC-Testbarkeit, WAS-statt-WIE und Abgeschlossenheit als Zusatzaufträge bestehender Reviewer; Profil-Abgleich als eigener Reviewer.
 - **B11 · Ablage** — Review-Ergebnisse nur im Chat.
 - **B12 · Aggregation** — per Skript statt Prosa-Regel; deterministisch, testbar.
@@ -333,6 +357,7 @@ Nachtrag Umsetzung: Der Guard lässt Shell-Aufrufe der plugin-eigenen Skripte `f
   - Fixture-Lauf bestanden: alle eingebauten Fehler an erwarteter Stelle gefunden; `spec-rework` korrigiert ohne AC-Umnummerierung, ein Eintrag pro Gruppe.
   - Smoke-Test (Plan-Task 10) bewusst verschoben, bis Plan- und Umsetzungs-Stufe fertig sind; Ergebnis wird als eigener Eintrag nachgetragen.
 - **B17 · Umsetzungs-Rulings** — Guard-Allowlist `file-hash.js` + `aggregate-findings.js` (AC-18); Guard blockt `Grep`, wenn die Spec im Suchpfad liegt; Nacharbeit bekommt den vom Skript gerenderten Markdown-Block (§9.5); Aggregation verwirft Reviewer außerhalb von `--expect`; führendes `@` am Spec-Pfad wird entfernt.
+- **B18 · Abschluss-Scout** — Nachtrag 2026-09-25 auf Wunsch des Menschen: nach dem letzten Review liefert `spec-review-scout` pro 🔴/🟡-Finding 1–3 Vorschläge mit begründetem Favoriten, aus Spec und Code, rein beratend (§6.3). Format und Ausfall-Regel wie `plan-review-scout` im Planning-Design §7.5.
 
 ## 17. Folge-Teilprojekte
 

@@ -38,6 +38,9 @@ Du orchestrierst, sonst nichts. Du liest die Spec nicht, bewertest keine Finding
    - `red=0` (nur Ausfall) → `r = r+1`, weiter mit Schritt 1 ohne Nacharbeit
 5. **Nacharbeit:** Hash von S merken. Dann `dv-forge:spec-rework` mit `run_in_background: false` starten, Inhalt: `Spec: <S>`, `Runde: <r>`, `Findings:` und den REWORK-Abschnitt unverändert. Danach `nacharbeiten + 1` und den Hash erneut bilden. Ist er gleich, Ende „Stillstand in Runde r“. Sonst `r = r+1`, weiter mit Schritt 1.
 
+## Abschluss-Scout
+Nach dem letzten Review, egal wie der Lauf endete: Zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, `dv-forge:spec-review-scout` einmal mit `run_in_background: false` starten, Inhalt: `Spec: <S>`, `Repo: <Projektwurzel>`, `Findings:` und den REWORK-Abschnitt der letzten Aggregation unverändert. Fehlt in der Antwort die Zeile `## Scout-Vorschläge`, einmal neu starten; fehlt sie wieder, gilt „Scout ausgefallen“. Sonst entfällt der Scout.
+
 ## Abschluss
-1. Bericht im Chat nach `references/report-format.md`, mit dem REPORT-Abschnitt der letzten Aggregation. Keine Dateien schreiben, nichts committen.
+1. Bericht im Chat nach `references/report-format.md`, mit dem REPORT-Abschnitt der letzten Aggregation und dem Scout-Abschnitt ab `## Scout-Vorschläge` unverändert. Keine Dateien schreiben, nichts committen.
 2. `node "${CLAUDE_PLUGIN_ROOT}/scripts/guard-orchestrator.js" release ${CLAUDE_SESSION_ID}`

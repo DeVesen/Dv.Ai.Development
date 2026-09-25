@@ -10,6 +10,9 @@
 ### Letztes Review
 <Abschnitt zwischen `=== REPORT ===` und `=== REWORK ===` aus der letzten Aggregation, unverändert>
 
+### Scout-Vorschläge                     ← nur wenn der Scout lief
+<Antwort des Scouts ab der Zeile `## Scout-Vorschläge` ohne diese Zeile, unverändert — oder „Scout ausgefallen“>
+
 Nächster Schritt: Spec und Abschnitt „Entscheidungen“ lesen, dann selbst committen.
 ```
 

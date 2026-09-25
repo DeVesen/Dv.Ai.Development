@@ -61,3 +61,20 @@ test('spec-rework_Body_DefinesDecisionEntryFormat', () => {
   assert.ok(body.includes('Fehlt er, legst du ihn direkt vor `## Offen, bewusst nicht weiterverfolgt (Abbruch)` an'), 'Anlage-Ort bei Abbruch fehlt');
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
+
+test('spec-review-scout_Frontmatter_ReadGrepGlobOpus', () => {
+  const { fields } = readAgent('spec-review-scout');
+  assert.equal(fields.name, 'spec-review-scout');
+  assert.equal(fields.tools, 'Read, Grep, Glob');
+  assert.equal(fields.model, 'opus');
+  assert.match(fields.description, /^Use when/);
+});
+
+test('spec-review-scout_Body_DefinesProposalFormat', () => {
+  const { body } = readAgent('spec-review-scout');
+  assert.ok(body.includes('## Scout-Vorschläge'));
+  assert.ok(body.includes('**Bevorzugt: <Nr>** — <Begründung>'));
+  assert.ok(body.includes('W-Eintrag'));
+  assert.match(body, /änderst keine Datei/);
+  assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
+});

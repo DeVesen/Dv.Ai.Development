@@ -31,3 +31,24 @@ test('modelSelection_Roles_ExplicitModelAndEscalation', () => {
   assert.match(text, /Final-Review \| immer `opus`/);
   assert.ok(text.includes('`haiku` → `sonnet` → `opus`'));
 });
+
+test('taskLoop_Steps_BriefReviewFixLoopBreaker', () => {
+  const text = reference('task-loop.md');
+  for (const part of ['<PLUGIN>/scripts/plan-tasks.js" brief "<P>" <n> "<W>"', '<PLUGIN>/scripts/review-package.js" <BASE> HEAD "<W>"',
+    'dv-forge:implementation-implementer', 'dv-forge:implementation-task-reviewer', 'dv-forge:implementation-re-reviewer',
+    '`SendMessage`', 'höchstens 5 Runden', 'Nie `HEAD~1`', '## 5. Breaker nach Runde 5', '`plan-vorgeschrieben`']) {
+    assert.ok(text.includes(part), `${part} fehlt`);
+  }
+  assert.match(text, /nie mehr als ein Umsetzer gleichzeitig/);
+  assert.match(text, /Du behebst nie selbst etwas/);
+  assert.match(text, /Du urteilst nur am Cap/);
+});
+
+test('finalReview_Wave_OneFixerOneReReview', () => {
+  const text = reference('final-review.md');
+  for (const part of ['review-package.js" forge-base/<slug> HEAD "<W>"', 'dv-forge:implementation-final-reviewer',
+    '`model: opus`', 'plan-tasks.js" header "<P>" "<W>"', '**ein** Fixer', '**Ein** Re-Review']) {
+    assert.ok(text.includes(part), `${part} fehlt`);
+  }
+  assert.match(text, /Eine zweite Welle gibt es nicht/);
+});

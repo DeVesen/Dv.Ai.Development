@@ -5,42 +5,72 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const SKILL_CALL = /^\s*\/dv-forge:spec-review\s+(?:"([^"]+)"|'([^']+)'|(\S+))/;
 const FILE_TOOLS = {
   Read: 'file_path', Edit: 'file_path', Write: 'file_path', MultiEdit: 'file_path',
   NotebookEdit: 'notebook_path',
 };
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
-const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js'];
-const DENY_REASON = 'dv-forge:spec-review läuft: Der Orchestrator liest und ändert die Spec nicht. '
-  + 'Prüfen übernehmen die Reviewer-Agents, Korrigieren der Agent spec-rework.';
+const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcome.js'];
+const TOKEN = /"([^"]*)"|'([^']*)'|(\S+)/g;
+const PLUGIN_ROOT = path.resolve(__dirname, '..');
+const DEFAULT_REASON = 'dv-forge-Orchestrator läuft: geschützte Dateien werden nur von SubAgents gelesen und geändert.';
+
+const COMMANDS = {
+  '/dv-forge:spec-review': {
+    reason: 'dv-forge:spec-review läuft: Der Orchestrator liest und ändert die Spec nicht. '
+      + 'Prüfen übernehmen die Reviewer-Agents, Korrigieren der Agent spec-rework.',
+    protect: ([spec]) => (spec ? [spec] : null),
+  },
+  '/dv-forge:plan-review': {
+    reason: 'dv-forge:plan-review läuft: Der Orchestrator liest und ändert weder Plan noch Spec. '
+      + 'Prüfen übernehmen die Reviewer-Agents, Korrigieren der Agent plan-rework.',
+    protect: ([plan, spec]) => (plan ? [plan, spec ?? path.join(path.dirname(plan), 'spec.md')] : null),
+  },
+};
 
 function markerPath(sessionId, tmpRoot = os.tmpdir()) {
   return path.join(tmpRoot, 'dv-forge', `${sessionId}.json`);
 }
 
-function samePath(a, b) {
-  const normalize = (value) => {
-    const resolved = path.resolve(value).replace(/\\/g, '/');
-    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
-  };
-  return normalize(a) === normalize(b);
+function normalize(value) {
+  const resolved = path.resolve(value).replace(/\\/g, '/');
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
 }
 
 function isWithin(filePath, dirPath) {
-  const normalize = (value) => {
-    const resolved = path.resolve(value).replace(/\\/g, '/');
-    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
-  };
-  const normalizedFile = normalize(filePath);
-  const normalizedDir = normalize(dirPath);
-  return normalizedFile === normalizedDir || normalizedFile.startsWith(`${normalizedDir}/`);
+  const file = normalize(filePath);
+  const dir = normalize(dirPath);
+  return file === dir || file.startsWith(`${dir}/`);
 }
 
-function parseSpecArgument(prompt) {
-  const match = SKILL_CALL.exec(String(prompt ?? ''));
-  const argument = match ? match[1] ?? match[2] ?? match[3] : null;
-  return argument === null ? null : argument.replace(/^@/, '');
+function tokenize(text) {
+  return [...String(text).matchAll(TOKEN)].map((match) => match[1] ?? match[2] ?? match[3]);
+}
+
+function positionalArguments(args) {
+  const result = [];
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] === '--rounds') {
+      index += 1;
+      continue;
+    }
+    if (!args[index].startsWith('--')) result.push(args[index].replace(/^@/, ''));
+  }
+  return result;
+}
+
+function parseSkillCall(prompt) {
+  const [command, ...args] = tokenize(String(prompt ?? '').trim());
+  const entry = COMMANDS[command];
+  if (!entry) return null;
+  const files = entry.protect(positionalArguments(args));
+  return files ? { command, files } : null;
+}
+
+function writeMarker(sessionId, marker, tmpRoot) {
+  const file = markerPath(sessionId, tmpRoot);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(marker));
 }
 
 function readMarker(sessionId, tmpRoot) {
@@ -52,26 +82,44 @@ function readMarker(sessionId, tmpRoot) {
 }
 
 function onPrompt(input, tmpRoot) {
-  const specArgument = parseSpecArgument(input.prompt);
-  if (!specArgument) return;
-  const specPath = path.resolve(input.cwd, specArgument);
-  const file = markerPath(input.session_id, tmpRoot);
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify({ specPath, specName: path.basename(specPath) }));
+  const call = parseSkillCall(input.prompt);
+  if (!call) return;
+  const entries = call.files.map((file) => ({ path: path.resolve(input.cwd, file), kind: 'file' }));
+  writeMarker(input.session_id, { command: call.command, protected: entries }, tmpRoot);
 }
 
-function touchesSpec(input, marker) {
+function hitsEntry(target, entry) {
+  return entry.kind === 'dir' ? isWithin(target, entry.path) : normalize(target) === normalize(entry.path);
+}
+
+function grepHitsEntry(searchRoot, entry) {
+  return isWithin(entry.path, searchRoot) || (entry.kind === 'dir' && isWithin(searchRoot, entry.path));
+}
+
+function shellHitsEntry(command, entry) {
+  const needle = entry.kind === 'dir'
+    ? path.resolve(entry.path).replace(/\\/g, '/').toLowerCase()
+    : path.basename(entry.path).toLowerCase();
+  return command.includes(needle);
+}
+
+function touchesProtected(input, entries) {
   const toolInput = input.tool_input ?? {};
   if (input.tool_name === 'Grep') {
-    return isWithin(marker.specPath, path.resolve(input.cwd, toolInput.path ?? '.'));
+    const searchRoot = path.resolve(input.cwd, toolInput.path ?? '.');
+    return entries.some((entry) => grepHitsEntry(searchRoot, entry));
   }
   if (Object.hasOwn(FILE_TOOLS, input.tool_name)) {
     const target = toolInput[FILE_TOOLS[input.tool_name]];
-    return Boolean(target) && samePath(path.resolve(input.cwd, target), marker.specPath);
+    if (!target) return false;
+    const absolute = path.resolve(input.cwd, target);
+    const readsOwnPluginFile = input.tool_name === 'Read' && isWithin(absolute, PLUGIN_ROOT);
+    return entries.some((entry) => hitsEntry(absolute, entry) && !(entry.kind === 'dir' && readsOwnPluginFile));
   }
   if (SHELL_TOOLS.has(input.tool_name)) {
-    const command = String(toolInput.command ?? '').toLowerCase();
-    return !ALLOWED_SCRIPTS.some((script) => command.includes(script)) && command.includes(marker.specName.toLowerCase());
+    const command = String(toolInput.command ?? '').toLowerCase().replace(/\\/g, '/');
+    return !ALLOWED_SCRIPTS.some((script) => command.includes(script))
+      && entries.some((entry) => shellHitsEntry(command, entry));
   }
   return false;
 }
@@ -79,8 +127,9 @@ function touchesSpec(input, marker) {
 function decidePreTool(input, tmpRoot) {
   if (input.agent_id) return null;
   const marker = readMarker(input.session_id, tmpRoot);
-  if (!marker) return null;
-  return touchesSpec(input, marker) ? DENY_REASON : null;
+  if (!marker || !Array.isArray(marker.protected)) return null;
+  if (!touchesProtected(input, marker.protected)) return null;
+  return COMMANDS[marker.command]?.reason ?? DEFAULT_REASON;
 }
 
 function release(sessionId, tmpRoot) {
@@ -116,4 +165,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { markerPath, parseSpecArgument, onPrompt, decidePreTool, release };
+module.exports = { COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, decidePreTool, release };

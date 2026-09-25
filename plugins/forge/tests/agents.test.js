@@ -120,3 +120,22 @@ test('plan-review-codeReaders_Body_TakeRepoInput', () => {
     assert.ok(readAgent(`plan-review-${reviewer}`).body.includes('`Repo:`'), `${reviewer} ohne Repo`);
   }
 });
+test('plan-rework_Frontmatter_ReadGrepGlobEditOpus', () => {
+  const { fields } = readAgent('plan-rework');
+  assert.equal(fields.name, 'plan-rework');
+  assert.equal(fields.tools, 'Read, Grep, Glob, Edit');
+  assert.equal(fields.model, 'opus');
+  assert.match(fields.description, /^Use when/);
+});
+
+test('plan-rework_Body_DecisionEntryRenumberingAndJsonResult', () => {
+  const { body } = readAgent('plan-rework');
+  assert.ok(body.includes('- **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>'));
+  assert.ok(body.includes('nicht geändert — Stelle existiert nicht'));
+  assert.ok(body.includes('`Task 3 → Task 3, Task 4`'));
+  assert.ok(body.includes('"results"'));
+  assert.ok(body.includes('`spec-question`'));
+  assert.match(body, /änderst sie nie/);
+  assert.match(body, /W-Einträge/);
+  assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
+});

@@ -648,7 +648,7 @@ All expectations met: continue with Task 5. Otherwise stop the whole plan here a
 **ACs:** AC-18
 
 **Files:**
-- Modify: `plugins/forge/scripts/aggregate-findings.js:9-13` · `normalizeLocation`
+- Modify: `plugins/forge/scripts/aggregate-findings.js:10-14` · `normalizeLocation`
 - Modify: `plugins/forge/scripts/aggregate-findings.js` · `module.exports`
 - Test: `plugins/forge/tests/aggregate-parse.test.js` (append)
 
@@ -1051,6 +1051,11 @@ test('parseSkillCall_PlanReviewWithoutSpec_UsesSpecInPlanFolder', () => {
   assert.deepEqual(call.files.map((file) => file.replace(/\\/g, '/')), ['docs/forge/x/plan.md', 'docs/forge/x/spec.md']);
 });
 
+test('parseSkillCall_FileMentionWithAt_StripsAt', () => {
+  assert.deepEqual(guard.parseSkillCall('/dv-forge:spec-review @docs/spec.md').files, ['docs/spec.md']);
+  assert.equal(guard.parseSkillCall('/dv-forge:plan-review @docs/forge/x/plan.md').files[0], 'docs/forge/x/plan.md');
+});
+
 test('parseSkillCall_PlanReviewWithSpec_ProtectsBoth', () => {
   const call = guard.parseSkillCall('/dv-forge:plan-review "my plans/plan.md" other/spec.md --rounds 2');
   assert.deepEqual(call.files, ['my plans/plan.md', 'other/spec.md']);
@@ -1198,7 +1203,7 @@ function positionalArguments(args) {
       index += 1;
       continue;
     }
-    if (!args[index].startsWith('--')) result.push(args[index]);
+    if (!args[index].startsWith('--')) result.push(args[index].replace(/^@/, ''));
   }
   return result;
 }
@@ -1378,6 +1383,7 @@ test('loop_BuildingBlocks_AllNamed', () => {
 test('loop_Closing_ScoutRunsOnlyOnRedOrYellowAndIsCheckedMechanically', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
   assert.match(text, /`red` > 0 oder `yellow` > 0/);
+  assert.match(text, /ohne Runden nach dem einzigen Review/);
   assert.ok(text.includes('## Scout-Vorschläge'));
   assert.ok(text.includes('Scout ausgefallen'));
 });
@@ -1534,7 +1540,7 @@ Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills. `<PLUGIN>` und `<SESSION>
 | Nacharbeiter | Agent-Name und seine Eingabe |
 | Fortschritts-Skript | Aufruf, dessen Ausgabe vor und nach der Nacharbeit verglichen wird |
 | Zusatz-Stopps | Prüfungen direkt nach der Nacharbeit, falls vorhanden |
-| Abschluss-Scout | Agent-Name und Eingabe des Scouts nach dem letzten Review, oder „Keiner“ |
+| Abschluss-Scout | Agent-Name und Eingabezeilen des Scouts, oder „Keiner“. Der Skill wählt die Zeilen frei (ergänzen oder weglassen) |
 | Bericht | Titel, zusätzliche Status-Werte und Abschnitte, nächster Schritt |
 
 ## Rolle
@@ -1563,7 +1569,7 @@ Start: `r = 1`, `nacharbeiten = 0`.
    5. `nacharbeiten + 1`, `r = r+1`, weiter mit Schritt 1.
 
 ## Abschluss
-1. **Abschluss-Scout:** Nennt der Skill einen Scout und zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, startest du ihn einmal mit `run_in_background: false`: Eingaben aus dem Skill, dazu `Findings:` und der REWORK-Abschnitt der letzten Aggregation unverändert. Enthält seine Antwort keine Zeile `## Scout-Vorschläge`, startest du ihn einmal neu. Fehlt sie wieder, gilt „Scout ausgefallen“. Du bewertest die Vorschläge nicht.
+1. **Abschluss-Scout** (nach dem letzten Review; bei einem Skill ohne Runden nach dem einzigen Review): Nennt der Skill einen Scout und zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, startest du ihn einmal mit `run_in_background: false`: Eingaben aus dem Skill, dazu `Findings:` und der REWORK-Abschnitt der letzten Aggregation unverändert. Enthält seine Antwort keine Zeile `## Scout-Vorschläge`, startest du ihn einmal neu. Fehlt sie wieder, gilt „Scout ausgefallen“. Du bewertest die Vorschläge nicht.
 2. Bericht im Chat nach `<PLUGIN>/shared/review-loop/report-format.md`, mit dem REPORT-Abschnitt der letzten Aggregation, dem Scout-Abschnitt ab `## Scout-Vorschläge` unverändert (oder „Scout ausgefallen“) und den Angaben des Skills. Keine Dateien schreiben, nichts committen.
 3. `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`
 ````

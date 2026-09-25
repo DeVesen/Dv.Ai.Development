@@ -286,6 +286,11 @@ beratend: Er ändert keine Datei und löst keine weitere Runde aus.
   unverändert als Zusatz-Abschnitt in den Bericht.
 - **Gemeinsamer Loop:** `shared/review-loop/loop.md` führt den Baustein „Abschluss-Scout“.
   `plan-review` füllt ihn, `spec-review` trägt „Keiner“ ein, bis es nachgerüstet wird.
+- **Neutral für andere Skills** (Abgleich Teilprojekt 3, Iteration 3): Der Baustein in `loop.md`
+  legt nur Auslöser, Wiederholung und Übernahme in den Bericht fest. Welche Eingabezeilen der Scout
+  bekommt, bestimmt der Skill; er darf Zeilen ergänzen (etwa `Context:`, `Profiles:`) oder weglassen
+  (etwa `Spec:`). „Nach dem letzten Review“ heißt bei einem Skill ohne Runden: nach dem einzigen
+  Review. `implementation-review` nutzt denselben Baustein und dasselbe Ausgabeformat.
 
 ## 8. Guard für `plan-review`
 

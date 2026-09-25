@@ -59,7 +59,7 @@ test('acRules_Rules_GivenWhenThenAndForbiddenPhrases', () => {
   const text = reference('ac-rules.md');
   assert.ok(text.includes('Gegeben <Vorbedingung>, wenn <Aktion>, dann <beobachtbares Ergebnis>.'));
   for (const phrase of ['funktioniert korrekt', 'ist möglich', 'sollte', 'idealerweise']) {
-    assert.ok(text.includes(`„${phrase}"`), `${phrase} fehlt`);
+    assert.ok(text.includes(`„${phrase}\u201C`), `${phrase} fehlt`);
   }
   assert.match(text, /Negativ- oder Randfall/);
 });

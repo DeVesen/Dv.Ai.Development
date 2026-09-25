@@ -13,7 +13,7 @@ Eine Runde ist eine Nachricht mit der kompletten Frontier. Danach antwortet der 
 - Die Nummern laufen über alle Runden fort: Runde 2 beginnt nach der letzten Nummer aus Runde 1.
 - Optionen, falls sinnvoll, stehen knapp in der Frage.
 - Genau eine Empfehlung pro Frage. Der Grund ist ausgeschrieben, nicht nur der Tag.
-- Bei `ungeklärt` ist der Grund eine ausgewiesene Vermutung, etwa „Vermutung: gängigster Fall" oder „Vermutung: kleinster Scope".
+- Bei `ungeklärt` ist der Grund eine ausgewiesene Vermutung, etwa „Vermutung: gängigster Fall“ oder „Vermutung: kleinster Scope“.
 
 ## Frontier-Regeln
 
@@ -32,5 +32,5 @@ Eine Runde ist eine Nachricht mit der kompletten Frontier. Danach antwortet der 
 
 ❓ **Q5** - **Export-Format**: CSV, Excel oder beides?
 
-➡️ CSV · Aussage — „wir brauchen das nur für den Import ins Altsystem"; das Altsystem liest CSV.
+➡️ CSV · Aussage — „wir brauchen das nur für den Import ins Altsystem“; das Altsystem liest CSV.
 ```

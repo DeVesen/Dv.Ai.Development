@@ -10,9 +10,9 @@
 
 ## Prüfbar
 
-- Ein AC ist prüfbar, wenn zwei Personen unabhängig voneinander zum selben Urteil „erfüllt" oder „nicht erfüllt" kommen.
+- Ein AC ist prüfbar, wenn zwei Personen unabhängig voneinander zum selben Urteil „erfüllt“ oder „nicht erfüllt“ kommen.
 - Zahlen, Grenzen und Texte stehen im AC, wenn das Ergebnis von ihnen abhängt.
-- Verboten: „funktioniert korrekt", „ist möglich", „sollte", „idealerweise". Ebenso Maßwörter ohne Maß wie „schnell" oder „benutzerfreundlich".
+- Verboten: „funktioniert korrekt“, „ist möglich“, „sollte“, „idealerweise“. Ebenso Maßwörter ohne Maß wie „schnell“ oder „benutzerfreundlich“.
 
 ## Abdeckung
 
@@ -24,5 +24,5 @@
 
 | Schwach | Prüfbar |
 |---|---|
-| Der Export funktioniert korrekt. | **AC-03** Gegeben eine Liste mit 3 Einträgen, wenn der Anwender „Exportieren" wählt, dann erhält er eine CSV-Datei mit einer Kopfzeile und 3 Datenzeilen. |
-| Leere Listen sollten sinnvoll behandelt werden. | **AC-04** Gegeben eine Liste ohne Einträge, wenn der Anwender die Liste öffnet, dann ist „Exportieren" deaktiviert und ein Hinweis nennt den Grund. |
+| Der Export funktioniert korrekt. | **AC-03** Gegeben eine Liste mit 3 Einträgen, wenn der Anwender „Exportieren“ wählt, dann erhält er eine CSV-Datei mit einer Kopfzeile und 3 Datenzeilen. |
+| Leere Listen sollten sinnvoll behandelt werden. | **AC-04** Gegeben eine Liste ohne Einträge, wenn der Anwender die Liste öffnet, dann ist „Exportieren“ deaktiviert und ein Hinweis nennt den Grund. |

@@ -58,5 +58,6 @@ test('spec-rework_Body_DefinesDecisionEntryFormat', () => {
   assert.ok(body.includes('W-Eintrag ist bindend'));
   assert.ok(body.includes('ans Ende dieses Abschnitts an, auch wenn danach weitere Abschnitte folgen'), 'Regel zu nachfolgenden Abschnitten fehlt');
   assert.ok(body.includes('Regel 3 gilt für sie nicht'), 'Regel zum Abbruch-Abschnitt fehlt');
+  assert.ok(body.includes('Fehlt er, legst du ihn direkt vor `## Offen, bewusst nicht weiterverfolgt (Abbruch)` an'), 'Anlage-Ort bei Abbruch fehlt');
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });

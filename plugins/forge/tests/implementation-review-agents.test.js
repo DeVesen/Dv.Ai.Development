@@ -67,3 +67,24 @@ test('implementation-review-risks_Body_SwallowedErrorIsRed', () => {
   assert.match(body, /verschluckter Fehler/);
   assert.match(body, /Spec und Plan liest du nicht/);
 });
+
+test('implementation-review-scout_Frontmatter_ReadGrepGlobOpus', () => {
+  const { fields } = readAgent('implementation-review-scout');
+  assert.equal(fields.name, 'implementation-review-scout');
+  assert.equal(fields.tools, 'Read, Grep, Glob');
+  assert.equal(fields.model, 'opus');
+  assert.match(fields.description, /^Use when/);
+});
+
+test('implementation-review-scout_Body_FormatContextProfilesAndNoEdits', () => {
+  const { body } = readAgent('implementation-review-scout');
+  for (const part of ['## Scout-Vorschläge', '**Bevorzugt: <Nr>** — <Begründung>', '`Context:`', '`Repo:`',
+    'docs/application/', '`Nicht ändern: <Begründung>`']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+  assert.match(body, /1 bis 3/);
+  assert.match(body, /änderst keine Datei/);
+  assert.match(body, /🟢-Gruppen lässt du weg/);
+  assert.doesNotMatch(body, /Spec so ändern/);
+  assert.doesNotMatch(body, TYPOGRAPHIC_QUOTES);
+});

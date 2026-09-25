@@ -285,7 +285,7 @@ beratend: Er ändert keine Datei und löst keine weitere Runde aus.
   Bericht „Scout ausgefallen“. Den Abschnitt ab `## Scout-Vorschläge` übernimmt der Orchestrator
   unverändert als Zusatz-Abschnitt in den Bericht.
 - **Gemeinsamer Loop:** `shared/review-loop/loop.md` führt den Baustein „Abschluss-Scout“.
-  `plan-review` füllt ihn, `spec-review` trägt „Keiner“ ein, bis es nachgerüstet wird.
+  `plan-review` füllt ihn, `spec-review` füllt ihn mit `spec-review-scout` (spec-review-Spec §6.3).
 - **Neutral für andere Skills** (Abgleich Teilprojekt 3, Iteration 3): Der Baustein in `loop.md`
   legt nur Auslöser, Wiederholung und Übernahme in den Bericht fest. Welche Eingabezeilen der Scout
   bekommt, bestimmt der Skill; er darf Zeilen ergänzen (etwa `Context:`, `Profiles:`) oder weglassen
@@ -414,7 +414,7 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 - **AC-28** Nach dem letzten Review eines `plan-review`-Laufs startet genau dann einmal `plan-review-scout`, wenn die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0 zeigt.
 - **AC-29** `plan-review-scout` hat `model: opus` und die Tools `Read`, `Grep`, `Glob`; er ändert keine Datei.
 - **AC-30** Die Scout-Antwort enthält pro 🔴- und 🟡-Gruppe 1 bis 3 nummerierte Vorschläge und genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`; 🟢-Gruppen erscheinen nicht.
-- **AC-31** Der Abschlussbericht enthält den Scout-Abschnitt unverändert oder den Vermerk „Scout ausgefallen“; `shared/review-loop/loop.md` führt den Baustein „Abschluss-Scout“, `spec-review` trägt „Keiner“ ein.
+- **AC-31** Der Abschlussbericht enthält den Scout-Abschnitt unverändert oder den Vermerk „Scout ausgefallen“; `shared/review-loop/loop.md` führt den Baustein „Abschluss-Scout“, `spec-review` füllt ihn mit `spec-review-scout` (spec-review-Spec §6.3).
 - **AC-32** Endet `plan-review` sauber, nennt der Bericht den Commit-Hinweis für `spec.md` und `plan.md`, den Hinweis auf eine frische Session und den kopierbaren Befehl `/dv-forge:implementation <plan.md>`; der Plan-Kopf nennt denselben Befehl.
 - **AC-33** Ein `Read` der Main-Session unterhalb der Plugin-Wurzel wird bei einem Verzeichnis-Eintrag nicht geblockt; `Edit` dort und `Read` auf einen Datei-Eintrag unterhalb der Plugin-Wurzel werden geblockt.
 
@@ -441,3 +441,4 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 - **P19 · Abgleich Teilprojekt 3, Iteration 2** — TP3 heißt `/dv-forge:implementation` (Umsetzung) und `/dv-forge:implementation-review` (Review ohne Loop, mit Scout). Übernommen: Umsetzungs-Befehl im Plan-Kopf (P9), Übergabe bei sauberem Plan-Review (AC-32), Leseausnahme für die Plugin-Wurzel im Guard (AC-33). `--escalation-status` bleibt parametrisiert, obwohl TP3 ihn nicht nutzt — kostet nichts und hält `rework-outcome.js` artefakt-neutral. Die Guard-Zeile für `implementation-review` und den Stellen-Typ Dateipfad baut TP3.
 - **P20 · Formatfehler des Nacharbeiters** — Statt Neustart (§10) fordert `plan-review` den Nacharbeiter einmal per `SendMessage` auf, nur seinen JSON-Block nachzuliefern; ein Neustart würde R-Einträge doppeln und den Plan erneut ändern. Bleibt das Format falsch, gelten alle Stellen als `unchanged`.
 - **P21 · Scout in spec-review** — `spec-review` ist nachgerüstet (Spec-Review-Design B18) und nennt unter „Abschluss-Scout“ `dv-forge:spec-review-scout` statt „Keiner“; AC-31 gilt damit in dieser Form.
+- **P22 · Doku-Angleich Scout** — §7.5 und AC-31 nennen jetzt `spec-review-scout` statt „Keiner“ und setzen P21 im Text um; kein Verhaltenswechsel.

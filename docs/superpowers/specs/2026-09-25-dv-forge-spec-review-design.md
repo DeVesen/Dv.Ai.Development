@@ -153,10 +153,14 @@ beratend: Er ändert keine Datei und löst keine weitere Runde aus.
 - **Prüfung durch den Orchestrator (mechanisch):** Fehlt `## Scout-Vorschläge`, einmal neu starten;
   fehlt die Zeile wieder, steht im Bericht „Scout ausgefallen“. Den Abschnitt übernimmt der
   Orchestrator unverändert in den Bericht.
+- **Umsetzung im gemeinsamen Loop:** Auslöser, Neustart, „Scout ausgefallen“ und die Übernahme in den
+  Bericht führt der Baustein „Abschluss-Scout“ in `shared/review-loop/loop.md` (Planning-Design §7.5).
+  `spec-review` füllt ihn nur mit dem Agent `dv-forge:spec-review-scout` und den Zeilen `Spec:` und `Repo:`;
+  `Findings:` ergänzt der Loop.
 
 ### 6.4 Abschluss
 
-Abschlussbericht im Chat (Format in `references/report-format.md`):
+Abschlussbericht im Chat (Format in `shared/review-loop/report-format.md`):
 - Status: `sauber nach Review r` | `Cap erreicht, k × 🔴 offen` | `Stillstand in Runde r`
 - Anzahl Reviews und Nacharbeiten
 - ausgefallene Reviewer, falls vorhanden
@@ -358,6 +362,7 @@ Nachtrag Umsetzung: Der Guard lässt Shell-Aufrufe der plugin-eigenen Skripte `f
   - Smoke-Test (Plan-Task 10) bewusst verschoben, bis Plan- und Umsetzungs-Stufe fertig sind; Ergebnis wird als eigener Eintrag nachgetragen.
 - **B17 · Umsetzungs-Rulings** — Guard-Allowlist `file-hash.js` + `aggregate-findings.js` (AC-18); Guard blockt `Grep`, wenn die Spec im Suchpfad liegt; Nacharbeit bekommt den vom Skript gerenderten Markdown-Block (§9.5); Aggregation verwirft Reviewer außerhalb von `--expect`; führendes `@` am Spec-Pfad wird entfernt.
 - **B18 · Abschluss-Scout** — Nachtrag 2026-09-25 auf Wunsch des Menschen: nach dem letzten Review liefert `spec-review-scout` pro 🔴/🟡-Finding 1–3 Vorschläge mit begründetem Favoriten, aus Spec und Code, rein beratend (§6.3). Format und Ausfall-Regel wie `plan-review-scout` im Planning-Design §7.5.
+- **B19 · Scout im gemeinsamen Loop** — Nachtrag 2026-09-25 nach der Planning-Umsetzung: Ablaufregeln des Scouts stehen nur im Baustein „Abschluss-Scout“ von `shared/review-loop/loop.md`; `spec-review` nennt Agent und Eingabezeilen (§6.3). Der Bericht folgt `shared/review-loop/report-format.md`.
 
 ## 17. Folge-Teilprojekte
 

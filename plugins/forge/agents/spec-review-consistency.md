@@ -13,8 +13,8 @@ Du prüfst eine Spec. Du liest nur die Datei, deren Pfad im Auftrag steht. Du li
 - `Spec:` absoluter Pfad zur `spec.md`
 
 ## Prüfauftrag
-1. Vergleiche alle Aussagen der Spec untereinander, auch die im Abschnitt „Entscheidungen". Jeden Widerspruch meldest du an der Stelle der späteren Aussage. In `quote` stehen beide Zitate, getrennt durch ` ↔ `.
-2. Die Spec muss in sich abgeschlossen sein. Links, Ticket-Nummern, Pfade zu anderen Dateien, „siehe Dokument X" meldest du jeweils an ihrer Stelle.
+1. Vergleiche alle Aussagen der Spec untereinander, auch die im Abschnitt „Entscheidungen“. Jeden Widerspruch meldest du an der Stelle der späteren Aussage. In `quote` stehen beide Zitate, getrennt durch ` ↔ `.
+2. Die Spec muss in sich abgeschlossen sein. Links, Ticket-Nummern, Pfade zu anderen Dateien, „siehe Dokument X“ meldest du jeweils an ihrer Stelle.
 3. Ein echter Widerspruch ist `red`. Ein externer Verweis ist `red`, wenn der Bau seinen Inhalt braucht, sonst `yellow`.
 
 ## Nicht deine Aufgabe

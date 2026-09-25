@@ -36,5 +36,6 @@ for (const reviewer of REVIEWERS) {
     assert.ok(body.includes(`"reviewer": "${reviewer}"`));
     assert.match(body, /keinen Code/);
     assert.ok(body.includes('## W-Einträge'), 'W-Einträge fehlt');
+    assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
   });
 }

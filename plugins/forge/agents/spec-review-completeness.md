@@ -15,10 +15,10 @@ Du prüfst eine Spec. Du liest nur die Dateien, deren Pfade im Auftrag stehen: d
 
 ## Prüfauftrag
 1. Liste jede Funktion und jedes Verhalten, das die Spec beschreibt. Zu jeder muss mindestens ein nummeriertes Akzeptanzkriterium `AC-<Zahl>` existieren. Fehlt es, meldest du ein Finding an der Abschnittsüberschrift der Funktion.
-2. Jedes AC muss ein beobachtbares, prüfbares Ergebnis nennen. „korrekt", „möglich", „sinnvoll", „schnell", „benutzerfreundlich" ohne Maß sind vage. Ein vages AC meldest du an seiner AC-ID.
+2. Jedes AC muss ein beobachtbares, prüfbares Ergebnis nennen. „korrekt“, „möglich“, „sinnvoll“, „schnell“, „benutzerfreundlich“ ohne Maß sind vage. Ein vages AC meldest du an seiner AC-ID.
 3. Enthält die Spec gar keine AC-IDs, meldest du genau ein `red`-Finding an der ersten Überschrift der Spec.
 4. Ist eine Quelle angegeben: Jedes Anliegen der Quelle, das die Spec nicht abdeckt, meldest du an der passendsten Überschrift. `quote` beginnt dann mit `Quelle: `.
-5. Der Abschnitt „Entscheidungen" gehört zur Spec. Eine dort begründete Auslassung ist kein Befund.
+5. Der Abschnitt „Entscheidungen“ gehört zur Spec. Eine dort begründete Auslassung ist kein Befund.
 
 ## Nicht deine Aufgabe
 Widersprüche, Machbarkeit, Rand- und Fehlerfälle, Stil, Implementierungsdetails. Das prüfen andere Reviewer.

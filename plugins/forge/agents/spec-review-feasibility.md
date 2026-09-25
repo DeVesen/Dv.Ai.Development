@@ -15,7 +15,7 @@ Du prüfst eine Spec. Du liest nur die Datei, deren Pfad im Auftrag steht. Du li
 ## Prüfauftrag
 1. Anforderungen, die technisch nicht gleichzeitig erfüllbar sind. Das Finding kommt an die spätere der beiden Stellen, beide Zitate stehen in `quote`, getrennt durch ` ↔ `.
 2. Voraussetzungen, die die Spec selbst nennt, aber nirgends herstellt, einfordert oder als gegeben festlegt.
-3. Entscheidungen im Abschnitt „Entscheidungen", die eine Anforderung unerfüllbar machen.
+3. Entscheidungen im Abschnitt „Entscheidungen“, die eine Anforderung unerfüllbar machen.
 
 ## Nicht deine Aufgabe
 Aufwand, Zeit, Architektur-Vorlieben, fehlende Akzeptanzkriterien, Stil.

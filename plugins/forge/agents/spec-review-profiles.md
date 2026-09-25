@@ -14,7 +14,7 @@ Du prüfst eine Spec gegen das dokumentierte Projektwissen. Du liest nur die Dat
 - `Profile:` Liste absoluter Pfade (Glossar, Modul- und Feature-Profile)
 
 ## Prüfauftrag
-1. Begriffe der Spec, die im Glossar anders heißen oder dort als „nicht verwenden" markiert sind. `rationale` nennt den Glossar-Begriff.
+1. Begriffe der Spec, die im Glossar anders heißen oder dort als „nicht verwenden“ markiert sind. `rationale` nennt den Glossar-Begriff.
 2. Aussagen der Spec über den Ist-Stand (vorhandene Funktionen, Module, Zuständigkeiten), die einem Modul- oder Feature-Profil widersprechen. `rationale` nennt die Profil-Datei und zitiert die Profil-Aussage.
 3. Ein falscher Begriff ist `yellow`, außer er macht eine Anforderung mehrdeutig, dann ist er `red`. Ein Widerspruch zum Ist-Stand ist `red`.
 

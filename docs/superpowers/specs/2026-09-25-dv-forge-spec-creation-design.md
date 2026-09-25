@@ -239,6 +239,9 @@ Drucktests nach `superpowers:writing-skills`, jeweils Baseline ohne Skill gegen 
 - Test 1 (zweite Ablehnung): Baseline schrieb sofort, Annahmen im Fließtext · mit Skill bestanden — Abbruch erkannt, Entwurf mit `Status: Abbruch am …, 3 Punkte offen` und Abschnitt „Offen, bewusst nicht weiterverfolgt (Abbruch)“, Schreiben erst nach Bestätigung.
 - Test 2 (Ergebnis): Baseline schrieb `csv-export.md` ins Wurzelverzeichnis und übernahm `AB#4711` als Referenz · mit Skill bestanden — `docs/forge/2026-09-25-csv-export/spec.md`, fünf Abschnitte, `AC-01`–`AC-03`, vier W-Einträge, keine Verweise, Übergabe mit Befehl und Hinweis auf frische Session, kein Commit. Beobachtung: AC-Zeilen tragen keinen Beleg-Tag; die AC-Vorlage in Abschnitt 6 zeigt ebenfalls keinen.
 - Zielordner vorhanden (AC-05): Baseline überschrieb die vorhandene Spec · mit Skill bestanden — nachgefragt, Slug `csv-export-2` vorgeschlagen, nichts geschrieben.
+- Test 3 (domain-modeling Konflikt): Baseline fragte „erledigt“ ab, übersah „Ticket“ gegen das Glossar · mit Skill bestanden — Widerspruch „Ticket“/„Aufgabe“ benannt, kanonischer Begriff vorgeschlagen, drei Grenzfall-Szenarien.
+- Test 4 (domain-modeling Ziel): mit verfügbarem Glossar-Skill nannten Baseline und Skill-Lauf den Aufruf von `dv-working-capturing:glossary`, der Skill-Lauf zusätzlich Synonym und Szenarien, keine `CONTEXT.md` · ohne Glossar-Skill legte die Baseline nichts an; mit Skill bestanden — `CONTEXT.md` im Format aus Abschnitt 7 mit **Serie** sofort angelegt.
+- Test 5 (with-docs Verbund): Baseline stellte freie Fragen ohne Begriffsprüfung und schrieb eine Spec mit „Ticket“ außerhalb jedes Formats · mit Skill bestanden — Begriffskonflikt als Q1 der kompletten Frontier im Rundenformat; die erzeugte Spec nennt „Ticket“ nur im W-Eintrag zum Begriff, Beleg-Tag `Historie`.
 
 ## 11. Nachtrag Spec-Review-Spec
 

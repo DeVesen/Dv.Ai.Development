@@ -55,11 +55,12 @@ Am Ende bekommt der Mensch die aktuelle Spec und das letzte Review-Ergebnis.
 plugins/forge/
 ├── .claude-plugin/plugin.json            name: dv-forge, version 0.1.0
 ├── skills/spec-review/
-│   ├── SKILL.md                          Orchestrator-Rolle, disable-model-invocation: true
-│   └── references/
-│       ├── finding-format.md             JSON-Format der Reviewer-Ausgabe
-│       ├── severity-rules.md             Konsequenz-Achse 🔴/🟡/🟢 + Hochstufung
-│       └── report-format.md              Aufbau des Abschlussberichts
+│   └── SKILL.md                          Orchestrator-Rolle, disable-model-invocation: true
+├── shared/review-loop/
+│   ├── loop.md                           Gemeinsamer Review-Loop aller Orchestrator-Skills
+│   ├── finding-format.md                 JSON-Format der Reviewer-Ausgabe
+│   ├── severity-rules.md                 Konsequenz-Achse 🔴/🟡/🟢 + Hochstufung
+│   └── report-format.md                  Aufbau des Abschlussberichts
 ├── agents/
 │   ├── spec-review-completeness.md       Vollständigkeit + AC-Testbarkeit       (sonnet)
 │   ├── spec-review-consistency.md        Konsistenz + Abgeschlossenheit         (sonnet)
@@ -83,7 +84,7 @@ Dazu ein Eintrag `dv-forge` → `./plugins/forge` in `.claude-plugin/marketplace
 **Konventionsentscheidungen:**
 - Skripte in Node (`.js`), nicht PowerShell, damit sie unter bash und macOS laufen.
 - Agent- und Skill-Texte folgen `superpowers:writing-skills`. Frontmatter nur `name` +
-  `description`, die `description` beginnt mit „Use when…“, Details liegen in `references/`.
+  `description`, die `description` beginnt mit „Use when…“, Details liegen in `shared/review-loop/`.
 
 ## 5. Aufruf
 
@@ -362,7 +363,7 @@ Nachtrag Umsetzung: Der Guard lässt Shell-Aufrufe der plugin-eigenen Skripte `f
   - Smoke-Test (Plan-Task 10) bewusst verschoben, bis Plan- und Umsetzungs-Stufe fertig sind; Ergebnis wird als eigener Eintrag nachgetragen.
 - **B17 · Umsetzungs-Rulings** — Guard-Allowlist `file-hash.js` + `aggregate-findings.js` (AC-18); Guard blockt `Grep`, wenn die Spec im Suchpfad liegt; Nacharbeit bekommt den vom Skript gerenderten Markdown-Block (§9.5); Aggregation verwirft Reviewer außerhalb von `--expect`; führendes `@` am Spec-Pfad wird entfernt.
 - **B18 · Abschluss-Scout** — Nachtrag 2026-09-25 auf Wunsch des Menschen: nach dem letzten Review liefert `spec-review-scout` pro 🔴/🟡-Finding 1–3 Vorschläge mit begründetem Favoriten, aus Spec und Code, rein beratend (§6.3). Format und Ausfall-Regel wie `plan-review-scout` im Planning-Design §7.5.
-- **B19 · Scout im gemeinsamen Loop** — Nachtrag 2026-09-25 nach der Planning-Umsetzung: Ablaufregeln des Scouts stehen nur im Baustein „Abschluss-Scout“ von `shared/review-loop/loop.md`; `spec-review` nennt Agent und Eingabezeilen (§6.3). Der Bericht folgt `shared/review-loop/report-format.md`.
+- **B19 · Scout im gemeinsamen Loop** — Nachtrag 2026-09-25 nach der Planning-Umsetzung: Ablaufregeln des Scouts stehen nur im Baustein „Abschluss-Scout“ von `shared/review-loop/loop.md`; `spec-review` nennt Agent und Eingabezeilen (§6.3). Der Bericht folgt `shared/review-loop/report-format.md`; §4 zeigt die Referenzen unter `shared/review-loop/` (verschoben mit Planning-Plan Task 8).
 
 ## 17. Folge-Teilprojekte
 

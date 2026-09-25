@@ -6,7 +6,7 @@ const path = require('node:path');
 const { readMarkdown } = require('./lib/markdown');
 
 const AGENTS = path.join(__dirname, '..', 'agents');
-const TYPOGRAPHIC_QUOTES = /[""„]/;
+const TYPOGRAPHIC_QUOTES = /[\u201C\u201D\u201E]/;
 
 function readAgent(name) {
   return readMarkdown(path.join(AGENTS, `${name}.md`));
@@ -55,5 +55,28 @@ test('implementation-re-reviewer_Body_VerdictPerFindingAndScope', () => {
   for (const part of ['behoben | nicht behoben', '### Neue Schäden im Fix-Diff', '### Außerhalb',
     '**Fix-Runde:** alle behoben, keine neuen 🔴 | offen: <Liste>']) {
     assert.ok(body.includes(part), `${part} fehlt`);
+  }
+});
+
+test('implementation-final-reviewer_Frontmatter_OpusReadOnly', () => {
+  const { fields } = readAgent('implementation-final-reviewer');
+  assert.equal(fields.name, 'implementation-final-reviewer');
+  assert.equal(fields.tools, 'Read, Grep, Glob, Bash, PowerShell');
+  assert.equal(fields.model, 'opus');
+  assert.match(fields.description, /^Use when/);
+});
+
+test('implementation-final-reviewer_Body_DeferredTriageAndHandoverVerdict', () => {
+  const { body } = readAgent('implementation-final-reviewer');
+  for (const part of ['`Zurückgestellt:`', '### Zurückgestellt', 'beheben | bleibt', '**Übergabe:** ja | mit Korrekturen | nein']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+  assert.match(body, /Fehler im Plan selbst/);
+});
+
+test('implementationAgents_Text_NoTypographicQuotes', () => {
+  for (const name of ['implementation-implementer', 'implementation-task-reviewer', 'implementation-re-reviewer', 'implementation-final-reviewer']) {
+    const { body } = readAgent(name);
+    assert.doesNotMatch(body, TYPOGRAPHIC_QUOTES, `${name} enthält typografische Anführungszeichen`);
   }
 });

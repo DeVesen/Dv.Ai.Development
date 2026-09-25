@@ -15,6 +15,13 @@ const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcom
   'plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js'];
 const VALUE_FLAGS = new Set(['--rounds', '--spec', '--context', '--base']);
 const TOKEN = /"([^"]*)"|'([^']*)'|(\S+)/g;
+const DIR_ALLOWED_SCRIPTS = [...ALLOWED_SCRIPTS, 'guard-orchestrator.js'];
+const TOPLEVEL_QUERY = 'git rev-parse --show-toplevel';
+const ABSOLUTE_PATH = /(?<![a-z])[a-z]:[\\/].*|(?<![\w.~-])\/(?!\/).*/i;
+const GIT_BASH_DRIVE = /^\/([a-z])(?=\/|$)/i;
+const CHAINING = /[;&|`<>\r\n]|\$\(/;
+const HEREDOC_START = /\s<<(?:'([A-Za-z_]\w*)'|([A-Za-z_]\w*))\s*$/;
+const UNQUOTED_EXPANSION = /`|\$\(/;
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_REASON = 'dv-forge-Orchestrator läuft: geschützte Dateien werden nur von SubAgents gelesen und geändert.';
 
@@ -89,21 +96,47 @@ function readMarker(sessionId, tmpRoot) {
   }
 }
 
-function repoRootOf(file, fallback) {
-  const result = spawnSync('git', ['-C', path.dirname(file), 'rev-parse', '--show-toplevel'], { encoding: 'utf8' });
+function gitToplevel(dir, fallback) {
+  const result = spawnSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' });
   return result.status === 0 ? path.resolve(result.stdout.trim()) : path.resolve(fallback);
 }
 
-function toEntry(entry, cwd) {
-  if (typeof entry === 'string') return { path: path.resolve(cwd, entry), kind: 'file' };
+function fromGitBashDrive(value) {
+  return process.platform === 'win32' ? value.replace(GIT_BASH_DRIVE, '$1:') : value;
+}
+
+function canonicalPath(value) {
+  let existing = path.resolve(fromGitBashDrive(String(value).replace(/\\/g, '/')));
+  const missing = [];
+  while (!fs.existsSync(existing)) {
+    const parent = path.dirname(existing);
+    if (parent === existing) return normalize(value);
+    missing.unshift(path.basename(existing));
+    existing = parent;
+  }
+  return normalize(path.join(fs.realpathSync.native(existing), ...missing));
+}
+
+function uniqueDirectories(dirs) {
+  const keys = dirs.map(canonicalPath);
+  return dirs.filter((dir, index) => keys.indexOf(keys[index]) === index).map((dir) => ({ path: dir, kind: 'dir' }));
+}
+
+function repoEntries(plan, cwd) {
+  const cwdTop = gitToplevel(cwd, cwd);
+  return uniqueDirectories([gitToplevel(path.dirname(plan), cwdTop), cwdTop]);
+}
+
+function toEntries(entry, cwd) {
+  if (typeof entry === 'string') return [{ path: path.resolve(cwd, entry), kind: 'file' }];
   const absolute = path.resolve(cwd, entry.path);
-  return entry.kind === 'repo' ? { path: repoRootOf(absolute, cwd), kind: 'dir' } : { path: absolute, kind: entry.kind };
+  return entry.kind === 'repo' ? repoEntries(absolute, cwd) : [{ path: absolute, kind: entry.kind }];
 }
 
 function onPrompt(input, tmpRoot) {
   const call = parseSkillCall(input.prompt);
   if (!call) return;
-  const entries = call.files.map((entry) => toEntry(entry, input.cwd));
+  const entries = call.files.flatMap((entry) => toEntries(entry, input.cwd));
   writeMarker(input.session_id, { command: call.command, protected: entries }, tmpRoot);
 }
 
@@ -115,11 +148,69 @@ function grepHitsEntry(searchRoot, entry) {
   return isWithin(entry.path, searchRoot) || (entry.kind === 'dir' && isWithin(searchRoot, entry.path));
 }
 
-function shellHitsEntry(command, entry) {
-  const needle = entry.kind === 'dir'
-    ? path.resolve(entry.path).replace(/\\/g, '/').toLowerCase()
-    : path.basename(entry.path).toLowerCase();
-  return command.includes(needle);
+function shellHitsFile(command, entry) {
+  return command.includes(path.basename(entry.path).toLowerCase());
+}
+
+function shellTouchesFiles(rawCommand, entries) {
+  const command = rawCommand.toLowerCase().replace(/\\/g, '/');
+  return !ALLOWED_SCRIPTS.some((script) => command.includes(script))
+    && entries.some((entry) => shellHitsFile(command, entry));
+}
+
+function namedPaths(command) {
+  return tokenize(command)
+    .map((token) => token.match(ABSOLUTE_PATH)?.[0])
+    .filter(Boolean)
+    .map(canonicalPath);
+}
+
+function isInsideAny(target, roots) {
+  return roots.some((root) => isWithin(target, root));
+}
+
+function isAllowedScriptPath(script) {
+  const match = String(script ?? '').replace(/\\/g, '/').match(/\/scripts\/([^/]+)$/);
+  return Boolean(match) && DIR_ALLOWED_SCRIPTS.includes(match[1].toLowerCase());
+}
+
+function isSingleScriptInvocation(line) {
+  if (CHAINING.test(line)) return false;
+  const [program, script] = tokenize(line);
+  return program === 'node' && isAllowedScriptPath(script);
+}
+
+function isClosedHeredoc(lines, [, quotedTerm, bareTerm]) {
+  const end = lines.indexOf(quotedTerm ?? bareTerm);
+  if (end === -1 || lines.slice(end + 1).some((line) => line.trim() !== '')) return false;
+  return quotedTerm !== undefined || !lines.slice(0, end).some((line) => UNQUOTED_EXPANSION.test(line));
+}
+
+function isPluginScriptCall(command) {
+  const [firstLine, ...body] = command.split(/\r?\n/);
+  const heredoc = firstLine.match(HEREDOC_START);
+  if (!heredoc) return body.length === 0 && isSingleScriptInvocation(firstLine);
+  return isSingleScriptInvocation(firstLine.slice(0, heredoc.index)) && isClosedHeredoc(body, heredoc);
+}
+
+function isPermittedInProtectedDir(rawCommand) {
+  const command = rawCommand.trim();
+  return command === TOPLEVEL_QUERY || isPluginScriptCall(command);
+}
+
+function shellTouchesDirectories(rawCommand, cwd, entries) {
+  if (entries.length === 0) return false;
+  const roots = entries.map((entry) => canonicalPath(entry.path));
+  const targets = [canonicalPath(cwd ?? '.'), ...namedPaths(rawCommand)];
+  const concerned = targets.some((target) => isInsideAny(target, roots));
+  return concerned && !isPermittedInProtectedDir(rawCommand);
+}
+
+function shellTouchesProtected(input, entries) {
+  const command = String(input.tool_input?.command ?? '');
+  const files = entries.filter((entry) => entry.kind !== 'dir');
+  const dirs = entries.filter((entry) => entry.kind === 'dir');
+  return shellTouchesFiles(command, files) || shellTouchesDirectories(command, input.cwd, dirs);
 }
 
 function touchesProtected(input, entries) {
@@ -135,11 +226,7 @@ function touchesProtected(input, entries) {
     const readsOwnPluginFile = input.tool_name === 'Read' && isWithin(absolute, PLUGIN_ROOT);
     return entries.some((entry) => hitsEntry(absolute, entry) && !(entry.kind === 'dir' && readsOwnPluginFile));
   }
-  if (SHELL_TOOLS.has(input.tool_name)) {
-    const command = String(toolInput.command ?? '').toLowerCase().replace(/\\/g, '/');
-    return !ALLOWED_SCRIPTS.some((script) => command.includes(script))
-      && entries.some((entry) => shellHitsEntry(command, entry));
-  }
+  if (SHELL_TOOLS.has(input.tool_name)) return shellTouchesProtected(input, entries);
   return false;
 }
 

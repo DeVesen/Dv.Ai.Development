@@ -39,3 +39,20 @@ for (const reviewer of REVIEWERS) {
     assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
   });
 }
+
+test('spec-rework_Frontmatter_ReadEditOpus', () => {
+  const { fields } = readAgent('spec-rework');
+  assert.equal(fields.name, 'spec-rework');
+  assert.equal(fields.tools, 'Read, Edit');
+  assert.equal(fields.model, 'opus');
+  assert.match(fields.description, /^Use when/);
+});
+
+test('spec-rework_Body_DefinesDecisionEntryFormat', () => {
+  const { body } = readAgent('spec-rework');
+  assert.ok(body.includes('- **R<r> · <Stelle>** — geändert | nicht geändert — <Begründung>'));
+  assert.ok(body.includes('nicht geändert — Stelle existiert nicht'));
+  assert.match(body, /keinen Code/);
+  assert.ok(body.includes('W-Eintrag ist bindend'));
+  assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
+});

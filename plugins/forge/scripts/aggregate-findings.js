@@ -16,6 +16,19 @@ function collapseLocation(location) {
   return String(location).trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+function fileLocationType(repoRoot) {
+  const prefix = repoRoot ? `${collapseLocation(repoRoot).replace(/\\/g, '/').replace(/\/+$/, '')}/` : null;
+  return {
+    name: 'file',
+    pattern: /^\S*\.[a-z0-9]+(?::\d+(?:-\d+)?)?$/,
+    normalize: (match) => {
+      const value = match[0].replace(/\\/g, '/').replace(/:\d+(?:-\d+)?$/, '');
+      const relative = prefix && value.startsWith(prefix) ? value.slice(prefix.length) : value;
+      return relative.replace(/^(?:\.\/)+/, '');
+    },
+  };
+}
+
 function normalizeLocation(location, types = LOCATION_TYPES) {
   const collapsed = collapseLocation(location);
   for (const type of types) {
@@ -63,11 +76,11 @@ function extractReviews(text) {
 const SEVERITY_ICON = { red: '🔴', yellow: '🟡', green: '🟢' };
 const CLOSING_QUOTE = String.fromCharCode(0x201c);
 
-function groupFindings(reviews) {
+function groupFindings(reviews, types = LOCATION_TYPES) {
   const groups = new Map();
   for (const review of reviews) {
     for (const finding of review.findings) {
-      const key = normalizeLocation(finding.location);
+      const key = normalizeLocation(finding.location, types);
       if (!groups.has(key)) groups.set(key, { key, location: finding.location.trim(), items: [] });
       groups.get(key).items.push({ reviewer: review.reviewer, ...finding });
     }
@@ -90,8 +103,8 @@ function bySeverityThenKey(a, b) {
   return byRankDescending(a, b) || a.key.localeCompare(b.key);
 }
 
-function aggregate(reviews) {
-  return groupFindings(reviews).map(rateGroup).sort(bySeverityThenKey);
+function aggregate(reviews, types = LOCATION_TYPES) {
+  return groupFindings(reviews, types).map(rateGroup).sort(bySeverityThenKey);
 }
 
 function summarize(groups, reviews, expected) {
@@ -144,10 +157,10 @@ function dropUnexpected(reviews, expected, errors) {
   });
 }
 
-function run(text, expected) {
+function run(text, expected, types = LOCATION_TYPES) {
   const { reviews, errors } = extractReviews(text);
   const kept = dropUnexpected(reviews, expected, errors);
-  const groups = aggregate(kept);
+  const groups = aggregate(kept, types);
   return { groups, errors, status: summarize(groups, kept, expected) };
 }
 
@@ -167,11 +180,23 @@ function parseExpected(args) {
   return index === -1 ? [] : String(args[index + 1] ?? '').split(',').filter(Boolean);
 }
 
+function parseRepo(args) {
+  const index = args.indexOf('--repo');
+  return index === -1 ? null : args[index + 1] ?? null;
+}
+
+function locationTypesFor(repoRoot) {
+  return repoRoot ? [...LOCATION_TYPES, fileLocationType(repoRoot)] : LOCATION_TYPES;
+}
+
 function main() {
-  const expected = parseExpected(process.argv.slice(2));
-  process.stdout.write(`${render(run(fs.readFileSync(0, 'utf8'), expected))}\n`);
+  const args = process.argv.slice(2);
+  const types = locationTypesFor(parseRepo(args));
+  process.stdout.write(`${render(run(fs.readFileSync(0, 'utf8'), parseExpected(args), types))}\n`);
 }
 
 if (require.main === module) main();
 
-module.exports = { SEVERITY_RANK, LOCATION_TYPES, normalizeLocation, extractReviews, aggregate, summarize, run, render };
+module.exports = {
+  SEVERITY_RANK, LOCATION_TYPES, fileLocationType, normalizeLocation, extractReviews, aggregate, summarize, run, render,
+};

@@ -51,6 +51,13 @@ test('glossaryTarget_Rules_PrefersWorkingCapturingElseContextFile', () => {
   assert.match(text, /erst anlegen, wenn der erste Begriff geklärt ist/);
 });
 
+test('glossaryTarget_Rules_TermsWithoutCodeTargetGoToContextFile', () => {
+  const text = reference('glossary-target.md');
+  assert.match(text, /Begriff mit Code-Ziel/);
+  assert.match(text, /Begriff ohne Code-Ziel/);
+  assert.match(text, /auch, wenn working-capturing verfügbar ist/);
+});
+
 test('contextFormat_Template_HasTitleAndThreeColumnTable', () => {
   const text = reference('context-format.md');
   assert.ok(text.includes('# Glossar — <Bereich>'));

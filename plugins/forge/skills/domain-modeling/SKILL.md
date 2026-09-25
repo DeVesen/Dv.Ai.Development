@@ -9,7 +9,7 @@ Aktive Begriffsarbeit während eines Gesprächs: Begriffe herausfordern, schärf
 
 ## Start
 
-Glossar-Ziel nach `references/glossary-target.md` bestimmen und seine vorhandenen Einträge lesen.
+Vorhandene Glossar-Einträge lesen. Das Ziel je Begriff bestimmt `references/glossary-target.md`: mit Code-Ziel über working-capturing, ohne Code-Ziel in `CONTEXT.md`.
 
 ## Während der Sitzung
 

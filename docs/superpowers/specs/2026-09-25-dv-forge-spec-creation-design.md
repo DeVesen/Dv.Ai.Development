@@ -148,13 +148,19 @@ Regeln:
 Eigene Neufassung. Das Verhalten ist unten vollständig beschrieben; diese Spec ist die einzige
 Quelle (Abschnitt 2, Leitplanke).
 
-**Start — Glossar-Ziel bestimmen (`glossary-target.md`):**
-1. Ist der Skill `dv-working-capturing:glossary` in der Session verfügbar, ist das
-   working-capturing-Glossar das Ziel. Begriffe werden ausschließlich über diesen Skill geschrieben;
-   er bestimmt Ort und Format. Zusätzlich werden vorhandene Modul- und Feature-Profile gelesen.
-2. Sonst ist das eigene Glossar das Ziel: `CONTEXT.md` im Repo-Root oder, falls
-   `CONTEXT-MAP.md` existiert, das `CONTEXT.md` des passenden Kontexts. Format nach
-   `context-format.md`. Dateien werden erst angelegt, wenn der erste Begriff geklärt ist.
+**Glossar-Ziel je Begriff bestimmen (`glossary-target.md`):**
+1. Zeigt ein Begriff auf eine konkrete Stelle im Code und ist der Skill
+   `dv-working-capturing:glossary` in der Session verfügbar, ist das working-capturing-Glossar das
+   Ziel. Solche Begriffe werden ausschließlich über diesen Skill geschrieben; er bestimmt Ort und
+   Format.
+2. Hat ein Begriff kein Code-Ziel oder ist der Skill nicht verfügbar, ist das eigene Glossar das
+   Ziel: `CONTEXT.md` im Repo-Root oder, falls `CONTEXT-MAP.md` existiert, das `CONTEXT.md` des
+   passenden Kontexts. Format nach `context-format.md`. Dateien werden erst angelegt, wenn der erste
+   Begriff geklärt ist.
+3. Ist working-capturing verfügbar, werden zusätzlich vorhandene Modul- und Feature-Profile gelesen.
+
+Grund für die Aufteilung: Das working-capturing-Glossar ordnet Begriffe Code zu und nimmt reine
+Fachbegriffe ohne Code-Ziel nicht auf.
 
 **Eigenes Glossar-Format (`context-format.md`):**
 
@@ -242,6 +248,7 @@ Drucktests nach `superpowers:writing-skills`, jeweils Baseline ohne Skill gegen 
 - Test 3 (domain-modeling Konflikt): Baseline fragte „erledigt“ ab, übersah „Ticket“ gegen das Glossar · mit Skill bestanden — Widerspruch „Ticket“/„Aufgabe“ benannt, kanonischer Begriff vorgeschlagen, drei Grenzfall-Szenarien.
 - Test 4 (domain-modeling Ziel): mit verfügbarem Glossar-Skill nannten Baseline und Skill-Lauf den Aufruf von `dv-working-capturing:glossary`, der Skill-Lauf zusätzlich Synonym und Szenarien, keine `CONTEXT.md` · ohne Glossar-Skill legte die Baseline nichts an; mit Skill bestanden — `CONTEXT.md` im Format aus Abschnitt 7 mit **Serie** sofort angelegt.
 - Test 5 (with-docs Verbund): Baseline stellte freie Fragen ohne Begriffsprüfung und schrieb eine Spec mit „Ticket“ außerhalb jedes Formats · mit Skill bestanden — Begriffskonflikt als Q1 der kompletten Frontier im Rundenformat; die erzeugte Spec nennt „Ticket“ nur im W-Eintrag zum Begriff, Beleg-Tag `Historie`.
+- Test 4, Nachtrag nach der Aufteilung des Glossar-Ziels (nur mit Skill, working-capturing verfügbar): Begriff ohne Code-Ziel — bestanden, `CONTEXT.md` angelegt, kein Aufruf von `dv-working-capturing:glossary` · Begriff mit passender Klasse im Code — bestanden, Aufruf von `dv-working-capturing:glossary` mit Code-Fundstelle, keine `CONTEXT.md`.
 - Test 6 (Verbund mit Review, Spec aus Test 2): completeness kein 🔴 zu AC-IDs, ein 🟡 zu fehlendem AC für ausgeblendete Spalten (inhaltlich) · consistency keine Findings, kein 🔴 zu Verweisen · keiner der beiden meldete einen W-Eintrag als Finding.
 
 ## 11. Nachtrag Spec-Review-Spec
@@ -262,7 +269,7 @@ entfernt W-Einträge nicht.
 - **AC-07** Die Spec enthält keine Links und keine Verweise auf externe Dokumente, Dateien oder Tickets.
 - **AC-08** Bei „reicht jetzt“ wird genau einmal eine Abschlussrunde angeboten; erst die zweite Ablehnung führt zum Abbruch-Format.
 - **AC-09** Der Skill endet mit Spec-Pfad, kopierbarem `/dv-forge:spec-review`-Befehl und Hinweis auf frische Session; er committet nichts.
-- **AC-10** `domain-modeling` schreibt über `dv-working-capturing:glossary`, wenn dieser Skill verfügbar ist, sonst in `CONTEXT.md` nach `context-format.md`.
+- **AC-10** `domain-modeling` schreibt einen Begriff mit Code-Ziel über `dv-working-capturing:glossary`, wenn dieser Skill verfügbar ist; einen Begriff ohne Code-Ziel, oder jeden Begriff ohne verfügbaren Skill, schreibt es in `CONTEXT.md` nach `context-format.md`.
 - **AC-11** Ein geklärter Begriff wird sofort geschrieben, nicht gesammelt.
 - **AC-12** Ein ADR wird nur angeboten, wenn alle drei Kriterien aus Abschnitt 7 erfüllt sind.
 - **AC-13** `spec-whiteboarding-with-docs` startet nur manuell und wendet die Vorrangregeln aus Abschnitt 8 an.
@@ -278,7 +285,7 @@ entfernt W-Einträge nicht.
 - **C4 · Format** — ein Abschnitt `## Entscheidungen` statt „Bereits geklärte Fragen“; W- und R-Einträge; ACs als `AC-01` …
 - **C5 · Grill-Stil** — grilling-Textformat statt `AskUserQuestion`.
 - **C6 · Abgrenzung** — Basis schlägt passiv nach; with-docs modelliert aktiv.
-- **C7 · domain-modeling** — als eigener Skill neu geschrieben; Ziel ist das working-capturing-Glossar, sonst das eigene `CONTEXT.md`.
+- **C7 · domain-modeling** — als eigener Skill neu geschrieben; Ziel ist das working-capturing-Glossar für Begriffe mit Code-Ziel, sonst das eigene `CONTEXT.md` (Nachtrag 2026-09-25 nach Final Review: Begriffe ohne Code-Ziel gehen auch bei verfügbarem working-capturing in `CONTEXT.md`).
 - **C8 · with-docs** — Verbund aus spec-whiteboarding und domain-modeling nach dem Vorbild von grill-with-docs.
 - **C9 · Write-back** — sofort, wie im Original; ersetzt die frühere Wahl „gebündelt am Ende“.
 - **C10 · ADRs** — übernommen, nach den drei Kriterien.

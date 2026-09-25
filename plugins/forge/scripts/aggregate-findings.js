@@ -49,6 +49,7 @@ function extractReviews(text) {
 }
 
 const SEVERITY_ICON = { red: '🔴', yellow: '🟡', green: '🟢' };
+const CLOSING_QUOTE = String.fromCharCode(0x201c);
 
 function groupFindings(reviews) {
   const groups = new Map();
@@ -114,7 +115,7 @@ function formatReworkGroup(group) {
   const escalation = group.escalated ? ' · hochgestuft' : '';
   const header = `### ${SEVERITY_ICON[group.severity]} ${group.location} (${group.reviewers.join(', ')}${escalation})`;
   const lines = group.items.map((item) =>
-    `- [${item.reviewer} · ${item.severity}] Zitat: „${cell(item.quote)}” · Konsequenz: ${cell(item.consequence)} · Begründung: ${cell(item.rationale)}`);
+    `- [${item.reviewer} · ${item.severity}] Zitat: „${cell(item.quote)}${CLOSING_QUOTE} · Konsequenz: ${cell(item.consequence)} · Begründung: ${cell(item.rationale)}`);
   return [header, ...lines].join('\n');
 }
 

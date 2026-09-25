@@ -139,3 +139,22 @@ test('plan-rework_Body_DecisionEntryRenumberingAndJsonResult', () => {
   assert.match(body, /W-Einträge/);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
 });
+test('plan-review-scout_Frontmatter_ReadGrepGlobOpus', () => {
+  const { fields } = readAgent('plan-review-scout');
+  assert.equal(fields.name, 'plan-review-scout');
+  assert.equal(fields.tools, 'Read, Grep, Glob');
+  assert.equal(fields.model, 'opus');
+  assert.match(fields.description, /^Use when/);
+});
+
+test('plan-review-scout_Body_FormatProposalsPreferredAndNoEdits', () => {
+  const { body } = readAgent('plan-review-scout');
+  assert.ok(body.includes('## Scout-Vorschläge'));
+  assert.ok(body.includes('**Bevorzugt: <Nr>** — <Begründung>'));
+  assert.match(body, /1 bis 3/);
+  assert.match(body, /änderst keine Datei/);
+  assert.match(body, /🟢-Gruppen/);
+  assert.match(body, /Spec so ändern/);
+  assert.ok(body.includes('`Repo:`'));
+    assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
+});

@@ -19,7 +19,7 @@ Session → `plan-review` → Mensch bekommt Plan und letztes Review.
 
 **Im Umfang:**
 - Skill `plan-writing` mit Referenzen
-- Skill `plan-review` als Orchestrator, fünf Reviewer-Agents, Nacharbeiter `plan-rework`
+- Skill `plan-review` als Orchestrator, fünf Reviewer-Agents, Nacharbeiter `plan-rework`, Scout `plan-review-scout`
 - Generalisierung der Loop-Infrastruktur aus `spec-review` (Abschnitt 9)
 - neues Skript `rework-outcome.js`, Tests
 
@@ -66,7 +66,8 @@ plugins/forge/
 │   ├── plan-review-architecture.md          (sonnet, Read, Grep, Glob)
 │   ├── plan-review-risks.md                 (sonnet, Read, Grep, Glob)
 │   ├── plan-review-buildability.md          (sonnet, Read, Grep, Glob)
-│   └── plan-rework.md                       (opus, Read, Grep, Glob, Edit)
+│   ├── plan-rework.md                       (opus, Read, Grep, Glob, Edit)
+│   └── plan-review-scout.md                 (opus, Read, Grep, Glob)
 ├── scripts/
 │   ├── guard-orchestrator.js                generalisiert (Abschnitt 9)
 │   ├── aggregate-findings.js                generalisiert (Abschnitt 9)
@@ -108,7 +109,7 @@ Folgende Elemente müssen erhalten bleiben, jedes mit unveränderter Strenge:
 2. Jeder Task nennt die AC-IDs, die er abdeckt.
 3. Der Plan endet mit `## Entscheidungen`.
 4. Die Übergabe am Ende nennt `/dv-forge:plan-review` statt einer Ausführungswahl.
-5. Der Plan-Kopf verweist auf keinen Ausführungs-Skill (Abschnitt 6.1).
+5. Der Plan-Kopf nennt den Umsetzungs-Befehl `/dv-forge:implementation <plan.md>` statt einer Ausführungswahl (Abschnitt 6.1).
 
 ## 6. Skill `plan-writing`
 
@@ -136,7 +137,7 @@ schon: nachfragen, nichts überschreiben.
 ````markdown
 # <Titel> — Umsetzungsplan
 
-> Umsetzung Task für Task, sequentiell. Schritte nutzen Checkbox-Syntax (`- [ ]`).
+> Umsetzung mit `/dv-forge:implementation <plan.md>`, Task für Task, sequentiell. Schritte nutzen Checkbox-Syntax (`- [ ]`).
 
 **Ziel:** <ein Satz>
 **Architektur:** <2–3 Sätze>
@@ -249,8 +250,42 @@ mit „Spec-Rückfrage in Runde r“.
   `Spec-Rückfrage in Runde r`
 - Anzahl Reviews und Nacharbeiten, ausgefallene Reviewer
 - Tabelle der aggregierten Findings des letzten Reviews
+- Abschnitt `## Scout-Vorschläge` aus 7.5, unverändert, oder der Vermerk „Scout ausgefallen“
 - Liste aller Spec-Rückfragen mit dem Hinweis: Spec anpassen → `spec-review` → `plan-review` erneut
 - Plan-Pfad
+- Nur bei `sauber`: der Hinweis „`spec.md` und `plan.md` vor dem Start committen, sonst sieht sie ein
+  Worktree nicht“, der Hinweis auf eine frische Session und der kopierbare Befehl
+  `/dv-forge:implementation <plan.md>`
+
+### 7.5 Scout nach dem letzten Review
+
+Nach dem **letzten** Review eines Laufs — unabhängig vom Grund des Endes — und vor dem
+Abschlussbericht läuft einmal der Agent `plan-review-scout` (`opus`, `Read, Grep, Glob`). Er ist rein
+beratend: Er ändert keine Datei und löst keine weitere Runde aus.
+
+- **Auslöser:** Die letzte `STATUS`-Zeile zeigt `red` > 0 oder `yellow` > 0. Sonst entfällt der Scout.
+- **Eingabe:** `Plan:`, `Spec:`, `Repo:` und `Findings:` mit dem REWORK-Abschnitt der letzten
+  Aggregation, unverändert. Der Scout bearbeitet darin nur 🔴- und 🟡-Gruppen; 🟢 ignoriert er.
+- **Auftrag pro Gruppe:** 1 bis 3 Lösungsvorschläge, abgeleitet aus Plan, Spec und Code. Genau einer
+  ist als bevorzugt markiert und begründet. Ist eine Gruppe nur über die Spec lösbar, darf ein
+  Vorschlag eine Spec-Änderung sein („Spec so ändern: …“).
+- **Ausgabeformat:**
+
+```markdown
+## Scout-Vorschläge
+
+### 🔴 <Stelle>
+1. <Vorschlag>
+2. <Vorschlag>
+**Bevorzugt: <Nr>** — <Begründung>
+```
+
+- **Prüfung durch den Orchestrator (mechanisch):** Die Antwort enthält die Zeile
+  `## Scout-Vorschläge`. Fehlt sie, wird der Scout einmal neu gestartet; fehlt sie wieder, steht im
+  Bericht „Scout ausgefallen“. Den Abschnitt ab `## Scout-Vorschläge` übernimmt der Orchestrator
+  unverändert als Zusatz-Abschnitt in den Bericht.
+- **Gemeinsamer Loop:** `shared/review-loop/loop.md` führt den Baustein „Abschluss-Scout“.
+  `plan-review` füllt ihn, `spec-review` trägt „Keiner“ ein, bis es nachgerüstet wird.
 
 ## 8. Guard für `plan-review`
 
@@ -274,6 +309,12 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
    aber nicht `/repo-alt/x.cs`. Die Shell-Regel (Kommando enthält einen geschützten Pfad) und die
    Ausnahme für Plugin-Skripte bleiben unverändert. Teilprojekt 3 nutzt das für den Schutz des ganzen
    Repos; spec- und plan-review tragen weiterhin nur Dateien ein.
+
+   **Ausnahme Plugin-Wurzel:** Ein `Read` der Main-Session auf eine Datei unterhalb der Plugin-Wurzel
+   (Ordner über `scripts/`, in dem der Guard selbst liegt) ist erlaubt, auch wenn sie in einem
+   geschützten **Verzeichnis**-Eintrag liegt. Grund: Beim Dogfooding liegt `plugins/forge` im
+   geschützten Repo, und der Orchestrator muss seine eigenen Referenzen (`loop.md` u. a.) laden.
+   Die Ausnahme gilt nicht für `Edit`/`Write` und nicht für Datei-Einträge.
 2. **`aggregate-findings.js`:** Die Normalisierung von `location` wird auf eine **Tabelle von
    Stellen-Typen** umgestellt statt verstreuter Regex. Jede Zeile hat: Name, Erkennungsmuster,
    Normalform. Eine Stelle, auf die keine Zeile passt, fällt auf die bestehende Überschriften-Regel
@@ -309,6 +350,7 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 | `plan-writing`: Mensch delegiert eine Frage | Empfehlung gilt, W-Eintrag mit Tag `delegiert` |
 | Reviewer-Ausgabe nicht im Format | einmal neu starten; danach „ausgefallen“, Runde nicht sauber |
 | Rückgabe von `plan-rework` nicht im Format | einmal neu starten; danach gelten alle Stellen als `unchanged`, der Hash-Vergleich entscheidet |
+| Scout-Antwort ohne `## Scout-Vorschläge` | einmal neu starten; danach „Scout ausgefallen“ im Bericht, der Bericht erscheint trotzdem |
 
 ## 11. Tests
 
@@ -331,7 +373,9 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
    - `plan-writing`, Druck „Spec ist klar, schreib kurz und ohne Code“ → vollständige Code-Schritte;
      bei mehrdeutiger Spec eine Frage an den Menschen statt einer Annahme.
    - `plan-review`, Druck „korrigier den Plan einfach selbst“ → nur Orchestrierung.
-6. **Dogfood:** `plan-writing` auf dieses Dokument, danach `plan-review` auf den entstandenen Plan.
+6. **Scout:** mit der Aggregation der Reviewer-Fixtures aus Punkt 4 als Eingabe; pro 🔴/🟡-Gruppe 1–3
+   Vorschläge und genau eine Zeile „Bevorzugt“, keine 🟢-Gruppe, keine geänderte Datei.
+7. **Dogfood:** `plan-writing` auf dieses Dokument, danach `plan-review` auf den entstandenen Plan.
 
 ## 12. Akzeptanzkriterien
 
@@ -362,6 +406,12 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 - **AC-25** `shared/review-loop/loop.md` nennt kein konkretes Fortschritts-Skript; jeder Orchestrator-Skill legt seines selbst fest.
 - **AC-26** Jede `Modify`-Zeile im Plan nennt einen stabilen Anker nach Regel 3 aus 6.1.
 - **AC-27** Ein Verzeichnis-Eintrag in `protected` blockt Datei-Tools auf jede Datei darunter, aber keine Datei in einem Geschwister-Verzeichnis mit gleichem Namenspräfix.
+- **AC-28** Nach dem letzten Review eines `plan-review`-Laufs startet genau dann einmal `plan-review-scout`, wenn die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0 zeigt.
+- **AC-29** `plan-review-scout` hat `model: opus` und die Tools `Read`, `Grep`, `Glob`; er ändert keine Datei.
+- **AC-30** Die Scout-Antwort enthält pro 🔴- und 🟡-Gruppe 1 bis 3 nummerierte Vorschläge und genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`; 🟢-Gruppen erscheinen nicht.
+- **AC-31** Der Abschlussbericht enthält den Scout-Abschnitt unverändert oder den Vermerk „Scout ausgefallen“; `shared/review-loop/loop.md` führt den Baustein „Abschluss-Scout“, `spec-review` trägt „Keiner“ ein.
+- **AC-32** Endet `plan-review` sauber, nennt der Bericht den Commit-Hinweis für `spec.md` und `plan.md`, den Hinweis auf eine frische Session und den kopierbaren Befehl `/dv-forge:implementation <plan.md>`; der Plan-Kopf nennt denselben Befehl.
+- **AC-33** Ein `Read` der Main-Session unterhalb der Plugin-Wurzel wird bei einem Verzeichnis-Eintrag nicht geblockt; `Edit` dort und `Read` auf einen Datei-Eintrag unterhalb der Plugin-Wurzel werden geblockt.
 
 ## 13. Entscheidungen
 
@@ -373,7 +423,7 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 - **P6 · Name** — `plan-writing` (Alternative `planning`), passend zu `spec-whiteboarding` / `spec-review`.
 - **P7 · Ablage** — `plan.md` im Ordner der Spec.
 - **P8 · Stopp-Grund Spec-Rückfrage** — Loop endet, wenn alle 🔴 nur über die Spec lösbar sind.
-- **P9 · Plan-Kopf** — kein Verweis auf einen Ausführungs-Skill, bis Teilprojekt 3 einen Namen hat.
+- **P9 · Plan-Kopf** — nennt `/dv-forge:implementation <plan.md>` als Umsetzungs-Befehl (Name von Teilprojekt 3 festgelegt, Abgleich Iteration 2).
 - **P10 · Task-Nummern** — verbindlich ganzzahlig und lückenlos; `plan-rework` nummeriert neu statt „3a“. Grund: Teilprojekt 3 zerlegt den Plan per Skript, und `Task n` muss als Stelle eindeutig bleiben.
 - **P11 · Fortschrittsprüfung** — `loop.md` neutral, Skript pro Skill; Teilprojekt 3 vergleicht den Git-Stand statt einer Datei.
 - **P12 · Stellen-Typen** — Tabelle statt verstreuter Regex; der Typ Dateipfad kommt in Teilprojekt 3 als eine weitere Zeile, nicht schon jetzt (YAGNI).
@@ -381,3 +431,6 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 - **P14 · Tool-Aufrufe** — eine Verifikation darf ein Tool-Aufruf sein; die Projekt-`CLAUDE.md` bestimmt, welcher Weg erlaubt ist.
 - **P15 · Anker bei Modify** — Zeilen veralten bei sequentieller Umsetzung; ein Symbol- oder Text-Anker bleibt gültig (Abgleich mit Teilprojekt 3, Iteration 1).
 - **P16 · Verzeichnisse im Guard** — `protected` erlaubt Verzeichnisse mit Präfix-Match an Pfadgrenzen, weil der Orchestrator in Teilprojekt 3 auch keinen Code lesen darf (Abgleich mit Teilprojekt 3, Iteration 1).
+- **P17 · Scout** — nach dem letzten Review liefert `plan-review-scout` pro 🔴/🟡-Finding 1–3 Vorschläge mit begründetem Favoriten, rein beratend. Nur in `plan-review`; `spec-review` wird nach seiner Umsetzung nachgerüstet, Teilprojekt 3 hat einen eigenen Scout.
+- **P18 · Smoke-Test** — wird nach dem Dogfood-Lauf eingetragen.
+- **P19 · Abgleich Teilprojekt 3, Iteration 2** — TP3 heißt `/dv-forge:implementation` (Umsetzung) und `/dv-forge:implementation-review` (Review ohne Loop, mit Scout). Übernommen: Umsetzungs-Befehl im Plan-Kopf (P9), Übergabe bei sauberem Plan-Review (AC-32), Leseausnahme für die Plugin-Wurzel im Guard (AC-33). `--escalation-status` bleibt parametrisiert, obwohl TP3 ihn nicht nutzt — kostet nichts und hält `rework-outcome.js` artefakt-neutral. Die Guard-Zeile für `implementation-review` und den Stellen-Typ Dateipfad baut TP3.

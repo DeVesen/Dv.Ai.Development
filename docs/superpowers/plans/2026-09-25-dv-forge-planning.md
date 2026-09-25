@@ -14,12 +14,12 @@
 
 - Plugin `dv-forge`, folder `plugins/forge/`. Nothing is taken from `dv-relay`: no names, texts or structures. Do not open `plugins/relay/` as a template.
 - No file under `plugins/forge/skills`, `agents`, `shared`, `hooks`, `scripts` or `.claude-plugin` mentions `superpowers` or `writing-plans` (spec AC-02). The content of `plan-writing` is written fresh in German; no sentence is translated word for word from an English original.
-- Block B (Tasks 5–12) starts only after Task 4 passes (spec AC-17). All existing spec-review tests stay green after every Block B task.
+- Block B (Tasks 5–13) starts only after Task 4 passes (spec AC-17). All existing spec-review tests stay green after every Block B task.
 - Scripts: Node, CommonJS, no npm dependencies, no `package.json`. Each script exports its functions and runs `main()` only under `require.main === module`.
 - Test command: `node --test "plugins/forge/tests/*.test.js"`. Expected result after every task: `fail 0`. Do not compare absolute test counts — other sessions add tests in parallel.
 - Skill and agent bodies: German prose, English technical terms. Frontmatter `description` in English, starting with "Use when…".
 - Skill frontmatter for `plan-writing` and `plan-review`: `name`, `description`, `disable-model-invocation: true`, `argument-hint`. `SKILL.md` body under 500 words; details go into `references/` or `shared/review-loop/`.
-- Agent frontmatter: `name`, `description`, `tools`, `model`. `plan-review-coverage`: `tools: Read`. The other four plan reviewers: `tools: Read, Grep, Glob`. `plan-rework`: `tools: Read, Grep, Glob, Edit`, `model: opus`. Reviewers: `model: sonnet`.
+- Agent frontmatter: `name`, `description`, `tools`, `model`. `plan-review-coverage`: `tools: Read`. The other four plan reviewers: `tools: Read, Grep, Glob`. `plan-rework`: `tools: Read, Grep, Glob, Edit`, `model: opus`. `plan-review-scout`: `tools: Read, Grep, Glob`, `model: opus`. Reviewers: `model: sonnet`.
 - `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_SESSION_ID}` are substituted only inside `SKILL.md`. Files that a skill tells the model to read (`shared/review-loop/*.md`) use the placeholders `<PLUGIN>` and `<SESSION>`; the skill defines them in its first lines.
 - Tests never assert on the German closing quote `“` (U+201C) as a literal; the editing tools may normalise it. Use `“` in JS strings or match without the quote.
 - Parallel sessions work on `plugins/forge/` in the same working tree on branch `V2`. Before each task run `git status --short plugins/forge`. If a file the task touches shows changes that are not yours, stop and report instead of editing.
@@ -38,7 +38,7 @@ plugins/forge/
 │   │       ├── task-rules.md             file structure, task sizing, step size, placeholders  (Task 2)
 │   │       └── self-check.md             checklist after writing                               (Task 2)
 │   ├── spec-review/SKILL.md              slimmed to spec-specific parts                        (Task 8)
-│   └── plan-review/SKILL.md              plan orchestrator                                     (Task 11)
+│   └── plan-review/SKILL.md              plan orchestrator                                     (Task 12)
 ├── shared/review-loop/
 │   ├── loop.md                           artefact-neutral loop                                 (Task 8)
 │   ├── finding-format.md                 moved from skills/spec-review/references, generalised (Task 8)
@@ -50,7 +50,8 @@ plugins/forge/
 │   ├── plan-review-architecture.md       fit with repo patterns and CLAUDE.md                  (Task 9)
 │   ├── plan-review-risks.md              error handling, security, unchecked assumptions       (Task 9)
 │   ├── plan-review-buildability.md       placeholders, anchors, numbering, allowed commands   (Task 9)
-│   └── plan-rework.md                    rework agent, R-entries, JSON result                  (Task 10)
+│   ├── plan-rework.md                    rework agent, R-entries, JSON result                  (Task 10)
+│   └── plan-review-scout.md              1–3 proposals per 🔴/🟡 finding after the last review (Task 11)
 ├── scripts/
 │   ├── aggregate-findings.js             location-type table                                   (Task 5)
 │   ├── rework-outcome.js                 new: escalation check                                 (Task 6)
@@ -63,8 +64,8 @@ plugins/forge/
     ├── guard-orchestrator.test.js        adapted + plan-review + directory cases               (Task 7)
     ├── review-loop.test.js               new: shared files                                     (Task 8)
     ├── skill.test.js                     spec-review checks adapted to loop.md                 (Task 8)
-    ├── agents.test.js                    + plan reviewers + plan-rework                        (Tasks 9–10)
-    ├── plan-review-skill.test.js         new                                                   (Task 11)
+    ├── agents.test.js                    + plan reviewers + plan-rework + scout                (Tasks 9–11)
+    ├── plan-review-skill.test.js         new                                                   (Task 12)
     └── fixtures/
         ├── plan-writing/clear-spec.md, ambiguous-spec.md                                       (Task 3)
         └── plan-review/spec.md, plan.md, repo/…                                                (Task 9)
@@ -78,7 +79,7 @@ Modify at the end: `plugins/forge/.claude-plugin/plugin.json` (minor version bum
 
 ### Task 1: Reference `plan-format.md` + origin scan
 
-**ACs:** AC-02, AC-06, AC-21, AC-23, AC-26
+**ACs:** AC-02, AC-06, AC-21, AC-23, AC-26, AC-32 (plan header)
 
 **Files:**
 - Create: `plugins/forge/skills/plan-writing/references/plan-format.md`
@@ -130,7 +131,7 @@ test('planFormat_Template_DecisionEntries', () => {
   assert.ok(text.includes('- **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>'));
 });
 
-test('planFormat_Rules_NumberingAnchorToolCallsNoExecutionSkill', () => {
+test('planFormat_Rules_NumberingAnchorToolCallsImplementationCommand', () => {
   const text = reference('plan-format.md');
   assert.ok(text.includes('`### Task <n>: <Komponente>`'));
   assert.match(text, /lückenlos aufsteigend ab 1/);
@@ -138,7 +139,8 @@ test('planFormat_Rules_NumberingAnchorToolCallsNoExecutionSkill', () => {
   assert.match(text, /Stabiler Anker/);
   assert.match(text, /Tool-Aufruf mit exakten Parametern/);
   assert.match(text, /Projekt-`CLAUDE\.md`/);
-  assert.match(text, /verweist auf keinen Ausführungs-Skill/);
+  assert.ok(text.includes("> Umsetzung mit `/dv-forge:implementation <plan.md>`"));
+  assert.match(text, /nennt den Umsetzungs-Befehl/);
 });
 ```
 
@@ -191,7 +193,7 @@ Der Plan liegt als `plan.md` im Ordner der Spec. Er hat genau diesen Aufbau:
 ````markdown
 # <Titel> — Umsetzungsplan
 
-> Umsetzung Task für Task, sequentiell. Schritte nutzen Checkbox-Syntax (`- [ ]`).
+> Umsetzung mit `/dv-forge:implementation <plan.md>`, Task für Task, sequentiell. Schritte nutzen Checkbox-Syntax (`- [ ]`).
 
 **Ziel:** <ein Satz>
 **Architektur:** <2–3 Sätze>
@@ -234,7 +236,7 @@ Der Plan liegt als `plan.md` im Ordner der Spec. Er hat genau diesen Aufbau:
 
 ## Regeln
 
-1. **Kopf:** `Ziel` ist genau ein Satz, `Architektur` zwei bis drei Sätze. `Spec` nennt den Pfad der Spec, aus der der Plan entsteht; der Umsetzer liest beide. Der Kopf verweist auf keinen Ausführungs-Skill.
+1. **Kopf:** `Ziel` ist genau ein Satz, `Architektur` zwei bis drei Sätze. `Spec` nennt den Pfad der Spec, aus der der Plan entsteht; der Umsetzer liest beide. Der Kopf nennt den Umsetzungs-Befehl `/dv-forge:implementation <plan.md>`.
 2. **Global Constraints:** Jede projektweite Vorgabe der Spec — Versionsgrenzen, erlaubte Abhängigkeiten, Namens- und Textregeln, Plattformvorgaben — steht hier als eine Zeile, mit exakt den Werten aus der Spec. Jeder Task erbt diesen Abschnitt, ohne ihn zu wiederholen.
 3. **Task-Überschriften** lauten exakt `### Task <n>: <Komponente>`. `<n>` ist eine ganze Zahl, lückenlos aufsteigend ab 1. Zusätze wie „Task 3a“ oder „Task 3.1“ sind verboten, denn spätere Stufen zerlegen den Plan per Skript.
 4. **ACs:** Jeder Task nennt unter `**ACs:**` die AC-IDs, die er umsetzt. Jedes AC der Spec steht in mindestens einem Task.
@@ -617,7 +619,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: the state produced by `docs/superpowers/plans/2026-09-25-dv-forge-spec-review.md`.
-- Produces: the go/no-go for Tasks 5–12.
+- Produces: the go/no-go for Tasks 5–13.
 
 - [ ] **Step 1: Check the spec-review artefacts**
 
@@ -755,7 +757,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   === REWORK-RESULT ===
   <rework agent answer ending in a JSON block {"results":[{"location","status"}]}>
   ```
-  stdout: first line `OUTCOME all-red-escalated=<true|false> escalated=<k>`, then one line `ESCALATED <location>` per result with the given status. Exit codes: 0 ok, 1 invalid input, 2 missing parameter. Exports `evaluate(text: string, escalationStatus: string): { allRedEscalated: boolean, escalated: string[] }`, `render(outcome): string`, `parseStatus(args: string[]): string`. Used by Task 11.
+  stdout: first line `OUTCOME all-red-escalated=<true|false> escalated=<k>`, then one line `ESCALATED <location>` per result with the given status. Exit codes: 0 ok, 1 invalid input, 2 missing parameter. Exports `evaluate(text: string, escalationStatus: string): { allRedEscalated: boolean, escalated: string[] }`, `render(outcome): string`, `parseStatus(args: string[]): string`. Used by Task 12.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -985,7 +987,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ### Task 7: `guard-orchestrator.js` — command table, `protected[]`, directory entries
 
-**ACs:** AC-08 (path rule), AC-16, AC-27
+**ACs:** AC-08 (path rule), AC-16, AC-27, AC-33
 
 **Files:**
 - Modify: `plugins/forge/scripts/guard-orchestrator.js` (whole file)
@@ -993,7 +995,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: nothing new. `hooks/hooks.json` stays unchanged.
-- Produces: marker JSON `{ command: string, protected: Array<{ path: string, kind: 'file' | 'dir' }> }`; exports `markerPath`, `parseSkillCall(prompt): { command, files } | null`, `writeMarker(sessionId, marker, tmpRoot?)`, `onPrompt`, `decidePreTool`, `release`, `COMMANDS`. `rework-outcome.js` is an allowed shell script. Directory entries are used by sub-project 3; spec- and plan-review write only file entries.
+- Produces: marker JSON `{ command: string, protected: Array<{ path: string, kind: 'file' | 'dir' }> }`; exports `markerPath`, `parseSkillCall(prompt): { command, files } | null`, `writeMarker(sessionId, marker, tmpRoot?)`, `onPrompt`, `decidePreTool`, `release`, `COMMANDS`, `PLUGIN_ROOT`. A main-session `Read` below `PLUGIN_ROOT` is allowed even inside a protected directory entry (not for file entries, not for Edit/Write). `rework-outcome.js` is an allowed shell script. Directory entries are used by sub-project 3; spec- and plan-review write only file entries.
 
 - [ ] **Step 1: Replace the three spec-only tests**
 
@@ -1100,6 +1102,32 @@ test('decidePreTool_DirectoryEntryShellNamesDirectory_Denies', () => {
   const env = setupDirectory();
   assert.ok(preTool(env, { tool_name: 'Bash', tool_input: { command: `ls "${env.repo}"` } }));
 });
+
+function setupRepoAroundPlugin() {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-guard-'));
+  const repo = path.resolve(guard.PLUGIN_ROOT, '..', '..');
+  guard.writeMarker(SESSION, { command: '/dv-forge:test', protected: [{ path: repo, kind: 'dir' }] }, tmpRoot);
+  return { tmpRoot, cwd: repo };
+}
+
+test('decidePreTool_DirectoryEntryReadInsidePluginRoot_Allows', () => {
+  const env = setupRepoAroundPlugin();
+  const loop = path.join(guard.PLUGIN_ROOT, 'shared', 'review-loop', 'loop.md');
+  assert.equal(preTool(env, { tool_name: 'Read', tool_input: { file_path: loop } }), null);
+});
+
+test('decidePreTool_DirectoryEntryEditInsidePluginRoot_Denies', () => {
+  const env = setupRepoAroundPlugin();
+  const loop = path.join(guard.PLUGIN_ROOT, 'shared', 'review-loop', 'loop.md');
+  assert.ok(preTool(env, { tool_name: 'Edit', tool_input: { file_path: loop } }));
+});
+
+test('decidePreTool_FileEntryInsidePluginRoot_StillDeniesRead', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-guard-'));
+  const spec = path.join(guard.PLUGIN_ROOT, 'tests', 'fixtures', 'flawed-spec.md');
+  guard.writeMarker(SESSION, { command: '/dv-forge:spec-review', protected: [{ path: spec, kind: 'file' }] }, tmpRoot);
+  assert.ok(preTool({ tmpRoot, cwd: guard.PLUGIN_ROOT }, { tool_name: 'Read', tool_input: { file_path: spec } }));
+});
 ```
 
 - [ ] **Step 3: Run the tests to verify they fail**
@@ -1128,6 +1156,7 @@ const FILE_TOOLS = {
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
 const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcome.js'];
 const TOKEN = /"([^"]*)"|'([^']*)'|(\S+)/g;
+const PLUGIN_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_REASON = 'dv-forge-Orchestrator läuft: geschützte Dateien werden nur von SubAgents gelesen und geändert.';
 
 const COMMANDS = {
@@ -1226,7 +1255,10 @@ function touchesProtected(input, entries) {
   }
   if (Object.hasOwn(FILE_TOOLS, input.tool_name)) {
     const target = toolInput[FILE_TOOLS[input.tool_name]];
-    return Boolean(target) && entries.some((entry) => hitsEntry(path.resolve(input.cwd, target), entry));
+    if (!target) return false;
+    const absolute = path.resolve(input.cwd, target);
+    const readsOwnPluginFile = input.tool_name === 'Read' && isWithin(absolute, PLUGIN_ROOT);
+    return entries.some((entry) => hitsEntry(absolute, entry) && !(entry.kind === 'dir' && readsOwnPluginFile));
   }
   if (SHELL_TOOLS.has(input.tool_name)) {
     const command = String(toolInput.command ?? '').toLowerCase().replace(/\\/g, '/');
@@ -1277,7 +1309,7 @@ if (require.main === module) {
   }
 }
 
-module.exports = { COMMANDS, markerPath, parseSkillCall, writeMarker, onPrompt, decidePreTool, release };
+module.exports = { COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, decidePreTool, release };
 ```
 
 - [ ] **Step 5: Run the tests to verify they pass**
@@ -1311,7 +1343,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: CLI contracts of `file-hash.js`, `aggregate-findings.js` (`--expect`, `STATUS …`, `=== REPORT ===`, `=== REWORK ===`), `guard-orchestrator.js release <session>`.
-- Produces: `shared/review-loop/loop.md` with the building blocks a skill must define: **Eingaben**, **Reviewer**, **Nacharbeiter**, **Fortschritts-Skript**, **Zusatz-Stopps**, **Bericht**; placeholders `<PLUGIN>` and `<SESSION>`. `report-format.md` with `<Berichtstitel>`. Used by Task 11.
+- Produces: `shared/review-loop/loop.md` with the building blocks a skill must define: **Eingaben**, **Reviewer**, **Nacharbeiter**, **Fortschritts-Skript**, **Zusatz-Stopps**, **Abschluss-Scout**, **Bericht**; placeholders `<PLUGIN>` and `<SESSION>`. `report-format.md` with `<Berichtstitel>`. Used by Task 12.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1338,9 +1370,16 @@ test('sharedLoop_Files_ExistAndOldReferencesAreGone', () => {
 
 test('loop_BuildingBlocks_AllNamed', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
-  for (const block of ['Eingaben', 'Reviewer', 'Nacharbeiter', 'Fortschritts-Skript', 'Zusatz-Stopps', 'Bericht']) {
+  for (const block of ['Eingaben', 'Reviewer', 'Nacharbeiter', 'Fortschritts-Skript', 'Zusatz-Stopps', 'Abschluss-Scout', 'Bericht']) {
     assert.ok(text.includes(`| ${block} |`), `${block} fehlt`);
   }
+});
+
+test('loop_Closing_ScoutRunsOnlyOnRedOrYellowAndIsCheckedMechanically', () => {
+  const text = readText(path.join(SHARED, 'loop.md'));
+  assert.match(text, /`red` > 0 oder `yellow` > 0/);
+  assert.ok(text.includes('## Scout-Vorschläge'));
+  assert.ok(text.includes('Scout ausgefallen'));
 });
 
 test('loop_Round_ForegroundAggregateStopsAndProgress', () => {
@@ -1362,6 +1401,7 @@ test('reportFormat_Generic_TitleAndSkillSpecificParts', () => {
   assert.ok(text.includes('## <Berichtstitel>: <pfad des Artefakts>'));
   assert.ok(text.includes('<Zusatz-Status des Skills>'));
   assert.ok(text.includes('<Zusatz-Abschnitte des Skills>'));
+  assert.ok(text.includes('Scout ausgefallen'));
   assert.ok(!text.includes('Spec-Review:'));
 });
 
@@ -1396,6 +1436,11 @@ test('skill_Body_DefinesPluginRootSessionAndReadsLoop', () => {
   for (const script of ['aggregate-findings.js', 'guard-orchestrator.js']) {
     assert.ok(readLoop().includes(`<PLUGIN>/scripts/${script}`), `${script} fehlt in loop.md`);
   }
+});
+
+test('skill_Body_HasNoClosingScoutYet', () => {
+  const { body } = readSkill();
+  assert.match(body, /## Abschluss-Scout\r?\nKeiner\./);
 });
 ```
 
@@ -1464,6 +1509,8 @@ Jeder Reviewer beendet seine Antwort mit genau einem JSON-Block. Nach dem Block 
 ### Letztes Review
 <Abschnitt zwischen `=== REPORT ===` und `=== REWORK ===` aus der letzten Aggregation, unverändert>
 
+<Scout-Abschnitt ab `## Scout-Vorschläge`, unverändert, oder „Scout ausgefallen“>        ← nur wenn der Skill einen Scout nennt und er lief
+
 <Zusatz-Abschnitte des Skills>
 
 Nächster Schritt: <Text aus dem Skill>
@@ -1487,6 +1534,7 @@ Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills. `<PLUGIN>` und `<SESSION>
 | Nacharbeiter | Agent-Name und seine Eingabe |
 | Fortschritts-Skript | Aufruf, dessen Ausgabe vor und nach der Nacharbeit verglichen wird |
 | Zusatz-Stopps | Prüfungen direkt nach der Nacharbeit, falls vorhanden |
+| Abschluss-Scout | Agent-Name und Eingabe des Scouts nach dem letzten Review, oder „Keiner“ |
 | Bericht | Titel, zusätzliche Status-Werte und Abschnitte, nächster Schritt |
 
 ## Rolle
@@ -1515,8 +1563,9 @@ Start: `r = 1`, `nacharbeiten = 0`.
    5. `nacharbeiten + 1`, `r = r+1`, weiter mit Schritt 1.
 
 ## Abschluss
-1. Bericht im Chat nach `<PLUGIN>/shared/review-loop/report-format.md`, mit dem REPORT-Abschnitt der letzten Aggregation und den Angaben des Skills. Keine Dateien schreiben, nichts committen.
-2. `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`
+1. **Abschluss-Scout:** Nennt der Skill einen Scout und zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, startest du ihn einmal mit `run_in_background: false`: Eingaben aus dem Skill, dazu `Findings:` und der REWORK-Abschnitt der letzten Aggregation unverändert. Enthält seine Antwort keine Zeile `## Scout-Vorschläge`, startest du ihn einmal neu. Fehlt sie wieder, gilt „Scout ausgefallen“. Du bewertest die Vorschläge nicht.
+2. Bericht im Chat nach `<PLUGIN>/shared/review-loop/report-format.md`, mit dem REPORT-Abschnitt der letzten Aggregation, dem Scout-Abschnitt ab `## Scout-Vorschläge` unverändert (oder „Scout ausgefallen“) und den Angaben des Skills. Keine Dateien schreiben, nichts committen.
+3. `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`
 ````
 
 - [ ] **Step 4: Slim `spec-review/SKILL.md`**
@@ -1560,6 +1609,9 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 
 ## Zusatz-Stopps
 Keine.
+
+## Abschluss-Scout
+Keiner.
 
 ## Bericht
 Titel „Spec-Review“, Artefakt `<S>`, keine Zusatz-Status und keine Zusatz-Abschnitte. Nächster Schritt: „Spec und Abschnitt „Entscheidungen“ lesen, dann selbst committen.“
@@ -1612,7 +1664,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: `readAgent(name)` and `FORMAT_KEYS` in `agents.test.js` (exist); finding format from `shared/review-loop/finding-format.md`.
-- Produces: agents `dv-forge:plan-review-<coverage|feasibility|architecture|risks|buildability>`. Input lines: `Plan: <abs>`, `Spec: <abs>`, and for all except coverage `Repo: <abs>`. Output: one JSON block with `"reviewer": "<kurzname>"`. Used by Task 11. The saved aggregate output from Step 5 is used by Task 10.
+- Produces: agents `dv-forge:plan-review-<coverage|feasibility|architecture|risks|buildability>`. Input lines: `Plan: <abs>`, `Spec: <abs>`, and for all except coverage `Repo: <abs>`. Output: one JSON block with `"reviewer": "<kurzname>"`. Used by Task 12. The saved aggregate output from Step 5 is used by Task 10.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1754,7 +1806,7 @@ module.exports = { registerRoutes };
 ````markdown
 # Bestellstatus abfragen — Umsetzungsplan
 
-> Umsetzung Task für Task, sequentiell. Schritte nutzen Checkbox-Syntax (`- [ ]`).
+> Umsetzung mit `/dv-forge:implementation <plan.md>`, Task für Task, sequentiell. Schritte nutzen Checkbox-Syntax (`- [ ]`).
 
 **Ziel:** Kunden fragen über die HTTP-API den Status einer Bestellung ab.
 **Architektur:** Eine neue Route ruft `OrderService.getStatus`. Der Service liest die Bestellung und fragt das Zahlungsdatum über `PaymentClient` beim Zahlungsdienst ab.
@@ -2281,7 +2333,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: REWORK section of `aggregate-findings.js`; `<SCRATCH>/plan-review-aggregate.txt` from Task 9 Step 5.
-- Produces: agent `dv-forge:plan-rework`. Input `Plan:`, `Spec:`, `Repo:`, `Runde:`, `Findings:` + REWORK section. Output ends with one JSON block `{"results":[{"location","status"}]}`, `status ∈ changed | unchanged | spec-question`. Used by Task 11 via `rework-outcome.js`.
+- Produces: agent `dv-forge:plan-rework`. Input `Plan:`, `Spec:`, `Repo:`, `Runde:`, `Findings:` + REWORK section. Output ends with one JSON block `{"results":[{"location","status"}]}`, `status ∈ changed | unchanged | spec-question`. Used by Task 12 via `rework-outcome.js`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -2402,16 +2454,141 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ---
 
-### Task 11: Orchestrator skill `plan-review` (Controller for Step 5)
+### Task 11: Scout agent `plan-review-scout` (Controller for Step 5)
 
-**ACs:** AC-01, AC-08, AC-09, AC-14, AC-15
+**ACs:** AC-29, AC-30
+
+**Files:**
+- Create: `plugins/forge/agents/plan-review-scout.md`
+- Modify: `plugins/forge/tests/agents.test.js` (append)
+
+**Interfaces:**
+- Consumes: REWORK section of `aggregate-findings.js`; `<SCRATCH>/plan-review-aggregate.txt` from Task 9 Step 5.
+- Produces: agent `dv-forge:plan-review-scout`. Input `Plan:`, `Spec:`, `Repo:`, `Findings:` + REWORK section of the last aggregation. Output: a section starting with the line `## Scout-Vorschläge`, one `### <Stufe> <Stelle>` block per 🔴/🟡 group with 1–3 numbered proposals and exactly one line `**Bevorzugt: <Nr>** — <Begründung>`. Used by Task 12.
+
+- [ ] **Step 1: Write the failing tests**
+
+Append to `plugins/forge/tests/agents.test.js`:
+
+```js
+test('plan-review-scout_Frontmatter_ReadGrepGlobOpus', () => {
+  const { fields } = readAgent('plan-review-scout');
+  assert.equal(fields.name, 'plan-review-scout');
+  assert.equal(fields.tools, 'Read, Grep, Glob');
+  assert.equal(fields.model, 'opus');
+  assert.match(fields.description, /^Use when/);
+});
+
+test('plan-review-scout_Body_FormatProposalsPreferredAndNoEdits', () => {
+  const { body } = readAgent('plan-review-scout');
+  assert.ok(body.includes('## Scout-Vorschläge'));
+  assert.ok(body.includes('**Bevorzugt: <Nr>** — <Begründung>'));
+  assert.match(body, /1 bis 3/);
+  assert.match(body, /änderst keine Datei/);
+  assert.match(body, /🟢-Gruppen/);
+  assert.match(body, /Spec so ändern/);
+  assert.ok(body.includes('`Repo:`'));
+});
+```
+
+- [ ] **Step 2: Run the tests to verify they fail**
+
+Run: `node --test "plugins/forge/tests/*.test.js"`
+Expected: FAIL with `ENOENT` for `plan-review-scout.md`.
+
+- [ ] **Step 3: Write the agent**
+
+`plugins/forge/agents/plan-review-scout.md`:
+
+````markdown
+---
+name: plan-review-scout
+description: Use when a dv-forge plan-review run has ended and every remaining red or yellow finding of its last review needs one to three concrete solution proposals, one of them recommended with a reason, before the report goes to the human.
+tools: Read, Grep, Glob
+model: opus
+---
+
+# Plan-Review: Scout
+
+Du berätst den Menschen nach dem letzten Review eines Plan-Reviews. Du liest Plan, Spec und den Code im Repo, nur lesend. Du änderst keine Datei, schreibst keine Einträge und löst keine weitere Runde aus. Einen Chatverlauf gibt es für dich nicht.
+
+## Eingabe
+- `Plan:` absoluter Pfad zur `plan.md`
+- `Spec:` absoluter Pfad zur `spec.md`
+- `Repo:` Wurzel des Repos; Pfade im Plan sind relativ dazu
+- `Findings:` Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+
+## Auftrag
+1. Du bearbeitest jede 🔴- und jede 🟡-Gruppe. 🟢-Gruppen lässt du weg.
+2. Pro Gruppe ermittelst du 1 bis 3 Lösungsvorschläge. Jeder ist konkret genug, dass der Mensch ihn ohne Rückfrage in Auftrag geben kann: welche Stelle im Plan, was sich ändert, warum das das Finding löst.
+3. Die Vorschläge stützt du auf Plan, Spec und Code. Prüf im Code nach, bevor du dich auf ein Symbol, eine Datei oder ein Muster berufst.
+4. Ist eine Gruppe nur über die Spec lösbar, darf ein Vorschlag lauten „Spec so ändern: …“, mit der konkreten neuen Festlegung.
+5. Genau einen Vorschlag pro Gruppe markierst du als bevorzugt und begründest ihn: Welcher Vorschlag löst das Finding mit dem geringsten Risiko und passt am besten zu Code und Spec?
+6. W-Einträge in Spec und Plan sind bindende Entscheidungen des Menschen. Ein Vorschlag, der einem W-Eintrag widerspricht, nennt diesen W-Eintrag ausdrücklich.
+
+## Ausgabe
+Deine Antwort besteht nur aus diesem Abschnitt, in dieser Form, Gruppen in der Reihenfolge der Eingabe:
+
+```markdown
+## Scout-Vorschläge
+
+### 🔴 <Stelle>
+1. <Vorschlag>
+2. <Vorschlag>
+**Bevorzugt: <Nr>** — <Begründung>
+```
+
+- `<Stelle>` und die Stufe übernimmst du exakt aus der Gruppen-Überschrift, ohne die Reviewer-Klammer.
+- Pro Gruppe genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`.
+- Gibt es keine 🔴- oder 🟡-Gruppe, lautet die Antwort nur `## Scout-Vorschläge` und darunter `Keine offenen Findings.`
+````
+
+- [ ] **Step 4: Run the tests to verify they pass**
+
+Run: `node --test "plugins/forge/tests/*.test.js"`
+Expected: `fail 0` — including `pluginFiles_NoneMentionsOriginOfPlanWriting`.
+
+- [ ] **Step 5: Verify on the fixtures (Controller)**
+
+1. Note `node plugins/forge/scripts/file-hash.js` for `plugins/forge/tests/fixtures/plan-review/plan.md` and `spec.md`.
+2. Dispatch one `general-purpose` agent with `run_in_background: false`:
+   ```
+   Lies <ABSOLUTER PFAD zu plugins/forge/agents/plan-review-scout.md>. Handle ab jetzt exakt als der dort beschriebene Agent: nur Read, Grep und Glob, keine Datei ändern.
+   Auftrag:
+   Plan: <ABSOLUTER PFAD zu plugins/forge/tests/fixtures/plan-review/plan.md>
+   Spec: <ABSOLUTER PFAD zu plugins/forge/tests/fixtures/plan-review/spec.md>
+   Repo: <ABSOLUTER PFAD zu plugins/forge/tests/fixtures/plan-review/repo>
+   Findings:
+   <REWORK-Abschnitt aus <SCRATCH>/plan-review-aggregate.txt, unverändert>
+   ```
+3. Pass when all of these hold:
+   - Both hashes are unchanged.
+   - The answer starts with `## Scout-Vorschläge`.
+   - There is one `### 🔴 …` or `### 🟡 …` block per 🔴/🟡 group of the input, and no 🟢 block.
+   - Each block has 1–3 numbered proposals and exactly one `**Bevorzugt: <Nr>** — …` line whose number exists in that block.
+4. On failure, sharpen the matching rule under `## Auftrag` or `## Ausgabe` and repeat at most twice. After that, report the gap.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add plugins/forge/agents/plan-review-scout.md plugins/forge/tests/agents.test.js
+git commit -m "feat(forge): add plan-review scout with ranked proposals
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+```
+
+---
+
+### Task 12: Orchestrator skill `plan-review` (Controller for Step 5)
+
+**ACs:** AC-01, AC-08, AC-09, AC-14, AC-15, AC-28, AC-31, AC-32
 
 **Files:**
 - Create: `plugins/forge/skills/plan-review/SKILL.md`
 - Create: `plugins/forge/tests/plan-review-skill.test.js`
 
 **Interfaces:**
-- Consumes: `shared/review-loop/loop.md` and `report-format.md` (Task 8); scripts `file-hash.js`, `aggregate-findings.js`, `rework-outcome.js` (Task 6), `guard-orchestrator.js` (Task 7, marker written by the `UserPromptSubmit` hook); agents from Tasks 9 and 10.
+- Consumes: `shared/review-loop/loop.md` and `report-format.md` (Task 8); scripts `file-hash.js`, `aggregate-findings.js`, `rework-outcome.js` (Task 6), `guard-orchestrator.js` (Task 7, marker written by the `UserPromptSubmit` hook); agents from Tasks 9, 10 and 11.
 - Produces: `/dv-forge:plan-review <plan.md> [spec.md] [--rounds N]`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -2449,6 +2626,18 @@ test('planReviewSkill_Body_ListsAllAgents', () => {
   for (const reviewer of REVIEWERS) assert.ok(body.includes(`dv-forge:plan-review-${reviewer}`), `${reviewer} fehlt`);
   assert.ok(body.includes('dv-forge:plan-rework'));
   assert.ok(body.includes('aktiv = coverage,feasibility,architecture,risks,buildability'));
+});
+
+test('planReviewSkill_Body_NamesClosingScout', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /## Abschluss-Scout\n`dv-forge:plan-review-scout`/);
+});
+
+test('planReviewSkill_Body_CleanReportHandsOverToImplementation', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('/dv-forge:implementation <P>'));
+  assert.match(body, /frischen Session/);
+  assert.match(body, /`spec\.md` und `plan\.md` vor dem Start committen/);
 });
 
 test('planReviewSkill_Body_SpecDefaultsToPlanFolder', () => {
@@ -2527,6 +2716,9 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 3. Jede Zeile `ESCALATED <Stelle>` an `spec_rueckfragen` anhängen, ohne Doppelte.
 4. `OUTCOME all-red-escalated=true` → Ende „Spec-Rückfrage in Runde r“.
 
+## Abschluss-Scout
+`dv-forge:plan-review-scout` — `Plan: <P>`, `Spec: <S>`, `Repo: <R>`
+
 ## Bericht
 Titel „Plan-Review“, Artefakt `<P>`, Zusatz-Status „Spec-Rückfrage in Runde r“. Ist `spec_rueckfragen` nicht leer, folgt als Zusatz-Abschnitt:
 
@@ -2535,7 +2727,10 @@ Titel „Plan-Review“, Artefakt `<P>`, Zusatz-Status „Spec-Rückfrage in Run
 - <Stelle>
 ```
 
-Nächster Schritt mit Spec-Rückfragen: „Spec anpassen, dann `/dv-forge:spec-review <S>`, danach `/dv-forge:plan-review <P>` erneut.“ Sonst: „Plan und Abschnitt „Entscheidungen“ lesen, dann selbst committen.“
+Nächster Schritt:
+- mit Spec-Rückfragen: „Spec anpassen, dann `/dv-forge:spec-review <S>`, danach `/dv-forge:plan-review <P>` erneut.“
+- sauber: „`spec.md` und `plan.md` vor dem Start committen, sonst sieht sie ein Worktree nicht. Dann in einer frischen Session:“ und darunter in einem Code-Block `/dv-forge:implementation <P>`.
+- sonst: „Plan, Abschnitt „Entscheidungen“ und Scout-Vorschläge lesen, dann selbst committen.“
 ````
 
 - [ ] **Step 4: Run the tests to verify they pass**
@@ -2580,7 +2775,7 @@ If Step 5 changed `loop.md`, add `plugins/forge/shared/review-loop/loop.md` to t
 
 ---
 
-### Task 12: Version bump, install and dogfood (human + Controller)
+### Task 13: Version bump, install and dogfood (human + Controller)
 
 **ACs:** AC-19, AC-20 (dogfood part)
 
@@ -2590,7 +2785,7 @@ If Step 5 changed `loop.md`, add `plugins/forge/shared/review-loop/loop.md` to t
 
 **Interfaces:**
 - Consumes: everything above.
-- Produces: an installed plugin version with `plan-writing` and `plan-review`, and the recorded smoke result `P17 · Smoke-Test`.
+- Produces: an installed plugin version with `plan-writing` and `plan-review`, and the recorded smoke result `P18 · Smoke-Test`.
 
 - [ ] **Step 1: Full test run**
 
@@ -2643,16 +2838,16 @@ In another fresh session:
 Check:
 1. Five reviewers start in parallel.
 2. The `STATUS` line appears; at most one rework with `R1 · …` entries in the plan.
-3. The report matches `shared/review-loop/report-format.md` with title „Plan-Review“.
+3. The report matches `shared/review-loop/report-format.md` with title „Plan-Review“. If the last review had 🔴/🟡, it contains the `## Scout-Vorschläge` section with 1–3 proposals and one „Bevorzugt“ line per finding. If it ended `sauber`, it contains the commit hint and `/dv-forge:implementation <plan.md>` in a code block.
 4. The spec file is unchanged (`git diff --no-index` is not needed — compare `file-hash.js` before and after).
 5. No file under `%TEMP%\dv-forge\` is left behind.
 
 - [ ] **Step 6: Record the result and clean up**
 
-The user decides whether to keep `docs/forge/2026-09-25-dogfood-planning/`. If not, delete the folder (it was never committed). Then append to `## 13. Entscheidungen` of the planning design:
+The user decides whether to keep `docs/forge/2026-09-25-dogfood-planning/`. If not, delete the folder (it was never committed). Then replace the placeholder line `- **P18 · Smoke-Test** — wird nach dem Dogfood-Lauf eingetragen.` in `## 13. Entscheidungen` of the planning design with:
 
 ```markdown
-- **P17 · Smoke-Test** — <bestanden | Abweichungen: …>, <Datum>.
+- **P18 · Smoke-Test** — <bestanden | Abweichungen: …>, <Datum>.
 ```
 
 ```bash

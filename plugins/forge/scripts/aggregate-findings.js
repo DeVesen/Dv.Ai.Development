@@ -114,7 +114,7 @@ function formatReworkGroup(group) {
   const escalation = group.escalated ? ' · hochgestuft' : '';
   const header = `### ${SEVERITY_ICON[group.severity]} ${group.location} (${group.reviewers.join(', ')}${escalation})`;
   const lines = group.items.map((item) =>
-    `- [${item.reviewer} · ${item.severity}] Zitat: „${cell(item.quote)}" · Konsequenz: ${cell(item.consequence)} · Begründung: ${cell(item.rationale)}`);
+    `- [${item.reviewer} · ${item.severity}] Zitat: „${cell(item.quote)}” · Konsequenz: ${cell(item.consequence)} · Begründung: ${cell(item.rationale)}`);
   return [header, ...lines].join('\n');
 }
 

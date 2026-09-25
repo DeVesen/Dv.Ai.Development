@@ -84,7 +84,7 @@ test('render_Result_StartsWithStatusLineAndHasBothSections', () => {
   assert.match(output, /=== REPORT ===/);
   assert.match(output, /=== REWORK ===/);
   assert.match(output, /a \\\| b/);
-  assert.match(output, /Zitat: „q"/);
+  assert.match(output, /Zitat: „q”/);
 });
 
 test('cli_ExpectAndStdin_PrintsStatusLine', () => {

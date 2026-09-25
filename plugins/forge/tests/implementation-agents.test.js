@@ -30,3 +30,30 @@ test('implementation-implementer_Body_InputsStatusAndNoSubagents', () => {
   assert.match(body, /höchstens 15 Zeilen/);
   assert.match(body, /ROT mit Befehl/);
 });
+
+for (const name of ['implementation-task-reviewer', 'implementation-re-reviewer']) {
+  test(`${name}_Frontmatter_ReadOnlyToolsSonnet`, () => {
+    const { fields } = readAgent(name);
+    assert.equal(fields.name, name);
+    assert.equal(fields.tools, 'Read, Grep, Glob, Bash, PowerShell');
+    assert.equal(fields.model, 'sonnet');
+    assert.match(fields.description, /^Use when/);
+  });
+}
+
+test('implementation-task-reviewer_Body_TwoPartsSeverityAndVerdict', () => {
+  const { body } = readAgent('implementation-task-reviewer');
+  for (const part of ['## Teil 1: Spec-Treue', '## Teil 2: Qualität', '## Dem Bericht nicht trauen',
+    '⚠️ nicht aus dem Diff prüfbar', '`plan-vorgeschrieben`', '**Task:** freigegeben | nachbessern', '`datei:zeile`']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+  assert.match(body, /keinen SubAgent/);
+});
+
+test('implementation-re-reviewer_Body_VerdictPerFindingAndScope', () => {
+  const { body } = readAgent('implementation-re-reviewer');
+  for (const part of ['behoben | nicht behoben', '### Neue Schäden im Fix-Diff', '### Außerhalb',
+    '**Fix-Runde:** alle behoben, keine neuen 🔴 | offen: <Liste>']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+});

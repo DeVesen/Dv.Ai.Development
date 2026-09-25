@@ -3,7 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { readText } = require('./lib/markdown');
+const fs = require('node:fs');
+const { readText, readMarkdown, wordCount } = require('./lib/markdown');
 
 const SKILL_DIR = path.join(__dirname, '..', 'skills', 'plan-writing');
 
@@ -89,4 +90,52 @@ test('selfCheck_Checklist_CoveragePlaceholdersConsistencyFormat', () => {
   assert.match(text, /Format/);
   assert.match(text, /kein SubAgent/);
   assert.match(text, /sofort im Plan/);
+});
+
+const SKILL = path.join(SKILL_DIR, 'SKILL.md');
+const REFERENCES = ['plan-format.md', 'task-rules.md', 'self-check.md'];
+
+test('skill_Frontmatter_ManualOnlyWithArgumentHint', () => {
+  const { fields } = readMarkdown(SKILL);
+  assert.equal(fields.name, 'plan-writing');
+  assert.match(fields.description, /^Use when/);
+  assert.equal(fields['disable-model-invocation'], 'true');
+  assert.equal(fields['argument-hint'], '<spec.md>');
+});
+
+test('skill_Body_StaysUnder500Words', () => {
+  assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
+});
+
+test('skill_Body_LinksAllReferencesThatExist', () => {
+  const { body } = readMarkdown(SKILL);
+  for (const name of REFERENCES) {
+    assert.ok(body.includes(`references/${name}`), `${name} nicht verlinkt`);
+    assert.ok(fs.existsSync(path.join(SKILL_DIR, 'references', name)), `${name} fehlt`);
+  }
+});
+
+test('skill_Body_WritesPlanNextToSpecAndHandsOverToPlanReview', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('`plan.md` im Ordner der Spec'));
+  assert.match(body, /nie überschreiben/);
+  assert.ok(body.includes('/dv-forge:plan-review <pfad/plan.md>'));
+  assert.match(body, /frischen Session/);
+  assert.ok(body.includes('Du committest nichts.'));
+});
+
+test('skill_Body_AsksHumanAndRecordsWEntries', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /eine Frage pro Nachricht/);
+  assert.ok(body.includes('W-Eintrag'));
+  assert.ok(body.includes('`delegiert`'));
+  assert.match(body, /keine Annahme stillschweigend/);
+});
+
+test('skill_Body_KeepsGuidingPrinciples', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /null Kontext/);
+  assert.match(body, /DRY\. YAGNI\. TDD\./);
+  assert.match(body, /Kündige an/);
+  assert.match(body, /mehrere unabhängige Teilsysteme/);
 });

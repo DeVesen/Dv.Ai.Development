@@ -6,7 +6,7 @@
 - `green` 🟢 — Anmerkung, Formulierung.
 
 **`scripts/aggregate-findings.js` fasst zusammen, der Orchestrator nie selbst:**
-1. `location` normalisieren (trim, Leerzeichen, Kleinschreibung, `AC-7` = `AC-07`).
+1. `location` normalisieren über die Tabelle der Stellen-Typen in `aggregate-findings.js`: `AC-7` = `AC-07`, `Task 3` = `Task 03`; alles andere per Rückfall-Regel (trim, Leerzeichen, Kleinschreibung).
 2. Nach normalisierter `location` gruppieren; die Gruppe behält alle Einzel-Findings.
 3. Stufe der Gruppe = höchste Stufe ihrer Einzel-Findings.
 4. Nennen ≥ 2 verschiedene Reviewer eine 🟡-Gruppe, wird sie 🔴 („hochgestuft“).

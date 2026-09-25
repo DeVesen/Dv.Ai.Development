@@ -4,11 +4,11 @@ Jeder Reviewer beendet seine Antwort mit genau einem JSON-Block. Nach dem Block 
 
 ```json
 {
-  "reviewer": "<completeness|consistency|feasibility|clarity|profiles>",
+  "reviewer": "<Kurzname des Reviewers>",
   "findings": [
     {
       "location": "AC-07",
-      "quote": "wörtliches Zitat aus der Spec",
+      "quote": "wörtliches Zitat aus dem geprüften Dokument",
       "severity": "red",
       "consequence": "Was schiefgeht, wenn so gebaut wird",
       "rationale": "Warum das ein Befund ist"
@@ -17,8 +17,8 @@ Jeder Reviewer beendet seine Antwort mit genau einem JSON-Block. Nach dem Block 
 }
 ```
 
-- `location`: `AC-<Zahl>` oder die exakte Abschnittsüberschrift ohne `#` und ohne Nummerierung davor.
-- `quote`: wörtlich aus der Spec. Bei Befunden aus der Quelle der Anfrage mit Präfix `Quelle: `.
+- `location`: ein Stellen-Schlüssel des Skills — `AC-<Zahl>`, `Task <n>`, `Global Constraints` oder die exakte Abschnittsüberschrift ohne `#` und ohne Nummerierung davor. Details auf Schritt-Ebene gehören in `quote`.
+- `quote`: wörtlich aus dem geprüften Dokument. Bei Befunden aus einer Zusatzquelle mit Präfix `Quelle: `.
 - `severity`: `red` | `yellow` | `green`, siehe `severity-rules.md`.
 - Keine Findings: `"findings": []`.
 - Alle Felder sind Strings und Pflicht. Ein Block, der davon abweicht, gilt als ungültig. Der Reviewer wird dann einmal neu gestartet.

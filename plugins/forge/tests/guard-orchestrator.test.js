@@ -55,6 +55,21 @@ test('decidePreTool_MainSessionGrepsSpec_Denies', () => {
   assert.ok(preTool(env, { tool_name: 'Grep', tool_input: { pattern: 'x', path: env.specPath } }));
 });
 
+test('decidePreTool_MainSessionGrepsSpecDirectory_Denies', () => {
+  const env = setup();
+  assert.ok(preTool(env, { tool_name: 'Grep', tool_input: { pattern: 'x', path: path.join(env.cwd, 'docs') } }));
+});
+
+test('decidePreTool_MainSessionGrepsWithoutPath_Denies', () => {
+  const env = setup();
+  assert.ok(preTool(env, { tool_name: 'Grep', tool_input: { pattern: 'x' } }));
+});
+
+test('decidePreTool_MainSessionGrepsSiblingDirectory_Allows', () => {
+  const env = setup();
+  assert.equal(preTool(env, { tool_name: 'Grep', tool_input: { pattern: 'x', path: path.join(env.cwd, 'src') } }), null);
+});
+
 test('decidePreTool_ShellCommandNamesSpec_Denies', () => {
   const env = setup();
   assert.ok(preTool(env, { tool_name: 'Bash', tool_input: { command: 'cat docs/SPEC.md' } }));

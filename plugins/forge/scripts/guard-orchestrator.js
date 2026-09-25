@@ -8,7 +8,7 @@ const path = require('node:path');
 const SKILL_CALL = /^\s*\/dv-forge:spec-review\s+(?:"([^"]+)"|'([^']+)'|(\S+))/;
 const FILE_TOOLS = {
   Read: 'file_path', Edit: 'file_path', Write: 'file_path', MultiEdit: 'file_path',
-  NotebookEdit: 'notebook_path', Grep: 'path',
+  NotebookEdit: 'notebook_path',
 };
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
 const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js'];
@@ -25,6 +25,16 @@ function samePath(a, b) {
     return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
   };
   return normalize(a) === normalize(b);
+}
+
+function isWithin(filePath, dirPath) {
+  const normalize = (value) => {
+    const resolved = path.resolve(value).replace(/\\/g, '/');
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  };
+  const normalizedFile = normalize(filePath);
+  const normalizedDir = normalize(dirPath);
+  return normalizedFile === normalizedDir || normalizedFile.startsWith(`${normalizedDir}/`);
 }
 
 function parseSpecArgument(prompt) {
@@ -51,6 +61,9 @@ function onPrompt(input, tmpRoot) {
 
 function touchesSpec(input, marker) {
   const toolInput = input.tool_input ?? {};
+  if (input.tool_name === 'Grep') {
+    return isWithin(marker.specPath, path.resolve(input.cwd, toolInput.path ?? '.'));
+  }
   if (Object.hasOwn(FILE_TOOLS, input.tool_name)) {
     const target = toolInput[FILE_TOOLS[input.tool_name]];
     return Boolean(target) && samePath(path.resolve(input.cwd, target), marker.specPath);

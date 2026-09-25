@@ -1,6 +1,6 @@
 # dv-forge: Umsetzen — Design
 
-2026-09-25 · @DeVesen · Branch `V2` · Status: Entwurf, wartet auf Freigabe
+2026-09-25 · @DeVesen · Branch `V2` · Status: freigegeben 2026-09-25
 
 ## 1. Kontext und Ziel
 

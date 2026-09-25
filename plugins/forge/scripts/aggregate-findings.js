@@ -7,10 +7,22 @@ const SEVERITY_RANK = { green: 1, yellow: 2, red: 3 };
 const TEXT_FIELDS = ['location', 'quote', 'consequence', 'rationale'];
 const JSON_BLOCK = /```json[ \t]*\r?\n([\s\S]*?)\r?\n```/g;
 
-function normalizeLocation(location) {
-  const collapsed = String(location).trim().replace(/\s+/g, ' ').toLowerCase();
-  const acId = /^ac-0*(\d+)$/.exec(collapsed);
-  return acId ? `ac-${acId[1]}` : collapsed;
+const LOCATION_TYPES = [
+  { name: 'ac', pattern: /^ac-0*(\d+)$/, normalize: (match) => `ac-${match[1]}` },
+  { name: 'task', pattern: /^task 0*(\d+)$/, normalize: (match) => `task ${match[1]}` },
+];
+
+function collapseLocation(location) {
+  return String(location).trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function normalizeLocation(location, types = LOCATION_TYPES) {
+  const collapsed = collapseLocation(location);
+  for (const type of types) {
+    const match = type.pattern.exec(collapsed);
+    if (match) return type.normalize(match);
+  }
+  return collapsed;
 }
 
 function isValidFinding(finding) {
@@ -162,4 +174,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { SEVERITY_RANK, normalizeLocation, extractReviews, aggregate, summarize, run, render };
+module.exports = { SEVERITY_RANK, LOCATION_TYPES, normalizeLocation, extractReviews, aggregate, summarize, run, render };

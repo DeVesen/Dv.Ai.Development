@@ -54,3 +54,30 @@ test('extractReviews_CrlfLineEndings_AreParsed', () => {
   const text = '```json\r\n' + JSON.stringify({ reviewer: 'clarity', findings: [] }) + '\r\n```';
   assert.equal(extractReviews(text).reviews.length, 1);
 });
+
+const { LOCATION_TYPES } = require('../scripts/aggregate-findings.js');
+
+test('normalizeLocation_TaskSpellings_AreEqual', () => {
+  assert.equal(normalizeLocation('Task 03'), 'task 3');
+  assert.equal(normalizeLocation('task 3'), 'task 3');
+  assert.equal(normalizeLocation(' TASK   3 '), 'task 3');
+});
+
+test('normalizeLocation_GlobalConstraints_FallsBackToHeadingRule', () => {
+  assert.equal(normalizeLocation('Global  Constraints'), 'global constraints');
+});
+
+test('normalizeLocation_TaskWithStep_IsNotATaskLocation', () => {
+  assert.equal(normalizeLocation('Task 3, Schritt 2'), 'task 3, schritt 2');
+});
+
+test('locationTypes_Table_HasAcAndTaskRows', () => {
+  assert.deepEqual(LOCATION_TYPES.map((type) => type.name), ['ac', 'task']);
+});
+
+test('normalizeLocation_ExtraTypeRow_WorksWithoutTouchingOthers', () => {
+  const types = [...LOCATION_TYPES, { name: 'x', pattern: /^x-0*(\d+)$/, normalize: (match) => `x-${match[1]}` }];
+  assert.equal(normalizeLocation('X-05', types), 'x-5');
+  assert.equal(normalizeLocation('AC-07', types), 'ac-7');
+  assert.equal(normalizeLocation('Task 03', types), 'task 3');
+});

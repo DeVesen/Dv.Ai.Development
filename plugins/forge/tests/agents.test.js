@@ -105,6 +105,7 @@ for (const [reviewer, tools] of Object.entries(PLAN_REVIEWERS)) {
     assert.ok(body.includes('## W-Einträge'), 'W-Einträge fehlt');
     assert.ok(body.includes('## Kalibrierung'), 'Kalibrierung fehlt');
     assert.ok(body.includes('`Task <n>`'), 'Stellen-Schlüssel fehlt');
+    assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
   });
 }
 

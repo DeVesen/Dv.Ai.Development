@@ -10,9 +10,9 @@
 ### Letztes Review
 <Abschnitt zwischen `=== REPORT ===` und `=== REWORK ===` aus der letzten Aggregation, unverändert>
 
-<Scout-Abschnitt ab `## Scout-Vorschläge`, unverändert, oder „Scout ausgefallen“>        ← nur wenn der Skill einen Scout nennt und er lief
-
 <Zusatz-Abschnitte des Skills>
+
+<Scout-Abschnitt ab `## Scout-Vorschläge`, unverändert, oder „Scout ausgefallen“>        ← nur wenn der Skill einen Scout nennt und er lief
 
 Nächster Schritt: <Text aus dem Skill>
 ```

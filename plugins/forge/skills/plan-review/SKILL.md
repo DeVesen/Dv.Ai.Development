@@ -14,7 +14,7 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 ## Eingaben
 1. Das erste Argument ist der Plan (`P`, absolut machen). Ein weiteres Argument ohne `--` ist die Spec (`S`); fehlt es, ist `S` die Datei `spec.md` im Ordner von `P`. `--rounds N` gibt die maximale Zahl an Nacharbeiten an, Default 3. Ein führendes `@` am Pfad entfernen.
 2. Für `P` und für `S`: `node "${CLAUDE_PLUGIN_ROOT}/scripts/file-hash.js" "<pfad>"`. Ist der Exit ≠ 0: melden „Datei nicht gefunden: <pfad>“ und Ende.
-3. `git rev-parse --show-toplevel` ausführen; die Ausgabe ist das Repo `R`.
+3. `git -C "<Ordner von P>" rev-parse --show-toplevel` ausführen; die Ausgabe ist das Repo `R`.
 4. `aktiv = coverage,feasibility,architecture,risks,buildability`; `spec_rueckfragen` ist eine leere Liste.
 
 ## Reviewer

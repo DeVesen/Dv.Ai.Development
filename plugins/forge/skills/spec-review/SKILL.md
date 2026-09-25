@@ -14,8 +14,9 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 ## Eingaben
 1. Das erste Argument ist die Spec (`S`, absolut machen). Ein weiteres Argument ohne `--` ist die Quelle (`Q`). `--rounds N` gibt die maximale Zahl an Nacharbeiten an, Default 3. Ein führendes `@` am Pfad entfernen.
 2. `node "${CLAUDE_PLUGIN_ROOT}/scripts/file-hash.js" "<S>"` ausführen. Ist der Exit ≠ 0: melden „Spec nicht gefunden: <S>“ und Ende.
-3. Profile per Glob suchen: `<glossar>/*.md` (Ort aus der Projekt-CLAUDE.md, sonst `docs/glossary`) und `docs/application/**/*.md`. Gibt es Treffer, ist `profiles` aktiv und `P` = Trefferliste. Du liest diese Dateien nicht.
-4. `aktiv = completeness,consistency,feasibility,clarity[,profiles]`.
+3. `git -C "<Ordner von S>" rev-parse --show-toplevel` ausführen; die Ausgabe ist die Projektwurzel `R`.
+4. Profile per Glob suchen: `<glossar>/*.md` (Ort aus der Projekt-CLAUDE.md, sonst `docs/glossary`) und `docs/application/**/*.md`. Gibt es Treffer, ist `profiles` aktiv und `P` = Trefferliste. Du liest diese Dateien nicht.
+5. `aktiv = completeness,consistency,feasibility,clarity[,profiles]`.
 
 ## Reviewer
 - `dv-forge:spec-review-completeness` — `Spec: <S>` und, falls vorhanden, `Quelle: <Q>`
@@ -34,7 +35,7 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 Keine.
 
 ## Abschluss-Scout
-`dv-forge:spec-review-scout` — `Spec: <S>` und `Repo: <Projektwurzel>`
+`dv-forge:spec-review-scout` — `Spec: <S>` und `Repo: <R>`
 
 ## Bericht
 Titel „Spec-Review“, Artefakt `<S>`, keine Zusatz-Status und keine Zusatz-Abschnitte. Nächster Schritt: „Spec und Abschnitt „Entscheidungen“ lesen, dann selbst committen.“

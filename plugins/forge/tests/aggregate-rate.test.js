@@ -87,6 +87,17 @@ test('render_Result_StartsWithStatusLineAndHasBothSections', () => {
   assert.ok(output.includes('Zitat: „q' + String.fromCharCode(0x201c)));
 });
 
+test('run_UnexpectedReviewerName_IsDroppedWithError', () => {
+  const text = [
+    block(review('spec-review-clarity', [finding()])),
+    block(review('clarity', [finding()])),
+  ].join('\n');
+  const result = run(text, ['clarity']);
+  assert.equal(result.status.counts.yellow, 1);
+  assert.equal(result.status.counts.red, 0);
+  assert.ok(result.errors.some((error) => error.includes('Unerwarteter Reviewer verworfen: spec-review-clarity')));
+});
+
 test('cli_ExpectAndStdin_PrintsStatusLine', () => {
   const input = block(review('clarity', []));
   const result = spawnSync(process.execPath, [SCRIPT, '--expect', 'clarity,profiles'], { input, encoding: 'utf8' });

@@ -40,6 +40,11 @@ test('skill_Body_StaysUnder500Words', () => {
   assert.ok(body.split(/\s+/).filter(Boolean).length < 500);
 });
 
+test('skill_Body_TellsToKeepJsonFence', () => {
+  const { body } = readSkill();
+  assert.ok(body.includes('inklusive seiner ```json-Zeile'));
+});
+
 test('skill_Body_GermanQuotesArePaired', () => {
   const { body } = readSkill();
   const opening = (body.match(/„/g) || []).length;

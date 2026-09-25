@@ -123,10 +123,20 @@ function formatRework(groups) {
   return groups.length === 0 ? 'Keine Findings.' : groups.map(formatReworkGroup).join('\n\n');
 }
 
+function dropUnexpected(reviews, expected, errors) {
+  if (expected.length === 0) return reviews;
+  return reviews.filter((review) => {
+    if (expected.includes(review.reviewer)) return true;
+    errors.push(`Unerwarteter Reviewer verworfen: ${review.reviewer}`);
+    return false;
+  });
+}
+
 function run(text, expected) {
   const { reviews, errors } = extractReviews(text);
-  const groups = aggregate(reviews);
-  return { groups, errors, status: summarize(groups, reviews, expected) };
+  const kept = dropUnexpected(reviews, expected, errors);
+  const groups = aggregate(kept);
+  return { groups, errors, status: summarize(groups, kept, expected) };
 }
 
 function render(result) {

@@ -39,7 +39,8 @@ function isWithin(filePath, dirPath) {
 
 function parseSpecArgument(prompt) {
   const match = SKILL_CALL.exec(String(prompt ?? ''));
-  return match ? match[1] ?? match[2] ?? match[3] : null;
+  const argument = match ? match[1] ?? match[2] ?? match[3] : null;
+  return argument === null ? null : argument.replace(/^@/, '');
 }
 
 function readMarker(sessionId, tmpRoot) {

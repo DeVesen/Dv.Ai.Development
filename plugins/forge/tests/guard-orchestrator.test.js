@@ -33,6 +33,10 @@ test('parseSpecArgument_OtherPrompt_ReturnsNull', () => {
   assert.equal(guard.parseSpecArgument('bitte review docs/spec.md'), null);
 });
 
+test('parseSpecArgument_AtPrefixedPath_StripsAt', () => {
+  assert.equal(guard.parseSpecArgument('/dv-forge:spec-review @docs/spec.md'), 'docs/spec.md');
+});
+
 test('onPrompt_SkillCall_WritesMarkerWithAbsoluteSpecPath', () => {
   const env = setup();
   const marker = JSON.parse(fs.readFileSync(guard.markerPath(SESSION, env.tmpRoot), 'utf8'));
@@ -126,7 +130,7 @@ test('cli_PretoolOnSpec_PrintsDenyJson', () => {
 
 test('hooksJson_EveryCommand_PointsToExistingGuardScript', () => {
   const { hooks } = JSON.parse(fs.readFileSync(HOOKS, 'utf8'));
-  assert.ok(hooks.UserPromptSubmit && hooks.PreToolUse && hooks.SessionEnd);
+  assert.ok(hooks.UserPromptSubmit && hooks.PreToolUse && hooks.SessionEnd && hooks.Stop);
   const commands = Object.values(hooks).flat().flatMap((entry) => entry.hooks.map((hook) => hook.command));
   for (const command of commands) assert.match(command, /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/guard-orchestrator\.js/);
   assert.ok(fs.existsSync(SCRIPT));

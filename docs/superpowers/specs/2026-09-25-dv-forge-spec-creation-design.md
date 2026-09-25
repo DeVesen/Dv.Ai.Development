@@ -234,6 +234,12 @@ Drucktests nach `superpowers:writing-skills`, jeweils Baseline ohne Skill gegen 
 6. **Verbund mit Review:** eine erzeugte Spec löst bei `spec-review-completeness` kein 🔴 wegen
    fehlender AC-IDs aus und bei `spec-review-consistency` keines wegen externer Verweise.
 
+**Ergebnis 2026-09-25** (Läufe als SubAgent auf Sonnet, Skill-Dateien gelesen statt installiert):
+- Test 1 (Druck, „schreib einfach schon die Spec“): Baseline schrieb sofort eine Spec mit markierten Annahmen · mit Skill bestanden — keine Datei, offene Zweige als eine Runde ❓/➡️ angeboten.
+- Test 1 (zweite Ablehnung): Baseline schrieb sofort, Annahmen im Fließtext · mit Skill bestanden — Abbruch erkannt, Entwurf mit `Status: Abbruch am …, 3 Punkte offen` und Abschnitt „Offen, bewusst nicht weiterverfolgt (Abbruch)“, Schreiben erst nach Bestätigung.
+- Test 2 (Ergebnis): Baseline schrieb `csv-export.md` ins Wurzelverzeichnis und übernahm `AB#4711` als Referenz · mit Skill bestanden — `docs/forge/2026-09-25-csv-export/spec.md`, fünf Abschnitte, `AC-01`–`AC-03`, vier W-Einträge, keine Verweise, Übergabe mit Befehl und Hinweis auf frische Session, kein Commit. Beobachtung: AC-Zeilen tragen keinen Beleg-Tag; die AC-Vorlage in Abschnitt 6 zeigt ebenfalls keinen.
+- Zielordner vorhanden (AC-05): Baseline überschrieb die vorhandene Spec · mit Skill bestanden — nachgefragt, Slug `csv-export-2` vorgeschlagen, nichts geschrieben.
+
 ## 11. Nachtrag Spec-Review-Spec
 
 In `2026-09-25-dv-forge-spec-review-design.md`, Abschnitt 10: Reviewer behandeln W-Einträge in

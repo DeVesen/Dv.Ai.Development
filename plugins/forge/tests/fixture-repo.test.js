@@ -44,3 +44,11 @@ test('buildRepo_NonEmptyTarget_Throws', () => {
   fs.writeFileSync(path.join(dir, 'x.txt'), 'x');
   assert.throws(() => buildRepo(dir), /Ziel ist nicht leer/);
 });
+
+test('buildRepo_Flawed_TagOnBaseAndOneImplementationCommit', () => {
+  const repo = buildRepo(target(), { flawed: true });
+  assert.equal(git(repo, 'rev-list', '--count', `forge-base/${SLUG}..HEAD`), '1');
+  assert.equal(git(repo, 'rev-parse', `forge-base/${SLUG}`), git(repo, 'rev-parse', 'HEAD~1'));
+  assert.ok(fs.existsSync(path.join(repo, 'src', 'order-total.js')));
+  assert.equal(fs.existsSync(path.join(repo, 'src', 'format-total.js')), false);
+});

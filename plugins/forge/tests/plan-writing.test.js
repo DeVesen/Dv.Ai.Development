@@ -45,3 +45,48 @@ test('planFormat_Rules_NumberingAnchorToolCallsImplementationCommand', () => {
   assert.ok(text.includes("> Umsetzung mit `/dv-forge:implementation <plan.md>`"));
   assert.match(text, /nennt den Umsetzungs-Befehl/);
 });
+
+test('taskRules_Sections_StructureSizingStepsPlaceholders', () => {
+  const text = reference('task-rules.md');
+  for (const heading of ['## Dateistruktur zuerst', '## Zuschnitt eines Tasks', '## Schrittgröße', '## Verbotene Platzhalter']) {
+    assert.ok(text.includes(`\n${heading}\n`), `${heading} fehlt`);
+  }
+});
+
+test('taskRules_Structure_OneResponsibilityExistingPatternsFirst', () => {
+  const text = reference('task-rules.md');
+  assert.match(text, /eine klare Verantwortung/);
+  assert.match(text, /Was sich gemeinsam ändert, liegt zusammen/);
+  assert.match(text, /vorhandenen Muster/);
+});
+
+test('taskRules_Sizing_SmallestUnitWithOwnTestCycle', () => {
+  const text = reference('task-rules.md');
+  assert.match(text, /kleinste Einheit mit eigenem Testzyklus/);
+  assert.match(text, /ablehnen und den Nachbarn trotzdem annehmen/);
+});
+
+test('taskRules_Steps_FiveActionsTwoToFiveMinutes', () => {
+  const text = reference('task-rules.md');
+  assert.match(text, /2–5 Minuten/);
+  for (const word of ['fehlschlagenden Test', 'Fehlschlag', 'minimalen Code', 'Erfolg', 'committen']) {
+    assert.ok(text.includes(word), `${word} fehlt`);
+  }
+});
+
+test('taskRules_Placeholders_ListsForbiddenPatterns', () => {
+  const text = reference('task-rules.md');
+  const patterns = ['TBD', 'TODO', 'später umsetzen', 'Fehlerbehandlung ergänzen', 'Validierung hinzufügen',
+    'Randfälle behandeln', 'Tests für das Obige', 'wie Task N', 'in keinem Task definiert'];
+  for (const pattern of patterns) assert.ok(text.includes(pattern), `${pattern} fehlt`);
+});
+
+test('selfCheck_Checklist_CoveragePlaceholdersConsistencyFormat', () => {
+  const text = reference('self-check.md');
+  assert.match(text, /Spec-Abdeckung/);
+  assert.match(text, /Platzhalter-Scan/);
+  assert.match(text, /Namens- und Typ-Konsistenz/);
+  assert.match(text, /Format/);
+  assert.match(text, /kein SubAgent/);
+  assert.match(text, /sofort im Plan/);
+});

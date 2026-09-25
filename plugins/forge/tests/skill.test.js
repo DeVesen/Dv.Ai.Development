@@ -72,6 +72,12 @@ test('skill_Body_NamesClosingScout', () => {
   assert.match(body, /## Abschluss-Scout\r?\n`dv-forge:spec-review-scout`/);
 });
 
+test('skill_Body_LeavesScoutRulesToLoop', () => {
+  const { body } = readSkill();
+  assert.ok(!body.includes('## Scout-Vorschläge'));
+  assert.ok(!body.includes('Scout ausgefallen'));
+});
+
 test('reportFormat_HasScoutSection', () => {
   const text = fs.readFileSync(path.join(__dirname, '..', 'shared', 'review-loop', 'report-format.md'), 'utf8');
   assert.ok(text.includes('## Scout-Vorschläge'));

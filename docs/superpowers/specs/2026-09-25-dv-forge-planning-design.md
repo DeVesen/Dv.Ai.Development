@@ -164,11 +164,11 @@ schon: nachfragen, nichts überschreiben.
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   <vollständiger Testcode>
 - [ ] **Schritt 2: Test rot laufen lassen**
-  Befehl: `<befehl>` — erwartet: FAIL mit „<meldung>“
+  Befehl: `<befehl oder Tool-Aufruf>` — erwartet: FAIL mit „<meldung>“
 - [ ] **Schritt 3: Minimal implementieren**
   <vollständiger Code>
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `<befehl>` — erwartet: PASS
+  Befehl: `<befehl oder Tool-Aufruf>` — erwartet: PASS
 - [ ] **Schritt 5: Commit**
   `git add <dateien>` · `git commit -m "<message>"`
 
@@ -176,6 +176,16 @@ schon: nachfragen, nichts überschreiben.
 - **W · <Kurztitel>** · Mensch | delegiert — <Antwort>
 - **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>
 ````
+
+**Verbindliche Format-Regeln** (maschinell auswertbar, weil spätere Stufen den Plan per Skript
+zerlegen, ohne dass ein Orchestrator ihn liest):
+1. **Task-Überschriften** lauten exakt `### Task <n>: <Komponente>`. `<n>` ist eine ganze Zahl,
+   lückenlos aufsteigend ab 1. Zusätze wie „Task 3a“ oder „Task 3.1“ sind verboten.
+2. **Befehl oder Tool-Aufruf:** Eine Verifikation ist entweder ein Shell-Befehl oder ein Tool-Aufruf
+   mit exakten Parametern, z. B. dev-mcp `test_dotnet_solution` mit `test_project_path`. Der Planer
+   liest vor dem Schreiben die Projekt-`CLAUDE.md`. Verbietet sie einen Weg (etwa Tests über die
+   Shell), verwendet der Plan den dort vorgeschriebenen. Ein Befehl, den der Umsetzer nicht ausführen
+   darf, ist ein Plan-Fehler.
 
 ## 7. Skill `plan-review`
 
@@ -199,7 +209,7 @@ für alle: nur melden, was bei der Umsetzung zu falschem Bau oder zum Steckenble
 | `plan-review-feasibility` | Reihenfolge der Tasks, Abhängigkeiten (was ein Task konsumiert, produziert ein früherer), externe Voraussetzungen, Konsistenz von Namen und Typen über Tasks. Keine Zeit- oder Aufwandsschätzung. |
 | `plan-review-architecture` | Passt der Plan zu Architektur, Mustern und Konventionen des Repos einschließlich Projekt-`CLAUDE.md`? Hat jede Datei eine Verantwortung? |
 | `plan-review-risks` | Fehlerbehandlung, Security, ungeprüfte Annahmen über Schnittstellen und externe Systeme. Keine organisatorischen Themen. |
-| `plan-review-buildability` | Platzhalter nach der Verbotsliste aus `task-rules.md`, Code-Schritte ohne Code, existierende Dateien/Zeilen/Symbole bei `Modify`, Task-Zuschnitt und Schrittgröße, ausführbare Befehle. |
+| `plan-review-buildability` | Platzhalter nach der Verbotsliste aus `task-rules.md`, Code-Schritte ohne Code, existierende Dateien/Zeilen/Symbole bei `Modify`, Task-Zuschnitt und Schrittgröße, ausführbare **und laut Projekt-`CLAUDE.md` erlaubte** Befehle bzw. Tool-Aufrufe, Task-Nummerierung nach Regel 1 aus 6.1. |
 
 ### 7.2 Stelle
 
@@ -211,6 +221,10 @@ Schritt-Ebene stehen im Zitat.
 - ändert nur `plan.md`, nie die Spec; liest Code
 - schreibt pro bearbeitetem aggregiertem Finding genau einen R-Eintrag im Format aus 6.1
 - ändert und entfernt keine W-Einträge
+- teilt er einen Task oder fügt einen ein, nummeriert er alle Tasks lückenlos neu (Regel 1 aus 6.1)
+  und zieht Verweise im Plan nach (Consumes/Produces, „aus Task n“). Der R-Eintrag nennt die
+  Zuordnung, z. B. `Task 3 → Task 3, Task 4`. R-Einträge früherer Runden bleiben unverändert; ihre
+  Nummern beziehen sich auf den Stand ihrer Runde.
 - ist ein Finding nur durch eine Spec-Änderung lösbar: Status `spec-rückfrage`, Plan bleibt an der
   Stelle unverändert
 - endet mit genau einem JSON-Block:
@@ -221,9 +235,9 @@ Schritt-Ebene stehen im Zitat.
 
 `status` ∈ `changed` | `unchanged` | `spec-question`.
 
-**Stopp-Grund „Spec-Rückfrage“:** `rework-outcome.js` gleicht die Rückgabe mit den aggregierten 🔴
-der Runde ab. Hat **jede** 🔴-Stelle den Status `spec-question`, endet der Loop mit
-„Spec-Rückfrage in Runde r“.
+**Stopp-Grund „Spec-Rückfrage“:** `rework-outcome.js --escalation-status spec-question` gleicht die
+Rückgabe mit den aggregierten 🔴 der Runde ab. Hat **jede** 🔴-Stelle diesen Status, endet der Loop
+mit „Spec-Rückfrage in Runde r“.
 
 ### 7.4 Abschlussbericht
 
@@ -249,16 +263,30 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
    Pfads. Eine Tabelle im Skript ordnet Befehle Pfaden zu:
    - `/dv-forge:spec-review <spec>` → `[spec]`
    - `/dv-forge:plan-review <plan> [spec]` → `[plan, spec]`; ohne `spec` gilt `spec.md` im Ordner des Plans
-2. **`aggregate-findings.js`:** Die Normalisierung von `location` setzt zusätzlich `Task 03`, `task 3`
-   und `TASK 3` gleich. Alle übrigen Regeln bleiben.
-3. **`rework-outcome.js`** (neu): liest den JSON-Block von `plan-rework` und die aggregierten
-   Findings, gibt `all-red-spec-questions: true|false` und die Liste der Spec-Rückfragen aus. Ungültiges
-   JSON ist ein Fehler.
+2. **`aggregate-findings.js`:** Die Normalisierung von `location` wird auf eine **Tabelle von
+   Stellen-Typen** umgestellt statt verstreuter Regex. Jede Zeile hat: Name, Erkennungsmuster,
+   Normalform. Eine Stelle, auf die keine Zeile passt, fällt auf die bestehende Überschriften-Regel
+   zurück (trimmen, Kleinschreibung, Leerzeichen zusammenfassen). Zeilen jetzt:
+   - `ac` — `AC-7` / `AC-07` → `ac-7` (bestehendes Verhalten)
+   - `task` — `Task 03` / `task 3` / `TASK 3` → `task 3`
+   - `heading` — Rückfall-Regel, deckt auch `Global Constraints` ab
+
+   Ein neuer Typ (in Teilprojekt 3: Dateipfad mit einheitlichen Slashes und Kleinschreibung) kommt
+   als eine weitere Zeile dazu, ohne bestehende Zeilen zu ändern.
+3. **`rework-outcome.js`** (neu): `rework-outcome.js --escalation-status <status>`. Liest den
+   JSON-Block des Nacharbeiters und die aggregierten Findings und gibt `all-red-escalated: true|false`
+   aus, dazu die Liste der Stellen mit diesem Status. `plan-review` ruft es mit `spec-question` auf;
+   Teilprojekt 3 nutzt dasselbe Skript mit eigenem Status. Fehlt der Parameter oder ist das JSON
+   ungültig, ist das ein Fehler.
 4. **Gemeinsame Referenzen:** `finding-format.md`, `severity-rules.md` und `report-format.md` ziehen
    von `skills/spec-review/references/` nach `shared/review-loop/`; der artefakt-neutrale Ablauf wird
    `shared/review-loop/loop.md`. Beide Orchestrator-Skills verweisen per `${CLAUDE_PLUGIN_ROOT}` darauf
    und behalten nur, was zu ihrem Artefakt gehört: Argumente, Reviewer und deren Eingaben,
-   Nacharbeiter, zusätzliche Stopp-Gründe, Stellen-Schlüssel.
+   Nacharbeiter, zusätzliche Stopp-Gründe, Stellen-Schlüssel und das Fortschritts-Skript.
+5. **Fortschrittsprüfung neutral:** `loop.md` sagt „Fortschritt nach der Nacharbeit per Skript
+   prüfen; kein Fortschritt trotz 🔴 → Stillstand“. Welches Skript das ist, legt der jeweilige Skill
+   fest: `spec-review` und `plan-review` nutzen `file-hash.js` auf ihre Datei; Teilprojekt 3 kann
+   den Git-Stand vergleichen.
 
 ## 10. Fehlerfälle
 
@@ -276,14 +304,17 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 1. **Guard** (`node:test`): `plan-review`-Prompt → Marker mit Plan und Spec; Spec im Plan-Ordner wird
    aufgelöst; beide Dateien für die Main-Session geblockt; SubAgent erlaubt; Spec-Review-Fälle
    unverändert grün.
-2. **Aggregation** (`node:test`): `Task 03` / `task 3` / `TASK 3` werden eine Gruppe.
-3. **`rework-outcome.js`** (`node:test`): alle 🔴 `spec-question` → `true`; gemischt → `false`;
-   🔴-Stelle ohne Rückgabe-Eintrag → `false`; ungültiges JSON → Fehler.
+2. **Aggregation** (`node:test`): `Task 03` / `task 3` / `TASK 3` werden eine Gruppe; bestehende
+   `ac`- und Überschriften-Fälle bleiben grün; ein Test-Stellen-Typ, der nur in der Test-Tabelle
+   ergänzt wird, wirkt ohne Änderung an anderen Zeilen.
+3. **`rework-outcome.js`** (`node:test`): mit `--escalation-status spec-question`: alle 🔴 mit diesem
+   Status → `true`; gemischt → `false`; 🔴-Stelle ohne Rückgabe-Eintrag → `false`; anderer Statuswert
+   als Parameter wird genauso ausgewertet; fehlender Parameter → Fehler; ungültiges JSON → Fehler.
 4. **Reviewer:** `tests/fixtures/plan-review/` mit Fixture-Spec, Fixture-Plan und Mini-Repo; je ein
    eingebauter Fehler pro Reviewer: fehlendes AC (coverage), Consumes vor Produces (feasibility), Bruch
    mit dem Muster im Mini-Repo (architecture), fehlende Fehlerbehandlung an einer Schnittstelle
-   (risks), Platzhalter plus nicht existierende `Modify`-Datei (buildability). Jeder Reviewer meldet
-   seinen Fehler.
+   (risks), Platzhalter plus nicht existierende `Modify`-Datei plus `Task 3a` plus Shell-Testbefehl,
+   den die Mini-Repo-`CLAUDE.md` verbietet (buildability). Jeder Reviewer meldet seinen Fehler.
 5. **Drucktests** (Baseline ohne vs. mit Skill):
    - `plan-writing`, Druck „Spec ist klar, schreib kurz und ohne Code“ → vollständige Code-Schritte;
      bei mehrdeutiger Spec eine Frage an den Menschen statt einer Annahme.
@@ -305,13 +336,18 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 - **AC-11** Ein fehlendes oder nur teilweise umgesetztes AC wird immer als 🔴 gemeldet.
 - **AC-12** `plan-rework` ändert nie die Spec und nie einen W-Eintrag.
 - **AC-13** `plan-rework` schreibt pro bearbeitetem aggregiertem Finding genau einen R-Eintrag und endet mit genau einem JSON-Block im Format aus 7.3.
-- **AC-14** Hat jede 🔴-Stelle einer Runde den Status `spec-question`, endet der Loop mit „Spec-Rückfrage in Runde r“.
+- **AC-14** Hat jede 🔴-Stelle einer Runde den Status `spec-question`, endet der Loop mit „Spec-Rückfrage in Runde r“; ermittelt wird das durch `rework-outcome.js --escalation-status spec-question`.
 - **AC-15** Der Abschlussbericht enthält alle Punkte aus 7.4; es entstehen keine Review-Dateien und kein Commit.
 - **AC-16** Während `plan-review` blockt der Guard Lese-, Schreib- und Shell-Zugriffe der Main-Session auf Plan und Spec, außer Aufrufen der Plugin-Skripte; SubAgents werden nicht geblockt.
 - **AC-17** Die Generalisierung aus Abschnitt 9 beginnt erst nach vollständiger Umsetzung von `spec-review`; danach laufen alle Spec-Review-Tests weiterhin grün.
-- **AC-18** `aggregate-findings.js` fasst `Task 03`, `task 3` und `TASK 3` zu einer Gruppe zusammen.
+- **AC-18** `aggregate-findings.js` normalisiert Stellen über eine Tabelle von Stellen-Typen und fasst `Task 03`, `task 3` und `TASK 3` zu einer Gruppe zusammen; ein neuer Typ braucht nur eine neue Tabellenzeile.
 - **AC-19** Alle Node-Tests laufen grün mit `node --test "plugins/forge/tests/*.test.js"`.
 - **AC-20** Die Drucktests aus Abschnitt 11 zeigen gegenüber der Baseline das geforderte Verhalten.
+- **AC-21** Jede Task-Überschrift im Plan lautet `### Task <n>: <Komponente>` mit ganzzahligem `<n>`, lückenlos ab 1.
+- **AC-22** Teilt oder ergänzt `plan-rework` einen Task, ist die Nummerierung danach wieder lückenlos, Verweise im Plan zeigen auf die neuen Nummern, und der R-Eintrag nennt die Zuordnung alt → neu.
+- **AC-23** Jede Verifikation im Plan ist ein Shell-Befehl oder ein Tool-Aufruf mit exakten Parametern und verstößt nicht gegen die Projekt-`CLAUDE.md`.
+- **AC-24** `rework-outcome.js` erwartet den Eskalations-Status als Parameter `--escalation-status`; ohne Parameter bricht es mit Fehler ab.
+- **AC-25** `shared/review-loop/loop.md` nennt kein konkretes Fortschritts-Skript; jeder Orchestrator-Skill legt seines selbst fest.
 
 ## 13. Entscheidungen
 
@@ -324,3 +360,8 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 - **P7 · Ablage** — `plan.md` im Ordner der Spec.
 - **P8 · Stopp-Grund Spec-Rückfrage** — Loop endet, wenn alle 🔴 nur über die Spec lösbar sind.
 - **P9 · Plan-Kopf** — kein Verweis auf einen Ausführungs-Skill, bis Teilprojekt 3 einen Namen hat.
+- **P10 · Task-Nummern** — verbindlich ganzzahlig und lückenlos; `plan-rework` nummeriert neu statt „3a“. Grund: Teilprojekt 3 zerlegt den Plan per Skript, und `Task n` muss als Stelle eindeutig bleiben.
+- **P11 · Fortschrittsprüfung** — `loop.md` neutral, Skript pro Skill; Teilprojekt 3 vergleicht den Git-Stand statt einer Datei.
+- **P12 · Stellen-Typen** — Tabelle statt verstreuter Regex; der Typ Dateipfad kommt in Teilprojekt 3 als eine weitere Zeile, nicht schon jetzt (YAGNI).
+- **P13 · Eskalations-Status** — `rework-outcome.js` parametrisiert statt einer Kopie pro Stufe.
+- **P14 · Tool-Aufrufe** — eine Verifikation darf ein Tool-Aufruf sein; die Projekt-`CLAUDE.md` bestimmt, welcher Weg erlaubt ist.

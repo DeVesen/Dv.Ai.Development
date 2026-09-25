@@ -78,3 +78,44 @@ test('spec-review-scout_Body_DefinesProposalFormat', () => {
   assert.match(body, /änderst keine Datei/);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
+
+const PLAN_REVIEWERS = {
+  coverage: 'Read',
+  feasibility: 'Read, Grep, Glob',
+  architecture: 'Read, Grep, Glob',
+  risks: 'Read, Grep, Glob',
+  buildability: 'Read, Grep, Glob',
+};
+
+for (const [reviewer, tools] of Object.entries(PLAN_REVIEWERS)) {
+  const name = `plan-review-${reviewer}`;
+
+  test(`${name}_Frontmatter_NameToolsModelDescription`, () => {
+    const { fields } = readAgent(name);
+    assert.equal(fields.name, name);
+    assert.equal(fields.tools, tools);
+    assert.equal(fields.model, 'sonnet');
+    assert.match(fields.description, /^Use when/);
+  });
+
+  test(`${name}_Body_FormatCalibrationDecisionsLocations`, () => {
+    const { body } = readAgent(name);
+    for (const key of FORMAT_KEYS) assert.ok(body.includes(key), `${key} fehlt`);
+    assert.ok(body.includes(`"reviewer": "${reviewer}"`));
+    assert.ok(body.includes('## W-Einträge'), 'W-Einträge fehlt');
+    assert.ok(body.includes('## Kalibrierung'), 'Kalibrierung fehlt');
+    assert.ok(body.includes('`Task <n>`'), 'Stellen-Schlüssel fehlt');
+  });
+}
+
+test('plan-review-coverage_Body_ReadsNoCodeAndMissingAcIsAlwaysRed', () => {
+  const { body } = readAgent('plan-review-coverage');
+  assert.match(body, /keinen Code/);
+  assert.match(body, /immer `red`/);
+});
+
+test('plan-review-codeReaders_Body_TakeRepoInput', () => {
+  for (const reviewer of ['feasibility', 'architecture', 'risks', 'buildability']) {
+    assert.ok(readAgent(`plan-review-${reviewer}`).body.includes('`Repo:`'), `${reviewer} ohne Repo`);
+  }
+});

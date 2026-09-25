@@ -16,7 +16,7 @@ function reference(name) {
 
 test('ledger_Lines_IdentityResumeAndAllEntryKinds', () => {
   const text = reference('ledger.md');
-  for (const part of [`# Ledger — Plan: <pfad/plan.md>`, 'Urteil: <was> — <warum> — <was es kostet, falls falsch>',
+  for (const part of ['`# Ledger — Plan: <pfad/plan.md>`', 'Urteil: <was> — <warum> — <was es kostet, falls falsch>',
     'Task <n>: zurückgestellt:', 'Task <n>: Fix-Runde <r>/5', 'Task <n>: geparkt —', 'Task <n>: fertig (',
     'Final: sauber | Fix-Welle', 'git log --oneline forge-base/<slug>..HEAD']) {
     assert.ok(text.includes(part), `${part} fehlt`);
@@ -28,7 +28,7 @@ test('modelSelection_Roles_ExplicitModelAndEscalation', () => {
   const text = reference('model-selection.md');
   assert.match(text, /ausdrücklich mit `model`/);
   assert.match(text, /Rundenzahl schlägt Token-Preis/);
-  assert.match(text, /Final-Review | immer `opus`/);
+  assert.match(text, /Final-Review \| immer `opus`/);
   assert.ok(text.includes('`haiku` → `sonnet` → `opus`'));
 });
 

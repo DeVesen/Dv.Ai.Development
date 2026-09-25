@@ -222,6 +222,11 @@ urteilt.
 Der Abschnitt `## Entscheidungen` ist die einzige Kontinuität zwischen den Runden. Reviewer sehen
 ihn als Teil der Spec. Ein begründetes „nicht geändert“ verhindert Pingpong.
 
+**W-Einträge** (`- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>`) stammen aus
+`dv-forge:spec-whiteboarding` und sind bindende Entscheidungen des Menschen. Alle Reviewer
+behandeln sie so: Ein W-Eintrag ist nie selbst ein Finding, ein Widerspruch zwischen Spec-Inhalt und
+W-Eintrag ist eines. Der Nacharbeiter ändert und entfernt W-Einträge nicht.
+
 ## 11. Orchestrator-Pflicht und Hook-Guard
 
 **Pflicht (gilt analog später für Plan- und Implementierungs-Review):** Der Orchestrator
@@ -316,6 +321,7 @@ Ergebnis wird als Entscheidung in diesem Dokument nachgetragen. Scheitern 1 oder
 - **B12 · Aggregation** — per Skript statt Prosa-Regel; deterministisch, testbar.
 - **B13 · Modelle** — Reviewer `sonnet`, Nacharbeiter `opus`; pro Agent im Frontmatter änderbar.
 - **B14 · Plugin-Name** — `dv-forge`.
+- **B15 · W-Einträge** — Nachtrag aus `2026-09-25-dv-forge-spec-creation-design.md`: W-Einträge sind bindend, siehe Abschnitt 10.
 
 ## 17. Folge-Teilprojekte
 

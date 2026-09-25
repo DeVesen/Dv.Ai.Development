@@ -1652,7 +1652,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - [ ] **Step 1: Full test run**
 
 Run: `node --test "plugins/forge/tests/*.test.js"`
-Expected: 53 tests pass, 0 fail.
+Expected: 0 fail; this plan's files: file-hash 4, aggregate-parse 8, aggregate-rate 11, guard-orchestrator 20, agents 12, skill 6.
 
 - [ ] **Step 2: Human installs the plugin**
 
@@ -1704,7 +1704,7 @@ git restore docs/superpowers/specs/2026-09-25-dv-forge-spec-review-design.md
 
 - [ ] **Step 6: Record the result**
 
-Write the smoke-test result (passed / deviations) as `B15 · Smoke-Test` into §16 of the design doc, then commit:
+Write the smoke-test result (passed / deviations) as `B16 · Smoke-Test` into §16 of the design doc, then commit:
 
 ```bash
 git add docs/superpowers/specs/2026-09-25-dv-forge-spec-review-design.md

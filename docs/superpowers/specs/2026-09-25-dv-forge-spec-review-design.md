@@ -197,7 +197,9 @@ Jeder Reviewer endet mit genau einem JSON-Block:
    alle Einzel-Findings (Reviewer, Zitat, Konsequenz, Begründung).
 3. Stufe der Gruppe = höchste Stufe ihrer Einzel-Findings.
 4. Nennen ≥ 2 **verschiedene** Reviewer dieselbe Gruppe und ist ihre Stufe 🟡, wird sie zu 🔴.
-5. Ausgabe: JSON für den Nacharbeiter plus Markdown-Tabelle für den Bericht, sortiert 🔴 → 🟡 → 🟢.
+5. Ausgabe: `STATUS`-Zeile, Markdown-Tabelle für den Bericht (`=== REPORT ===`) und vom Skript
+   gerenderter Markdown-Block für den Nacharbeiter (`=== REWORK ===`), sortiert 🔴 → 🟡 → 🟢. Reviews
+   mit Namen außerhalb von `--expect` werden verworfen und als Fehler gemeldet.
 6. Ungültiges JSON eines Reviewers wird als Fehler gemeldet und nicht still verworfen.
 
 **Bekannte Grobheit:** Zwei verschiedene Probleme an derselben Stelle werden zusammengelegt und können
@@ -238,8 +240,9 @@ W-Eintrag ist eines. Der Nacharbeiter ändert und entfernt W-Einträge nicht.
 **Durchsetzung — Weg A (Ziel):** Prosa im Skill plus Hook-Guard `guard-orchestrator.js`:
 - Marker setzen: `UserPromptSubmit`-Hook erkennt den Prompt `/dv-forge:spec-review <pfad>` und
   schreibt `<os.tmpdir()>/dv-forge/<session_id>.json` mit dem absoluten Spec-Pfad.
-- Blocken: `PreToolUse` für `Read|Edit|Write|MultiEdit|NotebookEdit`, wenn die Ziel-Datei die Spec
-  ist, und für `Bash|PowerShell`, wenn das Kommando den Spec-Pfad oder -Dateinamen enthält. Alles nur
+- Blocken: `PreToolUse` für `Read|Edit|Write|MultiEdit|NotebookEdit`, wenn die Ziel-Datei die Spec ist,
+  für `Grep`, wenn die Spec im Suchpfad liegt (fehlender Pfad = Arbeitsverzeichnis), und für
+  `Bash|PowerShell`, wenn das Kommando den Spec-Pfad oder -Dateinamen enthält. Alles nur
   in der Main-Session derselben `session_id`. Tool-Calls von SubAgents werden durchgelassen.
   Ausnahme: Shell-Aufrufe von `scripts/file-hash.js` und `scripts/aggregate-findings.js` sind erlaubt.
 - Aufräumen: `Stop`-Hook entfernt den Marker am Ende des Turns, `SessionEnd` als Rückfall.

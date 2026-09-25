@@ -52,3 +52,50 @@ test('finalReview_Wave_OneFixerOneReReview', () => {
   }
   assert.match(text, /Eine zweite Welle gibt es nicht/);
 });
+
+test('skill_Frontmatter_ManualOnlyWithArgumentHint', () => {
+  const { fields } = readMarkdown(SKILL);
+  assert.equal(fields.name, 'implementation');
+  assert.match(fields.description, /^Use when/);
+  assert.equal(fields['disable-model-invocation'], 'true');
+  assert.equal(fields['argument-hint'], '<plan.md>');
+});
+
+test('skill_Body_ReadsReferencesViaPluginRoot', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('`<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`'));
+  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/skills/implementation/references/'));
+  for (const name of REFERENCES) assert.ok(body.includes(`\`${name}\``), `${name} fehlt`);
+});
+
+test('skill_Body_StartScriptsInOrder', () => {
+  const { body } = readMarkdown(SKILL);
+  const order = ['plan-tasks.js" slug', 'base-tag.js" ensure', 'workspace.js" create implementation', 'plan-tasks.js" list'];
+  const positions = order.map((part) => body.indexOf(part));
+  assert.ok(positions.every((position) => position !== -1), `fehlt: ${order[positions.indexOf(-1)]}`);
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+});
+
+test('skill_Body_SixStopReasonsAndWEntryGuard', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /## Stopp-Gründe\n[\s\S]*6\. eine Prüfung beim Start scheitert/);
+  assert.match(body, /einem W-Eintrag in Spec oder Plan widerspräche/);
+});
+
+test('skill_Body_BranchRuleAndHandover', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('git switch -c forge/<slug>'));
+  assert.ok(body.includes('/dv-forge:implementation-review <P>'));
+  assert.ok(body.includes('workspace.js" remove implementation <slug>'));
+  assert.match(body, /kein Merge, kein Push/);
+  assert.match(body, /\*\*Meine Urteile:\*\*/);
+});
+
+test('skill_Body_StaysUnder500Words', () => {
+  assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
+});
+
+test('implementationTexts_NoTypographicQuotes', () => {
+  assert.doesNotMatch(readText(SKILL), TYPOGRAPHIC_QUOTES);
+  for (const name of REFERENCES) assert.doesNotMatch(reference(name), TYPOGRAPHIC_QUOTES, name);
+});

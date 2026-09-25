@@ -33,9 +33,9 @@ Ein Schritt ist genau eine Aktion von 2–5 Minuten. Der Zyklus pro Task:
 
 Jeder Schritt enthält den tatsächlichen Inhalt, den der Umsetzer braucht. Diese Muster sind Plan-Fehler — du schreibst sie nie:
 
-- „TBD", „TODO", „später umsetzen", „Details ergänzen"
-- „passende Fehlerbehandlung ergänzen", „Validierung hinzufügen", „Randfälle behandeln"
-- „Tests für das Obige schreiben" ohne den Testcode selbst
-- „wie Task N" oder „analog zu Task N" — du wiederholst den Code, weil der Umsetzer Tasks womöglich außer der Reihe liest
+- „TBD“, „TODO“, „später umsetzen“, „Details ergänzen“
+- „passende Fehlerbehandlung ergänzen“, „Validierung hinzufügen“, „Randfälle behandeln“
+- „Tests für das Obige schreiben“ ohne den Testcode selbst
+- „wie Task N“ oder „analog zu Task N“ — du wiederholst den Code, weil der Umsetzer Tasks womöglich außer der Reihe liest
 - Schritte, die sagen, was zu tun ist, ohne zu zeigen, wie — ein Code-Schritt braucht einen Code-Block
 - Verweise auf Typen, Funktionen oder Methoden, die in keinem Task definiert sind und im Code nicht existieren

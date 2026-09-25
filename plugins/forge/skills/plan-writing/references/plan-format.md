@@ -33,7 +33,7 @@ Der Plan liegt als `plan.md` im Ordner der Spec. Er hat genau diesen Aufbau:
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   <vollständiger Testcode>
 - [ ] **Schritt 2: Test rot laufen lassen**
-  Befehl: `<befehl oder Tool-Aufruf>` — erwartet: FAIL mit „<meldung>"
+  Befehl: `<befehl oder Tool-Aufruf>` — erwartet: FAIL mit „<meldung>“
 - [ ] **Schritt 3: Minimal implementieren**
   <vollständiger Code>
 - [ ] **Schritt 4: Test grün laufen lassen**
@@ -50,7 +50,7 @@ Der Plan liegt als `plan.md` im Ordner der Spec. Er hat genau diesen Aufbau:
 
 1. **Kopf:** `Ziel` ist genau ein Satz, `Architektur` zwei bis drei Sätze. `Spec` nennt den Pfad der Spec, aus der der Plan entsteht; der Umsetzer liest beide. Der Kopf nennt den Umsetzungs-Befehl `/dv-forge:implementation <plan.md>`.
 2. **Global Constraints:** Jede projektweite Vorgabe der Spec — Versionsgrenzen, erlaubte Abhängigkeiten, Namens- und Textregeln, Plattformvorgaben — steht hier als eine Zeile, mit exakt den Werten aus der Spec. Jeder Task erbt diesen Abschnitt, ohne ihn zu wiederholen.
-3. **Task-Überschriften** lauten exakt `### Task <n>: <Komponente>`. `<n>` ist eine ganze Zahl, lückenlos aufsteigend ab 1. Zusätze wie „Task 3a" oder „Task 3.1" sind verboten, denn spätere Stufen zerlegen den Plan per Skript.
+3. **Task-Überschriften** lauten exakt `### Task <n>: <Komponente>`. `<n>` ist eine ganze Zahl, lückenlos aufsteigend ab 1. Zusätze wie „Task 3a“ oder „Task 3.1“ sind verboten, denn spätere Stufen zerlegen den Plan per Skript.
 4. **ACs:** Jeder Task nennt unter `**ACs:**` die AC-IDs, die er umsetzt. Jedes AC der Spec steht in mindestens einem Task.
 5. **Dateien:** exakte Pfade. `Create` für neue Dateien, `Modify` für bestehende, `Test` für die Testdatei.
 6. **Stabiler Anker bei `Modify`:** Nach `·` steht ein Anker, der auch dann gültig bleibt, wenn ein früherer Task dieselbe Datei ändert: ein Symbol (`Klasse.methode`, Funktionsname) oder, bei Dateien ohne Symbole, eine eindeutige Überschrift bzw. Zeichenfolge in Backticks. Maßgeblich ist der Anker; die Zeilenangabe dient nur der Orientierung.

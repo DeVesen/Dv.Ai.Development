@@ -1647,6 +1647,8 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ### Task 10: Install and smoke test (human + Controller)
 
+> **Status 2026-09-25:** deferred by the user until the planning and implementation stages of `dv-forge` are done. Tasks 1–9 and the final-review fixes are complete (see spec §16 B16/B17). The smoke-test result goes into the spec as its own B entry (next free number), not B16.
+
 **Files:** none are created. Findings may lead to small edits in files from Tasks 5–9.
 
 - [ ] **Step 1: Full test run**

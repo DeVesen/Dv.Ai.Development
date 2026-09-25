@@ -328,6 +328,11 @@ Nachtrag Umsetzung: Der Guard lässt Shell-Aufrufe der plugin-eigenen Skripte `f
 - **B13 · Modelle** — Reviewer `sonnet`, Nacharbeiter `opus`; pro Agent im Frontmatter änderbar.
 - **B14 · Plugin-Name** — `dv-forge`.
 - **B15 · W-Einträge** — Nachtrag aus `2026-09-25-dv-forge-spec-creation-design.md`: W-Einträge sind bindend, siehe Abschnitt 10.
+- **B16 · Umsetzungsstand** — Nachtrag 2026-09-25 nach der Umsetzung (Plan `2026-09-25-dv-forge-spec-review.md`, Tasks 1–9 + Final-Review-Fixes):
+  - Drucktest bestanden: ohne Skill plant die Main-Session `Read` auf die Spec; mit Skill lehnt sie Selbstkorrektur ab, startet mit `file-hash.js` und dispatcht die Reviewer in einer Nachricht.
+  - Fixture-Lauf bestanden: alle eingebauten Fehler an erwarteter Stelle gefunden; `spec-rework` korrigiert ohne AC-Umnummerierung, ein Eintrag pro Gruppe.
+  - Smoke-Test (Plan-Task 10) bewusst verschoben, bis Plan- und Umsetzungs-Stufe fertig sind; Ergebnis wird als eigener Eintrag nachgetragen.
+- **B17 · Umsetzungs-Rulings** — Guard-Allowlist `file-hash.js` + `aggregate-findings.js` (AC-18); Guard blockt `Grep`, wenn die Spec im Suchpfad liegt; Nacharbeit bekommt den vom Skript gerenderten Markdown-Block (§9.5); Aggregation verwirft Reviewer außerhalb von `--expect`; führendes `@` am Spec-Pfad wird entfernt.
 
 ## 17. Folge-Teilprojekte
 
@@ -335,3 +340,5 @@ Nachtrag Umsetzung: Der Guard lässt Shell-Aufrufe der plugin-eigenen Skripte `f
 2. Planen: Plan-Erstellung und Plan-Review-Loop (vier Plan-Reviewer, AC-Abdeckung, alternative Pläne)
 3. Umsetzen: sequentielle SubAgent-Umsetzung und Implementierungs-Review-Loop
 4. `dv-relay` entfernen
+5. Guard um MCP-Lesetools erweitern (z. B. `dev-mcp` `read_*`, `find_by_content`): Matcher `mcp__.*`, String-Werte von `tool_input` gegen Spec-Pfad prüfen. Gilt auch für die Orchestratoren von Plan- und Implementierungs-Review.
+6. Ablageort der Modul- und Feature-Profile wie beim Glossar aus der Projekt-`CLAUDE.md` lesen statt fest `docs/application/`; `CONTEXT.md` aus `domain-modeling` als Profilquelle klären.

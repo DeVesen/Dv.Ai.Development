@@ -78,8 +78,18 @@ test('adrFormat_Offer_RequiresAllThreeCriteria', () => {
 });
 
 test('plugin_Texts_NoThirdPartyTextOrNotice', () => {
-  assert.ok(!fs.existsSync(path.join(PLUGIN_ROOT, 'THIRD-PARTY-NOTICES.md')));
+  const entries = fs.readdirSync(PLUGIN_ROOT, { recursive: true });
+  assert.ok(!entries.some((entry) => path.basename(entry) === 'THIRD-PARTY-NOTICES.md'));
   for (const file of listMarkdown(path.join(PLUGIN_ROOT, 'skills'))) {
     assert.doesNotMatch(readText(file), /mattpocock/i, file);
+  }
+});
+
+test('forgeSkills_Bodies_NoAtLinksOrGlobalSkillDependencies', () => {
+  for (const name of ['spec-whiteboarding', 'domain-modeling', 'spec-whiteboarding-with-docs']) {
+    const { body } = readMarkdown(path.join(PLUGIN_ROOT, 'skills', name, 'SKILL.md'));
+    for (const banned of [/(^|\s)@\S+\.md/m, /writing-workitem/, /ado-cli/]) {
+      assert.doesNotMatch(body, banned, `${name}: ${banned}`);
+    }
   }
 });

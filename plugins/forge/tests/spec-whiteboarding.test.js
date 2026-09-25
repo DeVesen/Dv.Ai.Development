@@ -42,6 +42,11 @@ test('specFormat_Rules_SelfContainedWithoutLegacySection', () => {
   assert.ok(!text.includes('Bereits geklärte Fragen'));
 });
 
+test('specFormat_Rules_DefineTagPositionIncludingAcLines', () => {
+  const text = reference('spec-format.md');
+  assert.match(text, /am Zeilenende nach ` · `, auch bei AC-Zeilen/);
+});
+
 test('grillRounds_Format_QuestionAndRecommendationLines', () => {
   const text = reference('grill-rounds.md');
   assert.ok(text.includes('❓ **Q1** - **<Titel>**: <Frage, ggf. mit Optionen>'));

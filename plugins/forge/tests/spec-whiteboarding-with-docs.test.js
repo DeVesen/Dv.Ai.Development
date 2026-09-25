@@ -29,6 +29,7 @@ test('withDocs_Body_DefinesFourPrecedenceRules', () => {
   assert.match(body, /trotz Sperre erlaubt/);
   assert.match(body, /nur für brainstorming, Plan und Code/);
   assert.match(body, /ausschließlich die kanonischen Begriffe/);
+  assert.match(body, /höchstens in dem W-Eintrag, der den Begriff festlegt/);
   assert.match(body, /tragen den Tag `Historie`/);
   assert.match(body, /ersetzt keine Runde/);
   assert.match(body, /Frontier aufgenommen/);

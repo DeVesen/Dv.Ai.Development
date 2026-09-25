@@ -241,7 +241,7 @@ W-Eintrag ist eines. Der Nacharbeiter ändert und entfernt W-Einträge nicht.
 - Blocken: `PreToolUse` für `Read|Edit|Write|MultiEdit|NotebookEdit`, wenn die Ziel-Datei die Spec
   ist, und für `Bash|PowerShell`, wenn das Kommando den Spec-Pfad oder -Dateinamen enthält. Alles nur
   in der Main-Session derselben `session_id`. Tool-Calls von SubAgents werden durchgelassen.
-  Ausnahme: `scripts/file-hash.js` auf die Spec ist erlaubt.
+  Ausnahme: Shell-Aufrufe von `scripts/file-hash.js` und `scripts/aggregate-findings.js` sind erlaubt.
 - Aufräumen: `Stop`-Hook entfernt den Marker am Ende des Turns, `SessionEnd` als Rückfall.
 - Ein Marker einer fremden `session_id` hat keine Wirkung.
 
@@ -260,14 +260,17 @@ nur als Prosa im Skill und wird durch den Drucktest abgesichert.
 
 ## 13. Spike (erste Plan-Aufgabe)
 
-Zu klären, bevor Weg A gebaut wird:
-1. Enthält die `PreToolUse`-Eingabe ein Feld, das Main-Session und SubAgent unterscheidet (z. B. `agent_id`)?
-2. Feuern Plugin-Hooks auch bei Tool-Calls von SubAgents?
-3. Sieht `UserPromptSubmit` den Slash-Aufruf eines Skills samt Argumenten und `session_id`?
-4. Funktioniert `disable-model-invocation: true` zusammen mit Argumenten?
-5. Werden Plugin-Agents als `dv-forge:<name>` per `Agent`-Tool aus einer Main-Session erreicht?
+Geklärt am 2026-09-25 (Doku code.claude.com/docs/en/hooks.md, plugins/components.md, skills.md):
+1. Hook-Eingaben aus SubAgents enthalten `agent_id` und `agent_type`; in der Main-Session fehlen sie. → Guard erlaubt, wenn `agent_id` gesetzt ist.
+2. Plugin-Hooks feuern global, sobald das Plugin geladen ist, auch für Tool-Calls von SubAgents.
+3. `UserPromptSubmit` liefert den rohen Prompt inklusive `/dv-forge:spec-review <pfad>` und `session_id`.
+4. `disable-model-invocation: true` verhindert nur den automatischen Aufruf; `$ARGUMENTS` und `argument-hint` funktionieren.
+5. Plugin-Agents heißen `dv-forge:<name>`; `${CLAUDE_PLUGIN_ROOT}` wird im Skill-Text ersetzt.
+6. Parallele `Agent`-Calls mit `run_in_background: false` in einer Nachricht kommen im selben Turn zurück, parallel (Test: zwei Agents, überlappende Zeitfenster von je ~9 s).
 
-Ergebnis wird als Entscheidung in diesem Dokument nachgetragen. Scheitern 1 oder 3, gilt Weg B.
+Folge: Weg A gilt. Stop-Hook entfernt den Marker am Turn-Ende; der Skill gibt ihn zusätzlich am Ende per `guard-orchestrator.js release` frei.
+
+Nachtrag Umsetzung: Der Guard lässt Shell-Aufrufe der plugin-eigenen Skripte `file-hash.js` und `aggregate-findings.js` durch. Grund: Reviewer-Texte, die an die Aggregation gehen, können den Dateinamen der Spec enthalten; die Aggregation liest die Spec nie.
 
 ## 14. Tests
 
@@ -301,9 +304,9 @@ Ergebnis wird als Entscheidung in diesem Dokument nachgetragen. Scheitern 1 oder
 - **AC-15** Es entstehen keine Review-Dateien; der Abschlussbericht erscheint nur im Chat mit den Inhalten aus 6.3.
 - **AC-16** Der Skill committet nichts.
 - **AC-17** Ein ungültig formatierter Reviewer wird genau einmal neu gestartet und danach als ausgefallen gemeldet; eine Runde mit Ausfall ist nicht sauber.
-- **AC-18** Bei Weg A blockt der Guard Lese-, Schreib- und Shell-Zugriffe der Main-Session auf die Spec, außer `file-hash.js`; SubAgents werden nicht geblockt.
+- **AC-18** Bei Weg A blockt der Guard Lese-, Schreib- und Shell-Zugriffe der Main-Session auf die Spec, außer Aufrufen von `file-hash.js` und `aggregate-findings.js`; SubAgents werden nicht geblockt.
 - **AC-19** Ein Marker wirkt nur in der Session, deren `session_id` er trägt, und wird am Turn-Ende entfernt.
-- **AC-20** Alle Node-Tests aus Abschnitt 14 laufen grün mit `node --test plugins/forge/tests`.
+- **AC-20** Alle Node-Tests aus Abschnitt 14 laufen grün mit `node --test "plugins/forge/tests/*.test.js"`.
 
 ## 16. Entscheidungen
 

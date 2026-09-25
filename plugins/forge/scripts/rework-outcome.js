@@ -35,10 +35,56 @@ function isValidEntry(entry) {
     && typeof entry.status === 'string' && entry.status !== '';
 }
 
+function parseBalancedObjectAt(text, start) {
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escape) escape = false;
+      else if (ch === '\\') escape = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        try {
+          return JSON.parse(text.slice(start, i + 1));
+        } catch {
+          return undefined;
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+function findLastBareResultsObject(text) {
+  for (let i = text.length - 1; i >= 0; i--) {
+    if (text[i] !== '{') continue;
+    const parsed = parseBalancedObjectAt(text, i);
+    if (parsed !== undefined && parsed !== null && typeof parsed === 'object'
+      && Object.prototype.hasOwnProperty.call(parsed, 'results')) {
+      return parsed;
+    }
+  }
+  return undefined;
+}
+
 function parseResults(result) {
-  const blocks = [...String(result).matchAll(JSON_BLOCK)];
-  if (blocks.length === 0) throw new Error('Kein JSON-Block in der Rückgabe des Nacharbeiters');
-  const parsed = JSON.parse(blocks[blocks.length - 1][1]);
+  const text = String(result);
+  const blocks = [...text.matchAll(JSON_BLOCK)];
+  let parsed;
+  if (blocks.length > 0) {
+    parsed = JSON.parse(blocks[blocks.length - 1][1]);
+  } else {
+    parsed = findLastBareResultsObject(text);
+    if (parsed === undefined) throw new Error('Kein JSON-Block in der Rückgabe des Nacharbeiters');
+  }
   const valid = parsed !== null && typeof parsed === 'object' && Array.isArray(parsed.results)
     && parsed.results.every(isValidEntry);
   if (!valid) throw new Error('JSON-Block verletzt das Rückgabe-Format');

@@ -60,6 +60,21 @@ test('evaluate_NoRedGroups_ReturnsFalse', () => {
   assert.equal(outcome.evaluate(text, 'spec-question').allRedEscalated, false);
 });
 
+test('evaluate_BareJsonWithoutFence_IsParsed', () => {
+  const findings = [finding('AC-04', 'red')];
+  const results = [{ location: 'AC-04', status: 'spec-question' }];
+  const text = `=== AGGREGATE ===\n${aggregateText(findings)}\n=== REWORK-RESULT ===\n`
+    + `Erledigt, hier das Ergebnis ohne Fence:\n${JSON.stringify({ results })}\n`;
+  const result = outcome.evaluate(text, 'spec-question');
+  assert.equal(result.allRedEscalated, true);
+  assert.deepEqual(result.escalated, ['AC-04']);
+});
+
+test('evaluate_NoJsonAtAll_Throws', () => {
+  const text = `=== AGGREGATE ===\n${aggregateText([finding('Task 1', 'red')])}\n=== REWORK-RESULT ===\nNur Text, kein JSON.\n`;
+  assert.throws(() => outcome.evaluate(text, 'spec-question'), /Kein JSON-Block/);
+});
+
 test('evaluate_InvalidJson_Throws', () => {
   const text = `=== AGGREGATE ===\n${aggregateText([finding('Task 1', 'red')])}\n=== REWORK-RESULT ===\n\`\`\`json\n{ kaputt\n\`\`\`\n`;
   assert.throws(() => outcome.evaluate(text, 'spec-question'));

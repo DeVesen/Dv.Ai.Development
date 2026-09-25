@@ -31,13 +31,13 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 `node "${CLAUDE_PLUGIN_ROOT}/scripts/file-hash.js" "<P>"`
 
 ## Zusatz-Stopps
-1. Die Aggregation dieser Runde und den letzten JSON-Block des Nacharbeiters übergeben:
+1. Die Aggregation dieser Runde und den letzten JSON-Block des Nacharbeiters inklusive seiner ```json-Zeile und der schließenden ```-Zeile übergeben:
    ```bash
    node "${CLAUDE_PLUGIN_ROOT}/scripts/rework-outcome.js" --escalation-status spec-question <<'DV_FORGE_EOF'
    === AGGREGATE ===
    <komplette Ausgabe von aggregate-findings.js dieser Runde>
    === REWORK-RESULT ===
-   <letzter JSON-Block des Nacharbeiters>
+   <letzter JSON-Block des Nacharbeiters inklusive seiner ```json-Zeile und der schließenden ```-Zeile>
    DV_FORGE_EOF
    ```
 2. Exit 1: den Nacharbeiter einmal per `SendMessage` bitten, nur seinen JSON-Block im vereinbarten Format nachzuliefern, und Schritt 1 wiederholen. Wieder Exit 1: alle Stellen gelten als `unchanged`; weiter mit der Fortschrittsprüfung.

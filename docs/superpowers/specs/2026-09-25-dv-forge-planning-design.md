@@ -154,7 +154,7 @@ schon: nachfragen, nichts überschreiben.
 
 **Dateien:**
 - Create: `exakter/pfad.ext`
-- Modify: `exakter/pfad.ext:123-145`
+- Modify: `exakter/pfad.ext:123-145` · `Klasse.methode`
 - Test: `tests/exakter/pfad.ext`
 
 **Interfaces:**
@@ -186,6 +186,10 @@ zerlegen, ohne dass ein Orchestrator ihn liest):
    liest vor dem Schreiben die Projekt-`CLAUDE.md`. Verbietet sie einen Weg (etwa Tests über die
    Shell), verwendet der Plan den dort vorgeschriebenen. Ein Befehl, den der Umsetzer nicht ausführen
    darf, ist ein Plan-Fehler.
+3. **Stabiler Anker bei `Modify`:** Jede `Modify`-Zeile nennt nach `·` einen Anker, der auch dann
+   gültig bleibt, wenn ein früherer Task dieselbe Datei ändert: ein Symbol (`Klasse.methode`,
+   Funktionsname) oder, bei Dateien ohne Symbole, eine eindeutige Überschrift bzw. Zeichenfolge in
+   Backticks. Maßgeblich ist der Anker; die Zeilenangabe dient nur der Orientierung.
 
 ## 7. Skill `plan-review`
 
@@ -209,7 +213,7 @@ für alle: nur melden, was bei der Umsetzung zu falschem Bau oder zum Steckenble
 | `plan-review-feasibility` | Reihenfolge der Tasks, Abhängigkeiten (was ein Task konsumiert, produziert ein früherer), externe Voraussetzungen, Konsistenz von Namen und Typen über Tasks. Keine Zeit- oder Aufwandsschätzung. |
 | `plan-review-architecture` | Passt der Plan zu Architektur, Mustern und Konventionen des Repos einschließlich Projekt-`CLAUDE.md`? Hat jede Datei eine Verantwortung? |
 | `plan-review-risks` | Fehlerbehandlung, Security, ungeprüfte Annahmen über Schnittstellen und externe Systeme. Keine organisatorischen Themen. |
-| `plan-review-buildability` | Platzhalter nach der Verbotsliste aus `task-rules.md`, Code-Schritte ohne Code, existierende Dateien/Zeilen/Symbole bei `Modify`, Task-Zuschnitt und Schrittgröße, ausführbare **und laut Projekt-`CLAUDE.md` erlaubte** Befehle bzw. Tool-Aufrufe, Task-Nummerierung nach Regel 1 aus 6.1. |
+| `plan-review-buildability` | Platzhalter nach der Verbotsliste aus `task-rules.md`, Code-Schritte ohne Code, existierende Dateien und Anker bei `Modify` (Regel 3 aus 6.1), Task-Zuschnitt und Schrittgröße, ausführbare **und laut Projekt-`CLAUDE.md` erlaubte** Befehle bzw. Tool-Aufrufe, Task-Nummerierung nach Regel 1 aus 6.1. |
 
 ### 7.2 Stelle
 
@@ -263,6 +267,13 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
    Pfads. Eine Tabelle im Skript ordnet Befehle Pfaden zu:
    - `/dv-forge:spec-review <spec>` → `[spec]`
    - `/dv-forge:plan-review <plan> [spec]` → `[plan, spec]`; ohne `spec` gilt `spec.md` im Ordner des Plans
+
+   Ein Eintrag in `protected` darf eine Datei **oder ein Verzeichnis** sein. Datei-Tools
+   (`Read|Edit|Write|MultiEdit|NotebookEdit`) werden geblockt, wenn der normalisierte absolute
+   Zielpfad dem Eintrag gleicht oder mit `<Eintrag>/` beginnt; `/repo` schützt also `/repo/x.cs`,
+   aber nicht `/repo-alt/x.cs`. Die Shell-Regel (Kommando enthält einen geschützten Pfad) und die
+   Ausnahme für Plugin-Skripte bleiben unverändert. Teilprojekt 3 nutzt das für den Schutz des ganzen
+   Repos; spec- und plan-review tragen weiterhin nur Dateien ein.
 2. **`aggregate-findings.js`:** Die Normalisierung von `location` wird auf eine **Tabelle von
    Stellen-Typen** umgestellt statt verstreuter Regex. Jede Zeile hat: Name, Erkennungsmuster,
    Normalform. Eine Stelle, auf die keine Zeile passt, fällt auf die bestehende Überschriften-Regel
@@ -303,7 +314,8 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 
 1. **Guard** (`node:test`): `plan-review`-Prompt → Marker mit Plan und Spec; Spec im Plan-Ordner wird
    aufgelöst; beide Dateien für die Main-Session geblockt; SubAgent erlaubt; Spec-Review-Fälle
-   unverändert grün.
+   unverändert grün; Verzeichnis-Eintrag blockt eine Datei darin, aber nicht ein Geschwister-
+   Verzeichnis mit gleichem Präfix (`/repo` vs. `/repo-alt`).
 2. **Aggregation** (`node:test`): `Task 03` / `task 3` / `TASK 3` werden eine Gruppe; bestehende
    `ac`- und Überschriften-Fälle bleiben grün; ein Test-Stellen-Typ, der nur in der Test-Tabelle
    ergänzt wird, wirkt ohne Änderung an anderen Zeilen.
@@ -348,6 +360,8 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 - **AC-23** Jede Verifikation im Plan ist ein Shell-Befehl oder ein Tool-Aufruf mit exakten Parametern und verstößt nicht gegen die Projekt-`CLAUDE.md`.
 - **AC-24** `rework-outcome.js` erwartet den Eskalations-Status als Parameter `--escalation-status`; ohne Parameter bricht es mit Fehler ab.
 - **AC-25** `shared/review-loop/loop.md` nennt kein konkretes Fortschritts-Skript; jeder Orchestrator-Skill legt seines selbst fest.
+- **AC-26** Jede `Modify`-Zeile im Plan nennt einen stabilen Anker nach Regel 3 aus 6.1.
+- **AC-27** Ein Verzeichnis-Eintrag in `protected` blockt Datei-Tools auf jede Datei darunter, aber keine Datei in einem Geschwister-Verzeichnis mit gleichem Namenspräfix.
 
 ## 13. Entscheidungen
 
@@ -365,3 +379,5 @@ darf vorher gebaut werden. Alle bestehenden Spec-Review-Tests bleiben grün.
 - **P12 · Stellen-Typen** — Tabelle statt verstreuter Regex; der Typ Dateipfad kommt in Teilprojekt 3 als eine weitere Zeile, nicht schon jetzt (YAGNI).
 - **P13 · Eskalations-Status** — `rework-outcome.js` parametrisiert statt einer Kopie pro Stufe.
 - **P14 · Tool-Aufrufe** — eine Verifikation darf ein Tool-Aufruf sein; die Projekt-`CLAUDE.md` bestimmt, welcher Weg erlaubt ist.
+- **P15 · Anker bei Modify** — Zeilen veralten bei sequentieller Umsetzung; ein Symbol- oder Text-Anker bleibt gültig (Abgleich mit Teilprojekt 3, Iteration 1).
+- **P16 · Verzeichnisse im Guard** — `protected` erlaubt Verzeichnisse mit Präfix-Match an Pfadgrenzen, weil der Orchestrator in Teilprojekt 3 auch keinen Code lesen darf (Abgleich mit Teilprojekt 3, Iteration 1).

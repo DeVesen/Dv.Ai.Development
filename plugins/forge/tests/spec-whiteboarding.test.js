@@ -3,7 +3,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { readText } = require('./lib/markdown');
+const fs = require('node:fs');
+const { readText, readMarkdown, wordCount } = require('./lib/markdown');
 
 const SKILL_DIR = path.join(__dirname, '..', 'skills', 'spec-whiteboarding');
 
@@ -62,4 +63,52 @@ test('acRules_Rules_GivenWhenThenAndForbiddenPhrases', () => {
     assert.ok(text.includes(`„${phrase}\u201C`), `${phrase} fehlt`);
   }
   assert.match(text, /Negativ- oder Randfall/);
+});
+
+const SKILL = path.join(SKILL_DIR, 'SKILL.md');
+const REFERENCES = ['spec-format.md', 'grill-rounds.md', 'ac-rules.md'];
+
+test('skill_Frontmatter_OnlyNameAndDescription', () => {
+  const { fields } = readMarkdown(SKILL);
+  assert.deepEqual(Object.keys(fields), ['name', 'description']);
+  assert.equal(fields.name, 'spec-whiteboarding');
+  assert.match(fields.description, /^Use when/);
+});
+
+test('skill_Body_StaysUnder500Words', () => {
+  assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
+});
+
+test('skill_Body_LinksAllReferencesThatExist', () => {
+  const { body } = readMarkdown(SKILL);
+  for (const name of REFERENCES) {
+    assert.ok(body.includes(`references/${name}`), `${name} nicht verlinkt`);
+    assert.ok(fs.existsSync(path.join(SKILL_DIR, 'references', name)), `${name} fehlt`);
+  }
+});
+
+test('skill_Body_WritesOnlyTheForgeSpecFile', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('docs/forge/YYYY-MM-DD-<slug>/spec.md'));
+  assert.match(body, /Nie überschreiben/);
+  for (const banned of [/\bADO\b/, /Nur Chat/, /AskUserQuestion/, /writing-workitem/, /(^|\s)@\S+\.md/m]) {
+    assert.doesNotMatch(body, banned);
+  }
+});
+
+test('skill_Body_ConfirmsContentTitleAndSlug', () => {
+  assert.match(readMarkdown(SKILL).body, /Inhalt, Titel und Slug/);
+});
+
+test('skill_Body_HandsOverWithoutCommit', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('/dv-forge:spec-review docs/forge/<…>/spec.md'));
+  assert.match(body, /frischen Session/);
+  assert.match(body, /Kein Commit, kein automatischer Start/);
+});
+
+test('skill_Body_AbortNeedsSecondInformedRefusal', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /genau einmal eine verdichtete Abschlussrunde/);
+  assert.match(body, /Zweite, informierte Ablehnung/);
 });

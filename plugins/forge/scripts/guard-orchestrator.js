@@ -4,13 +4,16 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
 const FILE_TOOLS = {
   Read: 'file_path', Edit: 'file_path', Write: 'file_path', MultiEdit: 'file_path',
   NotebookEdit: 'notebook_path',
 };
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
-const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcome.js'];
+const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcome.js',
+  'plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js'];
+const VALUE_FLAGS = new Set(['--rounds', '--spec', '--context', '--base']);
 const TOKEN = /"([^"]*)"|'([^']*)'|(\S+)/g;
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_REASON = 'dv-forge-Orchestrator läuft: geschützte Dateien werden nur von SubAgents gelesen und geändert.';
@@ -25,6 +28,11 @@ const COMMANDS = {
     reason: 'dv-forge:plan-review läuft: Der Orchestrator liest und ändert weder Plan noch Spec. '
       + 'Prüfen übernehmen die Reviewer-Agents, Korrigieren der Agent plan-rework.',
     protect: ([plan, spec]) => (plan ? [plan, spec ?? path.join(path.dirname(plan), 'spec.md')] : null),
+  },
+  '/dv-forge:implementation-review': {
+    reason: 'dv-forge:implementation-review läuft: Der Orchestrator liest weder Code noch Plan oder Spec. '
+      + 'Prüfen übernehmen die Reviewer-Agents, Vorschläge der Agent implementation-review-scout.',
+    protect: ([plan]) => (plan ? [{ path: plan, kind: 'repo' }] : null),
   },
 };
 
@@ -50,7 +58,7 @@ function tokenize(text) {
 function positionalArguments(args) {
   const result = [];
   for (let index = 0; index < args.length; index += 1) {
-    if (args[index] === '--rounds') {
+    if (VALUE_FLAGS.has(args[index])) {
       index += 1;
       continue;
     }
@@ -81,10 +89,21 @@ function readMarker(sessionId, tmpRoot) {
   }
 }
 
+function repoRootOf(file, fallback) {
+  const result = spawnSync('git', ['-C', path.dirname(file), 'rev-parse', '--show-toplevel'], { encoding: 'utf8' });
+  return result.status === 0 ? path.resolve(result.stdout.trim()) : path.resolve(fallback);
+}
+
+function toEntry(entry, cwd) {
+  if (typeof entry === 'string') return { path: path.resolve(cwd, entry), kind: 'file' };
+  const absolute = path.resolve(cwd, entry.path);
+  return entry.kind === 'repo' ? { path: repoRootOf(absolute, cwd), kind: 'dir' } : { path: absolute, kind: entry.kind };
+}
+
 function onPrompt(input, tmpRoot) {
   const call = parseSkillCall(input.prompt);
   if (!call) return;
-  const entries = call.files.map((file) => ({ path: path.resolve(input.cwd, file), kind: 'file' }));
+  const entries = call.files.map((entry) => toEntry(entry, input.cwd));
   writeMarker(input.session_id, { command: call.command, protected: entries }, tmpRoot);
 }
 

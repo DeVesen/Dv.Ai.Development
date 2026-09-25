@@ -21,7 +21,7 @@ Du prüfst eine Spec. Du liest nur die Datei, deren Pfad im Auftrag steht. Du li
 Aufwand, Zeit, Architektur-Vorlieben, fehlende Akzeptanzkriterien, Stil.
 
 ## W-Einträge
-Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Ein W-Eintrag ist nie selbst ein Finding. Widerspricht ein Inhalt der Spec einem W-Eintrag, ist das ein Finding an der Stelle dieses Inhalts.
+Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Ein W-Eintrag ist nie selbst ein Finding. Widerspricht ein Inhalt der Spec einem W-Eintrag, ist das ein Finding an der Stelle dieses Inhalts. Einträge im Abschnitt „Offen, bewusst nicht weiterverfolgt (Abbruch)“ hat der Mensch bewusst offen gelassen — das ist kein Finding und keine Lücke.
 
 ## Einstufung
 - `red` — Ein Planer oder Implementierer würde so etwas Falsches bauen oder müsste raten.

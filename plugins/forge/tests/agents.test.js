@@ -36,6 +36,8 @@ for (const reviewer of REVIEWERS) {
     assert.ok(body.includes(`"reviewer": "${reviewer}"`));
     assert.match(body, /keinen Code/);
     assert.ok(body.includes('## W-Einträge'), 'W-Einträge fehlt');
+    assert.ok(body.includes('Offen, bewusst nicht weiterverfolgt (Abbruch)'), 'Abbruch-Abschnitt-Regel fehlt');
+    assert.ok(body.includes('kein Finding und keine Lücke'), 'Abbruch-Abschnitt-Regel fehlt');
     assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
   });
 }
@@ -54,5 +56,7 @@ test('spec-rework_Body_DefinesDecisionEntryFormat', () => {
   assert.ok(body.includes('nicht geändert — Stelle existiert nicht'));
   assert.match(body, /keinen Code/);
   assert.ok(body.includes('W-Eintrag ist bindend'));
+  assert.ok(body.includes('ans Ende dieses Abschnitts an, auch wenn danach weitere Abschnitte folgen'), 'Regel zu nachfolgenden Abschnitten fehlt');
+  assert.ok(body.includes('Regel 3 gilt für sie nicht'), 'Regel zum Abbruch-Abschnitt fehlt');
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });

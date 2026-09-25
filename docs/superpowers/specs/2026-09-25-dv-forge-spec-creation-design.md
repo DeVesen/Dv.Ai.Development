@@ -19,13 +19,17 @@ Projekt-Glossar pflegt.
 
 **Im Umfang:**
 - Skill `dv-forge:spec-whiteboarding` — Umzug des globalen Skills `~/.claude/skills/spec-whiteboarding`, review-kompatibel angepasst
-- Skill `dv-forge:domain-modeling` — Adaption von `mattpocock-skills:domain-modeling`
-- Skill `dv-forge:spec-whiteboarding-with-docs` — Verbund der beiden, nach dem Vorbild von `mattpocock-skills:grill-with-docs`
-- `THIRD-PARTY-NOTICES.md` für die MIT-Lizenz von mattpocock-skills
+- Skill `dv-forge:domain-modeling` — eigene Neufassung der Arbeitsweise von `mattpocock-skills:domain-modeling`
+- Skill `dv-forge:spec-whiteboarding-with-docs` — Verbund der beiden, als Idee angelehnt an `mattpocock-skills:grill-with-docs`
 - Löschen des globalen `spec-whiteboarding` und Prüfen der Verweise darauf
 - Nachtrag in der Spec-Review-Spec (Abschnitt 11)
 
 **Nicht im Umfang:** Spec-Review-Loop, Planen, Umsetzen, Entfernen von `dv-relay`.
+
+**Leitplanke:** Aus mattpocock-skills werden nur Ideen und Arbeitsweisen übernommen, kein Text. Die
+Umsetzung schreibt alle Skill- und Referenztexte in eigenen Worten und eigener Struktur, ausschließlich
+aus dieser Spec. Dateien aus mattpocock-skills werden dabei weder gelesen noch als Vorlage genutzt.
+Deshalb entfällt ein Lizenzhinweis.
 
 ## 3. Begriffe
 
@@ -42,7 +46,6 @@ Projekt-Glossar pflegt.
 
 ```
 plugins/forge/
-├── THIRD-PARTY-NOTICES.md                    MIT-Hinweis mattpocock-skills (Copyright 2026 Matt Pocock)
 └── skills/
     ├── spec-whiteboarding/
     │   ├── SKILL.md                          Grundhaltung, Ablauf, Abbruch-Regel, Red Flags
@@ -142,8 +145,8 @@ Regeln:
 
 ## 7. Skill `domain-modeling`
 
-Adaption von `mattpocock-skills:domain-modeling`. Verhalten wie im Original, mit einem anderen
-Glossar-Ziel.
+Eigene Neufassung. Das Verhalten ist unten vollständig beschrieben; diese Spec ist die einzige
+Quelle (Abschnitt 2, Leitplanke).
 
 **Start — Glossar-Ziel bestimmen (`glossary-target.md`):**
 1. Ist der Skill `dv-working-capturing:glossary` in der Session verfügbar, ist das
@@ -153,9 +156,39 @@ Glossar-Ziel.
    `CONTEXT-MAP.md` existiert, das `CONTEXT.md` des passenden Kontexts. Format nach
    `context-format.md`. Dateien werden erst angelegt, wenn der erste Begriff geklärt ist.
 
-**Während der Sitzung (wie Original):**
+**Eigenes Glossar-Format (`context-format.md`):**
+
+```markdown
+# Glossar — <Bereich>
+
+<ein Satz: wofür dieser Bereich steht>
+
+| Begriff | Bedeutung | Nicht verwenden |
+|---|---|---|
+| **<kanonischer Begriff>** | <was er IST, höchstens zwei Sätze> | <Synonyme, kommagetrennt> |
+```
+
+- Ein Konzept, ein kanonischer Begriff; konkurrierende Wörter stehen unter „Nicht verwenden“.
+- Nur projektspezifische Fachbegriffe, keine allgemeinen Programmierbegriffe.
+- Bei mehreren Bereichen listet `CONTEXT-MAP.md` jeden Bereich mit Pfad zu seinem `CONTEXT.md` und
+  einem Satz Beschreibung.
+
+**Eigenes ADR-Format (`adr-format.md`):**
+
+```markdown
+# ADR-<NNNN>: <Titel>
+
+<YYYY-MM-DD> · Status: angenommen
+
+## Kontext
+## Entscheidung
+## Verworfene Alternativen
+## Folgen
+```
+
+**Während der Sitzung:**
 - **Gegen das Glossar prüfen:** Widerspricht ein verwendeter Begriff dem Glossar, sofort benennen.
-- **Unscharfe Begriffe schärfen:** einen kanonischen Begriff vorschlagen, Alternativen als „Avoid“.
+- **Unscharfe Begriffe schärfen:** einen kanonischen Begriff vorschlagen, Alternativen unter „Nicht verwenden“.
 - **Szenarien:** Grenzfälle mit konkreten Szenarien erzwingen.
 - **Gegen Code und Profile prüfen:** Widerspricht eine Aussage dem Code oder einem Profil, benennen.
 - **Sofort schreiben:** Ein geklärter Begriff geht direkt ins Glossar-Ziel, nicht gesammelt.
@@ -167,7 +200,7 @@ Das Glossar enthält nur Begriffe, keine Implementierungsdetails und keine Spec-
 
 ## 8. Skill `spec-whiteboarding-with-docs`
 
-Dünner Verbund, nach dem Vorbild von `grill-with-docs`: Er führt `dv-forge:spec-whiteboarding`
+Dünner Verbund: Er führt `dv-forge:spec-whiteboarding`
 aus und nutzt dabei `dv-forge:domain-modeling`. Beide werden über das Skill-Tool geladen.
 
 **Vorrangregeln:**
@@ -223,7 +256,7 @@ entfernt W-Einträge nicht.
 - **AC-11** Ein geklärter Begriff wird sofort geschrieben, nicht gesammelt.
 - **AC-12** Ein ADR wird nur angeboten, wenn alle drei Kriterien aus Abschnitt 7 erfüllt sind.
 - **AC-13** `spec-whiteboarding-with-docs` startet nur manuell und wendet die Vorrangregeln aus Abschnitt 8 an.
-- **AC-14** `THIRD-PARTY-NOTICES.md` enthält den vollständigen MIT-Lizenztext mit dem Copyright-Hinweis von mattpocock-skills.
+- **AC-14** Kein Skill- oder Referenztext ist aus mattpocock-skills kopiert oder umformuliert; Glossar- und ADR-Format entsprechen Abschnitt 7. Es gibt keine `THIRD-PARTY-NOTICES.md`.
 - **AC-15** Der globale `spec-whiteboarding` wird erst nach ausdrücklicher Bestätigung gelöscht.
 - **AC-16** Die Drucktests aus Abschnitt 10 zeigen gegenüber der Baseline das geforderte Verhalten.
 
@@ -235,9 +268,9 @@ entfernt W-Einträge nicht.
 - **C4 · Format** — ein Abschnitt `## Entscheidungen` statt „Bereits geklärte Fragen“; W- und R-Einträge; ACs als `AC-01` …
 - **C5 · Grill-Stil** — grilling-Textformat statt `AskUserQuestion`.
 - **C6 · Abgrenzung** — Basis schlägt passiv nach; with-docs modelliert aktiv.
-- **C7 · domain-modeling** — als eigener Skill übernommen; Ziel ist das working-capturing-Glossar, sonst das eigene `CONTEXT.md`.
+- **C7 · domain-modeling** — als eigener Skill neu geschrieben; Ziel ist das working-capturing-Glossar, sonst das eigene `CONTEXT.md`.
 - **C8 · with-docs** — Verbund aus spec-whiteboarding und domain-modeling nach dem Vorbild von grill-with-docs.
 - **C9 · Write-back** — sofort, wie im Original; ersetzt die frühere Wahl „gebündelt am Ende“.
 - **C10 · ADRs** — übernommen, nach den drei Kriterien.
 - **C11 · Übergabe** — Befehl ausgeben, kein Commit, kein Auto-Start.
-- **C12 · Lizenz** — MIT-Hinweis in `THIRD-PARTY-NOTICES.md`.
+- **C12 · Lizenz** — Neufassung aus der Spec statt Anpassung der Originaltexte; kein Lizenzhinweis nötig.

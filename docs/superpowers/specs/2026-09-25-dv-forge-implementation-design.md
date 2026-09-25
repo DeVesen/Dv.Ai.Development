@@ -52,7 +52,7 @@ aus der Planning-Spec (W-Eintrag). Zusätzlich:
 | Review-Paket | Datei mit Commit-Liste, Stat und Diff mit Kontext für einen Commit-Bereich. |
 | Ledger | Fortschrittsdatei des Controllers; überlebt Compaction und Neustart. |
 | Urteil | Entscheidung des Controllers an Stelle des Menschen, im Ledger als `Urteil:` festgehalten. |
-| Slug | Ordnername des Vorhabens, z. B. `2026-09-25-foo` aus `docs/forge/2026-09-25-foo/plan.md`. |
+| Slug | Ordnername des Vorhabens, z. B. `2026-09-25-foo` aus `docs/forge/2026-09-25-foo/plan.md`. Heißt der Plan nicht `plan.md`, ist es sein Dateiname ohne Endung. |
 | Basis-Tag | `forge-base/<slug>`; markiert den Commit vor dem ersten Task. |
 | Scout | SubAgent im `implementation-review`, der Lösungsvorschläge macht und nichts ändert. |
 
@@ -78,7 +78,7 @@ plugins/forge/
 │   ├── implementation-review-acceptance.md  (sonnet, Read, Grep, Glob)
 │   ├── implementation-review-plan-fidelity.md (sonnet, Read, Grep, Glob)
 │   ├── implementation-review-design.md      (sonnet, Read, Grep, Glob)
-│   ├── implementation-review-tests.md       (sonnet, Read, Grep, Glob, Shell, dev-mcp — Spike 1)
+│   ├── implementation-review-tests.md       (sonnet, ohne tools-Zeile: erbt alle Tools inkl. MCP)
 │   ├── implementation-review-risks.md       (sonnet, Read, Grep, Glob)
 │   └── implementation-review-scout.md       (opus, Read, Grep, Glob)
 ├── scripts/
@@ -158,7 +158,7 @@ Folgende Elemente von SDD bleiben erhalten, jedes mit unveränderter Strenge, in
 3. **Basis-Tag:** `base-tag.js ensure <slug>` setzt `forge-base/<slug>` auf HEAD. Existiert der Tag
    und ist Vorfahre von HEAD, gilt das als Fortsetzung. Existiert er und ist kein Vorfahre: Abbruch
    „Plan läuft auf einem anderen Branch“.
-4. **Arbeitsbereich:** `workspace.js implementation <slug>`. Ledger `progress.md` vorhanden und
+4. **Arbeitsbereich:** `workspace.js create implementation <slug>`. Ledger `progress.md` vorhanden und
    Identitätszeile passt → Fortsetzung ab dem ersten Task ohne `fertig`-Zeile. Sonst neues Ledger.
 5. **Tasks:** `plan-tasks.js list <plan>`. Fehler (kein Task, Lücke, doppelte Nummer) → Stopp.
 6. **Vorab-Scan** nach Abschnitt 5; Tabelle und Urteile ins Ledger.
@@ -188,7 +188,7 @@ Folgende Elemente von SDD bleiben erhalten, jedes mit unveränderter Strenge, in
    - **alle** Ledger-Zeilen mit `Urteil:` in Reihenfolge, je mit „was es kostet, falls falsch“
    - zurückgestellte Punkte, die das Final-Review offen ließ; Rest-Findings
    - kopierbarer Befehl `/dv-forge:implementation-review <plan.md>` und Hinweis auf frische Session
-4. Arbeitsbereich löschen. Tag und Branch bleiben.
+4. Arbeitsbereich löschen (`workspace.js remove implementation <slug>`). Tag und Branch bleiben.
 
 ### 6.4 Stopp-Gründe
 
@@ -229,13 +229,14 @@ mechanische Entscheidungen.
 1. **Start** (nur Pfade): Plan-Existenz per `file-hash.js`. Spec aus `--spec`, sonst per Pfadregel;
    fehlt sie, läuft `acceptance` nicht. Bereich: `--base`, sonst `base-tag.js resolve <slug>`;
    beides fehlt → Abbruch. BASE = HEAD → Abbruch „nichts zu prüfen“.
-2. `workspace.js review <slug>`; `review-package.js <BASE> HEAD <workspace>` → Paket-Pfad.
+2. `workspace.js create review <slug>`; `review-package.js <BASE> HEAD <workspace>` → Paket-Pfad.
 3. **Review:** alle aktiven Reviewer in **einer** Nachricht, jeder frisch (Tabelle 7.2). Keiner
    bekommt `--context`-Dateien. Ungültige Ausgabe → einmal neu starten, danach „ausgefallen“.
 4. **Aggregation** per `aggregate-findings.js` wie in `loop.md`.
 5. **Abschluss-Scout** nach dem Baustein in `loop.md`: Auslöser `STATUS` mit `red` > 0 oder
    `yellow` > 0 (7.3).
-6. **Abschlussbericht** nach `report-format.md` (7.4). Marker freigeben.
+6. **Abschlussbericht** nach `report-format.md` (7.4). Arbeitsbereich löschen
+   (`workspace.js remove review <slug>`), Marker freigeben.
 
 ### 7.2 Reviewer
 
@@ -291,16 +292,18 @@ Nur im Chat, keine Dateien, kein Commit:
 
 | Skript | Aufruf | Ausgabe / Verhalten |
 |---|---|---|
-| `plan-tasks.js` | `list <plan>` · `brief <plan> <n> <dir>` | `list`: Task-Nummern, eine pro Zeile; Exit 1 bei keinem Task, Lücke oder doppelter Nummer. `brief`: schreibt Kopf bis vor `---`, Global Constraints und den Block ab `### Task <n>:` bis zur nächsten Task-Überschrift oder `## Entscheidungen`; Überschriften in Code-Fences zählen nicht; gibt den Pfad aus. |
-| `workspace.js` | `<rolle> <slug>` | legt `<git-toplevel>/.forge/<rolle>/<slug>/` an, schreibt `.forge/.gitignore` mit `*`, gibt den Pfad aus. |
+| `plan-tasks.js` | `list <plan>` · `brief <plan> <n> <dir>` · `header <plan> <dir>` · `slug <plan>` | `list`: Task-Nummern, eine pro Zeile; Exit 1 bei keinem Task, Lücke oder doppelter Nummer. `brief`: schreibt `task-<n>-brief.md` mit dem Kopf bis vor `---` (inkl. Global Constraints) und dem Block ab `### Task <n>:` bis zur nächsten Task-Überschrift oder `##`-Überschrift; Überschriften in Code-Fences zählen nicht; gibt den Pfad aus. `header`: schreibt nur den Kopf als `header-brief.md` (für die Korrekturwelle). `slug`: Slug nach Abschnitt 3. |
+| `workspace.js` | `create <rolle> <slug>` · `remove <rolle> <slug>` | `create` legt `<git-toplevel>/.forge/<rolle>/<slug>/` an, schreibt `.forge/.gitignore` mit `*` und gibt den Pfad aus; `remove` löscht genau diesen Ordner. `<rolle>` ∈ `implementation`, `review`. |
 | `base-tag.js` | `ensure <slug>` · `resolve <slug>` | `ensure`: Tag setzen oder als Vorfahre von HEAD bestätigen; Exit 1, wenn kein Vorfahre. `resolve`: gibt den Tag aus; Exit 1, wenn er fehlt. |
 | `review-package.js` | `<base> <head> <dir>` | schreibt `review-<base7>..<head7>.diff` mit `git log --oneline`, `git diff --stat` und `git diff -U10`; gibt den Pfad aus; Exit 2 bei ungültiger Referenz. |
 
 Exit-Codes wie `file-hash.js`: 0 ok, 1 fachlicher Fehler, 2 Aufruffehler.
 
-**`aggregate-findings.js`:** eine Zeile `file` in `LOCATION_TYPES`. Normalform: `\` → `/`, Präfix des
-Git-Toplevels entfernen, führendes `./` entfernen, Kleinschreibung, Suffix `:n` bzw. `:n-m`
-abschneiden. Gruppiert wird pro Datei. Bekannte Grobheit wie in der Spec-Review-Spec: Zwei Probleme
+**`aggregate-findings.js`:** Stellen-Typ `file`, erzeugt von `fileLocationType(repoRoot)` und nur aktiv
+mit dem neuen Flag `--repo <R>`. `LOCATION_TYPES` selbst bleibt bei `ac` und `task`, damit Spec- und
+Plan-Review unverändert gruppieren. Erkannt wird eine Stelle ohne Leerzeichen mit Dateiendung.
+Normalform: `\` → `/`, Präfix des Git-Toplevels entfernen, führendes `./` entfernen, Kleinschreibung,
+Suffix `:n` bzw. `:n-m` abschneiden. Gruppiert wird pro Datei. Bekannte Grobheit wie in der Spec-Review-Spec: Zwei Probleme
 in derselben Datei werden zusammengelegt und können hochgestuft werden; die Einzel-Findings bleiben
 in der Gruppe sichtbar.
 
@@ -340,8 +343,10 @@ in der Gruppe sichtbar.
 
 ## 12. Spike (erste Plan-Aufgabe)
 
-1. Kann das Frontmatter eines Plugin-Agents MCP-Tools aufzählen (für `implementation-review-tests`
-   und dev-mcp)? Rückfall: `tools` weglassen, Nur-Lesen als Prosa-Pflicht im Agent.
+1. Erbt ein Plugin-Agent ohne `tools`-Zeile alle Tools der Session einschließlich MCP-Tools? Der Plan
+   wählt für `implementation-review-tests` und `implementation-implementer` bewusst diesen Weg statt
+   einer Tool-Liste, weil die Namen der MCP-Server je Projekt verschieden sind; Nur-Lesen ist beim
+   Reviewer Prosa-Pflicht. Ist die Antwort Nein, hält der Plan an.
 2. Überschreibt der `model`-Parameter des `Agent`-Aufrufs das Frontmatter-Modell? Rückfall: je
    Modellstufe ein eigener Umsetzer-Agent.
 3. Lässt sich der Umsetzer in Fix-Runde 1–3 per `SendMessage` fortsetzen? Rückfall: frischer Umsetzer
@@ -420,5 +425,8 @@ in der Gruppe sichtbar.
 - **I12 · Schweregrad** — forge-Achse auch im Task- und Final-Review; nur 🔴 startet die Fix-Schleife.
 - **I13 · Abgleich mit Teilprojekt 2** — drei Iterationen am 2026-09-25; übernommen dort: Task-Nummerierung, Anker bei `Modify`, Tool-Aufruf als Befehl, Verzeichnisse in `protected[]`, Lese-Ausnahme Plugin-Wurzel, Plan-Kopf und Übergabe mit `/dv-forge:implementation`, neutraler Scout-Baustein.
 - **I14 · Profile im Scout** — der Scout sucht working-capturing-Profile selbst, weil der Orchestrator die Projekt-`CLAUDE.md` im geschützten Repo nicht lesen darf.
+- **I15 · Präzisierung beim Planen** — `workspace.js create|remove`, `plan-tasks.js header|slug`, Stellen-Typ `file` nur mit `--repo`, keine `tools`-Zeile bei Umsetzer und Test-Reviewer, keine typografischen Anführungszeichen in neuen Artefakten (SubAgents normalisieren U+201C).
+- **I16 · Smoke-Test implementation** — wird nach dem Dogfood-Lauf eingetragen.
+- **I17 · Smoke-Test implementation-review** — wird nach dem Dogfood-Lauf eingetragen.
 </content>
 </invoke>

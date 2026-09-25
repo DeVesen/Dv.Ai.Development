@@ -17,6 +17,10 @@
       "source": "./plugins/dotnet"
     },
     {
+      "name": "dv-forge",
+      "source": "./plugins/forge"
+    },
+    {
       "name": "dv-relay",
       "source": "./plugins/relay"
     },

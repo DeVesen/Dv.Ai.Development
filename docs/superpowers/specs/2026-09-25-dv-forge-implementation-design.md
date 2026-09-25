@@ -352,6 +352,8 @@ in der Gruppe sichtbar.
 3. Lässt sich der Umsetzer in Fix-Runde 1–3 per `SendMessage` fortsetzen? Rückfall: frischer Umsetzer
    mit Brief, Bericht und Findings; der Bericht ist das Gedächtnis.
 
+**Ergebnis (2026-09-25):** 1. ja — https://code.claude.com/docs/en/sub-agents.md · 2. Aufruf gewinnt — https://code.claude.com/docs/en/sub-agents.md · 3. ja — https://code.claude.com/docs/en/sub-agents.md#resume-subagents.
+
 ## 13. Tests
 
 1. **Skripte** (`node:test`):

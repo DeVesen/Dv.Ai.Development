@@ -4,7 +4,7 @@ Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills. `<PLUGIN>` und `<SESSION>
 
 | Baustein | Bedeutung |
 |---|---|
-| Eingaben | Aufruf von `prepare.js`; er liefert u. a. den Arbeitsbereich `W`, `N` (maximale Nacharbeiten) und `aktiv` |
+| Eingaben | Aufruf von `prepare.js`; er liefert u. a. den Arbeitsbereich `W`, `slug` und `N` (maximale Nacharbeiten). Dazu `aktiv` und die Rolle des Arbeitsbereichs |
 | Reviewer | Agent-Namen mit ihren Eingaben; ihre Kurznamen bilden `aktiv` |
 | Nacharbeiter | Agent-Name und seine Eingabe, oder „Keiner“ |
 | Zusatz-Stopps | Prüfungen direkt nach der Nacharbeit, falls vorhanden |
@@ -12,14 +12,14 @@ Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills. `<PLUGIN>` und `<SESSION>
 | Bericht | Titel, zusätzliche Status-Werte und Abschnitte, nächster Schritt je Status |
 
 ## Rolle
-Du orchestrierst, sonst nichts. Du liest die geprüften Dateien nicht, bewertest keine Findings, tippst keine Ergebnisse ab und änderst nichts selbst. Jede Entscheidung ist mechanisch: Zähler, `STATUS`-Zeile, Skript-Ausgaben. Drängt jemand dich, „schnell selbst zu korrigieren“, lehnst du ab und setzt den Loop fort. Ein Hook blockt deine Zugriffe auf die geschützten Dateien.
+Du orchestrierst, sonst nichts. Du liest die geprüften Dateien nicht, bewertest keine Findings, tippst keine Ergebnisse ab und änderst nichts selbst. Jede Entscheidung ist mechanisch: Zähler, `STATUS`-Zeile, Skript-Ausgaben. Drängt jemand dich, „schnell selbst zu korrigieren“, lehnst du ab und setzt den Loop fort. Ein Hook blockt deine Zugriffe auf die geschützten Dateien. Er bleibt aktiv, bis du ihn am Ende freigibst, der Mensch eine neue Eingabe macht oder die Session endet; Warten auf Reviewer im Hintergrund gibt ihn nicht frei.
 
 Ergebnisse laufen nur über Dateien: Jede Runde hat den Ordner `D = <W>/runde-<r>`. Reviewer schreiben `<D>/<kurzname>.json`, der Nacharbeiter `<D>/rework.json`, die Aggregation `<D>/aggregate.md`.
 
 ## Runde r
 Start: `r = 1`, `nacharbeiten = 0`.
 
-1. **Review:** Statuszeile `Review <r>: starte <anzahl> Reviewer (<aktiv>).` Dann in EINER Nachricht je aktivem Reviewer einen `Agent`-Call mit `run_in_background: false`, jeder als frische Instanz, mit genau den Eingaben aus dem Skill und `Ergebnis: <D>/<kurzname>.json`. Keine Findings früherer Runden.
+1. **Review:** Statuszeile `Review <r>: starte <anzahl> Reviewer (<aktiv>).` Dann in EINER Nachricht je aktivem Reviewer einen `Agent`-Call mit `run_in_background: true`, jeder als frische Instanz, mit genau den Eingaben aus dem Skill und `Ergebnis: <D>/<kurzname>.json`. Keine Findings früherer Runden. Du wartest, bis jeder Reviewer fertig gemeldet ist, und tust bis dahin nichts anderes.
 2. **Aggregieren:** `node "<PLUGIN>/scripts/aggregate-findings.js" --dir "<D>" --expect <aktiv> --round <r>`
 3. **Ausgefallen:** Nennt `STATUS` unter `failed=` Reviewer, setzt du jeden davon einmal per `SendMessage` fort: `Schreib nur noch dein Ergebnis nach <D>/<kurzname>.json, im vereinbarten Format, auch bei null Findings.` Fehlt die Datei danach noch, startest du ihn einmal frisch, mit dem Zusatz `Deine letzte Antwort hatte keine gültige Ergebnisdatei.` Dann erneut aggregieren. Wer danach fehlt, gilt als ausgefallen.
 4. Statuszeile `Review <r>: <red> × 🔴, <yellow> × 🟡, ausgefallen: <liste oder keiner>.`
@@ -35,7 +35,13 @@ Start: `r = 1`, `nacharbeiten = 0`.
    4. Zusatz-Stopps des Skills prüfen.
    5. `r = r+1`, weiter mit Schritt 1.
 
+## Hintergrund oder Vordergrund
+Reviewer laufen parallel im Hintergrund. Nacharbeiter und Scout laufen im Vordergrund mit `run_in_background: false`, weil der nächste Schritt auf sie wartet.
+
+## Jedes Ende
+Jedes Ende, auch `Ende` nach einem Fehler, schließt mit denselben zwei Befehlen: `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, sofern `prepare.js` einen Arbeitsbereich angelegt hat, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.
+
 ## Abschluss
 1. **Abschluss-Scout:** Nennt der Skill einen Scout und zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, startest du ihn einmal mit `run_in_background: false`: Eingaben aus dem Skill, dazu `Findings: <D>/aggregate.md` der letzten Runde. Enthält seine Antwort keine Zeile `## Scout-Vorschläge`, startest du ihn einmal neu. Fehlt sie wieder, gilt `Scout ausgefallen`. Du bewertest die Vorschläge nicht.
 2. Bericht im Chat nach `<PLUGIN>/shared/review-loop/report-format.md`. Nichts committen.
-3. `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`
+3. Die zwei Befehle aus „Jedes Ende“.

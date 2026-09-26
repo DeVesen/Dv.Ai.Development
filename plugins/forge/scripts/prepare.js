@@ -165,6 +165,7 @@ function prepareSpecReview({ positional, flags }) {
   if (positional[1]) values.Q = existingFile(path.resolve(positional[1]), 'Quelle');
   values.N = rounds(flags);
   const slug = path.basename(spec).toLowerCase() === 'spec.md' ? path.basename(path.dirname(spec)) : path.basename(spec, path.extname(spec));
+  values.slug = slug;
   values.W = createWorkspace('spec-review', slug, root);
   const profiles = writeProfileIndex(root, values.W);
   values.profile = profiles.count > 0 ? 'ja' : 'nein';
@@ -177,7 +178,8 @@ function preparePlanReview({ positional, flags }) {
   const plan = existingFile(path.resolve(positional[0]), 'Plan');
   const root = gitRoot(path.dirname(plan));
   const values = { P: plan, S: resolveSpec(plan, positional[1], root), R: root, N: rounds(flags) };
-  values.W = createWorkspace('plan-review', slugOf(plan), root);
+  values.slug = slugOf(plan);
+  values.W = createWorkspace('plan-review', values.slug, root);
   return values;
 }
 

@@ -12,9 +12,9 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steht nur, was für die Spec gilt. Du liest die Spec nicht.
 
 ## Eingaben
-1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" spec-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Spec `S`, Projektwurzel `R`, `N` (maximale Nacharbeiten), Arbeitsbereich `W`, `profile` (`ja`/`nein`), bei `ja` den Profil-Index `PI`, falls angegeben die Quelle `Q` und je Warnung eine Zeile `WARN`.
+1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" spec-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Spec `S`, Projektwurzel `R`, `N` (maximale Nacharbeiten), Arbeitsbereich `W`, `slug`, `profile` (`ja`/`nein`), bei `ja` den Profil-Index `PI`, falls angegeben die Quelle `Q` und je Warnung eine Zeile `WARN`.
 2. Jede `WARN`-Zeile kommt in die Hinweise des Orchestrators. Du liest weder Profile noch Index.
-3. `aktiv = completeness,consistency,feasibility,clarity`, bei `profile=ja` zusätzlich `profiles`.
+3. `aktiv = completeness,consistency,feasibility,clarity`, bei `profile=ja` zusätzlich `profiles`. Rolle des Arbeitsbereichs: `spec-review`.
 
 ## Reviewer
 - `dv-forge:spec-review-completeness` — `Spec: <S>` und, falls vorhanden, `Quelle: <Q>`

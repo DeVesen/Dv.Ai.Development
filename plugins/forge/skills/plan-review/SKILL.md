@@ -12,8 +12,8 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steht nur, was für den Plan gilt. Du liest weder Plan noch Spec.
 
 ## Eingaben
-1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Plan `P`, Spec `S`, Repo `R`, Arbeitsbereich `W` und `N`, die maximale Zahl an Nacharbeiten.
-2. `aktiv = coverage,feasibility,architecture,risks,buildability`; `spec_rueckfragen` ist eine leere Liste.
+1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Plan `P`, Spec `S`, Repo `R`, Arbeitsbereich `W`, `slug` und `N`, die maximale Zahl an Nacharbeiten.
+2. `aktiv = coverage,feasibility,architecture,risks,buildability`; `spec_rueckfragen` ist eine leere Liste. Rolle des Arbeitsbereichs: `plan-review`.
 
 ## Reviewer
 - `dv-forge:plan-review-coverage` — `Plan: <P>`, `Spec: <S>`

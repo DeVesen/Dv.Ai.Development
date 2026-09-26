@@ -128,7 +128,8 @@ test('cli_PretoolOnSpec_PrintsDenyJson', () => {
 
 test('hooksJson_EveryCommand_PointsToExistingPluginScript', () => {
   const { hooks } = JSON.parse(fs.readFileSync(HOOKS, 'utf8'));
-  assert.ok(hooks.UserPromptSubmit && hooks.PreToolUse && hooks.SessionEnd && hooks.Stop && hooks.SubagentStop);
+  assert.ok(hooks.UserPromptSubmit && hooks.PreToolUse && hooks.SessionEnd && hooks.SubagentStop);
+  assert.equal(hooks.Stop, undefined, 'Stop feuert an jedem Turn-Ende und darf den Guard nicht freigeben');
   const commands = Object.values(hooks).flat().flatMap((entry) => entry.hooks.map((hook) => hook.command));
   for (const command of commands) {
     const match = /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/([a-z-]+\.js)/.exec(command);
@@ -159,7 +160,8 @@ function setupDirectory() {
 test('parseSkillCall_PlanReviewWithoutSpec_UsesSpecInPlanFolder', () => {
   const call = guard.parseSkillCall('/dv-forge:plan-review docs/forge/x/plan.md --rounds 2');
   assert.equal(call.command, '/dv-forge:plan-review');
-  assert.deepEqual(call.files.map((file) => file.replace(/\\/g, '/')), ['docs/forge/x/plan.md', 'docs/forge/x/spec.md']);
+  assert.equal(call.files[0], 'docs/forge/x/plan.md');
+  assert.ok(call.files[1].replace(/\\/g, '/').endsWith('docs/forge/x/spec.md'));
 });
 
 test('parseSkillCall_FileMentionWithAt_StripsAt', () => {
@@ -243,4 +245,39 @@ test('decidePreTool_FileEntryInsidePluginRoot_StillDeniesRead', () => {
   const spec = path.join(guard.PLUGIN_ROOT, 'tests', 'fixtures', 'flawed-spec.md');
   guard.writeMarker(SESSION, { command: '/dv-forge:spec-review', protected: [{ path: spec, kind: 'file' }] }, tmpRoot);
   assert.ok(preTool({ tmpRoot, cwd: guard.PLUGIN_ROOT }, { tool_name: 'Read', tool_input: { file_path: spec } }));
+});
+
+test('onPrompt_HumanPromptAfterRun_ReleasesButHarnessNoticeKeeps', () => {
+  const env = setup();
+  guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: '<task-notification>\n<task-id>x</task-id>' }, env.tmpRoot);
+  assert.ok(fs.existsSync(guard.markerPath(SESSION, env.tmpRoot)), 'Benachrichtigung gibt nicht frei');
+  guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: 'Danke, und jetzt bitte X' }, env.tmpRoot);
+  assert.equal(fs.existsSync(guard.markerPath(SESSION, env.tmpRoot)), false);
+});
+
+test('onPrompt_PlanReviewWithSpecLineInPlanHeader_ProtectsThatSpec', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-guard-'));
+  const cwd = require('./lib/git-repo').makeRepo();
+  fs.mkdirSync(path.join(cwd, 'docs', 'forge', 'x'), { recursive: true });
+  fs.mkdirSync(path.join(cwd, 'docs', 'specs'), { recursive: true });
+  fs.writeFileSync(path.join(cwd, 'docs', 'specs', 'andere.md'), '# Spec\n');
+  fs.writeFileSync(path.join(cwd, 'docs', 'forge', 'x', 'plan.md'), '# Plan\n\n**Spec:** docs/specs/andere.md\n');
+  guard.onPrompt({ session_id: SESSION, cwd, prompt: '/dv-forge:plan-review docs/forge/x/plan.md' }, tmpRoot);
+  const reason = guard.decidePreTool({ session_id: SESSION, cwd, tool_name: 'Read', tool_input: { file_path: path.join(cwd, 'docs', 'specs', 'andere.md') } }, tmpRoot);
+  assert.match(reason, /dv-forge:plan-review läuft/);
+});
+
+test('decidePreTool_DenyReason_NamesBlockedActionAndAllowedWay', () => {
+  const env = setup();
+  const reason = preTool(env, { tool_name: 'Bash', tool_input: { command: 'cat docs/SPEC.md' } });
+  assert.match(reason, /Geblockt: Bash cat docs\/SPEC\.md\./);
+  assert.match(reason, /Erlaubt sind: ein einzelner Aufruf node/);
+});
+
+test('decidePreTool_ShellReadsPluginFile_Allowed', () => {
+  const env = setup();
+  const file = path.join(guard.PLUGIN_ROOT, 'shared', 'review-loop', 'loop.md');
+  assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command: `cat "${file}"` } }), null);
+  assert.ok(preTool(env, { tool_name: 'Bash', tool_input: { command: `cat "${file}" docs/spec.md` } }));
+  assert.ok(preTool(env, { tool_name: 'Bash', tool_input: { command: `cat "${file}"; cat docs/spec.md` } }));
 });

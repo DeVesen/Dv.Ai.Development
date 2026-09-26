@@ -13,7 +13,7 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 
 ## Eingaben
 1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" implementation-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: `P`, `S`, `R`, `slug`, `B`, `W`, `K`, `N`, `aktiv` und je Kontext-Datei eine Zeile `C`. Das zweite Argument ohne `--` ist die Spec.
-2. `N = 0`: Es gibt keine Nacharbeit, der Loop endet nach Review 1.
+2. `N = 0`: Es gibt keine Nacharbeit, der Loop endet nach Review 1. Rolle des Arbeitsbereichs: `review`.
 3. An jeden Aggregations-Aufruf aus `loop.md` hängst du `--repo "<R>"` an.
 
 ## Reviewer
@@ -45,4 +45,3 @@ Nächster Schritt:
 - `sauber`, `yellow` > 0: `Keine roten Findings. Gelbe Findings und Scout-Vorschläge lesen, gewählte Änderungen selbst beauftragen, dann abschließen mit:` und der Code-Block `/dv-forge:finish-work`.
 - `geprüft, k × 🔴 offen`: `k rote Findings offen. Findings und Scout-Vorschläge lesen, gewählte Änderungen selbst beauftragen, dann /dv-forge:implementation-review <P> erneut.`
 
-Danach `node "${CLAUDE_PLUGIN_ROOT}/scripts/workspace.js" remove review <slug>`.

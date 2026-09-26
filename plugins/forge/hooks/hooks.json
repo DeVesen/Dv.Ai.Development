@@ -21,16 +21,6 @@
         ]
       }
     ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-orchestrator.js\" stop"
-          }
-        ]
-      }
-    ],
     "SessionEnd": [
       {
         "hooks": [

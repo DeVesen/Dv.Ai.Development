@@ -51,7 +51,7 @@ test('implementationReviewSkill_Body_ReportStatusRangeAndCleanup', () => {
   assert.ok(body.includes('`geprüft, k × 🔴 offen`'));
   assert.ok(body.includes('`<B>..HEAD`'));
   assert.ok(body.includes('/dv-forge:finish-work'));
-  assert.ok(body.includes('workspace.js" remove review <slug>'));
+  assert.ok(body.includes('Rolle des Arbeitsbereichs: `review`'));
 });
 
 test('implementationReviewSkill_Body_StaysUnder500Words', () => {

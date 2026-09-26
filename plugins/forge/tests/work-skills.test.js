@@ -44,7 +44,7 @@ test('startWork_Body_DelegatesDecisionToScript', () => {
 
 test('finishWork_Body_ChecksTestsThenRemoves', () => {
   const { body } = skill('finish-work');
-  const order = ['work.js" check', 'forge-config.js" get <Schlüssel>', 'work.js" remove', 'cd "<haupt>"'];
+  const order = ['work.js" check', 'forge-config.js" get <Schlüssel>', 'cd "<haupt>"', 'work.js" remove "<R>"'];
   const positions = order.map((part) => body.indexOf(part));
   assert.ok(positions.every((position) => position !== -1), `fehlt: ${order[positions.indexOf(-1)]}`);
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);

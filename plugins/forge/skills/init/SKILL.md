@@ -41,7 +41,7 @@ Du schreibst die Projekt-Einstellungen in den Abschnitt `## dv-forge` der Projek
 - Planungs-Skills: unit-integration-testing, software-design-principles
 ```
 
-Eine Zeile je Schlüssel, genau `- <Schlüssel>: <Wert>`. Werte mit `<` oder `\` in Backticks. Andere Schlüssel liest kein Script.
+Alle Schlüssel der Tabelle, je eine Zeile, genau `- <Schlüssel>: <Wert>`. Ein bewusst leerer Wert bleibt als `- <Schlüssel>:` stehen. Muster schreibst du mit Platzhaltern, nie aufgelöst: `../<repo>-worktrees`, nicht der Ordnername aus `show`. Werte mit `<` oder `\` in Backticks.
 
 ## Häufige Fehler
 | Fehler | Richtig |

@@ -94,6 +94,15 @@ test('remove_InWorktree_KeepsBranchWithAllCommits', () => {
   assert.equal(git(repo, 'rev-parse', 'refs/heads/feature/demo'), commit);
 });
 
+test('remove_FromMainCheckoutWithPath_RemovesWorktree', () => {
+  const repo = worktreeRepo();
+  const dir = values(run(repo, 'start', 'demo')).R;
+  const result = run(repo, 'remove', dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(dir), false);
+  assert.equal(result.stderr, '');
+});
+
 test('remove_WithUncommittedFile_KeepsWorktree', () => {
   const repo = worktreeRepo();
   const dir = values(run(repo, 'start', 'demo')).R;

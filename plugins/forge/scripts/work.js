@@ -7,7 +7,7 @@ const { toPosix } = require('./lib/posix');
 const { ConfigError, readConfig, branchFor } = require('./forge-config');
 
 const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const USAGE = 'Aufruf: node work.js start <slug> [--spec <pfad>] [--plan <pfad>] | check | remove\n';
+const USAGE = 'Aufruf: node work.js start <slug> [--spec <pfad>] [--plan <pfad>] | check | remove [<worktree>]\n';
 
 class WorkError extends Error {}
 
@@ -134,7 +134,8 @@ function run(command, args) {
     const parsed = parseStart(args);
     return parsed && (() => start(parsed.slug, parsed.options));
   }
-  if ((command === 'check' || command === 'remove') && args.length === 0) return () => (command === 'check' ? check() : remove());
+  if (command === 'check' && args.length === 0) return () => check();
+  if (command === 'remove' && args.length <= 1) return () => remove(args[0] ? path.resolve(args[0]) : process.cwd());
   return null;
 }
 

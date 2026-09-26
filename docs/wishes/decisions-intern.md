@@ -39,6 +39,13 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 - **I4** Workitem-Nummern sind optional (pro Projekt per Init). Nur wenn aktiv: Branch-Name mit anderer Nummer als die Spec (Metadaten-Kopf) → Stopp und Rückfrage.
 - **Worktree** Eintritt unmittelbar vor der Implementation, nicht vor dem Planen. Bedingungen: Spec und Plan committet (Q6); Plan hält den geprüften Basis-Commit fest, Implementation warnt beim Start, wenn sich seitdem vom Plan berührte Dateien geändert haben.
 
+- **I5** `Urteil:`- und `geparkt`-Zeilen (mind.) bleiben erhalten, abgelegt neben Spec und Plan (Variante B), committet mit der Umsetzung, dort auch der Abschlussbericht (Q9). implementation-review liest sie als „Zurückgestellt“.
+- **I6** Commit-Bereich im Ledger als `<BASE>..<HEAD>` (BASE = Stand vor dem Task), wie in `review-package.js`.
+- **I7** Feste Regeln in der Umsetzer-Definition (nicht im Brief): Commit-Attribution, `ToolSearch` vor „MCP nicht erreichbar“, `.forge/` nie committen, Timeout = einmal wiederholen und berichten, kein roter Test.
+- **I8** Global Constraints per `plan-tasks.js header` als Datei, Task-Reviewer bekommt den Pfad. Brief ist Script-Ausgabe und bleibt unangetastet; Klarstellungen des Controllers in separater Zusatzdatei.
+- **I9** `plan-tasks.js list` liefert je Task Titel, Dateien, Produces/Consumes und markiert mehrfach berührte Dateien.
+- **I10** Plan-Pfad in der Ledger-Identität relativ zur Checkout-Wurzel `R`, mit `/` (funktioniert über Rechner, Kollegen und Worktrees hinweg).
+
 ## Offen: Init-Skill für das Plugin (am Ende besprechen)
 
 Ein Init-Skill geht die Projekt-Parameter durch und schreibt sie in die Projekt-`CLAUDE.md`. Kandidaten bisher:

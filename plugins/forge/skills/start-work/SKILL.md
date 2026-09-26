@@ -22,7 +22,7 @@ Du richtest nur den Ort der Umsetzung ein. Ob ein Worktree entsteht und wie der 
 | `modus=vor-ort`, `standard=false` | Melden: Umsetzung auf Branch `<branch>` in `<R>`. |
 | `modus=vor-ort`, `standard=true` | Einmal fragen, ob auf dem Standard-Branch gearbeitet wird. Bei Nein `git switch -c <vorschlag>`. |
 
-4. Übergabe als Code-Block: `/dv-forge:implementation <P>`. Bei `modus=worktree` dazu: Die Session muss in `<R>` laufen.
+4. Übergabe als Code-Block: `/dv-forge:implementation <P>`, mit `<P>` relativ zur Projektwurzel. Bei `modus=worktree` folgt unter dem Code-Block die Zeile: `Session in <R> starten.`
 
 ## Häufige Fehler
 | Fehler | Richtig |

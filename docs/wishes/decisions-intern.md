@@ -51,6 +51,11 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 
 - **W1 (neu) Worktree-Lebenszyklus** Heute legt das Plugin keinen Worktree an. Künftig: (1) Implementation legt den Worktree beim Start an, wenn per Init aktiviert. (2) Übergabe nennt Worktree-Pfad und Branch; der Review-Befehl sagt, dort zu starten. (3) implementation-review prüft beim Start Worktree und Branch, sonst Stopp mit klarer Meldung. (4) Merge und Push bleiben beim Menschen; Aufräumen des Worktrees wird nur angeboten, nie automatisch.
 
+- **W2 (neu) Skills `start-work` und `finish-work`** Implementation nutzt sie als Bausteine, statt Git-Logik selbst zu enthalten.
+  - `start-work`: Schreibt die Init-Einstellung Worktree vor der Implementation vor → vom aktuellen HEAD einen Feature-Branch erstellen, daraus einen gleichnamigen Worktree. Sonst im aktuellen Stand bleiben und dort umsetzen.
+  - `finish-work`: (1) alles committet? (2) alle Tests und Builds laufen lassen. (3) rot oder offen → Stopp, nichts aufräumen. (4) ohne Worktree: auf dem Branch bleiben. (5) mit Worktree: prüfen, dass jeder Commit im zugehörigen Feature-Branch steckt, dann Worktree entfernen; Branch bleibt.
+  - `finish-work` startet nur der Mensch von Hand; implementation-review nennt ihn als nächsten Befehl. Ersetzt W1 Punkt 4 („Aufräumen anbieten“). Merge und Push bleiben beim Menschen.
+
 ## Init-Skill (entschieden)
 
 Neuer Skill fragt einmal pro Projekt die Einstellungen ab und schreibt sie in einen eigenen dv-forge-Abschnitt der Projekt-`CLAUDE.md`. Erneuter Aufruf zeigt aktuelle Werte und ändert nur Gewünschtes. Parameter:

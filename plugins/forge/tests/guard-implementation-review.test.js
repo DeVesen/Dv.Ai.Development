@@ -60,7 +60,7 @@ test('decidePreTool_MainSessionShellNamesRepo_Denies', () => {
 
 test('decidePreTool_PluginScriptsWithRepoPath_Allowed', () => {
   const env = setup();
-  for (const script of ['plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js']) {
+  for (const script of ['plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js', 'prepare.js', 'forge-config.js', 'work.js']) {
     const command = `node "/plugins/forge/scripts/${script}" x "${env.top}/.forge/review/x"`;
     assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null, script);
   }

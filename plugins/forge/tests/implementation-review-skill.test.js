@@ -13,7 +13,7 @@ test('implementationReviewSkill_Frontmatter_ManualOnlyWithArgumentHint', () => {
   assert.equal(fields.name, 'implementation-review');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], 'true');
-  assert.equal(fields['argument-hint'], '<plan.md> [--spec <pfad>] [--context <pfad>]... [--base <ref>]');
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--context <pfad>]... [--base <ref>]');
 });
 
 test('implementationReviewSkill_Body_ReadsSharedLoopWithPlaceholders', () => {
@@ -25,21 +25,16 @@ test('implementationReviewSkill_Body_ReadsSharedLoopWithPlaceholders', () => {
 
 test('implementationReviewSkill_Body_StartScriptsInOrder', () => {
   const { body } = readMarkdown(SKILL);
-  const order = ['file-hash.js" "<P>"', 'plan-tasks.js" slug "<P>"', 'base-tag.js" resolve <slug>',
-    'workspace.js" create review <slug>', 'review-package.js" <B> HEAD "<W>"'];
-  const positions = order.map((part) => body.indexOf(part));
-  assert.ok(positions.every((position) => position !== -1), `fehlt: ${order[positions.indexOf(-1)]}`);
-  assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" implementation-review $ARGUMENTS'));
+  for (const name of ['`P`', '`S`', '`R`', '`slug`', '`B`', '`W`', '`K`', '`C`']) assert.ok(body.includes(name), `${name} fehlt`);
 });
 
 test('implementationReviewSkill_Body_NoRoundsFiveReviewersRepoFlag', () => {
   const { body } = readMarkdown(SKILL);
   for (const reviewer of REVIEWERS) assert.ok(body.includes(`dv-forge:implementation-review-${reviewer}`), `${reviewer} fehlt`);
-  assert.ok(body.includes('aktiv = acceptance,plan-fidelity,design,tests,risks'));
   assert.ok(body.includes('`N = 0`'));
   assert.match(body, /## Nacharbeiter\nKeiner\./);
   assert.ok(body.includes('--repo "<R>"'));
-  assert.match(body, /ohne `S` entfällt `acceptance`/);
 });
 
 test('implementationReviewSkill_Body_ScoutGetsContextOnly', () => {
@@ -54,7 +49,8 @@ test('implementationReviewSkill_Body_ScoutGetsContextOnly', () => {
 test('implementationReviewSkill_Body_ReportStatusRangeAndCleanup', () => {
   const { body } = readMarkdown(SKILL);
   assert.ok(body.includes('`geprüft, k × 🔴 offen`'));
-  assert.ok(body.includes('`<B>..HEAD` · acceptance: gelaufen | entfallen (keine Spec)'));
+  assert.ok(body.includes('`<B>..HEAD`'));
+  assert.ok(body.includes('/dv-forge:finish-work'));
   assert.ok(body.includes('workspace.js" remove review <slug>'));
 });
 

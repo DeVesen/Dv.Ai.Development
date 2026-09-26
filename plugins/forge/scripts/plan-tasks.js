@@ -3,6 +3,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { toPosix } = require('./lib/posix');
 
 const TASK_HEADING = /^###\s+Task\s+(\d+):/;
 const SECTION_HEADING = /^##\s/;
@@ -100,7 +101,7 @@ function writeFile(dir, name, content) {
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, name);
   fs.writeFileSync(file, content);
-  return file;
+  return toPosix(file);
 }
 
 function writeBrief(planPath, number, dir) {

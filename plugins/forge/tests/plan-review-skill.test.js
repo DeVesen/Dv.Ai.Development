@@ -42,9 +42,9 @@ test('planReviewSkill_Body_CleanReportHandsOverToImplementation', () => {
   assert.match(body, /`spec\.md` und `plan\.md` vor dem Start committen/);
 });
 
-test('planReviewSkill_Body_SpecDefaultsToPlanFolder', () => {
+test('planReviewSkill_Body_InputsFromPrepareScript', () => {
   const { body } = readMarkdown(SKILL);
-  assert.match(body, /`spec\.md` im Ordner von `P`/);
+  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS'));
 });
 
 test('planReviewSkill_Body_ProgressAndEscalationScripts', () => {

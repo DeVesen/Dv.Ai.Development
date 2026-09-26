@@ -1,6 +1,6 @@
 ---
 name: implementation
-description: Use when a reviewed dv-forge plan.md should be implemented task by task with a fresh subagent per task, a task review with fix loop after each task and one final review, strictly sequential in the current checkout.
+description: Use when a reviewed dv-forge plan.md should be implemented task by task with a fresh subagent per task, a task review with fix loop after each task and one final review, strictly sequential.
 disable-model-invocation: true
 argument-hint: <plan.md>
 ---
@@ -24,9 +24,9 @@ Du hältst nur an und fragst, wenn
 6. eine Prüfung beim Start scheitert.
 
 ## Start
-1. `P` = erstes Argument, absolut. Lies den Plan; fehlt er: `Plan nicht gefunden: <P>`, Ende. `S` = `spec.md` im Ordner von `P`; lies sie, falls vorhanden, sonst Ledger-Notiz `keine Spec — Urteile vorläufig`. `R` = Ausgabe von `git rev-parse --show-toplevel`.
-2. `slug` = Ausgabe von `node "<PLUGIN>/scripts/plan-tasks.js" slug "<P>"`.
-3. Default-Branch = Ausgabe von `git symbolic-ref --short refs/remotes/origin/HEAD` ohne `origin/`, sonst `main` oder `master`. Steht `git branch --show-current` darauf, fragst du einmal, ob dort gearbeitet werden soll; bei Nein `git switch -c forge/<slug>`.
+1. `node "<PLUGIN>/scripts/prepare.js" implementation $ARGUMENTS`; Exit ungleich 0: Meldung ausgeben, Ende. Die Zeilen `<Name>=<Wert>` liefern Plan `P`, Spec `S`, `R` und `slug`. Lies Plan und Spec.
+2. `node "<PLUGIN>/scripts/work.js" start <slug> --spec "<S>" --plan "<P>"`; Exit ungleich 0: Meldung ausgeben, Ende. `R` = ausgegebener Wert `R`; alle weiteren Befehle laufen dort. Bei `modus=vor-ort` und `standard=true` fragst du einmal, ob auf dem Standard-Branch gearbeitet werden soll; bei Nein `git switch -c <vorschlag>`.
+3. Bei `modus=worktree` wechselst du mit `cd "<R>"` in den Worktree.
 4. `node "<PLUGIN>/scripts/base-tag.js" ensure <slug>`; Exit ungleich 0: Meldung ausgeben, Ende.
 5. `W` = Ausgabe von `node "<PLUGIN>/scripts/workspace.js" create implementation <slug>`; Ledger nach `ledger.md` anlegen oder fortsetzen.
 6. `node "<PLUGIN>/scripts/plan-tasks.js" list "<P>"`; Exit ungleich 0: Meldung ausgeben, Ende.
@@ -40,6 +40,7 @@ Bericht im Chat:
 - Bereich `forge-base/<slug>..HEAD` und Anzahl Tasks
 - **Meine Urteile:** jede `Urteil:`-Zeile des Ledgers in Reihenfolge, mit Kosten, vollständig
 - zurückgestellte Punkte und Rest-Findings, die offen blieben
+- Bei `modus=worktree`: Worktree `<R>` und Branch nennen; die frische Session startet dort.
 - Nächster Schritt in einer frischen Session, als Code-Block: `/dv-forge:implementation-review <P>`
 
 Dann `node "<PLUGIN>/scripts/workspace.js" remove implementation <slug>`. Tag und Branch bleiben; kein Merge, kein Push.

@@ -25,3 +25,12 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 - **S9** Profile bekommen denselben Standardort wie das Glossar. Gelesen wird ausschließlich vom aktuellen Branch-Stand; nie von einem anderen Branch lesen, nie wechseln. Fehlt etwas im aktuellen Stand, gilt es als nicht vorhanden (ungeklärt / nachfragen).
 - **R1** Orchestrator warnt bei gleichnamigen Profil-Dateien an mehreren Orten; Profil-Reviewer meldet abweichende Inhalte als eigenes Finding (nur bei Spec-Art `verankert`).
 - **P1** Planer-Eingaben abschließend: Spec, Code, working-capturing/Glossar/Profile (klare Dateien, wie beim Whiteboarding), ausdrücklich übergebene Dateien. **Keine Suche** nach anderen Specs oder Plänen (weder per Workitem-Nummer noch per Slug oder Ähnlichkeit) — alte Pläne dürfen einen Neuanlauf nicht lenken. Test-Konventions-Skills des Stacks werden geladen, Kernregeln als Global Constraint in den Plan; der Nacharbeiter erbt sie über den Plan.
+- **P1-Ergänzung** Nicht nur Test-Konventionen: feste Liste „für Planung laden“ (Architektur-, Design-, Stack-, Test-Skills) in der Projekt-`CLAUDE.md`. Planer lädt genau diese, Kernregeln als Global Constraint in den Plan. Fehlt die Liste → einmal Rückfrage, nie raten.
+
+## Offen: Init-Skill für das Plugin (am Ende besprechen)
+
+Ein Init-Skill geht die Projekt-Parameter durch und schreibt sie in die Projekt-`CLAUDE.md`. Kandidaten bisher:
+- Skill-Liste „für Planung laden“ (P1)
+- Ablageorte Spec und Plan (Q1)
+- Ort von Glossar und Profilen (S9)
+- Ab wann Worktree/Branch: ab Plan oder erst ab Implementation (S1)

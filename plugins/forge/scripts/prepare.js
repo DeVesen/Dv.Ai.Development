@@ -167,6 +167,11 @@ function prepareSpecReview({ positional, flags }) {
   const slug = path.basename(spec).toLowerCase() === 'spec.md' ? path.basename(path.dirname(spec)) : path.basename(spec, path.extname(spec));
   values.slug = slug;
   values.W = createWorkspace('spec-review', slug, root);
+  values.art = /^Art:\s*frei\s*$/m.test(fs.readFileSync(spec, 'utf8')) ? 'frei' : 'verankert';
+  if (values.art === 'frei') {
+    values.profile = 'nein';
+    return values;
+  }
   const profiles = writeProfileIndex(root, values.W);
   values.profile = profiles.count > 0 ? 'ja' : 'nein';
   if (profiles.count > 0) values.PI = profiles.index;

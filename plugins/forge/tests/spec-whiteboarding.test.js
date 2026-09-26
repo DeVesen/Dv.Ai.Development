@@ -71,7 +71,7 @@ test('acRules_Rules_GivenWhenThenAndForbiddenPhrases', () => {
 });
 
 const SKILL = path.join(SKILL_DIR, 'SKILL.md');
-const REFERENCES = ['spec-format.md', 'grill-rounds.md', 'ac-rules.md'];
+const REFERENCES = ['spec-format.md', 'grill-rounds.md', 'ac-rules.md', 'split.md'];
 
 test('skill_Frontmatter_OnlyNameAndDescription', () => {
   const { fields } = readMarkdown(SKILL);
@@ -94,8 +94,10 @@ test('skill_Body_LinksAllReferencesThatExist', () => {
 
 test('skill_Body_WritesOnlyTheForgeSpecFile', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('docs/forge/YYYY-MM-DD-<slug>/spec.md'));
+  assert.ok(body.includes('forge-config.js" get Spec-Ablage'));
   assert.match(body, /Nie überschreiben/);
+  assert.match(body, /wortgleich mit dem bestätigten Entwurf/);
+  assert.match(body, /Kein Branch, kein Worktree/);
   for (const banned of [/\bADO\b/, /Nur Chat/, /AskUserQuestion/, /writing-workitem/, /(^|\s)@\S+\.md/m]) {
     assert.doesNotMatch(body, banned);
   }
@@ -107,13 +109,44 @@ test('skill_Body_ConfirmsContentTitleAndSlug', () => {
 
 test('skill_Body_HandsOverWithoutCommit', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('/dv-forge:spec-review docs/forge/<…>/spec.md'));
+  assert.ok(body.includes('/dv-forge:spec-review <pfad>'));
+  assert.match(body, /aktueller Branch/);
+  assert.match(body, /Folgeaufträge außerhalb der Spec/);
   assert.match(body, /frischen Session/);
   assert.match(body, /Kein Commit, kein automatischer Start/);
 });
 
 test('skill_Body_AbortNeedsSecondInformedRefusal', () => {
-  const { body } = readMarkdown(SKILL);
+  const body = reference('grill-rounds.md');
   assert.match(body, /genau einmal eine verdichtete Abschlussrunde/);
   assert.match(body, /Zweite, informierte Ablehnung/);
+});
+
+test('skill_Body_FreeModeOnlyConversationAndThreeTags', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /Art `frei`/);
+  assert.match(body, /Kein Suchen in Code, Git, Glossar oder Historie/);
+  assert.ok(!body.includes('`Git`') && !body.includes('`Historie`'));
+  assert.match(body, /ab drei Schritten oder zwei Varianten/);
+});
+
+test('specFormat_Header_MetadataAndTagPrecedence', () => {
+  const text = reference('spec-format.md');
+  for (const line of ['Art: frei | verankert', 'Workitem: <Nummer>', 'Basis: <Commit-Kurzhash>']) assert.ok(text.includes(line), line);
+  assert.ok(text.includes('`Aussage` → `Anhang` → `Historie` → `Git`'));
+  assert.match(text, /bestätigte Empfehlung ist `Aussage`/);
+});
+
+test('grillRounds_Rules_FrameQuestionsUnclearAnswersExcludedOptions', () => {
+  const text = reference('grill-rounds.md');
+  assert.match(text, /## Rahmenfragen/);
+  assert.match(text, /nicht eindeutig, fragst du in einem Satz nach/);
+  assert.match(text, /Schließt ein bekannter Fakt Optionen aus, bietest du sie nicht an/);
+});
+
+test('split_Reference_DetachedSpecsAndResume', () => {
+  const text = reference('split.md');
+  assert.ok(text.includes('Status: abgetrennt aus <slug des Ursprungs> am <YYYY-MM-DD>, Whiteboarding offen'));
+  assert.ok(text.includes('/dv-forge:spec-whiteboarding <pfad>'));
+  assert.match(text, /Start-Stand/);
 });

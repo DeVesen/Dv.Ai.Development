@@ -12,7 +12,7 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steht nur, was für die Spec gilt. Du liest die Spec nicht.
 
 ## Eingaben
-1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" spec-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Spec `S`, Projektwurzel `R`, `N` (maximale Nacharbeiten), Arbeitsbereich `W`, `slug`, `profile` (`ja`/`nein`), bei `ja` den Profil-Index `PI`, falls angegeben die Quelle `Q` und je Warnung eine Zeile `WARN`.
+1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" spec-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Spec `S`, Projektwurzel `R`, `N` (maximale Nacharbeiten), Arbeitsbereich `W`, `slug`, `art` (`frei`/`verankert`), `profile` (`ja`/`nein`), bei `ja` den Profil-Index `PI`, falls angegeben die Quelle `Q` und je Warnung eine Zeile `WARN`.
 2. Jede `WARN`-Zeile kommt in die Hinweise des Orchestrators. Du liest weder Profile noch Index.
 3. `aktiv = completeness,consistency,feasibility,clarity`, bei `profile=ja` zusätzlich `profiles`. Rolle des Arbeitsbereichs: `spec-review`.
 
@@ -23,6 +23,8 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 - `dv-forge:spec-review-clarity` — `Spec: <S>`
 - `dv-forge:spec-review-profiles` — `Spec: <S>`, `Profil-Index: <PI>`, `Repo: <R>`; nur bei `profile=ja`
 
+Bei `art=frei` prüfen alle Reviewer nur die innere Stimmigkeit; `profile` ist dann immer `nein`.
+
 ## Nacharbeiter
 `dv-forge:spec-rework` — `Spec: <S>`
 
@@ -30,7 +32,7 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 Keine.
 
 ## Abschluss-Scout
-`dv-forge:spec-review-scout` — `Spec: <S>` und `Repo: <R>`
+`dv-forge:spec-review-scout` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`
 
 ## Bericht
 Titel `Spec-Review`, Artefakt `<S>`, keine Zusatz-Status und keine Zusatz-Abschnitte. Nächster Schritt:

@@ -154,3 +154,13 @@ test('planReview_CreatesWorkspace', () => {
   const out = values(run(repo, 'plan-review', 'docs/forge/demo/plan.md'));
   assert.ok(samePath(out.W, path.join(repo, '.forge', 'plan-review', 'demo')));
 });
+
+test('specReview_FreeSpec_NoProfilesEvenIfPresent', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'docs/forge/demo/spec.md', '# Spec\n\nStatus: bestätigt am 2026-09-26\nArt: frei\n', 'spec');
+  commitFile(repo, 'docs/glossary/terms.md', '# G\n\nx\n', 'glossary');
+  const out = values(run(repo, 'spec-review', 'docs/forge/demo/spec.md'));
+  assert.equal(out.art, 'frei');
+  assert.equal(out.profile, 'nein');
+  assert.equal(out.PI, undefined);
+});

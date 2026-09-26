@@ -46,6 +46,9 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 - **I9** `plan-tasks.js list` liefert je Task Titel, Dateien, Produces/Consumes und markiert mehrfach berührte Dateien.
 - **I10** Plan-Pfad in der Ledger-Identität relativ zur Checkout-Wurzel `R`, mit `/` (funktioniert über Rechner, Kollegen und Worktrees hinweg).
 
+- **V1** Nachweisart je AC kennzeichnen: `ausgeführt` / `gelesen` (Variante A).
+- **V2** Ein `prepare.js` löst alle Eingaben auf (P, S, R, slug, B, W, K, aktiv) als `key=value` oder bricht klar ab; gleiches Muster für plan-review und spec-review. Die Spec/Plan-Auflösung aus Q1 ist Teil davon.
+
 ## Offen: Init-Skill für das Plugin (am Ende besprechen)
 
 Ein Init-Skill geht die Projekt-Parameter durch und schreibt sie in die Projekt-`CLAUDE.md`. Kandidaten bisher:

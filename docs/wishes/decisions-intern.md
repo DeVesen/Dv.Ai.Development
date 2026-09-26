@@ -7,3 +7,9 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 - **Q3** Alle drei Teile: wörtliches Leer-Beispiel + Pflichtsatz in jeder Reviewer-Definition; bei Formatfehler per `SendMessage` nachfordern, erst dann Neustart mit Hinweis; `SubagentStop`-Hook (Node) prüft Ergebnisdatei.
 - **Q4** `summary` je Reviewer; Abschnitt „Hinweise des Orchestrators“; Ausfälle mit Grund, Runde, nächstem Schritt; Status/nächster Schritt aus Ergebnis abgeleitet; Logikfehler `N = 0` beheben. Grobheit: Variante A (Anzahl + alle Konsequenzen je Stelle).
 - **Q5** Statuszeile vor jedem Dispatch und nach jedem Review/jeder Nacharbeit. Reviewer parallel im Hintergrund, Umsetzer im Vordergrund.
+- **Q6** spec-review: bei „sauber“ Folgebefehl, sonst „Spec nicht bereit“. plan-writing warnt bei ungetrackter/geänderter Spec, nennt Commit als Schritt. plan-review bietet Commit mit Workitem-Nummer an, Ausführung erst nach Ja. Whiteboarding-Übergabe mit echtem Pfad und Branch.
+- **Q7** Plugin-Dateien und vorgeschriebene Script-Aufrufe auch für Shell-Tools frei; Deny-Meldung nennt Befehl und erlaubten Weg. Freigabe nicht mehr bei `Stop` (feuert jedes Turn-Ende, bestätigt), sondern bei Skill-Abschluss/`SessionEnd`, mit Test. Aufräumen auf jedem Ausstiegspfad.
+- **Q8** Alle Scripts geben Pfade mit `/` aus.
+- **Q9** implementation-Abschlussbericht als Datei neben Ledger, Chat nur Kurzfassung. Vorrang-Satz für eigene Formate in jedem Skill mit festem Format.
+- **Q10** spec-review: Profil-Index (Titel + Zeile) statt ganzer Liste, kein „kleine Spec“-Modus vorerst. plan-review: Prüfbereiche schärfer abgrenzen. implementation mit einem Task: nur Final-Review, Vorab-Scan eine Zeile je Task.
+- **Q11** Fortschritt = mindestens eine rote Stelle `changed` und im nächsten Review nicht wieder da.

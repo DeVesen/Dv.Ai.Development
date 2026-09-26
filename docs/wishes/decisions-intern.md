@@ -27,6 +27,11 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 - **P1** Planer-Eingaben abschließend: Spec, Code, working-capturing/Glossar/Profile (klare Dateien, wie beim Whiteboarding), ausdrücklich übergebene Dateien. **Keine Suche** nach anderen Specs oder Plänen (weder per Workitem-Nummer noch per Slug oder Ähnlichkeit) — alte Pläne dürfen einen Neuanlauf nicht lenken. Test-Konventions-Skills des Stacks werden geladen, Kernregeln als Global Constraint in den Plan; der Nacharbeiter erbt sie über den Plan.
 - **P1-Ergänzung** Nicht nur Test-Konventionen: feste Liste „für Planung laden“ (Architektur-, Design-, Stack-, Test-Skills) in der Projekt-`CLAUDE.md`. Planer lädt genau diese, Kernregeln als Global Constraint in den Plan. Fehlt die Liste → einmal Rückfrage, nie raten.
 
+- **P2** Schritttyp „Absicherungstest“: Test schreiben oder bestehenden ausführen, erwartet sofort grün; rot = Befund.
+- **P3** Selbst-Check: jede Annahme über Fremd-Code (Selektoren, Meldungstexte, Signaturen) im installierten Paket oder in der Doku (z. B. Context7) nachgesehen. Tool-Aufrufe gegen echtes Tool-Schema prüfen, nie gegen alte Pläne. buildability bekommt zusätzlich ToolSearch (nur lesend).
+- **P4** Standard-Variable `R` = Checkout-Wurzel (`git rev-parse --show-toplevel`), vom Umsetzer aufgelöst, kein verbotener Platzhalter.
+- **P5** Testdateien immer unter `Test:`, bestehende mit Anker. Plan übernimmt Tag `Aussage` statt `Mensch`, `delegiert` bleibt als Zusatz. Erwartete Ausgabe: Testname + FAIL/PASS genügt, Meldungstexte nur wenn nachgesehen.
+
 ## Offen: Init-Skill für das Plugin (am Ende besprechen)
 
 Ein Init-Skill geht die Projekt-Parameter durch und schreibt sie in die Projekt-`CLAUDE.md`. Kandidaten bisher:

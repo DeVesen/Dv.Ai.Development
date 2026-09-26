@@ -49,11 +49,15 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 - **V1** Nachweisart je AC kennzeichnen: `ausgeführt` / `gelesen` (Variante A).
 - **V2** Ein `prepare.js` löst alle Eingaben auf (P, S, R, slug, B, W, K, aktiv) als `key=value` oder bricht klar ab; gleiches Muster für plan-review und spec-review. Die Spec/Plan-Auflösung aus Q1 ist Teil davon.
 
-## Offen: Init-Skill für das Plugin (am Ende besprechen)
+## Init-Skill (entschieden)
 
-Ein Init-Skill geht die Projekt-Parameter durch und schreibt sie in die Projekt-`CLAUDE.md`. Kandidaten bisher:
-- Skill-Liste „für Planung laden“ (P1)
-- Ablageorte Spec und Plan (Q1)
-- Ort von Glossar und Profilen (S9)
-- Worktree/Branch-Strategie bei Implementation (Eintritt vor Implementation entschieden)
-- Workitem-Nummern: ja/nein, Muster (I4)
+Neuer Skill fragt einmal pro Projekt die Einstellungen ab und schreibt sie in einen eigenen dv-forge-Abschnitt der Projekt-`CLAUDE.md`. Erneuter Aufruf zeigt aktuelle Werte und ändert nur Gewünschtes. Parameter:
+
+1. Skills für Planung (Architektur, Design, Stack, Test) — P1
+2. Ablageorte Spec und Plan — Q1
+3. Ort von Glossar und Profilen — S9
+4. Workitem-Nummern ja/nein, Muster — I4
+5. Worktree bei Implementation ja/nein, Branch-Namensschema
+6. Werkzeuge für Build/Test/Lint (z. B. dev-mcp statt Shell) — B1
+7. Such-/Index-Werkzeuge für die Faktensuche im Verbund — S8
+8. Commit-Konvention für angebotene Commits — Q6

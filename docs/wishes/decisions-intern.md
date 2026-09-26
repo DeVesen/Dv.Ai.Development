@@ -49,6 +49,8 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 - **V1** Nachweisart je AC kennzeichnen: `ausgeführt` / `gelesen` (Variante A).
 - **V2** Ein `prepare.js` löst alle Eingaben auf (P, S, R, slug, B, W, K, aktiv) als `key=value` oder bricht klar ab; gleiches Muster für plan-review und spec-review. Die Spec/Plan-Auflösung aus Q1 ist Teil davon.
 
+- **W1 (neu) Worktree-Lebenszyklus** Heute legt das Plugin keinen Worktree an. Künftig: (1) Implementation legt den Worktree beim Start an, wenn per Init aktiviert. (2) Übergabe nennt Worktree-Pfad und Branch; der Review-Befehl sagt, dort zu starten. (3) implementation-review prüft beim Start Worktree und Branch, sonst Stopp mit klarer Meldung. (4) Merge und Push bleiben beim Menschen; Aufräumen des Worktrees wird nur angeboten, nie automatisch.
+
 ## Init-Skill (entschieden)
 
 Neuer Skill fragt einmal pro Projekt die Einstellungen ab und schreibt sie in einen eigenen dv-forge-Abschnitt der Projekt-`CLAUDE.md`. Erneuter Aufruf zeigt aktuelle Werte und ändert nur Gewünschtes. Parameter:

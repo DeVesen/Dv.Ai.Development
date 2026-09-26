@@ -13,3 +13,11 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 - **Q9** implementation-Abschlussbericht als Datei neben Ledger, Chat nur Kurzfassung. Vorrang-Satz für eigene Formate in jedem Skill mit festem Format.
 - **Q10** spec-review: Profil-Index (Titel + Zeile) statt ganzer Liste, kein „kleine Spec“-Modus vorerst. plan-review: Prüfbereiche schärfer abgrenzen. implementation mit einem Task: nur Final-Review, Vorab-Scan eine Zeile je Task.
 - **Q11** Fortschritt = mindestens eine rote Stelle `changed` und im nächsten Review nicht wieder da.
+- **S1** Spec entsteht im aktuellen Checkout; kein Branch, kein Worktree beim Whiteboarding.
+- **S10 (neu)** Auf Ansage „trenn das auf“ zerlegt der Skill die Spec in mehrere Specs; abgetrennte Teile als offen markiert für eigenes Whiteboarding.
+- **S2** Unklare Antwort → ein Satz Rückfrage vor Verbuchung. Durch Fakt ausgeschlossene Optionen nicht anbieten, Fakt als Voraussetzung. Feste Zeile „Begriffe: <Wort> → <Glossar-Begriff>“ vor den Fragen.
+- **S3** Rahmenfragen (Workitem, Ablage) einmal vor Runde 1, kein W-Eintrag. Metadaten-Kopf: Workitem-Nummer, Datum, Basis-Commit, Spec-Art.
+- **S4** Entwurf erst bei leerer Frontier; Datei wortgleich; spätere Änderung als Vorher/Nachher zur Bestätigung.
+- **S5** Skizze ab drei Schritten oder zwei Varianten, sonst Text.
+- **S6** Ein Tag je Zeile, Rangfolge: Aussage > Anhang > Historie > Git. Bestätigte Empfehlung = Aussage.
+- **S7 + Neuschnitt** `spec-whiteboarding` arbeitet nur mit Gesprächsinhalt und übergebenen Anhängen (keine Code-/Git-/Historie-/Glossar-Suche, fragt direkt; Tags: Aussage, Anhang, ungeklärt). `spec-whiteboarding-with-docs` ist die verankerte Variante mit Code, Git, Historie, Glossar. Metadaten-Kopf trägt Spec-Art `frei` / `verankert`; spec-review prüft `frei` nur auf innere Stimmigkeit (ohne Code-/Profil-Reviewer). Verbund: Variante B, je Schritt benennen, welche Referenz zu lesen ist, Pfad ab Plugin-Wurzel.

@@ -32,10 +32,18 @@ Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
 - **P4** Standard-Variable `R` = Checkout-Wurzel (`git rev-parse --show-toplevel`), vom Umsetzer aufgelöst, kein verbotener Platzhalter.
 - **P5** Testdateien immer unter `Test:`, bestehende mit Anker. Plan übernimmt Tag `Aussage` statt `Mensch`, `delegiert` bleibt als Zusatz. Erwartete Ausgabe: Testname + FAIL/PASS genügt, Meldungstexte nur wenn nachgesehen.
 
+- **B1** buildability prüft je vorgeschriebenem Build-/Test-/Lint-Gate, ob es verdrahtet ist (Script, Target, installierte Abhängigkeiten); nicht verdrahtet = Finding.
+- **I1** Kategorie „Plan-Vorgabe in Umgebung nicht erfüllbar“: Ursache außerhalb des Diffs; bräuchte Fix Installation/Umgebungsänderung → Stopp an den Menschen, sonst parken mit Urteil.
+- **I2** 🔴 schließt Freigabe aus. Außerhalb des Diffs höchstens 🟡 oder Abschnitt „außerhalb des Scopes“.
+- **I3** `plan-tasks.js brief` liefert Modellempfehlung; Abweichung erzwingt `Urteil:`-Zeile. `done-with-concerns`: Concerns nur notieren, Urteil erst nach Review.
+- **I4** Workitem-Nummern sind optional (pro Projekt per Init). Nur wenn aktiv: Branch-Name mit anderer Nummer als die Spec (Metadaten-Kopf) → Stopp und Rückfrage.
+- **Worktree** Eintritt unmittelbar vor der Implementation, nicht vor dem Planen. Bedingungen: Spec und Plan committet (Q6); Plan hält den geprüften Basis-Commit fest, Implementation warnt beim Start, wenn sich seitdem vom Plan berührte Dateien geändert haben.
+
 ## Offen: Init-Skill für das Plugin (am Ende besprechen)
 
 Ein Init-Skill geht die Projekt-Parameter durch und schreibt sie in die Projekt-`CLAUDE.md`. Kandidaten bisher:
 - Skill-Liste „für Planung laden“ (P1)
 - Ablageorte Spec und Plan (Q1)
 - Ort von Glossar und Profilen (S9)
-- Ab wann Worktree/Branch: ab Plan oder erst ab Implementation (S1)
+- Worktree/Branch-Strategie bei Implementation (Eintritt vor Implementation entschieden)
+- Workitem-Nummern: ja/nein, Muster (I4)

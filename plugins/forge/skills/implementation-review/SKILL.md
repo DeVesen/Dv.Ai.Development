@@ -26,9 +26,6 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 ## Nacharbeiter
 Keiner.
 
-## Fortschritts-Skript
-Keines.
-
 ## Zusatz-Stopps
 Keine.
 
@@ -43,4 +40,9 @@ Titel `Implementierungs-Review`, Artefakt `<P>`. Status `sauber nach Review 1`; 
 `<B>..HEAD`
 ```
 
-Nächster Schritt: `Findings und Scout-Vorschläge lesen; gewählte Änderungen selbst beauftragen. Ist alles erledigt, die Arbeit abschließen mit:` und darunter in einem Code-Block `/dv-forge:finish-work`. Danach `node "${CLAUDE_PLUGIN_ROOT}/scripts/workspace.js" remove review <slug>`.
+Nächster Schritt:
+- `sauber`, `yellow=0`: `Alles sauber. Arbeit abschließen mit:` und darunter in einem Code-Block `/dv-forge:finish-work`.
+- `sauber`, `yellow` > 0: `Keine roten Findings. Gelbe Findings und Scout-Vorschläge lesen, gewählte Änderungen selbst beauftragen, dann abschließen mit:` und der Code-Block `/dv-forge:finish-work`.
+- `geprüft, k × 🔴 offen`: `k rote Findings offen. Findings und Scout-Vorschläge lesen, gewählte Änderungen selbst beauftragen, dann /dv-forge:implementation-review <P> erneut.`
+
+Danach `node "${CLAUDE_PLUGIN_ROOT}/scripts/workspace.js" remove review <slug>`.

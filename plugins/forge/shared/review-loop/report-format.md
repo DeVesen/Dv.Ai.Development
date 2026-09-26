@@ -3,19 +3,33 @@
 ```markdown
 ## <Berichtstitel>: <pfad des Artefakts>
 
-**Status:** <sauber nach Review r | Cap erreicht, k × 🔴 offen | Stillstand in Runde r> | <Zusatz-Status des Skills>
+**Status:** <Status> | <Zusatz-Status des Skills>
 **Reviews:** <anzahl> · **Nacharbeiten:** <anzahl>
-**Ausgefallen:** <reviewer-liste>        ← nur wenn vorhanden
 
 ### Letztes Review
-<Abschnitt zwischen `=== REPORT ===` und `=== REWORK ===` aus der letzten Aggregation, unverändert>
+<Abschnitt zwischen `=== REPORT ===` und `=== REWORK ===` aus `aggregate.md` der letzten Runde, unverändert>
+
+### Hinweise des Orchestrators        ← nur wenn vorhanden
+- <eigene Abweichung oder Auslegung, z. B. wie ein Argument gelesen wurde, ein nachgeforderter oder neu gestarteter Reviewer>
 
 <Zusatz-Abschnitte des Skills>
 
 <Scout-Abschnitt ab `## Scout-Vorschläge`, unverändert, oder „Scout ausgefallen“>        ← nur wenn der Skill einen Scout nennt und er lief
 
-Nächster Schritt: <Text aus dem Skill>
+Nächster Schritt: <Text aus dem Skill für diesen Status>
 ```
 
-- `k` = Wert `red=` aus der letzten `STATUS`-Zeile.
-- Keine Review-Dateien schreiben, nichts committen.
+## Status
+Der Status folgt aus dem Stopp in `loop.md` und der letzten `STATUS`-Zeile:
+
+| Stopp | Status |
+|---|---|
+| `clean=true` | `sauber nach Review r` |
+| Reviewer ausgefallen | `unvollständig nach Review r, ausgefallen: <liste>` |
+| Cap | `Cap erreicht, k × 🔴 offen` |
+| kein Fortschritt | `Stillstand in Runde r, k × 🔴 offen` |
+
+`k` = Wert `red=` aus der letzten `STATUS`-Zeile.
+
+## Nächster Schritt
+Der Skill nennt je Status einen Text. `unvollständig` hat immer denselben: `Ausgefallene Reviewer: <liste>. Den Skill in einer frischen Session erneut starten.` Nennt der Skill für einen Status nichts, gilt der Text für `Cap erreicht`.

@@ -1,7 +1,7 @@
 ---
 name: implementation-review-acceptance
 description: Use when the dv-forge implementation-review orchestrator needs every acceptance criterion of a spec checked for an implementation and a proving test in the reviewed range.
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Write
 model: sonnet
 ---
 
@@ -13,6 +13,7 @@ Du prüfst, ob eine Umsetzung die Akzeptanzkriterien ihrer Spec erfüllt. Du lie
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Paket:` Datei mit Commits, Stat und Diff des geprüften Bereichs
 - `Repo:` Wurzel des Repos
+- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
 
 ## Prüfauftrag
 1. Liste jedes AC der Spec auf (`AC-01`, `AC-02`, …).
@@ -35,11 +36,12 @@ Du meldest nur, was dazu führt, dass die Umsetzung ein AC nicht erfüllt oder n
 - `green` — Anmerkung.
 
 ## Ausgabe
-Beende deine Antwort mit genau einem JSON-Block, danach kein Text:
+Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
 
 ```json
 {
   "reviewer": "acceptance",
+  "summary": "Prüfumfang in einem Satz",
   "findings": [
     {
       "location": "AC-02",
@@ -53,4 +55,6 @@ Beende deine Antwort mit genau einem JSON-Block, danach kein Text:
 ```
 
 - `location`: `AC-<Zahl>`.
-- Alle Felder sind Strings und Pflicht. Keine Findings: `"findings": []`.
+- `summary`: ein Satz zum Prüfumfang, z. B. `12 ACs geprüft, 3 Dateien gelesen, 0 Findings`.
+- Alle Felder sind Strings und Pflicht.
+- Ohne Findings schreibst du genau diese Form: `{"reviewer": "acceptance", "summary": "<Prüfumfang>", "findings": []}`.

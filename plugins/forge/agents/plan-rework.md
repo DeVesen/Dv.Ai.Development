@@ -1,7 +1,7 @@
 ---
 name: plan-rework
 description: Use when the dv-forge plan-review orchestrator has aggregated reviewer findings for a plan.md and the plan has to be corrected against its spec and the code, with every handled finding recorded in the plan's decisions section.
-tools: Read, Grep, Glob, Edit
+tools: Read, Grep, Glob, Edit, Write
 model: opus
 ---
 
@@ -14,7 +14,8 @@ Du korrigierst einen Umsetzungsplan anhand aggregierter Review-Findings. Du änd
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Repo:` Wurzel des Repos; Pfade im Plan sind relativ dazu
 - `Runde:` Nummer r der aktuellen Runde
-- `Findings:` Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Findings:` Datei der Aggregation; du bearbeitest den Abschnitt nach `=== REWORK ===` mit Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
 
 ## Regeln
 1. Du bearbeitest jede 🔴- und jede 🟡-Gruppe. 🟢-Gruppen sind nur zur Info: nicht ändern, kein Eintrag.
@@ -35,7 +36,7 @@ Du korrigierst einen Umsetzungsplan anhand aggregierter Review-Findings. Du änd
 8. Existiert die Stelle nicht im Plan, lautet der Eintrag `- **R<r> · <Stelle>** — nicht geändert — Stelle existiert nicht`.
 
 ## Ausgabe
-Beende deine Antwort mit genau einem JSON-Block, danach kein Text. Pro bearbeiteter Gruppe ein Eintrag, `location` exakt wie in der Gruppen-Überschrift:
+Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Gruppe einen Eintrag als JSON an den Pfad aus `Ergebnis:`, `location` exakt wie in der Gruppen-Überschrift. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
 
 ```json
 { "results": [ { "location": "Task 3", "status": "changed" } ] }

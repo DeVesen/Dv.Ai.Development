@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const AGENTS = path.join(__dirname, '..', 'agents');
 const REVIEWERS = ['completeness', 'consistency', 'feasibility', 'clarity', 'profiles'];
-const FORMAT_KEYS = ['"reviewer"', '"findings"', '"location"', '"quote"', '"severity"', '"consequence"', '"rationale"'];
+const FORMAT_KEYS = ['"reviewer"', '"summary"', '"findings"', '"location"', '"quote"', '"severity"', '"consequence"', '"rationale"'];
 
 function readAgent(name) {
   const text = fs.readFileSync(path.join(AGENTS, `${name}.md`), 'utf8');
@@ -25,7 +25,7 @@ for (const reviewer of REVIEWERS) {
   test(`${name}_Frontmatter_NameToolsModelDescription`, () => {
     const { fields } = readAgent(name);
     assert.equal(fields.name, name);
-    assert.equal(fields.tools, 'Read');
+    assert.equal(fields.tools, 'Read, Write');
     assert.equal(fields.model, 'sonnet');
     assert.match(fields.description, /^Use when/);
   });
@@ -45,7 +45,7 @@ for (const reviewer of REVIEWERS) {
 test('spec-rework_Frontmatter_ReadEditOpus', () => {
   const { fields } = readAgent('spec-rework');
   assert.equal(fields.name, 'spec-rework');
-  assert.equal(fields.tools, 'Read, Edit');
+  assert.equal(fields.tools, 'Read, Edit, Write');
   assert.equal(fields.model, 'opus');
   assert.match(fields.description, /^Use when/);
 });
@@ -80,11 +80,11 @@ test('spec-review-scout_Body_DefinesProposalFormat', () => {
 });
 
 const PLAN_REVIEWERS = {
-  coverage: 'Read',
-  feasibility: 'Read, Grep, Glob',
-  architecture: 'Read, Grep, Glob',
-  risks: 'Read, Grep, Glob',
-  buildability: 'Read, Grep, Glob',
+  coverage: 'Read, Write',
+  feasibility: 'Read, Grep, Glob, Write',
+  architecture: 'Read, Grep, Glob, Write',
+  risks: 'Read, Grep, Glob, Write',
+  buildability: 'Read, Grep, Glob, Write',
 };
 
 for (const [reviewer, tools] of Object.entries(PLAN_REVIEWERS)) {
@@ -123,7 +123,7 @@ test('plan-review-codeReaders_Body_TakeRepoInput', () => {
 test('plan-rework_Frontmatter_ReadGrepGlobEditOpus', () => {
   const { fields } = readAgent('plan-rework');
   assert.equal(fields.name, 'plan-rework');
-  assert.equal(fields.tools, 'Read, Grep, Glob, Edit');
+  assert.equal(fields.tools, 'Read, Grep, Glob, Edit, Write');
   assert.equal(fields.model, 'opus');
   assert.match(fields.description, /^Use when/);
 });
@@ -157,4 +157,29 @@ test('plan-review-scout_Body_FormatProposalsPreferredAndNoEdits', () => {
   assert.match(body, /Spec so ändern/);
   assert.ok(body.includes('`Repo:`'));
     assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
+});
+
+test('allReviewers_Body_WriteResultFileWithEmptyExample', () => {
+  const names = fs.readdirSync(AGENTS).filter((file) => /-review-/.test(file) && !file.includes('scout')).map((file) => file.slice(0, -3));
+  assert.equal(names.length, 15);
+  for (const name of names) {
+    const { body } = readAgent(name);
+    const short = /"reviewer": "([a-z-]+)"/.exec(body)[1];
+    assert.ok(body.includes('- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei'), `${name}: Eingabe Ergebnis fehlt`);
+    assert.ok(body.includes('Deine letzte Aktion: Schreib dein Ergebnis mit `Write`'), `${name}: letzte Aktion fehlt`);
+    assert.ok(body.includes('auch bei null Findings'), name);
+    assert.ok(body.includes(`\`{"reviewer": "${short}", "summary": "<Prüfumfang>", "findings": []}\``), `${name}: Leer-Beispiel fehlt`);
+    assert.ok(!body.includes('Beende deine Antwort mit genau einem JSON-Block'), `${name}: alter Ausgabeweg`);
+  }
+});
+
+test('reworkAndScouts_Body_ReadFindingsFromAggregateFile', () => {
+  for (const name of ['spec-rework', 'plan-rework']) {
+    const { body } = readAgent(name);
+    assert.ok(body.includes('- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei'), name);
+    assert.ok(body.includes('"results"'), name);
+  }
+  for (const name of ['spec-review-scout', 'plan-review-scout', 'implementation-review-scout']) {
+    assert.ok(readAgent(name).body.includes('`Findings:` Datei der letzten Aggregation'), name);
+  }
 });

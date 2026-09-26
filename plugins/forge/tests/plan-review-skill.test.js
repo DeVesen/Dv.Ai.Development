@@ -39,7 +39,8 @@ test('planReviewSkill_Body_CleanReportHandsOverToImplementation', () => {
   const { body } = readMarkdown(SKILL);
   assert.ok(body.includes('/dv-forge:implementation <P>'));
   assert.match(body, /frischen Session/);
-  assert.match(body, /`spec\.md` und `plan\.md` vor dem Start committen/);
+  assert.match(body, /Soll ich Spec und Plan jetzt committen\?/);
+  assert.ok(body.includes('forge-config.js" get Commit-Konvention'));
 });
 
 test('planReviewSkill_Body_InputsFromPrepareScript', () => {
@@ -47,14 +48,11 @@ test('planReviewSkill_Body_InputsFromPrepareScript', () => {
   assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS'));
 });
 
-test('planReviewSkill_Body_ProgressAndEscalationScripts', () => {
+test('planReviewSkill_Body_EscalationReadsRoundFolder', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/file-hash.js" "<P>"'));
-  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/rework-outcome.js" --escalation-status spec-question'));
-  assert.ok(body.includes('=== AGGREGATE ==='));
-  assert.ok(body.includes('=== REWORK-RESULT ==='));
-  assert.ok(body.includes('Spec-Rückfrage in Runde r'));
-  assert.ok(body.includes('### Spec-Rückfragen'));
+  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/rework-outcome.js" --escalation-status spec-question --dir "<W>/runde-<r>"'));
+  assert.ok(!body.includes('DV_FORGE_EOF'));
+  assert.ok(!body.includes('file-hash.js'));
 });
 
 test('planReviewSkill_Body_StaysUnder500Words', () => {

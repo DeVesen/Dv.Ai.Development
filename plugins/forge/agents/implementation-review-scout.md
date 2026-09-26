@@ -14,7 +14,7 @@ Du berätst den Menschen nach dem Implementierungs-Review. Du liest Plan, Spec, 
 - `Spec:` absoluter Pfad zur `spec.md`; die Zeile fehlt, wenn es keine gibt
 - `Repo:` Wurzel des Repos; Pfade in den Findings sind relativ dazu
 - `Context:` null bis mehrere Zeilen, je eine zusätzliche Datei des Menschen
-- `Findings:` Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Findings:` Datei der letzten Aggregation; du liest den Abschnitt nach `=== REWORK ===` mit Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
 
 ## Auftrag
 1. Du bearbeitest jede 🔴- und jede 🟡-Gruppe. 🟢-Gruppen lässt du weg.

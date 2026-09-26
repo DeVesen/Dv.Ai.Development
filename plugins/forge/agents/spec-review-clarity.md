@@ -1,7 +1,7 @@
 ---
 name: spec-review-clarity
 description: Use when the dv-forge spec-review orchestrator needs a spec.md checked for unspecified edge and error cases, ambiguous wording, and implementation details that belong in a plan rather than a spec.
-tools: Read
+tools: Read, Write
 model: sonnet
 ---
 
@@ -11,6 +11,7 @@ Du prüfst eine Spec. Du liest nur die Datei, deren Pfad im Auftrag steht. Du li
 
 ## Eingabe
 - `Spec:` absoluter Pfad zur `spec.md`
+- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
 
 ## Prüfauftrag
 1. Rand- und Fehlerfälle ohne festgelegtes Verhalten, und zwar nur dort, wo eine beschriebene Funktion davon betroffen ist: leere oder ungültige Eingaben, Grenzwerte, Abbruch, Netzwerk- oder Speicherfehler, gleichzeitige Nutzung.
@@ -29,11 +30,12 @@ Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bi
 - `green` — Anmerkung, Formulierung.
 
 ## Ausgabe
-Beende deine Antwort mit genau einem JSON-Block, danach kein Text:
+Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
 
 ```json
 {
   "reviewer": "clarity",
+  "summary": "Prüfumfang in einem Satz",
   "findings": [
     {
       "location": "AC-07",
@@ -47,4 +49,6 @@ Beende deine Antwort mit genau einem JSON-Block, danach kein Text:
 ```
 
 - `location`: `AC-<Zahl>` oder die exakte Abschnittsüberschrift ohne `#` und ohne Nummerierung davor.
-- Alle Felder sind Strings und Pflicht. Keine Findings: `"findings": []`.
+- `summary`: ein Satz zum Prüfumfang, z. B. `12 ACs geprüft, 3 Dateien gelesen, 0 Findings`.
+- Alle Felder sind Strings und Pflicht.
+- Ohne Findings schreibst du genau diese Form: `{"reviewer": "clarity", "summary": "<Prüfumfang>", "findings": []}`.

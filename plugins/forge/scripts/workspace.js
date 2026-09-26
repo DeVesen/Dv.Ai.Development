@@ -6,9 +6,9 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 
-const ROLES = new Set(['implementation', 'review']);
+const ROLES = new Set(['implementation', 'review', 'spec-review', 'plan-review']);
 const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const USAGE = 'Aufruf: node workspace.js create|remove <implementation|review> <slug>\n';
+const USAGE = 'Aufruf: node workspace.js create|remove <implementation|review|spec-review|plan-review> <slug>\n';
 
 class WorkspaceError extends Error {}
 

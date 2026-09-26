@@ -23,6 +23,10 @@ const CHAINING = /[;&|`<>\r\n]|\$\(/;
 const HEREDOC_START = /\s<<(?:'([A-Za-z_]\w*)'|([A-Za-z_]\w*))\s*$/;
 const UNQUOTED_EXPANSION = /`|\$\(/;
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
+const REVIEW_AGENT = /^dv-forge:(?:(?:spec|plan|implementation)-review-(?!scout$)[a-z-]+|(?:spec|plan)-rework)$/;
+const WORKSPACE_SEGMENT = /\/\.forge\//;
+const WORKSPACE_REASON = 'dv-forge: Review- und Nacharbeits-Agents schreiben mit Write nur in den Arbeitsbereich .forge/. '
+  + 'Schreib dein Ergebnis an den Pfad aus deinem Auftrag (Zeile Ergebnis:).';
 const DEFAULT_REASON = 'dv-forge-Orchestrator läuft: geschützte Dateien werden nur von SubAgents gelesen und geändert.';
 
 const COMMANDS = {
@@ -230,8 +234,14 @@ function touchesProtected(input, entries) {
   return false;
 }
 
+function writesOutsideWorkspace(input) {
+  if (input.tool_name !== 'Write' || !REVIEW_AGENT.test(String(input.agent_type ?? ''))) return false;
+  const target = input.tool_input?.file_path;
+  return !target || !WORKSPACE_SEGMENT.test(normalize(path.resolve(input.cwd ?? '.', target)));
+}
+
 function decidePreTool(input, tmpRoot) {
-  if (input.agent_id) return null;
+  if (input.agent_id) return writesOutsideWorkspace(input) ? WORKSPACE_REASON : null;
   const marker = readMarker(input.session_id, tmpRoot);
   if (!marker || !Array.isArray(marker.protected)) return null;
   if (!touchesProtected(input, marker.protected)) return null;

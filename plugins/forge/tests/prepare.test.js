@@ -126,3 +126,31 @@ test('cli_BadArguments_ExitWithTwo', () => {
   assert.equal(run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--base', 'x').status, 2);
   assert.equal(run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--rounds', 'drei').status, 2);
 });
+
+test('specReview_ProfilesFound_WritesIndexAndWarnsOnDuplicates', () => {
+  const repo = planRepo();
+  commitFile(repo, 'docs/glossary/domain-terms.md', '# Fachbegriffe\n\nKunde heißt Auftraggeber.\n', 'glossary');
+  commitFile(repo, 'docs/application/orders/domain-terms.md', '# Begriffe Bestellung\n\nAnders.\n', 'profile');
+  const result = run(repo, 'spec-review', 'docs/forge/demo/spec.md');
+  assert.equal(result.status, 0, result.stderr);
+  const out = values(result);
+  assert.equal(out.profile, 'ja');
+  const index = fs.readFileSync(out.PI, 'utf8');
+  assert.match(index, /- docs\/glossary\/domain-terms\.md — Fachbegriffe — Kunde heißt Auftraggeber\./);
+  assert.match(index, /- docs\/application\/orders\/domain-terms\.md — Begriffe Bestellung — Anders\./);
+  assert.match(out.WARN, /gleichnamige Profile an mehreren Orten: .*docs\/application\/orders\/domain-terms\.md.*docs\/glossary\/domain-terms\.md/);
+  assert.ok(samePath(out.W, path.join(repo, '.forge', 'spec-review', 'demo')));
+});
+
+test('specReview_NoProfiles_ProfileInactiveWithoutIndexLine', () => {
+  const repo = planRepo();
+  const out = values(run(repo, 'spec-review', 'docs/forge/demo/spec.md'));
+  assert.equal(out.profile, 'nein');
+  assert.equal(out.PI, undefined);
+});
+
+test('planReview_CreatesWorkspace', () => {
+  const repo = planRepo();
+  const out = values(run(repo, 'plan-review', 'docs/forge/demo/plan.md'));
+  assert.ok(samePath(out.W, path.join(repo, '.forge', 'plan-review', 'demo')));
+});

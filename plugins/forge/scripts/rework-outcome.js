@@ -2,6 +2,7 @@
 'use strict';
 
 const fs = require('node:fs');
+const path = require('node:path');
 const { normalizeLocation } = require('./aggregate-findings.js');
 
 const AGGREGATE_MARK = '=== AGGREGATE ===';
@@ -109,6 +110,45 @@ function evaluate(text, escalationStatus) {
   return { allRedEscalated, escalated };
 }
 
+function readDir(dir) {
+  const aggregateFile = path.join(dir, 'aggregate.md');
+  const reworkFile = path.join(dir, 'rework.json');
+  if (!fs.existsSync(aggregateFile)) throw new Error(`Aggregation fehlt: ${aggregateFile}`);
+  if (!fs.existsSync(reworkFile)) throw new Error(`Ergebnis des Nacharbeiters fehlt: ${reworkFile}`);
+  const aggregate = fs.readFileSync(aggregateFile, 'utf8');
+  const result = `\`\`\`json\n${fs.readFileSync(reworkFile, 'utf8').trim()}\n\`\`\``;
+  return `${AGGREGATE_MARK}\n${aggregate}\n${RESULT_MARK}\n${result}\n`;
+}
+
+function roundDir(workspace, round) {
+  return path.join(workspace, `runde-${round}`);
+}
+
+function redKeys(dir) {
+  const file = path.join(dir, 'aggregate.md');
+  if (!fs.existsSync(file)) return [];
+  return redLocations(fs.readFileSync(file, 'utf8')).map((location) => normalizeLocation(location));
+}
+
+function changedKeys(dir) {
+  const file = path.join(dir, 'rework.json');
+  if (!fs.existsSync(file)) return [];
+  try {
+    return parseResults(fs.readFileSync(file, 'utf8'))
+      .filter((entry) => entry.status === 'changed')
+      .map((entry) => normalizeLocation(entry.location));
+  } catch {
+    return [];
+  }
+}
+
+function progress(workspace, round) {
+  const before = new Set(redKeys(roundDir(workspace, round)));
+  const after = new Set(redKeys(roundDir(workspace, round + 1)));
+  const fixed = changedKeys(roundDir(workspace, round)).filter((key) => before.has(key) && !after.has(key));
+  return { progress: fixed.length > 0, fixed };
+}
+
 function render(outcome) {
   return [
     `OUTCOME all-red-escalated=${outcome.allRedEscalated} escalated=${outcome.escalated.length}`,
@@ -122,14 +162,39 @@ function parseStatus(args) {
   return value.startsWith('--') ? '' : value;
 }
 
+const USAGE = 'Aufruf: node rework-outcome.js --escalation-status <status> [--dir <runden-ordner>] < eingabe\n'
+  + '       node rework-outcome.js progress --dir <arbeitsbereich> --round <r>\n';
+
+function optionValue(args, name) {
+  const index = args.indexOf(name);
+  const value = index === -1 ? null : args[index + 1] ?? null;
+  return value && !value.startsWith('--') ? value : null;
+}
+
+function runProgress(args) {
+  const dir = optionValue(args, '--dir');
+  const round = optionValue(args, '--round');
+  if (!dir || !/^\d+$/.test(round ?? '')) return null;
+  const outcome = progress(dir, Number(round));
+  return [`PROGRESS ${outcome.progress}`, ...outcome.fixed.map((key) => `FIXED ${key}`)].join('\n');
+}
+
+function runEscalation(args) {
+  const status = parseStatus(args);
+  if (!status) return null;
+  const dir = optionValue(args, '--dir');
+  return render(evaluate(dir ? readDir(dir) : fs.readFileSync(0, 'utf8'), status));
+}
+
 function main() {
-  const status = parseStatus(process.argv.slice(2));
-  if (!status) {
-    process.stderr.write('Aufruf: node rework-outcome.js --escalation-status <status> < eingabe\n');
-    process.exit(2);
-  }
+  const args = process.argv.slice(2);
   try {
-    process.stdout.write(`${render(evaluate(fs.readFileSync(0, 'utf8'), status))}\n`);
+    const output = args[0] === 'progress' ? runProgress(args) : runEscalation(args);
+    if (output === null) {
+      process.stderr.write(USAGE);
+      process.exit(2);
+    }
+    process.stdout.write(`${output}\n`);
   } catch (error) {
     process.stderr.write(`dv-forge rework-outcome: ${error.message}\n`);
     process.exit(1);
@@ -138,4 +203,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { evaluate, render, parseStatus };
+module.exports = { evaluate, render, parseStatus, readDir, progress };

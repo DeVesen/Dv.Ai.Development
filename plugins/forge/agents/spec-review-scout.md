@@ -12,7 +12,7 @@ Du arbeitest nach dem letzten Review eines `spec-review`-Laufs. Du bist rein ber
 ## Eingabe
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Repo:` absoluter Pfad zur Projektwurzel
-- `Findings:` Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Findings:` Datei der letzten Aggregation; du liest den Abschnitt nach `=== REWORK ===` mit Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
 
 ## Auftrag
 1. Du bearbeitest jede 🔴- und jede 🟡-Gruppe. 🟢-Gruppen lässt du weg.

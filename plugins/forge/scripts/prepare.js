@@ -120,18 +120,65 @@ function checkLocation(root, slug, specPath) {
   }
 }
 
+function markdownFiles(dir) {
+  if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) return [];
+  return fs.readdirSync(dir, { recursive: true })
+    .filter((entry) => String(entry).toLowerCase().endsWith('.md'))
+    .map((entry) => path.join(dir, String(entry)));
+}
+
+function profileSummary(file) {
+  const lines = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n').split('\n').map((line) => line.trim());
+  const title = (lines.find((line) => line.startsWith('#')) ?? '').replace(/^#+\s*/, '');
+  const text = lines.find((line) => line !== '' && !line.startsWith('#') && !line.startsWith('---')) ?? '';
+  return [title, text.length > 120 ? `${text.slice(0, 117)}...` : text].filter(Boolean).join(' — ');
+}
+
+function profileDirs(root) {
+  const { config } = readConfig(root);
+  const dirs = [config.Glossar, config.Profile, 'docs/application'].map((dir) => path.resolve(root, dir));
+  return dirs.filter((dir, index) => dirs.indexOf(dir) === index);
+}
+
+function duplicateWarnings(files) {
+  const byName = new Map();
+  for (const file of files) {
+    const name = path.basename(file).toLowerCase();
+    byName.set(name, [...(byName.get(name) ?? []), file]);
+  }
+  return [...byName.values()].filter((group) => group.length > 1)
+    .map((group) => `gleichnamige Profile an mehreren Orten: ${group.map(toPosix).join(', ')}`);
+}
+
+function writeProfileIndex(root, workspace) {
+  const files = [...new Set(profileDirs(root).flatMap(markdownFiles))].sort();
+  const lines = files.map((file) => `- ${toPosix(path.relative(root, file))} — ${profileSummary(file)}`);
+  const index = path.join(workspace, 'profile-index.md');
+  fs.writeFileSync(index, `# Profil-Index\n\nPfade relativ zu ${toPosix(root)}\n\n${lines.join('\n')}\n`);
+  return { index, count: files.length, warnings: duplicateWarnings(files) };
+}
+
 function prepareSpecReview({ positional, flags }) {
   const spec = existingFile(path.resolve(positional[0]), 'Spec');
-  const values = { S: spec, R: gitRoot(path.dirname(spec)) };
+  const root = gitRoot(path.dirname(spec));
+  const values = { S: spec, R: root };
   if (positional[1]) values.Q = existingFile(path.resolve(positional[1]), 'Quelle');
   values.N = rounds(flags);
+  const slug = path.basename(spec).toLowerCase() === 'spec.md' ? path.basename(path.dirname(spec)) : path.basename(spec, path.extname(spec));
+  values.W = createWorkspace('spec-review', slug, root);
+  const profiles = writeProfileIndex(root, values.W);
+  values.profile = profiles.count > 0 ? 'ja' : 'nein';
+  if (profiles.count > 0) values.PI = profiles.index;
+  if (profiles.warnings.length > 0) values.WARN = profiles.warnings;
   return values;
 }
 
 function preparePlanReview({ positional, flags }) {
   const plan = existingFile(path.resolve(positional[0]), 'Plan');
   const root = gitRoot(path.dirname(plan));
-  return { P: plan, S: resolveSpec(plan, positional[1], root), R: root, N: rounds(flags) };
+  const values = { P: plan, S: resolveSpec(plan, positional[1], root), R: root, N: rounds(flags) };
+  values.W = createWorkspace('plan-review', slugOf(plan), root);
+  return values;
 }
 
 function prepareImplementation({ positional }) {

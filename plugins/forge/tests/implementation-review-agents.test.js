@@ -6,14 +6,14 @@ const path = require('node:path');
 const { readMarkdown } = require('./lib/markdown');
 
 const AGENTS = path.join(__dirname, '..', 'agents');
-const FORMAT_KEYS = ['"reviewer"', '"findings"', '"location"', '"quote"', '"severity"', '"consequence"', '"rationale"'];
+const FORMAT_KEYS = ['"reviewer"', '"summary"', '"findings"', '"location"', '"quote"', '"severity"', '"consequence"', '"rationale"'];
 const TYPOGRAPHIC_QUOTES = /[\u201C\u201D\u201E]/;
 const REVIEWERS = {
-  acceptance: { tools: 'Read, Grep, Glob', location: '`AC-<Zahl>`' },
-  'plan-fidelity': { tools: 'Read, Grep, Glob', location: '`Task <n>` oder `Global Constraints`' },
-  design: { tools: 'Read, Grep, Glob', location: 'Pfad der Datei relativ zu `Repo`' },
+  acceptance: { tools: 'Read, Grep, Glob, Write', location: '`AC-<Zahl>`' },
+  'plan-fidelity': { tools: 'Read, Grep, Glob, Write', location: '`Task <n>` oder `Global Constraints`' },
+  design: { tools: 'Read, Grep, Glob, Write', location: 'Pfad der Datei relativ zu `Repo`' },
   tests: { tools: undefined, location: 'oder `Testlauf`' },
-  risks: { tools: 'Read, Grep, Glob', location: 'Pfad der Datei relativ zu `Repo`' },
+  risks: { tools: 'Read, Grep, Glob, Write', location: 'Pfad der Datei relativ zu `Repo`' },
 };
 
 function readAgent(name) {

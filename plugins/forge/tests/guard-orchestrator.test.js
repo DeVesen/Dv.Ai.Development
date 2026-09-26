@@ -126,12 +126,15 @@ test('cli_PretoolOnSpec_PrintsDenyJson', () => {
   assert.equal(JSON.parse(result.stdout).hookSpecificOutput.permissionDecision, 'deny');
 });
 
-test('hooksJson_EveryCommand_PointsToExistingGuardScript', () => {
+test('hooksJson_EveryCommand_PointsToExistingPluginScript', () => {
   const { hooks } = JSON.parse(fs.readFileSync(HOOKS, 'utf8'));
-  assert.ok(hooks.UserPromptSubmit && hooks.PreToolUse && hooks.SessionEnd && hooks.Stop);
+  assert.ok(hooks.UserPromptSubmit && hooks.PreToolUse && hooks.SessionEnd && hooks.Stop && hooks.SubagentStop);
   const commands = Object.values(hooks).flat().flatMap((entry) => entry.hooks.map((hook) => hook.command));
-  for (const command of commands) assert.match(command, /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/guard-orchestrator\.js/);
-  assert.ok(fs.existsSync(SCRIPT));
+  for (const command of commands) {
+    const match = /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/([a-z-]+\.js)/.exec(command);
+    assert.ok(match, command);
+    assert.ok(fs.existsSync(path.join(path.dirname(SCRIPT), match[1])), match[1]);
+  }
 });
 
 function setupPlanReview(prompt = '/dv-forge:plan-review docs/forge/x/plan.md') {

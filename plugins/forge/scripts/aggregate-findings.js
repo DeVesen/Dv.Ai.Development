@@ -2,6 +2,7 @@
 'use strict';
 
 const fs = require('node:fs');
+const path = require('node:path');
 
 const SEVERITY_RANK = { green: 1, yellow: 2, red: 3 };
 const TEXT_FIELDS = ['location', 'quote', 'consequence', 'rationale'];
@@ -48,6 +49,7 @@ function isValidFinding(finding) {
 function isValidReview(review) {
   return review !== null && typeof review === 'object'
     && typeof review.reviewer === 'string' && review.reviewer !== ''
+    && (review.summary === undefined || typeof review.summary === 'string')
     && Array.isArray(review.findings)
     && review.findings.every(isValidFinding);
 }
@@ -61,6 +63,31 @@ function parseReview(body, errors) {
     errors.push(`Ungültiges JSON: ${error.message}`);
   }
   return null;
+}
+
+const RESERVED_FILES = new Set(['rework.json']);
+
+function readReviewFile(file, errors, reasons) {
+  const name = path.basename(file, '.json');
+  const review = parseReview(fs.readFileSync(file, 'utf8'), errors);
+  if (!review) {
+    reasons.set(name, 'Ergebnis ungültig');
+    return null;
+  }
+  if (review.reviewer !== name) {
+    errors.push(`Dateiname ${name}.json passt nicht zu reviewer ${review.reviewer}`);
+    reasons.set(name, 'Ergebnis ungültig');
+    return null;
+  }
+  return review;
+}
+
+function readReviewDir(dir) {
+  const errors = [];
+  const reasons = new Map();
+  const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter((name) => name.endsWith('.json') && !RESERVED_FILES.has(name)) : [];
+  const reviews = files.map((name) => readReviewFile(path.join(dir, name), errors, reasons)).filter(Boolean);
+  return { reviews, errors, reasons };
 }
 
 function extractReviews(text) {
@@ -115,6 +142,15 @@ function summarize(groups, reviews, expected) {
   return { clean: counts.red === 0 && failed.length === 0, counts, failed };
 }
 
+function formatScope(reviews, status, options = {}) {
+  const round = options.round ? ` in Review ${options.round}` : '';
+  const reasons = options.reasons ?? new Map();
+  const delivered = reviews.map((review) => `- ${review.reviewer}: ${cell(review.summary ?? 'keine Zusammenfassung')}`);
+  const failed = status.failed.map((name) => `- ${name}: ausgefallen${round} — ${reasons.get(name) ?? 'Ergebnisdatei fehlt'}`);
+  const lines = [...delivered, ...failed];
+  return lines.length === 0 ? [] : ['### Prüfumfang', ...lines, ''];
+}
+
 function cell(text) {
   return String(text).replace(/\r?\n/g, ' ').replace(/\|/g, '\\|');
 }
@@ -129,11 +165,21 @@ function formatStatus(status) {
   return `STATUS clean=${status.clean} red=${red} yellow=${yellow} green=${green} failed=${failed}`;
 }
 
-function formatReport(groups) {
+function consequences(group) {
+  return [...group.items].sort(byRankDescending)
+    .map((item) => `${SEVERITY_ICON[item.severity]} ${cell(item.consequence)}`)
+    .join('<br>');
+}
+
+function formatTable(groups) {
   if (groups.length === 0) return 'Keine Findings.';
   const rows = groups.map((group) =>
-    `| ${SEVERITY_ICON[group.severity]} | ${cell(group.location)} | ${group.reviewers.join(', ')} | ${cell(leadItem(group).consequence)} |`);
-  return ['| Stufe | Stelle | Reviewer | Konsequenz |', '|---|---|---|---|', ...rows].join('\n');
+    `| ${SEVERITY_ICON[group.severity]} | ${cell(group.location)} | ${group.items.length} | ${group.reviewers.join(', ')} | ${consequences(group)} |`);
+  return ['| Stufe | Stelle | Anzahl | Reviewer | Konsequenzen |', '|---|---|---|---|---|', ...rows].join('\n');
+}
+
+function formatReport(groups, reviews = [], status = { failed: [] }, options = {}) {
+  return [...formatScope(reviews, status, options), formatTable(groups)].join('\n');
 }
 
 function formatReworkGroup(group) {
@@ -157,11 +203,18 @@ function dropUnexpected(reviews, expected, errors) {
   });
 }
 
-function run(text, expected, types = LOCATION_TYPES) {
-  const { reviews, errors } = extractReviews(text);
+function evaluate({ reviews, errors, reasons }, expected, types = LOCATION_TYPES, round = null) {
   const kept = dropUnexpected(reviews, expected, errors);
   const groups = aggregate(kept, types);
-  return { groups, errors, status: summarize(groups, kept, expected) };
+  return { groups, errors, reviews: kept, reasons, round, status: summarize(groups, kept, expected) };
+}
+
+function run(text, expected, types = LOCATION_TYPES) {
+  return evaluate(extractReviews(text), expected, types);
+}
+
+function runDir(dir, expected, types = LOCATION_TYPES, round = null) {
+  return evaluate(readReviewDir(dir), expected, types, round);
 }
 
 function render(result) {
@@ -169,7 +222,7 @@ function render(result) {
     formatStatus(result.status),
     ...result.errors.map((error) => `ERROR ${error}`),
     '=== REPORT ===',
-    formatReport(result.groups),
+    formatReport(result.groups, result.reviews, result.status, { round: result.round, reasons: result.reasons }),
     '=== REWORK ===',
     formatRework(result.groups),
   ].join('\n');
@@ -180,9 +233,13 @@ function parseExpected(args) {
   return index === -1 ? [] : String(args[index + 1] ?? '').split(',').filter(Boolean);
 }
 
-function parseRepo(args) {
-  const index = args.indexOf('--repo');
+function optionValue(args, name) {
+  const index = args.indexOf(name);
   return index === -1 ? null : args[index + 1] ?? null;
+}
+
+function parseRepo(args) {
+  return optionValue(args, '--repo');
 }
 
 function locationTypesFor(repoRoot) {
@@ -192,11 +249,19 @@ function locationTypesFor(repoRoot) {
 function main() {
   const args = process.argv.slice(2);
   const types = locationTypesFor(parseRepo(args));
-  process.stdout.write(`${render(run(fs.readFileSync(0, 'utf8'), parseExpected(args), types))}\n`);
+  const dir = optionValue(args, '--dir');
+  if (!dir) {
+    process.stdout.write(`${render(run(fs.readFileSync(0, 'utf8'), parseExpected(args), types))}\n`);
+    return;
+  }
+  const output = `${render(runDir(dir, parseExpected(args), types, optionValue(args, '--round')))}\n`;
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'aggregate.md'), output);
+  process.stdout.write(output);
 }
 
 if (require.main === module) main();
 
 module.exports = {
-  SEVERITY_RANK, LOCATION_TYPES, fileLocationType, normalizeLocation, extractReviews, aggregate, summarize, run, render,
+  SEVERITY_RANK, LOCATION_TYPES, fileLocationType, normalizeLocation, extractReviews, readReviewDir, aggregate, summarize, run, runDir, render,
 };

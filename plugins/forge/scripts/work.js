@@ -76,11 +76,11 @@ function startInPlace(root, config, slug, spec) {
   return { modus: 'vor-ort', branch, standard, vorschlag: suggestedBranch(config, slug, spec), R: root };
 }
 
-function startWorktree(root, config, slug, spec) {
+function startWorktree(root, main, config, slug, spec) {
   const branch = branchFor(config, slug, spec);
   const existing = worktrees(root).find((entry) => entry.branch === branch);
   if (existing) return { modus: 'worktree', aktion: 'fortgesetzt', branch, R: existing.dir };
-  const dir = path.resolve(root, config['Worktree-Ordner'], branch);
+  const dir = path.resolve(main, config['Worktree-Ordner'], branch);
   const hasBranch = git(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`]).ok;
   const args = hasBranch ? ['worktree', 'add', dir, branch] : ['worktree', 'add', '-b', branch, dir, 'HEAD'];
   const created = git(root, args);
@@ -90,10 +90,10 @@ function startWorktree(root, config, slug, spec) {
 
 function start(slug, options = {}, cwd = process.cwd()) {
   const root = toplevel(cwd);
-  const { config } = readConfig(root);
+  const { config, main } = readConfig(root);
   if (config.Worktree !== 'ja') return startInPlace(root, config, slug, options.spec);
   ensureCommitted(root, [options.spec, options.plan].filter(Boolean));
-  return startWorktree(root, config, slug, options.spec);
+  return startWorktree(root, main, config, slug, options.spec);
 }
 
 function check(cwd = process.cwd()) {

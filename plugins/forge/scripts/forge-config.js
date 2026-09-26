@@ -36,6 +36,12 @@ function repoRoot(cwd) {
   return path.resolve(result.stdout.trim());
 }
 
+function mainRoot(root) {
+  const result = spawnSync('git', ['-C', root, 'rev-parse', '--path-format=absolute', '--git-common-dir'], { encoding: 'utf8' });
+  const common = result.status === 0 ? path.resolve(result.stdout.trim()) : null;
+  return common && path.basename(common) === '.git' ? path.dirname(common) : root;
+}
+
 function sectionLines(text) {
   const lines = text.replace(/\r\n/g, '\n').split('\n');
   const start = lines.findIndex((line) => line.trim() === SECTION);
@@ -64,8 +70,9 @@ function readConfig(cwd = process.cwd()) {
   const found = fs.existsSync(file) ? parseSection(fs.readFileSync(file, 'utf8')) : {};
   const config = { ...DEFAULTS, ...found };
   if (config.Profile === '<Glossar>') config.Profile = config.Glossar;
-  config['Worktree-Ordner'] = config['Worktree-Ordner'].replace('<repo>', path.basename(root));
-  return { root: toPosix(root), config, configured: Object.keys(found) };
+  const main = mainRoot(root);
+  config['Worktree-Ordner'] = config['Worktree-Ordner'].replace('<repo>', path.basename(main));
+  return { root: toPosix(root), main: toPosix(main), config, configured: Object.keys(found) };
 }
 
 function getValue(key, cwd = process.cwd()) {

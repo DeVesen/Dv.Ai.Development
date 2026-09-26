@@ -57,6 +57,15 @@ test('start_Twice_ResumesExistingWorktree', () => {
   assert.ok(samePath(second.R, first.R));
 });
 
+test('start_FromInsideOtherWorktree_PlacesNewWorktreeBesideMainCheckout', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'CLAUDE.md', '## dv-forge\n- Worktree: ja\n', 'config');
+  const first = values(run(repo, 'start', 'eins')).R;
+  const second = values(run(first, 'start', 'zwei')).R;
+  const expected = path.join(path.dirname(repo), `${path.basename(repo)}-worktrees`, 'feature', 'zwei');
+  assert.ok(samePath(second, expected));
+});
+
 test('start_PlanNotCommitted_Aborts', () => {
   const repo = worktreeRepo();
   fs.writeFileSync(path.join(repo, 'plan.md'), '# Plan\n');

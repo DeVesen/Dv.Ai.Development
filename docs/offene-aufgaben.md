@@ -30,6 +30,9 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 - [x] Einbinden: `dv-forge: <plattform>-<kommando>` in `Build`, `Test`, `Lint` und in Plänen; `forge-config.js get` und das Brief-Skript lösen es in den Skript-Aufruf auf.
 - [x] `init` prüft zuerst Stolperfallen (`setup-check.js`): Regeln, Skills, `.mcp.json` und Rechte, die Build/Test über dev-mcp oder build-log-filter schicken; je Datei eine Entscheidung (alle nach Vorschlag, einzeln, behalten). Schlägt Build/Test/Lint je `.sln` und `angular.json` vor.
 - [x] Dieses Repo bereinigt: von 104 Stellen in 16 Dateien bleiben 3 bewusst behaltene Fehlalarme im codebase-analyzer-Skill. Der dev-mcp-Skill ist auf Dateizugriff, Git und Prozesse gekürzt (299 statt 836 Wörter), EF läuft über `dotnet ef` mit `EF_CONNECTION`.
+- [x] Plugin-Kopien bereinigt (dv-dotnet EF, dv-angular Migration, dv-relay Worktree/Finish): Build und Test kommen aus `## dv-forge` der Projekt-`CLAUDE.md`, die Plugins bleiben unabhängig von dv-forge. `setup-check.js` prüft auch installierte Plugins unter `~/.claude/plugins/cache`.
+- [x] Versionen: dv-forge 0.6.0, dv-angular 1.1.0, dv-dotnet 1.1.0, dv-relay 1.2.0.
+- [ ] Pull Request nach `V2` (nicht nach `master`).
 - [ ] `setup-check.js` soll sich behaltene Stellen merken, damit der `init` sie nicht bei jedem Lauf wieder meldet. Beispiele für Fehlalarme: beschreibende Sätze wie „Kein Shell-Build“ in `codebase-analyzer/SKILL.md` Z. 206 und `codebase-analyzer/references/op-tool-overview.md` Z. 71 und 109.
 
 ### Entscheidung zu Gruppe 3

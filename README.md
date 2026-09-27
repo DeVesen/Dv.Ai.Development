@@ -141,11 +141,11 @@ Applies a personal software design philosophy during design decisions and code r
 
 `Process` `Retrospective` `MCP Quality` `Improvement` `Session Analysis`
 
-Analyzes the *process* of the current session — not what was delivered, but how it ran. Covers MCP call quality, orchestration efficiency, reviewer findings, friction points, and session learnings. Produces a prioritized improvement table for skills, agents, and MCP servers.
+Analyzes the *process* of a session — not what was delivered, but how it ran. A script (`scripts/session-facts.js`) reads the Claude Code session transcript and reports duration, human turns, token use per session and subagent, tool calls, tool errors, blocked calls, repeats and compactions. The skill turns these facts into an experience report under `docs/wishes/`, each wish with its target: plugin, skill, agent, CLAUDE.md, hook or MCP server.
 
 | Command / Trigger | Purpose |
 |---|---|
-| "retrospektive" · "prozess analyse" | Start session retrospective |
+| "retrospektive" · "session review" · "prozess analyse" | Start session retrospective |
 | "harness verbessern" · "was koennen wir verbessern" | Natural language trigger |
 | "wie lief das" · "erkenntnisse" · "learnings" | Natural language trigger |
 | `kein-retrospektive` · `no-retrospektive` | Opt-out |
@@ -382,7 +382,6 @@ Deep code intelligence for Angular and .NET. Handles indexing, reviews, metrics,
 
 **Transport:** Docker HTTP — Port 8089  
 **Source:** `Mcp-Servers/Build.Log.Filter.Mcp/` (C#/.NET 9)  
-**Skill:** referenced from `prozess-retrospektive`
 
 Reduces raw build and test output to errors, warnings, summaries, and stack traces. Primarily used as a filter for shell-based build log streams (e.g., `ng serve`) where dev-mcp streaming is not available. Supports both one-shot filtering and chunk-by-chunk streaming with session state.
 

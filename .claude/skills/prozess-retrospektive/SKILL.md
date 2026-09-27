@@ -1,166 +1,33 @@
 ---
 name: prozess-retrospektive
-description: >
-  Use when analyzing the current session's work process to get improvement ideas for the harness.
-  Triggers: "retrospektive", "prozess analyse", "harness verbessern", "was koennen wir verbessern",
-  "wie lief das", "was haben wir gelernt", "erkenntnisse", "learnings", "session insights".
-  Always explicit — never auto-triggers. Opt-out: kein-retrospektive, no-retrospektive.
+description: Use when a session is ending or finished and the way it went — rounds, token use, blocked or failed tool calls, misunderstandings, interventions by the human — should be turned into improvements for plugins, skills, CLAUDE.md, hooks or MCP servers. Triggers "retrospektive", "session review", "prozess analyse", "harness verbessern", "was koennen wir verbessern", "wie lief das", "learnings". Never auto-triggers. Opt-out kein-retrospektive.
 ---
 
-# prozess-retrospektive
+# Prozess-Retrospektive
 
-Analyse des Arbeitsprozesses — nicht was geliefert wurde, sondern **wie** es lief.
-Liefert konkrete, umsetzbare Ideen um den Harness (Skills, Agents, MCP-Server) zu verbessern.
-
-Ein einziger Analyse-Agent — kein Fan-out. Der Agent braucht den Gesamtblick ueber die Session,
-keine parallelen Teilperspektiven.
-
----
-
-## Analyse-Bereiche
-
-### 1 — MCP-Call-Qualitaet
-
-- Welche MCP-Tools wurden aufgerufen?
-- Gab es Timeouts, Verbindungsfehler, unerwartete Fehler?
-- Musste auf Shell-Fallback ausgewichen werden (Anti-Shortcut-Verstoesse)?
-- Wurden Tools mehrfach aufgerufen weil das erste Ergebnis unbrauchbar war?
-- Gab es Tools die haetten genuetzt haetten aber nicht aufgerufen wurden?
-
-### 2 — Orchestrierungs-Effizienz
-
-- Wurden Gates uebersprungen oder unnoetig wiederholt?
-- Gab es Blockaden durch Abhaengigkeiten zwischen Slices/Agents?
-- Wie viele Scribe-Runden liefen? War das verhaeltnismaessig?
-- Gab es unnoetige sequenzielle Schritte die parallel haetten laufen koennen?
-- Hard Stops: warum, und haette der Flow das frueher erkennen koennen?
-
-### 3 — Reviewer-Qualitaet (generisch)
-
-Unabhaengig davon welche Reviewer liefen (Anzahl und Namen variieren je Skill):
-
-- Welche Reviewer-Rollen lieferten echte, nicht-triviale Findings?
-- Welche Rollen meldeten hauptsaechlich Rauschen oder Duplikate?
-- Gab es Ueberschneidungen zwischen Rollen die auf Redundanz hinweisen?
-- Wurden Findings korrekt als "eindeutig fixbar" vs. "klaerungsbeduerftig" klassifiziert?
-- Wie viele Iterationen brauchte der Review-Loop und warum?
-
-### 4 — Reibungspunkte
-
-- Wo musste der Nutzer eingreifen, klaren oder entsperren?
-- Welche Fragen haetten durch bessere Planung vermieden werden koennen?
-- Gab es Missverstaendnisse zwischen Anforderung und Umsetzung die sich haetten vermeiden lassen?
-- Wo hat der Nutzer Entscheidungen getroffen die eigentlich der Harness haette antizipieren koennen?
-
-### 5 — Review- und Inspektions-Loop
-
-- Wie viele Iterationen liefen?
-- Welche Reviewer-Rollen fanden die meisten Findings?
-- Gab es Findings die immer wieder auftauchten (Muster)?
-- War der Loop-Abbruch sauber oder blieben Punkte offen?
-
-### 6 — Session-Erkenntnisse
-
-- Was war entscheidend fuer den Erfolg oder Misserfolg der Session?
-- Was war ueberraschend — positiv oder negativ?
-- Welche Muster zeigen sich (wiederkehrende Probleme, erfolgreiche Ansaetze)?
-- Was sollte beim naechsten Mal anders angegangen werden?
-
----
-
-## Scope-Check vor Analyse
-
-Vor der Analyse die Tabelle auswerten: Jede zutreffende Bedingung reduziert den betroffenen Bereich auf je einen Satz — volle Tiefe nur in Bereichen, in denen tatsächlich etwas stattgefunden hat.
-
-| Wenn … | Bereiche | Ausgabe-Satz |
-|--------|----------|--------------|
-| Kein MCP aufgerufen | MCP-Call-Qualität | „Keine MCP-Calls in dieser Session." |
-| Keine Hard Stops | Orchestrierungs-Effizienz | „Keine Hard Stops — Flow lief ohne Blockaden." |
-| Kein Review gelaufen | Reviewer-Qualität + Review- und Inspektions-Loop | je 1 Satz: „Kein Review-Loop in dieser Session." / „Kein Inspektions-Loop in dieser Session." |
-
-Trifft keine Bedingung zu, werden alle Bereiche mit voller Tiefe analysiert.
-
----
+Du bewertest, **wie** die Session lief, nicht was geliefert wurde. Ergebnis ist ein Erfahrungsbericht als Datei, aus dem später eine Wunschliste entsteht. Jede Aussage stützt sich auf eine Zahl oder ein Zitat aus der Session; alles andere kennzeichnest du als `Eindruck`.
 
 ## Ablauf
+1. **Fakten holen:** `node "<skill-ordner>/scripts/session-facts.js"` im Projektordner. Es liest das Protokoll der neuesten Session: Dauer, Eingaben des Menschen, Tokens je Session und Subagent, Tool-Aufrufe, Tool-Fehler, blockierte Aufrufe, Wiederholungen, Skills, Zusammenfassungen. Eine andere Session mit `--file <pfad>`.
+2. **Reibung finden:** Leg die Fakten neben den Verlauf und such die Stellen aus der Tabelle unten. Je Stelle: was passiert ist, was es gekostet hat (Tokens, Runden, Minuten, Rückfragen), welche Ursache.
+3. **Ziel bestimmen:** Jede Verbesserung bekommt genau ein Ziel: Plugin, Skill, Agent, `CLAUDE.md`, Hook oder MCP-Server, mit Datei, falls bekannt. Was nur einmal passiert ist und keine Regel braucht, kommt unter Kleinigkeiten.
+4. **Schreiben:** nach `references/report-format.md` als `docs/wishes/<YYYY-MM-DD>-<thema>.md`. Existiert die Datei, hängst du `-2` an. Nicht committen, erst fragen.
+5. **Im Chat:** nur Pfad, Zahl der Wünsche und die drei teuersten Reibungspunkte in je einem Satz.
 
-**Schritt 1 — Kontext sammeln**
-Den Verlauf der Session analysieren: welche Skills liefen, welche Agents, welche MCP-Calls,
-welche Findings, wie viele Runden, wo gab es Stopper.
+## Wonach du suchst
+| Signal | Typische Ursache |
+|---|---|
+| Subagent mit vielen neuen Tokens für kleine Aufgabe | zu breiter Auftrag, falsches Modell, fehlende Vorauswahl |
+| Tool-Fehler oder blockierter Aufruf, danach Umweg | Hook zu streng, Regel fehlt im Skill, falsches Werkzeug |
+| gleicher Aufruf direkt wiederholt | unklares Ergebnis, fehlende Prüfung |
+| Rückfrage oder Korrektur durch den Menschen | Missverständnis, fehlende Vorgabe in `CLAUDE.md` oder Skill |
+| Zusammenfassung des Kontexts | zu viel Text im Hauptkontext statt in Dateien |
+| Skill geladen, aber nicht befolgt | Regel zu weich, Form passt nicht zum Fehler |
 
-**Schritt 2 — Analyse je Bereich**
-Alle 5 Bereiche systematisch durchgehen. Pro Bereich: Befund + Bewertung (gut / verbesserbar / problematisch).
-
-**Schritt 3 — Verbesserungsideen ableiten**
-Aus jedem Befund eine konkrete, umsetzbare Idee ableiten:
-- Was genau aendern?
-- In welcher Datei (Skill / Agent / MCP-Server)?
-- Welchen Effekt wuerde die Aenderung haben?
-
-**Schritt 4 — Bericht ausgeben**
-
----
-
-## Bericht-Format
-
-```
-## Prozess-Retrospektive — [Session-Kurztitel]
-
-### Gesamteindruck
-[2-3 Saetze: wie lief die Session insgesamt, was war stark, was war schwach]
-
-### Befunde
-
-#### MCP-Call-Qualitaet
-[Befunde + Bewertung]
-
-#### Orchestrierungs-Effizienz
-[Befunde + Bewertung]
-
-#### Reviewer-Qualitaet
-[Befunde + Bewertung — generisch, ohne Annahmen ueber feste Reviewer-Sets]
-
-#### Reibungspunkte
-[Befunde + Bewertung]
-
-#### Review- und Inspektions-Loop
-[Befunde + Bewertung — nur wenn ein Review- oder Inspektions-Loop in der Session lief]
-
-#### Session-Erkenntnisse
-[Was war entscheidend / ueberraschend — Muster die sich zeigen — was naechstes Mal anders]
-
-### Verbesserungsideen (priorisiert)
-
-| Prioritaet | Idee | Datei | Erwarteter Effekt |
-|-----------|------|-------|------------------|
-| Hoch | ... | ... | ... |
-| Mittel | ... | ... | ... |
-| Niedrig | ... | ... | ... |
-
-### Fazit
-[1 Satz: lohnt sich eine Verbesserungsrunde jetzt oder spaeter?]
-```
-
----
-
----
-
-## MCP-Kontext fuer die Analyse
-
-Alle drei MCPs gehoeren zum Dev-Tooling-Spektrum dieser Harness-Umgebung:
-
-| MCP | Zweck | Skill |
-|-----|-------|-------|
-| `dev-mcp` | Dateien, Build, Test, Scaffolding, Git, Patch | [dev-mcp](../dev-mcp/SKILL.md) |
-| `codebase-analyzer` | Index, Review, Analyse, Metriken, Composite | [codebase-analyzer](../codebase-analyzer/SKILL.md) |
-| `build-log-filter` | Shell-Logs: ng serve, Shell-Fallback | [build-log-filter](../build-log-filter/SKILL.md) |
-
-Routing-Einstieg: [`dev-tooling`](../dev-tooling/SKILL.md)
-
-Bei der Analyse von MCP-Call-Qualitaet immer das volle Spektrum beruecksichtigen — nicht nur den genutzten MCP, sondern auch ob ein anderer MCP besser gepasst haette.
-
----
-
-## Opt-out
-
-`kein-retrospektive` · `no-retrospektive` · `skip-retrospektive`
+## Häufige Fehler
+| Fehler | Richtig |
+|---|---|
+| Aus dem Gedächtnis schätzen | Zahlen aus `session-facts.js` |
+| Alles loben | Positiv nur, was sich lohnt beizubehalten |
+| Wunsch ohne Ziel-Datei | Ziel benennen oder `Ziel offen` schreiben |
+| Bericht nur im Chat | Datei schreiben; der Chat bekommt die Kurzfassung |

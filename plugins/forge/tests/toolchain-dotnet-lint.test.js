@@ -30,5 +30,6 @@ test('cli_VerifyNoChanges_AlwaysPassed', { skip: process.platform === 'win32' &&
   const result = spawnSync(process.execPath, [SCRIPT, '--path', fake.dir, '--log', path.join(fake.dir, 'l.log')], { encoding: 'utf8', env: fake.env });
   assert.equal(result.status, 1, result.stderr);
   assert.match(result.stdout, /^dotnet-lint: FEHLGESCHLAGEN \(Exit 2\)/);
+  assert.match(result.stdout, /Warnungen: 1, anzeigen mit --show warnings/);
   assert.deepEqual(fake.args(), ['format', fake.dir, '--verify-no-changes']);
 });

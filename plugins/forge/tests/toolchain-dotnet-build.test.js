@@ -65,3 +65,38 @@ test('cli_MissingPath_ExitsTwo', () => {
   assert.equal(result.status, 2);
   assert.match(result.stderr, /Pfad nicht gefunden/);
 });
+
+test('render_ShowModes_ErrorsOnlyByDefaultWarningsOnRequest', () => {
+  const report = { ok: false, exitCode: 1, seconds: 3, log: 'x.log', summary: 'Build FAILED.', errors: ['E1'], warnings: ['W1', 'W2'] };
+  const errorsOnly = build.render(report);
+  assert.match(errorsOnly, /Fehler \(1\):\n- E1/);
+  assert.doesNotMatch(errorsOnly, /- W1/);
+  assert.match(errorsOnly, /Warnungen: 2, anzeigen mit --show warnings/);
+  const warningsOnly = build.render(report, 'warnings');
+  assert.match(warningsOnly, /Warnungen \(2\):\n- W1\n- W2/);
+  assert.doesNotMatch(warningsOnly, /- E1/);
+  assert.match(warningsOnly, /Fehler: 1, anzeigen mit --show errors/);
+  const all = build.render(report, 'all');
+  assert.match(all, /- E1/);
+  assert.match(all, /- W2/);
+});
+
+test('render_ManyWarnings_CappedWithHintToLog', () => {
+  const warnings = Array.from({ length: 105 }, (_, index) => `W${index}`);
+  const output = build.render({ ok: true, exitCode: 0, seconds: 1, log: 'x.log', summary: 'ok', errors: [], warnings }, 'warnings');
+  assert.match(output, /Warnungen \(105\):/);
+  assert.match(output, /- … und 5 weitere, siehe Log/);
+});
+
+test('parseArgs_UnknownShowMode_Rejected', () => {
+  assert.equal(build.parseArgs(['--show', 'warnings']).show, 'warnings');
+  assert.throws(() => build.parseArgs(['--show', 'infos']));
+});
+
+test('cli_ShowWarnings_BuildsWithoutIncremental', POSIX_ONLY, () => {
+  const fake = fakeDotnet(FAILED, 1);
+  const result = spawnSync(process.execPath, [SCRIPT, '--path', fake.dir, '--show', 'warnings', '--log', path.join(fake.dir, 'w.log')], { encoding: 'utf8', env: fake.env });
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stdout, /Warnungen \(1\):\n- C:\\src\\App\\Bar\.cs\(3,1\): warning CS8618/);
+  assert.deepEqual(fake.args(), ['build', fake.dir, '--no-incremental']);
+});

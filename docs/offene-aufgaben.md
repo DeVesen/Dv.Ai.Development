@@ -23,6 +23,7 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 - Folgen: build-log-filter entfällt, Build/Test-Teil der dev-mcp-SKILL.md und MCP-First-Regel in der `CLAUDE.md` anpassen.
 - [x] Die sechs Skripte liegen unter `plugins/forge/scripts/toolchain/`, mit Tests.
   - Angular-Skripte an einem echten Angular-20-Projekt geprüft.
+- [x] Option `--show errors|warnings|all` für Build und Lint: normal nur Fehler, auf Wunsch nur Warnungen (z. B. für Review oder Whiteboarding) oder beides.
 - [ ] .NET-Skripte an einem echten Projekt prüfen (in der Cloud-Umgebung kein .NET SDK verfügbar).
 - [ ] Einbinden: dv-forge-Konfiguration (`Build`, `Test`, `Lint`), Umsetzungs-Skill, `init`-Skill.
 
@@ -49,6 +50,11 @@ Nur noch ein MCP-Server: der codebase-analyzer. Der dev-mcp fällt weg, sobald d
 2. Gruppe 4: der Umzug in den codebase-analyzer.
 3. Skills und `CLAUDE.md` anpassen, Block-Hook entscheiden.
 4. Nach 2–3 Retros: Gruppe 1 entscheiden, dev-mcp abschalten.
+
+## Kompletttest (offen, macht der User)
+
+- [ ] Wenn alle Schritte umgesetzt sind: ein kompletter dv-forge-Lauf an einem echten Projekt mit Angular und .NET, danach Retro.
+- [ ] Die Erfahrungsberichte aus `docs/wishes/` gemeinsam durchsehen: Laufen die sechs Skripte? Stimmen Fehler, Warnungen und Testnamen? Wird der dev-mcp noch gebraucht?
 
 ## Retro-Skill
 

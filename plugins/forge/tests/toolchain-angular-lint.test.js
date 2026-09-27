@@ -41,6 +41,7 @@ test('cli_LintTarget_RunsNgLintWithJsonFormat', () => {
   assert.equal(result.status, 1, result.stderr);
   assert.match(result.stdout, /^angular-lint: FEHLGESCHLAGEN \(Exit 1\)/);
   assert.match(result.stdout, /- src\/app\/app\.ts:4 @typescript-eslint\/no-unused-vars/);
+  assert.match(result.stdout, /Warnungen: 1, anzeigen mit --show warnings/);
   assert.deepEqual(fake.args(), ['lint', '--format=json']);
 });
 

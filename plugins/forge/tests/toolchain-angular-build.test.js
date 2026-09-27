@@ -19,6 +19,8 @@ const FAILED = [
   '      10 │   count: number = \'x\';',
   '',
   '▲ [WARNING] NG8107: The left side of this optional chain operation does not include \'null\' [plugin angular-compiler]',
+  '',
+  '    src/app/app.html:3:17:',
 ].join('\n');
 
 test('parse_EsbuildError_CarriesLocation', () => {
@@ -62,4 +64,13 @@ test('cli_NoCliInstalled_TellsToInstall', () => {
   const result = spawnSync(process.execPath, [SCRIPT, '--root', dir, '--log', path.join(dir, 'b.log')], { encoding: 'utf8' });
   assert.equal(result.status, 1);
   assert.match(result.stdout, /Angular CLI nicht gefunden\. Im Projektordner npm install ausführen\./);
+});
+
+test('cli_ShowWarnings_OnlyWarningsListed', () => {
+  const fake = fakeAngular(ANGULAR_JSON, FAILED, 1);
+  const result = spawnSync(process.execPath, [SCRIPT, '--root', fake.dir, '--show', 'warnings', '--log', path.join(fake.dir, 'w.log')], { encoding: 'utf8', env: fake.env });
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stdout, /Warnungen \(1\):\n- src\/app\/app\.html:3:17: ▲ \[WARNING\] NG8107/);
+  assert.doesNotMatch(result.stdout, /- src\/app\/app\.ts:10:9/);
+  assert.match(result.stdout, /Fehler: 1, anzeigen mit --show errors/);
 });

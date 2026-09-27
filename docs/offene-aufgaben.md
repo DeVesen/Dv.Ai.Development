@@ -12,7 +12,7 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 | 1 | Tools, die Claude Code schon hat (Suchen, Lesen, Ersetzen, Umbenennen, Löschen, Ordner, Git, Prozesse) | **Entschieden:** 2–3 Retros messen, dann streichen oder behalten |
 | 2 | Build, Test, Lint mit gefilterter Ausgabe, dazu build-log-filter | **Entschieden:** wandert als Skripte ins Plugin (siehe unten) |
 | 3 | Scaffolding (`ng generate`, `dotnet new`, `dotnet ef`) | **Entschieden:** Shell-Befehle, Konventionen in den Skills (siehe unten) |
-| 4 | Code gezielt lesen (`read_method`, `read_signatures_only` …) | offen, als Nächstes besprechen |
+| 4 | Code gezielt lesen (`read_method`, `read_signatures_only` …) | **Entschieden:** wandert in den codebase-analyzer (siehe unten) |
 
 ### Entscheidung zu Gruppe 2
 
@@ -29,6 +29,23 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 - Konventionen (z. B. Komponente = `.ts`, `.html`, `.scss`, `.spec.ts`) stehen im Skill `angular`; das ist dort schon abgedeckt (`op-generate.md`, `feature-first-layout.md`).
 - [ ] Skill `dotnet`: Abschnitt zu `dotnet new` fehlt noch.
 - [ ] Ein Block-Hook darf `ng generate`, `dotnet new` und `dotnet ef` nicht blocken.
+
+### Entscheidung zu Gruppe 4
+
+- Die Lese- und Such-Tools ziehen in den codebase-analyzer um: `read_method`, `read_signatures_only`, `read_class_summary`, `read_component_bundle`, `find_implementations`, `insert_member`, `update_imports`, `rename_file_with_impact`, `analyze_angular_architecture`.
+- Doppelt vorhanden, nur im dev-mcp streichen: `find_angular_route`, `find_angular_guard`, `find_dotnet_endpoint`, `find_di_registration`.
+- [ ] Umzug umsetzen.
+
+### Zielbild
+
+Nur noch ein MCP-Server: der codebase-analyzer. Der dev-mcp fällt weg, sobald die Messung zu Gruppe 1 vorliegt. Der build-log-filter fällt mit Gruppe 2 weg.
+
+### Reihenfolge der Umsetzung (Vorschlag)
+
+1. Gruppe 2: die sechs Skripte für Build, Test und Lint.
+2. Gruppe 4: der Umzug in den codebase-analyzer.
+3. Skills und `CLAUDE.md` anpassen, Block-Hook entscheiden.
+4. Nach 2–3 Retros: Gruppe 1 entscheiden, dev-mcp abschalten.
 
 ## Retro-Skill
 

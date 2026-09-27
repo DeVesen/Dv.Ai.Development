@@ -59,5 +59,5 @@ Treat integration-style tests as **specifications of desired product behavior**.
 
 ## Verification
 
-- Run the project's unit test command (e.g. **`ng test`**) after meaningful test or production changes.
-- After non-trivial Angular edits, run **`build_angular_project`** via dev-mcp.
+- Run **`dv-forge: angular-test`** after meaningful test or production changes.
+- After non-trivial Angular edits, run **`dv-forge: angular-build`**.

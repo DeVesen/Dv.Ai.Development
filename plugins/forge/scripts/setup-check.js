@@ -16,6 +16,7 @@ const USAGE = 'Aufruf: node setup-check.js [--cwd <projektordner>]\n';
 const SKIPPED_DIRS = new Set(['node_modules', 'bin', 'obj', 'dist', '.git', '.angular', '.vs', '.forge']);
 
 const TOOLCHAIN_TOOLS = /\b(test_dotnet_solution|test_angular_project|build_dotnet_solution|build_angular_project|lint_angular_project|run_npm_script|publish_dotnet_project|run_inspectcode)\b/;
+const SCAFFOLD_TOOLS = /\b(scaffold_angular_component|scaffold_angular_service|scaffold_angular_directive|scaffold_spec_for|create_angular_project|create_dotnet_solution|scaffold_dotnet_project|scaffold_dto|scaffold_api_action|run_ef_migration)\b/;
 const MOVED_TOOLS = /\b(read_method|read_signatures_only|read_class_summary|read_component_bundle|analyze_angular_architecture|insert_member|update_imports)\b/;
 const DROPPED_TOOLS = { find_implementations: 'codebase-analyzer: find_type_hierarchy', rename_file_with_impact: 'Suche nach dem Dateinamen plus git mv' };
 const SHELL_BAN = /\b(niemals|nie|never|verboten|verbot|kein|keine|nicht|no)\b.*\b(shell|powershell|bash)\b|\b(shell|powershell|bash)\b.*\b(verboten|verbot|niemals|never)\b/i;
@@ -82,6 +83,7 @@ function toolchainSuggestion(value) {
 const RULES = {
   toolchain: { label: 'Build/Test/Lint über dev-mcp', why: 'dv-forge nutzt dafür eigene Skripte mit gefilterter Ausgabe.', proposal: 'auf dv-forge-Skripte umstellen oder streichen' },
   shellBan: { label: 'Verbot von Build/Test über die Shell', why: 'Die dv-forge-Skripte laufen über die Shell (`node …`).', proposal: 'Verbot auf direkte Aufrufe (`ng build`, `dotnet test` …) beschränken, dv-forge-Skripte ausnehmen' },
+  scaffold: { label: 'Anlegen über dev-mcp', why: 'Anlegen läuft über die Shell, Konventionen stehen in den Skills angular und dotnet.', proposal: 'auf `ng generate`, `dotnet new` bzw. `dotnet ef` umstellen' },
   buildLogFilter: { label: 'build-log-filter erwähnt', why: 'Der Server entfällt; die dv-forge-Skripte filtern selbst.', proposal: 'streichen' },
   moved: { label: 'Lese-Tool beim dev-mcp verortet', why: 'Es liegt jetzt im codebase-analyzer.', proposal: '`dev-mcp` durch `codebase-analyzer` ersetzen' },
   dropped: { label: 'Tool, das wegfällt', why: 'find_implementations und rename_file_with_impact gibt es künftig nicht mehr.', proposal: 'find_type_hierarchy bzw. Suche plus `git mv`' },
@@ -101,7 +103,8 @@ function markdownFindings(file, label) {
     if (inConfig) return;
     const toolchain = TOOLCHAIN_TOOLS.exec(text);
     if (toolchain) add('toolchain', line, toolchainSuggestion(toolchain[1]));
-    else if (SHELL_BAN.test(text) && BUILD_WORDS.test(text)) add('shellBan', line);
+    else if (SHELL_BAN.test(text) && BUILD_WORDS.test(text) && !/dv-forge/i.test(text)) add('shellBan', line);
+    if (SCAFFOLD_TOOLS.test(text)) add('scaffold', line);
     if (/build-log-filter/i.test(text)) add('buildLogFilter', line);
     if (MOVED_TOOLS.test(text) && /dev-mcp/i.test(text)) add('moved', line);
     if (Object.keys(DROPPED_TOOLS).some((tool) => text.includes(tool))) add('dropped', line);

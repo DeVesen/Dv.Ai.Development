@@ -28,6 +28,8 @@ function setup() {
     '| Klasse lesen | `dev-mcp`: `read_method` |',
     '| `build-log-filter` | Docker HTTP |',
     '- Build-Ausgaben immer knapp halten.',
+    '| Tests | `dv-forge: dotnet-test` — nie direkt `dotnet test` über die Shell |',
+    '- Komponenten mit `scaffold_angular_component` anlegen.',
     '',
     '## dv-forge',
     '- Test: `dev-mcp: test_dotnet_solution`',
@@ -47,7 +49,9 @@ test('cli_ProjectWithOldRules_FindingsGroupedPerFile', () => {
   const result = run(repo, home);
   assert.equal(result.status, 0, result.stderr);
   const out = result.stdout;
-  assert.match(out, /### CLAUDE\.md \(4 Stellen\)/);
+  assert.match(out, /### CLAUDE\.md \(5 Stellen\)/);
+  assert.doesNotMatch(out, /Verbot von Build\/Test über die Shell · Z\. 6/);
+  assert.match(out, /- Anlegen über dev-mcp · Z\. 7 → auf `ng generate`/);
   assert.match(out, /- Build\/Test\/Lint über dev-mcp · Z\. 2 → auf dv-forge-Skripte umstellen oder streichen \(`dv-forge: angular-test`\)/);
   assert.match(out, /- Lese-Tool beim dev-mcp verortet · Z\. 3 → `dev-mcp` durch `codebase-analyzer` ersetzen/);
   assert.match(out, /- build-log-filter erwähnt · Z\. 4 → streichen/);

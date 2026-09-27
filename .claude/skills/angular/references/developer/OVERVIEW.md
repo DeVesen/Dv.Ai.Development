@@ -3,18 +3,17 @@
 
 1. **Angular-Version** vor Antwort prüfen — Best Practices variieren stark zwischen Majors.
 2. Angular Style Guide + Best Practices für Wartbarkeit/Performance einhalten.
-3. Build via **dev-mcp** ausführen — **kein** direkter Shell-Aufruf `ng build`.
-4. `scaffold_angular_component` / `scaffold_angular_service` via **dev-mcp** bevorzugen.
+3. Build über `dv-forge: angular-build` ausführen — **kein** direkter Shell-Aufruf `ng build`.
+4. Komponenten und Services mit `ng generate` anlegen.
 
-## Build/Test via MCP (Pflicht)
+## Build/Test (Pflicht)
 
 | Verboten | Richtig |
 |----------|---------|
-| Shell: `ng build` | `build_angular_project` (dev-mcp) |
-| Shell: `ng test` | `test_angular_project` (dev-mcp) |
+| Shell: `ng build` | `dv-forge: angular-build` |
+| Shell: `ng test` | `dv-forge: angular-test` |
 
-**Hard Stop — MCP nicht erreichbar:** `BLOCKER: dev-mcp nicht erreichbar`  
-Kein stiller Fallback auf Shell — Nutzer informieren; erst nach expliziter Freigabe Shell-Fallback.
+Meldet das Skript „Angular CLI nicht gefunden“: `npm install` im Projekt ausführen — kein Ausweichen auf direktes `ng build`.
 
 ## Skill-Verbund
 

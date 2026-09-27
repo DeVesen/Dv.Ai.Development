@@ -1,6 +1,6 @@
 {
   "name": "codebase-analyzer",
-  "version": "2.9.0",
+  "version": "2.10.0",
   "description": "MCP Server for Angular & .NET code reviews",
   "type": "module",
   "main": "dist/index.js",
@@ -14,10 +14,12 @@
     "test:god-classes": "npm run build && node test-fixtures/god-classes/run-assertions.mjs",
     "test:compiler-diagnostics": "npm run build && node test-fixtures/compiler-diagnostics/run-assertions.mjs",
     "test:index-solution": "npm run build && node test-fixtures/index-solution/run-assertions.mjs",
-    "test:boyscout-actions": "npm run build && node test-fixtures/boyscout-actions/run-assertions.mjs"
+    "test:boyscout-actions": "npm run build && node test-fixtures/boyscout-actions/run-assertions.mjs",
+    "test:readers": "npm run build && node --test dist/features/code-reader.test.js dist/features/angular-readers.test.js dist/features/code-edit.test.js"
   },
   "dependencies": {
-"@modelcontextprotocol/sdk": "^1.12.0",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@vscode/tree-sitter-wasm": "^0.3.1",
     "fast-xml-parser": "^5.8.0",
     "ts-morph": "^28.0.0",
     "zod": "^3.25.0"

@@ -41,7 +41,11 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 - Ziehen in den codebase-analyzer um (7): `read_method`, `read_signatures_only`, `read_class_summary`, `read_component_bundle`, `analyze_angular_architecture`, `insert_member`, `update_imports`.
 - Gestrichen, weil gleich günstig ersetzbar (2): `find_implementations` (→ `find_type_hierarchy`), `rename_file_with_impact` (→ Suche + `git mv`).
 - Doppelt vorhanden, nur im dev-mcp streichen: `find_angular_route`, `find_angular_guard`, `find_dotnet_endpoint`, `find_di_registration`.
-- [ ] Umzug umsetzen.
+- [x] Die 7 Tools sind im codebase-analyzer (v2.10.0), gleiche Namen und Parameter wie im dev-mcp, mit Tests.
+  - C# über tree-sitter im Prozess (Parser lädt einmal, danach Millisekunden), TypeScript über ts-morph.
+  - Am echten Angular-Projekt über das MCP-Protokoll geprüft.
+- [ ] Im dev-mcp nichts entfernt: Hier gibt es kein .NET SDK zum Bauen. Die Tools fallen mit dem Abschalten des dev-mcp weg; bis dahin leiten die Skills auf den codebase-analyzer (Schritt 3).
+- Hinweis: `find_di_registration` des codebase-analyzer sucht nur in .NET; die Angular-Variante des dev-mcp (providers) entfällt, eine Textsuche ersetzt sie.
 
 ### Zielbild
 

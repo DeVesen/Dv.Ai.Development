@@ -10,43 +10,18 @@
 | Modernisierungs-Migrationen | [migrations.md](migrations.md) |
 | Angular MCP Server | [mcp.md](mcp.md) |
 
-## Build/Test via MCP (Pflicht — Hard Gate)
+## Build/Test/Lint (Pflicht)
 
-| Aktion | MCP-Tool | VERBOTEN |
-|--------|----------|---------|
-| Build | `build_angular_project` (dev-angular-mcp) | Shell `ng build` |
-| Test | `test_angular_project` (dev-angular-mcp) | Shell `ng test` |
+| Aktion | Aufruf | Verboten |
+|--------|--------|----------|
+| Build | `dv-forge: angular-build --root <angular-ordner>` | `ng build` direkt |
+| Test | `dv-forge: angular-test --root <angular-ordner>` | `ng test` direkt |
+| Lint | `dv-forge: angular-lint --root <angular-ordner>` | `ng lint` direkt |
 
-`build_angular_project` und `test_angular_project` filtern die Konsolenausgabe intern — der LLM erhält ausschließlich `errors[]`, `warnings[]`, `summary`. **Kein build-log-filter** für diese Aufrufe.
+Die Skripte liefern nur Fehler und eine Zusammenfassung, das volle Log liegt in einer Datei. Warnungen mit `--show warnings`.
 
-**Hard Stop wenn MCP nicht erreichbar:** `BLOCKER: dev-angular-mcp nicht erreichbar` — kein Shell-Fallback ohne explizite Nutzerfreigabe.
+## Scaffolding
 
+`ng generate` über die Shell, Regeln in [op-generate.md](../new-app/op-generate.md). Danach die erstellten Dateien lesen und projektspezifisch anpassen.
 
-
-## Dev Angular MCP — Scaffolding
-
-Wenn `dev-angular-mcp` konfiguriert ist, **immer MCP statt Shell** für Scaffolding:
-
-| Aktion | MCP-Tool | VERBOTEN |
-|--------|----------|---------|
-| Neue Komponente | `scaffold_angular_component` | Shell `ng generate component` |
-| Neuer Service | `scaffold_angular_service` | Shell `ng generate service` |
-
-### Parameter
-
-| Parameter | Wert |
-|-----------|------|
-| `project_root` | Container-Pfad `/workspace/...` zum Angular-Root (`angular.json`) |
-| `name` | kebab-case empfohlen (Scaffolding) |
-| `path` | optional, z. B. `src/app/shared` (Scaffolding) |
-| `configuration` | optional, z. B. `production` (Build) |
-| `options` | optional CLI-Flags (Scaffolding) |
-
-Output Scaffolding: JSON mit `success`, `createdFiles[]`, `exitCode`.
-Output Build/Test: JSON mit `success`, `errors[]`, `warnings[]`, `summary`, `exitCode`.
-
-Nach dem Scaffolding: erstellte Dateien lesen und projektspezifisch anpassen.
-
-Referenz: [mcp.md](mcp.md) — Tool-Katalog und Aufrufregeln.
-
-> **Abgrenzung:** `@angular/cli mcp` (siehe [mcp.md](mcp.md)) ist der offizielle Angular-Dokumentations-MCP — **dev-angular-mcp** führt `ng`-Kommandos im Container aus.
+> **Abgrenzung:** `@angular/cli mcp` ist der offizielle Angular-Dokumentations-MCP ([mcp.md](mcp.md)).

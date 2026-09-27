@@ -1,6 +1,6 @@
 # Entscheidungen zu new-wishes-intern
 
-Stand der Besprechung. Umsetzung gebündelt nach Durchsprache aller Punkte.
+Stand der Besprechung. Alle Punkte sind in dv-forge 0.5.0 umgesetzt (Blöcke 1 bis 5 auf Branch `claude/new-wishes-intern-file-4p0f3n`).
 
 - **Q1** Auflösung Spec/Plan als Node-Script (Reihenfolge: Argument, `**Spec:**`-Zeile, `spec.md` im Plan-Ordner, Abbruch mit Kandidaten). Zweites Argument ohne Flag in implementation-review = Spec. Projekt-`CLAUDE.md` hat Vorrang bei Ablage; plan-writing bekommt optionalen Zielpfad.
 - **Q2** Reviewer schreiben Ergebnis nach `<W>/<reviewer>.json`. Reviewer bekommen `Write`, ein Node-Hook erlaubt Schreiben nur im Workspace. Scripts nehmen `--input`/Workspace statt stdin, halten Rundenstand selbst. Profil-Liste als Datei. Plattformneutral (Node), kein PowerShell.

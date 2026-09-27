@@ -4,8 +4,9 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const mcpUsage = require('./mcp-usage.js');
 
-const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--cwd <projektordner>]\n';
+const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--cwd <projektordner>] [--expect <mcp-server,...>]\n';
 const NOTICE = /^\s*<(?:task-notification|agent-message|system-reminder|command-|local-command)/;
 const DENIAL = /denied|blocked|Permission|hook/i;
 
@@ -159,17 +160,20 @@ function render(sessionFile, facts, agents) {
 function parseArgs(args) {
   const options = {};
   for (let index = 0; index < args.length; index += 2) {
-    const key = { '--file': 'file', '--cwd': 'cwd' }[args[index]];
+    const key = { '--file': 'file', '--cwd': 'cwd', '--expect': 'expect' }[args[index]];
     if (!key || args[index + 1] === undefined) return null;
     options[key] = args[index + 1];
   }
+  if (options.expect) options.expect = options.expect.split(',').map((name) => name.trim()).filter(Boolean);
   return options;
 }
 
 function run(options) {
   const file = options.file ? path.resolve(options.file) : newestSession(projectDir(options.cwd ?? process.cwd()));
   if (!fs.existsSync(file)) throw new FactsError(`Session-Datei nicht gefunden: ${file}`);
-  return render(file, analyze(readEntries(file)), subagentRows(file));
+  const session = mcpUsage.loadSession(file);
+  if (options.cwd) session.cwd = options.cwd;
+  return `${render(file, analyze(readEntries(file)), subagentRows(file))}\n${mcpUsage.render(session, { expect: options.expect, transcript: file })}`;
 }
 
 function main() {

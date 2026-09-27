@@ -59,6 +59,14 @@ test('cli_File_RendersFactsAndSubagents', () => {
   assert.match(result.stdout, /- Bash: Permission denied by hook/);
 });
 
+test('cli_Expect_AppendsMeasuredMcpUsage', () => {
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', session(), '--expect', 'dev-mcp'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /## MCP-Nutzung \(gemessen\)/);
+  assert.match(result.stdout, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
+  assert.match(result.stdout, /\| Bash \| 2 \| 1 \| 1 \| Hauptagent \(2\) \|/);
+});
+
 test('projectDir_EscapesPathLikeClaudeCode', () => {
   assert.equal(facts.projectDir('/home/user/Dv.Ai.Development', '/root'), path.join('/root', '.claude', 'projects', '-home-user-Dv-Ai-Development'));
 });

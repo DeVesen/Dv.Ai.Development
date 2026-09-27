@@ -143,6 +143,8 @@ Applies a personal software design philosophy during design decisions and code r
 
 Analyzes the *process* of a session — not what was delivered, but how it ran. A script (`scripts/session-facts.js`) reads the Claude Code session transcript and reports duration, human turns, token use per session and subagent, tool calls, tool errors, blocked calls, repeats and compactions. The skill turns these facts into an experience report under `docs/wishes/`, each wish with its target: plugin, skill, agent, CLAUDE.md, hook or MCP server.
 
+MCP usage is measured, not recalled: the same run appends a section from `scripts/mcp-usage.js` with calls, errors and repeats per MCP server and native tool, per agent (subagent transcripts included), plus expected-but-unused servers and shell-fallback candidates. Across several reports this shows which MCPs are irrelevant.
+
 | Command / Trigger | Purpose |
 |---|---|
 | "retrospektive" · "session review" · "prozess analyse" | Start session retrospective |

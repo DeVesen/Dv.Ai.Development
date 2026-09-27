@@ -8,7 +8,7 @@ description: Use when a session is ending or finished and the way it went — ro
 Du bewertest, **wie** die Session lief, nicht was geliefert wurde. Ergebnis ist ein Erfahrungsbericht als Datei, aus dem später eine Wunschliste entsteht. Jede Aussage stützt sich auf eine Zahl oder ein Zitat aus der Session; alles andere kennzeichnest du als `Eindruck`.
 
 ## Ablauf
-1. **Fakten holen:** `node "<skill-ordner>/scripts/session-facts.js"` im Projektordner. Es liest das Protokoll der neuesten Session: Dauer, Eingaben des Menschen, Tokens je Session und Subagent, Tool-Aufrufe, Tool-Fehler, blockierte Aufrufe, Wiederholungen, Skills, Zusammenfassungen. Eine andere Session mit `--file <pfad>`.
+1. **Fakten holen:** `node "<skill-ordner>/scripts/session-facts.js" --expect dev-mcp,codebase-analyzer,build-log-filter` im Projektordner. Es liest das Protokoll der neuesten Session: Dauer, Eingaben des Menschen, Tokens je Session und Subagent, Tool-Aufrufe, Tool-Fehler, blockierte Aufrufe, Wiederholungen, Skills, Zusammenfassungen. Dazu die gemessene MCP-Nutzung: Aufrufe je MCP-Server und nativem Tool samt Agent, erwartete oder verfügbare, aber ungenutzte Server, Shell-Fallback-Kandidaten. Eine andere Session mit `--file <pfad>`.
    Ein Tool-Fehler ist erst ein Befund, wenn die Meldung einen echten Fehlschlag zeigt; ein Exit-Code ungleich 0 bei grünem Lauf zählt nicht. Laufen noch Subagents, wartest du auf sie oder vermerkst sie als offen.
 2. **Reibung finden:** Leg die Fakten neben den Verlauf und such die Stellen aus der Tabelle unten. Je Stelle: was passiert ist, was es gekostet hat (Tokens, Runden, Minuten, Rückfragen), welche Ursache.
 3. **Ziel bestimmen:** Jeder Wunsch bekommt genau ein Ziel: Plugin, Skill, Agent, `CLAUDE.md`, Hook oder MCP-Server, mit Datei, falls bekannt. Was nur einmal passiert ist und keine Regel braucht, kommt ohne `Ziel:` unter Kleinigkeiten.
@@ -22,6 +22,8 @@ Du bewertest, **wie** die Session lief, nicht was geliefert wurde. Ergebnis ist 
 | Tool-Fehler oder blockierter Aufruf, danach Umweg | Hook zu streng, Regel fehlt im Skill, falsches Werkzeug |
 | gleicher Aufruf direkt wiederholt | unklares Ergebnis, fehlende Prüfung |
 | Rückfrage oder Korrektur durch den Menschen | Missverständnis, fehlende Vorgabe in `CLAUDE.md` oder Skill |
+| MCP erwartet, aber 0 Aufrufe | für diese Arbeit verzichtbar oder übersehen; im Bericht je MCP entscheiden |
+| Shell-Fallback-Kandidat (`dotnet`, `ng`, `npm` über Bash) | MCP-First umgangen: Hook fehlt, Skill-Regel zu weich oder MCP nicht erreichbar |
 | Zusammenfassung des Kontexts | zu viel Text im Hauptkontext statt in Dateien |
 | Skill geladen, aber nicht befolgt | Regel zu weich, Form passt nicht zum Fehler |
 

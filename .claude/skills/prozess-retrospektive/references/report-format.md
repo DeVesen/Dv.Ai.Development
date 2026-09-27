@@ -11,6 +11,11 @@ Gleiches Format wie die bisherigen Berichte unter `docs/wishes/`, damit mehrere 
 ## Zahlen
 <die Zeilen oben aus session-facts.js, unverändert, ohne Tabellen>
 
+## MCP-Nutzung
+<Abschnitt „MCP-Nutzung (gemessen)" aus session-facts.js, unverändert mit Tabellen>
+
+**Relevanz:** je erwartetem MCP ein Satz: gebraucht · verzichtbar in dieser Session · hätte genützt, weil <Beleg>
+
 ## Positiv
 
 1. **<Kurzbefund>.** <was gut lief, mit Beleg>
@@ -32,3 +37,4 @@ Regeln:
 - Sortiert nach Kosten: teuerster Reibungspunkt zuerst.
 - Eine Aussage ohne Zahl oder Zitat trägt am Ende ` · Eindruck`.
 - Kein Wunsch ohne `Ziel:`-Zeile.
+- Die Relevanz-Sätze sammeln sich über mehrere Berichte; erst dann wird ein MCP gestrichen, nicht nach einer Session.

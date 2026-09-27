@@ -5,6 +5,8 @@ Laufende Arbeit, die noch nicht fertig ist. Erledigtes wird gestrichen.
 ## MCP-Server verschlanken (dev-mcp)
 
 Ziel: Aufgaben des dev-mcp prüfen, was wegfallen oder als Skript ins Plugin wandern kann.
+
+**Maßstab für jede Entscheidung:** Die MCPs sollen helfen und Zeit und Tokens sparen. Ein Tool fällt nur weg, wenn der Ersatz nicht teurer ist.
 Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morph starten nicht jedes Mal neu).
 
 | Nr | Gruppe | Stand |
@@ -36,7 +38,8 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 
 ### Entscheidung zu Gruppe 4
 
-- Die Lese- und Such-Tools ziehen in den codebase-analyzer um: `read_method`, `read_signatures_only`, `read_class_summary`, `read_component_bundle`, `find_implementations`, `insert_member`, `update_imports`, `rename_file_with_impact`, `analyze_angular_architecture`.
+- Ziehen in den codebase-analyzer um (7): `read_method`, `read_signatures_only`, `read_class_summary`, `read_component_bundle`, `analyze_angular_architecture`, `insert_member`, `update_imports`.
+- Gestrichen, weil gleich günstig ersetzbar (2): `find_implementations` (→ `find_type_hierarchy`), `rename_file_with_impact` (→ Suche + `git mv`).
 - Doppelt vorhanden, nur im dev-mcp streichen: `find_angular_route`, `find_angular_guard`, `find_dotnet_endpoint`, `find_di_registration`.
 - [ ] Umzug umsetzen.
 

@@ -9,8 +9,9 @@ Du bewertest, **wie** die Session lief, nicht was geliefert wurde. Ergebnis ist 
 
 ## Ablauf
 1. **Fakten holen:** `node "<skill-ordner>/scripts/session-facts.js"` im Projektordner. Es liest das Protokoll der neuesten Session: Dauer, Eingaben des Menschen, Tokens je Session und Subagent, Tool-Aufrufe, Tool-Fehler, blockierte Aufrufe, Wiederholungen, Skills, Zusammenfassungen. Eine andere Session mit `--file <pfad>`.
+   Ein Tool-Fehler ist erst ein Befund, wenn die Meldung einen echten Fehlschlag zeigt; ein Exit-Code ungleich 0 bei grünem Lauf zählt nicht. Laufen noch Subagents, wartest du auf sie oder vermerkst sie als offen.
 2. **Reibung finden:** Leg die Fakten neben den Verlauf und such die Stellen aus der Tabelle unten. Je Stelle: was passiert ist, was es gekostet hat (Tokens, Runden, Minuten, Rückfragen), welche Ursache.
-3. **Ziel bestimmen:** Jede Verbesserung bekommt genau ein Ziel: Plugin, Skill, Agent, `CLAUDE.md`, Hook oder MCP-Server, mit Datei, falls bekannt. Was nur einmal passiert ist und keine Regel braucht, kommt unter Kleinigkeiten.
+3. **Ziel bestimmen:** Jeder Wunsch bekommt genau ein Ziel: Plugin, Skill, Agent, `CLAUDE.md`, Hook oder MCP-Server, mit Datei, falls bekannt. Was nur einmal passiert ist und keine Regel braucht, kommt ohne `Ziel:` unter Kleinigkeiten.
 4. **Schreiben:** nach `references/report-format.md` als `docs/wishes/<YYYY-MM-DD>-<thema>.md`. Existiert die Datei, hängst du `-2` an. Nicht committen, erst fragen.
 5. **Im Chat:** nur Pfad, Zahl der Wünsche und die drei teuersten Reibungspunkte in je einem Satz.
 

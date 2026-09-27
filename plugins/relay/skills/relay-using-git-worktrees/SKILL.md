@@ -191,7 +191,7 @@ Ready to implement <feature-name>
 | No matching sibling worktree exists | Create `<parent>\<root-folder-name>-wt-<branch-name>` |
 | Permission error on create | Sandbox fallback, work in place |
 | Tests fail during baseline | Report failures + ask |
-| No project setup needed | N/A here — this project always has one of `LAC.sln` or `src/frontend`'s Angular project |
+| `Build` is empty on purpose | Skip setup; still run the baseline with `Test` if it is set |
 
 ## Rationalization Table
 

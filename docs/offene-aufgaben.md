@@ -10,9 +10,18 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 | Nr | Gruppe | Stand |
 |---|---|---|
 | 1 | Tools, die Claude Code schon hat (Suchen, Lesen, Ersetzen, Umbenennen, Löschen, Ordner, Git, Prozesse) | **Entschieden:** 2–3 Retros messen, dann streichen oder behalten |
-| 2 | Build, Test, Lint mit gefilterter Ausgabe, dazu build-log-filter | offen, als Nächstes besprechen |
-| 3 | Scaffolding (`ng generate`, `dotnet new`, `dotnet ef`) | offen |
+| 2 | Build, Test, Lint mit gefilterter Ausgabe, dazu build-log-filter | **Entschieden:** wandert als Skripte ins Plugin (siehe unten) |
+| 3 | Scaffolding (`ng generate`, `dotnet new`, `dotnet ef`) | offen, als Nächstes besprechen |
 | 4 | Code gezielt lesen (`read_method`, `read_signatures_only` …) | offen |
+
+### Entscheidung zu Gruppe 2
+
+- Ein eigenes, unabhängiges Skript je Kommando und Plattform, kein Sammel-Skript:
+  - Angular: `angular-build`, `angular-test`, `angular-lint`
+  - .NET: `dotnet-build`, `dotnet-test`, `dotnet-lint`
+- Jedes Skript: volles Log in eine Datei, zurück nur Fehler und Zusammenfassung.
+- Folgen: build-log-filter entfällt, Build/Test-Teil der dev-mcp-SKILL.md und MCP-First-Regel in der `CLAUDE.md` anpassen.
+- [ ] Umsetzen, nachdem die Gruppen 3 und 4 besprochen sind.
 
 ## Retro-Skill
 

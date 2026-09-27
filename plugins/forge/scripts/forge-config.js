@@ -43,12 +43,14 @@ function mainRoot(root) {
 }
 
 function sectionLines(text) {
-  const lines = text.replace(/\r\n/g, '\n').split('\n');
-  const start = lines.findIndex((line) => line.trim() === SECTION);
-  if (start === -1) return [];
-  const rest = lines.slice(start + 1);
-  const end = rest.findIndex((line) => /^#{1,2}\s/.test(line));
-  return end === -1 ? rest : rest.slice(0, end);
+  const result = [];
+  let inside = false;
+  for (const line of text.replace(/\r\n/g, '\n').split('\n')) {
+    if (line.trim() === SECTION) inside = true;
+    else if (/^#{1,2}\s/.test(line)) inside = false;
+    else if (inside) result.push(line);
+  }
+  return result;
 }
 
 function stripTicks(value) {

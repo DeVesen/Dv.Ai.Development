@@ -84,7 +84,7 @@ const PLAN_REVIEWERS = {
   feasibility: 'Read, Grep, Glob, Write',
   architecture: 'Read, Grep, Glob, Write',
   risks: 'Read, Grep, Glob, Write',
-  buildability: 'Read, Grep, Glob, Write',
+  buildability: 'Read, Grep, Glob, Write, ToolSearch',
 };
 
 for (const [reviewer, tools] of Object.entries(PLAN_REVIEWERS)) {
@@ -181,5 +181,15 @@ test('reworkAndScouts_Body_ReadFindingsFromAggregateFile', () => {
   }
   for (const name of ['spec-review-scout', 'plan-review-scout', 'implementation-review-scout']) {
     assert.ok(readAgent(name).body.includes('`Findings:` Datei der letzten Aggregation'), name);
+  }
+});
+
+test('plan-review-buildability_Body_GatesSchemaAndForeignCode', () => {
+  const { body } = readAgent('plan-review-buildability');
+  assert.match(body, /\*\*Gates verdrahtet:\*\*/);
+  assert.match(body, /per `ToolSearch`/);
+  assert.match(body, /Das prüft nur dieser Reviewer/);
+  for (const name of ['feasibility', 'architecture', 'risks', 'coverage']) {
+    assert.match(readAgent(`plan-review-${name}`).body, /prüft `buildability`/, name);
   }
 });

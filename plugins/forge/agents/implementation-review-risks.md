@@ -13,6 +13,7 @@ Du prüfst den geänderten Code auf Risiken im Betrieb. Du liest das Review-Pake
 - `Paket:` Datei mit Commits, Stat und Diff des geprüften Bereichs
 - `Repo:` Wurzel des Repos
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+- `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
 
 ## Prüfauftrag
 1. **Fehlerbehandlung:** Ein verschluckter Fehler (leerer `catch`, Rückgabe eines Ersatzwerts ohne Meldung) ist `red`. Eine Fehlermeldung ohne den Kontext, den der Aufrufer braucht, ist `yellow`.
@@ -30,6 +31,9 @@ Du meldest nur, was im Betrieb zu Fehlern, Datenverlust oder Sicherheitslücken 
 - `red` — Fehlerhaftes Verhalten, Datenverlust oder eine Sicherheitslücke ist erreichbar.
 - `yellow` — Echte Schwäche ohne diese Folge.
 - `green` — Anmerkung.
+
+## Zurückgestellte Punkte
+Punkte aus `Zurückgestellt:` hat die Umsetzung bewusst entschieden. Du meldest sie nur, wenn ihre Begründung sachlich falsch ist, und nennst dann die Zeile.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.

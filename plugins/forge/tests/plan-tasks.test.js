@@ -122,17 +122,37 @@ test('slugOf_OtherFileName_UsesBaseName', () => {
   assert.equal(planTasks.slugOf(path.join('docs', 'plans', '2026-09-25-bar.md')), '2026-09-25-bar');
 });
 
-test('cli_List_PrintsOneNumberPerLine', () => {
+test('cli_List_PrintsOverviewLinePerTask', () => {
   const result = run('list', writePlan(PLAN));
   assert.equal(result.status, 0);
-  assert.equal(result.stdout, '1\n2\n');
+  assert.match(result.stdout, /^Task 1: Erster \| Dateien: - \| Produces: - \| Consumes: - \| Modell: sonnet$/m);
+  assert.match(result.stdout, /^Task 2: /m);
+});
+
+const DETAILED = [
+  '# P', '', '---', '',
+  '### Task 1: Modell', '', '**Dateien:**', '- Create: `src/order.js`', '- Test: `tests/order.test.js`', '',
+  '**Interfaces:**', '- Produces: `total(items): number`', '',
+  '```js', 'test()', '```', '', '```js', 'code()', '```', '',
+  '### Task 2: Service', '', '**Dateien:**', '- Modify: `src/order.js:10-20` · `total`', '- Create: `src/service.js`', '',
+  '**Interfaces:**', '- Consumes: `total(items): number`', '',
+].join('\n');
+
+test('describeTasks_FilesInterfacesAndSharedFiles', () => {
+  const plan = writePlan(DETAILED);
+  const overview = planTasks.formatOverview(planTasks.describeTasks(plan));
+  assert.match(overview, /^Task 1: Modell \| Dateien: src\/order\.js, tests\/order\.test\.js \| Produces: `total\(items\): number` \| Consumes: - \| Modell: haiku$/m);
+  assert.match(overview, /^Task 2: Service \| Dateien: src\/order\.js, src\/service\.js \| Produces: - \| Consumes: `total\(items\): number` \| Modell: sonnet$/m);
+  assert.match(overview, /^MEHRFACH src\/order\.js: Task 1, Task 2$/m);
 });
 
 test('cli_Brief_WritesFileAndPrintsPath', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-brief-'));
   const result = run('brief', writePlan(PLAN), '2', dir);
   assert.equal(result.status, 0);
-  assert.equal(result.stdout.trim(), path.join(dir, 'task-2-brief.md'));
+  const [file, model] = result.stdout.trim().split('\n');
+  assert.equal(file, path.join(dir, 'task-2-brief.md').replace(/\\/g, '/'));
+  assert.equal(model, 'modell=sonnet');
   assert.ok(fs.readFileSync(path.join(dir, 'task-2-brief.md'), 'utf8').includes('Text zwei.'));
 });
 

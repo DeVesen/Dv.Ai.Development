@@ -4,7 +4,9 @@
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
-const { ConfigError, readConfig, branchFor } = require('./forge-config');
+const fs = require('node:fs');
+const { ConfigError, readConfig, branchFor, workitemOf } = require('./forge-config');
+const { describeTasks, PlanError } = require('./plan-tasks');
 
 const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const USAGE = 'Aufruf: node work.js start <slug> [--spec <pfad>] [--plan <pfad>] | check | remove [<worktree>]\n';
@@ -58,7 +60,9 @@ function ensureCommitted(root, files) {
 }
 
 function render(values) {
-  return Object.entries(values).map(([key, value]) => `${key}=${toPosix(value)}`).join('\n');
+  return Object.entries(values)
+    .flatMap(([key, value]) => (Array.isArray(value) ? value.map((item) => `${key}=${toPosix(item)}`) : [`${key}=${toPosix(value)}`]))
+    .join('\n');
 }
 
 function suggestedBranch(config, slug, spec) {
@@ -70,10 +74,44 @@ function suggestedBranch(config, slug, spec) {
   }
 }
 
+function workitemConflict(config, branch, spec) {
+  if (config.Workitem === 'keine' || !config.Workitem) return null;
+  const own = workitemOf(spec);
+  let pattern;
+  try {
+    pattern = new RegExp(config.Workitem);
+  } catch {
+    return null;
+  }
+  const found = pattern.exec(branch);
+  return own && found && found[0] !== own ? found[0] : null;
+}
+
 function startInPlace(root, config, slug, spec) {
   const branch = currentBranch(root);
   const standard = String(branch !== '' && branch === defaultBranch(root));
-  return { modus: 'vor-ort', branch, standard, vorschlag: suggestedBranch(config, slug, spec), R: root };
+  const values = { modus: 'vor-ort', branch, standard, vorschlag: suggestedBranch(config, slug, spec), R: root };
+  const conflict = workitemConflict(config, branch, spec);
+  if (conflict) values['workitem-konflikt'] = conflict;
+  return values;
+}
+
+const BASE_LINE = /^\*\*Basis:\*\*\s*`?([0-9a-f]{4,40})`?\s*$/m;
+
+function driftFiles(root, plan) {
+  if (!plan || !fs.existsSync(plan)) return [];
+  const base = BASE_LINE.exec(fs.readFileSync(plan, 'utf8'));
+  if (!base || !git(root, ['rev-parse', '--verify', '--quiet', `${base[1]}^{commit}`]).ok) return [];
+  let files;
+  try {
+    files = [...new Set(describeTasks(plan).flatMap((task) => task.files.map((file) => file.path)))];
+  } catch (error) {
+    if (error instanceof PlanError) return [];
+    throw error;
+  }
+  if (files.length === 0) return [];
+  const out = git(root, ['diff', '--name-only', `${base[1]}`, 'HEAD', '--', ...files]).out;
+  return out === '' ? [] : out.split('\n');
 }
 
 function startWorktree(root, main, config, slug, spec) {
@@ -91,9 +129,17 @@ function startWorktree(root, main, config, slug, spec) {
 function start(slug, options = {}, cwd = process.cwd()) {
   const root = toplevel(cwd);
   const { config, main } = readConfig(root);
-  if (config.Worktree !== 'ja') return startInPlace(root, config, slug, options.spec);
+  const drift = driftFiles(root, options.plan);
+  const finish = (values) => {
+    const mapped = { ...values };
+    for (const [key, file] of [['P', options.plan], ['S', options.spec]]) {
+      if (file) mapped[key] = path.join(values.R, path.relative(root, path.resolve(file)));
+    }
+    return drift.length > 0 ? { ...mapped, drift } : mapped;
+  };
+  if (config.Worktree !== 'ja') return finish(startInPlace(root, config, slug, options.spec));
   ensureCommitted(root, [options.spec, options.plan].filter(Boolean));
-  return startWorktree(root, main, config, slug, options.spec);
+  return finish(startWorktree(root, main, config, slug, options.spec));
 }
 
 function check(cwd = process.cwd()) {

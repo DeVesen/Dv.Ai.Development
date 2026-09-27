@@ -14,6 +14,7 @@ Du prüfst, ob die Umsetzung dem Plan folgt. Du liest den Plan, das Review-Paket
 - `Paket:` Datei mit Commits, Stat und Diff des geprüften Bereichs
 - `Repo:` Wurzel des Repos
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+- `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
 
 ## Prüfauftrag
 1. Für jeden Task (`### Task <n>: …`): Gibt es die Dateien unter `Create` und die Änderungen unter `Modify` im Paket oder im Repo? Ein Task ohne Umsetzung ist `red`.
@@ -35,6 +36,9 @@ Du meldest nur, was eine Lücke oder Abweichung gegenüber dem Plan bedeutet. St
 - `red` — Geplantes fehlt, oder eine Abweichung bricht eine Schnittstelle, eine Global Constraint oder einen W-Eintrag.
 - `yellow` — Begründete oder folgenlose Abweichung.
 - `green` — Anmerkung.
+
+## Zurückgestellte Punkte
+Punkte aus `Zurückgestellt:` hat die Umsetzung bewusst entschieden. Du meldest sie nur, wenn ihre Begründung sachlich falsch ist, und nennst dann die Zeile.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.

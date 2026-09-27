@@ -14,6 +14,7 @@ Du prüfst, ob eine Umsetzung die Akzeptanzkriterien ihrer Spec erfüllt. Du lie
 - `Paket:` Datei mit Commits, Stat und Diff des geprüften Bereichs
 - `Repo:` Wurzel des Repos
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+- `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
 
 ## Prüfauftrag
 1. Liste jedes AC der Spec auf (`AC-01`, `AC-02`, …).
@@ -35,6 +36,9 @@ Du meldest nur, was dazu führt, dass die Umsetzung ein AC nicht erfüllt oder n
 - `yellow` — Echte Schwäche ohne falsches Verhalten.
 - `green` — Anmerkung.
 
+## Zurückgestellte Punkte
+Punkte aus `Zurückgestellt:` hat die Umsetzung bewusst entschieden. Du meldest sie nur, wenn ihre Begründung sachlich falsch ist, und nennst dann die Zeile.
+
 ## Ausgabe
 Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
 
@@ -55,6 +59,6 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
 ```
 
 - `location`: `AC-<Zahl>`.
-- `summary`: ein Satz zum Prüfumfang, z. B. `12 ACs geprüft, 3 Dateien gelesen, 0 Findings`.
+- `summary`: je AC der Nachweis und seine Art, z. B. `AC-01 Test OrderTotal (gelesen), AC-02 Code order.js (gelesen), 0 Findings`. Du führst nichts aus; jeder deiner Nachweise ist `gelesen`.
 - Alle Felder sind Strings und Pflicht.
 - Ohne Findings schreibst du genau diese Form: `{"reviewer": "acceptance", "summary": "<Prüfumfang>", "findings": []}`.

@@ -10,6 +10,7 @@ const { resolveTag, TagError } = require('./base-tag');
 const { createWorkspace } = require('./workspace');
 const { writePackage, PackageError } = require('./review-package');
 const { ConfigError, readConfig, branchFor } = require('./forge-config');
+const { archivePath } = require('./ledger');
 
 const USAGE = [
   'Aufruf: node prepare.js spec-review <spec> [quelle] [--rounds N]',
@@ -204,10 +205,12 @@ function prepareImplementationReview({ positional, flags }) {
   const base = flags['--base']?.[0] ?? resolveTag(slug, root);
   const workspace = createWorkspace('review', slug, root);
   const pack = writePackage(base, 'HEAD', workspace, root);
-  return {
+  const values = {
     P: plan, S: spec, R: root, slug, B: base, W: workspace, K: pack, C: contexts,
     N: '0', aktiv: 'acceptance,plan-fidelity,design,tests,risks',
   };
+  if (fs.existsSync(archivePath(plan))) values.Z = archivePath(plan);
+  return values;
 }
 
 const PREPARERS = {

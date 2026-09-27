@@ -1,6 +1,6 @@
 # Plan-Format
 
-Der Plan liegt als `plan.md` im Ordner der Spec. Er hat genau diesen Aufbau:
+Der Plan liegt am Zielpfad aus Plan-Writing, Default `plan.md` im Ordner der Spec. Er hat genau diesen Aufbau. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.
 
 ````markdown
 # <Titel> — Umsetzungsplan
@@ -10,7 +10,8 @@ Der Plan liegt als `plan.md` im Ordner der Spec. Er hat genau diesen Aufbau:
 **Ziel:** <ein Satz>
 **Architektur:** <2–3 Sätze>
 **Tech-Stack:** <Technologien>
-**Spec:** <Pfad zur spec.md>
+**Spec:** <Pfad zur spec.md, relativ zur Checkout-Wurzel>
+**Basis:** <Commit-Kurzhash beim Schreiben>
 
 ## Global Constraints
 - <projektweite Vorgabe, Wert wörtlich aus der Spec>
@@ -33,7 +34,7 @@ Der Plan liegt als `plan.md` im Ordner der Spec. Er hat genau diesen Aufbau:
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   <vollständiger Testcode>
 - [ ] **Schritt 2: Test rot laufen lassen**
-  Befehl: `<befehl oder Tool-Aufruf>` — erwartet: FAIL mit „<meldung>“
+  Befehl: `<befehl oder Tool-Aufruf>` — erwartet: FAIL `<testname>`
 - [ ] **Schritt 3: Minimal implementieren**
   <vollständiger Code>
 - [ ] **Schritt 4: Test grün laufen lassen**
@@ -41,21 +42,30 @@ Der Plan liegt als `plan.md` im Ordner der Spec. Er hat genau diesen Aufbau:
 - [ ] **Schritt 5: Commit**
   `git add <dateien>` · `git commit -m "<message>"`
 
+Absicherungstest, für ein AC wie „bleibt wie bisher“ ohne Code-Änderung:
+
+- [ ] **Schritt 1: Absicherungstest schreiben oder bestehenden nennen**
+  <vollständiger Testcode oder Testname>
+- [ ] **Schritt 2: Absicherungstest laufen lassen**
+  Befehl: `<befehl oder Tool-Aufruf>` — erwartet: PASS `<testname>`; rot ist ein Befund, kein Grund, Code zu ändern
+- [ ] **Schritt 3: Commit** (entfällt, wenn nur ein bestehender Test lief)
+
 ## Entscheidungen
-- **W · <Kurztitel>** · Mensch | delegiert — <Antwort>
+- **W · <Kurztitel>** · Aussage | delegiert — <Antwort>
 - **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>
 ````
 
 ## Regeln
 
-1. **Kopf:** `Ziel` ist genau ein Satz, `Architektur` zwei bis drei Sätze. `Spec` nennt den Pfad der Spec, aus der der Plan entsteht; der Umsetzer liest beide. Der Kopf nennt den Umsetzungs-Befehl `/dv-forge:implementation <plan.md>`.
-2. **Global Constraints:** Jede projektweite Vorgabe der Spec — Versionsgrenzen, erlaubte Abhängigkeiten, Namens- und Textregeln, Plattformvorgaben — steht hier als eine Zeile, mit exakt den Werten aus der Spec. Jeder Task erbt diesen Abschnitt, ohne ihn zu wiederholen.
+1. **Kopf:** `Ziel` ist genau ein Satz, `Architektur` zwei bis drei Sätze. `Spec` nennt den Pfad der Spec relativ zur Checkout-Wurzel; der Umsetzer liest beide. `Basis` ist die Ausgabe von `git rev-parse --short HEAD` beim Schreiben; die Umsetzung warnt, wenn sich Plan-Dateien seitdem geändert haben. Der Kopf nennt den Umsetzungs-Befehl `/dv-forge:implementation <plan.md>`.
+2. **Global Constraints:** Jede projektweite Vorgabe der Spec — Versionsgrenzen, erlaubte Abhängigkeiten, Namens- und Textregeln, Plattformvorgaben — steht hier als eine Zeile, mit exakt den Werten aus der Spec. Dazu die Kernregeln der Planungs-Skills, je Regel eine Zeile mit dem Skill-Namen. Jeder Task erbt diesen Abschnitt, ohne ihn zu wiederholen.
 3. **Task-Überschriften** lauten exakt `### Task <n>: <Komponente>`. `<n>` ist eine ganze Zahl, lückenlos aufsteigend ab 1. Zusätze wie „Task 3a“ oder „Task 3.1“ sind verboten, denn spätere Stufen zerlegen den Plan per Skript.
 4. **ACs:** Jeder Task nennt unter `**ACs:**` die AC-IDs, die er umsetzt. Jedes AC der Spec steht in mindestens einem Task.
-5. **Dateien:** exakte Pfade. `Create` für neue Dateien, `Modify` für bestehende, `Test` für die Testdatei.
+5. **Dateien:** exakte Pfade relativ zur Checkout-Wurzel. `Create` für neue Dateien, `Modify` für bestehende. Jede Testdatei steht unter `Test`, neu oder bestehend; eine bestehende bekommt nach `·` einen Anker wie bei `Modify`.
 6. **Stabiler Anker bei `Modify`:** Nach `·` steht ein Anker, der auch dann gültig bleibt, wenn ein früherer Task dieselbe Datei ändert: ein Symbol (`Klasse.methode`, Funktionsname) oder, bei Dateien ohne Symbole, eine eindeutige Überschrift bzw. Zeichenfolge in Backticks. Maßgeblich ist der Anker; die Zeilenangabe dient nur der Orientierung.
 7. **Interfaces:** Der Umsetzer eines Tasks sieht nur seinen Task. `Consumes` und `Produces` sind sein einziger Weg, Namen und Typen der Nachbar-Tasks zu kennen — deshalb exakte Funktionsnamen, Parameter- und Rückgabetypen, keine Umschreibungen.
-8. **Schritte:** Jeder Code-Schritt enthält den vollständigen Code in einem Code-Block. Jeder Lauf-Schritt nennt den genauen Befehl bzw. Tool-Aufruf und die erwartete Ausgabe.
-9. **Befehl oder Tool-Aufruf:** Eine Verifikation ist ein Shell-Befehl oder ein Tool-Aufruf mit exakten Parametern, z. B. dev-mcp `test_dotnet_solution` mit `test_project_path`. Maßgeblich ist die Projekt-`CLAUDE.md`: Verbietet sie einen Weg, etwa Tests über die Shell, nutzt der Plan den dort vorgeschriebenen. Ein Befehl, den der Umsetzer nicht ausführen darf, ist ein Plan-Fehler.
-10. **Commit pro Task:** Der letzte Schritt jedes Tasks staged genau die Dateien des Tasks und committet.
-11. **Entscheidungen:** Jede Antwort des Menschen während der Planung steht als W-Eintrag mit Tag `Mensch` oder `delegiert`. W-Einträge sind bindend. R-Einträge schreibt nur der Nacharbeiter des Plan-Reviews.
+8. **Schritte:** Jeder Code-Schritt enthält den vollständigen Code in einem Code-Block. Jeder Lauf-Schritt nennt den genauen Befehl bzw. Tool-Aufruf und das erwartete Ergebnis: Testname plus `FAIL` oder `PASS` genügt. Eine Meldung zitierst du nur, wenn du sie im Code oder in der Doku nachgesehen hast.
+9. **Checkout-Wurzel:** Braucht ein Befehl einen absoluten Pfad, schreibst du `<R>/<pfad>`. `<R>` ist kein verbotener Platzhalter; der Umsetzer setzt die Ausgabe von `git rev-parse --show-toplevel` ein.
+10. **Befehl oder Tool-Aufruf:** Eine Verifikation ist ein Shell-Befehl oder ein Tool-Aufruf mit exakten Parametern, z. B. dev-mcp `test_dotnet_solution` mit `test_project_path`. Maßgeblich ist die Projekt-`CLAUDE.md`: Verbietet sie einen Weg, etwa Tests über die Shell, nutzt der Plan den dort vorgeschriebenen. Ein Befehl, den der Umsetzer nicht ausführen darf, ist ein Plan-Fehler.
+11. **Commit pro Task:** Der letzte Schritt jedes Tasks staged genau die Dateien des Tasks und committet.
+12. **Entscheidungen:** Jede Antwort des Menschen während der Planung steht als W-Eintrag mit Tag `Aussage` oder `delegiert`, wie in der Spec. W-Einträge sind bindend. R-Einträge schreibt nur der Nacharbeiter des Plan-Reviews.

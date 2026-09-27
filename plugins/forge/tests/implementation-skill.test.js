@@ -89,7 +89,10 @@ test('skill_Body_BranchRuleAndHandover', () => {
   assert.ok(body.includes('/dv-forge:implementation-review <P>'));
   assert.ok(body.includes('workspace.js" remove implementation <slug>'));
   assert.match(body, /kein Merge, kein Push/);
-  assert.match(body, /\*\*Meine Urteile:\*\*/);
+  assert.ok(body.includes('ledger.js" archive "<P>" "<W>"'));
+  assert.ok(body.includes('<W>/abschluss.md'));
+  assert.match(body, /Vorrang vor Stil-Regeln/);
+  assert.match(body, /genau einen Task, entfällt das Task-Review/);
 });
 
 test('skill_Body_StaysUnder500Words', () => {

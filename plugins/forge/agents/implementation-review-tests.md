@@ -14,6 +14,7 @@ Du prüfst die Tests der Umsetzung und führst die Suite einmal aus. Du liest Pl
 - `Paket:` Datei mit Commits, Stat und Diff des geprüften Bereichs
 - `Repo:` Wurzel des Repos
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+- `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
 
 ## Prüfauftrag
 1. Ermittle den Befehl für die komplette Suite aus dem Plan (Global Constraints oder die Lauf-Schritte der Tasks). Den Weg bestimmt die Projekt-`CLAUDE.md`: Schreibt sie ein MCP-Tool vor, nutzt du dieses statt der Shell.
@@ -41,6 +42,9 @@ Du meldest nur, was die Aussagekraft der Tests mindert oder die Suite rot macht.
 - `yellow` — Echte Schwäche ohne diese Folge.
 - `green` — Anmerkung.
 
+## Zurückgestellte Punkte
+Punkte aus `Zurückgestellt:` hat die Umsetzung bewusst entschieden. Du meldest sie nur, wenn ihre Begründung sachlich falsch ist, und nennst dann die Zeile.
+
 ## Ausgabe
 Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
 
@@ -61,6 +65,6 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
 ```
 
 - `location`: Pfad der Testdatei relativ zu `Repo`, mit `/`, oder `Testlauf`.
-- `summary`: ein Satz zum Prüfumfang, z. B. `12 ACs geprüft, 3 Dateien gelesen, 0 Findings`.
+- `summary`: der Suite-Lauf mit Art `ausgeführt`, z. B. `Suite ausgeführt: 42 grün, 0 rot; 3 Testdateien gelesen, 0 Findings`.
 - Alle Felder sind Strings und Pflicht.
 - Ohne Findings schreibst du genau diese Form: `{"reviewer": "tests", "summary": "<Prüfumfang>", "findings": []}`.

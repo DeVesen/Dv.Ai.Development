@@ -1,5 +1,7 @@
 # Abschlussbericht (nur im Chat)
 
+Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.
+
 ```markdown
 ## <Berichtstitel>: <pfad des Artefakts>
 

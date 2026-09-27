@@ -69,3 +69,8 @@ test('cli_ShowAndGet_MarkDefaults', () => {
   assert.equal(run(repo, 'get', 'Quatsch').status, 1);
   assert.equal(run(repo, 'bogus').status, 2);
 });
+
+test('parseSection_TwoSections_BothReadLaterWins', () => {
+  const text = '## dv-forge\n- Worktree: ja\n- Glossar: a\n\n## Sonst\n- Glossar: x\n\n## dv-forge\n- Glossar: b\n';
+  assert.deepEqual(config.parseSection(text), { Worktree: 'ja', Glossar: 'b' });
+});

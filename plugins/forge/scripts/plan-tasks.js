@@ -83,6 +83,58 @@ function listTasks(planPath) {
   return checkedPlan(planPath).tasks.map((task) => task.number);
 }
 
+const FILE_LINE = /^\s*-\s*(Create|Modify|Test):\s*`([^`:]+)(?::[^`]*)?`/;
+const INTERFACE_LINE = /^\s*-\s*(Produces|Consumes):\s*(.+)$/;
+
+function describeTask(lines, task) {
+  const block = lines.slice(task.start, task.end);
+  const title = lines[task.start].replace(TASK_HEADING, '').trim();
+  const files = [];
+  const interfaces = { Produces: [], Consumes: [] };
+  let fences = 0;
+  for (const line of block) {
+    const file = FILE_LINE.exec(line);
+    if (file) files.push({ kind: file[1], path: file[2].trim() });
+    const iface = INTERFACE_LINE.exec(line);
+    if (iface) interfaces[iface[1]].push(iface[2].trim());
+    if (FENCE.test(line)) fences += 1;
+  }
+  return { number: task.number, title, files, interfaces, codeBlocks: Math.floor(fences / 2) };
+}
+
+function describeTasks(planPath) {
+  const { lines, tasks } = checkedPlan(planPath);
+  return tasks.map((task) => describeTask(lines, task));
+}
+
+function recommendModel(description) {
+  const changed = description.files.filter((file) => file.kind !== 'Test').length;
+  return changed <= 1 && description.codeBlocks >= 2 ? 'haiku' : 'sonnet';
+}
+
+function sharedFiles(descriptions) {
+  const byPath = new Map();
+  for (const description of descriptions) {
+    for (const file of description.files) {
+      const numbers = byPath.get(file.path) ?? [];
+      if (!numbers.includes(description.number)) numbers.push(description.number);
+      byPath.set(file.path, numbers);
+    }
+  }
+  return [...byPath.entries()].filter(([, numbers]) => numbers.length > 1);
+}
+
+function formatOverview(descriptions) {
+  const rows = descriptions.map((description) => {
+    const files = description.files.map((file) => file.path).join(', ') || '-';
+    const produces = description.interfaces.Produces.join('; ') || '-';
+    const consumes = description.interfaces.Consumes.join('; ') || '-';
+    return `Task ${description.number}: ${description.title} | Dateien: ${files} | Produces: ${produces} | Consumes: ${consumes} | Modell: ${recommendModel(description)}`;
+  });
+  const shared = sharedFiles(descriptions).map(([file, numbers]) => `MEHRFACH ${file}: ${numbers.map((n) => `Task ${n}`).join(', ')}`);
+  return [...rows, ...shared].join('\n');
+}
+
 function buildHeader(planPath) {
   const { lines, headerEnd } = checkedPlan(planPath);
   return `${trimTrailing(lines.slice(0, headerEnd)).join('\n')}\n`;
@@ -108,6 +160,12 @@ function writeBrief(planPath, number, dir) {
   return writeFile(dir, `task-${number}-brief.md`, buildBrief(planPath, number));
 }
 
+function briefWithModel(planPath, number, dir) {
+  const file = writeBrief(planPath, number, dir);
+  const description = describeTasks(planPath).find((entry) => entry.number === number);
+  return `${file}\nmodell=${recommendModel(description)}`;
+}
+
 function writeHeader(planPath, dir) {
   return writeFile(dir, 'header-brief.md', buildHeader(planPath));
 }
@@ -120,8 +178,8 @@ function slugOf(planPath) {
 }
 
 const COMMANDS = {
-  list: { arity: 1, run: ([plan]) => listTasks(plan).join('\n') },
-  brief: { arity: 3, run: ([plan, number, dir]) => writeBrief(plan, Number(number), dir) },
+  list: { arity: 1, run: ([plan]) => formatOverview(describeTasks(plan)) },
+  brief: { arity: 3, run: ([plan, number, dir]) => briefWithModel(plan, Number(number), dir) },
   header: { arity: 2, run: ([plan, dir]) => writeHeader(plan, dir) },
   slug: { arity: 1, run: ([plan]) => slugOf(plan) },
 };
@@ -148,4 +206,6 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { PlanError, scanPlan, numberingError, listTasks, buildHeader, buildBrief, writeBrief, writeHeader, slugOf };
+module.exports = {
+  PlanError, scanPlan, numberingError, listTasks, describeTasks, recommendModel, formatOverview, buildHeader, buildBrief, writeBrief, writeHeader, slugOf,
+};

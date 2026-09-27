@@ -21,7 +21,7 @@ Du prüfst, ob ein Umsetzungsplan zum bestehenden System passt. Du liest Plan un
 3. **Verantwortung:** Hat jede Datei genau eine Verantwortung? Wächst eine bestehende Datei zum Alleskönner?
 
 ## Nicht deine Aufgabe
-Fehlerbehandlung, Security, AC-Abdeckung, Reihenfolge, Platzhalter.
+Fehlerbehandlung, Security, AC-Abdeckung, Reihenfolge, Platzhalter. Doku-Zitate, Meldungstexte, Selektoren und Signaturen fremder Bibliotheken sowie Tool-Parameter prüft `buildability`.
 
 ## W-Einträge
 Einträge der Form `- **W · <Kurztitel>** · …` in Spec und Plan sind bindende Entscheidungen des Menschen. Ein W-Eintrag ist nie selbst ein Finding. Widerspricht ein Inhalt des Plans einem W-Eintrag, ist das ein Finding an der Stelle dieses Inhalts. R-Einträge im Plan begründen frühere Korrekturen; ein begründetes „nicht geändert“ meldest du nur neu, wenn die Begründung sachlich falsch ist.

@@ -22,7 +22,7 @@ Du prüfst einen Umsetzungsplan darauf, ob er sich in der geplanten Reihenfolge 
 4. **Widersprüche zwischen Tasks:** Ein späterer Task macht zunichte, was ein früherer gebaut hat.
 
 ## Nicht deine Aufgabe
-Zeit- und Aufwandsschätzung, Stil, Architektur-Vorlieben, Fehlerbehandlung, AC-Abdeckung.
+Zeit- und Aufwandsschätzung, Stil, Architektur-Vorlieben, Fehlerbehandlung, AC-Abdeckung. Doku-Zitate, Meldungstexte, Selektoren und Signaturen fremder Bibliotheken sowie Tool-Parameter prüft `buildability`.
 
 ## W-Einträge
 Einträge der Form `- **W · <Kurztitel>** · …` in Spec und Plan sind bindende Entscheidungen des Menschen. Ein W-Eintrag ist nie selbst ein Finding. Widerspricht ein Inhalt des Plans einem W-Eintrag, ist das ein Finding an der Stelle dieses Inhalts. R-Einträge im Plan begründen frühere Korrekturen; ein begründetes „nicht geändert“ meldest du nur neu, wenn die Begründung sachlich falsch ist.

@@ -13,6 +13,7 @@ Du prüfst, ob der geänderte Code gut gebaut ist. Du liest das Review-Paket, di
 - `Paket:` Datei mit Commits, Stat und Diff des geprüften Bereichs
 - `Repo:` Wurzel des Repos
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+- `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
 
 ## Prüfauftrag
 1. Lies `<Repo>/CLAUDE.md`, falls vorhanden. Ihre Regeln sind Maßstab.
@@ -32,6 +33,9 @@ Du meldest nur, was die Wartung dieses Codes spürbar erschwert. Geschmack ist k
 - `red` — Wartungsschaden, für den du einen Merge blocken würdest.
 - `yellow` — Echte Schwäche ohne diese Folge.
 - `green` — Anmerkung, Formulierung.
+
+## Zurückgestellte Punkte
+Punkte aus `Zurückgestellt:` hat die Umsetzung bewusst entschieden. Du meldest sie nur, wenn ihre Begründung sachlich falsch ist, und nennst dann die Zeile.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.

@@ -134,3 +134,24 @@ test('cli_BadArguments_ExitWithTwo', () => {
   assert.equal(run(repo, 'start', 'demo', '--foo', 'x').status, 2);
   assert.equal(run(repo, 'check', 'x').status, 2);
 });
+
+test('start_PlanFilesChangedSinceBasis_ReportsDrift', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'src/a.js', 'a\n', 'a');
+  const base = git(repo, 'rev-parse', '--short', 'HEAD');
+  const plan = `# P\n\n**Basis:** ${base}\n\n---\n\n### Task 1: A\n\n- Modify: \`src/a.js\` · \`a\`\n- Create: \`src/neu.js\`\n`;
+  commitFile(repo, 'plan.md', plan, 'plan');
+  assert.equal(values(run(repo, 'start', 'demo', '--plan', 'plan.md')).drift, undefined);
+  commitFile(repo, 'src/a.js', 'b\n', 'change a');
+  assert.equal(values(run(repo, 'start', 'demo', '--plan', 'plan.md')).drift, 'src/a.js');
+});
+
+test('start_BranchCarriesOtherWorkitem_ReportsConflict', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'CLAUDE.md', '## dv-forge\n- Workitem: `AB#\\d+`\n', 'config');
+  commitFile(repo, 'spec.md', '# S\n\nWorkitem: AB#12\n', 'spec');
+  git(repo, 'switch', '-q', '-c', 'feature/AB#99-alt');
+  assert.equal(values(run(repo, 'start', 'demo', '--spec', 'spec.md'))['workitem-konflikt'], 'AB#99');
+  git(repo, 'switch', '-q', '-c', 'feature/AB#12-neu');
+  assert.equal(values(run(repo, 'start', 'demo', '--spec', 'spec.md'))['workitem-konflikt'], undefined);
+});

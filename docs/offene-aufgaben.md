@@ -11,8 +11,8 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 |---|---|---|
 | 1 | Tools, die Claude Code schon hat (Suchen, Lesen, Ersetzen, Umbenennen, Löschen, Ordner, Git, Prozesse) | **Entschieden:** 2–3 Retros messen, dann streichen oder behalten |
 | 2 | Build, Test, Lint mit gefilterter Ausgabe, dazu build-log-filter | **Entschieden:** wandert als Skripte ins Plugin (siehe unten) |
-| 3 | Scaffolding (`ng generate`, `dotnet new`, `dotnet ef`) | offen, als Nächstes besprechen |
-| 4 | Code gezielt lesen (`read_method`, `read_signatures_only` …) | offen |
+| 3 | Scaffolding (`ng generate`, `dotnet new`, `dotnet ef`) | **Entschieden:** Shell-Befehle, Konventionen in den Skills (siehe unten) |
+| 4 | Code gezielt lesen (`read_method`, `read_signatures_only` …) | offen, als Nächstes besprechen |
 
 ### Entscheidung zu Gruppe 2
 
@@ -22,6 +22,13 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 - Jedes Skript: volles Log in eine Datei, zurück nur Fehler und Zusammenfassung.
 - Folgen: build-log-filter entfällt, Build/Test-Teil der dev-mcp-SKILL.md und MCP-First-Regel in der `CLAUDE.md` anpassen.
 - [ ] Umsetzen, nachdem die Gruppen 3 und 4 besprochen sind.
+
+### Entscheidung zu Gruppe 3
+
+- Anlegen über Shell: `ng generate`, `dotnet new`, `dotnet ef`. Kein eigenes Skript, kein MCP.
+- Konventionen (z. B. Komponente = `.ts`, `.html`, `.scss`, `.spec.ts`) stehen im Skill `angular`; das ist dort schon abgedeckt (`op-generate.md`, `feature-first-layout.md`).
+- [ ] Skill `dotnet`: Abschnitt zu `dotnet new` fehlt noch.
+- [ ] Ein Block-Hook darf `ng generate`, `dotnet new` und `dotnet ef` nicht blocken.
 
 ## Retro-Skill
 

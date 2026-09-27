@@ -118,7 +118,7 @@ Discover all available schematics for the installed version: `ng generate @angul
 
 ### Standalone migration — three discrete, verified stages
 
-Run each phase, then verify the build (`ng build` / `build_angular_project` via dev-mcp) before the next:
+Run each phase, then verify the build with the project's build command (`Build` in the `## dv-forge` section of `CLAUDE.md`; ask once if missing) before the next:
 
 1. `ng generate @angular/core:standalone` → **Convert all components, directives, and pipes to standalone**.
 2. Verify build. Run again → **Remove unnecessary NgModule classes**.

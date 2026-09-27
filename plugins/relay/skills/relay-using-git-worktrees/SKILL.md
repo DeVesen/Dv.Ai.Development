@@ -149,23 +149,21 @@ the current directory instead. Run setup and baseline tests in place.
 
 ## Step 2: Project Setup
 
-This project's own build tooling, not raw shell commands — per its MCP-First
-rule:
+Build with the project's own build command: `Build` in the `## dv-forge`
+section of the project `CLAUDE.md`. Several commands (e.g. backend and
+frontend) are separated by ` ; `; run them in order. If the section or the key
+is missing, ask once.
 
-- Backend (`src/backend/LAC.sln`, .NET 8): `dev-mcp`'s `build_dotnet_solution`.
-- Frontend (`src/frontend`, Angular): `dev-mcp`'s `build_angular_project`
-  (covers `npm install` as part of project setup).
+- A value `dv-forge: <name> …` is the script `scripts/toolchain/<name>.js` of
+  the dv-forge plugin.
+- Run `npm install` first in an Angular folder whose `node_modules` is missing.
 
-Never fall back to a raw `dotnet`, `npm`, or `ng` shell call — this project
-treats that as a blocker to raise, not a silent substitute.
+Never swap the configured command for a raw `dotnet` or `ng` call.
 
 ## Step 3: Verify Clean Baseline
 
-Run this project's tests before anything is built, via the same MCP-First
-tooling:
-
-- `dev-mcp`'s `test_dotnet_solution` for the backend.
-- `dev-mcp`'s `test_angular_project` for the frontend.
+Run this project's tests before anything is built: `Test` from the same
+section, with the same rules as in Step 2.
 
 **If tests fail:** report the failures, ask whether to proceed or investigate
 first. A dirty baseline makes every later failure ambiguous — this is worth

@@ -41,6 +41,9 @@ function setup() {
   write(repo, 'src/App.sln', '');
   write(repo, 'web/angular.json', '{}');
   write(home, 'skills/dev-mcp/SKILL.md', 'Use build_dotnet_solution via dev-mcp.\n');
+  write(home, 'plugins/cache/dv-market/dv-angular/1.0.0/skills/angular-migration/SKILL.md', 'Verify with build_angular_project via dev-mcp.\n');
+  write(home, 'plugins/cache/dv-market/dv-angular/1.0.0/README.md', 'build_angular_project outside skills\n');
+  write(home, 'plugins/cache/dv-market/dv-forge/0.6.0/skills/init/SKILL.md', 'dev-mcp or build-log-filter\n');
   return { repo, home };
 }
 
@@ -66,8 +69,10 @@ test('cli_ProjectWithOldRules_FindingsGroupedPerFile', () => {
 test('cli_GlobalSkills_ListedSeparatelyAsSource', () => {
   const { repo, home } = setup();
   const out = run(repo, home).stdout;
-  assert.match(out, /Global: 1 Stellen in 1 Dateien/);
-  assert.match(out, /## Global \(in der Quelle ändern, nicht in der installierten Kopie\)\n\n### ~\/\.claude\/skills\/dev-mcp\/SKILL\.md \(1 Stelle\)/);
+  assert.match(out, /Global: 2 Stellen in 2 Dateien/);
+  assert.match(out, /## Global \(in der Quelle ändern, nicht in der installierten Kopie; Plugins danach mit `\/plugin update`\)\n\n### ~\/\.claude\/skills\/dev-mcp\/SKILL\.md \(1 Stelle\)/);
+  assert.match(out, /### ~\/\.claude\/plugins\/cache\/dv-market\/dv-angular\/1\.0\.0\/skills\/angular-migration\/SKILL\.md \(1 Stelle\)/);
+  assert.doesNotMatch(out, /dv-forge\/0\.6\.0|README\.md/);
 });
 
 test('cli_Platforms_SuggestToolchainCommands', () => {

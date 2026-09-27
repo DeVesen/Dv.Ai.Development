@@ -53,6 +53,23 @@ function markdownFiles(claudeMd, claudeDir) {
   return files.filter((file) => fs.existsSync(file));
 }
 
+// Installierte Plugins liegen unter <home>/plugins/cache/<marketplace>/<plugin>/<version>/.
+// dv-forge selbst nennt dev-mcp und build-log-filter absichtlich und bleibt außen vor.
+function pluginFiles(home) {
+  const files = [];
+  const walk = (dir, inContent) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!SKIPPED_DIRS.has(entry.name) && !/^(dv-)?forge$/.test(entry.name)) walk(full, inContent || ['skills', 'agents', 'commands'].includes(entry.name));
+      } else if (inContent && entry.name.endsWith('.md')) files.push(full);
+    }
+  };
+  const cache = path.join(home, 'plugins', 'cache');
+  if (fs.existsSync(cache)) walk(cache, false);
+  return files;
+}
+
 function globalDir() {
   return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
 }
@@ -145,6 +162,7 @@ function check(cwd) {
     ...settingsFindings(root),
   ];
   const global = path.resolve(home) === path.resolve(root, '.claude') ? [] : markdownFiles(path.join(home, 'CLAUDE.md'), home)
+    .concat(pluginFiles(home))
     .flatMap((file) => markdownFindings(file, `~/.claude/${toPosix(path.relative(home, file))}`));
   return { root, project, global, platforms: platforms(root) };
 }
@@ -172,7 +190,7 @@ function render({ root, project, global, platforms: found }) {
   const lines = [`# Setup-Check: ${toPosix(root)}`, '', `Projekt: ${project.length} Stellen in ${new Set(project.map((f) => f.file)).size} Dateien · Global: ${global.length} Stellen in ${new Set(global.map((f) => f.file)).size} Dateien`, ''];
   if (used.length > 0) lines.push('## Warum', ...used.map((rule) => `- ${RULES[rule].label}: ${RULES[rule].why}`), '');
   lines.push('## Projekt', '', ...(project.length > 0 ? renderGroup(project) : ['Keine Stolperfallen.', '']));
-  if (global.length > 0) lines.push('## Global (in der Quelle ändern, nicht in der installierten Kopie)', '', ...renderGroup(global));
+  if (global.length > 0) lines.push('## Global (in der Quelle ändern, nicht in der installierten Kopie; Plugins danach mit `/plugin update`)', '', ...renderGroup(global));
   lines.push('## Vorschläge für Build, Test, Lint');
   const relative = (target) => toPosix(path.relative(root, target)) || '.';
   for (const sln of found.dotnet) lines.push(`- .NET ${relative(sln)}: \`dv-forge: dotnet-build --path ${relative(sln)}\`, \`dv-forge: dotnet-test --path ${relative(sln)}\`, \`dv-forge: dotnet-lint --path ${relative(sln)}\``);

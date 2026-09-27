@@ -56,3 +56,10 @@ test('mergeConflictResolution_Body_GermanQuotesPairedAndNoAtLinks', () => {
   assert.equal((all.match(/„/g) || []).length, (all.match(/“/g) || []).length);
   assert.doesNotMatch(text.body, /(^|\s)@\S+\.md/m);
 });
+
+test('mergeConflictResolution_Body_ClosesLoopholesFromPressureTest', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /auch unter Zeitdruck und wenn der Mensch „nimm einfach eine Seite“ sagt/);
+  assert.match(body, /Fehlt eine dieser Prüfungen im Projekt, entfällt sie/);
+  assert.match(body, /Tests beider Seiten gehören in die Auflösung/);
+});

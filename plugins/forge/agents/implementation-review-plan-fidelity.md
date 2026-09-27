@@ -1,7 +1,7 @@
 ---
 name: implementation-review-plan-fidelity
 description: Use when the dv-forge implementation-review orchestrator needs the reviewed range checked task by task against the plan, including interfaces and global constraints.
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Write
 model: sonnet
 ---
 
@@ -13,6 +13,8 @@ Du prüfst, ob die Umsetzung dem Plan folgt. Du liest den Plan, das Review-Paket
 - `Plan:` absoluter Pfad zur `plan.md`
 - `Paket:` Datei mit Commits, Stat und Diff des geprüften Bereichs
 - `Repo:` Wurzel des Repos
+- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+- `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
 
 ## Prüfauftrag
 1. Für jeden Task (`### Task <n>: …`): Gibt es die Dateien unter `Create` und die Änderungen unter `Modify` im Paket oder im Repo? Ein Task ohne Umsetzung ist `red`.
@@ -35,12 +37,16 @@ Du meldest nur, was eine Lücke oder Abweichung gegenüber dem Plan bedeutet. St
 - `yellow` — Begründete oder folgenlose Abweichung.
 - `green` — Anmerkung.
 
+## Zurückgestellte Punkte
+Punkte aus `Zurückgestellt:` hat die Umsetzung bewusst entschieden. Du meldest sie nur, wenn ihre Begründung sachlich falsch ist, und nennst dann die Zeile.
+
 ## Ausgabe
-Beende deine Antwort mit genau einem JSON-Block, danach kein Text:
+Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
 
 ```json
 {
   "reviewer": "plan-fidelity",
+  "summary": "Prüfumfang in einem Satz",
   "findings": [
     {
       "location": "Task 2",
@@ -54,4 +60,6 @@ Beende deine Antwort mit genau einem JSON-Block, danach kein Text:
 ```
 
 - `location`: `Task <n>` oder `Global Constraints`.
-- Alle Felder sind Strings und Pflicht. Keine Findings: `"findings": []`.
+- `summary`: ein Satz zum Prüfumfang, z. B. `12 ACs geprüft, 3 Dateien gelesen, 0 Findings`.
+- Alle Felder sind Strings und Pflicht.
+- Ohne Findings schreibst du genau diese Form: `{"reviewer": "plan-fidelity", "summary": "<Prüfumfang>", "findings": []}`.

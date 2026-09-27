@@ -70,7 +70,7 @@ test('skill_Body_ReadsReferencesViaPluginRoot', () => {
 
 test('skill_Body_StartScriptsInOrder', () => {
   const { body } = readMarkdown(SKILL);
-  const order = ['plan-tasks.js" slug', 'base-tag.js" ensure', 'workspace.js" create implementation', 'plan-tasks.js" list'];
+  const order = ['prepare.js" implementation $ARGUMENTS', 'work.js" start <slug>', 'base-tag.js" ensure', 'workspace.js" create implementation', 'plan-tasks.js" list'];
   const positions = order.map((part) => body.indexOf(part));
   assert.ok(positions.every((position) => position !== -1), `fehlt: ${order[positions.indexOf(-1)]}`);
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
@@ -84,11 +84,15 @@ test('skill_Body_SixStopReasonsAndWEntryGuard', () => {
 
 test('skill_Body_BranchRuleAndHandover', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('git switch -c forge/<slug>'));
+  assert.ok(body.includes('git switch -c <vorschlag>'));
+  assert.ok(body.includes('cd "<R>"'));
   assert.ok(body.includes('/dv-forge:implementation-review <P>'));
   assert.ok(body.includes('workspace.js" remove implementation <slug>'));
   assert.match(body, /kein Merge, kein Push/);
-  assert.match(body, /\*\*Meine Urteile:\*\*/);
+  assert.ok(body.includes('ledger.js" archive "<P>" "<W>"'));
+  assert.ok(body.includes('<W>/abschluss.md'));
+  assert.match(body, /Vorrang vor Stil-Regeln/);
+  assert.match(body, /genau einen Task, entfällt das Task-Review/);
 });
 
 test('skill_Body_StaysUnder500Words', () => {

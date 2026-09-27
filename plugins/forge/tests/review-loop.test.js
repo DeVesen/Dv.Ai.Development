@@ -18,7 +18,7 @@ test('sharedLoop_Files_ExistAndOldReferencesAreGone', () => {
 
 test('loop_BuildingBlocks_AllNamed', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
-  for (const block of ['Eingaben', 'Reviewer', 'Nacharbeiter', 'Fortschritts-Skript', 'Zusatz-Stopps', 'Abschluss-Scout', 'Bericht']) {
+  for (const block of ['Eingaben', 'Reviewer', 'Nacharbeiter', 'Zusatz-Stopps', 'Abschluss-Scout', 'Bericht']) {
     assert.ok(text.includes(`| ${block} |`), `${block} fehlt`);
   }
 });
@@ -26,15 +26,18 @@ test('loop_BuildingBlocks_AllNamed', () => {
 test('loop_Closing_ScoutRunsOnlyOnRedOrYellowAndIsCheckedMechanically', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
   assert.match(text, /`red` > 0 oder `yellow` > 0/);
-  assert.match(text, /ohne Runden nach dem einzigen Review/);
+  assert.ok(text.includes('Findings: <D>/aggregate.md'));
   assert.ok(text.includes('## Scout-Vorschläge'));
   assert.ok(text.includes('Scout ausgefallen'));
 });
 
 test('loop_Round_ForegroundAggregateStopsAndProgress', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
-  for (const part of ['run_in_background: false', '<PLUGIN>/scripts/aggregate-findings.js', '--expect <aktiv>',
-    'failed=', 'clean=true', 'r = N+1', 'red=0', 'Stillstand in Runde r', '<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>']) {
+  for (const part of ['run_in_background: false', '<PLUGIN>/scripts/aggregate-findings.js" --dir "<D>" --expect <aktiv> --round <r>',
+    'failed=', 'clean=true', 'r = N+1', 'unvollständig nach Review r', 'Stillstand in Runde r-1', 'rework-outcome.js" progress --dir "<W>" --round <r-1>',
+    'Ergebnis: <D>/<kurzname>.json', 'Ergebnis: <D>/rework.json', '`SendMessage`', 'Statuszeile', 'run_in_background: true',
+    '<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>', '## Jedes Ende',
+    '<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
 });
@@ -42,6 +45,7 @@ test('loop_Round_ForegroundAggregateStopsAndProgress', () => {
 test('loop_ProgressCheck_NamesNoConcreteScript', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
   assert.ok(!text.includes('file-hash.js'));
+  assert.ok(!text.includes('DV_FORGE_EOF'), 'kein Heredoc mehr');
   assert.ok(!text.includes('${CLAUDE_PLUGIN_ROOT}'));
 });
 

@@ -1,11 +1,14 @@
 # Spec-Format
 
-Die Spec liegt als `docs/forge/YYYY-MM-DD-<slug>/spec.md` vor. Sie hat genau diese Abschnitte in dieser Reihenfolge:
+Die Spec liegt am Ort aus `Spec-Ablage` der Projekt-Einstellungen, Default `docs/forge/<datum>-<slug>/spec.md`. Sie hat genau diese Abschnitte in dieser Reihenfolge:
 
 ```markdown
 # <Titel>
 
 Status: bestätigt am <YYYY-MM-DD>
+Art: frei | verankert
+Workitem: <Nummer>
+Basis: <Commit-Kurzhash>
 
 ## Was, wie, wo, warum
 <fachlich, kein Code>
@@ -27,11 +30,17 @@ Status: bestätigt am <YYYY-MM-DD>
 
 1. **AC-IDs:** zweistellig, lückenlos ab `AC-01`, in der Reihenfolge des Auftretens. Jedes AC folgt `ac-rules.md`.
 2. **W-Einträge:** Jede Entscheidung des Menschen aus den Runden steht als W-Eintrag unter `## Entscheidungen`. Der Beleg-Tag nennt die Herkunft der Antwort, meist `Aussage`.
-3. **In sich abgeschlossen:** keine Links, keine Verweise auf Dateien, Tickets oder andere Dokumente. Inhalte aus Anhängen stehen zusammengefasst in der Spec; der Tag `Anhang` nennt nur die Herkunft.
+3. **In sich abgeschlossen:** keine Links, keine Verweise auf Dateien, Tickets oder andere Dokumente. Inhalte aus Anhängen stehen zusammengefasst in der Spec; der Tag `Anhang` nennt nur die Herkunft. Ausnahme ist nur der Kopf.
 4. **WAS statt WIE:** keine Klassen, Dateipfade, Architektur oder Technik-Schritte.
-5. **Beleg-Tags:** Jede inhaltliche Zeile trägt einen Beleg-Tag: `Aussage` · `Git` · `Historie` · `Anhang` · `ungeklärt`. Er steht am Zeilenende nach ` · `, auch bei AC-Zeilen; ein Prosa-Absatz trägt ihn an seinem Ende. In W- und Abbruch-Einträgen steht er nach dem Kurztitel.
+5. **Beleg-Tags:** Jede inhaltliche Zeile trägt genau einen Beleg-Tag: `Aussage` · `Anhang` · `Historie` · `Git` · `ungeklärt`. Er steht am Zeilenende nach ` · `, auch bei AC-Zeilen; ein Prosa-Absatz trägt ihn an seinem Ende. In W- und Abbruch-Einträgen steht er nach dem Kurztitel. Stützen mehrere Quellen eine Zeile, gewinnt die erste in der Reihenfolge `Aussage` → `Anhang` → `Historie` → `Git`. Eine vom Menschen bestätigte Empfehlung ist `Aussage`. Eine Spec der Art `frei` kennt nur `Aussage`, `Anhang` und `ungeklärt`.
 6. **Keine offene Frage:** Geschrieben wird erst, wenn die Frontier leer ist. Einzige Ausnahme ist der echte Abbruch, unten.
 7. **Letzter Pflicht-Abschnitt:** `## Entscheidungen`. Der Spec-Review hängt dort später eigene Einträge an; W-Einträge bleiben dabei unverändert.
+
+## Kopf
+Die Zeilen unter dem Titel sind Metadaten, kein fachlicher Inhalt, und tragen keinen Beleg-Tag.
+- `Art`: `frei` aus `spec-whiteboarding`, `verankert` aus `spec-whiteboarding-with-docs`. Die Art steuert den Spec-Review.
+- `Workitem`: nur, wenn das Projekt Workitem-Nummern nutzt (`Workitem` in den Projekt-Einstellungen ist nicht `keine`). Sonst entfällt die Zeile.
+- `Basis`: Ausgabe von `git rev-parse --short HEAD` beim Schreiben.
 
 ## Nur nach echtem Abbruch
 

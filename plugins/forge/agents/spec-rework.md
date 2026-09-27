@@ -1,7 +1,7 @@
 ---
 name: spec-rework
 description: Use when the dv-forge spec-review orchestrator has aggregated reviewer findings for a spec.md and the spec has to be corrected and every handled finding recorded in its decisions section.
-tools: Read, Edit
+tools: Read, Edit, Write
 model: opus
 ---
 
@@ -12,7 +12,8 @@ Du korrigierst eine Spec anhand aggregierter Review-Findings. Du liest und ände
 ## Eingabe
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Runde:` Nummer r der aktuellen Runde
-- `Findings:` Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Findings:` Datei der Aggregation; du bearbeitest den Abschnitt nach `=== REWORK ===` mit Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
 
 ## Regeln
 1. Du bearbeitest jede 🔴- und jede 🟡-Gruppe. 🟢-Gruppen sind nur zur Info: nicht ändern, kein Eintrag.
@@ -28,9 +29,10 @@ Du korrigierst eine Spec anhand aggregierter Review-Findings. Du liest und ände
 10. Einträge des Abschnitts `## Offen, bewusst nicht weiterverfolgt (Abbruch)` löst, änderst oder entfernst du nie; Regel 3 gilt für sie nicht.
 
 ## Ausgabe
-Eine Zeile pro bearbeiteter Gruppe, sonst nichts:
+Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Gruppe einen Eintrag als JSON an den Pfad aus `Ergebnis:`, `location` exakt wie in der Gruppen-Überschrift. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
 
+```json
+{ "results": [ { "location": "AC-04", "status": "changed" } ] }
 ```
-AC-04: geändert
-Export: nicht geändert
-```
+
+`status`: `changed` (geändert) | `unchanged` (nicht geändert).

@@ -24,18 +24,25 @@ test('withDocs_Body_LoadsBothSkillsViaSkillTool', () => {
   assert.match(body, /Skill-Tool/);
 });
 
-test('withDocs_Body_DefinesFourPrecedenceRules', () => {
+test('withDocs_Body_DefinesPrecedenceRules', () => {
   const { body } = readMarkdown(SKILL);
   assert.match(body, /trotz Sperre erlaubt/);
   assert.match(body, /nur für brainstorming, Plan und Code/);
   assert.match(body, /ausschließlich die kanonischen Begriffe/);
   assert.match(body, /höchstens in dem W-Eintrag, der den Begriff festlegt/);
-  assert.match(body, /tragen den Tag `Historie`/);
+  assert.match(body, /tragen `Historie`/);
+  assert.match(body, /`Art: verankert`/);
+  assert.match(body, /nur der aktuelle Branch-Stand/);
+  assert.ok(body.includes('forge-config.js" get Suche'));
+  assert.ok(body.includes('`Begriffe: <Wort des Menschen> → <Glossar-Begriff>`'));
   assert.match(body, /ersetzt keine Runde/);
   assert.match(body, /Frontier aufgenommen/);
 });
 
-test('withDocs_Body_StaysThin', () => {
-  assert.ok(wordCount(readMarkdown(SKILL).body) < 200);
+test('withDocs_Body_NamesReferencePerStepAndStaysLean', () => {
+  const { body } = readMarkdown(SKILL);
+  for (const name of ['glossary-target.md', 'context-format.md', 'adr-format.md', 'grill-rounds.md']) assert.ok(body.includes(name), name);
+  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/skills'));
+  assert.ok(wordCount(body) < 350);
   assert.ok(!fs.existsSync(path.join(SKILL_DIR, 'references')));
 });

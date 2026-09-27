@@ -14,4 +14,4 @@
 
 **Sauber** heißt: `STATUS clean=true`, also kein 🔴 und kein ausgefallener Reviewer.
 
-**Bekannte Grobheit:** Verschiedene Probleme an derselben Stelle werden zusammengelegt. Das ist gewollt, weil der Orchestrator nicht inhaltlich urteilt.
+**Mehrere Probleme an einer Stelle:** Sie bilden eine Gruppe, weil der Orchestrator nicht inhaltlich urteilt. Der Bericht zeigt je Gruppe die Anzahl und alle Konsequenzen, sortiert nach Stufe.

@@ -4,10 +4,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { toPosix } = require('./lib/posix');
 
-const ROLES = new Set(['implementation', 'review']);
+const ROLES = new Set(['implementation', 'review', 'spec-review', 'plan-review']);
 const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const USAGE = 'Aufruf: node workspace.js create|remove <implementation|review> <slug>\n';
+const USAGE = 'Aufruf: node workspace.js create|remove <implementation|review|spec-review|plan-review> <slug>\n';
 
 class WorkspaceError extends Error {}
 
@@ -25,13 +26,13 @@ function createWorkspace(role, slug, cwd = process.cwd()) {
   const dir = workspacePath(role, slug, cwd);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, '..', '..', '.gitignore'), '*\n');
-  return dir;
+  return toPosix(dir);
 }
 
 function removeWorkspace(role, slug, cwd = process.cwd()) {
   const dir = workspacePath(role, slug, cwd);
   fs.rmSync(dir, { recursive: true, force: true });
-  return dir;
+  return toPosix(dir);
 }
 
 const ACTIONS = { create: createWorkspace, remove: removeWorkspace };

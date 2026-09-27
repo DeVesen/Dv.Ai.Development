@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { toPosix } = require('./lib/posix');
 
 const USAGE = 'Aufruf: node review-package.js <base> <head> <dir>\n';
 
@@ -56,7 +57,7 @@ function writePackage(base, head, dir, cwd = process.cwd()) {
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, `review-${from.slice(0, 7)}..${to.slice(0, 7)}.diff`);
   fs.writeFileSync(file, content);
-  return file;
+  return toPosix(file);
 }
 
 function main() {

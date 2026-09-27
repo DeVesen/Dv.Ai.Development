@@ -12,10 +12,8 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steht nur, was für den Plan gilt. Du liest weder Plan noch Spec.
 
 ## Eingaben
-1. Das erste Argument ist der Plan (`P`, absolut machen). Ein weiteres Argument ohne `--` ist die Spec (`S`); fehlt es, ist `S` die Datei `spec.md` im Ordner von `P`. `--rounds N` gibt die maximale Zahl an Nacharbeiten an, Default 3. Ein führendes `@` am Pfad entfernen.
-2. Für `P` und für `S`: `node "${CLAUDE_PLUGIN_ROOT}/scripts/file-hash.js" "<pfad>"`. Ist der Exit ≠ 0: melden „Datei nicht gefunden: <pfad>“ und Ende.
-3. `git -C "<Ordner von P>" rev-parse --show-toplevel` ausführen; die Ausgabe ist das Repo `R`.
-4. `aktiv = coverage,feasibility,architecture,risks,buildability`; `spec_rueckfragen` ist eine leere Liste.
+1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Plan `P`, Spec `S`, Repo `R`, Arbeitsbereich `W`, `slug` und `N`, die maximale Zahl an Nacharbeiten.
+2. `aktiv = coverage,feasibility,architecture,risks,buildability`; `spec_rueckfragen` ist eine leere Liste. Rolle des Arbeitsbereichs: `plan-review`.
 
 ## Reviewer
 - `dv-forge:plan-review-coverage` — `Plan: <P>`, `Spec: <S>`
@@ -27,28 +25,17 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 ## Nacharbeiter
 `dv-forge:plan-rework` — `Plan: <P>`, `Spec: <S>`, `Repo: <R>`
 
-## Fortschritts-Skript
-`node "${CLAUDE_PLUGIN_ROOT}/scripts/file-hash.js" "<P>"`
-
 ## Zusatz-Stopps
-1. Die Aggregation dieser Runde und den letzten JSON-Block des Nacharbeiters inklusive seiner ```json-Zeile und der schließenden ```-Zeile übergeben:
-   ```bash
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/rework-outcome.js" --escalation-status spec-question <<'DV_FORGE_EOF'
-   === AGGREGATE ===
-   <komplette Ausgabe von aggregate-findings.js dieser Runde>
-   === REWORK-RESULT ===
-   <letzter JSON-Block des Nacharbeiters inklusive seiner ```json-Zeile und der schließenden ```-Zeile>
-   DV_FORGE_EOF
-   ```
-2. Exit 1: den Nacharbeiter einmal per `SendMessage` bitten, nur seinen JSON-Block im vereinbarten Format nachzuliefern, und Schritt 1 wiederholen. Wieder Exit 1: alle Stellen gelten als `unchanged`; weiter mit der Fortschrittsprüfung.
+1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/rework-outcome.js" --escalation-status spec-question --dir "<W>/runde-<r>"`
+2. Exit 1: den Nacharbeiter einmal per `SendMessage` bitten, nur sein Ergebnis nach `<W>/runde-<r>/rework.json` zu schreiben, und Schritt 1 wiederholen. Wieder Exit 1: weiter ohne Eskalation.
 3. Jede Zeile `ESCALATED <Stelle>` an `spec_rueckfragen` anhängen, ohne Doppelte.
-4. `OUTCOME all-red-escalated=true` → Ende „Spec-Rückfrage in Runde r“.
+4. `OUTCOME all-red-escalated=true` → Ende `Spec-Rückfrage in Runde r`.
 
 ## Abschluss-Scout
 `dv-forge:plan-review-scout` — `Plan: <P>`, `Spec: <S>`, `Repo: <R>`
 
 ## Bericht
-Titel „Plan-Review“, Artefakt `<P>`, Zusatz-Status „Spec-Rückfrage in Runde r“. Ist `spec_rueckfragen` nicht leer, folgt als Zusatz-Abschnitt:
+Titel `Plan-Review`, Artefakt `<P>`, Zusatz-Status `Spec-Rückfrage in Runde r`. Ist `spec_rueckfragen` nicht leer, folgt als Zusatz-Abschnitt:
 
 ```markdown
 ### Spec-Rückfragen
@@ -56,6 +43,6 @@ Titel „Plan-Review“, Artefakt `<P>`, Zusatz-Status „Spec-Rückfrage in Run
 ```
 
 Nächster Schritt:
-- mit Spec-Rückfragen: „Spec anpassen, dann `/dv-forge:spec-review <S>`, danach `/dv-forge:plan-review <P>` erneut.“
-- sauber: „`spec.md` und `plan.md` vor dem Start committen, sonst sieht sie ein Worktree nicht. Dann in einer frischen Session:“ und darunter in einem Code-Block `/dv-forge:implementation <P>`.
-- sonst: „Plan, Abschnitt „Entscheidungen“ und Scout-Vorschläge lesen, dann selbst committen.“
+- mit Spec-Rückfragen: `Spec anpassen, dann /dv-forge:spec-review <S>, danach /dv-forge:plan-review <P> erneut.`
+- `sauber`: `Plan ist bereit. Soll ich Spec und Plan jetzt committen?` Nach dem Ja und erst nach dem Freigeben des Guards committest du beide Dateien, Nachricht nach `Commit-Konvention` aus `node "${CLAUDE_PLUGIN_ROOT}/scripts/forge-config.js" get Commit-Konvention`, mit der Workitem-Nummer der Spec, falls sie eine nennt. Dann in einer frischen Session ein Code-Block `/dv-forge:implementation <P>`.
+- sonst: `Plan nicht bereit. Plan, Abschnitt Entscheidungen und Scout-Vorschläge lesen, dann /dv-forge:plan-review <P> erneut.`

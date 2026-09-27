@@ -12,7 +12,7 @@ const FILE_TOOLS = {
 };
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
 const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcome.js',
-  'plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js'];
+  'plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js', 'prepare.js', 'forge-config.js', 'work.js', 'ledger.js'];
 const VALUE_FLAGS = new Set(['--rounds', '--spec', '--context', '--base']);
 const TOKEN = /"([^"]*)"|'([^']*)'|(\S+)/g;
 const DIR_ALLOWED_SCRIPTS = [...ALLOWED_SCRIPTS, 'guard-orchestrator.js'];
@@ -23,6 +23,10 @@ const CHAINING = /[;&|`<>\r\n]|\$\(/;
 const HEREDOC_START = /\s<<(?:'([A-Za-z_]\w*)'|([A-Za-z_]\w*))\s*$/;
 const UNQUOTED_EXPANSION = /`|\$\(/;
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
+const REVIEW_AGENT = /^dv-forge:(?:(?:spec|plan|implementation)-review-(?!scout$)[a-z-]+|(?:spec|plan)-rework)$/;
+const WORKSPACE_SEGMENT = /\/\.forge\//;
+const WORKSPACE_REASON = 'dv-forge: Review- und Nacharbeits-Agents schreiben mit Write nur in den Arbeitsbereich .forge/. '
+  + 'Schreib dein Ergebnis an den Pfad aus deinem Auftrag (Zeile Ergebnis:).';
 const DEFAULT_REASON = 'dv-forge-Orchestrator läuft: geschützte Dateien werden nur von SubAgents gelesen und geändert.';
 
 const COMMANDS = {
@@ -34,7 +38,7 @@ const COMMANDS = {
   '/dv-forge:plan-review': {
     reason: 'dv-forge:plan-review läuft: Der Orchestrator liest und ändert weder Plan noch Spec. '
       + 'Prüfen übernehmen die Reviewer-Agents, Korrigieren der Agent plan-rework.',
-    protect: ([plan, spec]) => (plan ? [plan, spec ?? path.join(path.dirname(plan), 'spec.md')] : null),
+    protect: ([plan, spec], cwd) => (plan ? [plan, spec ?? specOfPlan(path.resolve(cwd ?? '.', plan))] : null),
   },
   '/dv-forge:implementation-review': {
     reason: 'dv-forge:implementation-review läuft: Der Orchestrator liest weder Code noch Plan oder Spec. '
@@ -42,6 +46,20 @@ const COMMANDS = {
     protect: ([plan]) => (plan ? [{ path: plan, kind: 'repo' }] : null),
   },
 };
+
+const HARNESS_NOTICE = /<(?:task-notification|agent-message|system-reminder)\b/;
+const ALLOWED_WAYS = 'Erlaubt sind: ein einzelner Aufruf node "<PLUGIN>/scripts/<script>.js" ohne Verkettung, '
+  + '`git rev-parse --show-toplevel` und das Lesen von Plugin-Dateien. Die geschützten Dateien lesen und ändern nur SubAgents.';
+
+function specOfPlan(planPath) {
+  const beside = path.join(path.dirname(planPath), 'spec.md');
+  try {
+    const { resolveSpec } = require('./prepare');
+    return resolveSpec(planPath, undefined, gitToplevel(path.dirname(planPath), path.dirname(planPath)));
+  } catch {
+    return beside;
+  }
+}
 
 function markerPath(sessionId, tmpRoot = os.tmpdir()) {
   return path.join(tmpRoot, 'dv-forge', `${sessionId}.json`);
@@ -74,11 +92,11 @@ function positionalArguments(args) {
   return result;
 }
 
-function parseSkillCall(prompt) {
+function parseSkillCall(prompt, cwd) {
   const [command, ...args] = tokenize(String(prompt ?? '').trim());
   const entry = COMMANDS[command];
   if (!entry) return null;
-  const files = entry.protect(positionalArguments(args));
+  const files = entry.protect(positionalArguments(args), cwd);
   return files ? { command, files } : null;
 }
 
@@ -134,10 +152,13 @@ function toEntries(entry, cwd) {
 }
 
 function onPrompt(input, tmpRoot) {
-  const call = parseSkillCall(input.prompt);
-  if (!call) return;
-  const entries = call.files.flatMap((entry) => toEntries(entry, input.cwd));
-  writeMarker(input.session_id, { command: call.command, protected: entries }, tmpRoot);
+  const call = parseSkillCall(input.prompt, input.cwd);
+  if (call) {
+    const entries = call.files.flatMap((entry) => toEntries(entry, input.cwd));
+    writeMarker(input.session_id, { command: call.command, protected: entries }, tmpRoot);
+    return;
+  }
+  if (!HARNESS_NOTICE.test(String(input.prompt ?? ''))) release(input.session_id, tmpRoot);
 }
 
 function hitsEntry(target, entry) {
@@ -150,6 +171,14 @@ function grepHitsEntry(searchRoot, entry) {
 
 function shellHitsFile(command, entry) {
   return command.includes(path.basename(entry.path).toLowerCase());
+}
+
+function isPluginRead(rawCommand) {
+  if (CHAINING.test(rawCommand)) return false;
+  const args = tokenize(rawCommand).slice(1).filter((token) => !token.startsWith('-'));
+  const root = canonicalPath(PLUGIN_ROOT);
+  return args.length > 0 && args.every((token) => ABSOLUTE_PATH.test(token) && token.match(ABSOLUTE_PATH)[0] === token
+    && isWithin(canonicalPath(token), root));
 }
 
 function shellTouchesFiles(rawCommand, entries) {
@@ -195,7 +224,7 @@ function isPluginScriptCall(command) {
 
 function isPermittedInProtectedDir(rawCommand) {
   const command = rawCommand.trim();
-  return command === TOPLEVEL_QUERY || isPluginScriptCall(command);
+  return command === TOPLEVEL_QUERY || isPluginScriptCall(command) || isPluginRead(command);
 }
 
 function shellTouchesDirectories(rawCommand, cwd, entries) {
@@ -210,6 +239,7 @@ function shellTouchesProtected(input, entries) {
   const command = String(input.tool_input?.command ?? '');
   const files = entries.filter((entry) => entry.kind !== 'dir');
   const dirs = entries.filter((entry) => entry.kind === 'dir');
+  if (isPluginRead(command.trim())) return false;
   return shellTouchesFiles(command, files) || shellTouchesDirectories(command, input.cwd, dirs);
 }
 
@@ -230,12 +260,25 @@ function touchesProtected(input, entries) {
   return false;
 }
 
+function writesOutsideWorkspace(input) {
+  if (input.tool_name !== 'Write' || !REVIEW_AGENT.test(String(input.agent_type ?? ''))) return false;
+  const target = input.tool_input?.file_path;
+  return !target || !WORKSPACE_SEGMENT.test(normalize(path.resolve(input.cwd ?? '.', target)));
+}
+
 function decidePreTool(input, tmpRoot) {
-  if (input.agent_id) return null;
+  if (input.agent_id) return writesOutsideWorkspace(input) ? WORKSPACE_REASON : null;
   const marker = readMarker(input.session_id, tmpRoot);
   if (!marker || !Array.isArray(marker.protected)) return null;
   if (!touchesProtected(input, marker.protected)) return null;
-  return COMMANDS[marker.command]?.reason ?? DEFAULT_REASON;
+  return `${COMMANDS[marker.command]?.reason ?? DEFAULT_REASON} Geblockt: ${blockedAction(input)}. ${ALLOWED_WAYS}`;
+}
+
+function blockedAction(input) {
+  const toolInput = input.tool_input ?? {};
+  const target = toolInput.command ?? toolInput[FILE_TOOLS[input.tool_name]] ?? toolInput.path ?? toolInput.pattern ?? '';
+  const text = String(target).replace(/\s+/g, ' ').trim();
+  return `${input.tool_name} ${text.length > 120 ? `${text.slice(0, 117)}...` : text}`.trim();
 }
 
 function release(sessionId, tmpRoot) {

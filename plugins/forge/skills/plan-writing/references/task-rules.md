@@ -29,6 +29,8 @@ Ein Schritt ist genau eine Aktion von 2–5 Minuten. Der Zyklus pro Task:
 4. Test laufen lassen und den Erfolg bestätigen
 5. committen
 
+Ein AC ohne Code-Änderung, etwa „bleibt wie bisher“, bekommt statt des Zyklus den Absicherungstest aus `plan-format.md`: Test schreiben oder bestehenden nennen, laufen lassen, erwartet sofort grün.
+
 ## Verbotene Platzhalter
 
 Jeder Schritt enthält den tatsächlichen Inhalt, den der Umsetzer braucht. Diese Muster sind Plan-Fehler — du schreibst sie nie:
@@ -39,3 +41,5 @@ Jeder Schritt enthält den tatsächlichen Inhalt, den der Umsetzer braucht. Dies
 - „wie Task N“ oder „analog zu Task N“ — du wiederholst den Code, weil der Umsetzer Tasks womöglich außer der Reihe liest
 - Schritte, die sagen, was zu tun ist, ohne zu zeigen, wie — ein Code-Schritt braucht einen Code-Block
 - Verweise auf Typen, Funktionen oder Methoden, die in keinem Task definiert sind und im Code nicht existieren
+
+`<R>` für die Checkout-Wurzel ist kein Platzhalter in diesem Sinn.

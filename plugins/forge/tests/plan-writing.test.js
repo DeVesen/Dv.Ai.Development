@@ -31,7 +31,7 @@ test('planFormat_Template_TaskBlockWithAcsFilesInterfacesSteps', () => {
 
 test('planFormat_Template_DecisionEntries', () => {
   const text = reference('plan-format.md');
-  assert.ok(text.includes('- **W · <Kurztitel>** · Mensch | delegiert — <Antwort>'));
+  assert.ok(text.includes('- **W · <Kurztitel>** · Aussage | delegiert — <Antwort>'));
   assert.ok(text.includes('- **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>'));
 });
 
@@ -100,7 +100,7 @@ test('skill_Frontmatter_ManualOnlyWithArgumentHint', () => {
   assert.equal(fields.name, 'plan-writing');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], 'true');
-  assert.equal(fields['argument-hint'], '<spec.md>');
+  assert.equal(fields['argument-hint'], '<spec.md> [ziel.md]');
 });
 
 test('skill_Body_StaysUnder500Words', () => {
@@ -117,11 +117,14 @@ test('skill_Body_LinksAllReferencesThatExist', () => {
 
 test('skill_Body_WritesPlanNextToSpecAndHandsOverToPlanReview', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('`plan.md` im Ordner der Spec'));
+  assert.ok(body.includes('forge-config.js" get Plan-Ablage'));
   assert.match(body, /nie überschreiben/);
   assert.ok(body.includes('/dv-forge:plan-review <pfad/plan.md>'));
   assert.match(body, /frischen Session/);
-  assert.ok(body.includes('Du committest nichts.'));
+  assert.match(body, /Spec und Plan committen/);
+  assert.ok(body.includes('Du committest nichts selbst.'));
+  assert.match(body, /Andere Specs oder Pläne suchst du nie/);
+  assert.ok(body.includes('get Planungs-Skills'));
 });
 
 test('skill_Body_AsksHumanAndRecordsWEntries', () => {

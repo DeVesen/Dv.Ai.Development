@@ -9,6 +9,8 @@ Für jeden geklärten Begriff, bevor er geschrieben wird.
    - Format nach `context-format.md`.
    - Dateien erst anlegen, wenn der erste Begriff geklärt ist. Eine Sitzung ohne geklärten Begriff hinterlässt keine Datei.
 
-Ist working-capturing verfügbar, zu Beginn zusätzlich die vorhandenen Modul- und Feature-Profile lesen. Ihren Ort nennt die Projekt-`CLAUDE.md`.
+Ist working-capturing verfügbar, zu Beginn zusätzlich die vorhandenen Modul- und Feature-Profile lesen. Ihren Ort liefert `node "${CLAUDE_PLUGIN_ROOT}/scripts/forge-config.js" get Profile`; ohne Einstellung ist es derselbe Ort wie das Glossar.
+
+Glossar und Profile liest du nur im aktuellen Branch-Stand. Du wechselst nie den Branch und liest nie von einem anderen Branch. Fehlt ein Begriff oder Profil dort, gilt er als nicht vorhanden.
 
 Das Ziel je Begriff nennen, mit Beleg: die Code-Fundstelle und welcher Skill in der Liste stand, oder dass kein Code-Ziel existiert.

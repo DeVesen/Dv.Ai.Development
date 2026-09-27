@@ -38,7 +38,7 @@ test('skill_Body_DefinesPluginRootSessionAndReadsLoop', () => {
   assert.ok(body.includes('`<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`'));
   assert.ok(body.includes('`<SESSION>` = `${CLAUDE_SESSION_ID}`'));
   assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md'));
-  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/file-hash.js'));
+  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" spec-review $ARGUMENTS'));
   for (const script of ['aggregate-findings.js', 'guard-orchestrator.js']) {
     assert.ok(readLoop().includes(`<PLUGIN>/scripts/${script}`), `${script} fehlt in loop.md`);
   }
@@ -49,8 +49,11 @@ test('skill_Body_StaysUnder500Words', () => {
   assert.ok(body.split(/\s+/).filter(Boolean).length < 500);
 });
 
-test('skill_Body_TellsToKeepJsonFence', () => {
-  assert.ok(readLoop().includes('inklusive seiner ```json-Zeile'));
+test('skill_Body_ProfilesGetIndexNotList', () => {
+  const { body } = readSkill();
+  assert.ok(body.includes('`Profil-Index: <PI>`'));
+  assert.ok(body.includes('/dv-forge:plan-writing <S>'));
+  assert.match(body, /Spec nicht bereit/);
 });
 
 test('skill_Body_GermanQuotesArePaired', () => {

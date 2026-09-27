@@ -14,7 +14,11 @@ Du berätst den Menschen nach dem Implementierungs-Review. Du liest Plan, Spec, 
 - `Spec:` absoluter Pfad zur `spec.md`; die Zeile fehlt, wenn es keine gibt
 - `Repo:` Wurzel des Repos; Pfade in den Findings sind relativ dazu
 - `Context:` null bis mehrere Zeilen, je eine zusätzliche Datei des Menschen
-- `Findings:` Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Findings:` Datei der letzten Aggregation; du liest den Abschnitt nach `=== REWORK ===` mit Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
+
+## Zurückgestellte Punkte
+Punkte aus `Zurückgestellt:` hat die Umsetzung bewusst entschieden. Du schlägst für sie nichts vor, außer ihre Begründung ist sachlich falsch; dann nennst du die Zeile.
 
 ## Auftrag
 1. Du bearbeitest jede 🔴- und jede 🟡-Gruppe. 🟢-Gruppen lässt du weg.

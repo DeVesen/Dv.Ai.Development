@@ -59,5 +59,6 @@ Trigger `dev-mcp init`: nach dem Pfad der `Dev.Mcp.exe` fragen, in der `.mcp.jso
 | Bedarf | Datei |
 |---|---|
 | Parameter, Rückgabe-Schema | `references/tool-catalog.md` |
+| Spec oder Testklasse anlegen | `references/workflows.md` |
 | Fehler-Diagnose | `references/error-guide.md` |
 | dev-mcp oder codebase-analyzer? | `references/routing.md` |

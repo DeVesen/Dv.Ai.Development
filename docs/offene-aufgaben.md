@@ -27,7 +27,9 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
   - Angular-Skripte an einem echten Angular-20-Projekt geprüft.
 - [x] Option `--show errors|warnings|all` für Build und Lint: normal nur Fehler, auf Wunsch nur Warnungen (z. B. für Review oder Whiteboarding) oder beides.
 - [ ] .NET-Skripte an einem echten Projekt prüfen (in der Cloud-Umgebung kein .NET SDK verfügbar).
-- [ ] Einbinden: dv-forge-Konfiguration (`Build`, `Test`, `Lint`), Umsetzungs-Skill, `init`-Skill.
+- [x] Einbinden: `dv-forge: <plattform>-<kommando>` in `Build`, `Test`, `Lint` und in Plänen; `forge-config.js get` und das Brief-Skript lösen es in den Skript-Aufruf auf.
+- [x] `init` prüft zuerst Stolperfallen (`setup-check.js`): Regeln, Skills, `.mcp.json` und Rechte, die Build/Test über dev-mcp oder build-log-filter schicken; je Datei eine Entscheidung (alle nach Vorschlag, einzeln, behalten). Schlägt Build/Test/Lint je `.sln` und `angular.json` vor.
+- [ ] Dieses Repo selbst bereinigen: `setup-check.js` findet hier 79 Stellen in 16 Dateien (CLAUDE.md, Skills angular, codebase-analyzer, dev-mcp …) – am besten über `/dv-forge:init`.
 
 ### Entscheidung zu Gruppe 3
 
@@ -57,6 +59,14 @@ Nur noch ein MCP-Server: der codebase-analyzer. Der dev-mcp fällt weg, sobald d
 2. Gruppe 4: der Umzug in den codebase-analyzer.
 3. Skills und `CLAUDE.md` anpassen, Block-Hook entscheiden.
 4. Nach 2–3 Retros: Gruppe 1 entscheiden, dev-mcp abschalten.
+
+## Später: Plattform-Plugins abspalten
+
+Ziel: dv-forge konzentriert sich auf Spezifizieren → Planen → Umsetzen → Review und lässt sich ohne unnötige Last auch in Python- oder React-Projekten nutzen.
+
+- [ ] Plugin `forge-dotnet`: `dotnet-build`, `dotnet-test`, `dotnet-lint` aus `plugins/forge/scripts/toolchain/`, dazu deren Tests.
+- [ ] Plugin `forge-angular`: `angular-build`, `angular-test`, `angular-lint`, dazu deren Tests.
+- [ ] Der `init`-Teil für die Skripte (Build, Test, Lint erkennen und eintragen) zieht mit in die Plattform-Plugins; dv-forge fragt nur noch nach den fertigen Befehlen.
 
 ## Kompletttest (offen, macht der User)
 

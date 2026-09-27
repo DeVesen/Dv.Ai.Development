@@ -12,7 +12,7 @@ Du stellst sicher, dass alles committet ist und alle Prüfungen grün sind. Erst
 
 ## Ablauf
 1. `node "<PLUGIN>/scripts/work.js" check`. Exit ungleich 0: Meldung wörtlich ausgeben, Ende. Du committest, verwirfst und stashst nichts; das entscheidet der Mensch.
-2. Prüfungen: `node "<PLUGIN>/scripts/forge-config.js" get <Schlüssel>` für `Build`, `Test` und `Lint`. Jeden nicht leeren Wert im Ordner `<R>` ausführen, als Befehl oder als genanntes Tool; leere überspringst du. Sind alle drei leer, fragst du einmal, was laufen soll.
+2. Prüfungen: `node "<PLUGIN>/scripts/forge-config.js" get <Schlüssel>` für `Build`, `Test` und `Lint`. Jeden nicht leeren Wert im Ordner `<R>` ausführen, als Befehl oder als genanntes Tool; mehrere, mit ` ; ` getrennt, nacheinander; leere überspringst du. Sind alle drei leer, fragst du einmal, was laufen soll.
 3. Ein Lauf rot: Befund melden, Ende. Nichts aufräumen.
 4. Nach der Ausgabe von Schritt 1 handeln:
 

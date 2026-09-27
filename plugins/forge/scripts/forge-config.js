@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
+const { resolveToolchain } = require('./lib/toolchain');
 
 const SECTION = '## dv-forge';
 const ENTRY = /^-\s+([^:]+):\s*(.*)$/;
@@ -77,9 +78,13 @@ function readConfig(cwd = process.cwd()) {
   return { root: toPosix(root), main: toPosix(main), config, configured: Object.keys(found) };
 }
 
+const COMMAND_KEYS = new Set(['Build', 'Test', 'Lint']);
+
+// Build, Test und Lint kommen ausführbar zurück: "dv-forge: dotnet-test" wird zum Skript-Aufruf.
 function getValue(key, cwd = process.cwd()) {
   if (!Object.hasOwn(DEFAULTS, key)) throw new ConfigError(`Unbekannter Schlüssel: ${key}`);
-  return readConfig(cwd).config[key];
+  const value = readConfig(cwd).config[key];
+  return COMMAND_KEYS.has(key) ? resolveToolchain(value) : value;
 }
 
 function workitemOf(specPath) {

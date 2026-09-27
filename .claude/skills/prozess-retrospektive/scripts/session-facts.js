@@ -50,12 +50,31 @@ function shortError(text) {
   return textOf(text).replace(/\s+/g, ' ').trim().slice(0, 120);
 }
 
+// Kurzform eines Aufrufs für die Sparpotenzial-Liste: Tool plus wichtigstes Argument.
+function callLabel(part) {
+  const input = part.input ?? {};
+  const detail = input.command ?? input.file_path ?? input.pattern ?? input.path ?? input.skill ?? input.description ?? '';
+  return `${part.name}${detail ? ` ${String(detail).replace(/\s+/g, ' ').slice(0, 80)}` : ''}`;
+}
+
+// Die ersten zwei Wörter eines Shell-Befehls, z. B. "git status" oder "dotnet test".
+function commandHead(part) {
+  if (!['Bash', 'PowerShell'].includes(part.name) || typeof part.input?.command !== 'string') return null;
+  const segments = part.input.command.split(/&&|;|\|\||\n/).map((segment) => segment.trim());
+  const words = (segments.find((segment) => segment && !/^cd\s/.test(segment)) ?? '')
+    .split(/\s+/).filter((word) => !/^\w+=/.test(word));
+  if (words.length === 0) return null;
+  return words.slice(0, /^[a-z][\w:-]*$/i.test(words[1] ?? '') ? 2 : 1).join(' ');
+}
+
 function analyze(entries) {
   const facts = {
     turns: 0, requests: 0, input: 0, cached: 0, output: 0, models: new Set(), tools: new Map(), errors: new Map(),
     denials: 0, repeats: 0, skills: new Map(), compactions: 0, first: null, last: null,
+    results: [], reads: new Map(), commands: new Map(),
   };
   const names = new Map();
+  const calls = new Map();
   let previousCall = null;
   const seenRequests = new Set();
   for (const entry of entries) {
@@ -79,6 +98,10 @@ function analyze(entries) {
       for (const part of Array.isArray(message.content) ? message.content : []) {
         if (part.type !== 'tool_use') continue;
         names.set(part.id, part.name);
+        calls.set(part.id, callLabel(part));
+        if (part.name === 'Read' && part.input?.file_path) facts.reads.set(part.input.file_path, (facts.reads.get(part.input.file_path) ?? 0) + 1);
+        const head = commandHead(part);
+        if (head) facts.commands.set(head, (facts.commands.get(head) ?? 0) + 1);
         facts.tools.set(part.name, (facts.tools.get(part.name) ?? 0) + 1);
         if (part.name === 'Skill' && part.input?.skill) facts.skills.set(part.input.skill, (facts.skills.get(part.input.skill) ?? 0) + 1);
         const call = `${part.name}:${JSON.stringify(part.input)}`;
@@ -92,6 +115,7 @@ function analyze(entries) {
         facts.turns += 1;
       }
       for (const part of Array.isArray(content) ? content : []) {
+        if (part.type === 'tool_result') facts.results.push({ call: calls.get(part.tool_use_id) ?? 'unbekannt', chars: textOf(part.content).length });
         if (part.type !== 'tool_result' || !part.is_error) continue;
         const tool = names.get(part.tool_use_id) ?? 'unbekannt';
         const text = shortError(part.content);
@@ -123,11 +147,40 @@ function subagentRows(sessionFile) {
     const facts = analyze(readEntries(path.join(dir, name)));
     const errors = [...facts.errors.values()].reduce((sum, list) => sum + list.length, 0);
     return {
+      facts,
       description: meta.description ?? name, type: meta.agentType ?? '?', model: meta.model ?? [...facts.models].join(','),
       tokens: facts.input + facts.cached + facts.output, fresh: facts.input + facts.output, tools: [...facts.tools.values()].reduce((a, b) => a + b, 0), errors,
       duration: minutes(facts.first, facts.last),
     };
   }).sort((a, b) => b.tokens - a.tokens);
+}
+
+const TOP_RESULTS = 5;
+const MIN_COMMAND_REPEATS = 3;
+
+function merge(target, map) {
+  for (const [key, count] of map) target.set(key, (target.get(key) ?? 0) + count);
+  return target;
+}
+
+// Sparpotenzial über Hauptsession und Subagents: wo viel Kontext floss oder Arbeit sich wiederholte.
+function savings(all) {
+  const results = all.flatMap((facts) => facts.results).sort((a, b) => b.chars - a.chars).slice(0, TOP_RESULTS);
+  const reads = [...all.reduce((map, facts) => merge(map, facts.reads), new Map())].filter(([, count]) => count > 1).sort((a, b) => b[1] - a[1]);
+  const commands = [...all.reduce((map, facts) => merge(map, facts.commands), new Map())].filter(([, count]) => count >= MIN_COMMAND_REPEATS).sort((a, b) => b[1] - a[1]);
+  return [
+    '## Sparpotenzial (Hauptsession und Subagents)',
+    '',
+    'Größte Tool-Ergebnisse (etwa 4 Zeichen je Token):',
+    ...(results.length > 0 ? results.map((r) => `- ${thousands(r.chars / 4)} Tokens · ${r.call}`) : ['- keine']),
+    '',
+    'Mehrfach gelesene Dateien:',
+    ...(reads.length > 0 ? reads.slice(0, 10).map(([file, count]) => `- ${count}× ${file}`) : ['- keine']),
+    '',
+    `Wiederkehrende Shell-Befehle (ab ${MIN_COMMAND_REPEATS}×):`,
+    ...(commands.length > 0 ? commands.slice(0, 10).map(([head, count]) => `- ${count}× ${head}`) : ['- keine']),
+    '',
+  ].join('\n');
 }
 
 function render(sessionFile, facts, agents) {
@@ -173,7 +226,10 @@ function run(options) {
   if (!fs.existsSync(file)) throw new FactsError(`Session-Datei nicht gefunden: ${file}`);
   const session = mcpUsage.loadSession(file);
   if (options.cwd) session.cwd = options.cwd;
-  return `${render(file, analyze(readEntries(file)), subagentRows(file))}\n${mcpUsage.render(session, { expect: options.expect, transcript: file })}`;
+  const facts = analyze(readEntries(file));
+  const agents = subagentRows(file);
+  const mcp = mcpUsage.render(session, { expect: options.expect, transcript: file });
+  return `${render(file, facts, agents)}\n${savings([facts, ...agents.map((agent) => agent.facts)])}\n${mcp}`;
 }
 
 function main() {
@@ -193,4 +249,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { projectDir, analyze, readEntries, render, subagentRows, run };
+module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, run };

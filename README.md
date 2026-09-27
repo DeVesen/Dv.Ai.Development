@@ -145,6 +145,8 @@ Analyzes the *process* of a session — not what was delivered, but how it ran. 
 
 MCP usage is measured, not recalled: the same run appends a section from `scripts/mcp-usage.js` with calls, errors and repeats per MCP server and native tool, per agent (subagent transcripts included), plus expected-but-unused servers and shell-fallback candidates. Across several reports this shows which MCPs are irrelevant.
 
+Besides friction the skill looks for savings in time, tokens and money: the script lists the largest tool results, files read more than once and recurring shell commands. Wishes may target existing plugins, skills, hooks and MCPs or something new (`neu:`), such as a script or MCP tool that takes over repeated manual work.
+
 | Command / Trigger | Purpose |
 |---|---|
 | "retrospektive" · "session review" · "prozess analyse" | Start session retrospective |

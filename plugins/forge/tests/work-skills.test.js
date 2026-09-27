@@ -34,6 +34,14 @@ test('init_Body_ListsEveryConfigKey', () => {
   assert.ok(body.includes('## dv-forge'));
 });
 
+test('init_Body_ChecksSetupBeforeConfig', () => {
+  const { body } = skill('init');
+  const check = body.indexOf('setup-check.js"');
+  assert.ok(check !== -1 && check < body.indexOf('forge-config.js" show'));
+  assert.match(body, /\*\*alle nach Vorschlag\*\*, \*\*einzeln\*\* oder \*\*behalten\*\*/);
+  assert.ok(body.includes('dv-forge: dotnet-test'));
+});
+
 test('startWork_Body_DelegatesDecisionToScript', () => {
   const { body } = skill('start-work');
   assert.ok(body.includes('prepare.js" implementation $ARGUMENTS'));

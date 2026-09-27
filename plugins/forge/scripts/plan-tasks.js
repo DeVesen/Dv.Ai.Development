@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { toPosix } = require('./lib/posix');
+const { resolveToolchain } = require('./lib/toolchain');
 
 const TASK_HEADING = /^###\s+Task\s+(\d+):/;
 const SECTION_HEADING = /^##\s/;
@@ -146,7 +147,7 @@ function buildBrief(planPath, number) {
   if (!task) throw new PlanError(`Task ${number} nicht im Plan: ${planPath}`);
   const header = trimTrailing(lines.slice(0, headerEnd));
   const body = trimTrailing(lines.slice(task.start, task.end));
-  return `${[...header, '', ...body].join('\n')}\n`;
+  return resolveToolchain(`${[...header, '', ...body].join('\n')}\n`);
 }
 
 function writeFile(dir, name, content) {
@@ -167,7 +168,7 @@ function briefWithModel(planPath, number, dir) {
 }
 
 function writeHeader(planPath, dir) {
-  return writeFile(dir, 'header-brief.md', buildHeader(planPath));
+  return writeFile(dir, 'header-brief.md', resolveToolchain(buildHeader(planPath)));
 }
 
 function slugOf(planPath) {

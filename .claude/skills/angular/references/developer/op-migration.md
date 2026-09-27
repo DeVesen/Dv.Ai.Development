@@ -26,5 +26,5 @@ Migriert Legacy-Angular-Patterns auf moderne Syntax (Signals, Control Flow, etc.
 ## Hinweise
 
 - Version prüfen: `package.json` → `@angular/core` — APIs und Empfehlungen unterscheiden sich je Major.
-- Nach Migration: `build_angular_project` via dev-mcp ausführen und Compile-Fehler beheben ([op-layout.md](op-layout.md) Tooling).
+- Nach Migration: `dv-forge: angular-build` ausführen und Compile-Fehler beheben ([op-layout.md](op-layout.md) Tooling).
 - Signal-State-Migration (BehaviorSubject → signal): [signal-architecture.md](signal-architecture.md).

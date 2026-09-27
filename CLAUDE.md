@@ -34,7 +34,6 @@ Details: https://claudedirectory.org/plugins/context7
 
 | Server | Transport | Details |
 |--------|-----------|---------|
-| `build-log-filter` | Docker HTTP | Port 8089 |
 | `codebase-analyzer` | Node stdio | `C:\Develop\.apps\codebase-analyzer\index.js` |
 | `dev-mcp` | stdio | `C:\Develop\.apps\dev-mcp\Dev.Mcp.exe` |
 
@@ -47,10 +46,10 @@ Details: https://claudedirectory.org/plugins/context7
 | Aufgabe | Erster Griff |
 |---------|-------------|
 | Symbol / Datei suchen | `dev-mcp`: `find_file`, `find_by_content` |
-| Klasse / Methode lesen | `dev-mcp`: `read_class_summary`, `read_signatures_only`, `read_method` |
+| Klasse / Methode lesen | `codebase-analyzer`: `read_class_summary`, `read_signatures_only`, `read_method` |
 | Index / Abhängigkeiten | `codebase-analyzer`: `find_in_index`, `index_project` |
-| Angular-Tests ausführen | `dev-mcp`: `test_angular_project` — niemals via Shell/PowerShell |
-| .NET-Tests ausführen | `dev-mcp`: `test_dotnet_solution` — immer `test_project_path` angeben |
+| Angular-Tests ausführen | `dv-forge: angular-test --root <angular-ordner>` — nie direkt `ng test` über die Shell |
+| .NET-Tests ausführen | `dv-forge: dotnet-test --path <testprojekt>` — nie direkt `dotnet test` über die Shell |
 | Native Read / Grep | nur als dokumentierter Fallback nach MCP-Versuch |
 
 ---

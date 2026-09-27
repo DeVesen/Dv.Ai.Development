@@ -59,6 +59,14 @@ test('cli_File_RendersFactsAndSubagents', () => {
   assert.match(result.stdout, /- Bash: Permission denied by hook/);
 });
 
+test('cli_Expect_AppendsMeasuredMcpUsage', () => {
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', session(), '--expect', 'dev-mcp'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /## MCP-Nutzung \(gemessen\)/);
+  assert.match(result.stdout, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
+  assert.match(result.stdout, /\| Bash \| 2 \| 1 \| 1 \| Hauptagent \(2\) \|/);
+});
+
 test('projectDir_EscapesPathLikeClaudeCode', () => {
   assert.equal(facts.projectDir('/home/user/Dv.Ai.Development', '/root'), path.join('/root', '.claude', 'projects', '-home-user-Dv-Ai-Development'));
 });
@@ -66,4 +74,20 @@ test('projectDir_EscapesPathLikeClaudeCode', () => {
 test('cli_BadArgsOrMissingFile_ExitCodes', () => {
   assert.equal(spawnSync(process.execPath, [SCRIPT, '--foo'], { encoding: 'utf8' }).status, 2);
   assert.equal(spawnSync(process.execPath, [SCRIPT, '--file', '/gibt/es/nicht.jsonl'], { encoding: 'utf8' }).status, 1);
+});
+
+test('savings_LargeResultsRepeatedReadsAndCommands_Listed', () => {
+  const use = (id, name, input) => ({ type: 'assistant', requestId: id, message: { content: [{ type: 'tool_use', id, name, input }] } });
+  const result = (id, chars) => ({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: id, content: 'x'.repeat(chars) }] } });
+  const entries = [
+    use('a', 'Read', { file_path: 'src/big.ts' }), result('a', 40000),
+    use('b', 'Read', { file_path: 'src/big.ts' }), result('b', 40000),
+    ...[1, 2, 3].flatMap((n) => [use(`t${n}`, 'Bash', { command: `cd src && FOO=1 dotnet test --filter X${n}` }), result(`t${n}`, 100)]),
+    use('g', 'Bash', { command: 'git status' }), result('g', 10),
+  ];
+  const text = facts.savings([facts.analyze(entries)]);
+  assert.match(text, /- 10k Tokens · Read src\/big\.ts/);
+  assert.match(text, /Mehrfach gelesene Dateien:\n- 2× src\/big\.ts/);
+  assert.match(text, /- 3× dotnet test/);
+  assert.doesNotMatch(text, /git status/);
 });

@@ -28,9 +28,9 @@ Nützliche Flags:
 
 ### 3. Build-Check
 
-Build via **dev-angular-mcp** ausführen: `build_angular_project` zum Fehler-Check.
+Build über `dv-forge: angular-build` zum Fehler-Check.
 
-**VERBOTEN:** `ng build` als Shell-Kommando.
+**VERBOTEN:** `ng build` direkt als Shell-Kommando; nur über `dv-forge: angular-build`.
 
 
 

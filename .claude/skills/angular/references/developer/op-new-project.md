@@ -17,8 +17,8 @@
 
 ## Nach Projekterstellung
 
-- Build via **dev-angular-mcp** ausführen: `build_angular_project` — Fehler analysieren und beheben — Pflicht.
-- **VERBOTEN:** `ng build` als Shell-Kommando.
+- Build über `dv-forge: angular-build` ausführen — Fehler analysieren und beheben — Pflicht.
+- **VERBOTEN:** `ng build` direkt als Shell-Kommando; nur über `dv-forge: angular-build`.
 
 
 

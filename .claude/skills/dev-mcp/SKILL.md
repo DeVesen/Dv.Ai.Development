@@ -1,163 +1,64 @@
 ---
 name: dev-mcp
 description: >
-  Use when reading/searching files (.cs/.ts/.json/.md), Angular or .NET scaffolding,
-  ng build/test, dotnet build/test/publish, npm run/install, git mv, creating specs/test classes,
-  exploring directories, or checking running processes.
-  Replaces all Shell dotnet/ng/npm/git-mv commands. BLOCKER if unreachable — no silent fallback.
-  Not for index/review/metrics (→ codebase-analyzer). Routing questions: references/routing.md.
+  Use when searching or reading files (.cs/.ts/.json/.md) by pattern, content or line range,
+  patching or batch-replacing text, moving or renaming files with git history, checking changed
+  files or running processes via the dev-mcp server. Not for build/test/lint (→ dv-forge scripts),
+  scaffolding (→ ng generate / dotnet new), code reading by symbol (→ codebase-analyzer).
 ---
 
-## MCP-FIRST — Dateizugriff (Hard Gate)
+# dev-mcp
 
-**`Read`-, `Grep`-, `Glob`-Tool und `Bash ls` / `PowerShell Get-ChildItem` niemals verwenden** wenn dev-mcp verfügbar.
+Der dev-mcp ist nur noch für Dateizugriff, Textänderungen, Git und Prozesse zuständig. Ob diese Tools bleiben, entscheidet die Retro-Messung (siehe `docs/offene-aufgaben.md`, Gruppe 1).
 
-| Verboten | Richtig |
-|----------|---------|
-| `Read`-Tool auf beliebige Dateien | `read_file_raw` (dev-mcp) |
-| `Read`-Tool auf `.cs`/`.ts` | `read_signatures_only` / `read_method` / `read_class_summary` |
-| `Grep`-Tool für Symbole/Inhalte | `find_by_content` / `find_implementations` |
-| `Glob`-Tool für Dateimuster | `find_file` |
-| `Bash ls` / `PowerShell ls -Recurse` / `Get-ChildItem` | `list_directory` |
+## Was wohin gehört
 
-> **Ausnahme:** Nur wenn dev-mcp nicht erreichbar → BLOCKER melden (siehe unten).
+| Aufgabe | Weg |
+|---|---|
+| Build, Test, Lint | `dv-forge: angular-build|test|lint`, `dv-forge: dotnet-build|test|lint` — nie direkt `ng`/`dotnet` |
+| Komponente, Service, Projekt anlegen | `ng generate`, `dotnet new` über die Shell |
+| EF-Migrationen | `dotnet ef` über die Shell, siehe dotnet-Skill |
+| `npm run`, `npm install`, `dotnet publish` | Shell |
+| Signaturen, Methode, Klasse, Komponente lesen | codebase-analyzer: `read_signatures_only`, `read_method`, `read_class_summary`, `read_component_bundle` |
+| Member einfügen, Imports umschreiben | codebase-analyzer: `insert_member`, `update_imports` |
+| Implementierungen finden | codebase-analyzer: `find_type_hierarchy` |
 
----
-
-## MCP-FIRST — Build / Test / Publish / npm / git (Hard Gate)
-
-**Shell-Kommandos für diese Operationen niemals direkt** wenn dev-mcp verfügbar.
-
-| Verboten | Richtig |
-|----------|---------|
-| `dotnet build` (Shell) | `build_dotnet_solution` |
-| `dotnet test` (Shell) | `test_dotnet_solution` |
-| `dotnet publish` / `PowerShell(dotnet publish ...)` | `publish_dotnet_project` |
-| `dotnet ef migrations add/list/remove/...` (Shell) | `run_ef_migration` |
-| `ng build` (Shell) | `build_angular_project` |
-| `ng test` (Shell) | `test_angular_project` |
-| `npm run *` / `Bash(npm run *)` | `run_npm_script` |
-| `npm install` / `Bash(npm install *)` | `run_npm_script(script: "install")` |
-| `git mv` / `Bash(git mv *)` | `git_move` |
-| `PowerShell(Get-Process ...)` | `list_processes` |
-
-> **Angular-Tests: Absolutes Verbot ohne Ausnahme**
-> `ng test`, `npx ng test`, `PowerShell(ng test ...)` — vollständig verboten, null Ausnahmen.
-> Einziger erlaubter Weg: `mcp__dev-mcp__test_angular_project`.
-> MCP nicht erreichbar? → BLOCKER melden. Kein Shell-Fallback für ng test.
-
----
-
-## Hard Stop — MCP nicht erreichbar
-
-> **`BLOCKER: dev-mcp nicht erreichbar`**
-> - Kein stiller Fallback auf Shell / native Tools
-> - Nutzer informieren: MCP aktiv? Exe unter `C:\Develop\.apps\dev-mcp\`?
-> - Erst nach **expliziter Nutzerfreigabe**: Shell-Fallback
-
----
-
-## ToolSearch — Standard-Batch (Session-Start)
-
-**Einmaliger Batch-Load** vor dem ersten dev-mcp-Aufruf in der Session — statt 5 sequenzieller Calls:
-
-```
-select:mcp__dev-mcp__read_lines,mcp__dev-mcp__read_files_batch,mcp__dev-mcp__test_angular_project,mcp__dev-mcp__test_dotnet_solution,mcp__dev-mcp__find_file
-```
-
-| Muster | Ergebnis |
-|--------|----------|
-| ✅ Einziger `select:`-Batch (ein Call) | Alle 5 Standard-Tools gleichzeitig geladen |
-| ❌ 5 separate ToolSearch-Calls über Session verteilt | Akkumulierter Wartezeit-Overhead pro Call |
-
-> Nur diese 5 dokumentierten Standard-Tools laden — kein Preload selten genutzter Tools.
-> Stack-Hinweis: Reine Angular-Sessions können `test_dotnet_solution` weglassen; reine .NET-Sessions `test_angular_project` — dieser Vollbatch gilt für Angular+.NET-Projekte.
-
----
-
-## Pfad-Kanon (Pflicht)
-
-- Alle Pfade als **echte Windows-Absolutpfade**: `C:\Develop\MyProject\`
-- **VERBOTEN:** `/project/`, `/workspace/`, relative Pfade, `{parameter}`-Platzhalter
-- `Path not allowed` → Pfad liegt außerhalb AllowedDirectories (appsettings.json)
-- Keine Docker-Volumes — dev-mcp läuft nativ als stdio-Prozess
-
----
-
-## Routing: Welches Tool wann?
+## dev-mcp-Tools
 
 | Aufgabe | Tool |
-|---------|------|
-| Beliebige Datei lesen (.json, .md, .html, .scss, …) | `read_file_raw` |
-| `.cs`/`.ts` Public API lesen | `read_signatures_only` |
-| Einzelne Methode lesen | `read_method` |
-| Klassenstruktur lesen | `read_class_summary` |
-| Angular-Komponente vollständig lesen | `read_component_bundle` |
-| Mehrere Dateien auf einmal lesen | `read_files_batch` |
-| Verzeichnis erkunden | `list_directory` |
+|---|---|
 | Dateien nach Muster suchen | `find_file` |
 | Inhalt per Regex suchen | `find_by_content` |
-| Interface-Implementierungen finden | `find_implementations` |
-| Muster-Spec/Testklasse finden | `find_test_pattern` |
-| Angular-Spec anlegen | `scaffold_spec_for` → Workflow: `references/workflows.md` |
-| Angular-Komponente/Service erzeugen | `scaffold_angular_component` / `scaffold_angular_service` |
-| Angular bauen | `build_angular_project` |
-| Angular testen | `test_angular_project` |
-| npm-Script ausführen | `run_npm_script(working_directory, script)` |
-| .NET-Testklasse anlegen | `scaffold_dotnet_test_class` → Workflow: `references/workflows.md` |
-| .NET-Projekt anlegen | `create_dotnet_solution` + `scaffold_dotnet_project` |
-| .NET bauen | `build_dotnet_solution` |
-| .NET testen | `test_dotnet_solution` |
-| .NET veröffentlichen | `publish_dotnet_project` |
-| EF-Migration anlegen/auflisten/entfernen/DB aktualisieren | `run_ef_migration` → Workflow: [dotnet-Skill ef-migrations](../dotnet/references/ef-migrations/OVERVIEW.md) |
-| Datei verschieben (mit Git-History) | `git_move` |
-| Datei umbenennen (mit Impact-Analyse) | `rename_file_with_impact` |
-| Geänderte Dateien ermitteln | `git_changed_files` |
+| Zeilenbereich lesen | `read_lines` |
+| Mehrere Dateien auf einmal lesen | `read_files_batch` |
 | Datei patchen | `apply_text_patch` |
 | Batch-Textersetzung | `replace_in_files` |
-| Laufende Prozesse prüfen | `list_processes` |
-| .NET statisch analysieren (JetBrains) | `run_inspectcode` |
-| Angular linten (ESLint) | `lint_angular_project` |
-| Code reviewen / indexieren / Metriken | **codebase-analyzer** (anderer MCP) |
+| Datei löschen mit Referenzprüfung | `delete_file_safe` |
+| Datei umbenennen | `rename_file` |
+| Datei verschieben mit Git-History | `git_move` |
+| Ordnerstruktur anlegen | `create_directory_structure` |
+| Geänderte Dateien, kompakter Diff | `git_changed_files`, `git_diff_summary` |
+| Laufende Prozesse | `list_processes` |
 
----
+ToolSearch einmal pro Session als Batch: `select:mcp__dev-mcp__find_file,mcp__dev-mcp__find_by_content,mcp__dev-mcp__read_lines,mcp__dev-mcp__read_files_batch`
 
-## Abgrenzung
+## Pfade
 
-- **codebase-analyzer:** Index, Review, Metriken, AST, `detect_untested_public_api` — separater MCP
-- Keine Überschneidung: dev-mcp liest/schreibt/baut, codebase-analyzer analysiert
-
----
+Echte Windows-Absolutpfade (`C:\Develop\MyProject\`), keine `/workspace/`- oder relativen Pfade. `Path not allowed` heißt: außerhalb der AllowedDirectories in `appsettings.json`.
 
 ## Init — `.mcp.json` einrichten
 
-**Trigger:** `dev-mcp init`
-
-1. Frage den User: *„Wo liegt `Dev.Mcp.exe`? (z. B. `C:\Develop\.apps\dev-mcp\Dev.Mcp.exe`)"*
-2. Lies die lokale `.mcp.json` im aktuellen Arbeitsverzeichnis (falls vorhanden).
-3. Füge den `dev-mcp`-Eintrag hinzu (oder ersetze ihn wenn er bereits existiert):
+Trigger `dev-mcp init`: nach dem Pfad der `Dev.Mcp.exe` fragen, in der `.mcp.json` im Projekt-Root den Eintrag setzen, dann Claude Code neu starten lassen.
 
 ```json
-"dev-mcp": {
-  "command": "<Pfad zur Dev.Mcp.exe>",
-  "env": {
-    "LOG_VIEWER_PORT": "51011"
-  }
-}
+"dev-mcp": { "command": "<Pfad zur Dev.Mcp.exe>", "env": { "LOG_VIEWER_PORT": "51011" } }
 ```
 
-4. Schreibe die aktualisierte `.mcp.json` zurück.
-5. Bestätige: *„`dev-mcp` wurde in `.mcp.json` eingetragen. Claude Code neu starten damit der Server geladen wird."*
-
-**Hinweis:** Die `.mcp.json` liegt im Projekt-Root (neben `CLAUDE.md`). Falls sie nicht existiert, anlegen mit `{ "mcpServers": { ... } }`.
-
----
-
-## Referenzen (on-demand lesen)
+## Referenzen
 
 | Bedarf | Datei |
-|--------|-------|
-| Tool-Parameter unklar, Rückgabe-Schema, Beispiele | `references/tool-catalog.md` |
-| Test/Spec anlegen (Schritt-für-Schritt) | `references/workflows.md` |
-| Fehler-/Symptom-Diagnose | `references/error-guide.md` |
-| Welcher MCP für welche Aufgabe (dev-mcp vs codebase-analyzer) | `references/routing.md` |
+|---|---|
+| Parameter, Rückgabe-Schema | `references/tool-catalog.md` |
+| Spec oder Testklasse anlegen | `references/workflows.md` |
+| Fehler-Diagnose | `references/error-guide.md` |
+| dev-mcp oder codebase-analyzer? | `references/routing.md` |

@@ -40,9 +40,11 @@ pull request — and whatever cleanup log the chosen option below produces.
 
 ## Step 1: Verify Tests
 
-Run the project's full test suite, using this project's own testing tooling —
-`dev-mcp`'s `test_dotnet_solution` / `test_angular_project`, never a raw shell
-`dotnet`/`ng`/`npm` call, per this project's MCP-First rule.
+Run the project's full test suite with its own test command: `Test` in the
+`## dv-forge` section of the project `CLAUDE.md` (several separated by ` ; `;
+ask once if missing). A value `dv-forge: <name> …` is the script
+`scripts/toolchain/<name>.js` of the dv-forge plugin. Never swap it for a raw
+`dotnet`/`ng`/`npm` call.
 
 **If tests fail**, report the failures and stop — the menu in Step 4 comes
 only after a green suite:
@@ -125,8 +127,8 @@ git checkout <base-branch>
 git pull
 git merge <feature-branch>
 
-# Verify tests on merged result, via this project's own test tooling
-<dev-mcp test_dotnet_solution / test_angular_project>
+# Verify tests on merged result, via this project's own test command
+<Test from CLAUDE.md, section ## dv-forge>
 ```
 
 If tests fail on the merged result: stop, leave the worktree and branch in

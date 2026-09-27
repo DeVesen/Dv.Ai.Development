@@ -52,6 +52,9 @@ import {
   findDiRegistration, analyzePlanningInventory, traceApiContract, findApiConsumers,
 } from "./features/new-tools.js";
 import { analyzeSliceImpact } from "./features/slice-impact.js";
+import { readClassSummary, readMethod, readSignaturesOnly } from "./features/code-reader.js";
+import { analyzeAngularArchitecture, readComponentBundle } from "./features/angular-readers.js";
+import { insertMember, updateImports } from "./features/code-edit.js";
 import { registerIndex, getAllRegistryEntries } from "./index-registry.js";
 import { runTsIospAnalysis } from "./features/ts-iosp-runner.js";
 
@@ -2399,6 +2402,135 @@ server.tool(
   }
 );
 
+// ─── Fast readers and edits (moved from dev-mcp) ─────────────────────────────
+// Single-file tools without project load: TypeScript via ts-morph, C# via tree-sitter.
+
+function jsonResult(value: unknown) {
+  return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] };
+}
+
+function errorResult(error: unknown) {
+  return { content: [{ type: "text" as const, text: `Error: ${(error as Error).message}` }], isError: true };
+}
+
+function existingFile(filePath: string): string {
+  const abs = resolve(filePath);
+  if (!existsSync(abs)) throw new Error(`File not found: ${abs}`);
+  return abs;
+}
+
+server.tool(
+  "read_signatures_only",
+  "Returns only member signatures of a .cs or .ts file (constructors, properties, methods; TS also functions and interface members) — no bodies. Typically ~90% fewer tokens than reading the file. Public/protected/internal by default.",
+  {
+    file_path: z.string().describe("Absolute path to a .cs or .ts file"),
+    include_private: z.boolean().default(false).describe("Include private members"),
+  },
+  async ({ file_path, include_private }) => {
+    try { return jsonResult(await readSignaturesOnly(existingFile(file_path), include_private)); }
+    catch (e) { return errorResult(e); }
+  }
+);
+
+server.tool(
+  "read_method",
+  "Returns one method/function by name — signature, full source and line range — without the rest of the file. Returns all overloads if several match.",
+  {
+    file_path: z.string().describe("Absolute path to a .cs or .ts file"),
+    method_name: z.string().describe("Method, function, constructor or accessor name"),
+    class_name: z.string().optional().describe("Class name to disambiguate"),
+  },
+  async ({ file_path, method_name, class_name }) => {
+    try { return jsonResult(await readMethod(existingFile(file_path), method_name, class_name)); }
+    catch (e) { return errorResult(e); }
+  }
+);
+
+server.tool(
+  "read_class_summary",
+  "Structural overview of one class/record/struct/interface: base class, interfaces, properties (name, type, access) and methods (name, return type, parameters, line). No bodies.",
+  {
+    file_path: z.string().describe("Absolute path to a .cs or .ts file"),
+    class_name: z.string().optional().describe("Type name (default: first type in the file)"),
+  },
+  async ({ file_path, class_name }) => {
+    try { return jsonResult(await readClassSummary(existingFile(file_path), class_name)); }
+    catch (e) { return errorResult(e); }
+  }
+);
+
+server.tool(
+  "read_component_bundle",
+  "Reads an Angular component in one call: selector, standalone, imports, TS signatures, plus optionally its template (full HTML or a binding summary), style file and spec signatures.",
+  {
+    component_ts_path: z.string().describe("Absolute path to the component .ts file"),
+    include_template: z.boolean().default(true).describe("Include the template"),
+    template_mode: z.enum(["full", "summary"]).default("summary").describe("'summary' = bindings and control flow only; 'full' = complete HTML"),
+    include_styles: z.boolean().default(false).describe("Include the style file path"),
+    include_spec: z.boolean().default(false).describe("Include spec signatures"),
+  },
+  async ({ component_ts_path, include_template, template_mode, include_styles, include_spec }) => {
+    try {
+      return jsonResult(await readComponentBundle(existingFile(component_ts_path), {
+        includeTemplate: include_template, templateMode: template_mode, includeStyles: include_styles, includeSpec: include_spec,
+      }));
+    } catch (e) { return errorResult(e); }
+  }
+);
+
+server.tool(
+  "analyze_angular_architecture",
+  "Static check of three Angular architecture rules, no build: (1) *ApiService classes live under core/api/, (2) classes under core/api/ inject only HttpClient, (3) classes under features/<name>/services/ do not inject HttpClient directly. Detects constructor and inject() injection.",
+  {
+    project_path: z.string().describe("Angular project root (folder with angular.json)"),
+  },
+  ({ project_path }) => {
+    const abs = resolve(project_path);
+    if (!existsSync(abs)) return { content: [{ type: "text", text: `Path not found: ${abs}` }], isError: true };
+    return jsonResult(analyzeAngularArchitecture(abs));
+  }
+);
+
+server.tool(
+  "insert_member",
+  "Inserts a method, property or field into a .cs or .ts class without reading the file first. position 'end_of_class' (default) or 'after_member'. Methods without body get a not-implemented stub. Keeps line endings and member indentation.",
+  {
+    file_path: z.string().describe("Absolute path to a .cs or .ts file"),
+    member_kind: z.enum(["method", "property", "field"]).describe("Kind of member"),
+    signature: z.string().describe("Member signature, e.g. 'public string Name { get; set; }' or 'async load(id: string): Promise<void>'"),
+    body: z.string().optional().describe("Method body lines without braces"),
+    position: z.enum(["end_of_class", "after_member"]).default("end_of_class").describe("Where to insert"),
+    after_member_name: z.string().optional().describe("Existing member to insert after (position=after_member)"),
+    class_name: z.string().optional().describe("Target class (default: first class in the file)"),
+  },
+  async ({ file_path, member_kind, signature, body, position, after_member_name, class_name }) => {
+    try {
+      return jsonResult(await insertMember(existingFile(file_path), {
+        memberKind: member_kind, signature, body, position, afterMemberName: after_member_name, className: class_name,
+      }));
+    } catch (e) { return errorResult(e); }
+  }
+);
+
+server.tool(
+  "update_imports",
+  "Rewrites import paths (TypeScript: from '...', import('...')) or usings (C#: namespace) in one file or all files under a directory in one call. Skips node_modules, bin, obj, dist. Returns every changed line.",
+  {
+    file_path: z.string().optional().describe("Absolute path to a single file"),
+    directory: z.string().optional().describe("Absolute path to a directory to scan (alternative to file_path)"),
+    old_path: z.string().describe("Old import path (TS: exact module specifier; C#: namespace)"),
+    new_path: z.string().describe("New import path"),
+    language: z.enum(["typescript", "csharp", "auto"]).default("auto").describe("File types to touch"),
+  },
+  ({ file_path, directory, old_path, new_path, language }) => {
+    try {
+      const target = file_path ?? directory;
+      if (!target) throw new Error("Provide file_path or directory");
+      return jsonResult(updateImports(existingFile(target), old_path, new_path, language));
+    } catch (e) { return errorResult(e); }
+  }
+);
+
 // Tool: analyze_planning_inventory (REQ-G03)
 server.tool(
   "analyze_planning_inventory",
@@ -2542,4 +2674,4 @@ startLogViewer(logViewerPort);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
-console.error("codebase-analyzer v2.9 running (analyze_iosp_compliance[typescript], index_solution, suggest_boyscout_actions, detect_god_classes, analyze_compiler_diagnostics, detect_untested_public_api, find_symbol_references, find_type_hierarchy)");
+console.error("codebase-analyzer v2.10 running (read_signatures_only, read_method, read_class_summary, read_component_bundle, analyze_angular_architecture, insert_member, update_imports, analyze_iosp_compliance[typescript], index_solution, suggest_boyscout_actions, detect_god_classes, analyze_compiler_diagnostics, detect_untested_public_api, find_symbol_references, find_type_hierarchy)");

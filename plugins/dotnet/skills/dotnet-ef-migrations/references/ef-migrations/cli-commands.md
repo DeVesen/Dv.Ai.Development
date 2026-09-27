@@ -1,6 +1,8 @@
 # EF CLI — Migrationen
 
-Alle Operationen über **`mcp__dev-mcp__run_ef_migration`** — kein Shell-`dotnet ef` mehr.
+Alle Operationen direkt über `dotnet ef` im Ordner `{backend-path}`.
+
+**Connection-String nie in den Befehl schreiben:** einmal die Umgebungsvariable `EF_CONNECTION` setzen (Wert aus `appsettings.Development.json` → `ConnectionStrings:Database`), im Befehl nur `$env:EF_CONNECTION`. So erscheint er weder im Chat noch im Protokoll.
 
 **Hinweis:** `{backend-path}`, `{database-project-name}`, `{startup-project-name}`, `{DbContext}` sind projektspezifisch — aus Kontext ableiten.
 
@@ -8,18 +10,13 @@ Alle Operationen über **`mcp__dev-mcp__run_ef_migration`** — kein Shell-`dotn
 
 - `dotnet-ef` als globales oder lokales Tool verfügbar
 - `Microsoft.EntityFrameworkCore.Design` am Startup-Projekt (`{startup-project-name}`)
-- Dev-Connection-String aus `{startup-project-name}/appsettings.Development.json` → `ConnectionStrings:Database` (für `database-update`/`list`/`has-pending-model-changes` nur lokal, nicht in den Chat kopieren — `connection`-Parameter wird von `run_ef_migration` nicht ins Tool-Call-Log oder die Console-Ausgabe geschrieben)
+- Dev-Connection-String aus `{startup-project-name}/appsettings.Development.json` → `ConnectionStrings:Database` (für `database update`/`migrations list` über `EF_CONNECTION`, nie in den Chat kopieren)
 
 ## Migration anlegen (Pflicht)
 
 ```
-run_ef_migration(
-  action: "add",
-  backend_path: "{backend-path}",
-  database_project: "{database-project-name}",
-  startup_project: "{startup-project-name}",
-  name: "<PascalCase-Name>"   // z. B. AddMachineToParameterSearchView
-)
+dotnet ef migrations add <PascalCase-Name> --project {database-project-name} --startup-project {startup-project-name}
+# z. B. AddMachineToParameterSearchView
 ```
 
 **Nach dem Aufruf prüfen:**
@@ -31,58 +28,37 @@ run_ef_migration(
 ## Migrationen auflisten
 
 ```
-run_ef_migration(
-  action: "list",
-  backend_path: "{backend-path}",
-  database_project: "{database-project-name}",
-  startup_project: "{startup-project-name}",
-  connection: "<ConnectionStrings:Database aus appsettings.Development.json>"   // empfohlen, {DbContext}Factory setzt sonst leeren Npgsql-String
-)
+dotnet ef migrations list --project {database-project-name} --startup-project {startup-project-name} --connection "$env:EF_CONNECTION"
+# --connection empfohlen, {DbContext}Factory setzt sonst leeren Npgsql-String
 ```
 
 ## Datenbank aktualisieren (lokal)
 
-`{DbContext}Factory` (`{backend-path}/{database-project-name}/Context/{DbContext}Factory.cs`) verwendet `UseNpgsql("")` — **ohne** `connection` schlägt Design-Time oft fehl.
+`{DbContext}Factory` (`{backend-path}/{database-project-name}/Context/{DbContext}Factory.cs`) verwendet `UseNpgsql("")` — **ohne** `--connection` schlägt Design-Time oft fehl.
 
 ```
-run_ef_migration(
-  action: "database-update",
-  backend_path: "{backend-path}",
-  database_project: "{database-project-name}",
-  startup_project: "{startup-project-name}",
-  connection: "<ConnectionStrings:Database>"
-)
+dotnet ef database update --project {database-project-name} --startup-project {startup-project-name} --connection "$env:EF_CONNECTION"
 ```
 
-Optional auf eine bestimmte Migration mit `target_migration: "<MigrationName>"`.
+Optional auf eine bestimmte Migration: `dotnet ef database update <MigrationName> …`.
 
 ## Letzte Migration entfernen (nur vor Deploy)
 
 Nur wenn die Migration **noch nicht** auf gemeinsame/Produktions-DBs angewendet wurde:
 
 ```
-run_ef_migration(
-  action: "remove",
-  backend_path: "{backend-path}",
-  database_project: "{database-project-name}",
-  startup_project: "{startup-project-name}"
-)
+dotnet ef migrations remove --project {database-project-name} --startup-project {startup-project-name}
 ```
 
-Entfernt die letzte Migration inkl. Designer und setzt den Snapshot zurück. Bei Fehlstart mit orphan `.cs` ohne Designer: Datei manuell löschen, Entity korrigieren, `action: "add"` erneut ausführen.
+Entfernt die letzte Migration inkl. Designer und setzt den Snapshot zurück. Bei Fehlstart mit orphan `.cs` ohne Designer: Datei manuell löschen, Entity korrigieren, `dotnet ef migrations add` erneut ausführen.
 
 ## Pending-Model-Changes prüfen (Verify-Schritt)
 
 ```
-run_ef_migration(
-  action: "has-pending-model-changes",
-  backend_path: "{backend-path}",
-  database_project: "{database-project-name}",
-  startup_project: "{startup-project-name}"
-)
+dotnet ef migrations has-pending-model-changes --project {database-project-name} --startup-project {startup-project-name}
 ```
 
-Ergebnis `Success: false` → Modell und letzte Migration weichen ab, `action: "add"` fehlt noch.
+Exit-Code ungleich 0 bzw. Meldung „changes have been made“ → Modell und letzte Migration weichen ab, `migrations add` fehlt noch.
 
 ## Laufzeit (ohne CLI)
 

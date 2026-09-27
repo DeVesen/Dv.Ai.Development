@@ -1,32 +1,29 @@
-# dev-mcp Routing — Welcher MCP wann?
+# dev-mcp Routing — Welcher Weg wann?
 
-Lesen wenn unklar ist ob dev-mcp oder codebase-analyzer zu verwenden ist.
+Lesen wenn unklar ist, ob dev-mcp, codebase-analyzer, ein dv-forge-Skript oder die Shell zuständig ist.
 
 ---
 
-## dev-mcp vs. codebase-analyzer
-
-| Aufgabe | MCP |
+| Aufgabe | Weg |
 |---------|-----|
-| Datei/Klasse/Methode **lesen** (token-sparend) | dev-mcp |
-| Interface-Implementierungen **finden** | dev-mcp |
-| Muster-Spec/Testklasse **finden** | dev-mcp → `find_test_pattern` |
-| Angular-Spec **anlegen** (bestehende .ts) | dev-mcp → `scaffold_spec_for` |
-| Angular-Komponente/Service **erzeugen** | dev-mcp |
-| Angular **bauen** | dev-mcp → `build_angular_project` |
-| Angular **testen** | dev-mcp → `test_angular_project` |
-| .NET-Testklasse **anlegen** | dev-mcp → `scaffold_dotnet_test_class` |
-| .NET-Projekt / Ordnerstruktur **anlegen** | dev-mcp |
-| .NET **bauen** | dev-mcp → `build_dotnet_solution` |
-| .NET **testen** | dev-mcp → `test_dotnet_solution` |
-| Datei **patchen** | dev-mcp → `apply_text_patch` |
-| Zeilen lesen (token-sparend) | dev-mcp → `read_lines` |
-| Mehrere Dateien batch lesen | dev-mcp → `read_files_batch` |
-| Angular-Komponente **bundle** lesen | dev-mcp → `read_component_bundle` |
-| Git-Änderungen **auflisten** | dev-mcp → `git_changed_files` |
+| Angular **bauen / testen / linten** | `dv-forge: angular-build`, `angular-test`, `angular-lint` |
+| .NET **bauen / testen / linten** | `dv-forge: dotnet-build`, `dotnet-test`, `dotnet-lint` |
+| Angular-Komponente/Service/Spec **erzeugen** | Shell → `ng generate` |
+| .NET-Projekt/Solution **anlegen** | Shell → `dotnet new` |
+| EF-Migrationen | Shell → `dotnet ef`, siehe dotnet-Skill |
+| `npm run`, `npm install`, `ng serve`, `dotnet publish` | Shell |
+| Signaturen/Methode/Klasse **lesen** (token-sparend) | codebase-analyzer → `read_signatures_only`, `read_method`, `read_class_summary` |
+| Angular-Komponente **bundle** lesen | codebase-analyzer → `read_component_bundle` |
+| Member **einfügen** | codebase-analyzer → `insert_member` |
+| Imports **aktualisieren** nach Move | codebase-analyzer → `update_imports` |
+| Interface-Implementierungen **finden** | codebase-analyzer → `find_type_hierarchy` |
+| Dateien nach Muster/Inhalt **suchen** | dev-mcp → `find_file`, `find_by_content` |
+| Zeilen lesen, mehrere Dateien batch lesen | dev-mcp → `read_lines`, `read_files_batch` |
+| Datei **patchen**, Batch-Ersetzung | dev-mcp → `apply_text_patch`, `replace_in_files` |
+| Datei verschieben mit Git-History | dev-mcp → `git_move` |
+| Git-Änderungen **auflisten** | dev-mcp → `git_changed_files`, `git_diff_summary` |
 | Test-Targets für geänderte Dateien | dev-mcp → `slice_test_targets` |
-| Datei umbenennen (mit Impact-Preview) | dev-mcp → `rename_file_with_impact` |
-| Imports **aktualisieren** nach Move | dev-mcp → `update_imports` |
+| Laufende Prozesse | dev-mcp → `list_processes` |
 | Code **reviewen**, **indexieren**, Komplexität | codebase-analyzer |
 | Untestierte API **entdecken** | codebase-analyzer → `detect_untested_public_api` |
 | Symbol **suchen** (Index + Fallback) | codebase-analyzer → `scout_symbol` |
@@ -38,14 +35,3 @@ Lesen wenn unklar ist ob dev-mcp oder codebase-analyzer zu verwenden ist.
 | .NET Endpoint **finden** | codebase-analyzer → `find_dotnet_endpoint` |
 | DI-Registrierung **finden** | codebase-analyzer → `find_di_registration` |
 | FE Service → BE Endpoint + Validierung | codebase-analyzer → `trace_api_contract` |
-
----
-
-## dev-mcp vs. build-log-filter
-
-| Kommando | Tool | Grund |
-|----------|------|-------|
-| `ng build`, `ng test` | dev-mcp | MCP filtert intern — kein build-log-filter nötig |
-| `dotnet build`, `dotnet test` | dev-mcp | MCP filtert intern — kein build-log-filter nötig |
-| `ng serve`, `npm start` | build-log-filter (Shell) | Kein MCP für Dev-Server |
-| Shell-Fallback nach BLOCKER | build-log-filter | Nur nach expliziter Nutzerfreigabe |

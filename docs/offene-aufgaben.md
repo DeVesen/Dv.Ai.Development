@@ -21,7 +21,10 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
   - .NET: `dotnet-build`, `dotnet-test`, `dotnet-lint`
 - Jedes Skript: volles Log in eine Datei, zurück nur Fehler und Zusammenfassung.
 - Folgen: build-log-filter entfällt, Build/Test-Teil der dev-mcp-SKILL.md und MCP-First-Regel in der `CLAUDE.md` anpassen.
-- [ ] Umsetzen, nachdem die Gruppen 3 und 4 besprochen sind.
+- [x] Die sechs Skripte liegen unter `plugins/forge/scripts/toolchain/`, mit Tests.
+  - Angular-Skripte an einem echten Angular-20-Projekt geprüft.
+- [ ] .NET-Skripte an einem echten Projekt prüfen (in der Cloud-Umgebung kein .NET SDK verfügbar).
+- [ ] Einbinden: dv-forge-Konfiguration (`Build`, `Test`, `Lint`), Umsetzungs-Skill, `init`-Skill.
 
 ### Entscheidung zu Gruppe 3
 

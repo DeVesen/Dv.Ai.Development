@@ -29,7 +29,8 @@ Der codebase-analyzer bleibt als Server, weil er warm läuft (Roslyn und ts-morp
 - [ ] .NET-Skripte an einem echten Projekt prüfen (in der Cloud-Umgebung kein .NET SDK verfügbar).
 - [x] Einbinden: `dv-forge: <plattform>-<kommando>` in `Build`, `Test`, `Lint` und in Plänen; `forge-config.js get` und das Brief-Skript lösen es in den Skript-Aufruf auf.
 - [x] `init` prüft zuerst Stolperfallen (`setup-check.js`): Regeln, Skills, `.mcp.json` und Rechte, die Build/Test über dev-mcp oder build-log-filter schicken; je Datei eine Entscheidung (alle nach Vorschlag, einzeln, behalten). Schlägt Build/Test/Lint je `.sln` und `angular.json` vor.
-- [ ] Dieses Repo selbst bereinigen: `setup-check.js` findet hier 79 Stellen in 16 Dateien (CLAUDE.md, Skills angular, codebase-analyzer, dev-mcp …) – am besten über `/dv-forge:init`.
+- [ ] Dieses Repo selbst bereinigen: `setup-check.js` fand hier 104 Stellen in 16 Dateien. Erledigt: `CLAUDE.md`, alle Angular-Skill-Dateien, `codebase-analyzer`. Offen: dev-mcp-Skill, dotnet-Skill, prozess-retrospektive.
+- [ ] `setup-check.js` soll sich behaltene Stellen merken, damit der `init` sie nicht bei jedem Lauf wieder meldet. Beispiele für Fehlalarme: beschreibende Sätze wie „Kein Shell-Build“ in `codebase-analyzer/SKILL.md` Z. 206 und `codebase-analyzer/references/op-tool-overview.md` Z. 71 und 109.
 
 ### Entscheidung zu Gruppe 3
 

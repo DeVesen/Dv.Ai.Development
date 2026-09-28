@@ -13,16 +13,20 @@ Du prüfst einen Umsetzungsplan darauf, ob er sich in der geplanten Reihenfolge 
 - `Plan:` absoluter Pfad zur `plan.md`
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Repo:` Wurzel des Repos; Pfade im Plan sind relativ dazu
+- `Anker:` optional, Datei der Anker-Prüfung mit Task-Übersicht und je Dateizeile ✅, ⚠ oder ❌
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+
+Gibt es `Anker:`, liest du den Plan einmal ganz und danach nur noch Abschnitte per Zeilenbereich laut Task-Übersicht in der Anker-Datei.
 
 ## Prüfauftrag
 1. **Reihenfolge:** Alles, was ein Task unter `Consumes` nennt, produziert ein früherer Task oder existiert bereits im Repo. Sonst: Finding an `Task <n>`.
 2. **Namen und Typen:** Dieselbe Funktion, derselbe Typ, dasselbe Feld heißt in allen Tasks gleich und hat dieselbe Signatur.
 3. **Externe Voraussetzungen:** Pakete, Dienste, Zugangsdaten oder Werkzeuge, die der Plan nutzt, aber weder herstellt noch im Repo als vorhanden belegt sind. Im Repo nachsehen, bevor du meldest.
 4. **Widersprüche zwischen Tasks:** Ein späterer Task macht zunichte, was ein früherer gebaut hat.
+5. **⚠-Zeilen:** Gibt es `Anker:`, prüfst du jede ⚠-Zeile gegen den Code, den der genannte frühere Task im Plan schreibt. Führt auch er den Anker nicht ein: Finding an `Task <n>` der ⚠-Zeile.
 
 ## Nicht deine Aufgabe
-Zeit- und Aufwandsschätzung, Stil, Architektur-Vorlieben, Fehlerbehandlung, AC-Abdeckung. Doku-Zitate, Meldungstexte, Selektoren und Signaturen fremder Bibliotheken sowie Tool-Parameter prüft `buildability`.
+Existenz von Dateien und Ankern prüfst du nicht; sie steht in der Anker-Datei. Zeit- und Aufwandsschätzung, Stil, Architektur-Vorlieben, Fehlerbehandlung, AC-Abdeckung. Doku-Zitate, Meldungstexte, Selektoren und Signaturen fremder Bibliotheken sowie Tool-Parameter prüft `buildability`.
 
 ## W-Einträge
 Einträge der Form `- **W · <Kurztitel>** · …` in Spec und Plan sind bindende Entscheidungen des Menschen. Ein W-Eintrag ist nie selbst ein Finding. Widerspricht ein Inhalt des Plans einem W-Eintrag, ist das ein Finding an der Stelle dieses Inhalts. R-Einträge im Plan begründen frühere Korrekturen; ein begründetes „nicht geändert“ meldest du nur neu, wenn die Begründung sachlich falsch ist.

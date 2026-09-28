@@ -70,3 +70,10 @@ test('planReviewSkill_Body_BuildabilityGetsConfiguredCommands', () => {
   const { body } = readMarkdown(SKILL);
   assert.ok(body.includes('`Build: <Build>`, `Test: <Test>`, `Lint: <Lint>`'));
 });
+
+test('planReviewSkill_Body_AnchorFileGoesToEveryReviewer', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('die Anker-Datei `A`'));
+  assert.ok(body.includes('jede `WARN`-Zeile kommt in die Hinweise des Orchestrators'));
+  assert.ok(body.includes('Jeder Reviewer bekommt zusätzlich `Anker: <A>`, wenn es `A` gibt.'));
+});

@@ -13,7 +13,10 @@ Du prüfst, ob ein Umsetzungsplan zum bestehenden System passt. Du liest Plan un
 - `Plan:` absoluter Pfad zur `plan.md`
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Repo:` Wurzel des Repos; Pfade im Plan sind relativ dazu
+- `Anker:` optional, Datei der Anker-Prüfung mit Task-Übersicht und je Dateizeile ✅, ⚠ oder ❌
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+
+Gibt es `Anker:`, liest du den Plan einmal ganz und danach nur noch Abschnitte per Zeilenbereich laut Task-Übersicht in der Anker-Datei.
 
 ## Prüfauftrag
 1. **Regeln des Projekts:** Lies die Projekt-`CLAUDE.md` und weitere Instruktionsdateien im Repo. Verstößt ein Task gegen eine dort festgelegte Regel (Schichten, Ordner, Datenzugriff, Test-Konventionen)? Finding an `Task <n>`.

@@ -12,7 +12,10 @@ Du prüfst einen Umsetzungsplan gegen seine Spec. Du liest nur die beiden Dateie
 ## Eingabe
 - `Plan:` absoluter Pfad zur `plan.md`
 - `Spec:` absoluter Pfad zur `spec.md`
+- `Anker:` optional, Datei der Anker-Prüfung mit Task-Übersicht und je Dateizeile ✅, ⚠ oder ❌
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+
+Gibt es `Anker:`, liest du den Plan einmal ganz und danach nur noch Abschnitte per Zeilenbereich laut Task-Übersicht in der Anker-Datei.
 
 ## Prüfauftrag
 1. Jede AC-ID der Spec steht unter `**ACs:**` in mindestens einem Task. Fehlt eine, ist das ein Finding an `AC-<Zahl>`, immer `red`.

@@ -232,3 +232,24 @@ test('spec-review-profiles_Body_WritesExcerptOnceAndReadsItInLaterRounds', () =>
   assert.match(body, /Existiert der Auszug, liest du nur ihn/);
   assert.match(body, /Fehlt er, schreibst du/);
 });
+
+test('planReviewers_Body_TakeAnchorFileAndReadPlanOnce', () => {
+  for (const name of ['coverage', 'feasibility', 'architecture', 'risks', 'buildability']) {
+    const { body } = readAgent(`plan-review-${name}`);
+    assert.ok(body.includes('- `Anker:` optional, Datei der Anker-Prüfung mit Task-Übersicht und je Dateizeile ✅, ⚠ oder ❌'), name);
+    assert.ok(body.includes('Gibt es `Anker:`, liest du den Plan einmal ganz und danach nur noch Abschnitte per Zeilenbereich laut Task-Übersicht in der Anker-Datei.'), name);
+  }
+});
+
+test('plan-review-buildability_Body_ReportsOnlyRedAnchorLines', () => {
+  const { body } = readAgent('plan-review-buildability');
+  assert.ok(body.includes('ist jede ❌-Zeile aus der Anker-Datei ein Finding an ihrem Task'));
+  assert.ok(body.includes('⚠- und ✅-Zeilen meldest du nicht'));
+  assert.ok(body.includes('Ohne `Anker:`: Die Datei einer `Modify`-Zeile existiert im Repo'));
+});
+
+test('plan-review-feasibility_Body_NoExistenceCheckButWarningLines', () => {
+  const { body } = readAgent('plan-review-feasibility');
+  assert.ok(body.includes('Existenz von Dateien und Ankern prüfst du nicht; sie steht in der Anker-Datei.'));
+  assert.ok(body.includes('**⚠-Zeilen:**'));
+});

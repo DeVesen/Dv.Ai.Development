@@ -13,7 +13,10 @@ Du suchst technische Risiken, die ein Umsetzungsplan übersieht. Du liest Plan u
 - `Plan:` absoluter Pfad zur `plan.md`
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Repo:` Wurzel des Repos; Pfade im Plan sind relativ dazu
+- `Anker:` optional, Datei der Anker-Prüfung mit Task-Übersicht und je Dateizeile ✅, ⚠ oder ❌
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+
+Gibt es `Anker:`, liest du den Plan einmal ganz und danach nur noch Abschnitte per Zeilenbereich laut Task-Übersicht in der Anker-Datei.
 
 ## Prüfauftrag
 1. **Fehlerbehandlung an Schnittstellen:** Aufrufe externer Systeme, Dateien, Netzwerk, Nutzereingaben. Was passiert bei Fehler, Timeout oder unerwarteter Antwort? Ist das im Code des Plans nicht behandelt: Finding an `Task <n>`.

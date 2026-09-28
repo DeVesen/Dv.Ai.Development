@@ -141,6 +141,30 @@ Die KI ordnet noch ein, aber in eine enge Liste statt „rot, gelb oder grün na
 
 Hundertprozentig gleiche Ergebnisse gibt es mit KI nicht. Aber Ablauf, Farbe und Ende hängen dann nicht mehr an ihr.
 
+## Teil 4: Bereichs-Review statt Komplett-Review
+
+> Entwurf, noch zu bestätigen. Erweitert die Grundregel „einmal suchen, danach nur nachprüfen“.
+
+### Idee
+Nur Runde 1 prüft das ganze Dokument. Ab Runde 2 prüfen die Reviewer nur die Bereiche, die die Nacharbeit geändert hat. Bereiche ohne Beanstandung bleiben unberührt.
+
+Bereich heißt: in der Spec ein Abschnitt oder ein AC, im Plan ein Task.
+
+### Ablauf ab Runde 2
+1. **Geänderte Bereiche ermitteln:** Ein Skript vergleicht das Dokument vor und nach der Nacharbeit, je Überschrift, AC oder Task. Das ist statisch und erfasst auch Bereiche, die die Nacharbeit nebenbei geändert hat.
+2. **Abhängige Bereiche dazunehmen:**
+   - Spec: Bereiche, die den geänderten Bereich oder seine ACs nennen.
+   - Plan: Tasks, die per `Consumes`/`Produces` am geänderten Task hängen.
+   Das Skript leitet beides aus dem Text ab.
+3. **Nur diese Bereiche prüfen**, mit allen Blickwinkeln.
+4. **Querprüfung auf Widersprüche:** Nur die Frage, ob der neue Text etwas im Rest widerspricht. Keine neue Suche im Rest.
+5. **Ausgenommen:** Der Abschnitt `Entscheidungen` löst kein Nachprüfen aus, er wird nur ergänzt.
+
+### Grenzen
+- Die Randfall-Spirale lief in **einem** Bereich (Sortierregel). Das Bereichs-Review allein stoppt sie nicht. Dafür braucht es weiterhin die Kategorien aus Teil 3 und einen Deckel für die Durchläufe.
+- Mit Bereichs-Review wird jeder Durchlauf billig. Der Deckel kann deshalb höher sein, z. B. drei statt zwei, ohne dass Kosten und Dauer ausufern.
+- Die Abdeckung im Plan („jedes AC steht in einem Task“) prüft ein Skript über alle ACs. Das kostet nichts und bleibt deshalb global.
+
 ## Offene Punkte für die Umsetzung
 - Wie die Nachprüf-Runde technisch läuft: eigener Reviewer oder dieselben Reviewer mit Auftrag „nur diese Punkte prüfen“.
 - Ob `rework-outcome.js progress` („renewed“ als Fortschritt) dann entfällt.

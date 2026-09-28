@@ -2,7 +2,7 @@
 name: plan-review-scout
 description: Use when a dv-forge plan-review run has ended and every remaining red or yellow finding of its last review needs one to three concrete solution proposals, one of them recommended with a reason, before the report goes to the human.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 ---
 
 # Plan-Review: Scout

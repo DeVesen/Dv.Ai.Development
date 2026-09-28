@@ -2,7 +2,7 @@
 name: implementation-review-scout
 description: Use when a dv-forge implementation-review has aggregated its findings and every red or yellow finding needs one to three concrete solution proposals, one of them recommended with a reason, before the report goes to the human.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 ---
 
 # Implementierungs-Review: Scout

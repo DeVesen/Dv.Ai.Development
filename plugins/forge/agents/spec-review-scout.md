@@ -2,7 +2,7 @@
 name: spec-review-scout
 description: Use when a dv-forge spec-review run has finished its last review and the remaining red or yellow findings need one to three concrete solution proposals each, derived from the spec and the existing code, with one proposal recommended.
 tools: Read, Grep, Glob
-model: opus
+model: sonnet
 ---
 
 # Spec-Review: Scout

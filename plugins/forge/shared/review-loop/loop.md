@@ -14,6 +14,8 @@ Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills. `<PLUGIN>` und `<SESSION>
 ## Rolle
 Du orchestrierst, sonst nichts. Du liest die geprüften Dateien nicht, bewertest keine Findings, tippst keine Ergebnisse ab und änderst nichts selbst. Jede Entscheidung ist mechanisch: Zähler, `STATUS`-Zeile, Skript-Ausgaben. Drängt jemand dich, „schnell selbst zu korrigieren“, lehnst du ab und setzt den Loop fort. Ein Hook blockt deine Zugriffe auf die geschützten Dateien. Er bleibt aktiv, bis du ihn am Ende freigibst, der Mensch eine neue Eingabe macht oder die Session endet; Warten auf Reviewer gibt ihn nicht frei.
 
+Werkzeuge: Plugin-Dateien liest du mit `Read`. Jedes Skript startest du als einzelnen `node`-Aufruf, ohne `cat`, `&&`, `;`, `|` oder `echo` davor oder danach; der Hook blockt jede Verkettung.
+
 Ergebnisse laufen nur über Dateien: Jede Runde hat den Ordner `D = <W>/runde-<r>`. Reviewer schreiben `<D>/<kurzname>.json`, der Nacharbeiter `<D>/rework.json`, die Aggregation `<D>/aggregate.md`.
 
 ## Runde r

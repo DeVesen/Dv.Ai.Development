@@ -42,6 +42,12 @@ test('loop_Round_ForegroundAggregateStopsAndProgress', () => {
   }
 });
 
+test('loop_Tools_ReadPluginFilesAndRunScriptsUnchained', () => {
+  const text = readText(path.join(SHARED, 'loop.md'));
+  assert.ok(text.includes('Plugin-Dateien liest du mit `Read`'));
+  assert.ok(text.includes('als einzelnen `node`-Aufruf'));
+});
+
 test('loop_Reviewers_StartInForegroundNeverInBackground', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
   assert.match(text, /EINER Nachricht je aktivem Reviewer einen `Agent`-Call mit `run_in_background: false`/);

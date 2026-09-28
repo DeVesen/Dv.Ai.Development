@@ -62,11 +62,11 @@ test('spec-rework_Body_DefinesDecisionEntryFormat', () => {
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 
-test('spec-review-scout_Frontmatter_ReadGrepGlobOpus', () => {
+test('spec-review-scout_Frontmatter_ReadGrepGlobSonnet', () => {
   const { fields } = readAgent('spec-review-scout');
   assert.equal(fields.name, 'spec-review-scout');
   assert.equal(fields.tools, 'Read, Grep, Glob');
-  assert.equal(fields.model, 'opus');
+  assert.equal(fields.model, 'sonnet');
   assert.match(fields.description, /^Use when/);
 });
 
@@ -139,11 +139,11 @@ test('plan-rework_Body_DecisionEntryRenumberingAndJsonResult', () => {
   assert.match(body, /W-Einträge/);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
 });
-test('plan-review-scout_Frontmatter_ReadGrepGlobOpus', () => {
+test('plan-review-scout_Frontmatter_ReadGrepGlobSonnet', () => {
   const { fields } = readAgent('plan-review-scout');
   assert.equal(fields.name, 'plan-review-scout');
   assert.equal(fields.tools, 'Read, Grep, Glob');
-  assert.equal(fields.model, 'opus');
+  assert.equal(fields.model, 'sonnet');
   assert.match(fields.description, /^Use when/);
 });
 

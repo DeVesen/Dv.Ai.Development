@@ -11,7 +11,7 @@ const FILE_TOOLS = {
   NotebookEdit: 'notebook_path',
 };
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
-const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcome.js',
+const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcome.js', 'review-flow.js',
   'plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js', 'prepare.js', 'forge-config.js', 'work.js', 'ledger.js', 'followup.js'];
 const VALUE_FLAGS = new Set(['--rounds', '--spec', '--context', '--base']);
 const TOKEN = /"([^"]*)"|'([^']*)'|(\S+)/g;
@@ -177,7 +177,14 @@ function onPrompt(input, tmpRoot) {
     writeMarker(input.session_id, { command: call.command, protected: entries }, tmpRoot);
     return;
   }
-  if (!HARNESS_NOTICE.test(String(input.prompt ?? ''))) release(input.session_id, tmpRoot);
+  if (HARNESS_NOTICE.test(String(input.prompt ?? ''))) return;
+  // Beim Anhalten für Fragen an den Menschen bleibt der Guard für genau eine Antwort bestehen.
+  const marker = readMarker(input.session_id, tmpRoot);
+  if (marker?.paused) {
+    writeMarker(input.session_id, { ...marker, paused: false }, tmpRoot);
+    return;
+  }
+  release(input.session_id, tmpRoot);
 }
 
 function hitsEntry(target, entry) {
@@ -304,6 +311,11 @@ function release(sessionId, tmpRoot) {
   fs.rmSync(markerPath(sessionId, tmpRoot), { force: true });
 }
 
+function pause(sessionId, tmpRoot) {
+  const marker = readMarker(sessionId, tmpRoot);
+  if (marker) writeMarker(sessionId, { ...marker, paused: true }, tmpRoot);
+}
+
 function writeDeny(reason) {
   if (!reason) return;
   process.stdout.write(JSON.stringify({
@@ -319,6 +331,7 @@ function readStdinJson() {
 function main() {
   const [event, argument] = process.argv.slice(2);
   if (event === 'release') return release(argument);
+  if (event === 'pause') return pause(argument);
   const input = readStdinJson();
   if (event === 'prompt') return onPrompt(input);
   if (event === 'pretool') return writeDeny(decidePreTool(input));
@@ -333,4 +346,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, decidePreTool, release };
+module.exports = { COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, decidePreTool, release, pause };

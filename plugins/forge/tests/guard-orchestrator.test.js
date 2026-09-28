@@ -197,6 +197,27 @@ test('decidePreTool_PlanReviewShellIsReworkOutcome_Allows', () => {
   assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
 });
 
+test('decidePreTool_ReviewFlowScriptNamesSpec_Allows', () => {
+  const env = setup();
+  const command = `node "/plugins/forge/scripts/review-flow.js" round1 spec-review "${env.specPath}" "${env.cwd}/.forge/ws" clarity`;
+  assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
+});
+
+test('pause_HumanAnswersAfterHalt_GuardStaysOnceThenReleases', () => {
+  const env = setup();
+  guard.pause(SESSION, env.tmpRoot);
+  guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: 'F1: b, F2: später' }, env.tmpRoot);
+  assert.ok(preTool(env, { tool_name: 'Read', tool_input: { file_path: env.specPath } }));
+  guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: 'danke' }, env.tmpRoot);
+  assert.equal(preTool(env, { tool_name: 'Read', tool_input: { file_path: env.specPath } }), null);
+});
+
+test('pause_NoMarker_CreatesNone', () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-guard-'));
+  guard.pause('ohne-marker', tmpRoot);
+  assert.equal(fs.existsSync(guard.markerPath('ohne-marker', tmpRoot)), false);
+});
+
 test('decidePreTool_PlanReviewSubagentEditsPlan_Allows', () => {
   const env = setupPlanReview();
   assert.equal(preTool(env, { agent_id: 'agent-1', tool_name: 'Edit', tool_input: { file_path: env.planPath } }), null);

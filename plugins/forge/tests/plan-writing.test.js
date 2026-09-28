@@ -93,7 +93,7 @@ test('selfCheck_Checklist_CoveragePlaceholdersConsistencyFormat', () => {
 });
 
 const SKILL = path.join(SKILL_DIR, 'SKILL.md');
-const REFERENCES = ['plan-format.md', 'task-rules.md', 'self-check.md'];
+const REFERENCES = ['plan-format.md', 'task-rules.md', 'self-check.md', 'context-reading.md'];
 
 test('skill_Frontmatter_ManualOnlyWithArgumentHint', () => {
   const { fields } = readMarkdown(SKILL);
@@ -141,4 +141,48 @@ test('skill_Body_KeepsGuidingPrinciples', () => {
   assert.match(body, /DRY\. YAGNI\. TDD\./);
   assert.match(body, /Kündige an/);
   assert.match(body, /mehrere unabhängige Teilsysteme/);
+});
+
+function contextReading() {
+  return readText(path.join(SKILL_DIR, 'references', 'context-reading.md'));
+}
+
+test('contextReading_Status_AfterSpecAndEveryArea', () => {
+  const text = contextReading();
+  assert.match(text, /Nach dem Lesen der Spec/);
+  assert.match(text, /nach jedem Bereich ein Einzeiler/);
+});
+
+test('contextReading_Search_IndexFirstLocateThenReadBundled', () => {
+  const text = contextReading();
+  assert.ok(text.includes('forge-config.js" get Suche'));
+  assert.match(text, /erst verorten, dann/i);
+  assert.match(text, /in einem parallelen Block/);
+});
+
+test('contextReading_MoreThanTwoLayers_DelegatesSearchToSonnetAgent', () => {
+  const text = contextReading();
+  assert.match(text, /mehr als zwei Schichten/);
+  assert.match(text, /`model: sonnet`/);
+  assert.match(text, /Datei:Zeile, Rolle, betroffener Test/);
+});
+
+test('contextReading_PlanningSkills_PathScopedOnlyWhenPlanTouchesPath', () => {
+  const text = contextReading();
+  assert.ok(text.includes('`<skill> @<pfad>`'));
+  assert.match(text, /ohne `@` gilt immer/);
+});
+
+test('planFormat_DecisionEntries_DesignChoiceNotBindingAndNoQuestionsLine', () => {
+  const text = readText(path.join(SKILL_DIR, 'references', 'plan-format.md'));
+  assert.ok(text.includes('- **E · <Kurztitel>** · Planer — <Wahl und Grund>'));
+  assert.match(text, /E-Einträge sind nicht bindend/);
+  assert.ok(text.includes('- Keine Fragen an den Menschen.'));
+  assert.ok(text.includes('dv-forge: angular-test --root <R>/src/frontend -- --include src/app/<pfad>.spec.ts'));
+});
+
+test('selfCheck_ForeignCode_IncludesCliOptionsAndDryRun', () => {
+  const text = readText(path.join(SKILL_DIR, 'references', 'self-check.md'));
+  assert.match(text, /CLI-Optionen und Befehlsformen/);
+  assert.match(text, /einmal auf eine bestehende Testdatei/);
 });

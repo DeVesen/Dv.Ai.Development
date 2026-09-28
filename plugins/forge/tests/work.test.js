@@ -57,6 +57,37 @@ test('start_Twice_ResumesExistingWorktree', () => {
   assert.ok(samePath(second.R, first.R));
 });
 
+function workitemRepo() {
+  const repo = makeRepo();
+  commitFile(repo, '.gitignore', '.wt/\n', 'ignore');
+  commitFile(repo, 'CLAUDE.md', `${WORKTREE_CONFIG}- Branch-Schema: feature/<workitem>-<slug>\n`, 'config');
+  commitFile(repo, 'spec.md', '# T\n\nWorkitem: `307326`\n', 'spec');
+  return repo;
+}
+
+test('start_SlugWithDateAndWorkitem_CreatesShortBranchAndWorktreeFolder', () => {
+  const repo = workitemRepo();
+  const result = run(repo, 'start', '2026-09-28-307326-foo', '--spec', path.join(repo, 'spec.md'));
+  assert.equal(result.status, 0, result.stderr);
+  const out = values(result);
+  assert.equal(out.aktion, 'angelegt');
+  assert.equal(out.branch, 'feature/307326-foo');
+  assert.ok(samePath(out.R, path.join(repo, '.wt', 'feature', '307326-foo')));
+});
+
+test('start_LegacyLongBranchExists_ContinuesOnIt', () => {
+  const repo = workitemRepo();
+  git(repo, 'branch', 'feature/307326-2026-09-28-307326-foo');
+  const result = run(repo, 'start', '2026-09-28-307326-foo', '--spec', path.join(repo, 'spec.md'));
+  assert.equal(result.status, 0, result.stderr);
+  const out = values(result);
+  assert.equal(out.aktion, 'angehaengt');
+  assert.equal(out.branch, 'feature/307326-2026-09-28-307326-foo');
+  const again = values(run(repo, 'start', '2026-09-28-307326-foo', '--spec', path.join(repo, 'spec.md')));
+  assert.equal(again.aktion, 'fortgesetzt');
+  assert.equal(again.branch, 'feature/307326-2026-09-28-307326-foo');
+});
+
 test('start_FromInsideOtherWorktree_PlacesNewWorktreeBesideMainCheckout', () => {
   const repo = makeRepo();
   commitFile(repo, 'CLAUDE.md', '## dv-forge\n- Worktree: ja\n', 'config');

@@ -58,6 +58,47 @@ test('branchFor_WorkitemPlaceholder_ReadsSpecHeader', () => {
   assert.throws(() => config.branchFor(values, 'foo', null), /braucht eine Workitem-Nummer/);
 });
 
+function specWith(workitem) {
+  const repo = makeRepo();
+  commitFile(repo, 'spec.md', `# T\n\nWorkitem: \`${workitem}\`\n`, 'spec');
+  return path.join(repo, 'spec.md');
+}
+
+test('branchFor_SlugWithDateAndWorkitem_DropsBothOnce', () => {
+  const values = { 'Branch-Schema': 'feature/<workitem>-<slug>' };
+  const spec = specWith('307326');
+  assert.equal(config.branchFor(values, '2026-09-28-307326-result-status', spec), 'feature/307326-result-status');
+  assert.equal(config.branchFor(values, '2026-09-28-result-status', spec), 'feature/307326-result-status');
+  assert.equal(config.branchFor(values, '307326-result-status', spec), 'feature/307326-result-status');
+  assert.equal(config.branchFor(values, 'result-status', spec), 'feature/307326-result-status');
+});
+
+test('branchFor_WorkitemWithPrefix_MatchesNumberOrFullValueInSlug', () => {
+  const values = { 'Branch-Schema': 'feature/<workitem>-<slug>' };
+  assert.equal(config.branchFor(values, '2026-09-28-307326-foo', specWith('#307326')), 'feature/#307326-foo');
+  assert.equal(config.branchFor(values, '2026-09-28-AB#12-foo', specWith('AB#12')), 'feature/AB#12-foo');
+  assert.equal(config.branchFor(values, '2026-09-28-12-foo', specWith('AB#12')), 'feature/AB#12-foo');
+});
+
+test('branchFor_OtherNumberInSlug_StaysInSlug', () => {
+  const values = { 'Branch-Schema': 'feature/<workitem>-<slug>' };
+  assert.equal(config.branchFor(values, '2026-09-28-1234-foo', specWith('307326')), 'feature/307326-1234-foo');
+});
+
+test('branchFor_SchemaWithoutWorkitem_DropsOnlyDateAndKeepsNumber', () => {
+  const values = { 'Branch-Schema': 'feature/<slug>' };
+  assert.equal(config.branchFor(values, '2026-09-28-307326-foo', specWith('307326')), 'feature/307326-foo');
+  assert.equal(config.branchFor(values, 'foo', null), 'feature/foo');
+});
+
+test('branchCandidates_ShortenedSlug_AlsoNamesLegacyBranch', () => {
+  const values = { 'Branch-Schema': 'feature/<workitem>-<slug>' };
+  const spec = specWith('307326');
+  assert.deepEqual(config.branchCandidates(values, '2026-09-28-307326-foo', spec),
+    ['feature/307326-foo', 'feature/307326-2026-09-28-307326-foo']);
+  assert.deepEqual(config.branchCandidates(values, 'foo', spec), ['feature/307326-foo']);
+});
+
 test('cli_ShowAndGet_MarkDefaults', () => {
   const repo = makeRepo();
   commitFile(repo, 'CLAUDE.md', SECTION, 'config');

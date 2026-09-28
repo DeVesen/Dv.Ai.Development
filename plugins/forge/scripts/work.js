@@ -5,7 +5,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 const fs = require('node:fs');
-const { ConfigError, readConfig, branchFor, workitemOf } = require('./forge-config');
+const { ConfigError, readConfig, branchFor, branchCandidates, workitemOf } = require('./forge-config');
 const { describeTasks, PlanError } = require('./plan-tasks');
 
 const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -114,12 +114,18 @@ function driftFiles(root, plan) {
   return out === '' ? [] : out.split('\n');
 }
 
+function hasBranchRef(root, branch) {
+  return git(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`]).ok;
+}
+
 function startWorktree(root, main, config, slug, spec) {
-  const branch = branchFor(config, slug, spec);
-  const existing = worktrees(root).find((entry) => entry.branch === branch);
-  if (existing) return { modus: 'worktree', aktion: 'fortgesetzt', branch, R: existing.dir };
+  const candidates = branchCandidates(config, slug, spec);
+  const open = worktrees(root);
+  const resumed = candidates.map((name) => open.find((entry) => entry.branch === name)).find(Boolean);
+  if (resumed) return { modus: 'worktree', aktion: 'fortgesetzt', branch: resumed.branch, R: resumed.dir };
+  const branch = candidates.find((name) => hasBranchRef(root, name)) ?? candidates[0];
   const dir = path.resolve(main, config['Worktree-Ordner'], branch);
-  const hasBranch = git(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`]).ok;
+  const hasBranch = hasBranchRef(root, branch);
   const args = hasBranch ? ['worktree', 'add', dir, branch] : ['worktree', 'add', '-b', branch, dir, 'HEAD'];
   const created = git(root, args);
   if (!created.ok) throw new WorkError(`Worktree konnte nicht angelegt werden: ${created.err}`);

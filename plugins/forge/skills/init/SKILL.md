@@ -26,7 +26,7 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 | `Profile` | Ordner der Modul- und Feature-Profile | wie `Glossar` |
 | `Workitem` | `keine` oder Muster, z. B. `AB#\d+` | `keine` |
 | `Worktree` | `ja` = Worktree vor der Umsetzung | `nein` |
-| `Branch-Schema` | Muster mit `<slug>`, optional `<workitem>` | `feature/<slug>` |
+| `Branch-Schema` | Muster mit `<slug>`, optional `<workitem>`; `<slug>` ist der Plan-Dateiname ohne führendes Datum und, wenn das Schema `<workitem>` enthält, ohne führende Workitem-Nummer | `feature/<slug>` |
 | `Worktree-Ordner` | relativ zur Projektwurzel | `../<repo>-worktrees` |
 | `Planungs-Skills` | Skill-Namen, mit Komma getrennt | leer: Plan-Writing fragt |
 | `Build`, `Test`, `Lint` | Befehl oder dv-forge-Skript aus „Vorschläge“ von `setup-check.js`, z. B. `dv-forge: dotnet-test --path src/App.sln`; mehrere mit ` ; ` | leer |

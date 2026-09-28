@@ -92,13 +92,44 @@ function workitemOf(specPath) {
   return match ? stripTicks(match[1]) : '';
 }
 
-function branchFor(config, slug, specPath) {
-  const schema = config['Branch-Schema'];
+const LEADING_DATE = /^\d{4}-\d{2}-\d{2}-/;
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Der Slug ist der Dateiname und trägt oft schon Datum und Workitem-Nummer. Im Branch fällt das Datum weg,
+// die Nummer nur, wenn das Schema sie selbst einsetzt; sonst stünde sie doppelt da.
+function branchSlug(slug, workitem, schema) {
+  const withoutDate = slug.replace(LEADING_DATE, '');
+  if (!schema.includes('<workitem>') || !workitem) return withoutDate;
+  const forms = [...new Set([workitem, workitem.replace(/^.*#/, '')])].filter(Boolean).map(escapeRegExp);
+  return withoutDate.replace(new RegExp(`^(?:${forms.join('|')})[-_]`), '');
+}
+
+function schemaWorkitem(schema, specPath) {
   const workitem = workitemOf(specPath);
   if (schema.includes('<workitem>') && !workitem) {
     throw new ConfigError(`Branch-Schema ${schema} braucht eine Workitem-Nummer, die Spec nennt keine.`);
   }
+  return workitem;
+}
+
+function fill(schema, slug, workitem) {
   return schema.replace('<slug>', slug).replace('<workitem>', workitem);
+}
+
+function branchFor(config, slug, specPath) {
+  const schema = config['Branch-Schema'];
+  const workitem = schemaWorkitem(schema, specPath);
+  return fill(schema, branchSlug(slug, workitem, schema), workitem);
+}
+
+// Neuer Branch-Name zuerst, danach der alte mit ungekürztem Slug, damit laufende Arbeit gefunden wird.
+function branchCandidates(config, slug, specPath) {
+  const schema = config['Branch-Schema'];
+  const workitem = schemaWorkitem(schema, specPath);
+  return [...new Set([branchFor(config, slug, specPath), fill(schema, slug, workitem)])];
 }
 
 function show(cwd = process.cwd()) {
@@ -126,4 +157,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, workitemOf, branchFor };
+module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, workitemOf, branchFor, branchCandidates };

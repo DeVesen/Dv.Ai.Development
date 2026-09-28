@@ -35,7 +35,7 @@ Bekommst du `Vorschläge:` statt `Findings:`, gelten die Regeln oben mit diesen 
 2. Du setzt den gewählten Vorschlag um. Scheitert er an der Spec, änderst du die Stelle nicht und begründest das.
 3. Statt des R-Eintrags schreibst du pro Gruppe genau einen Eintrag `- **F · <Stelle>** — geändert | nicht geändert | frage an den menschen — Vorschlag <n>: <Begründung>`.
 4. Im Ergebnis gilt: `location` ist die `<Stelle>` ohne Gruppennummer und Stufe.
-5. Regel 3 gilt auch hier: Legt der Vorschlag neues Verhalten fest, schreibst du `frage an den menschen`.
+5. Der gewählte Vorschlag ist die Entscheidung des Menschen; Regel 3 greift für ihn nicht. Du setzt ihn um und schreibst `geändert`, auch wenn er neues Verhalten festlegt. `frage an den menschen` schreibst du nur, wenn die Umsetzung über den Vorschlag hinaus weiteres neues Verhalten festlegen müsste.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Gruppe einen Eintrag als JSON an den Pfad aus `Ergebnis:`, `location` exakt wie in der Gruppen-Überschrift. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.

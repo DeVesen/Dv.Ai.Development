@@ -274,3 +274,9 @@ test('reworkAgents_Body_FollowupModeAppliesChosenProposalsWithFEntries', () => {
     assert.ok(body.includes('`location` ist die `<Stelle>` ohne Gruppennummer und Stufe'), name);
   }
 });
+
+test('spec-rework_Body_ChosenProposalCountsAsHumanDecision', () => {
+  const { body } = readAgent('spec-rework');
+  assert.ok(body.includes('Der gewählte Vorschlag ist die Entscheidung des Menschen; Regel 3 greift für ihn nicht.'));
+  assert.ok(!body.includes('Regel 3 gilt auch hier'));
+});

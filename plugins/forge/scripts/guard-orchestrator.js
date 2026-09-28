@@ -90,8 +90,8 @@ function normalize(value) {
 }
 
 function isWithin(filePath, dirPath) {
-  const file = normalize(filePath);
-  const dir = normalize(dirPath);
+  const file = canonicalPath(filePath);
+  const dir = canonicalPath(dirPath);
   return file === dir || file.startsWith(`${dir}/`);
 }
 
@@ -181,7 +181,7 @@ function onPrompt(input, tmpRoot) {
 }
 
 function hitsEntry(target, entry) {
-  return entry.kind === 'dir' ? isWithin(target, entry.path) : normalize(target) === normalize(entry.path);
+  return entry.kind === 'dir' ? isWithin(target, entry.path) : canonicalPath(target) === canonicalPath(entry.path);
 }
 
 function grepHitsEntry(searchRoot, entry) {

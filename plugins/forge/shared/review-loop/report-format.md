@@ -16,7 +16,7 @@ Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.
 
 <Zusatz-Abschnitte des Skills>
 
-<Scout-Abschnitt ab `## Scout-Vorschläge`, unverändert, oder „Scout ausgefallen“>        ← nur wenn der Skill einen Scout nennt und er lief
+<Ausgabe von `followup.js save` ab `## Scout-Vorschläge`, unverändert, oder „Scout ausgefallen“>        ← nur wenn der Skill einen Scout nennt und er lief
 
 Nächster Schritt: <Text aus dem Skill für diesen Status>
 ```

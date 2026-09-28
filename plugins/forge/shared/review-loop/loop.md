@@ -44,6 +44,7 @@ Alle Agents laufen im Vordergrund mit `run_in_background: false`, weil der näch
 Jedes Ende, auch `Ende` nach einem Fehler, schließt mit denselben zwei Befehlen: `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, sofern `prepare.js` einen Arbeitsbereich angelegt hat, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.
 
 ## Abschluss
-1. **Abschluss-Scout:** Nennt der Skill einen Scout und zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, startest du ihn einmal mit `run_in_background: false`: Eingaben aus dem Skill, dazu `Findings: <D>/aggregate.md` der letzten Runde. Enthält seine Antwort keine Zeile `## Scout-Vorschläge`, startest du ihn einmal neu. Fehlt sie wieder, gilt `Scout ausgefallen`. Du bewertest die Vorschläge nicht.
-2. Bericht im Chat nach `<PLUGIN>/shared/review-loop/report-format.md`. Nichts committen.
-3. Die zwei Befehle aus „Jedes Ende“.
+1. **Abschluss-Scout:** Nennt der Skill einen Scout und zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, startest du ihn einmal mit `run_in_background: false`: Eingaben aus dem Skill, dazu `Findings: <D>/aggregate.md` der letzten Runde und `Ergebnis: <D>/scout.md`. Du bewertest die Vorschläge nicht.
+2. **Sichern:** `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<D>"`, immer, auch ohne Scout; ohne Scout räumt es die alte Sicherung weg. Lief der Scout und gibt `save` `KEIN SCOUT` aus, startest du den Scout einmal neu und rufst `save` erneut auf. Wieder `KEIN SCOUT`: `Scout ausgefallen`.
+3. Bericht im Chat nach `<PLUGIN>/shared/review-loop/report-format.md`; der Scout-Abschnitt ist die Ausgabe von `save`. Nichts committen.
+4. Die zwei Befehle aus „Jedes Ende“.

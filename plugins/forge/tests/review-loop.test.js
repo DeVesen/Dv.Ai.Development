@@ -23,12 +23,15 @@ test('loop_BuildingBlocks_AllNamed', () => {
   }
 });
 
-test('loop_Closing_ScoutRunsOnlyOnRedOrYellowAndIsCheckedMechanically', () => {
+test('loop_Closing_ScoutWritesFileAndSaveRunsBeforeCleanup', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
   assert.match(text, /`red` > 0 oder `yellow` > 0/);
-  assert.ok(text.includes('Findings: <D>/aggregate.md'));
-  assert.ok(text.includes('## Scout-Vorschläge'));
-  assert.ok(text.includes('Scout ausgefallen'));
+  for (const part of ['Findings: <D>/aggregate.md', 'Ergebnis: <D>/scout.md', '<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<D>"',
+    'KEIN SCOUT', 'Scout ausgefallen', 'die Ausgabe von `save`']) {
+    assert.ok(text.includes(part), `${part} fehlt`);
+  }
+  const closing = text.slice(text.indexOf('## Abschluss'));
+  assert.ok(closing.indexOf('followup.js" save') < closing.indexOf('Die zwei Befehle aus „Jedes Ende“'));
 });
 
 test('loop_Round_ForegroundAggregateStopsAndProgress', () => {
@@ -68,6 +71,7 @@ test('reportFormat_Generic_TitleAndSkillSpecificParts', () => {
   assert.ok(text.includes('<Zusatz-Status des Skills>'));
   assert.ok(text.includes('<Zusatz-Abschnitte des Skills>'));
   assert.ok(text.includes('Scout ausgefallen'));
+  assert.ok(text.includes('Ausgabe von `followup.js save`'));
   assert.ok(!text.includes('Spec-Review:'));
 });
 

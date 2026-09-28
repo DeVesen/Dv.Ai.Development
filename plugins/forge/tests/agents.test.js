@@ -193,3 +193,27 @@ test('plan-review-buildability_Body_GatesSchemaAndForeignCode', () => {
     assert.match(readAgent(`plan-review-${name}`).body, /prüft `buildability`/, name);
   }
 });
+
+test('plan-review-coverage_Body_SplitsAcIntoPartsAndReportsAllGapsInOneFinding', () => {
+  const { body } = readAgent('plan-review-coverage');
+  assert.match(body, /zerlegst du jedes AC in seine Teilaussagen/);
+  assert.match(body, /alle fehlenden Teilaussagen in einem Finding/);
+});
+
+test('plan-rework_Body_AcFindingChecksTheWholeAc', () => {
+  const { body } = readAgent('plan-rework');
+  assert.match(body, /Finding an `AC-<Zahl>`.*ganze AC/);
+});
+
+test('plan-review-buildability_Body_CommandsFromInputNoPluginResearch', () => {
+  const { body } = readAgent('plan-review-buildability');
+  assert.ok(body.includes('- `Build:`, `Test:`, `Lint:`'));
+  assert.match(body, /Quellen und Tests des Plugins liest du nicht/);
+  assert.match(body, /In `node_modules` liest du nur für Auftrag 8/);
+});
+
+test('plan-review-architecture_Body_LooksForExistingCounterparts', () => {
+  const { body } = readAgent('plan-review-architecture');
+  assert.match(body, /\*\*Wiederverwendung:\*\*/);
+  assert.match(body, /„Muster aus <Datei>“/);
+});

@@ -13,7 +13,10 @@ Du prüfst, ob ein Umsetzer mit null Kontext diesen Plan Schritt für Schritt ab
 - `Plan:` absoluter Pfad zur `plan.md`
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Repo:` Wurzel des Repos; Pfade im Plan sind relativ dazu
+- `Build:`, `Test:`, `Lint:` die erlaubten Befehle aus der Projekt-Konfiguration, wörtlich; leer heißt: nicht festgelegt
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
+
+Quellen und Tests des Plugins liest du nicht; welche Befehle erlaubt sind, steht in `Build:`, `Test:` und `Lint:` und in der Projekt-`CLAUDE.md`. In `node_modules` liest du nur für Auftrag 8, und nur, wenn der Plan etwas aus einer Bibliothek zitiert oder importiert.
 
 ## Prüfauftrag
 1. **Platzhalter:** „TBD“, „TODO“, „später umsetzen“, „Details ergänzen“, „passende Fehlerbehandlung ergänzen“, „Validierung hinzufügen“, „Randfälle behandeln“, „Tests für das Obige schreiben“ ohne Testcode, „wie Task N“, Verweise auf Typen oder Funktionen, die in keinem Task definiert sind und im Repo nicht existieren.

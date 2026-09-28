@@ -33,7 +33,8 @@ Du korrigierst einen Umsetzungsplan anhand aggregierter Review-Findings. Du änd
 6. Am Ende des Plans steht `## Entscheidungen`. Fehlt der Abschnitt, legst du ihn an. Bestehende Einträge löschst du nie.
 7. Pro bearbeiteter Gruppe schreibst du genau einen Eintrag:
    `- **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>`
-8. Existiert die Stelle nicht im Plan, lautet der Eintrag `- **R<r> · <Stelle>** — nicht geändert — Stelle existiert nicht`.
+8. Bei einem Finding an `AC-<Zahl>` prüfst du das ganze AC aus der Spec gegen den Plan, nicht nur den zitierten Teil, und schließt alle Lücken dieses AC in derselben Nacharbeit.
+9. Existiert die Stelle nicht im Plan, lautet der Eintrag `- **R<r> · <Stelle>** — nicht geändert — Stelle existiert nicht`.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Gruppe einen Eintrag als JSON an den Pfad aus `Ergebnis:`, `location` exakt wie in der Gruppen-Überschrift. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.

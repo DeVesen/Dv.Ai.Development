@@ -16,7 +16,7 @@ Du prüfst einen Umsetzungsplan gegen seine Spec. Du liest nur die beiden Dateie
 
 ## Prüfauftrag
 1. Jede AC-ID der Spec steht unter `**ACs:**` in mindestens einem Task. Fehlt eine, ist das ein Finding an `AC-<Zahl>`, immer `red`.
-2. Jedes genannte AC wird in seinem Task tatsächlich umgesetzt und durch einen Test oder eine Verifikation belegt. Ist es nur teilweise umgesetzt, ist das ein Finding an `AC-<Zahl>`, immer `red`.
+2. Jedes genannte AC wird in seinem Task tatsächlich umgesetzt und durch einen Test oder eine Verifikation belegt. Dazu zerlegst du jedes AC in seine Teilaussagen (jede Stelle, jeder Fall, jeder Wert, den es nennt) und hakst jede einzeln gegen Task und Test ab. Ist es nur teilweise umgesetzt, ist das ein Finding an `AC-<Zahl>`, immer `red`; du nennst alle fehlenden Teilaussagen in einem Finding, jede in `consequence`, nicht nur die erste.
 3. Jede Soll-Vorgabe der Spec steht in `## Global Constraints`, mit dem Wert aus der Spec. Fehlt sie oder weicht sie ab: Finding an `Global Constraints`.
 4. Jeder Task hat mindestens eine Verifikation: einen Test oder einen Befehl bzw. Tool-Aufruf mit erwarteter Ausgabe. Fehlt sie: Finding an `Task <n>`.
 

@@ -195,3 +195,13 @@ test('reviews_OnlyUnknownOrEmpty_ExitWithTwoWithoutWorkspace', () => {
   assert.equal(run(repo, 'implementation', 'docs/forge/demo/plan.md', '--only', 'coverage').status, 2);
   assert.ok(!fs.existsSync(path.join(repo, '.forge', 'plan-review', 'demo')));
 });
+
+
+test('planReview_ConfiguredCommands_AreListedRaw', () => {
+  const repo = planRepo();
+  commitFile(repo, 'CLAUDE.md', '## dv-forge\n- Test: dv-forge: angular-test --root src/frontend\n', 'config');
+  const out = values(run(repo, 'plan-review', 'docs/forge/demo/plan.md'));
+  assert.equal(out.Test, 'dv-forge: angular-test --root src/frontend');
+  assert.equal(out.Build, '');
+  assert.equal(out.Lint, '');
+});

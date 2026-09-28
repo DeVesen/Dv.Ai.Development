@@ -59,3 +59,14 @@ test('planReviewSkill_Body_EscalationReadsRoundFolder', () => {
 test('planReviewSkill_Body_StaysUnder500Words', () => {
   assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
 });
+
+test('planReviewSkill_Body_AsksToCommitOnlyWhenSpecOrPlanChanged', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('git status --porcelain -- "<S>" "<P>"'));
+  assert.match(body, /Leere Ausgabe: keine Frage/);
+});
+
+test('planReviewSkill_Body_BuildabilityGetsConfiguredCommands', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('`Build: <Build>`, `Test: <Test>`, `Lint: <Lint>`'));
+});

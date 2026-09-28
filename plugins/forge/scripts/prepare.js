@@ -210,9 +210,12 @@ function preparePlanReview({ positional, flags }) {
   const root = gitRoot(path.dirname(plan));
   const values = { P: plan, S: resolveSpec(plan, positional[1], root), R: root, N: rounds(flags) };
   const aktiv = chosenReviewers('plan-review', flags).join(',');
+  const { config } = readConfig(root);
   values.slug = slugOf(plan);
   values.W = createWorkspace('plan-review', values.slug, root);
   values.aktiv = aktiv;
+  // Erlaubte Befehle wörtlich aus der Konfiguration, damit buildability sie nicht aus Plugin-Quellen herleitet.
+  for (const key of ['Build', 'Test', 'Lint']) values[key] = config[key];
   return values;
 }
 

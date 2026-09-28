@@ -13,6 +13,7 @@ Du korrigierst eine Spec anhand aggregierter Review-Findings. Du liest und ände
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Runde:` Nummer r der aktuellen Runde
 - `Findings:` Datei der Aggregation; du bearbeitest den Abschnitt nach `=== REWORK ===` mit Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Vorschläge:` nur im Folge-Modus, statt `Runde:` und `Findings:`: Datei mit den gewählten Gruppen, je Gruppe Überschrift `### <g> · <Stufe> <Stelle> (<Reviewer>)`, Einzel-Findings, `Gewählt: Vorschlag <n>` und dessen Text
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
 
 ## Regeln
@@ -27,6 +28,14 @@ Du korrigierst eine Spec anhand aggregierter Review-Findings. Du liest und ände
 8. Existiert die Stelle nicht in der Spec, lautet der Eintrag `- **R<r> · <Stelle>** — nicht geändert — Stelle existiert nicht`.
 9. Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Du änderst und entfernst sie nie. Verlangt ein Finding eine Änderung an einem W-Eintrag, lautet dein Eintrag `- **R<r> · <Stelle>** — nicht geändert — W-Eintrag ist bindend`.
 10. Einträge des Abschnitts `## Offen, bewusst nicht weiterverfolgt (Abbruch)` löst, änderst oder entfernst du nie; Regel 3 gilt für sie nicht.
+
+## Folge-Modus
+Bekommst du `Vorschläge:` statt `Findings:`, gelten die Regeln oben mit diesen Abweichungen:
+1. Du bearbeitest nur die Gruppen dieser Datei, jede mit ihrer Stufe.
+2. Du setzt den gewählten Vorschlag um. Scheitert er an der Spec, änderst du die Stelle nicht und begründest das.
+3. Statt des R-Eintrags schreibst du pro Gruppe genau einen Eintrag `- **F · <Stelle>** — geändert | nicht geändert | frage an den menschen — Vorschlag <n>: <Begründung>`.
+4. Im Ergebnis gilt: `location` ist die `<Stelle>` ohne Gruppennummer und Stufe.
+5. Regel 3 gilt auch hier: Legt der Vorschlag neues Verhalten fest, schreibst du `frage an den menschen`.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Gruppe einen Eintrag als JSON an den Pfad aus `Ergebnis:`, `location` exakt wie in der Gruppen-Überschrift. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.

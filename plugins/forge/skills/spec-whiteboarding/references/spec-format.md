@@ -34,7 +34,7 @@ Basis: <Commit-Kurzhash>
 4. **WAS statt WIE:** keine Klassen, Dateipfade, Architektur oder Technik-Schritte.
 5. **Beleg-Tags:** Jede inhaltliche Zeile trägt genau einen Beleg-Tag: `Aussage` · `Anhang` · `Historie` · `Git` · `ungeklärt`. Er steht am Zeilenende nach ` · `, auch bei AC-Zeilen; ein Prosa-Absatz trägt ihn an seinem Ende. In W- und Abbruch-Einträgen steht er nach dem Kurztitel. Stützen mehrere Quellen eine Zeile, gewinnt die erste in der Reihenfolge `Aussage` → `Anhang` → `Historie` → `Git`. Eine vom Menschen bestätigte Empfehlung ist `Aussage`. Eine Spec der Art `frei` kennt nur `Aussage`, `Anhang` und `ungeklärt`.
 6. **Keine offene Frage:** Geschrieben wird erst, wenn die Frontier leer ist. Einzige Ausnahme ist der echte Abbruch, unten.
-7. **Letzter Pflicht-Abschnitt:** `## Entscheidungen`. Der Spec-Review hängt dort später eigene Einträge an; W-Einträge bleiben dabei unverändert.
+7. **Letzter Pflicht-Abschnitt:** `## Entscheidungen`. Der Spec-Review hängt dort später eigene Einträge an; W-Einträge bleiben dabei unverändert. Der Nacharbeiter im Folge-Modus (`/dv-forge:review-followup`) schreibt dort F-Einträge `- **F · <Stelle>** — … — Vorschlag <n>: <Begründung>`.
 
 ## Kopf
 Die Zeilen unter dem Titel sind Metadaten, kein fachlicher Inhalt, und tragen keinen Beleg-Tag.

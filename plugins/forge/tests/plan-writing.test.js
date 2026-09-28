@@ -186,3 +186,9 @@ test('selfCheck_ForeignCode_IncludesCliOptionsAndDryRun', () => {
   assert.match(text, /CLI-Optionen und Befehlsformen/);
   assert.match(text, /einmal auf eine bestehende Testdatei/);
 });
+
+test('planFormat_DecisionEntries_FollowupEntryOnlyFromFollowupRework', () => {
+  const text = reference('plan-format.md');
+  assert.ok(text.includes('- **F · <Stelle>** — geändert | nicht geändert | spec-rückfrage — Vorschlag <n>: <Begründung>'));
+  assert.ok(text.includes('F-Einträge schreibt nur der Nacharbeiter im Folge-Modus'));
+});

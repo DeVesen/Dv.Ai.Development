@@ -263,3 +263,13 @@ test('scouts_Body_WriteResultFileAndAnswerWithPathOnly', () => {
     assert.ok(!body.includes('Deine Antwort besteht nur aus diesem Abschnitt'), name);
   }
 });
+
+test('reworkAgents_Body_FollowupModeAppliesChosenProposalsWithFEntries', () => {
+  for (const [name, escalation] of [['plan-rework', 'spec-rückfrage'], ['spec-rework', 'frage an den menschen']]) {
+    const { body } = readAgent(name);
+    assert.ok(body.includes('## Folge-Modus'), name);
+    assert.ok(body.includes('- `Vorschläge:` nur im Folge-Modus'), name);
+    assert.ok(body.includes(`\`- **F · <Stelle>** — geändert | nicht geändert | ${escalation} — Vorschlag <n>: <Begründung>\``), name);
+    assert.ok(body.includes('`location` ist die `<Stelle>` ohne Gruppennummer und Stufe'), name);
+  }
+});

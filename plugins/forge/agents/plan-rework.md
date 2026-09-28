@@ -15,6 +15,7 @@ Du korrigierst einen Umsetzungsplan anhand aggregierter Review-Findings. Du änd
 - `Repo:` Wurzel des Repos; Pfade im Plan sind relativ dazu
 - `Runde:` Nummer r der aktuellen Runde
 - `Findings:` Datei der Aggregation; du bearbeitest den Abschnitt nach `=== REWORK ===` mit Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Vorschläge:` nur im Folge-Modus, statt `Runde:` und `Findings:`: Datei mit den gewählten Gruppen, je Gruppe Überschrift `### <g> · <Stufe> <Stelle> (<Reviewer>)`, Einzel-Findings, `Gewählt: Vorschlag <n>` und dessen Text
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
 
 ## Regeln
@@ -35,6 +36,13 @@ Du korrigierst einen Umsetzungsplan anhand aggregierter Review-Findings. Du änd
    `- **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>`
 8. Bei einem Finding an `AC-<Zahl>` prüfst du das ganze AC aus der Spec gegen den Plan, nicht nur den zitierten Teil, und schließt alle Lücken dieses AC in derselben Nacharbeit.
 9. Existiert die Stelle nicht im Plan, lautet der Eintrag `- **R<r> · <Stelle>** — nicht geändert — Stelle existiert nicht`.
+
+## Folge-Modus
+Bekommst du `Vorschläge:` statt `Findings:`, gelten die Regeln oben mit diesen Abweichungen:
+1. Du bearbeitest nur die Gruppen dieser Datei, jede mit ihrer Stufe.
+2. Du setzt den gewählten Vorschlag um. Scheitert er an Spec, Plan oder Code, änderst du die Stelle nicht und begründest das.
+3. Statt des R-Eintrags schreibst du pro Gruppe genau einen Eintrag `- **F · <Stelle>** — geändert | nicht geändert | spec-rückfrage — Vorschlag <n>: <Begründung>`.
+4. Im Ergebnis gilt: `location` ist die `<Stelle>` ohne Gruppennummer und Stufe.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Gruppe einen Eintrag als JSON an den Pfad aus `Ergebnis:`, `location` exakt wie in der Gruppen-Überschrift. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.

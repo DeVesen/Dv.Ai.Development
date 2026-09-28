@@ -151,3 +151,7 @@ test('split_Reference_DetachedSpecsAndResume', () => {
   assert.ok(text.includes('/dv-forge:spec-whiteboarding <pfad>'));
   assert.match(text, /Start-Stand/);
 });
+
+test('specFormat_Rules_FollowupEntries', () => {
+  assert.ok(reference('spec-format.md').includes('schreibt dort F-Einträge `- **F · <Stelle>** — … — Vorschlag <n>: <Begründung>`'));
+});

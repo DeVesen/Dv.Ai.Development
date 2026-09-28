@@ -54,6 +54,7 @@ Absicherungstest, für ein AC wie „bleibt wie bisher“ ohne Code-Änderung:
 - **W · <Kurztitel>** · Aussage | delegiert — <Antwort>
 - **E · <Kurztitel>** · Planer — <Wahl und Grund>
 - **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>
+- **F · <Stelle>** — geändert | nicht geändert | spec-rückfrage — Vorschlag <n>: <Begründung>
 ````
 
 ## Regeln
@@ -69,4 +70,4 @@ Absicherungstest, für ein AC wie „bleibt wie bisher“ ohne Code-Änderung:
 9. **Checkout-Wurzel:** Braucht ein Befehl einen absoluten Pfad, schreibst du `<R>/<pfad>`. `<R>` ist kein verbotener Platzhalter; der Umsetzer setzt die Ausgabe von `git rev-parse --show-toplevel` ein.
 10. **Befehl oder Tool-Aufruf:** Eine Verifikation ist ein Shell-Befehl oder ein Tool-Aufruf mit exakten Parametern, z. B. `dv-forge: dotnet-test --path <R>/src/App.Tests -- --filter OrderTests` oder `dv-forge: angular-test --root <R>/src/frontend -- --include src/app/<pfad>.spec.ts`; Argumente nach `--` reicht das Skript an das Test-Werkzeug durch. `dv-forge: <plattform>-<kommando>` löst das Brief-Skript in den Skript-Aufruf auf. Maßgeblich ist die Projekt-`CLAUDE.md`: Verbietet sie einen Weg, etwa Tests über die Shell, nutzt der Plan den dort vorgeschriebenen. Ein Befehl, den der Umsetzer nicht ausführen darf, ist ein Plan-Fehler.
 11. **Commit pro Task:** Der letzte Schritt jedes Tasks staged genau die Dateien des Tasks und committet.
-12. **Entscheidungen:** Jede Antwort des Menschen während der Planung steht als W-Eintrag mit Tag `Aussage` oder `delegiert`, wie in der Spec. W-Einträge sind bindend. Eine sichtbare Entwurfswahl, die kein AC festlegt und nach der du nicht fragen musstest (etwa wo eine Spalte hängt), steht als E-Eintrag mit Grund; E-Einträge sind nicht bindend, Reviewer dürfen sie anfechten. Legt eine Wahl die Form eines AC-Ergebnisses fest, ist sie eine Frage, kein E-Eintrag. Gab es keine Frage an den Menschen, steht dort die Zeile `- Keine Fragen an den Menschen.` R-Einträge schreibt nur der Nacharbeiter des Plan-Reviews.
+12. **Entscheidungen:** Jede Antwort des Menschen während der Planung steht als W-Eintrag mit Tag `Aussage` oder `delegiert`, wie in der Spec. W-Einträge sind bindend. Eine sichtbare Entwurfswahl, die kein AC festlegt und nach der du nicht fragen musstest (etwa wo eine Spalte hängt), steht als E-Eintrag mit Grund; E-Einträge sind nicht bindend, Reviewer dürfen sie anfechten. Legt eine Wahl die Form eines AC-Ergebnisses fest, ist sie eine Frage, kein E-Eintrag. Gab es keine Frage an den Menschen, steht dort die Zeile `- Keine Fragen an den Menschen.` R-Einträge schreibt nur der Nacharbeiter des Plan-Reviews. F-Einträge schreibt nur der Nacharbeiter im Folge-Modus (`/dv-forge:review-followup`).

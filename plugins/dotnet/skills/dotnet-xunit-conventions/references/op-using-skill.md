@@ -18,7 +18,7 @@ Prüfe auf die Marker:
 ```markdown
 <!-- test-conventions:dotnet-xunit START — managed by `dotnet-xunit-conventions bootstrap`, do not hand-edit inside markers -->
 ## Test-Konventionen: .NET/xUnit — gilt für JEDEN Agenten (auch dispatchte Subagenten)
-Subagenten laden Skills nicht, sehen aber CLAUDE.md — darum steht der handlungsfähige Kern hier inline.
+Subagenten laden Skills nur, wenn der Dispatch-Prompt sie nennt (`/name` bzw. „nutze Skill X“), sehen aber immer CLAUDE.md — darum steht der handlungsfähige Kern hier inline.
 1. AAA je Test (`// Arrange` / `// Act` / `// Assert`).
 2. Naming: `<Method>_<AusgangssituationUndEingabe>_<ErwartetesErgebnis>`. Kein `WhenCalled`/`WithInput`/`ReturnsResult`.
 3. Neue Tests: xUnit v3 + FluentAssertions + Moq. Interfaces via `Mock<T>` (Setup in Arrange, Verify in Assert).
@@ -41,20 +41,20 @@ Existiert → überspringen (nie überschreiben). Fehlt → anlegen:
 ```markdown
 ---
 name: subagent-skill-gate
-description: Subagenten sehen CLAUDE.md, laden aber Skill-Bodies nicht — subagenten-relevante Regeln gehören inline in CLAUDE.md; portable Skill-Regeln erreichen Subagenten nur per Dispatch-Injektion
+description: Subagenten sehen immer CLAUDE.md, laden einen Skill-Body aber nur, wenn der Dispatch-Prompt den Skill nennt — subagenten-relevante Regeln gehören inline in CLAUDE.md; Details per Skill-Nennung oder Dispatch-Injektion
 metadata:
   type: feedback
 ---
 
-Dispatchte Subagenten (Implementer, Reviewer, Planner) sehen `CLAUDE.md` und Skill-*Beschreibungen*, laden aber den Skill-*Body* nicht.
+Dispatchte Subagenten (Implementer, Reviewer, Planner) sehen immer `CLAUDE.md` und Skill-*Beschreibungen*; den Skill-*Body* laden sie nur, wenn der Dispatch-Prompt den Skill nennt (`/name` bzw. „nutze Skill X“).
 
-**Why:** Regeln, die Subagenten befolgen sollen, müssen inline in `CLAUDE.md` stehen. Ein portabler Skill erreicht dispatchte Subagenten nur, wenn der Orchestrator (z. B. superpowers-Controller) die Regeln explizit in den Dispatch-Prompt (Global-Constraints) injiziert.
+**Why:** Regeln, die Subagenten befolgen sollen, müssen inline in `CLAUDE.md` stehen. Ein portabler Skill erreicht dispatchte Subagenten nur, wenn der Orchestrator (z. B. superpowers-Controller) ihn im Dispatch-Prompt nennt oder die Regeln explizit injiziert (Global-Constraints).
 
 **How to apply:** Neue subagenten-relevante Regeln in den Bootstrap-Template-Block des jeweiligen Skills schreiben (Single Source) — nicht pro Projekt von Hand wiederholen. Der `bootstrap`-Modus propagiert sie beim nächsten Run. [[subagent-mcp-first-gate]]
 ```
 `MEMORY.md`-Indexzeile ergänzen (nur wenn fehlt):
 ```
-- [Subagent skill gate](subagent-skill-gate.md) — Subagenten laden Skill-Bodies nicht → Regeln inline in CLAUDE.md / per Dispatch injizieren
+- [Subagent skill gate](subagent-skill-gate.md) — Subagenten laden Skill-Bodies nur bei Nennung im Dispatch → Kernregeln inline in CLAUDE.md, Details per Skill-Nennung
 ```
 
 ## Schritt 5 — Gotcha-Memory `fluentassertions-v8-license.md` (create-if-missing)

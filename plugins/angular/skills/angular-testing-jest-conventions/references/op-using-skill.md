@@ -18,7 +18,7 @@ Prüfe auf die Marker:
 ```markdown
 <!-- test-conventions:angular-jest START — managed by `angular-testing-jest-conventions bootstrap`, do not hand-edit inside markers -->
 ## Test-Konventionen: Angular/Jest — gilt für JEDEN Agenten (auch dispatchte Subagenten)
-Subagenten laden Skills nicht, sehen aber CLAUDE.md — darum steht der handlungsfähige Kern hier inline.
+Subagenten laden Skills nur, wenn der Dispatch-Prompt sie nennt (`/name` bzw. „nutze Skill X“), sehen aber immer CLAUDE.md — darum steht der handlungsfähige Kern hier inline.
 1. AAA je Test (`// Arrange` / `// Act` / `// Assert`).
 2. Naming: `<method>_<AusgangssituationUndEingabe>_<ErwartetesErgebnis>` im `it(...)`. Kein `should work`.
 3. Runner Jest + TestBed. Spies: `jest.fn()`/`jest.spyOn()`/`jest.mocked()` — NICHT `jasmine.createSpyObj`. `mockReturnValue`/`mockResolvedValue`, `expect.objectContaining`.
@@ -40,20 +40,20 @@ Existiert → überspringen (nie überschreiben). Fehlt → anlegen:
 ```markdown
 ---
 name: subagent-skill-gate
-description: Subagenten sehen CLAUDE.md, laden aber Skill-Bodies nicht — subagenten-relevante Regeln gehören inline in CLAUDE.md; portable Skill-Regeln erreichen Subagenten nur per Dispatch-Injektion
+description: Subagenten sehen immer CLAUDE.md, laden einen Skill-Body aber nur, wenn der Dispatch-Prompt den Skill nennt — subagenten-relevante Regeln gehören inline in CLAUDE.md; Details per Skill-Nennung oder Dispatch-Injektion
 metadata:
   type: feedback
 ---
 
-Dispatchte Subagenten (Implementer, Reviewer, Planner) sehen `CLAUDE.md` und Skill-*Beschreibungen*, laden aber den Skill-*Body* nicht.
+Dispatchte Subagenten (Implementer, Reviewer, Planner) sehen immer `CLAUDE.md` und Skill-*Beschreibungen*; den Skill-*Body* laden sie nur, wenn der Dispatch-Prompt den Skill nennt (`/name` bzw. „nutze Skill X“).
 
-**Why:** Regeln, die Subagenten befolgen sollen, müssen inline in `CLAUDE.md` stehen. Ein portabler Skill erreicht dispatchte Subagenten nur, wenn der Orchestrator (z. B. superpowers-Controller) die Regeln explizit in den Dispatch-Prompt (Global-Constraints) injiziert.
+**Why:** Regeln, die Subagenten befolgen sollen, müssen inline in `CLAUDE.md` stehen. Ein portabler Skill erreicht dispatchte Subagenten nur, wenn der Orchestrator (z. B. superpowers-Controller) ihn im Dispatch-Prompt nennt oder die Regeln explizit injiziert (Global-Constraints).
 
 **How to apply:** Neue subagenten-relevante Regeln in den Bootstrap-Template-Block des jeweiligen Skills schreiben (Single Source) — nicht pro Projekt von Hand wiederholen. Der `bootstrap`-Modus propagiert sie beim nächsten Run. [[subagent-mcp-first-gate]]
 ```
 `MEMORY.md`-Indexzeile ergänzen (nur wenn fehlt):
 ```
-- [Subagent skill gate](subagent-skill-gate.md) — Subagenten laden Skill-Bodies nicht → Regeln inline in CLAUDE.md / per Dispatch injizieren
+- [Subagent skill gate](subagent-skill-gate.md) — Subagenten laden Skill-Bodies nur bei Nennung im Dispatch → Kernregeln inline in CLAUDE.md, Details per Skill-Nennung
 ```
 
 ## Schritt 5 — Gotcha-Memory `jest-vs-jasmine-spies.md` (create-if-missing)

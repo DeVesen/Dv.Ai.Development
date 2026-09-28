@@ -72,3 +72,19 @@ test('cli_Jest_NoWatchFlag', () => {
   assert.match(result.stdout, /angular-test: OK/);
   assert.deepEqual(fake.args(), ['test']);
 });
+
+test('cli_TestBuilderPackageMissing_StopsBeforeRunWithNpmCiHint', () => {
+  const fake = fakeAngular(project('@angular/build:unit-test'), VITEST, 1, { withBuilderPackages: false });
+  const result = spawnSync(process.execPath, [SCRIPT, '--root', fake.dir, '--log', path.join(fake.dir, 't.log')], { encoding: 'utf8', env: fake.env });
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stdout, /Node-Pakete fehlen: @angular\/build\. Im Projektordner npm ci ausführen\./);
+  assert.match(result.stdout, /Zusammenfassung: Nicht gestartet\./);
+  assert.throws(() => fake.args());
+});
+
+test('builderPackages_ScopedAndUnscopedBuilders_NamePackages', () => {
+  assert.deepEqual(ngTest.builderPackages(project('@angular/build:unit-test')), ['@angular/build']);
+  assert.deepEqual(ngTest.builderPackages(project('@angular-builders/jest:run')), ['@angular-builders/jest']);
+  assert.deepEqual(ngTest.builderPackages(project('karma-builder:run')), ['karma-builder']);
+  assert.deepEqual(ngTest.builderPackages({ projects: {} }), []);
+});

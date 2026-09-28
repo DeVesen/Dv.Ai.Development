@@ -60,6 +60,32 @@ function findNg(root) {
   }
 }
 
+// Pakete der Test-Builder, z. B. "@angular/build:unit-test" → "@angular/build".
+function builderPackages(config) {
+  const builders = Object.values(config.projects ?? {})
+    .map((project) => String((project.architect?.test ?? project.targets?.test)?.builder ?? ''))
+    .filter(Boolean);
+  return [...new Set(builders.map((builder) => builder.split(':')[0]))];
+}
+
+function packageFound(root, name) {
+  for (let dir = root; ; dir = path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, 'node_modules', name, 'package.json'))) return true;
+    if (path.dirname(dir) === dir) return false;
+  }
+}
+
+// Fehlt ein Builder-Paket (leere oder tote Junction, npm ci nie gelaufen), bricht ng test erst nach langem Start
+// mit einer Meldung zwischen Warnungen ab. Vorher prüfen spart den Lauf und nennt die Ursache.
+function missingBuilderPackages(root) {
+  try {
+    const config = JSON.parse(fs.readFileSync(path.join(root, 'angular.json'), 'utf8'));
+    return builderPackages(config).filter((name) => !packageFound(root, name));
+  } catch {
+    return [];
+  }
+}
+
 function unique(lines, max) {
   return [...new Set(lines.map((line) => line.trim()).filter(Boolean))].slice(0, max);
 }
@@ -126,6 +152,11 @@ function run(args) {
     fs.writeFileSync(log, `Angular CLI nicht gefunden: ${NG_SCRIPT} ab ${root}\n`);
     return { ok: false, seconds: 0, log, errors: ['Angular CLI nicht gefunden. Im Projektordner npm install ausführen.'], warnings: [], summary: 'Nicht gestartet.' };
   }
+  const missing = missingBuilderPackages(root);
+  if (missing.length > 0) {
+    fs.writeFileSync(log, `Builder-Pakete nicht gefunden: ${missing.join(', ')} ab ${root}\n`);
+    return { ok: false, seconds: 0, log, errors: [`Node-Pakete fehlen: ${missing.join(', ')}. Im Projektordner npm ci ausführen.`], warnings: [], summary: 'Nicht gestartet.' };
+  }
   const runner = runnerOf(root);
   const commandLine = ['test', ...(runner === 'jest' ? [] : ['--watch=false']), ...args.extra];
   fs.writeFileSync(log, `> ng ${commandLine.join(' ')}\n\n`);
@@ -170,4 +201,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { parseArgs, parse, render, findNg, runnerOf };
+module.exports = { parseArgs, parse, render, findNg, runnerOf, builderPackages };

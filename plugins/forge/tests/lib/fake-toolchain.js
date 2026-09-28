@@ -34,12 +34,18 @@ function fakeDotnet(output, exitCode = 0) {
 }
 
 // Legt ein Angular-Projekt mit angular.json und einer falschen CLI unter node_modules an.
-function fakeAngular(angularJson, output, exitCode = 0) {
+function fakeAngular(angularJson, output, exitCode = 0, { withBuilderPackages = true } = {}) {
   const dir = tempDir('dv-forge-ng-');
   fs.writeFileSync(path.join(dir, 'angular.json'), JSON.stringify(angularJson));
   const bin = path.join(dir, 'node_modules', '@angular', 'cli', 'bin');
   fs.mkdirSync(bin, { recursive: true });
   fs.writeFileSync(path.join(bin, 'ng.js'), `${FAKE}\n`);
+  const builders = Object.values(angularJson.projects ?? {}).flatMap((project) => Object.values(project.architect ?? project.targets ?? {}))
+    .map((target) => String(target.builder ?? '').split(':')[0]).filter(Boolean);
+  for (const name of withBuilderPackages ? builders : []) {
+    fs.mkdirSync(path.join(dir, 'node_modules', name), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'node_modules', name, 'package.json'), JSON.stringify({ name }));
+  }
   const env = { ...process.env, ...fakeEnv(dir, output, exitCode) };
   return { dir, env, args: () => JSON.parse(fs.readFileSync(env.FAKE_ARGS, 'utf8')) };
 }

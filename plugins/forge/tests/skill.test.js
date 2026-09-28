@@ -86,3 +86,15 @@ test('reportFormat_HasScoutSection', () => {
   assert.ok(text.includes('## Scout-Vorschläge'));
   assert.ok(text.includes('Scout ausgefallen'));
 });
+
+test('skill_Body_HumanQuestionsStopTheLoopAndAreListed', () => {
+  const { body } = readSkill();
+  assert.ok(body.includes('rework-outcome.js" --escalation-status human-question --dir "<W>/runde-<r>"'));
+  assert.ok(body.includes('Fragen an den Menschen in Runde r'));
+  assert.ok(body.includes('### Fragen an den Menschen'));
+});
+
+test('skill_Body_ProfilesReviewerGetsExcerptPath', () => {
+  const { body } = readSkill();
+  assert.ok(body.includes('`Profil-Auszug: <PA>`'));
+});

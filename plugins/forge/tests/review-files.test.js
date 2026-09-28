@@ -106,6 +106,15 @@ test('progress_RedAgainWithOtherContentButNotChanged_IsStandstill', () => {
   assert.equal(progress(workspace, 1).progress, false);
 });
 
+test('reworkOutcomeCli_HumanQuestion_EscalatesSpecFindingToHuman', () => {
+  const workspace = tmp();
+  round(workspace, 1, ['AC-18'], null);
+  const dir = path.join(workspace, 'runde-1');
+  fs.writeFileSync(path.join(dir, 'rework.json'), JSON.stringify({ results: [{ location: 'AC-18', status: 'human-question' }] }));
+  const result = spawnSync(process.execPath, [path.join(SCRIPTS, 'rework-outcome.js'), '--escalation-status', 'human-question', '--dir', dir], { encoding: 'utf8' });
+  assert.equal(result.stdout, 'OUTCOME all-red-escalated=true escalated=1\nESCALATED AC-18\n');
+});
+
 test('reworkOutcomeCli_DirMode_ReadsAggregateAndReworkFile', () => {
   const workspace = tmp();
   round(workspace, 1, ['Task 1'], []);

@@ -13,10 +13,14 @@ Du prüfst eine Spec gegen das dokumentierte Projektwissen. Du liest die Spec, d
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Profil-Index:` Datei mit einer Zeile je Profil: Pfad relativ zum Repo, Titel, erste Aussage
 - `Repo:` Wurzel des Repos; die Pfade im Index sind relativ dazu
+- `Profil-Auszug:` absoluter Pfad des Auszugs im Arbeitsbereich; gilt über alle Runden
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
 
+## Profil-Auszug
+Existiert der Auszug, liest du nur ihn statt der Profile. Berührt die Spec einen Bereich, den er nicht abdeckt, liest du dieses Profil nach und hängst den Abschnitt an. Fehlt er, schreibst du ihn nach Schritt 1 mit `Write`: je gelesenem Profil eine Überschrift `## <Pfad>` und darunter wörtlich nur die Abschnitte, die Begriffe oder Bereiche der Spec betreffen.
+
 ## Prüfauftrag
-1. Wähle aus dem Index die Profile, deren Titel oder erste Aussage Begriffe oder Bereiche der Spec betreffen, und lies nur diese. Im Zweifel liest du eins mehr. `summary` nennt beides, z. B. `32 Profile im Index, 5 gelesen`.
+1. Wähle aus dem Index die Profile, deren Titel oder erste Aussage Begriffe oder Bereiche der Spec betreffen, und lies nur diese. Im Zweifel liest du eins mehr. `summary` nennt beides, z. B. `32 Profile im Index, 5 gelesen` oder `Auszug gelesen, 1 Profil nachgelesen`.
 2. Begriffe der Spec, die im Glossar anders heißen oder dort als „nicht verwenden“ markiert sind. `rationale` nennt den Glossar-Begriff.
 3. Aussagen der Spec über den Ist-Stand (vorhandene Funktionen, Module, Zuständigkeiten), die einem Modul- oder Feature-Profil widersprechen. `rationale` nennt die Profil-Datei und zitiert die Profil-Aussage.
 4. Gleichnamige Profil-Dateien an verschiedenen Orten, die sich zu einer Aussage widersprechen, sind ein eigenes Finding an der betroffenen Spec-Stelle. `rationale` nennt beide Dateien.

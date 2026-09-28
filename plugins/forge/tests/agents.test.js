@@ -52,7 +52,7 @@ test('spec-rework_Frontmatter_ReadEditOpus', () => {
 
 test('spec-rework_Body_DefinesDecisionEntryFormat', () => {
   const { body } = readAgent('spec-rework');
-  assert.ok(body.includes('- **R<r> · <Stelle>** — geändert | nicht geändert — <Begründung>'));
+  assert.ok(body.includes('- **R<r> · <Stelle>** — geändert | nicht geändert | frage an den menschen — <Begründung oder Frage>'));
   assert.ok(body.includes('nicht geändert — Stelle existiert nicht'));
   assert.match(body, /keinen Code/);
   assert.ok(body.includes('W-Eintrag ist bindend'));
@@ -216,4 +216,19 @@ test('plan-review-architecture_Body_LooksForExistingCounterparts', () => {
   const { body } = readAgent('plan-review-architecture');
   assert.match(body, /\*\*Wiederverwendung:\*\*/);
   assert.match(body, /„Muster aus <Datei>“/);
+});
+
+test('spec-rework_Body_NewBehaviourBecomesQuestionNotDecision', () => {
+  const { body } = readAgent('spec-rework');
+  assert.doesNotMatch(body, /naheliegendste, konservativste Festlegung/);
+  assert.match(body, /Klarstellung/);
+  assert.match(body, /neues Verhalten/);
+  assert.ok(body.includes('`human-question`'));
+});
+
+test('spec-review-profiles_Body_WritesExcerptOnceAndReadsItInLaterRounds', () => {
+  const { body } = readAgent('spec-review-profiles');
+  assert.ok(body.includes('- `Profil-Auszug:`'));
+  assert.match(body, /Existiert der Auszug, liest du nur ihn/);
+  assert.match(body, /Fehlt er, schreibst du/);
 });

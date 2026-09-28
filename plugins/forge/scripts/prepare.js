@@ -159,10 +159,14 @@ function profileDirs(root) {
   return dirs.filter((dir, index) => dirs.indexOf(dir) === index);
 }
 
+// Ein Profil je Ordner trägt immer denselben Namen; nur andere doppelte Namen sind verdächtig.
+const PER_FOLDER_NAMES = new Set(['feature.md', 'module.md', 'readme.md', 'index.md']);
+
 function duplicateWarnings(files) {
   const byName = new Map();
   for (const file of files) {
     const name = path.basename(file).toLowerCase();
+    if (PER_FOLDER_NAMES.has(name)) continue;
     byName.set(name, [...(byName.get(name) ?? []), file]);
   }
   return [...byName.values()].filter((group) => group.length > 1)
@@ -194,7 +198,11 @@ function prepareSpecReview({ positional, flags }) {
   } else {
     const profiles = writeProfileIndex(root, values.W);
     values.profile = profiles.count > 0 ? 'ja' : 'nein';
-    if (profiles.count > 0) values.PI = profiles.index;
+    if (profiles.count > 0) {
+      values.PI = profiles.index;
+      // Der Profil-Reviewer schreibt den Auszug in Runde 1; spätere Runden lesen nur ihn.
+      values.PA = path.join(values.W, 'profil-auszug.md');
+    }
     warnings.push(...profiles.warnings);
   }
   const active = chosen.filter((name) => name !== 'profiles' || values.profile === 'ja');

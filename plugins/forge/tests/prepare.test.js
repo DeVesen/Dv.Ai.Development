@@ -142,6 +142,17 @@ test('specReview_ProfilesFound_WritesIndexAndWarnsOnDuplicates', () => {
   assert.ok(samePath(out.W, path.join(repo, '.forge', 'spec-review', 'demo')));
 });
 
+test('specReview_OneProfileFilePerFolder_NoDuplicateWarning', () => {
+  const repo = planRepo();
+  commitFile(repo, 'docs/application/feature/wizard/feature.md', '# Wizard\n\nx\n', 'feature a');
+  commitFile(repo, 'docs/application/feature/dashboard/feature.md', '# Dashboard\n\ny\n', 'feature b');
+  commitFile(repo, 'docs/application/module/api/module.md', '# API\n\nz\n', 'module a');
+  commitFile(repo, 'docs/application/module/web/module.md', '# Web\n\nw\n', 'module b');
+  const out = values(run(repo, 'spec-review', 'docs/forge/demo/spec.md'));
+  assert.equal(out.profile, 'ja');
+  assert.equal(out.WARN, undefined);
+});
+
 test('specReview_NoProfiles_ProfileInactiveWithoutIndexLine', () => {
   const repo = planRepo();
   const out = values(run(repo, 'spec-review', 'docs/forge/demo/spec.md'));
@@ -204,4 +215,15 @@ test('planReview_ConfiguredCommands_AreListedRaw', () => {
   assert.equal(out.Test, 'dv-forge: angular-test --root src/frontend');
   assert.equal(out.Build, '');
   assert.equal(out.Lint, '');
+});
+
+test('specReview_ProfilesFound_NamesExcerptPathInWorkspaceWithoutCreatingIt', () => {
+  const repo = planRepo();
+  commitFile(repo, 'docs/glossary/terms.md', '# G\n\nx\n', 'glossary');
+  const out = values(run(repo, 'spec-review', 'docs/forge/demo/spec.md'));
+  assert.ok(samePath(path.dirname(out.PA), out.W));
+  assert.equal(path.basename(out.PA), 'profil-auszug.md');
+  assert.ok(!fs.existsSync(out.PA));
+  const none = planRepo();
+  assert.equal(values(run(none, 'spec-review', 'docs/forge/demo/spec.md')).PA, undefined);
 });

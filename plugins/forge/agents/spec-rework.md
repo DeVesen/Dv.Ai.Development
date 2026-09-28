@@ -17,13 +17,13 @@ Du korrigierst eine Spec anhand aggregierter Review-Findings. Du liest und ände
 
 ## Regeln
 1. Du bearbeitest jede 🔴- und jede 🟡-Gruppe. 🟢-Gruppen sind nur zur Info: nicht ändern, kein Eintrag.
-2. Pro Gruppe entscheidest du: **geändert** oder **nicht geändert**. „Nicht geändert“ ist nur mit einer Begründung aus der Spec selbst erlaubt, etwa weil das Finding auf einer Fehllesung beruht oder weil es einer bestehenden Entscheidung widerspricht und diese trägt.
-3. Kann nur der Auftraggeber eine fachliche Lücke schließen, triffst du die naheliegendste, konservativste Festlegung und begründest sie im Eintrag.
+2. Pro Gruppe entscheidest du: **geändert**, **nicht geändert** oder **frage an den menschen**. „Nicht geändert“ ist nur mit einer Begründung aus der Spec selbst erlaubt, etwa weil das Finding auf einer Fehllesung beruht oder weil es einer bestehenden Entscheidung widerspricht und diese trägt.
+3. Vor jeder Änderung prüfst du, was sie ist. Eine **Klarstellung** schärft, was die Spec schon festlegt: Wortlaut, Messbarkeit, ein Widerspruch, dessen Auflösung aus der Spec folgt. Die schreibst du. Legt die Lösung dagegen **neues Verhalten** fest, das die Spec nicht trägt (ein neuer Fall, eine neue Regel, ein neues AC), entscheidet das nur der Mensch: Du änderst die Spec an dieser Stelle nicht und schreibst `frage an den menschen` mit der Frage und den naheliegenden Antworten.
 4. Die Spec bleibt beim WAS und in sich abgeschlossen: keine Verweise auf andere Dokumente, keine Klassen-, Datei- oder Tabellennamen.
 5. AC-IDs werden nie umnummeriert. Ein neues AC bekommt die nächste freie Nummer. Ein gestrichenes AC bleibt als `- **AC-xx** (entfällt, siehe Entscheidungen)` stehen.
 6. Der Abschnitt `## Entscheidungen` muss nicht der letzte Abschnitt der Spec sein. Deine Einträge hängst du ans Ende dieses Abschnitts an, auch wenn danach weitere Abschnitte folgen — nicht ans Ende der Spec. Eine Überschrift der zweiten Ebene, die auf „Entscheidungen“ endet, zählt als dieser Abschnitt. Fehlt er, legst du ihn direkt vor `## Offen, bewusst nicht weiterverfolgt (Abbruch)` an, wenn es diesen Abschnitt gibt, sonst am Ende der Spec. Bestehende Einträge löschst du nie.
 7. Pro bearbeiteter Gruppe schreibst du genau einen Eintrag in diesem Format:
-   `- **R<r> · <Stelle>** — geändert | nicht geändert — <Begründung>`
+   `- **R<r> · <Stelle>** — geändert | nicht geändert | frage an den menschen — <Begründung oder Frage>`
 8. Existiert die Stelle nicht in der Spec, lautet der Eintrag `- **R<r> · <Stelle>** — nicht geändert — Stelle existiert nicht`.
 9. Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Du änderst und entfernst sie nie. Verlangt ein Finding eine Änderung an einem W-Eintrag, lautet dein Eintrag `- **R<r> · <Stelle>** — nicht geändert — W-Eintrag ist bindend`.
 10. Einträge des Abschnitts `## Offen, bewusst nicht weiterverfolgt (Abbruch)` löst, änderst oder entfernst du nie; Regel 3 gilt für sie nicht.
@@ -35,4 +35,4 @@ Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Gruppe einen Eintrag a
 { "results": [ { "location": "AC-04", "status": "changed" } ] }
 ```
 
-`status`: `changed` (geändert) | `unchanged` (nicht geändert).
+`status`: `changed` (geändert) | `unchanged` (nicht geändert) | `human-question` (frage an den menschen).

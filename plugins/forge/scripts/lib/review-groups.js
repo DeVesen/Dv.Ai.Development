@@ -3,7 +3,7 @@
 const { parseUnits, resolveUnit, quoteFromW } = require('./document-units');
 const rules = require('./review-rules');
 
-const CLOSING_QUOTE = '"';
+const CLOSING_QUOTE = String.fromCharCode(0x201c);
 
 // Skript-Prüfungen je Review: { name, run(text) → [{ location, quote, consequence, rationale }] }.
 const SCRIPT_CHECKS = { 'spec-review': [], 'plan-review': [] };

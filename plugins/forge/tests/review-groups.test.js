@@ -62,7 +62,7 @@ test('reworkSection_Groups_HeadingAndItemLineFormat', () => {
   const result = classify([entry('clarity', { category: 'widerspruch', consequence: 'Ein Umlaut fehlt' })]);
   const text = groups.reworkSection(result.groups);
   assert.ok(text.startsWith('=== REWORK ===\n### 🟡 AC-04 (clarity)\n'));
-  assert.ok(text.includes('- [clarity · widerspruch] Zitat: „Gegeben C" · Konsequenz: Ein Umlaut fehlt · Begründung: r · höchstens 🟡: Schreibweise'));
+  assert.ok(text.includes('- [clarity · widerspruch] Zitat: „Gegeben C“ · Konsequenz: Ein Umlaut fehlt · Begründung: r · höchstens 🟡: Schreibweise'));
 });
 
 test('table_Groups_OneRowPerStelle', () => {

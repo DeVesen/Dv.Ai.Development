@@ -174,3 +174,8 @@ Gleiche Wünsche aus mehreren Berichten sind zusammengeführt; die Häufigkeit s
 | Abschn. 2 · B5 Fortschritt inhaltlich | geänderte rote Stelle zählt als Fortschritt, wenn sie verschwindet (`FIXED`) oder mit anderem Inhalt (Zitat · Konsequenz) wiederkommt (`RENEWED`); gleicher Inhalt bleibt Stillstand | umgesetzt |
 | Abschn. 2 · C6 `--only` | `prepare.js` liefert `aktiv=` für alle drei Reviews, `--only <reviewer,...>` wählt aus (feste Reihenfolge, Unbekanntes → Exit 2, `profiles` ohne Profile → WARN); Automatik aus Diff kommt ins Paket 3/4 | umgesetzt |
 | Abschn. 2 · C7 schlanke Besetzung | zurückgestellt, erst mit mehr Berichten; `--only` deckt es manuell ab | zurückgestellt |
+| Abschn. 3 · Coverage Teilaussagen | `plan-review-coverage` zerlegt jedes AC in Teilaussagen, hakt jede ab, nennt alle fehlenden in **einem** Finding | umgesetzt |
+| Abschn. 3 · Nacharbeiter ganzes AC | `plan-rework` Regel 8: bei Finding an `AC-<n>` das ganze AC gegen den Plan prüfen, alle Lücken in derselben Nacharbeit schließen | umgesetzt |
+| Abschn. 3 · Buildability eingrenzen | `prepare.js plan-review` liefert `Build=`/`Test=`/`Lint=` wörtlich aus der Konfiguration, Reviewer bekommt sie als Eingabe; keine Plugin-Quellen, `node_modules` nur für Auftrag 8 | umgesetzt |
+| Abschn. 3 · Architecture Wiederverwendung | Auftrag 4: bei „Muster aus <Datei>“ und neuen Funktionen/Klassen/Test-Helfern nach Gegenstücken suchen; Kopie statt Wiederverwendung → Finding | umgesetzt |
+| Abschn. 3 · Commit-Frage | `plan-review` bei `sauber`: nach Guard-Freigabe `git status --porcelain -- "<S>" "<P>"`, leer → keine Frage | umgesetzt |

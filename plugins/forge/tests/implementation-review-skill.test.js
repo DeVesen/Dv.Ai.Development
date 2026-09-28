@@ -13,7 +13,7 @@ test('implementationReviewSkill_Frontmatter_ManualOnlyWithArgumentHint', () => {
   assert.equal(fields.name, 'implementation-review');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], 'true');
-  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--context <pfad>]... [--base <ref>]');
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]');
 });
 
 test('implementationReviewSkill_Body_ReadsSharedLoopWithPlaceholders', () => {

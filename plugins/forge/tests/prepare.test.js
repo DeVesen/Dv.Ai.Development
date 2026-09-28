@@ -164,3 +164,34 @@ test('specReview_FreeSpec_NoProfilesEvenIfPresent', () => {
   assert.equal(out.profile, 'nein');
   assert.equal(out.PI, undefined);
 });
+
+test('reviews_WithoutOnly_ListAllReviewersAsActive', () => {
+  const repo = planRepo();
+  assert.equal(values(run(repo, 'plan-review', 'docs/forge/demo/plan.md')).aktiv, 'coverage,feasibility,architecture,risks,buildability');
+  assert.equal(values(run(repo, 'spec-review', 'docs/forge/demo/spec.md')).aktiv, 'completeness,consistency,feasibility,clarity');
+  commitFile(repo, 'docs/glossary/terms.md', '# G\n\nx\n', 'glossary');
+  assert.equal(values(run(repo, 'spec-review', 'docs/forge/demo/spec.md')).aktiv, 'completeness,consistency,feasibility,clarity,profiles');
+});
+
+test('planReview_Only_KeepsCanonicalOrderOfChosenReviewers', () => {
+  const repo = planRepo();
+  const out = values(run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--only', 'buildability,coverage'));
+  assert.equal(out.aktiv, 'coverage,buildability');
+});
+
+test('specReview_OnlyProfilesWithoutProfiles_DropsItWithWarning', () => {
+  const repo = planRepo();
+  const out = values(run(repo, 'spec-review', 'docs/forge/demo/spec.md', '--only', 'clarity,profiles'));
+  assert.equal(out.aktiv, 'clarity');
+  assert.match([].concat(out.WARN).join('\n'), /profiles nicht aktiv/);
+});
+
+test('reviews_OnlyUnknownOrEmpty_ExitWithTwoWithoutWorkspace', () => {
+  const repo = planRepo();
+  const unknown = run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--only', 'coverage,clarity');
+  assert.equal(unknown.status, 2);
+  assert.match(unknown.stderr, /clarity/);
+  assert.equal(run(repo, 'spec-review', 'docs/forge/demo/spec.md', '--only', ',').status, 2);
+  assert.equal(run(repo, 'implementation', 'docs/forge/demo/plan.md', '--only', 'coverage').status, 2);
+  assert.ok(!fs.existsSync(path.join(repo, '.forge', 'plan-review', 'demo')));
+});

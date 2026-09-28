@@ -13,7 +13,7 @@ test('planReviewSkill_Frontmatter_ManualOnlyWithArgumentHint', () => {
   assert.equal(fields.name, 'plan-review');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], 'true');
-  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--rounds N]');
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--rounds N] [--only <reviewer,...>]');
 });
 
 test('planReviewSkill_Body_ReadsSharedLoopWithPlaceholders', () => {
@@ -27,7 +27,8 @@ test('planReviewSkill_Body_ListsAllAgents', () => {
   const { body } = readMarkdown(SKILL);
   for (const reviewer of REVIEWERS) assert.ok(body.includes(`dv-forge:plan-review-${reviewer}`), `${reviewer} fehlt`);
   assert.ok(body.includes('dv-forge:plan-rework'));
-  assert.ok(body.includes('aktiv = coverage,feasibility,architecture,risks,buildability'));
+  assert.ok(body.includes('`aktiv` kommt aus `prepare.js`'));
+  assert.ok(body.includes('Du startest genau die Reviewer aus `aktiv`'));
 });
 
 test('planReviewSkill_Body_NamesClosingScout', () => {

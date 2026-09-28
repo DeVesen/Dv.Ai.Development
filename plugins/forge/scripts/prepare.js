@@ -13,10 +13,10 @@ const { ConfigError, readConfig, branchFor } = require('./forge-config');
 const { archivePath } = require('./ledger');
 
 const USAGE = [
-  'Aufruf: node prepare.js spec-review <spec> [quelle] [--rounds N]',
-  '       node prepare.js plan-review <plan> [spec] [--rounds N]',
+  'Aufruf: node prepare.js spec-review <spec> [quelle] [--rounds N] [--only <reviewer,...>]',
+  '       node prepare.js plan-review <plan> [spec] [--rounds N] [--only <reviewer,...>]',
   '       node prepare.js implementation <plan> [spec]',
-  '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>]',
+  '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
@@ -26,10 +26,17 @@ class PrepareError extends Error {}
 class UsageError extends Error {}
 
 const FLAGS = {
-  'spec-review': ['--rounds'],
-  'plan-review': ['--rounds'],
+  'spec-review': ['--rounds', '--only'],
+  'plan-review': ['--rounds', '--only'],
   implementation: [],
-  'implementation-review': ['--spec', '--context', '--base'],
+  'implementation-review': ['--spec', '--context', '--base', '--only'],
+};
+
+// Reviewer je Review in fester Reihenfolge; --only wählt daraus, die Reihenfolge bleibt.
+const REVIEWERS = {
+  'spec-review': ['completeness', 'consistency', 'feasibility', 'clarity', 'profiles'],
+  'plan-review': ['coverage', 'feasibility', 'architecture', 'risks', 'buildability'],
+  'implementation-review': ['acceptance', 'plan-fidelity', 'design', 'tests', 'risks'],
 };
 const MAX_POSITIONAL = { 'spec-review': 2, 'plan-review': 2, implementation: 2, 'implementation-review': 2 };
 
@@ -111,6 +118,17 @@ function rounds(flags) {
   return value;
 }
 
+function chosenReviewers(skill, flags) {
+  const all = REVIEWERS[skill];
+  if (!flags['--only']) return all;
+  const wanted = flags['--only'].flatMap((value) => value.split(',')).map((name) => name.trim()).filter(Boolean);
+  const unknown = wanted.filter((name) => !all.includes(name));
+  if (wanted.length === 0 || unknown.length > 0) {
+    throw new UsageError(`--only erlaubt für ${skill}: ${all.join(',')}${unknown.length > 0 ? `; unbekannt: ${unknown.join(',')}` : ''}`);
+  }
+  return all.filter((name) => wanted.includes(name));
+}
+
 function checkLocation(root, slug, specPath) {
   const { config } = readConfig(root);
   if (config.Worktree !== 'ja') return;
@@ -165,18 +183,25 @@ function prepareSpecReview({ positional, flags }) {
   const values = { S: spec, R: root };
   if (positional[1]) values.Q = existingFile(path.resolve(positional[1]), 'Quelle');
   values.N = rounds(flags);
+  const chosen = chosenReviewers('spec-review', flags);
   const slug = path.basename(spec).toLowerCase() === 'spec.md' ? path.basename(path.dirname(spec)) : path.basename(spec, path.extname(spec));
   values.slug = slug;
   values.W = createWorkspace('spec-review', slug, root);
   values.art = /^Art:\s*frei\s*$/m.test(fs.readFileSync(spec, 'utf8')) ? 'frei' : 'verankert';
+  const warnings = [];
   if (values.art === 'frei') {
     values.profile = 'nein';
-    return values;
+  } else {
+    const profiles = writeProfileIndex(root, values.W);
+    values.profile = profiles.count > 0 ? 'ja' : 'nein';
+    if (profiles.count > 0) values.PI = profiles.index;
+    warnings.push(...profiles.warnings);
   }
-  const profiles = writeProfileIndex(root, values.W);
-  values.profile = profiles.count > 0 ? 'ja' : 'nein';
-  if (profiles.count > 0) values.PI = profiles.index;
-  if (profiles.warnings.length > 0) values.WARN = profiles.warnings;
+  const active = chosen.filter((name) => name !== 'profiles' || values.profile === 'ja');
+  if (flags['--only'] && active.length < chosen.length) warnings.push('profiles nicht aktiv: keine Profile oder freie Spec');
+  if (active.length === 0) throw new UsageError('--only lässt keinen aktiven Reviewer übrig');
+  values.aktiv = active.join(',');
+  if (warnings.length > 0) values.WARN = warnings;
   return values;
 }
 
@@ -184,8 +209,10 @@ function preparePlanReview({ positional, flags }) {
   const plan = existingFile(path.resolve(positional[0]), 'Plan');
   const root = gitRoot(path.dirname(plan));
   const values = { P: plan, S: resolveSpec(plan, positional[1], root), R: root, N: rounds(flags) };
+  const aktiv = chosenReviewers('plan-review', flags).join(',');
   values.slug = slugOf(plan);
   values.W = createWorkspace('plan-review', values.slug, root);
+  values.aktiv = aktiv;
   return values;
 }
 
@@ -203,11 +230,12 @@ function prepareImplementationReview({ positional, flags }) {
   checkLocation(root, slug, spec);
   const contexts = (flags['--context'] ?? []).map((file) => existingFile(path.resolve(file), 'Kontext-Datei'));
   const base = flags['--base']?.[0] ?? resolveTag(slug, root);
+  const aktiv = chosenReviewers('implementation-review', flags).join(',');
   const workspace = createWorkspace('review', slug, root);
   const pack = writePackage(base, 'HEAD', workspace, root);
   const values = {
     P: plan, S: spec, R: root, slug, B: base, W: workspace, K: pack, C: contexts,
-    N: '0', aktiv: 'acceptance,plan-fidelity,design,tests,risks',
+    N: '0', aktiv,
   };
   if (fs.existsSync(archivePath(plan))) values.Z = archivePath(plan);
   return values;

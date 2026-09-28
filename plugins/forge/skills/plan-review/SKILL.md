@@ -2,7 +2,7 @@
 name: plan-review
 description: Use when a dv-forge plan.md should run through the review loop of parallel reviewers against its spec and the code, mechanical aggregation and rework until it is clean, the round cap is reached or only a spec change could help.
 disable-model-invocation: true
-argument-hint: <plan.md> [spec.md] [--rounds N]
+argument-hint: <plan.md> [spec.md] [--rounds N] [--only <reviewer,...>]
 ---
 
 # Plan-Review (Orchestrator)
@@ -12,8 +12,8 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steht nur, was für den Plan gilt. Du liest weder Plan noch Spec.
 
 ## Eingaben
-1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Plan `P`, Spec `S`, Repo `R`, Arbeitsbereich `W`, `slug` und `N`, die maximale Zahl an Nacharbeiten.
-2. `aktiv = coverage,feasibility,architecture,risks,buildability`; `spec_rueckfragen` ist eine leere Liste. Rolle des Arbeitsbereichs: `plan-review`.
+1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Plan `P`, Spec `S`, Repo `R`, Arbeitsbereich `W`, `slug`, `aktiv` und `N`, die maximale Zahl an Nacharbeiten.
+2. `aktiv` kommt aus `prepare.js`: alle fünf Reviewer, mit `--only` nur die genannten. Du startest genau die Reviewer aus `aktiv`. `spec_rueckfragen` ist eine leere Liste. Rolle des Arbeitsbereichs: `plan-review`.
 
 ## Reviewer
 - `dv-forge:plan-review-coverage` — `Plan: <P>`, `Spec: <S>`
@@ -45,4 +45,4 @@ Titel `Plan-Review`, Artefakt `<P>`, Zusatz-Status `Spec-Rückfrage in Runde r`.
 Nächster Schritt:
 - mit Spec-Rückfragen: `Spec anpassen, dann /dv-forge:spec-review <S>, danach /dv-forge:plan-review <P> erneut.`
 - `sauber`: `Plan ist bereit. Soll ich Spec und Plan jetzt committen?` Nach dem Ja und erst nach dem Freigeben des Guards committest du beide Dateien, Nachricht nach `Commit-Konvention` aus `node "${CLAUDE_PLUGIN_ROOT}/scripts/forge-config.js" get Commit-Konvention`, mit der Workitem-Nummer der Spec, falls sie eine nennt. Dann in einer frischen Session ein Code-Block `/dv-forge:implementation <P>`.
-- sonst: `Plan nicht bereit. Plan, Abschnitt Entscheidungen und Scout-Vorschläge lesen, dann /dv-forge:plan-review <P> erneut.`
+- sonst: `Plan nicht bereit. Plan, Abschnitt Entscheidungen und Scout-Vorschläge lesen, dann /dv-forge:plan-review <P> erneut; betreffen die Änderungen nur einzelne Reviewer, mit --only <reviewer,...>.`

@@ -2,7 +2,7 @@
 name: spec-review
 description: Use when a finished spec.md should run through the dv-forge review loop of parallel reviewers, mechanical aggregation and rework until it is clean or the round cap is reached.
 disable-model-invocation: true
-argument-hint: <spec.md> [quelle.md] [--rounds N]
+argument-hint: <spec.md> [quelle.md] [--rounds N] [--only <reviewer,...>]
 ---
 
 # Spec-Review (Orchestrator)
@@ -12,9 +12,9 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steht nur, was für die Spec gilt. Du liest die Spec nicht.
 
 ## Eingaben
-1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" spec-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Spec `S`, Projektwurzel `R`, `N` (maximale Nacharbeiten), Arbeitsbereich `W`, `slug`, `art` (`frei`/`verankert`), `profile` (`ja`/`nein`), bei `ja` den Profil-Index `PI`, falls angegeben die Quelle `Q` und je Warnung eine Zeile `WARN`.
+1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" spec-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Spec `S`, Projektwurzel `R`, `N` (maximale Nacharbeiten), Arbeitsbereich `W`, `slug`, `art` (`frei`/`verankert`), `profile` (`ja`/`nein`), `aktiv`, bei `ja` den Profil-Index `PI`, falls angegeben die Quelle `Q` und je Warnung eine Zeile `WARN`.
 2. Jede `WARN`-Zeile kommt in die Hinweise des Orchestrators. Du liest weder Profile noch Index.
-3. `aktiv = completeness,consistency,feasibility,clarity`, bei `profile=ja` zusätzlich `profiles`. Rolle des Arbeitsbereichs: `spec-review`.
+3. `aktiv` kommt aus `prepare.js`: alle Reviewer, mit `--only` nur die genannten; `profiles` nur bei `profile=ja`. Du startest genau die Reviewer aus `aktiv`. Rolle des Arbeitsbereichs: `spec-review`.
 
 ## Reviewer
 - `dv-forge:spec-review-completeness` — `Spec: <S>` und, falls vorhanden, `Quelle: <Q>`

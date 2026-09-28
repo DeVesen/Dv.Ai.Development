@@ -2,7 +2,7 @@
 name: implementation-review
 description: Use when a finished dv-forge implementation should be checked once by parallel reviewers against plan, spec and code, with mechanical aggregation and a scout that proposes solutions for every red or yellow finding.
 disable-model-invocation: true
-argument-hint: <plan.md> [spec.md] [--context <pfad>]... [--base <ref>]
+argument-hint: <plan.md> [spec.md] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]
 ---
 
 # Implementierungs-Review (Orchestrator)

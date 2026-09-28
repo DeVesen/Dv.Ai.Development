@@ -48,6 +48,13 @@ Alles, was der Plan sinnvoll selbst entscheiden kann, ist ein Hinweis (🟡), z.
 | Nacharbeit sieht keinen Bestand, schickt jede neue Regel einzeln an den Menschen | Nacharbeit nutzt Scout-Vorschläge, fragt gebündelt |
 | Loop bis 0 × 🔴, Cap oder Stillstand | Höchstens zwei Durchläufe |
 
+### Schutz vor Detail-Dauerläufern
+Beispiel: Groß- oder Kleinschreibung, ß oder ss, Umlaute.
+1. **Deckel:** Höchstens zwei Durchläufe je Lauf, egal was gefunden wird.
+2. **Einstufung:** Solche Schreibweisen-Details sind ein Hinweis, der Plan entscheidet sie. Das steht als Beispiel wörtlich im Reviewer-Auftrag, damit der Reviewer es nicht doch als 🔴 einstuft.
+3. **Nachprüfen:** Runde 2 prüft nur die gemeldeten Punkte. Ein neuer Randfall, der erst durch eine Antwort entsteht, wird dort nicht gesucht.
+4. **Über Läufe hinweg:** Hat der Mensch eine Regel als W-Eintrag entschieden, gilt sie als abgeschlossen. Randfälle dieser Regel sind in allen späteren Läufen höchstens ein Hinweis.
+
 ---
 
 ## Teil 2: Plan-Review

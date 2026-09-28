@@ -24,7 +24,6 @@ Install both plugins globally in Claude Code before using this repo:
 │   ├── commit-message/         Conventional Commits generator
 │   ├── de-en-communication/    Language rules (German/English)
 │   ├── software-design-principles/  Personal design philosophy
-│   ├── prozess-retrospektive/  Session process analysis
 │   ├── regression-audit/       Change regression detection
 │   ├── ado-mcp/                Azure DevOps work item operations + analysis
 │   ├── microsoft-learn/        Routing skill for Microsoft Learn MCP server
@@ -137,15 +136,19 @@ Applies a personal software design philosophy during design decisions and code r
 
 ---
 
-#### `prozess-retrospektive`
+#### `prozess-retrospektive` (plugin `dv-forge`)
 
 `Process` `Retrospective` `MCP Quality` `Improvement` `Session Analysis`
 
-Analyzes the *process* of a session — not what was delivered, but how it ran. A script (`scripts/session-facts.js`) reads the Claude Code session transcript and reports duration, human turns, token use per session and subagent, tool calls, tool errors, blocked calls, repeats and compactions. The skill turns these facts into an experience report under `docs/wishes/`, each wish with its target: plugin, skill, agent, CLAUDE.md, hook or MCP server.
+Part of the `dv-forge` plugin (`plugins/forge/skills/prozess-retrospektive/`, invoked as `/dv-forge:prozess-retrospektive`), but it looks for gaps in any session, not only in dv-forge runs.
 
-MCP usage is measured, not recalled: the same run appends a section from `scripts/mcp-usage.js` with calls, errors and repeats per MCP server and native tool, per agent (subagent transcripts included), plus expected-but-unused servers and shell-fallback candidates. Across several reports this shows which MCPs are irrelevant.
+Analyzes the *process* of a session — not what was delivered, but how it ran. A script (`plugins/forge/scripts/session-facts.js`) reads the Claude Code session transcript and reports duration, human turns, token use per session and subagent, tool calls, tool errors, blocked calls, repeats and compactions. The skill turns these facts into an experience report under `docs/wishes/`, each wish with its target: plugin, skill, agent, CLAUDE.md, hook or MCP server.
+
+MCP usage is measured, not recalled: the same run appends a section from `plugins/forge/scripts/mcp-usage.js` with calls, errors and repeats per MCP server and native tool, per agent (subagent transcripts included), plus expected-but-unused servers and shell-fallback candidates. Across several reports this shows which MCPs are irrelevant.
 
 Besides friction the skill looks for savings in time, tokens and money: the script lists the largest tool results, files read more than once and recurring shell commands. Wishes may target existing plugins, skills, hooks and MCPs or something new (`neu:`), such as a script or MCP tool that takes over repeated manual work.
+
+Every finding is written for an outsider: the situation describes project parts by their role instead of project names, tools are named with a half-sentence on what they do, and each finding states what would have been the better approach in that very case. Project files and terms go into a separate *Im Projekt* line, so a finding can be handed to someone who has never seen the project.
 
 | Command / Trigger | Purpose |
 |---|---|

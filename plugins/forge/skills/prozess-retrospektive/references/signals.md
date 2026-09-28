@@ -23,6 +23,9 @@ Zwei Blickrichtungen: **Reibung** (was hakte) und **Sparpotenzial** (was kostete
 | dieselbe Datei mehrfach gelesen | Zusammenfassung in Datei, Lese-Tool für Ausschnitte, Übergabe an Subagent als Datei |
 | wiederkehrender Shell-Befehl oder Befehlsfolge | eigenes Skript, Hook zum festen Zeitpunkt |
 | gleiche Abfolge von Schritten in jeder Session | Skill, der die Abfolge festlegt, oder Skript, das sie ausführt |
+| Lauf ohne neue Information: gleiche Suite, gleicher Build oder gleiches Review erneut, obwohl sich dafür nichts geändert hat | gezielter Lauf auf das Geänderte, Ergebnis aus dem letzten Lauf weiterverwenden |
+| breiter Lauf, wo ein schmaler reicht: ganze Testsuite für eine Datei, ganzer Build für eine Zeile | Filter oder Einzeltest, Skript mit Ziel-Parameter |
+| Ergebnis erzeugt, aber nie genutzt: Subagent-Bericht ignoriert, Ausgabe nicht gelesen | Lauf streichen oder Auftrag auf das Gebrauchte zuschneiden |
 | Modell sucht, rät oder rechnet, was deterministisch ist | Skript oder MCP-Tool statt Modellarbeit |
 | teures Modell für einfache Arbeit | Subagent mit kleinerem Modell |
 | Mensch wartet auf etwas, das parallel laufen könnte | Hintergrund-Aufgabe, parallele Subagents |

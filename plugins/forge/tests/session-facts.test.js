@@ -68,7 +68,10 @@ test('cli_Expect_AppendsMeasuredMcpUsage', () => {
 });
 
 test('projectDir_EscapesPathLikeClaudeCode', () => {
-  assert.equal(facts.projectDir('/home/user/Dv.Ai.Development', '/root'), path.join('/root', '.claude', 'projects', '-home-user-Dv-Ai-Development'));
+  const [cwd, escaped] = process.platform === 'win32'
+    ? ['C:\\Develop\\Dv.Ai.Development', 'C--Develop-Dv-Ai-Development']
+    : ['/home/user/Dv.Ai.Development', '-home-user-Dv-Ai-Development'];
+  assert.equal(facts.projectDir(cwd, '/root'), path.join('/root', '.claude', 'projects', escaped));
 });
 
 test('cli_BadArgsOrMissingFile_ExitCodes', () => {

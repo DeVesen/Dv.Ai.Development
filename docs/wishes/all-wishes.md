@@ -179,3 +179,10 @@ Gleiche Wünsche aus mehreren Berichten sind zusammengeführt; die Häufigkeit s
 | Abschn. 3 · Buildability eingrenzen | `prepare.js plan-review` liefert `Build=`/`Test=`/`Lint=` wörtlich aus der Konfiguration, Reviewer bekommt sie als Eingabe; keine Plugin-Quellen, `node_modules` nur für Auftrag 8 | umgesetzt |
 | Abschn. 3 · Architecture Wiederverwendung | Auftrag 4: bei „Muster aus <Datei>“ und neuen Funktionen/Klassen/Test-Helfern nach Gegenstücken suchen; Kopie statt Wiederverwendung → Finding | umgesetzt |
 | Abschn. 3 · Commit-Frage | `plan-review` bei `sauber`: nach Guard-Freigabe `git status --porcelain -- "<S>" "<P>"`, leer → keine Frage | umgesetzt |
+| Abschn. 4 · Nacharbeiter ohne Fachentscheidung | Ursache war Regel 3 in `spec-rework` („naheliegendste, konservativste Festlegung“). Ersetzt: Klarstellung schreiben, **neues Verhalten** → Status `human-question`, Spec an der Stelle unverändert; `spec-review` Zusatz-Stopp `Fragen an den Menschen in Runde r` + Abschnitt „Fragen an den Menschen“ | umgesetzt |
+| Abschn. 4 · Profil-Auszug | `prepare.js` liefert `PA=<W>/profil-auszug.md`; Profil-Reviewer schreibt ihn in Runde 1, spätere Runden lesen nur ihn und ergänzen bei Bedarf | umgesetzt |
+| Abschn. 4 · Whiteboarding mit Bestand | betroffene Feature-Profile vollständig lesen, Code-Aussagen dagegenhalten; Regel 6 Selbstcheck „exakt/immer/nie“ gegen alle ACs | umgesetzt |
+| Abschn. 4 · Bestandssuche | Such-Agents nur `model: sonnet`, Rückgabe Datei:Zeile, Rolle (Code-Index-Vorrang stand schon in Regel 1) | umgesetzt |
+| Abschn. 4 · Skizze | nur für Abläufe/Verzweigungen, Reihenfolgen und Listen bleiben Text (Skill jetzt 499 von 500 Wörtern) | umgesetzt |
+| Abschn. 4 · Fehlalarm Profile | `feature.md`, `module.md`, `README.md`, `index.md` von der Doppelt-Warnung ausgenommen | umgesetzt |
+| Abschn. 4 · Aufruf-Sperre Folge-Skill | bleibt; Sperre schützt vor Selbststart des Dialog-Skills, Kosten 1 Eingabe | nicht ändern |

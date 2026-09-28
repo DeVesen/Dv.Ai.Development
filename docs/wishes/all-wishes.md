@@ -186,3 +186,10 @@ Gleiche Wünsche aus mehreren Berichten sind zusammengeführt; die Häufigkeit s
 | Abschn. 4 · Skizze | nur für Abläufe/Verzweigungen, Reihenfolgen und Listen bleiben Text (Skill jetzt 499 von 500 Wörtern) | umgesetzt |
 | Abschn. 4 · Fehlalarm Profile | `feature.md`, `module.md`, `README.md`, `index.md` von der Doppelt-Warnung ausgenommen | umgesetzt |
 | Abschn. 4 · Aufruf-Sperre Folge-Skill | bleibt; Sperre schützt vor Selbststart des Dialog-Skills, Kosten 1 Eingabe | nicht ändern |
+| Abschn. 5 · Zwischenstände | neue Referenz `plan-writing/references/context-reading.md`: nach Spec ein Satz mit Reihenfolge der Bereiche, nach jedem Bereich ein Einzeiler | umgesetzt |
+| Abschn. 5 · Erkundung delegieren | ab mehr als zwei Schichten Such-Agent `model: sonnet`, Rückgabe `Datei:Zeile, Rolle, betroffener Test` | umgesetzt |
+| Abschn. 5 · Code-Index + gebündelt lesen | zuerst `forge-config get Suche`, erst verorten, dann alle Bereiche in einem parallelen Block | umgesetzt |
+| Abschn. 5 · Planungs-Skills je Plattform | Syntax `<skill> @<pfad>` in `Planungs-Skills`; ohne `@` immer, mit `@` nur wenn der Plan den Pfad berührt; Doku in `init` (ohne Skriptänderung, das Modell wertet aus) | umgesetzt |
+| Abschn. 5 · Selbst-Check CLI | `self-check.md` Punkt 5: CLI-Optionen und Befehlsformen; jeder Testbefehl einmal auf bestehende Testdatei oder per Doku belegt | umgesetzt |
+| Abschn. 5 · Wrapper-Beispiel | `plan-format.md` Regel 10 nennt zusätzlich `angular-test … -- --include …` | umgesetzt |
+| Abschn. 5 · E-Einträge | `- **E · <Kurztitel>** · Planer — <Wahl und Grund>`, nicht bindend, nur für Wahlen ohne AC-Bezug; Zeile `- Keine Fragen an den Menschen.` | umgesetzt |

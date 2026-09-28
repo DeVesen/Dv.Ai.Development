@@ -12,12 +12,14 @@ const { writePackage, PackageError } = require('./review-package');
 const { ConfigError, readConfig, branchFor } = require('./forge-config');
 const { archivePath } = require('./ledger');
 const { writeAnchors } = require('./plan-anchors');
+const { ART_OF_ROLE, FollowupError, latest, loadGroups, rolesFor, slugFor } = require('./followup');
 
 const USAGE = [
   'Aufruf: node prepare.js spec-review <spec> [quelle] [--rounds N] [--only <reviewer,...>]',
   '       node prepare.js plan-review <plan> [spec] [--rounds N] [--only <reviewer,...>]',
   '       node prepare.js implementation <plan> [spec]',
   '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]',
+  '       node prepare.js review-followup <spec|plan> <auswahl>   (auswahl: b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
@@ -31,6 +33,7 @@ const FLAGS = {
   'plan-review': ['--rounds', '--only'],
   implementation: [],
   'implementation-review': ['--spec', '--context', '--base', '--only'],
+  'review-followup': [],
 };
 
 // Reviewer je Review in fester Reihenfolge; --only wählt daraus, die Reihenfolge bleibt.
@@ -39,7 +42,7 @@ const REVIEWERS = {
   'plan-review': ['coverage', 'feasibility', 'architecture', 'risks', 'buildability'],
   'implementation-review': ['acceptance', 'plan-fidelity', 'design', 'tests', 'risks'],
 };
-const MAX_POSITIONAL = { 'spec-review': 2, 'plan-review': 2, implementation: 2, 'implementation-review': 2 };
+const MAX_POSITIONAL = { 'spec-review': 2, 'plan-review': 2, implementation: 2, 'implementation-review': 2, 'review-followup': 2 };
 
 function parseArgs(skill, args) {
   const positional = [];
@@ -277,11 +280,82 @@ function prepareImplementationReview({ positional, flags }) {
   return values;
 }
 
+const SELECTION = /^(?:b|\d+|\d+:(?:\d+|b)(?:,\d+:(?:\d+|b))*)$/;
+
+function selectionPairs(text, groups) {
+  if (!text.includes(':')) return groups.map((group) => [String(group.number), text]);
+  return text.split(',').map((part) => part.split(':'));
+}
+
+function chooseProposal(group, wanted) {
+  if (wanted === 'b') {
+    if (!group.preferred) throw new PrepareError(`Gruppe ${group.number} hat keinen bevorzugten Vorschlag.`);
+    return group.preferred;
+  }
+  const choice = Number(wanted);
+  if (choice < 1 || choice > group.proposals.length) {
+    throw new PrepareError(`Gruppe ${group.number}: Vorschlag ${wanted} gibt es nicht (1-${group.proposals.length}).`);
+  }
+  return choice;
+}
+
+function parseSelection(text, groups) {
+  if (!SELECTION.test(text)) throw new UsageError(`Auswahl ungültig: ${text} (erlaubt: b, <n>, <g>:<n|b>,...)`);
+  if (groups.length === 0) throw new PrepareError('Die Sicherung enthält keine Scout-Gruppen.');
+  const seen = new Set();
+  return selectionPairs(text, groups).map(([number, wanted]) => {
+    const group = groups[Number(number) - 1];
+    if (!group) throw new PrepareError(`Gruppe ${number} gibt es nicht (1-${groups.length}).`);
+    if (seen.has(group.number)) throw new PrepareError(`Gruppe ${group.number} doppelt gewählt.`);
+    seen.add(group.number);
+    return { group, choice: chooseProposal(group, wanted) };
+  });
+}
+
+function selectionText(chosen) {
+  const blocks = chosen.map(({ group, choice }) => [
+    `### ${group.number} · ${group.severity} ${group.location} (${group.reviewers.join(', ')})`,
+    ...group.findings,
+    `Gewählt: Vorschlag ${choice}`,
+    group.proposals[choice - 1],
+  ].join('\n'));
+  return `# Gewählte Scout-Vorschläge\n\n${blocks.join('\n\n')}\n`;
+}
+
+function headCommit(root) {
+  const result = spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' });
+  if (result.status !== 0) throw new PrepareError(`HEAD nicht lesbar: ${toPosix(root)}`);
+  return result.stdout.trim();
+}
+
+function prepareReviewFollowup({ positional }) {
+  if (positional.length !== 2) throw new UsageError('review-followup braucht <artefakt> <auswahl>');
+  const artifact = existingFile(path.resolve(positional[0]), 'Artefakt');
+  const root = gitRoot(path.dirname(artifact));
+  const roles = rolesFor(artifact);
+  const slug = slugFor(artifact, roles);
+  const saved = latest(root, slug, roles);
+  if (!saved) throw new PrepareError(`Keine Scout-Vorschläge gesichert für ${slug}. Zuerst das Review laufen lassen.`);
+  const chosen = parseSelection(positional[1], loadGroups(saved.dir));
+  const affected = [...new Set(chosen.flatMap(({ group }) => group.reviewers))];
+  const art = ART_OF_ROLE[saved.role];
+  const values = PREPARERS[art]({ positional: [artifact], flags: { '--only': [affected.join(',')] } });
+  const selection = path.join(values.W, 'auswahl.md');
+  fs.writeFileSync(selection, selectionText(chosen));
+  values.art = art;
+  values.F = selection;
+  values.gruppen = chosen.map(({ group }) => group.number).join(',');
+  values.WAHL = chosen.map(({ group, choice }) => `${group.number} · ${group.severity} ${group.location} · Vorschlag ${choice}`);
+  if (art === 'implementation-review') values.FIX_BASE = headCommit(values.R);
+  return values;
+}
+
 const PREPARERS = {
   'spec-review': prepareSpecReview,
   'plan-review': preparePlanReview,
   implementation: prepareImplementation,
   'implementation-review': prepareImplementationReview,
+  'review-followup': prepareReviewFollowup,
 };
 
 function render(values) {
@@ -304,7 +378,7 @@ function main() {
       process.stderr.write(`${error.message}\n${USAGE}`);
       process.exit(2);
     }
-    if (![PrepareError, TagError, PackageError, ConfigError].some((type) => error instanceof type)) throw error;
+    if (![PrepareError, TagError, PackageError, ConfigError, FollowupError].some((type) => error instanceof type)) throw error;
     process.stderr.write(`${error.message}\n`);
     process.exit(1);
   }

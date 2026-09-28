@@ -264,3 +264,110 @@ test('planReview_AnchorCheckFails_WarnsWithoutAAndExitsZero', () => {
   assert.equal(out.A, undefined);
   assert.match([].concat(out.WARN).join('\n'), /Anker-Prüfung fehlgeschlagen: Task-Nummerierung/);
 });
+
+const FOLLOWUP_AGGREGATE = [
+  '=== REWORK ===',
+  '### 🔴 Task 2 (buildability, feasibility · hochgestuft)',
+  '- [buildability · yellow] Zitat: „a“ · Konsequenz: k1 · Begründung: b1',
+  '',
+  '### 🟡 AC-03 (coverage)',
+  '- [coverage · yellow] Zitat: „c“ · Konsequenz: k3 · Begründung: b3',
+  '',
+].join('\n');
+const FOLLOWUP_SCOUT = [
+  '## Scout-Vorschläge', '',
+  '### 🔴 Task 2', '1. Anker ändern', '2. Datei vorher anlegen', '**Bevorzugt: 2** — weniger Risiko', '',
+  '### 🟡 AC-03', '1. Schritt ergänzen', '**Bevorzugt: 1** — einziger Weg', '',
+].join('\n');
+
+function saveFollowup(repo, role, savedAt, aggregate = FOLLOWUP_AGGREGATE, scout = FOLLOWUP_SCOUT) {
+  const dir = path.join(repo, '.forge', 'followup', role, 'demo');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'aggregate.md'), aggregate);
+  fs.writeFileSync(path.join(dir, 'scout.md'), scout);
+  fs.writeFileSync(path.join(dir, 'meta.json'), JSON.stringify({ rolle: role, savedAt }));
+}
+
+test('reviewFollowup_NothingSaved_ExitsOneWithHint', () => {
+  const result = run(planRepo(), 'review-followup', 'docs/forge/demo/plan.md', 'b');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Keine Scout-Vorschläge gesichert für demo/);
+});
+
+test('reviewFollowup_PlanPreferred_OnlyAffectedReviewersAndSelectionFile', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'b');
+  assert.equal(result.status, 0, result.stderr);
+  const out = values(result);
+  assert.equal(out.art, 'plan-review');
+  assert.equal(out.aktiv, 'coverage,feasibility,buildability');
+  assert.equal(out.gruppen, '1,2');
+  assert.deepEqual([].concat(out.WAHL), ['1 · 🔴 Task 2 · Vorschlag 2', '2 · 🟡 AC-03 · Vorschlag 1']);
+  assert.ok(samePath(path.dirname(out.F), out.W));
+  const selection = fs.readFileSync(out.F, 'utf8');
+  assert.ok(selection.includes('### 1 · 🔴 Task 2 (buildability, feasibility)'));
+  assert.ok(selection.includes('- [buildability · yellow] Zitat: „a“'));
+  assert.ok(selection.includes('Gewählt: Vorschlag 2\nDatei vorher anlegen'));
+});
+
+test('reviewFollowup_PerGroupSelection_WritesOnlyChosenGroup', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', '2:1'));
+  assert.equal(out.aktiv, 'coverage');
+  assert.equal(out.gruppen, '2');
+  assert.ok(!fs.readFileSync(out.F, 'utf8').includes('Task 2'));
+});
+
+test('reviewFollowup_BadSyntaxOrArgumentCount_ExitsTwo', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  assert.equal(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'x').status, 2);
+  assert.equal(run(repo, 'review-followup', 'docs/forge/demo/plan.md', '1:').status, 2);
+  assert.equal(run(repo, 'review-followup', 'docs/forge/demo/plan.md').status, 2);
+});
+
+test('reviewFollowup_UnknownGroupProposalOrDuplicate_ExitsOne', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const call = (selection) => run(repo, 'review-followup', 'docs/forge/demo/plan.md', selection);
+  assert.match(call('3:1').stderr, /Gruppe 3 gibt es nicht \(1-2\)/);
+  assert.match(call('2:2').stderr, /Gruppe 2: Vorschlag 2 gibt es nicht \(1-1\)/);
+  assert.match(call('1:1,1:2').stderr, /Gruppe 1 doppelt gewählt/);
+  assert.equal(call('3').status, 1);
+});
+
+test('reviewFollowup_PreferredMissing_ExitsOneNamingGroup', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', FOLLOWUP_AGGREGATE, FOLLOWUP_SCOUT.replace('**Bevorzugt: 1** — einziger Weg', ''));
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'b');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Gruppe 2 hat keinen bevorzugten Vorschlag/);
+});
+
+test('reviewFollowup_ImplementationSavedLater_WinsWithFixBase', () => {
+  const repo = planRepo();
+  git(repo, 'tag', 'forge-base/demo', 'HEAD~1');
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  saveFollowup(repo, 'review', '2026-09-28T11:00:00.000Z',
+    '=== REWORK ===\n### 🔴 src/a.ts (risks)\n- [risks · red] Zitat: „x“ · Konsequenz: k · Begründung: b\n',
+    '## Scout-Vorschläge\n\n### 🔴 src/a.ts\n1. Prüfung ergänzen\n**Bevorzugt: 1** — klar\n');
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', '1');
+  assert.equal(result.status, 0, result.stderr);
+  const out = values(result);
+  assert.equal(out.art, 'implementation-review');
+  assert.equal(out.aktiv, 'risks');
+  assert.equal(out.FIX_BASE, git(repo, 'rev-parse', 'HEAD'));
+});
+
+test('reviewFollowup_SpecArtifact_UsesSpecReviewSave', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T12:00:00.000Z');
+  saveFollowup(repo, 'spec-review', '2026-09-28T10:00:00.000Z',
+    '=== REWORK ===\n### 🟡 AC-01 (clarity)\n- [clarity · yellow] Zitat: „x“ · Konsequenz: k · Begründung: b\n',
+    '## Scout-Vorschläge\n\n### 🟡 AC-01\n1. Wortlaut schärfen\n**Bevorzugt: 1** — klar\n');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/spec.md', 'b'));
+  assert.equal(out.art, 'spec-review');
+  assert.equal(out.aktiv, 'clarity');
+});

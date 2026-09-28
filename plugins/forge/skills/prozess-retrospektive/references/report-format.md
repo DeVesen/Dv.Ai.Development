@@ -62,6 +62,7 @@ Ein Befund aus Kurzbefund, *Situation*, *Kosten* oder *Ersparnis*, *Ursache*, *B
 - Befehle behalten Werkzeug und Optionen, Projektnamen werden Platzhalter: `dotnet build <Solution>`, `docker logs --tail 200 <Container>`.
 - Dateien, Klassen, Container, Solutions und Fachbegriffe des Projekts stehen nur unter *Im Projekt:*. Das gilt auch für „Neue Ideen“.
 - Vor dem Speichern gehst du jeden Befund durch: Steht außerhalb von *Im Projekt:* ein Name, den nur dieses Projekt kennt, ersetzt du ihn durch seine Rolle oder einen Platzhalter.
+- „Zahlen“ und „MCP-Nutzung“ sind davon ausgenommen: Sie sind Rohdaten aus dem Skript und bleiben wörtlich, auch mit Pfaden und Projektnamen.
 
 Beispiel:
 
@@ -80,5 +81,6 @@ Beispiel:
 - Sortiert nach Kosten: teuerster Reibungspunkt zuerst, größte Einsparung zuerst.
 - Ein Punkt steht entweder unter Reibung (etwas hakte) oder unter Sparpotenzial (lief, aber zu teuer), nicht in beiden.
 - Eine Aussage ohne Zahl oder Zitat trägt am Ende ` · Eindruck`.
+- Ein Fehler in einem Werkzeug ist nie eine Kleinigkeit: Er tritt bei jedem Lauf wieder auf und bekommt einen Befund mit `Ziel:`.
 - Kein Befund ohne *Besser gewesen:* und ohne `Ziel:`-Zeile. `neu:` heißt: Das gibt es noch nicht, es lohnt sich, darüber nachzudenken; jedes `neu:` steht zusätzlich unter „Neue Ideen“.
 - Die Relevanz-Sätze sammeln sich über mehrere Berichte; erst dann wird ein MCP gestrichen, nicht nach einer Session.

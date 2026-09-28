@@ -9,7 +9,7 @@ const { readText, readMarkdown, wordCount } = require('./lib/markdown');
 const PLUGIN_ROOT = path.join(__dirname, '..');
 const SKILL_DIR = path.join(PLUGIN_ROOT, 'skills', 'prozess-retrospektive');
 const SKILL = path.join(SKILL_DIR, 'SKILL.md');
-const REFERENCES = ['signals.md', 'report-format.md'];
+const REFERENCES = ['signals.md', 'report-format.md', 'common-mistakes.md'];
 
 function reference(name) {
   return readText(path.join(SKILL_DIR, 'references', name));
@@ -93,4 +93,39 @@ test('signals_Savings_CoverNeedlessRuns', () => {
   assert.match(text, /Lauf ohne neue Information/);
   assert.match(text, /breiter Lauf, wo ein schmaler reicht/);
   assert.match(text, /Ergebnis erzeugt, aber nie genutzt/);
+});
+
+test('commonMistakes_Table_KeepsRowsAndAddsRuleQuotesAndCountedNumbers', () => {
+  const text = reference('common-mistakes.md');
+  for (const row of ['Aus dem Gedächtnis schätzen', 'Zahlen oder MCP-Tabellen abtippen', 'Bericht nur im Chat']) {
+    assert.ok(text.includes(row), `${row} fehlt`);
+  }
+  assert.match(text, /Regel eines anderen Werkzeugs aus dem Gedächtnis/);
+  assert.ok(text.includes('`datei:zeile`'));
+  assert.ok(text.includes('`grep -c`'));
+});
+
+test('prozessRetrospektive_Body_TableMovedOutAndLinked', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.doesNotMatch(body, /\| Aus dem Gedächtnis schätzen \|/);
+  assert.ok(body.includes('references/common-mistakes.md'));
+});
+
+test('prozessRetrospektive_Body_CommitWithConventionAndSessionWorkitem', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('forge-config.js" get Commit-Konvention'));
+  assert.match(body, /Workitem-Nummer.*unklar.*fragst du/);
+});
+
+test('prozessRetrospektive_Body_LargeContextSuggestsFreshSession', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /frischen? Session/);
+  assert.ok(body.includes('--file <pfad>'));
+  assert.match(body, /200k/);
+});
+
+test('reportFormat_ToolErrorIsNeverTrivialAndRawDataExempt', () => {
+  const text = reference('report-format.md');
+  assert.match(text, /Ein Fehler in einem Werkzeug ist nie eine Kleinigkeit/);
+  assert.match(text, /„Zahlen“ und „MCP-Nutzung“ sind davon ausgenommen/);
 });

@@ -16,7 +16,7 @@ Kategorien zur Einordnung: `widerspruch`, `fehlendes-verhalten` und `unerfuellba
 ## Theoretisches Verhalten nach Umsetzung
 Die Reviewer prüfen in Runde 1 und vergeben je Finding eine Kategorie:
 
-- **`completeness`:** Hat eine beschriebene Funktion kein AC, fehlt ein Anliegen der Quelle oder hat die Spec gar keine AC-ID, ist das `fehlendes-verhalten`. · Aussage
+- **`completeness`:** Hat eine beschriebene Funktion kein AC, fehlt ein Anliegen der Quelle oder hat die Spec gar keine AC-ID, ist das `fehlendes-verhalten`. Hat die Spec gar keine AC-ID, meldet `completeness` dafür genau ein Finding an der Titelüberschrift (`#`) des Dokuments und keine weiteren Findings je Funktion ohne AC. · Aussage
 - **`completeness`, vage ACs:** Nennt ein AC gar kein beobachtbares Ergebnis, etwa „funktioniert korrekt“, ist das `fehlendes-verhalten`. Nennt es ein Ergebnis ohne Maß, ist das `detail`. · Aussage
 - **`consistency`:** Ein Widerspruch zwischen zwei Aussagen ist `widerspruch`. Ein Verweis auf ein anderes Dokument ist `detail`, außer er ist die einzige Beschreibung einer Funktion; dann ist er `fehlendes-verhalten`. · Aussage
 - **`feasibility`:** Anforderungen, die nicht zugleich erfüllbar sind, und Entscheidungen, die eine Anforderung unerfüllbar machen, sind `unerfuellbar`. Eine Voraussetzung, die die Spec nennt, aber nicht herstellt, ist `detail`. · Aussage
@@ -25,13 +25,13 @@ Die Reviewer prüfen in Runde 1 und vergeben je Finding eine Kategorie:
 
 Kein Reviewer des Spec-Reviews ist nur beratend. · Aussage
 
-Kein Reviewer meldet eine Formulierung, einen Stil oder einen Randfall. · Aussage
+Kein Reviewer meldet eine Formulierung, einen Stil oder einen Randfall. Uneinheitliche Schreibweisen eines Begriffs (Groß- oder Kleinschreibung, ß oder ss, Umlaute) zählen nicht als Stil; sie sind `detail`, und nur `clarity` meldet sie. · Aussage
 
-Bei einer Spec der Art `frei` prüfen alle Reviewer nur die innere Stimmigkeit, und `profiles` läuft nicht. · Git
+Bei einer Spec der Art `frei` prüfen alle Reviewer die innere Stimmigkeit; `completeness` gleicht zusätzlich die Quelle ab, wenn eine vorliegt. `profiles` läuft nicht. · Git
 
 Der Scout macht vor der Nacharbeit Vorschläge. Bei `verankert` stützt er sie auf die Spec, die Profile, das Glossar und den Code. Bei `frei` stützt er sie nur auf die Spec. Jeder Vorschlag nennt seinen Beleg oder sagt, dass es keinen gibt. · Aussage
 
-Die Nacharbeit schreibt eine Klarstellung selbst. Neues Verhalten schreibt sie selbst, wenn der bevorzugte Scout-Vorschlag einen Beleg aus Spec oder Bestand nennt. Nur neues Verhalten ohne Beleg wird eine Frage an den Menschen. · Aussage
+Die Nacharbeit schreibt eine Klarstellung selbst. Eine Klarstellung schärft, was die Spec schon festlegt (Wortlaut, Messbarkeit, ein Widerspruch, dessen Auflösung aus der Spec folgt); alles, was einen neuen Fall, eine neue Regel oder ein neues AC festlegt, ist neues Verhalten. Neues Verhalten schreibt sie selbst, wenn der bevorzugte Scout-Vorschlag einen Beleg aus Spec oder Bestand nennt. Bestand sind Profile, Glossar und Code, bei `frei` nur die Spec. Bevorzugt ist der Vorschlag, den der Scout als „Bevorzugt“ kennzeichnet. Nur neues Verhalten ohne Beleg wird eine Frage an den Menschen. · Aussage
 
 Ein Beleg aus dem Bestand geht nie vor einen W-Eintrag. Widerspricht der bevorzugte Vorschlag einem W-Eintrag, ändert die Nacharbeit die Stelle nicht, und ihr Eintrag lautet „W-Eintrag ist bindend“. · Git
 
@@ -50,7 +50,7 @@ Nächster Schritt im Bericht, je Status:
 
 ## Akzeptanzkriterien
 - **AC-01** Gegeben eine Spec mit einer beschriebenen Funktion ohne AC, wenn Runde 1 endet, dann liegt an der Überschrift dieser Funktion ein Finding der Kategorie `fehlendes-verhalten`. · Aussage
-- **AC-02** Gegeben eine Spec ohne jede AC-ID, wenn Runde 1 endet, dann meldet `completeness` genau ein Finding der Kategorie `fehlendes-verhalten`, an der ersten Überschrift. · Git
+- **AC-02** Gegeben eine Spec ohne jede AC-ID, wenn Runde 1 endet, dann meldet `completeness` genau ein Finding der Kategorie `fehlendes-verhalten`, an der Titelüberschrift (`#`) des Dokuments. · Git
 - **AC-03** Gegeben eine Quelle mit einem Anliegen, das die Spec nicht abdeckt, wenn Runde 1 endet, dann liegt ein Finding der Kategorie `fehlendes-verhalten` vor, dessen Zitat mit „Quelle: “ beginnt. · Aussage
 - **AC-04** Gegeben ein AC, das mit „dann funktioniert der Export korrekt“ endet, wenn Runde 1 endet, dann liegt an diesem AC ein Finding der Kategorie `fehlendes-verhalten`. · Aussage
 - **AC-05** Gegeben ein AC, das mit „dann lädt die Liste schnell“ endet, wenn Runde 1 endet, dann liegt an diesem AC ein Finding der Kategorie `detail`. · Aussage
@@ -77,6 +77,10 @@ Nächster Schritt im Bericht, je Status:
 - **AC-26** Gegeben der Status `sauber nach Nachprüfung` mit zwei Hinweisen, wenn der Bericht erscheint, dann nennt er zuerst `/dv-forge:review-followup <spec> <auswahl>` als optionalen Schritt, mit dem Auswahl-Hinweis. · Git
 - **AC-27** Gegeben der Status `Fragen offen`, wenn der Bericht erscheint, dann nennt er als nächsten Schritt, `/dv-forge:spec-review <spec>` erneut zu starten. · Aussage
 - **AC-28** Gegeben der Status `nicht bereit, 1 × 🔴 offen`, wenn der Bericht erscheint, dann nennt er `/dv-forge:review-followup <spec> <auswahl>` und das erneute `/dv-forge:spec-review <spec>` nach eigener Anpassung als nächste Schritte. · Git
+- **AC-29** Gegeben eine Spec der Art `frei`, wenn Runde 1 endet, dann liegt kein Ergebnis von `profiles` vor. · Aussage
+- **AC-30** Gegeben ein 🔴-Finding eines beliebigen Reviewers des Spec-Reviews, wenn die Runde endet, dann ist der Status nicht `sauber`. · Aussage
+- **AC-31** Gegeben eine 🔴-Stelle, deren bevorzugter Scout-Vorschlag nur eine Klarstellung ist, wenn die Nacharbeit endet, dann ist der Vorschlag in der Spec umgesetzt, und es gibt zu dieser Stelle keine Frage an den Menschen. · Aussage
+- **AC-32** Gegeben eine Spec mit einem W-Eintrag und einem Eintrag im Abschnitt „Offen, bewusst nicht weiterverfolgt (Abbruch)“, wenn Runde 1 endet, dann liegt zu keinem der beiden ein Finding vor. · Aussage
 
 ## Entscheidungen
 - **W · Ziel Spec-Review** · Aussage — Die Spec ist stimmig, verständlich und grob umsetzbar, aber nicht perfekt. Details entscheidet der Plan. Der Reviewer ist kein Oberlehrer.
@@ -89,3 +93,13 @@ Nächster Schritt im Bericht, je Status:
 - **W · Kein 🟢** · Aussage — Die Reviewer des Spec-Reviews melden keine `formulierung`.
 - **W · Eigene Entscheidungen im Bericht** · Aussage — Der Bericht listet jede Stelle, an der die Nacharbeit neues Verhalten mit Beleg geschrieben hat, samt Beleg.
 - **W · Scout bei `frei`** · Aussage — Er liest nur die Spec, wie heute.
+- **W · Quellenabgleich bei `frei`** · Aussage — `completeness` gleicht die Quelle auch bei `frei` ab; die Quelle gehört zur Eingabe, nicht zum Bestand.
+- **W · Erste Überschrift** · Aussage — Gemeint ist die Titelüberschrift (`#`) des Dokuments.
+- **W · Beleg und bevorzugter Vorschlag** · Aussage — Bestand sind Profile, Glossar und Code, bei `frei` nur die Spec. Bevorzugt ist der Vorschlag, den der Scout so kennzeichnet.
+- **W · Schreibweisen** · Aussage — Nur `clarity` meldet uneinheitliche Schreibweisen.
+- **W · Neue ACs aus R1** · Aussage — AC-29 (`profiles` läuft bei `frei` nicht), AC-30 (jedes 🔴 blockt) und AC-31 (Klarstellung ohne Frage) ergänzt.
+- **W · ACs für Soll-Vorgaben** · Aussage — Nur für W- und Abbruch-Einträge ein AC (AC-32). Ziel und ß/ss-Beispiel im Reviewer-Auftrag bleiben Soll-Vorgaben ohne AC.
+- **R1 · AC-02** — geändert — Klarstellung im `completeness`-Punkt: Ohne jede AC-ID gilt AC-02 (genau ein Finding an der ersten Überschrift), keine zusätzlichen Findings je Funktion; der Vorrang folgt aus dem ausdrücklichen „genau ein“ in AC-02.
+- **R1 · Theoretisches Verhalten nach Umsetzung** — frage an den menschen — Klargestellt: Grenze Klarstellung/neues Verhalten definiert; Schreibweisen (ß/ss, Groß-/Kleinschreibung, Umlaute) sind kein Stil, sondern `detail` (folgt aus Soll-Vorgaben und AC-17). Offen: (1) Prüft `completeness` bei `frei` weiter das Anliegen der Quelle (AC-03)? Antworten: ja, die Quelle gehört zur Eingabe / nein, bei `frei` entfällt der Quellenabgleich. (2) Sollen neue ACs ergänzt werden für: `profiles` läuft bei `frei` nicht; Findings jedes Reviewers können blocken (keiner nur beratend); die Nacharbeit schreibt eine Klarstellung ohne Frage an den Menschen? Antworten: ja, alle drei / nur einzelne / nein, die Aussagen genügen.
+- **R1 · Entscheidungen** — nicht geändert — W-Eintrag ist bindend; der Verhaltensabschnitt und „W · Scout bei `frei`“ legen bereits fest, dass der Scout bei `frei` nur die Spec liest.
+- **R1 · Soll-Vorgaben** — frage an den menschen — Sollen ACs ergänzt werden, die prüfen, dass jeder Reviewer-Auftrag das Ziel und das ß/ss-Beispiel nennt und dass W-Einträge sowie Abbruch-Einträge nie Findings werden? Antworten: ja, für alle drei Vorgaben / nur für W- und Abbruch-Einträge / nein, die Soll-Vorgaben genügen.

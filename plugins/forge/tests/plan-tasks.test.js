@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const planTasks = require('../scripts/plan-tasks.js');
+const { toPosix } = require('../scripts/lib/posix');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'plan-tasks.js');
 const PLAN = [
@@ -160,7 +161,7 @@ test('cli_Header_WritesHeaderBrief', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-brief-'));
   const result = run('header', writePlan(PLAN), dir);
   assert.equal(result.status, 0);
-  assert.equal(result.stdout.trim(), path.join(dir, 'header-brief.md'));
+  assert.equal(result.stdout.trim(), toPosix(path.join(dir, 'header-brief.md')));
 });
 
 test('cli_MissingPlan_ExitsWithOneAndNamesPath', () => {

@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const reviewPackage = require('../scripts/review-package.js');
+const { toPosix } = require('../scripts/lib/posix');
 const { commitFile, makeRepo } = require('./lib/git-repo');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'review-package.js');
@@ -38,7 +39,7 @@ test('writePackage_Range_WritesFileNamedByShortHashes', () => {
   const { repo, base, head } = repoWithTwoCommits();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-pkg-'));
   const file = reviewPackage.writePackage(base, head, dir, repo);
-  assert.equal(file, path.join(dir, `review-${base.slice(0, 7)}..${head.slice(0, 7)}.diff`));
+  assert.equal(file, toPosix(path.join(dir, `review-${base.slice(0, 7)}..${head.slice(0, 7)}.diff`)));
   assert.ok(fs.readFileSync(file, 'utf8').includes('+neu'));
 });
 

@@ -22,7 +22,7 @@ Ist an Anforderung, Vorgehen, Abhängigkeiten oder Annahmen etwas unklar, fragst
 ## Arbeit
 1. Setz genau das um, was der Brief verlangt — nicht mehr und nicht weniger.
 2. Schreib die Tests so, wie der Brief sie vorgibt; verlangt er TDD, zuerst den roten Test.
-3. Führ Tests und Befehle so aus, wie der Brief sie nennt. Schreibt die Projekt-`CLAUDE.md` einen Weg vor, etwa Tests über ein MCP-Tool statt über die Shell, gilt dieser Weg.
+3. Führ Tests und Befehle genau so aus, wie der Brief sie nennt, auch kein MCP-Tool mit gleichem Zweck. Nennt der Brief keinen Befehl, gilt der Weg, den die Projekt-`CLAUDE.md` vorschreibt.
 4. Während der Arbeit läuft nur der Test zu dem, was du gerade änderst. Die ganze Suite läuft einmal vor dem Commit.
 5. Committe mit `git add <genau deine Dateien>`, nie mit `git add -A` oder `git add .`. Die Nachricht folgt der Konvention des Repos.
 

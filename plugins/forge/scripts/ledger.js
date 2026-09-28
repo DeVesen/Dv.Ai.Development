@@ -3,11 +3,13 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 
 const USAGE = 'Aufruf: node ledger.js archive <plan> <arbeitsbereich>\n';
 const JUDGEMENT = /^Urteil:/;
 const DEFERRED = /^Task \d+: (?:zurückgestellt:|geparkt —|Bedenken:)/;
+const FULL_RUN = /^Gesamtlauf:/;
 
 class LedgerError extends Error {}
 
@@ -19,6 +21,18 @@ function archivePath(planPath) {
 
 function readLines(file) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n').split('\n') : [];
+}
+
+function shortHead(dir) {
+  const result = spawnSync('git', ['-C', dir, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' });
+  return result.status === 0 ? result.stdout.trim() : '-';
+}
+
+// Stand der Umsetzung beim Archivieren und der letzte grüne Gesamtlauf: Das Review erkennt spätere Commits,
+// Test-Reviewer und Abschluss sparen sich einen zweiten Lauf auf demselben Code.
+function stateLines(planPath, ledger) {
+  const runs = ledger.map((line) => line.trim()).filter((line) => FULL_RUN.test(line));
+  return [`- Stand: ${shortHead(path.dirname(path.resolve(planPath)))}`, `- ${runs.at(-1) ?? 'Gesamtlauf: keiner'}`];
 }
 
 function buildArchive(planPath, workspace) {
@@ -42,6 +56,9 @@ function buildArchive(planPath, workspace) {
     '',
     '## Zurückgestellt und geparkt',
     ...bullets(DEFERRED),
+    '',
+    '## Stand',
+    ...stateLines(planPath, ledger),
     '',
   ].join('\n');
 }

@@ -104,6 +104,24 @@ test('implementationReview_SecondArgumentIsSpec_NotIgnored', () => {
   assert.match(conflict.stderr, /Zwei verschiedene Specs/);
 });
 
+test('implementationReview_CommitsAfterReportState_WarnsExceptReportItself', () => {
+  const repo = planRepo();
+  const stand = git(repo, 'rev-parse', '--short', commitFile(repo, 'src/a.ts', 'a\n', 'feat: a'));
+  commitFile(repo, 'docs/forge/demo/umsetzung.md', `# Umsetzung\n\n## Stand\n- Stand: ${stand}\n- Gesamtlauf: keiner\n`, 'docs: report');
+  const clean = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~2'));
+  assert.equal(clean.WARN, undefined);
+  commitFile(repo, 'src/b.ts', 'b\n', 'refactor: share helper');
+  const late = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~3'));
+  assert.match([].concat(late.WARN).join('\n'), /nach dem Umsetzungsbericht \(Stand .+\): .*refactor: share helper/);
+});
+
+test('implementationReview_ConfiguredTestCommand_IsListedRaw', () => {
+  const repo = planRepo();
+  commitFile(repo, 'CLAUDE.md', '## dv-forge\n- Test: dv-forge: angular-test --root src/frontend\n', 'config');
+  const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~1'));
+  assert.equal(out.Test, 'dv-forge: angular-test --root src/frontend');
+});
+
 test('implementationReview_ContextFilesListed', () => {
   const repo = planRepo();
   commitFile(repo, 'a.md', 'a\n', 'a');

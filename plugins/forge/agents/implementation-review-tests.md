@@ -13,13 +13,15 @@ Du prüfst die Tests der Umsetzung und führst die Suite einmal aus. Du liest Pl
 - `Spec:` absoluter Pfad zur `spec.md`; die Zeile fehlt, wenn es keine gibt
 - `Paket:` Datei mit Commits, Stat und Diff des geprüften Bereichs
 - `Repo:` Wurzel des Repos
+- `Test:` Testbefehl aus der Projekt-Konfiguration, wörtlich; leer heißt: nicht festgelegt
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
 - `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
 
 ## Prüfauftrag
-1. Ermittle den Befehl für die komplette Suite aus dem Plan (Global Constraints oder die Lauf-Schritte der Tasks). Den Weg bestimmt die Projekt-`CLAUDE.md`: Schreibt sie ein MCP-Tool vor, nutzt du dieses statt der Shell.
-2. Führ die komplette Suite genau einmal aus.
-   - Jeder rote Test ist `red` an der Stelle seiner Testdatei.
+1. Befehl für die komplette Suite: der aus `Test:`; ist er leer, der aus dem Plan (Global Constraints oder die Lauf-Schritte der Tasks). Du führst ihn genau so aus, auch kein MCP-Tool mit gleichem Zweck.
+2. Führ die komplette Suite genau einmal aus. Ausnahme: Nennt `Zurückgestellt:` im Abschnitt Stand eine Zeile `Gesamtlauf:` mit `grün` und zeigt `git diff --name-only <commit> HEAD` seitdem nur Doku (`.md`), läuft die Suite nicht erneut; du lässt nur die Testdateien aus dem Paket laufen und nennst den Gesamtlauf in `summary`.
+   - Ein roter Test im Paket ist `red` an der Stelle seiner Testdatei.
+   - Ein roter Test außerhalb des Pakets läuft einmal einzeln nach. Ist er einzeln auch rot, ist er `red` an seiner Testdatei; sonst `green` mit `consequence` `flaky im Gesamtlauf`.
    - Warnungen oder Rauschen in der Ausgabe sind `yellow` an der Stelle `Testlauf`.
    - Lässt sich die Suite nicht ausführen, ist das `red` an der Stelle `Testlauf`, mit der Fehlermeldung als Zitat.
 3. Prüf die Tests im Paket:

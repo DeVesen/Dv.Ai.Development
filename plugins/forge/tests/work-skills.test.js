@@ -58,3 +58,10 @@ test('finishWork_Body_ChecksTestsThenRemoves', () => {
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
   assert.match(body, /Kein Merge, kein Push, kein Branch löschen/);
 });
+
+test('finishWork_Body_SkipsTestRunWhenReportShowsGreenRunOnSameCode', () => {
+  const { body } = skill('finish-work');
+  assert.ok(body.includes('`Gesamtlauf:`'));
+  assert.ok(body.includes('git diff --name-only <commit> HEAD'));
+  assert.match(body, /nur Doku/);
+});

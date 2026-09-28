@@ -57,3 +57,8 @@ test('implementationReviewSkill_Body_ReportStatusRangeAndCleanup', () => {
 test('implementationReviewSkill_Body_StaysUnder500Words', () => {
   assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
 });
+
+test('implementationReviewSkill_Body_WarnLinesGoToOrchestratorNotes', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /Jede `WARN`-Zeile kommt in die Hinweise des Orchestrators/);
+});

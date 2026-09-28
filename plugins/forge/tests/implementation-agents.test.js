@@ -80,3 +80,9 @@ test('implementationAgents_Text_NoTypographicQuotes', () => {
     assert.doesNotMatch(body, TYPOGRAPHIC_QUOTES, `${name} enthält typografische Anführungszeichen`);
   }
 });
+
+test('implementation-implementer_Body_ConfiguredTestCommandFirst', () => {
+  const { body } = readAgent('implementation-implementer');
+  assert.match(body, /auch kein MCP-Tool mit gleichem Zweck/);
+  assert.doesNotMatch(body, /etwa Tests über ein MCP-Tool statt über die Shell/);
+});

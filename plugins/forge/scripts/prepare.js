@@ -233,6 +233,20 @@ function prepareImplementation({ positional }) {
   return { P: plan, S: resolveSpec(plan, positional[1], root), R: gitRoot(process.cwd()), slug: slugOf(plan) };
 }
 
+const REPORT_STATE = /^- Stand: ([0-9a-f]{4,40})\s*$/m;
+
+// Commits nach dem Stand des Umsetzungsberichts, ohne den Bericht selbst: Sie fehlen in Urteilen und Bereich.
+function commitsAfterReport(report, root) {
+  const state = REPORT_STATE.exec(fs.readFileSync(report, 'utf8'));
+  if (!state) return null;
+  // realpath gleicht kurze (8.3) und lange Windows-Pfade an, sonst zeigt der Ausschluss aus dem Repo heraus.
+  const relative = toPosix(path.relative(fs.realpathSync.native(root), fs.realpathSync.native(report)));
+  const log = spawnSync('git', ['-C', root, 'log', '--format=%h %s', `${state[1]}..HEAD`, '--', '.', `:(exclude)${relative}`], { encoding: 'utf8' });
+  if (log.status !== 0) return `Stand ${state[1]} des Umsetzungsberichts nicht prüfbar: ${log.stderr.trim().split('\n')[0]}`;
+  const commits = log.stdout.trim().split('\n').filter(Boolean);
+  return commits.length === 0 ? null : `Commits nach dem Umsetzungsbericht (Stand ${state[1]}): ${commits.join(' · ')}`;
+}
+
 function prepareImplementationReview({ positional, flags }) {
   const plan = existingFile(path.resolve(positional[0]), 'Plan');
   const root = gitRoot(process.cwd());
@@ -246,9 +260,13 @@ function prepareImplementationReview({ positional, flags }) {
   const pack = writePackage(base, 'HEAD', workspace, root);
   const values = {
     P: plan, S: spec, R: root, slug, B: base, W: workspace, K: pack, C: contexts,
-    N: '0', aktiv,
+    N: '0', aktiv, Test: readConfig(root).config.Test,
   };
-  if (fs.existsSync(archivePath(plan))) values.Z = archivePath(plan);
+  if (fs.existsSync(archivePath(plan))) {
+    values.Z = archivePath(plan);
+    const late = commitsAfterReport(values.Z, root);
+    if (late) values.WARN = late;
+  }
   return values;
 }
 

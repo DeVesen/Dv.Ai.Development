@@ -12,7 +12,7 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steht nur, was für die Umsetzung gilt. Du liest weder Plan, Spec, Kontext-Dateien noch Code; ein Hook blockt das für das ganze Repo.
 
 ## Eingaben
-1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" implementation-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: `P`, `S`, `R`, `slug`, `B`, `W`, `K`, `N`, `aktiv`, je Kontext-Datei eine Zeile `C` und, falls die Umsetzung sie abgelegt hat, `Z`. Das zweite Argument ohne `--` ist die Spec.
+1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" implementation-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: `P`, `S`, `R`, `slug`, `B`, `W`, `K`, `N`, `aktiv`, `Test`, je Kontext-Datei eine Zeile `C`, falls die Umsetzung sie abgelegt hat, `Z` und je Warnung eine Zeile `WARN`. Das zweite Argument ohne `--` ist die Spec. Jede `WARN`-Zeile kommt in die Hinweise des Orchestrators.
 2. `N = 0`: Es gibt keine Nacharbeit, der Loop endet nach Review 1. Rolle des Arbeitsbereichs: `review`.
 3. An jeden Aggregations-Aufruf aus `loop.md` hängst du `--repo "<R>"` an.
 
@@ -22,7 +22,7 @@ Jeder Reviewer und der Scout bekommen zusätzlich `Zurückgestellt: <Z>`, wenn e
 - `dv-forge:implementation-review-acceptance` — `Spec: <S>`, `Paket: <K>`, `Repo: <R>`
 - `dv-forge:implementation-review-plan-fidelity` — `Plan: <P>`, `Paket: <K>`, `Repo: <R>`
 - `dv-forge:implementation-review-design` — `Paket: <K>`, `Repo: <R>`
-- `dv-forge:implementation-review-tests` — `Plan: <P>`, `Spec: <S>`, `Paket: <K>`, `Repo: <R>`
+- `dv-forge:implementation-review-tests` — `Plan: <P>`, `Spec: <S>`, `Paket: <K>`, `Repo: <R>`, `Test: <Test>`
 - `dv-forge:implementation-review-risks` — `Paket: <K>`, `Repo: <R>`
 
 ## Nacharbeiter

@@ -62,6 +62,22 @@ test('implementation-review-tests_Body_RunsSuiteOnceAndMayNotEdit', () => {
   assert.match(body, /Ein Test ohne Assertion ist `red`/);
 });
 
+test('implementation-review-tests_Body_ConfiguredCommandFirstAndReusesGreenRun', () => {
+  const { body } = readAgent('implementation-review-tests');
+  assert.ok(body.includes('- `Test:`'));
+  assert.match(body, /auch kein MCP-Tool mit gleichem Zweck/);
+  assert.doesNotMatch(body, /Schreibt sie ein MCP-Tool vor/);
+  assert.ok(body.includes('`Gesamtlauf:`'));
+  assert.match(body, /nur Doku/);
+});
+
+test('implementation-review-tests_Body_ForeignRedTestIsRerunAlone', () => {
+  const { body } = readAgent('implementation-review-tests');
+  assert.match(body, /außerhalb des Pakets/);
+  assert.match(body, /einzeln/);
+  assert.ok(body.includes('`flaky im Gesamtlauf`'));
+});
+
 test('implementation-review-risks_Body_SwallowedErrorIsRed', () => {
   const { body } = readAgent('implementation-review-risks');
   assert.match(body, /verschluckter Fehler/);

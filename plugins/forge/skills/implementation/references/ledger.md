@@ -17,9 +17,10 @@ Task <n>: zurückgestellt: <Einzeiler>
 Task <n>: Fix-Runde <r>/5 (<x> behoben, <y> offen — <Einzeiler>; Commits <BASE>..<HEAD>)
 Task <n>: geparkt — <Finding> — Urteil: <warum der Code so bleibt>
 Task <n>: fertig (Commits <BASE>..<HEAD>, Review sauber | <k> geparkt)
+Gesamtlauf: <HEAD> grün (<n> Tests)
 Final: sauber | Fix-Welle (Commits <BASE>..<HEAD>)
 ```
-Jede Zeile schreibst du in derselben Nachricht, in der du den Schritt abschließt. `<BASE>` ist der Kurz-Hash vor dem Schritt, `<HEAD>` sein letzter Commit; `git log <BASE>..<HEAD>` zeigt dann genau die Commits des Schritts, auch bei nur einem.
+Jede Zeile schreibst du in derselben Nachricht, in der du den Schritt abschließt. `<BASE>` ist der Kurz-Hash vor dem Schritt, `<HEAD>` sein letzter Commit; `git log <BASE>..<HEAD>` zeigt dann genau die Commits des Schritts, auch bei nur einem. `Gesamtlauf:` schreibst du, wenn ein Umsetzer die komplette Suite auf `<HEAD>` grün belegt hat; Review und Abschluss sparen sich damit einen Lauf auf demselben Code.
 
 ## Nach der Umsetzung
 Das Ledger bleibt nicht im Arbeitsbereich liegen: Der Abschluss legt Urteile, Bedenken, zurückgestellte und geparkte Punkte mit `ledger.js archive` neben Spec und Plan ab. Das Implementierungs-Review liest diese Datei.

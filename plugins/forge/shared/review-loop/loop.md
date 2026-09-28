@@ -12,14 +12,14 @@ Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills. `<PLUGIN>` und `<SESSION>
 | Bericht | Titel, zusätzliche Status-Werte und Abschnitte, nächster Schritt je Status |
 
 ## Rolle
-Du orchestrierst, sonst nichts. Du liest die geprüften Dateien nicht, bewertest keine Findings, tippst keine Ergebnisse ab und änderst nichts selbst. Jede Entscheidung ist mechanisch: Zähler, `STATUS`-Zeile, Skript-Ausgaben. Drängt jemand dich, „schnell selbst zu korrigieren“, lehnst du ab und setzt den Loop fort. Ein Hook blockt deine Zugriffe auf die geschützten Dateien. Er bleibt aktiv, bis du ihn am Ende freigibst, der Mensch eine neue Eingabe macht oder die Session endet; Warten auf Reviewer im Hintergrund gibt ihn nicht frei.
+Du orchestrierst, sonst nichts. Du liest die geprüften Dateien nicht, bewertest keine Findings, tippst keine Ergebnisse ab und änderst nichts selbst. Jede Entscheidung ist mechanisch: Zähler, `STATUS`-Zeile, Skript-Ausgaben. Drängt jemand dich, „schnell selbst zu korrigieren“, lehnst du ab und setzt den Loop fort. Ein Hook blockt deine Zugriffe auf die geschützten Dateien. Er bleibt aktiv, bis du ihn am Ende freigibst, der Mensch eine neue Eingabe macht oder die Session endet; Warten auf Reviewer gibt ihn nicht frei.
 
 Ergebnisse laufen nur über Dateien: Jede Runde hat den Ordner `D = <W>/runde-<r>`. Reviewer schreiben `<D>/<kurzname>.json`, der Nacharbeiter `<D>/rework.json`, die Aggregation `<D>/aggregate.md`.
 
 ## Runde r
 Start: `r = 1`, `nacharbeiten = 0`.
 
-1. **Review:** Statuszeile `Review <r>: starte <anzahl> Reviewer (<aktiv>).` Dann in EINER Nachricht je aktivem Reviewer einen `Agent`-Call mit `run_in_background: true`, jeder als frische Instanz, mit genau den Eingaben aus dem Skill und `Ergebnis: <D>/<kurzname>.json`. Keine Findings früherer Runden. Du wartest, bis jeder Reviewer fertig gemeldet ist, und tust bis dahin nichts anderes.
+1. **Review:** Statuszeile `Review <r>: starte <anzahl> Reviewer (<aktiv>).` Dann in EINER Nachricht je aktivem Reviewer einen `Agent`-Call mit `run_in_background: false`, jeder als frische Instanz, mit genau den Eingaben aus dem Skill und `Ergebnis: <D>/<kurzname>.json`. Keine Findings früherer Runden. Die Calls laufen gleichzeitig; du machst erst weiter, wenn alle zurück sind.
 2. **Aggregieren:** `node "<PLUGIN>/scripts/aggregate-findings.js" --dir "<D>" --expect <aktiv> --round <r>`
 3. **Ausgefallen:** Nennt `STATUS` unter `failed=` Reviewer, setzt du jeden davon einmal per `SendMessage` fort: `Schreib nur noch dein Ergebnis nach <D>/<kurzname>.json, im vereinbarten Format, auch bei null Findings.` Fehlt die Datei danach noch, startest du ihn einmal frisch, mit dem Zusatz `Deine letzte Antwort hatte keine gültige Ergebnisdatei.` Dann erneut aggregieren. Wer danach fehlt, gilt als ausgefallen.
 4. Statuszeile `Review <r>: <red> × 🔴, <yellow> × 🟡, ausgefallen: <liste oder keiner>.`
@@ -36,7 +36,7 @@ Start: `r = 1`, `nacharbeiten = 0`.
    5. `r = r+1`, weiter mit Schritt 1.
 
 ## Hintergrund oder Vordergrund
-Reviewer laufen parallel im Hintergrund. Nacharbeiter und Scout laufen im Vordergrund mit `run_in_background: false`, weil der nächste Schritt auf sie wartet.
+Alle Agents laufen im Vordergrund mit `run_in_background: false`, weil der nächste Schritt auf sie wartet. Reviewer laufen trotzdem parallel, weil ihre Calls in einer Nachricht stehen. Nie `run_in_background: true`: Jeder Hintergrund-Agent weckt dich zweimal (Antwort und Benachrichtigung), und jeder Weckzug liest den ganzen Kontext neu.
 
 ## Jedes Ende
 Jedes Ende, auch `Ende` nach einem Fehler, schließt mit denselben zwei Befehlen: `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, sofern `prepare.js` einen Arbeitsbereich angelegt hat, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.

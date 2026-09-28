@@ -35,11 +35,18 @@ test('loop_Round_ForegroundAggregateStopsAndProgress', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
   for (const part of ['run_in_background: false', '<PLUGIN>/scripts/aggregate-findings.js" --dir "<D>" --expect <aktiv> --round <r>',
     'failed=', 'clean=true', 'r = N+1', 'unvollständig nach Review r', 'Stillstand in Runde r-1', 'rework-outcome.js" progress --dir "<W>" --round <r-1>',
-    'Ergebnis: <D>/<kurzname>.json', 'Ergebnis: <D>/rework.json', '`SendMessage`', 'Statuszeile', 'run_in_background: true',
+    'Ergebnis: <D>/<kurzname>.json', 'Ergebnis: <D>/rework.json', '`SendMessage`', 'Statuszeile',
     '<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>', '## Jedes Ende',
     '<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
+});
+
+test('loop_Reviewers_StartInForegroundNeverInBackground', () => {
+  const text = readText(path.join(SHARED, 'loop.md'));
+  assert.match(text, /EINER Nachricht je aktivem Reviewer einen `Agent`-Call mit `run_in_background: false`/);
+  assert.ok(text.includes('Nie `run_in_background: true`'));
+  assert.ok(!/Reviewer laufen parallel im Hintergrund/.test(text));
 });
 
 test('loop_ProgressCheck_NamesNoConcreteScript', () => {

@@ -66,7 +66,7 @@ test('skill_Body_GermanQuotesArePaired', () => {
 test('skill_Body_RunsScoutAfterLastReview', () => {
   const { body } = readSkill();
   assert.ok(body.includes('dv-forge:spec-review-scout'));
-  assert.ok(readLoop().includes('## Scout-Vorschläge'));
+  assert.ok(readLoop().includes('followup.js" save <rolle> <slug> "<D>"'));
   assert.ok(readLoop().includes('Scout ausgefallen'));
 });
 
@@ -97,4 +97,11 @@ test('skill_Body_HumanQuestionsStopTheLoopAndAreListed', () => {
 test('skill_Body_ProfilesReviewerGetsExcerptPath', () => {
   const { body } = readSkill();
   assert.ok(body.includes('`Profil-Auszug: <PA>`'));
+});
+
+test('skill_Body_NextStepOffersReviewFollowup', () => {
+  const { body } = readSkill();
+  assert.ok(body.includes('/dv-forge:review-followup <S> <auswahl>'));
+  assert.ok(body.includes('Offene 🟡: optional /dv-forge:review-followup <S> <auswahl>.'));
+  assert.ok(body.includes('`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`'));
 });

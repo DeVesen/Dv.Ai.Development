@@ -62,3 +62,10 @@ test('implementationReviewSkill_Body_WarnLinesGoToOrchestratorNotes', () => {
   const { body } = readMarkdown(SKILL);
   assert.match(body, /Jede `WARN`-Zeile kommt in die Hinweise des Orchestrators/);
 });
+
+test('implementationReviewSkill_Body_NextStepOffersReviewFollowup', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('/dv-forge:review-followup <P> <auswahl>'));
+  assert.ok(body.includes('`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`'));
+  assert.ok(!body.includes('gewählte Änderungen selbst beauftragen'));
+});

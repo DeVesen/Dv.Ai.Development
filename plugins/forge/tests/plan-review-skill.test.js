@@ -77,3 +77,10 @@ test('planReviewSkill_Body_AnchorFileGoesToEveryReviewer', () => {
   assert.ok(body.includes('jede `WARN`-Zeile kommt in die Hinweise des Orchestrators'));
   assert.ok(body.includes('Jeder Reviewer bekommt zusätzlich `Anker: <A>`, wenn es `A` gibt.'));
 });
+
+test('planReviewSkill_Body_NextStepOffersReviewFollowup', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('/dv-forge:review-followup <P> <auswahl>'));
+  assert.ok(body.includes('Offene 🟡: optional /dv-forge:review-followup <P> <auswahl>.'));
+  assert.ok(body.includes('`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`'));
+});

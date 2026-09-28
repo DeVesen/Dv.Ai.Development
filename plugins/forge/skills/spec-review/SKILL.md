@@ -46,7 +46,9 @@ Titel `Spec-Review`, Artefakt `<S>`, Zusatz-Status `Fragen an den Menschen in Ru
 - <Stelle>
 ```
 
+Auswahl-Hinweis: `Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`
+
 Nächster Schritt:
 - mit Fragen: `Die Fragen in den R-Einträgen der Spec beantworten und als W-Einträge festhalten, dann /dv-forge:spec-review <S> erneut.`
-- `sauber`: `Spec ist bereit. Spec committen, dann in einer frischen Session:` und darunter in einem Code-Block `/dv-forge:plan-writing <S>`.
-- sonst: `Spec nicht bereit. Findings, Abschnitt Entscheidungen und Scout-Vorschläge lesen, Spec anpassen, dann /dv-forge:spec-review <S> erneut.`
+- `sauber`: Bei `yellow` > 0 steht zuerst `Offene 🟡: optional /dv-forge:review-followup <S> <auswahl>.` und der Auswahl-Hinweis. Dann `Spec ist bereit. Spec committen, dann in einer frischen Session:` und darunter in einem Code-Block `/dv-forge:plan-writing <S>`.
+- sonst: `Spec nicht bereit. Findings und Scout-Vorschläge lesen, dann /dv-forge:review-followup <S> <auswahl> oder Spec selbst anpassen und /dv-forge:spec-review <S> erneut.` und der Auswahl-Hinweis.

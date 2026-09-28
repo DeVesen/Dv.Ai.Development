@@ -42,8 +42,10 @@ Titel `Implementierungs-Review`, Artefakt `<P>`. Status `sauber nach Review 1`; 
 `<B>..HEAD`
 ```
 
+Auswahl-Hinweis: `Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`
+
 Nächster Schritt:
 - `sauber`, `yellow=0`: `Alles sauber. Arbeit abschließen mit:` und darunter in einem Code-Block `/dv-forge:finish-work`.
-- `sauber`, `yellow` > 0: `Keine roten Findings. Gelbe Findings und Scout-Vorschläge lesen, gewählte Änderungen selbst beauftragen, dann abschließen mit:` und der Code-Block `/dv-forge:finish-work`.
-- `geprüft, k × 🔴 offen`: `k rote Findings offen. Findings und Scout-Vorschläge lesen, gewählte Änderungen selbst beauftragen, dann /dv-forge:implementation-review <P> erneut.`
+- `sauber`, `yellow` > 0: `Keine roten Findings. Gelbe Findings und Scout-Vorschläge lesen, gewählte mit /dv-forge:review-followup <P> <auswahl> umsetzen, dann abschließen mit:`, der Code-Block `/dv-forge:finish-work` und der Auswahl-Hinweis.
+- `geprüft, k × 🔴 offen`: `k rote Findings offen. Findings und Scout-Vorschläge lesen, dann /dv-forge:review-followup <P> <auswahl>.` und der Auswahl-Hinweis.
 

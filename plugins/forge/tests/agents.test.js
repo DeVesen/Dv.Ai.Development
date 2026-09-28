@@ -168,7 +168,7 @@ test('plan-review-scout_Body_FormatProposalsPreferredAndNoEdits', () => {
 });
 
 test('allReviewers_Body_WriteResultFileWithEmptyExample', () => {
-  const names = fs.readdirSync(AGENTS).filter((file) => /-review-/.test(file) && !file.includes('scout')).map((file) => file.slice(0, -3));
+  const names = fs.readdirSync(AGENTS).filter((file) => /-review-/.test(file) && !file.includes('scout') && !file.includes('verifier')).map((file) => file.slice(0, -3));
   assert.equal(names.length, 15);
   for (const name of names) {
     const { body } = readAgent(name);
@@ -305,3 +305,28 @@ test('specAndPlanReviewers_Body_NameCategoriesNeverColours', () => {
     assert.ok(body.includes('Ein Feld `severity` oder `color` macht dein Ergebnis ungültig.'), `${name}: Hinweis auf ungültige Farbe`);
   }
 });
+
+for (const [name, tools, inputs, categories] of [
+  ['spec-review-verifier', 'Read, Write', ['- `Spec:`'], SPEC_CATEGORIES],
+  ['plan-review-verifier', 'Read, Grep, Glob, Write', ['- `Plan:`', '- `Spec:`', '- `Repo:`'], PLAN_CATEGORIES],
+]) {
+  test(`${name}_Frontmatter_NameToolsModelDescription`, () => {
+    const { fields } = readAgent(name);
+    assert.equal(fields.name, name);
+    assert.equal(fields.tools, tools);
+    assert.equal(fields.model, 'sonnet');
+    assert.match(fields.description, /^Use when/);
+  });
+
+  test(`${name}_Body_JudgesChecklistAndChangedAreasOnly`, () => {
+    const { body } = readAgent(name);
+    for (const input of [...inputs, '- `Prüfliste:`', '- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei']) assert.ok(body.includes(input), `${name}: ${input}`);
+    for (const part of ['"verdicts"', '"verdict": "erledigt"', '`nicht erledigt`', 'Du suchst nicht neu', 'nur darauf, ob sein neuer Text',
+      '`{"reviewer": "verifier", "summary": "<Prüfumfang>", "verdicts": [], "findings": []}`', 'Deine letzte Aktion: Schreib dein Ergebnis mit `Write`']) {
+      assert.ok(body.includes(part), `${name}: ${part}`);
+    }
+    for (const category of categories) assert.ok(categorySection(body).includes(`- \`${category}\` — `), `${name}: ${category}`);
+    assert.ok(!body.includes('"severity"'));
+    assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
+  });
+}

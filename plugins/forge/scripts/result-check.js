@@ -44,7 +44,7 @@ function problemWith(file) {
     return 'ist kein gültiges JSON';
   }
   if (value === null || typeof value !== 'object') return 'ist kein JSON-Objekt';
-  if (!Array.isArray(value.findings) && !Array.isArray(value.results)) return 'hat weder "findings" noch "results"';
+  if (!['findings', 'results', 'answers'].some((key) => Array.isArray(value[key]))) return 'hat weder "findings" noch "results" noch "answers"';
   return null;
 }
 

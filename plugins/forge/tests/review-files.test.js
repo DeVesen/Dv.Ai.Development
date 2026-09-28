@@ -149,6 +149,12 @@ test('resultCheck_ValidFileOrNoResultLineOrSecondStop_AllowsStop', () => {
   assert.equal(resultCheck.decide({ stop_hook_active: true, agent_transcript_path: transcript('Ergebnis: /fehlt.json') }), null);
 });
 
+test('resultCheck_AnswersFile_AllowsStop', () => {
+  const target = path.join(tmp(), 'antworten.json');
+  fs.writeFileSync(target, JSON.stringify({ answers: [{ question: 'F1', status: 'open' }] }));
+  assert.equal(resultCheck.decide({ agent_transcript_path: transcript(`Ergebnis: ${target}`) }), null);
+});
+
 test('resultCheck_InvalidJson_Blocks', () => {
   const target = path.join(tmp(), 'risks.json');
   fs.writeFileSync(target, '{"reviewer":"risks"}');

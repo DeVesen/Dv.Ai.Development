@@ -245,3 +245,22 @@ test('specReview_ProfilesFound_NamesExcerptPathInWorkspaceWithoutCreatingIt', ()
   const none = planRepo();
   assert.equal(values(run(none, 'spec-review', 'docs/forge/demo/spec.md')).PA, undefined);
 });
+
+test('planReview_AnchorFile_WrittenIntoWorkspaceAndListedAsA', () => {
+  const repo = planRepo();
+  const result = run(repo, 'plan-review', 'docs/forge/demo/plan.md');
+  assert.equal(result.status, 0, result.stderr);
+  const out = values(result);
+  assert.ok(fs.existsSync(out.A));
+  assert.ok(samePath(path.dirname(out.A), out.W));
+  assert.match(fs.readFileSync(out.A, 'utf8'), /^# Anker-Prüfung: docs\/forge\/demo\/plan\.md\n/);
+});
+
+test('planReview_AnchorCheckFails_WarnsWithoutAAndExitsZero', () => {
+  const repo = planRepo(PLAN.replace('### Task 1: Eins', '### Task 2: Zwei'));
+  const result = run(repo, 'plan-review', 'docs/forge/demo/plan.md');
+  assert.equal(result.status, 0, result.stderr);
+  const out = values(result);
+  assert.equal(out.A, undefined);
+  assert.match([].concat(out.WARN).join('\n'), /Anker-Prüfung fehlgeschlagen: Task-Nummerierung/);
+});

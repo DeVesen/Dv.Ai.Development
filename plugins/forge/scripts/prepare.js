@@ -11,6 +11,7 @@ const { createWorkspace } = require('./workspace');
 const { writePackage, PackageError } = require('./review-package');
 const { ConfigError, readConfig, branchFor } = require('./forge-config');
 const { archivePath } = require('./ledger');
+const { writeAnchors } = require('./plan-anchors');
 
 const USAGE = [
   'Aufruf: node prepare.js spec-review <spec> [quelle] [--rounds N] [--only <reviewer,...>]',
@@ -222,6 +223,12 @@ function preparePlanReview({ positional, flags }) {
   values.slug = slugOf(plan);
   values.W = createWorkspace('plan-review', values.slug, root);
   values.aktiv = aktiv;
+  // Anker einmal deterministisch prüfen; ein Fehler darf das Review nicht verhindern.
+  try {
+    values.A = writeAnchors(plan, root, values.W);
+  } catch (error) {
+    values.WARN = [`Anker-Prüfung fehlgeschlagen: ${error.message}`];
+  }
   // Erlaubte Befehle wörtlich aus der Konfiguration, damit buildability sie nicht aus Plugin-Quellen herleitet.
   for (const key of ['Build', 'Test', 'Lint']) values[key] = config[key];
   return values;

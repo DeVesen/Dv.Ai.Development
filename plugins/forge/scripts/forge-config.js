@@ -67,15 +67,24 @@ function parseSection(text) {
   return entries;
 }
 
+// Eine nicht versionierte CLAUDE.md fehlt in jedem Worktree; dann gilt die des Haupt-Checkouts.
+function configFile(root, main) {
+  const own = path.join(root, 'CLAUDE.md');
+  if (fs.existsSync(own)) return { file: own, source: 'eigen' };
+  const fallback = path.join(main, 'CLAUDE.md');
+  if (main !== root && fs.existsSync(fallback)) return { file: fallback, source: 'haupt' };
+  return { file: null, source: 'keine' };
+}
+
 function readConfig(cwd = process.cwd()) {
   const root = repoRoot(cwd);
-  const file = path.join(root, 'CLAUDE.md');
-  const found = fs.existsSync(file) ? parseSection(fs.readFileSync(file, 'utf8')) : {};
+  const main = mainRoot(root);
+  const { file, source } = configFile(root, main);
+  const found = file ? parseSection(fs.readFileSync(file, 'utf8')) : {};
   const config = { ...DEFAULTS, ...found };
   if (config.Profile === '<Glossar>') config.Profile = config.Glossar;
-  const main = mainRoot(root);
   config['Worktree-Ordner'] = config['Worktree-Ordner'].replace('<repo>', path.basename(main));
-  return { root: toPosix(root), main: toPosix(main), config, configured: Object.keys(found) };
+  return { root: toPosix(root), main: toPosix(main), config, configured: Object.keys(found), source };
 }
 
 const COMMAND_KEYS = new Set(['Build', 'Test', 'Lint']);
@@ -147,6 +156,8 @@ function main() {
     process.exit(2);
   }
   try {
+    const { source, main: mainCheckout } = readConfig();
+    if (source === 'haupt') process.stderr.write(`Hinweis: Konfiguration aus dem Haupt-Checkout ${mainCheckout}/CLAUDE.md\n`);
     process.stdout.write(`${command === 'show' ? show() : getValue(key)}\n`);
   } catch (error) {
     if (!(error instanceof ConfigError)) throw error;

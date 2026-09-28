@@ -5,7 +5,8 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const config = require('../scripts/forge-config.js');
-const { commitFile, makeRepo } = require('./lib/git-repo');
+const fs = require('node:fs');
+const { commitFile, git, makeRepo } = require('./lib/git-repo');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'forge-config.js');
 const SECTION = [
@@ -48,6 +49,40 @@ test('readConfig_Section_OverridesDefaultsAndProfileFollowsGlossary', () => {
   const { config: values } = config.readConfig(repo);
   assert.equal(values.Worktree, 'ja');
   assert.equal(values.Profile, 'docs/terms');
+});
+
+function worktreeWithUntrackedConfig() {
+  const repo = makeRepo();
+  fs.writeFileSync(path.join(repo, '.gitignore'), 'CLAUDE.md\n.wt/\n');
+  git(repo, 'add', '.gitignore');
+  git(repo, 'commit', '--quiet', '-m', 'ignore');
+  fs.writeFileSync(path.join(repo, 'CLAUDE.md'), '## dv-forge\n- Test: dv-forge: angular-test --root src/frontend\n');
+  const worktree = path.join(repo, '.wt', 'feature');
+  git(repo, 'worktree', 'add', '--quiet', '-b', 'feature', worktree);
+  return { repo, worktree };
+}
+
+test('readConfig_WorktreeWithoutClaudeMd_FallsBackToMainCheckout', () => {
+  const { worktree } = worktreeWithUntrackedConfig();
+  const { config: values, source } = config.readConfig(worktree);
+  assert.equal(values.Test, 'dv-forge: angular-test --root src/frontend');
+  assert.equal(source, 'haupt');
+});
+
+test('readConfig_OwnClaudeMd_WinsAndSourceIsOwn', () => {
+  const { worktree } = worktreeWithUntrackedConfig();
+  fs.writeFileSync(path.join(worktree, 'CLAUDE.md'), '## dv-forge\n- Test: eigener Befehl\n');
+  const { config: values, source } = config.readConfig(worktree);
+  assert.equal(values.Test, 'eigener Befehl');
+  assert.equal(source, 'eigen');
+});
+
+test('cli_Get_FallbackToMainCheckout_NotedOnStderrOnly', () => {
+  const { worktree } = worktreeWithUntrackedConfig();
+  const result = run(worktree, 'get', 'Lint');
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, '\n');
+  assert.match(result.stderr, /Konfiguration aus dem Haupt-Checkout/);
 });
 
 test('branchFor_WorkitemPlaceholder_ReadsSpecHeader', () => {

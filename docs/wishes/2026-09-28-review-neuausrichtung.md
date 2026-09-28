@@ -99,6 +99,48 @@ Eine Spec-Rückfrage gibt es nur, wenn die Spec sich widerspricht oder etwas Unm
 
 ---
 
+## Teil 3: Was Skripte statt der KI entscheiden
+
+Ziel: Gleiche Eingabe führt zum gleichen Ablauf. Die KI findet und beschreibt, **das Skript entscheidet**, was blockt und wann Schluss ist.
+
+### Kernidee: Kategorie statt Farbe
+Reviewer vergeben keine Farbe mehr. Sie wählen je Finding eine Kategorie aus einer festen Liste. Das Skript leitet die Farbe aus einer Tabelle ab.
+
+| Kategorie | Farbe (Skript) |
+|---|---|
+| `widerspruch` | 🔴 |
+| `fehlendes-verhalten` (Funktion oder AC fehlt) | 🔴 |
+| `unerfuellbar` | 🔴 |
+| `ac-fehlt-im-plan` (nur Plan-Review) | 🔴 |
+| `umsetzer-steckt-fest` (nur Plan-Review) | 🔴 |
+| `detail` (Randfall, Schreibweise, Sortierung …) | 🟡 |
+| `formulierung` | 🟢 |
+
+Die KI ordnet noch ein, aber in eine enge Liste statt „rot, gelb oder grün nach Gefühl“.
+
+### Vollständig per Skript
+| Regel | Wie |
+|---|---|
+| Höchstens zwei Durchläufe | Zähler im Loop-Skript |
+| Runde 2 prüft nur nach | Skript baut aus Runde 1 die Prüfliste. Findings an Stellen, die nicht auf der Liste stehen, stuft es auf Hinweis herab |
+| Nur bestimmte Reviewer blocken | Skript kappt Findings von `architecture` und `risks` auf 🟡 |
+| Keine Hochstufung 2 × 🟡 → 🔴 | Regel im Aggregations-Skript streichen |
+| Offene Fragen an den Menschen nicht erneut melden | Skript liest offene R-Einträge der Spec und filtert Findings an diesen Stellen |
+| Kopfzeilen des eigenen Formats (`Status`, `Art`, `Workitem`, `Basis`) | Skript filtert Findings darauf |
+| Fragen gebündelt je Stelle | Skript fasst Eskalationen je Stelle im Bericht zusammen |
+
+### Teilweise per Skript
+| Regel | Wie | Grenze |
+|---|---|---|
+| Randfälle zu W-Einträgen höchstens 🟡 | Skript kappt Findings, deren Zitat aus einem W-Eintrag stammt | Zitat aus dem Spec-Text zur selben Regel erkennt es nicht |
+| Schreibweisen-Details nie 🔴 | Kategorie `detail`; zusätzlich Wortliste (Groß-/Kleinschreibung, ß, Umlaut, Diakritik) als Absicherung | Wortliste ist grob |
+
+### Bleibt Urteil der KI
+- Ob etwas überhaupt ein Befund ist, und welche Kategorie es hat
+- Scout-Vorschläge und der Text der Nacharbeit
+
+Hundertprozentig gleiche Ergebnisse gibt es mit KI nicht. Aber Ablauf, Farbe und Ende hängen dann nicht mehr an ihr.
+
 ## Offene Punkte für die Umsetzung
 - Wie die Nachprüf-Runde technisch läuft: eigener Reviewer oder dieselben Reviewer mit Auftrag „nur diese Punkte prüfen“.
 - Ob `rework-outcome.js progress` („renewed“ als Fortschritt) dann entfällt.

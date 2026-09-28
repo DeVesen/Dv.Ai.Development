@@ -193,3 +193,10 @@ Gleiche Wünsche aus mehreren Berichten sind zusammengeführt; die Häufigkeit s
 | Abschn. 5 · Selbst-Check CLI | `self-check.md` Punkt 5: CLI-Optionen und Befehlsformen; jeder Testbefehl einmal auf bestehende Testdatei oder per Doku belegt | umgesetzt |
 | Abschn. 5 · Wrapper-Beispiel | `plan-format.md` Regel 10 nennt zusätzlich `angular-test … -- --include …` | umgesetzt |
 | Abschn. 5 · E-Einträge | `- **E · <Kurztitel>** · Planer — <Wahl und Grund>`, nicht bindend, nur für Wahlen ohne AC-Bezug; Zeile `- Keine Fragen an den Menschen.` | umgesetzt |
+| Abschn. 6 · Fremde rote Tests | `implementation-review-tests`: roter Test außerhalb des Pakets läuft einzeln nach; nur einzeln rot ist `red`, sonst `green` `flaky im Gesamtlauf` | umgesetzt |
+| Abschn. 6 · Grünen Gesamtlauf wiederverwenden | Ledger-Zeile `Gesamtlauf: <HEAD> grün (<n> Tests)`; `ledger.js archive` schreibt Abschnitt `## Stand` (Stand + letzter Gesamtlauf); Test-Reviewer und `finish-work` lassen die Suite weg, wenn seitdem nur Doku (`.md`) geändert wurde | umgesetzt |
+| Abschn. 6 · Bericht gegen HEAD | `prepare.js implementation-review` meldet `WARN` mit allen Commits nach `Stand` ohne den Bericht selbst (bzw. „nicht prüfbar“ bei Git-Fehler); Skill übernimmt `WARN` in die Hinweise. Gefunden: 8.3- vs. Langpfad unter Windows, per `realpath` gelöst | umgesetzt |
+| Abschn. 6 · Zurückgestellt als eigene Datei | Umsetzungsbericht ist schon ein Auszug (Abschlussbericht, Urteile, Zurückgestellt) | nicht ändern |
+| Abschn. 6 · Konfiguration im Worktree | `forge-config.js readConfig` fällt ohne eigene `CLAUDE.md` auf die des Haupt-Checkouts zurück (`source=haupt`), CLI meldet das auf stderr | umgesetzt |
+| Abschn. 6 · Testweg | Ursache war das MCP-Beispiel in `implementation-implementer` Regel 3 und `implementation-review-tests` Auftrag 1; jetzt: Befehl aus Brief bzw. `Test:` genau so, „auch kein MCP-Tool mit gleichem Zweck“; `prepare.js implementation-review` liefert `Test=`. Hook `test-weg-guard` zurückgestellt | umgesetzt, Hook zurückgestellt |
+| Abschn. 6 · Visuell prüfen | kein visueller Check im Plugin, Browser-Werkzeug projektabhängig | zurückgestellt |

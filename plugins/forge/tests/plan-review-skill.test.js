@@ -8,85 +8,52 @@ const { readMarkdown, wordCount } = require('./lib/markdown');
 const SKILL = path.join(__dirname, '..', 'skills', 'plan-review', 'SKILL.md');
 const REVIEWERS = ['coverage', 'feasibility', 'architecture', 'risks', 'buildability'];
 
-test('planReviewSkill_Frontmatter_ManualOnlyWithArgumentHint', () => {
+test('planReviewSkill_Frontmatter_ManualOnlyWithArgumentHintWithoutRounds', () => {
   const { fields } = readMarkdown(SKILL);
   assert.equal(fields.name, 'plan-review');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], 'true');
-  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--rounds N] [--only <reviewer,...>]');
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--only <reviewer,...>]');
 });
 
-test('planReviewSkill_Body_ReadsSharedLoopWithPlaceholders', () => {
+test('planReviewSkill_Body_ReadsSharedFlowWithBuildingBlocks', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('`<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`'));
-  assert.ok(body.includes('`<SESSION>` = `${CLAUDE_SESSION_ID}`'));
-  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md'));
+  for (const part of ['`<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`', '`<SESSION>` = `${CLAUDE_SESSION_ID}`', '${CLAUDE_PLUGIN_ROOT}/shared/review-flow/flow.md',
+    '`<art>` = `plan-review`', '`<DOK>` = `<P>`', 'Titel `Plan-Review`', 'Rolle `plan-review`', '${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+  assert.ok(!body.includes('review-loop/loop.md'));
+  assert.ok(!body.includes('rework-outcome.js'));
+  assert.ok(!body.includes('--rounds'));
 });
 
-test('planReviewSkill_Body_ListsAllAgents', () => {
+test('planReviewSkill_Body_ListsAllAgentsAndInputs', () => {
   const { body } = readMarkdown(SKILL);
   for (const reviewer of REVIEWERS) assert.ok(body.includes(`dv-forge:plan-review-${reviewer}`), `${reviewer} fehlt`);
-  assert.ok(body.includes('dv-forge:plan-rework'));
+  for (const agent of ['dv-forge:plan-rework', 'dv-forge:plan-review-verifier', 'dv-forge:plan-review-scout']) assert.ok(body.includes(agent), `${agent} fehlt`);
   assert.ok(body.includes('`aktiv` kommt aus `prepare.js`'));
   assert.ok(body.includes('Du startest genau die Reviewer aus `aktiv`'));
+  assert.ok(body.includes('`Build: <Build>`, `Test: <Test>`, `Lint: <Lint>`'));
+  assert.ok(body.includes('Jeder Reviewer bekommt zusätzlich `Anker: <A>`, wenn es `A` gibt.'));
+  assert.ok(body.includes('jede `WARN`-Zeile kommt in die Hinweise des Orchestrators'));
 });
 
-test('planReviewSkill_Body_NamesClosingScout', () => {
+test('planReviewSkill_Body_AnchorsRefreshedAfterRework', () => {
   const { body } = readMarkdown(SKILL);
-  assert.match(body, /## Abschluss-Scout\n`dv-forge:plan-review-scout`/);
+  const after = body.slice(body.indexOf('## Nach der Nacharbeit'), body.indexOf('## Nachprüfer'));
+  assert.ok(after.includes('${CLAUDE_PLUGIN_ROOT}/scripts/plan-tasks.js" anchors "<P>" "<R>" "<W>"'));
 });
 
-test('planReviewSkill_Body_CleanReportHandsOverToImplementation', () => {
+test('planReviewSkill_Body_NextStepPerStatusWithCommitQuestion', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('/dv-forge:implementation <P>'));
-  assert.match(body, /frischen Session/);
-  assert.match(body, /Soll ich Spec und Plan jetzt committen\?/);
-  assert.ok(body.includes('forge-config.js" get Commit-Konvention'));
-});
-
-test('planReviewSkill_Body_InputsFromPrepareScript', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS'));
-});
-
-test('planReviewSkill_Body_EscalationReadsRoundFolder', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/rework-outcome.js" --escalation-status spec-question --dir "<W>/runde-<r>"'));
-  assert.ok(!body.includes('DV_FORGE_EOF'));
-  assert.ok(!body.includes('file-hash.js'));
+  for (const part of ['`sauber …`', '`Fragen offen`', '`nicht bereit …`', '`unvollständig …`', '/dv-forge:implementation <P>', 'frischen Session',
+    'git status --porcelain -- "<S>" "<P>"', 'Leere Ausgabe: keine Frage', 'Soll ich Spec und Plan jetzt committen?', 'forge-config.js" get Commit-Konvention',
+    'Offene 🟡: optional /dv-forge:review-followup <P> <auswahl>.', '/dv-forge:review-followup <P> <auswahl>', 'Spec-Rückfragen',
+    '`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
 });
 
 test('planReviewSkill_Body_StaysUnder500Words', () => {
   assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
-});
-
-test('planReviewSkill_Body_AsksToCommitOnlyWhenSpecOrPlanChanged', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('git status --porcelain -- "<S>" "<P>"'));
-  assert.match(body, /Leere Ausgabe: keine Frage/);
-});
-
-test('planReviewSkill_Body_BuildabilityGetsConfiguredCommands', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('`Build: <Build>`, `Test: <Test>`, `Lint: <Lint>`'));
-});
-
-test('planReviewSkill_Body_AnchorFileGoesToEveryReviewer', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('die Anker-Datei `A`'));
-  assert.ok(body.includes('jede `WARN`-Zeile kommt in die Hinweise des Orchestrators'));
-  assert.ok(body.includes('Jeder Reviewer bekommt zusätzlich `Anker: <A>`, wenn es `A` gibt.'));
-});
-
-test('planReviewSkill_Body_NextStepOffersReviewFollowup', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('/dv-forge:review-followup <P> <auswahl>'));
-  assert.ok(body.includes('Offene 🟡: optional /dv-forge:review-followup <P> <auswahl>.'));
-  assert.ok(body.includes('`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`'));
-});
-
-test('planReviewSkill_Body_AnchorFileRefreshedAfterEveryRework', () => {
-  const { body } = readMarkdown(SKILL);
-  const stops = body.slice(body.indexOf('## Zusatz-Stopps'), body.indexOf('## Abschluss-Scout'));
-  assert.ok(stops.includes('${CLAUDE_PLUGIN_ROOT}/scripts/plan-tasks.js" anchors "<P>" "<R>" "<W>"'));
 });

@@ -330,3 +330,22 @@ for (const [name, tools, inputs, categories] of [
     assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
   });
 }
+
+test('reworkAgents_Body_OnlyRedStellenThreeOutcomesAndBundledQuestions', () => {
+  for (const [name, question] of [['spec-rework', 'human-question'], ['plan-rework', 'spec-question']]) {
+    const { body } = readAgent(name);
+    for (const part of ['- `Nacharbeit:` Datei mit `## 🔴-Stellen`', 'Hinweise und 🟢-Findings bearbeitest du nicht', '"questions"', '"locations"', '"cases"',
+      '"recommendation"', '"reason"', `\`${question}\``, 'Jede Stelle mit Frage steht in genau einer gebündelten Frage', 'je Regel']) {
+      assert.ok(body.includes(part), `${name}: ${part}`);
+    }
+    assert.ok(!body.includes('Du bearbeitest jede 🔴- und jede 🟡-Gruppe'), `${name}: alte Regel`);
+  }
+});
+
+test('spec-rework_Body_AnswerModeWritesWEntriesAfterREntries', () => {
+  const { body } = readAgent('spec-rework');
+  for (const part of ['## Antwort-Modus', '- `Fragen:`', '- `Antworten:`', '"answers"', '`answered`', '`partial`', '`open`', 'nach allen R-Einträgen',
+    '- **W · <Stelle>[, <Stelle>…]** · Aussage — <Antwort>', '„später“', '## Offene Fragen aus früheren Läufen']) {
+    assert.ok(body.includes(part), part);
+  }
+});

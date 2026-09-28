@@ -10,7 +10,7 @@ const TASK_HEADING = /^###\s+Task\s+(\d+):/;
 const SECTION_HEADING = /^##\s/;
 const FENCE = /^\s*(`{3,}|~{3,})(.*)$/;
 const RULE = /^---\s*$/;
-const USAGE = 'Aufruf: node plan-tasks.js list <plan> | brief <plan> <n> <dir> | header <plan> <dir> | slug <plan>\n';
+const USAGE = 'Aufruf: node plan-tasks.js list <plan> | brief <plan> <n> <dir> | header <plan> <dir> | slug <plan> | anchors <plan> <repo> <out>\n';
 
 class PlanError extends Error {}
 
@@ -84,18 +84,35 @@ function listTasks(planPath) {
   return checkedPlan(planPath).tasks.map((task) => task.number);
 }
 
-const FILE_LINE = /^\s*-\s*(Create|Modify|Test):\s*`([^`:]+)(?::[^`]*)?`/;
+const FILE_LINE = /^\s*-\s*(Create|Modify|Test):\s*`([^`:]+)(?::(\d+)-(\d+))?(?::[^`]*)?`(.*)$/;
+const ANCHOR_REST = /^\s*·\s*(.+?)\s*$/;
 const INTERFACE_LINE = /^\s*-\s*(Produces|Consumes):\s*(.+)$/;
+
+function parseFileLine(line) {
+  const match = FILE_LINE.exec(line);
+  if (!match) return null;
+  const anchor = ANCHOR_REST.exec(match[5]);
+  return {
+    kind: match[1],
+    path: match[2].trim(),
+    range: match[3] ? { from: Number(match[3]), to: Number(match[4]) } : null,
+    anchor: anchor ? anchor[1].replace(/^`([^`]*)`.*$/, '$1') : null,
+  };
+}
+
+function taskTitle(lines, task) {
+  return lines[task.start].replace(TASK_HEADING, '').trim();
+}
 
 function describeTask(lines, task) {
   const block = lines.slice(task.start, task.end);
-  const title = lines[task.start].replace(TASK_HEADING, '').trim();
+  const title = taskTitle(lines, task);
   const files = [];
   const interfaces = { Produces: [], Consumes: [] };
   let fences = 0;
   for (const line of block) {
-    const file = FILE_LINE.exec(line);
-    if (file) files.push({ kind: file[1], path: file[2].trim() });
+    const file = parseFileLine(line);
+    if (file) files.push({ kind: file.kind, path: file.path });
     const iface = INTERFACE_LINE.exec(line);
     if (iface) interfaces[iface[1]].push(iface[2].trim());
     if (FENCE.test(line)) fences += 1;
@@ -183,6 +200,7 @@ const COMMANDS = {
   brief: { arity: 3, run: ([plan, number, dir]) => briefWithModel(plan, Number(number), dir) },
   header: { arity: 2, run: ([plan, dir]) => writeHeader(plan, dir) },
   slug: { arity: 1, run: ([plan]) => slugOf(plan) },
+  anchors: { arity: 3, run: ([plan, repo, out]) => require('./plan-anchors').writeAnchors(plan, repo, out) },
 };
 
 function isValidCall(command, args) {
@@ -205,8 +223,10 @@ function main() {
   }
 }
 
-if (require.main === module) main();
-
 module.exports = {
   PlanError, scanPlan, numberingError, listTasks, describeTasks, recommendModel, formatOverview, buildHeader, buildBrief, writeBrief, writeHeader, slugOf,
+  checkedPlan, markFences, parseFileLine, taskTitle,
 };
+
+// Nach module.exports: das Kommando anchors lädt plan-anchors.js, das diese Exporte braucht.
+if (require.main === module) main();

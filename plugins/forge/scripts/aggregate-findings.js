@@ -165,6 +165,21 @@ function formatStatus(status) {
   return `STATUS clean=${status.clean} red=${red} yellow=${yellow} green=${green} failed=${failed}`;
 }
 
+// Was jeder Reviewer geliefert hat (rot/gelb/grün), bevor Findings je Stelle zusammengelegt werden.
+function formatRead(reviews, groups) {
+  const perReviewer = reviews.map((review) => {
+    const count = (severity) => review.findings.filter((finding) => finding.severity === severity).length;
+    return `${review.reviewer}=${count('red')}/${count('yellow')}/${count('green')}`;
+  });
+  const total = reviews.reduce((sum, review) => sum + review.findings.length, 0);
+  return `EINGELESEN ${perReviewer.join(' ') || '-'} · ${total} Findings an ${groups.length} Stellen`;
+}
+
+function formatEscalated(groups) {
+  const escalated = groups.filter((group) => group.escalated).map((group) => group.location);
+  return `HOCHGESTUFT ${escalated.join(', ') || '-'}`;
+}
+
 function consequences(group) {
   return [...group.items].sort(byRankDescending)
     .map((item) => `${SEVERITY_ICON[item.severity]} ${cell(item.consequence)}`)
@@ -220,6 +235,8 @@ function runDir(dir, expected, types = LOCATION_TYPES, round = null) {
 function render(result) {
   return [
     formatStatus(result.status),
+    formatRead(result.reviews, result.groups),
+    formatEscalated(result.groups),
     ...result.errors.map((error) => `ERROR ${error}`),
     '=== REPORT ===',
     formatReport(result.groups, result.reviews, result.status, { round: result.round, reasons: result.reasons }),

@@ -104,3 +104,22 @@ test('cli_ExpectAndStdin_PrintsStatusLine', () => {
   assert.equal(result.status, 0);
   assert.equal(result.stdout.split('\n')[0], 'STATUS clean=false red=0 yellow=0 green=0 failed=profiles');
 });
+
+test('render_CountsPerReviewer_ShowWhatWasReadBeforeGrouping', () => {
+  const text = [
+    block(review('completeness', [finding({ location: 'AC-01', severity: 'red' }), finding({ location: 'AC-01' })])),
+    block(review('clarity', [finding({ location: 'AC-02' }), finding({ location: 'AC-03', severity: 'green' })])),
+  ].join('\n');
+  const lines = render(run(text, ['completeness', 'clarity'])).split('\n');
+  assert.equal(lines[0], 'STATUS clean=false red=1 yellow=1 green=1 failed=-');
+  assert.equal(lines[1], 'EINGELESEN completeness=1/1/0 clarity=0/1/1 · 4 Findings an 3 Stellen');
+  assert.equal(lines[2], 'HOCHGESTUFT -');
+});
+
+test('render_YellowFromTwoReviewers_ListsEscalatedLocation', () => {
+  const text = [block(review('completeness', [finding()])), block(review('clarity', [finding()]))].join('\n');
+  const lines = render(run(text, ['completeness', 'clarity'])).split('\n');
+  assert.equal(lines[0], 'STATUS clean=false red=1 yellow=0 green=0 failed=-');
+  assert.equal(lines[1], 'EINGELESEN completeness=0/1/0 clarity=0/1/0 · 2 Findings an 1 Stellen');
+  assert.equal(lines[2], 'HOCHGESTUFT AC-07');
+});

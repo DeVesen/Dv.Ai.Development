@@ -64,9 +64,9 @@ test('aggregateCli_Dir_WritesAggregateFileAndIgnoresReworkJson', () => {
   assert.doesNotMatch(result.stdout, /Unerwarteter Reviewer/);
 });
 
-function round(workspace, r, reds, changed) {
+function round(workspace, r, reds, changed, consequence = 'c') {
   const dir = path.join(workspace, `runde-${r}`);
-  writeReview(dir, 'coverage', reds.map((location) => finding(location, 'red')));
+  writeReview(dir, 'coverage', reds.map((location) => finding(location, 'red', consequence)));
   const output = spawnSync(process.execPath, [path.join(SCRIPTS, 'aggregate-findings.js'), '--dir', dir, '--expect', 'coverage'], { encoding: 'utf8' });
   assert.equal(output.status, 0);
   if (changed) fs.writeFileSync(path.join(dir, 'rework.json'), JSON.stringify({ results: changed.map((location) => ({ location, status: 'changed' })) }));
@@ -76,7 +76,7 @@ test('progress_RedChangedAndGone_IsProgress', () => {
   const workspace = tmp();
   round(workspace, 1, ['Task 1', 'Task 2'], ['Task 1']);
   round(workspace, 2, ['Task 2']);
-  assert.deepEqual(progress(workspace, 1), { progress: true, fixed: ['task 1'] });
+  assert.deepEqual(progress(workspace, 1), { progress: true, fixed: ['task 1'], renewed: [] });
 });
 
 test('progress_OnlyNotesOrRedReturns_IsStandstill', () => {
@@ -88,6 +88,22 @@ test('progress_OnlyNotesOrRedReturns_IsStandstill', () => {
   round(notesOnly, 1, ['Task 1'], []);
   round(notesOnly, 2, []);
   assert.equal(progress(notesOnly, 1).progress, false);
+});
+
+test('progress_RedAgainAtSameLocationWithOtherContent_IsProgress', () => {
+  const workspace = tmp();
+  round(workspace, 1, ['AC-08'], ['AC-08'], 'Tooltip ungeprüft');
+  round(workspace, 2, ['AC-08'], null, 'Popup ungeprüft');
+  assert.deepEqual(progress(workspace, 1), { progress: true, fixed: [], renewed: ['ac-8'] });
+  const run = spawnSync(process.execPath, [path.join(SCRIPTS, 'rework-outcome.js'), 'progress', '--dir', workspace, '--round', '1'], { encoding: 'utf8' });
+  assert.equal(run.stdout, 'PROGRESS true\nRENEWED ac-8\n');
+});
+
+test('progress_RedAgainWithOtherContentButNotChanged_IsStandstill', () => {
+  const workspace = tmp();
+  round(workspace, 1, ['AC-08'], [], 'Tooltip ungeprüft');
+  round(workspace, 2, ['AC-08'], null, 'Popup ungeprüft');
+  assert.equal(progress(workspace, 1).progress, false);
 });
 
 test('reworkOutcomeCli_DirMode_ReadsAggregateAndReworkFile', () => {

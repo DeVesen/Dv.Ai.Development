@@ -7,6 +7,7 @@ const { normalizeLocation } = require('./aggregate-findings.js');
 
 const AGGREGATE_MARK = '=== AGGREGATE ===';
 const RESULT_MARK = '=== REWORK-RESULT ===';
+const REWORK_MARK = '=== REWORK ===';
 const RED_GROUP = /^### 🔴 (.+) \([^()]*\)$/;
 const JSON_BLOCK = /```json[ \t]*\r?\n([\s\S]*?)\r?\n```/g;
 
@@ -124,10 +125,31 @@ function roundDir(workspace, round) {
   return path.join(workspace, `runde-${round}`);
 }
 
-function redKeys(dir) {
+// Rote Stellen einer Runde mit dem Inhalt ihrer Findings: Stelle → Menge aus „Zitat · Konsequenz“.
+function redContents(dir) {
   const file = path.join(dir, 'aggregate.md');
-  if (!fs.existsSync(file)) return [];
-  return redLocations(fs.readFileSync(file, 'utf8')).map((location) => normalizeLocation(location));
+  const contents = new Map();
+  if (!fs.existsSync(file)) return contents;
+  const text = fs.readFileSync(file, 'utf8');
+  const mark = text.indexOf(REWORK_MARK);
+  const rework = mark === -1 ? text : text.slice(mark + REWORK_MARK.length);
+  let current = null;
+  for (const line of rework.split(/\r?\n/)) {
+    const red = RED_GROUP.exec(line.trimEnd());
+    if (red) {
+      current = normalizeLocation(red[1]);
+      contents.set(current, new Set());
+    } else if (line.startsWith('### ')) {
+      current = null;
+    } else if (current && line.startsWith('- [')) {
+      contents.get(current).add(line.replace(/^- \[[^\]]*\]\s*/, '').replace(/ · Begründung: .*$/, ''));
+    }
+  }
+  return contents;
+}
+
+function sameContent(before, after) {
+  return [...after].some((item) => before.has(item));
 }
 
 function changedKeys(dir) {
@@ -142,11 +164,15 @@ function changedKeys(dir) {
   }
 }
 
+// Fortschritt: Eine geänderte rote Stelle ist danach nicht mehr rot (fixed) oder wieder rot,
+// aber mit anderem Inhalt, weil der nächste Teil desselben Problems sichtbar wurde (renewed).
 function progress(workspace, round) {
-  const before = new Set(redKeys(roundDir(workspace, round)));
-  const after = new Set(redKeys(roundDir(workspace, round + 1)));
-  const fixed = changedKeys(roundDir(workspace, round)).filter((key) => before.has(key) && !after.has(key));
-  return { progress: fixed.length > 0, fixed };
+  const before = redContents(roundDir(workspace, round));
+  const after = redContents(roundDir(workspace, round + 1));
+  const changed = changedKeys(roundDir(workspace, round)).filter((key) => before.has(key));
+  const fixed = changed.filter((key) => !after.has(key));
+  const renewed = changed.filter((key) => after.has(key) && !sameContent(before.get(key), after.get(key)));
+  return { progress: fixed.length > 0 || renewed.length > 0, fixed, renewed };
 }
 
 function render(outcome) {
@@ -176,7 +202,7 @@ function runProgress(args) {
   const round = optionValue(args, '--round');
   if (!dir || !/^\d+$/.test(round ?? '')) return null;
   const outcome = progress(dir, Number(round));
-  return [`PROGRESS ${outcome.progress}`, ...outcome.fixed.map((key) => `FIXED ${key}`)].join('\n');
+  return [`PROGRESS ${outcome.progress}`, ...outcome.fixed.map((key) => `FIXED ${key}`), ...outcome.renewed.map((key) => `RENEWED ${key}`)].join('\n');
 }
 
 function runEscalation(args) {

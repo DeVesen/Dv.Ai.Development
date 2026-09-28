@@ -122,8 +122,7 @@ function byRankDescending(a, b) {
 function rateGroup(group) {
   const highest = [...group.items].sort(byRankDescending)[0].severity;
   const reviewers = [...new Set(group.items.map((item) => item.reviewer))];
-  const escalated = highest === 'yellow' && reviewers.length >= 2;
-  return { ...group, reviewers, escalated, severity: escalated ? 'red' : highest };
+  return { ...group, reviewers, severity: highest };
 }
 
 function bySeverityThenKey(a, b) {
@@ -175,11 +174,6 @@ function formatRead(reviews, groups) {
   return `EINGELESEN ${perReviewer.join(' ') || '-'} · ${total} Findings an ${groups.length} Stellen`;
 }
 
-function formatEscalated(groups) {
-  const escalated = groups.filter((group) => group.escalated).map((group) => group.location);
-  return `HOCHGESTUFT ${escalated.join(', ') || '-'}`;
-}
-
 function consequences(group) {
   return [...group.items].sort(byRankDescending)
     .map((item) => `${SEVERITY_ICON[item.severity]} ${cell(item.consequence)}`)
@@ -198,8 +192,7 @@ function formatReport(groups, reviews = [], status = { failed: [] }, options = {
 }
 
 function formatReworkGroup(group) {
-  const escalation = group.escalated ? ' · hochgestuft' : '';
-  const header = `### ${SEVERITY_ICON[group.severity]} ${group.location} (${group.reviewers.join(', ')}${escalation})`;
+  const header = `### ${SEVERITY_ICON[group.severity]} ${group.location} (${group.reviewers.join(', ')})`;
   const lines = group.items.map((item) =>
     `- [${item.reviewer} · ${item.severity}] Zitat: „${cell(item.quote)}${CLOSING_QUOTE} · Konsequenz: ${cell(item.consequence)} · Begründung: ${cell(item.rationale)}`);
   return [header, ...lines].join('\n');
@@ -236,7 +229,6 @@ function render(result) {
   return [
     formatStatus(result.status),
     formatRead(result.reviews, result.groups),
-    formatEscalated(result.groups),
     ...result.errors.map((error) => `ERROR ${error}`),
     '=== REPORT ===',
     formatReport(result.groups, result.reviews, result.status, { round: result.round, reasons: result.reasons }),

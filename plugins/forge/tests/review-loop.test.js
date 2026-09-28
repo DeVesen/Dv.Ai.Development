@@ -65,6 +65,13 @@ test('loop_ProgressCheck_NamesNoConcreteScript', () => {
   assert.ok(!text.includes('${CLAUDE_PLUGIN_ROOT}'));
 });
 
+test('severityRules_TwoYellow_NoLongerEscalate', () => {
+  const text = readText(path.join(SHARED, 'severity-rules.md'));
+  assert.ok(!text.includes('hochgestuft'));
+  assert.ok(text.includes('3. Stufe der Gruppe = höchste Stufe ihrer Einzel-Findings. Zwei 🟡 an einer Stelle bleiben 🟡.'));
+  assert.ok(text.includes('4. Sortierung 🔴 → 🟡 → 🟢.'));
+});
+
 test('reportFormat_Generic_TitleAndSkillSpecificParts', () => {
   const text = readText(path.join(SHARED, 'report-format.md'));
   assert.ok(text.includes('## <Berichtstitel>: <pfad des Artefakts>'));

@@ -28,16 +28,20 @@ test('aggregate_MixedSeverities_GroupTakesHighest', () => {
     review('consistency', [finding({ severity: 'red' })]),
   ]);
   assert.equal(group.severity, 'red');
-  assert.equal(group.escalated, false);
 });
 
-test('aggregate_YellowFromTwoReviewers_EscalatesToRed', () => {
+test('aggregate_YellowFromTwoReviewers_StaysYellow', () => {
   const [group] = aggregate([
     review('consistency', [finding()]),
     review('clarity', [finding()]),
   ]);
+  assert.equal(group.severity, 'yellow');
+  assert.equal(Object.hasOwn(group, 'escalated'), false);
+});
+
+test('aggregate_RedWithoutCategory_StaysRed', () => {
+  const [group] = aggregate([review('risks', [finding({ severity: 'red' })])]);
   assert.equal(group.severity, 'red');
-  assert.equal(group.escalated, true);
 });
 
 test('aggregate_YellowTwiceFromSameReviewer_StaysYellow', () => {
@@ -113,13 +117,16 @@ test('render_CountsPerReviewer_ShowWhatWasReadBeforeGrouping', () => {
   const lines = render(run(text, ['completeness', 'clarity'])).split('\n');
   assert.equal(lines[0], 'STATUS clean=false red=1 yellow=1 green=1 failed=-');
   assert.equal(lines[1], 'EINGELESEN completeness=1/1/0 clarity=0/1/1 · 4 Findings an 3 Stellen');
-  assert.equal(lines[2], 'HOCHGESTUFT -');
+  assert.equal(lines[2], '=== REPORT ===');
 });
 
-test('render_YellowFromTwoReviewers_ListsEscalatedLocation', () => {
+test('render_YellowFromTwoReviewers_StaysYellowWithoutEscalationLine', () => {
   const text = [block(review('completeness', [finding()])), block(review('clarity', [finding()]))].join('\n');
-  const lines = render(run(text, ['completeness', 'clarity'])).split('\n');
-  assert.equal(lines[0], 'STATUS clean=false red=1 yellow=0 green=0 failed=-');
+  const output = render(run(text, ['completeness', 'clarity']));
+  const lines = output.split('\n');
+  assert.equal(lines[0], 'STATUS clean=true red=0 yellow=1 green=0 failed=-');
   assert.equal(lines[1], 'EINGELESEN completeness=0/1/0 clarity=0/1/0 · 2 Findings an 1 Stellen');
-  assert.equal(lines[2], 'HOCHGESTUFT AC-07');
+  assert.ok(!output.includes('HOCHGESTUFT'));
+  assert.ok(!output.includes('hochgestuft'));
+  assert.ok(output.includes('### 🟡 AC-07 (completeness, clarity)'));
 });

@@ -40,12 +40,13 @@ test('locationTypes_DefaultTable_StaysAcAndTask', () => {
   assert.deepEqual(LOCATION_TYPES.map((type) => type.name), ['ac', 'task']);
 });
 
-test('run_FileTypes_GroupsAcrossReviewersAndEscalates', () => {
+test('run_FileTypes_GroupsAcrossReviewersAndStaysYellow', () => {
   const text = [block('design', [finding('src/a.ts:3', 'yellow')]), block('risks', [finding('src\\A.ts', 'yellow')])].join('\n');
   const { groups, status } = run(text, ['design', 'risks'], TYPES);
   assert.equal(groups.length, 1);
-  assert.equal(groups[0].severity, 'red');
-  assert.equal(status.counts.red, 1);
+  assert.equal(groups[0].severity, 'yellow');
+  assert.equal(status.counts.red, 0);
+  assert.equal(status.counts.yellow, 1);
 });
 
 test('run_DefaultTypes_KeepsFileSpellingsApart', () => {
@@ -57,5 +58,5 @@ test('cli_RepoFlag_GroupsFileLocations', () => {
   const input = [block('design', [finding(`${REPO}\\src\\a.ts:3`, 'yellow')]), block('risks', [finding('src/a.ts', 'yellow')])].join('\n');
   const result = spawnSync(process.execPath, [SCRIPT, '--expect', 'design,risks', '--repo', REPO], { input, encoding: 'utf8' });
   assert.equal(result.status, 0);
-  assert.match(result.stdout, /^STATUS clean=false red=1 yellow=0 green=0 failed=-/);
+  assert.match(result.stdout, /^STATUS clean=true red=0 yellow=1 green=0 failed=-/);
 });

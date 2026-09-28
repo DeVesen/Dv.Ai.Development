@@ -23,7 +23,7 @@ Ein Lauf des Spec- oder Plan-Reviews:
 7. **Antwort:** Der Mensch antwortet im Chat. Die Nacharbeit trägt jede Antwort als W-Eintrag ein und passt das Dokument an. Antwortet der Mensch „später“, bleiben die Fragen offen, und der Lauf geht weiter. · Aussage
 8. **Plan-Review:** Dort ist eine Frage an den Menschen eine Spec-Rückfrage. Der Lauf wartet nicht auf eine Antwort, die Rückfrage bleibt offen, und der Lauf geht weiter. · Aussage
 9. **Runde 2, Nachprüfung:** Ein Skript baut die Prüfliste aus den 🔴-Stellen der Runde 1 und den Stellen beantworteter Fragen. Stellen mit offener Frage stehen nicht darauf. Das Skript ermittelt außerdem die Bereiche, die die Nacharbeit geändert hat. · Aussage
-10. **Urteil:** Ein eigener Nachprüfer urteilt je Punkt der Prüfliste „erledigt“ oder „nicht erledigt“. Die geänderten Bereiche prüft er nur darauf, ob der neue Text dem Rest widerspricht. Er sucht nicht neu, und kein Reviewer läuft ein zweites Mal. · Aussage
+10. **Urteil:** Ein eigener Nachprüfer urteilt je Punkt der Prüfliste „erledigt“ oder „nicht erledigt“. Punkte aus einer Skript-Prüfung beurteilt stattdessen das Skript. Die geänderten Bereiche prüft er nur darauf, ob der neue Text dem Rest widerspricht. Er sucht nicht neu, und kein Reviewer läuft ein zweites Mal. · Aussage
 11. **Ende:** Nach der Nachprüfung endet der Lauf. Es gibt keine weitere Nacharbeit. · Aussage
 12. **Bericht:** Er zeigt den Status, das Urteil je Punkt der Prüfliste, jeden Widerspruch, jeden Hinweis mit seinen Scout-Vorschlägen und alle offenen Fragen mit ihren Stellen. Hinweise lassen sich mit `/dv-forge:review-followup` auswählen und umsetzen. · Aussage
 
@@ -36,7 +36,7 @@ Das Implementierungs-Review bleibt, wie es ist. Seine Reviewer vergeben weiter e
 Status am Ende, in dieser Rangfolge; es gilt der erste, der zutrifft:
 - `unvollständig, ausgefallen: <liste>`: Ein Reviewer oder der Nachprüfer hat nach Nachforderung und Neustart kein gültiges Ergebnis geliefert. Fällt ein Reviewer in Runde 1 aus, endet der Lauf sofort. · Aussage
 - `Fragen offen`: Mindestens eine Frage an den Menschen oder eine Spec-Rückfrage ist offen. Der Bericht zeigt trotzdem alle offenen 🔴. · Aussage
-- `nicht bereit, k × 🔴 offen`: Nach der Nachprüfung ist ein Punkt nicht erledigt, oder es gibt einen Widerspruch. k ist die Summe aus beidem. · Aussage
+- `nicht bereit, k × 🔴 offen`: Nach der Nachprüfung ist ein Punkt nicht erledigt, es gibt einen Widerspruch, oder eine Skript-Prüfung meldet ein 🔴. k ist die Summe daraus. · Aussage
 - `sauber nach Runde 1` oder `sauber nach Nachprüfung`: nichts davon trifft zu. · Aussage
 
 ## Soll-Vorgaben
@@ -56,12 +56,13 @@ Status am Ende, in dieser Rangfolge; es gilt der erste, der zutrifft:
   - Findings von Reviewern, die ein Review als nur beratend führt · Aussage
   - Findings, deren ganzes Zitat aus einem W-Eintrag stammt · Aussage
   - Findings, deren Text eines dieser Wörter nennt: Groß- oder Kleinschreibung, ß, Umlaut, Diakritik · Aussage
-  - in der Nachprüfung jedes Finding an einer Stelle außerhalb der Prüfliste, außer einem Widerspruch in einem geänderten Bereich · Aussage
+  - in der Nachprüfung jedes Finding an einer Stelle außerhalb der Prüfliste, außer einem Widerspruch in einem geänderten Bereich und außer dem Befund einer Skript-Prüfung · Aussage
 - **Entfällt:** Das Skript verwirft diese Findings:
   - Findings zu den Kopfzeilen `Status`, `Art`, `Workitem`, `Basis` · Aussage
   - Findings an einer Stelle mit offener Frage an den Menschen · Aussage
 - **Offene Frage:** Eine Frage an den Menschen gilt als offen, bis ein W-Eintrag sie beantwortet. · Git
 - **Bündelung prüfen:** Jede Stelle mit einer Frage an den Menschen steht in genau einer gebündelten Frage. Das prüft ein Skript. Fehlt eine Stelle oder steht sie doppelt, wird die Nacharbeit einmal zur Korrektur aufgefordert. · Aussage
+- **Skript-Prüfungen:** Ein Review kann Prüfungen haben, die ein Skript ohne KI über das ganze Dokument macht. Sie laufen in Runde 1 und in der Nachprüfung. Ihre Befunde bleiben auch in der Nachprüfung 🔴 und zählen zu den offenen 🔴. · Aussage
 - **Geänderter Bereich:** In der Spec ist das ein Abschnitt oder ein AC, im Plan ein Task. Bereiche, die die Nacharbeit nebenbei geändert hat, zählen mit. · Aussage
 - **Entscheidungen:** Änderungen im Abschnitt `Entscheidungen` machen ihn nicht zu einem geänderten Bereich. · Anhang
 
@@ -89,7 +90,7 @@ Status am Ende, in dieser Rangfolge; es gilt der erste, der zutrifft:
 - **AC-21** Gegeben eine Spec mit einer offenen Frage und eine Runde 1 ohne 🔴, wenn Runde 1 endet, dann hält der Lauf an und stellt die offene Frage. · Aussage
 - **AC-22** Gegeben drei 🔴-Stellen aus Runde 1 ohne Frage an den Menschen, wenn die Nachprüfung endet, dann nennt der Bericht für genau diese drei Stellen je „erledigt“ oder „nicht erledigt“, und kein Reviewer aus Runde 1 ist erneut gelaufen. · Aussage
 - **AC-23** Gegeben die Nacharbeit ändert nebenbei einen Abschnitt, der nicht auf der Prüfliste steht, und der neue Text widerspricht einem AC, wenn die Nachprüfung endet, dann steht dieser Widerspruch als 🔴 im Bericht. · Aussage
-- **AC-24** Gegeben die Nachprüfung meldet ein Finding an einer Stelle außerhalb der Prüfliste, das kein Widerspruch in einem geänderten Bereich ist, wenn es eingestuft wird, dann steht es als 🟡. · Aussage
+- **AC-24** Gegeben die Nachprüfung meldet ein Finding an einer Stelle außerhalb der Prüfliste, das weder ein Widerspruch in einem geänderten Bereich noch der Befund einer Skript-Prüfung ist, wenn es eingestuft wird, dann steht es als 🟡. · Aussage
 - **AC-25** Gegeben die Nacharbeit hat außer dem Abschnitt `Entscheidungen` nichts geändert, wenn die Nachprüfung läuft, dann prüft sie keinen Bereich auf Widerspruch. · Anhang
 - **AC-26** Gegeben nach der Nachprüfung sind alle Punkte erledigt, es gibt keinen Widerspruch und keine offene Frage, wenn der Lauf endet, dann lautet der Status `sauber nach Nachprüfung`, und keine weitere Runde startet. · Aussage
 - **AC-27** Gegeben nach der Nachprüfung sind zwei Punkte nicht erledigt und keine Frage offen, wenn der Lauf endet, dann lautet der Status `nicht bereit, 2 × 🔴 offen`, und es gibt keine zweite Nacharbeit. · Aussage
@@ -100,6 +101,7 @@ Status am Ende, in dieser Rangfolge; es gilt der erste, der zutrifft:
 - **AC-32** Gegeben `/dv-forge:review-followup` nach einem Spec-Review mit zwei gewählten Stellen, wenn die Vorschläge umgesetzt sind, dann urteilt der Nachprüfer je gewählter Stelle „erledigt“ oder „nicht erledigt“ und prüft die geänderten Bereiche auf Widerspruch, und kein Reviewer läuft. · Aussage
 - **AC-33** Gegeben im Implementierungs-Review melden zwei Reviewer an derselben Stelle je ein 🟡, wenn die Runde eingestuft wird, dann steht die Stelle als 🟡. · Aussage
 - **AC-34** Gegeben im Implementierungs-Review ein Finding mit der Farbe 🔴 und ohne Kategorie, wenn die Runde eingestuft wird, dann steht es als 🔴. · Aussage
+- **AC-35** Gegeben eine Skript-Prüfung meldet in der Nachprüfung ein 🔴 an einer Stelle außerhalb der Prüfliste, wenn der Lauf endet, dann steht es als 🔴 und zählt zu den offenen 🔴. · Aussage
 
 ## Entscheidungen
 - **W · Grundregel** · Aussage — Einmal suchen, danach nur nachprüfen.
@@ -124,3 +126,4 @@ Status am Ende, in dieser Rangfolge; es gilt der erste, der zutrifft:
 - **W · Rangfolge der Status** · Aussage — Die Nachprüfung läuft auch bei offenen Fragen. Rangfolge: unvollständig → Fragen offen → nicht bereit → sauber. Im Plan-Review listet `Fragen offen` die Spec-Rückfragen auf.
 - **W · Zitat aus W-Eintrag** · Aussage — Herabgestuft wird nur, wenn das ganze Zitat aus einem W-Eintrag stammt.
 - **W · Offene Fragen ohne neues 🔴** · Aussage — Der Lauf hält trotzdem an und stellt sie.
+- **W · Skript-Prüfungen in der Nachprüfung** · Aussage — Befunde einer Skript-Prüfung bleiben auch in der Nachprüfung 🔴 und zählen zu den offenen 🔴. Ob ein solcher Punkt erledigt ist, entscheidet das Skript, nicht der Nachprüfer.

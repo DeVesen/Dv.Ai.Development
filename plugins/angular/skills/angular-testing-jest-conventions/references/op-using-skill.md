@@ -26,7 +26,7 @@ Subagenten laden Skills nicht, sehen aber CLAUDE.md — darum steht der handlung
 5. Magic-Strings: mehrfach genutzte API-Verträge (Routen, Feldnamen) → benannte Konstante.
 6. Bestand respektieren: bestehende `it('should …')` nicht umbenennen; neue `it` nach Schema. Keine Mock-Lib-/Runner-Migration ohne ausdrücklichen Wunsch.
 7. superpowers: Der Controller injiziert diese Konventionen in jeden Implementer-/Fix-Dispatch (Global-Constraints) und in die Reviewer-Lens.
-8. Verifikation: Tests grün über den Standard-Testlauf des Projekts; kein stiller Shell-Fallback, falls das Projekt einen Test-MCP vorschreibt.
+8. Verifikation: Tests grün über den Testbefehl des Projekts (dv-forge `Test:` bzw. die dort genannten Skripte), genau so, kein anderes Werkzeug mit gleichem Zweck; ein direkter Aufruf nur angekündigt zur Fehlerdiagnose, er zählt nie als grün.
 Details: Skill `angular-testing-jest-conventions`.
 <!-- test-conventions:angular-jest END -->
 ```

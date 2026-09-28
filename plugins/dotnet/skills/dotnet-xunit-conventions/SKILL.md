@@ -117,8 +117,9 @@ Bau-Hilfe für Entities, die noch kein Test braucht (YAGNI).
 **VERBOTEN ohne Wunsch:** Mitläufer-Migration, Shouldly, automatisches Umstellen auf xUnit.
 
 ## 11. Verifikation
-Tests grün laufen lassen über den Standard-Testlauf des Projekts (RED → GREEN). Falls das Projekt
-einen Test-MCP/-Runner vorschreibt, diesen nutzen — kein stiller Shell-Fallback.
+Tests grün laufen lassen über den Testbefehl des Projekts (RED → GREEN): dv-forge `Test:` bzw. die dort genannten
+Skripte, sonst den in der Projekt-`CLAUDE.md` vorgeschriebenen Weg — genau so, kein anderes Werkzeug mit gleichem
+Zweck. Kein stiller Fallback; ein direkter Aufruf ist nur angekündigt zur Fehlerdiagnose erlaubt und zählt nie als grün.
 
 ## 12. Bootstrap-Modus (`using-skill` / `bootstrap`)
 Aufruf mit Argument `using-skill` oder `bootstrap` → deterministischer Installer, keine normale

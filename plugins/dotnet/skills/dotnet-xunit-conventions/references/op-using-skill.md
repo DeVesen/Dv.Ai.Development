@@ -27,7 +27,7 @@ Subagenten laden Skills nicht, sehen aber CLAUDE.md — darum steht der handlung
 6. Mehrstufige Testdaten (über Fremdschlüssel verkettete Entities, feste Anlege-Reihenfolge): über eine wiederverwendbare, testprojekt-lokale Bau-Hilfe erzeugen, gegliedert nach fachlicher Gruppe — nicht Entity für Entity in einer langen Arrange-Methode. Konvention als XML-Doc auf der Builder-Klasse. Wächst bei Bedarf mit (YAGNI).
 7. Bestand respektieren: bestehende MSTest/NUnit-Klassen erweitern erlaubt, Framework behalten; KEINE Mitläufer-Migration ohne ausdrücklichen Wunsch.
 8. superpowers: Der Controller injiziert diese Konventionen in jeden Implementer-/Fix-Dispatch (Global-Constraints) und in die Reviewer-Lens.
-9. Verifikation: Tests grün über den Standard-Testlauf des Projekts; kein stiller Shell-Fallback, falls das Projekt einen Test-MCP vorschreibt.
+9. Verifikation: Tests grün über den Testbefehl des Projekts (dv-forge `Test:` bzw. die dort genannten Skripte), genau so, kein anderes Werkzeug mit gleichem Zweck; ein direkter Aufruf nur angekündigt zur Fehlerdiagnose, er zählt nie als grün.
 Details: Skill `dotnet-xunit-conventions`.
 <!-- test-conventions:dotnet-xunit END -->
 ```

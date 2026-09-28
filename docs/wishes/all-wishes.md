@@ -203,3 +203,10 @@ Gleiche Wünsche aus mehreren Berichten sind zusammengeführt; die Häufigkeit s
 | Abschn. 7 · Node-Pakete prüfen | kein neues Skript: `angular-test.js` prüft vor dem Lauf die Pakete der Test-Builder aus `angular.json` (z. B. `@angular/build`) und bricht sonst sofort ab mit „Node-Pakete fehlen: … npm ci ausführen“; erkennt auch tote Junctions | umgesetzt |
 | Abschn. 7 · Junction automatisch | nicht umsetzen: die Junction auf den Paketordner des Haupt-Checkouts war die Ursache des Vorfalls | nicht ändern |
 | Abschn. 8 · dev-mcp Fehlerzeile | `AngularRunner`: gemeinsamer Fallback `FailureLines` für Karma/Jest/Vitest (Zeilen mit error/could not find/cannot find/not found aus stdout+stderr, sonst letzte Zeilen), Node-Warnungen getrennt in `warnings`; 12 neue xUnit-Tests | umgesetzt, **Deploy offen** (`deploy.ps1` löscht `tool-calls.ndjson` im Ziel, vorher sichern; laufenden Server erst stoppen) |
+| Abschn. 9 · Platz im Skill | Tabelle „Häufige Fehler“ nach `prozess-retrospektive/references/common-mistakes.md` ausgelagert (Skill 494 → 460 Wörter trotz Ergänzungen) | umgesetzt |
+| Abschn. 9 · Regel-Aussagen belegen | neue Zeile: Regel eines anderen Werkzeugs mit `datei:zeile` zitieren oder `Eindruck`; Vorschlag dagegen ist Regeländerung | umgesetzt |
+| Abschn. 9 · Nicht gemessene Zahlen | neue Zeile: per `grep -c` im Protokoll zählen, sonst weglassen oder `Eindruck` | umgesetzt |
+| Abschn. 9 · Werkzeugfehler | `report-format.md` Regel: Werkzeugfehler ist nie Kleinigkeit, bekommt `Ziel:` | umgesetzt |
+| Abschn. 9 · Rohdaten vs. Anonymisierung | „Zahlen“ und „MCP-Nutzung“ ausdrücklich von der Platzhalter-Regel ausgenommen (Rest erledigte `--skeleton`) | umgesetzt |
+| Abschn. 9 · Commit-Konvention | Schritt 4: nach Ja Commit nach `forge-config get Commit-Konvention` mit Workitem-Nummer der Session; unklar → vorher fragen | umgesetzt |
+| Abschn. 9 · Frische Session | Schritt 1: Cache je Anfrage über ~200k → Wiederholung in frischer Session mit `--file <pfad>` aus `Quelle:` empfehlen | umgesetzt |

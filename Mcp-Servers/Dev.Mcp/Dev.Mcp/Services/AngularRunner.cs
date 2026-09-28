@@ -23,6 +23,14 @@ public sealed partial class AngularRunner
     [GeneratedRegex(@"(?:WARNING in |warning\s+TS\d+:|⚠\s*\[WARNING\])", RegexOptions.IgnoreCase)]
     private static partial Regex BuildWarningLineRegex();
 
+    // Node and CLI notices that precede a failed start: "(node:1234) MaxListenersExceededWarning", deprecated builders.
+    [GeneratedRegex(@"^\(node:\d+\)|--trace-warnings|\w*Warning:|\bdeprecated\b", RegexOptions.IgnoreCase)]
+    private static partial Regex NodeWarningLineRegex();
+
+    // Lines that name why a test run could not start, e.g. "Error: Could not find the '...' builder's node package."
+    [GeneratedRegex(@"\berror\b|could not find|cannot find|not found", RegexOptions.IgnoreCase)]
+    private static partial Regex FailureCauseLineRegex();
+
     // esbuild prints the file location on its own line below the "[ERROR]" header: "src/app/x.ts:10:9:"
     [GeneratedRegex(@"^(.+:\d+:\d+):$")]
     private static partial Regex EsbuildLocationLineRegex();
@@ -142,6 +150,19 @@ public sealed partial class AngularRunner
         return new AngularBuildResult { Success = exitCode == 0, Command = "ng build", Errors = errors, Warnings = warnings, ExitCode = exitCode, Summary = summary };
     }
 
+    private static string[] NodeWarnings(string[] lines) =>
+        lines.Select(l => l.Trim()).Where(l => l.Length > 0 && NodeWarningLineRegex().IsMatch(l)).Distinct().Take(MaxWarnings).ToArray();
+
+    // A run that fails without failed tests or compile errors: the lines naming the cause, Node warnings excluded;
+    // without such a line the last lines of the output.
+    private static string[] FailureLines(string[] lines, Func<string, bool>? ignore = null)
+    {
+        var candidates = lines.Select(l => l.Trim())
+            .Where(l => l.Length > 0 && !NodeWarningLineRegex().IsMatch(l) && !(ignore?.Invoke(l) ?? false)).ToArray();
+        var causes = candidates.Where(l => FailureCauseLineRegex().IsMatch(l)).Distinct().Take(MaxErrors).ToArray();
+        return causes.Length > 0 ? causes : candidates.TakeLast(FallbackLineCount).ToArray();
+    }
+
     public static AngularBuildResult ParseTestOutput(string stdout, string stderr, int exitCode)
     {
         var combined = StripAnsi(stdout + "\n" + stderr);
@@ -154,8 +175,7 @@ public sealed partial class AngularRunner
         string[] errors;
         if (failedTests.Length > 0) errors = failedTests;
         else if (tsErrors.Length > 0) errors = tsErrors;
-        else if (exitCode != 0 && !string.IsNullOrWhiteSpace(stderr))
-            errors = StripAnsi(stderr).Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).Take(MaxErrors).ToArray();
+        else if (exitCode != 0) errors = FailureLines(lines);
         else errors = [];
 
         var summary = executedLine is { Success: true } ? executedLine.Value.Trim()
@@ -164,7 +184,7 @@ public sealed partial class AngularRunner
             : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
             : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
 
-        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = [], ExitCode = exitCode, Summary = summary };
+        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = NodeWarnings(lines), ExitCode = exitCode, Summary = summary };
     }
 
     public static AngularBuildResult ParseJestOutput(string stdout, string stderr, int exitCode)
@@ -186,15 +206,7 @@ public sealed partial class AngularRunner
         string[] errors;
         if (failedTests.Length > 0) errors = failedTests;
         else if (tsErrors.Length > 0) errors = tsErrors;
-        else if (exitCode != 0)
-        {
-            var stderrLines = StripAnsi(stderr).Split('\n').Select(l => l.Trim())
-                .Where(l => l.Length > 0 && !JestExperimentalNoteRegex().IsMatch(l)).ToArray();
-            var fallbackLines = lines.Where(l => l.Contains("Error", StringComparison.OrdinalIgnoreCase) && !JestExperimentalNoteRegex().IsMatch(l))
-                .Select(l => l.Trim()).Where(l => l.Length > 0).ToArray();
-            errors = stderrLines.Length > 0 ? stderrLines.Take(MaxErrors).ToArray()
-                : fallbackLines.Take(MaxErrors).ToArray();
-        }
+        else if (exitCode != 0) errors = FailureLines(lines, l => JestExperimentalNoteRegex().IsMatch(l));
         else errors = [];
 
         var summary = jestSummaryLine is { Success: true } ? jestSummaryLine.Value.Trim()
@@ -203,7 +215,7 @@ public sealed partial class AngularRunner
             : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
             : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
 
-        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = [], ExitCode = exitCode, Summary = summary };
+        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = NodeWarnings(lines), ExitCode = exitCode, Summary = summary };
     }
 
     public static AngularBuildResult ParseVitestOutput(string stdout, string stderr, int exitCode)
@@ -221,8 +233,7 @@ public sealed partial class AngularRunner
         string[] errors;
         if (failedTests.Length > 0) errors = failedTests;
         else if (tsErrors.Length > 0) errors = tsErrors;
-        else if (exitCode != 0 && !string.IsNullOrWhiteSpace(stderr))
-            errors = StripAnsi(stderr).Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).Take(MaxErrors).ToArray();
+        else if (exitCode != 0) errors = FailureLines(lines);
         else errors = [];
 
         var summary = summaryLines.Length > 0 ? string.Join(" | ", summaryLines)
@@ -231,7 +242,7 @@ public sealed partial class AngularRunner
             : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
             : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
 
-        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = [], ExitCode = exitCode, Summary = summary };
+        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = NodeWarnings(lines), ExitCode = exitCode, Summary = summary };
     }
 
     private async Task<AngularBuildResult> RunAsync(

@@ -45,6 +45,11 @@ const COMMANDS = {
       + 'Prüfen übernehmen die Reviewer-Agents, Vorschläge der Agent implementation-review-scout.',
     protect: ([plan]) => (plan ? [{ path: plan, kind: 'repo' }] : null),
   },
+  '/dv-forge:review-followup': {
+    reason: 'dv-forge:review-followup läuft: Der Orchestrator liest und ändert weder Artefakt, Spec noch Code. '
+      + 'Umsetzen übernehmen Nacharbeiter bzw. Umsetzer, Prüfen die Reviewer-Agents.',
+    protect: ([artifact], cwd) => (artifact ? followupEntries(path.resolve(cwd ?? '.', artifact), cwd) : null),
+  },
 };
 
 const HARNESS_NOTICE = /<(?:task-notification|agent-message|system-reminder)\b/;
@@ -59,6 +64,20 @@ function specOfPlan(planPath) {
   } catch {
     return beside;
   }
+}
+
+// Schützt dasselbe wie das Review, dessen Sicherung der Followup nutzt; ohne Sicherung scheitert prepare.js ohnehin.
+function followupEntries(artifact, cwd) {
+  let saved;
+  try {
+    saved = require('./followup').resolveFollowup(artifact, gitToplevel(path.dirname(artifact), cwd ?? '.'));
+  } catch {
+    return null;
+  }
+  if (!saved) return null;
+  if (saved.role === 'spec-review') return [artifact];
+  if (saved.role === 'plan-review') return [artifact, specOfPlan(artifact)];
+  return [{ path: artifact, kind: 'repo' }];
 }
 
 function markerPath(sessionId, tmpRoot = os.tmpdir()) {

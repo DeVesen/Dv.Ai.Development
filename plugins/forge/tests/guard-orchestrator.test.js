@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const guard = require('../scripts/guard-orchestrator.js');
+const { makeRepo, commitFile, samePath } = require('./lib/git-repo');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'guard-orchestrator.js');
 const HOOKS = path.join(__dirname, '..', 'hooks', 'hooks.json');
@@ -286,4 +287,32 @@ test('decidePreTool_ShellReadsPluginFile_Allowed', () => {
   assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command: `cat "${file}"` } }), null);
   assert.ok(preTool(env, { tool_name: 'Bash', tool_input: { command: `cat "${file}" docs/spec.md` } }));
   assert.ok(preTool(env, { tool_name: 'Bash', tool_input: { command: `cat "${file}"; cat docs/spec.md` } }));
+});
+
+test('onPrompt_ReviewFollowup_ProtectsLikeTheSavedReview', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'docs/forge/demo/plan.md', '# P\n\n### Task 1: Eins\n', 'plan');
+  commitFile(repo, 'docs/forge/demo/spec.md', '# S\n', 'spec');
+  const save = (role, savedAt) => {
+    const dir = path.join(repo, '.forge', 'followup', role, 'demo');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'meta.json'), JSON.stringify({ rolle: role, savedAt }));
+  };
+  const marker = (prompt) => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-guard-'));
+    guard.onPrompt({ session_id: SESSION, cwd: repo, prompt }, tmpRoot);
+    const file = guard.markerPath(SESSION, tmpRoot);
+    return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+  };
+  assert.equal(marker('/dv-forge:review-followup docs/forge/demo/plan.md b'), null);
+  save('plan-review', '2026-09-28T10:00:00.000Z');
+  const plan = marker('/dv-forge:review-followup docs/forge/demo/plan.md b');
+  assert.equal(plan.command, '/dv-forge:review-followup');
+  assert.deepEqual(plan.protected.map((entry) => entry.kind), ['file', 'file']);
+  save('review', '2026-09-28T11:00:00.000Z');
+  assert.ok(marker('/dv-forge:review-followup docs/forge/demo/plan.md 1:2').protected.every((entry) => entry.kind === 'dir'));
+  save('spec-review', '2026-09-28T12:00:00.000Z');
+  const spec = marker('/dv-forge:review-followup docs/forge/demo/spec.md b');
+  assert.equal(spec.protected.length, 1);
+  assert.ok(samePath(spec.protected[0].path, path.join(repo, 'docs/forge/demo/spec.md')));
 });

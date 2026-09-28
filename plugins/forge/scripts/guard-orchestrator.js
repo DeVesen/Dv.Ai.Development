@@ -23,7 +23,7 @@ const CHAINING = /[;&|`<>\r\n]|\$\(/;
 const HEREDOC_START = /\s<<(?:'([A-Za-z_]\w*)'|([A-Za-z_]\w*))\s*$/;
 const UNQUOTED_EXPANSION = /`|\$\(/;
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
-const REVIEW_AGENT = /^dv-forge:(?:(?:spec|plan|implementation)-review-(?!scout$)[a-z-]+|(?:spec|plan)-rework)$/;
+const REVIEW_AGENT = /^dv-forge:(?:(?:spec|plan|implementation)-review-[a-z-]+|(?:spec|plan)-rework)$/;
 const WORKSPACE_SEGMENT = /\/\.forge\//;
 const WORKSPACE_REASON = 'dv-forge: Review- und Nacharbeits-Agents schreiben mit Write nur in den Arbeitsbereich .forge/. '
   + 'Schreib dein Ergebnis an den Pfad aus deinem Auftrag (Zeile Ergebnis:).';

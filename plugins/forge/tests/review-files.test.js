@@ -172,3 +172,25 @@ test('guard_ImplementerOrMainSessionWrites_NotRestricted', () => {
   assert.equal(guard.decidePreTool({ session_id: 's', cwd, agent_id: 'a1', agent_type: 'dv-forge:plan-review-risks', tool_name: 'Edit', tool_input: { file_path: file } }), null);
   assert.equal(guard.decidePreTool({ session_id: 'ohne-marker', cwd, tool_name: 'Write', tool_input: { file_path: file } }, tmp()), null);
 });
+
+test('resultCheck_ScoutMarkdownWithSection_AllowsStop', () => {
+  const target = path.join(tmp(), 'scout.md');
+  fs.writeFileSync(target, '## Scout-Vorschläge\n\n### 🔴 Task 1\n1. x\n**Bevorzugt: 1** — y\n');
+  assert.equal(resultCheck.decide({ agent_transcript_path: transcript(`Ergebnis: ${target}`) }), null);
+});
+
+test('resultCheck_ScoutMarkdownWithoutSection_Blocks', () => {
+  const target = path.join(tmp(), 'scout.md');
+  fs.writeFileSync(target, 'Hier sind meine Vorschläge.\n');
+  assert.match(resultCheck.decide({ agent_transcript_path: transcript(`Ergebnis: ${target}`) }).reason,
+    /enthält keinen Abschnitt ## Scout-Vorschläge/);
+});
+
+test('guard_ScoutWritesOutsideWorkspace_DeniedInsideAllowed', () => {
+  const cwd = tmp();
+  const base = { session_id: 's', cwd, agent_id: 'a1', tool_name: 'Write', agent_type: 'dv-forge:plan-review-scout' };
+  assert.match(guard.decidePreTool({ ...base, tool_input: { file_path: path.join(cwd, 'docs', 'plan.md') } }),
+    /nur in den Arbeitsbereich \.forge\//);
+  const inside = path.join(cwd, '.forge', 'plan-review', 'x', 'runde-1', 'scout.md');
+  assert.equal(guard.decidePreTool({ ...base, tool_input: { file_path: inside } }), null);
+});

@@ -62,10 +62,10 @@ test('spec-rework_Body_DefinesDecisionEntryFormat', () => {
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 
-test('spec-review-scout_Frontmatter_ReadGrepGlobSonnet', () => {
+test('spec-review-scout_Frontmatter_ReadGrepGlobWriteSonnet', () => {
   const { fields } = readAgent('spec-review-scout');
   assert.equal(fields.name, 'spec-review-scout');
-  assert.equal(fields.tools, 'Read, Grep, Glob');
+  assert.equal(fields.tools, 'Read, Grep, Glob, Write');
   assert.equal(fields.model, 'sonnet');
   assert.match(fields.description, /^Use when/);
 });
@@ -139,10 +139,10 @@ test('plan-rework_Body_DecisionEntryRenumberingAndJsonResult', () => {
   assert.match(body, /W-Einträge/);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
 });
-test('plan-review-scout_Frontmatter_ReadGrepGlobSonnet', () => {
+test('plan-review-scout_Frontmatter_ReadGrepGlobWriteSonnet', () => {
   const { fields } = readAgent('plan-review-scout');
   assert.equal(fields.name, 'plan-review-scout');
-  assert.equal(fields.tools, 'Read, Grep, Glob');
+  assert.equal(fields.tools, 'Read, Grep, Glob, Write');
   assert.equal(fields.model, 'sonnet');
   assert.match(fields.description, /^Use when/);
 });
@@ -252,4 +252,14 @@ test('plan-review-feasibility_Body_NoExistenceCheckButWarningLines', () => {
   const { body } = readAgent('plan-review-feasibility');
   assert.ok(body.includes('Existenz von Dateien und Ankern prüfst du nicht; sie steht in der Anker-Datei.'));
   assert.ok(body.includes('**⚠-Zeilen:**'));
+});
+
+test('scouts_Body_WriteResultFileAndAnswerWithPathOnly', () => {
+  for (const name of ['spec-review-scout', 'plan-review-scout', 'implementation-review-scout']) {
+    const { body } = readAgent(name);
+    assert.ok(body.includes('- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei (`scout.md`)'), name);
+    assert.ok(body.includes('Deine letzte Aktion: Schreib mit `Write`'), name);
+    assert.ok(body.includes('Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.'), name);
+    assert.ok(!body.includes('Deine Antwort besteht nur aus diesem Abschnitt'), name);
+  }
 });

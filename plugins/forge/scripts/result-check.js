@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 
 const RESULT_LINE = /^\s*-?\s*`?Ergebnis:`?\s*(.+?)\s*$/m;
+const SCOUT_HEADING = /^## Scout-Vorschläge\s*$/m;
 
 function messageText(content) {
   if (typeof content === 'string') return content;
@@ -33,6 +34,9 @@ function expectedResult(transcriptPath) {
 
 function problemWith(file) {
   if (!fs.existsSync(file)) return 'fehlt';
+  if (file.toLowerCase().endsWith('.md')) {
+    return SCOUT_HEADING.test(fs.readFileSync(file, 'utf8')) ? null : 'enthält keinen Abschnitt ## Scout-Vorschläge';
+  }
   let value;
   try {
     value = JSON.parse(fs.readFileSync(file, 'utf8'));

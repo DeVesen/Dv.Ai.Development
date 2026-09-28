@@ -84,10 +84,10 @@ test('implementation-review-risks_Body_SwallowedErrorIsRed', () => {
   assert.match(body, /Spec und Plan liest du nicht/);
 });
 
-test('implementation-review-scout_Frontmatter_ReadGrepGlobSonnet', () => {
+test('implementation-review-scout_Frontmatter_ReadGrepGlobWriteSonnet', () => {
   const { fields } = readAgent('implementation-review-scout');
   assert.equal(fields.name, 'implementation-review-scout');
-  assert.equal(fields.tools, 'Read, Grep, Glob');
+  assert.equal(fields.tools, 'Read, Grep, Glob, Write');
   assert.equal(fields.model, 'sonnet');
   assert.match(fields.description, /^Use when/);
 });

@@ -132,19 +132,24 @@ function configuredServers(cwd) {
   return Object.keys(config?.mcpServers ?? {});
 }
 
-function loadSession(transcript) {
-  const main = readJsonl(transcript);
-  const typeByAgent = agentTypesFromMain(main);
+// entries/keepSubagent schränken auf einen Ausschnitt der Session ein; ohne sie zählt die ganze Session.
+function loadSession(transcript, { entries, keepSubagent = () => true } = {}) {
+  const all = readJsonl(transcript);
+  const main = entries ?? all;
+  const typeByAgent = agentTypesFromMain(all);
   const inlineLabel = (entry) => (entry.isSidechain && entry.agentId
     ? agentLabel(entry.agentId, null, typeByAgent) : MAIN_AGENT);
   const calls = collectCalls(main, inlineLabel);
-  const subagents = subagentFiles(transcript);
-  for (const file of subagents) {
+  let subagentCount = 0;
+  for (const file of subagentFiles(transcript)) {
+    const agentEntries = readJsonl(file);
+    if (!keepSubagent(agentEntries)) continue;
+    subagentCount += 1;
     const label = agentLabel(agentIdOf(file), file, typeByAgent);
-    calls.push(...collectCalls(readJsonl(file), () => label));
+    calls.push(...collectCalls(agentEntries, () => label));
   }
-  const cwd = main.find((entry) => entry.cwd)?.cwd;
-  return { calls, available: availableServers(main), cwd, subagentCount: subagents.length };
+  const cwd = all.find((entry) => entry.cwd)?.cwd;
+  return { calls, available: availableServers(all), cwd, subagentCount };
 }
 
 function simplify(name) {

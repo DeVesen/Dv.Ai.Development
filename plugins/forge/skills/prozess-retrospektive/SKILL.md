@@ -10,17 +10,18 @@ Du deckst **Lücken** der Session auf, nicht nur in dv-forge, sondern in allem, 
 Ergebnis ist ein Erfahrungsbericht als Datei. Jeder Befund ist so geschrieben, dass ihn jemand ohne jede Kenntnis des Projekts versteht und weitergeben kann. Jede Aussage stützt sich auf eine Zahl oder ein Zitat aus der Session; alles andere kennzeichnest du als `Eindruck`.
 
 ## Ablauf
-1. **Fakten holen:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/session-facts.js" --expect dev-mcp,codebase-analyzer` im Projektordner. Es liest das Protokoll der neuesten Session: Dauer, Eingaben des Menschen, Tokens je Session und Subagent, Tool-Aufrufe, Tool-Fehler, blockierte Aufrufe, Wiederholungen, Skills, Zusammenfassungen, gemessene MCP-Nutzung und Sparpotenzial. Eine andere Session mit `--file <pfad>`. Die Zahlen kommen aus dem Skript, nicht aus deinem Gedächtnis; den Verlauf liest du nur an den Stellen nach, auf die sie zeigen.
+1. **Fakten holen:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/session-facts.js" --session ${CLAUDE_SESSION_ID} --expect dev-mcp,codebase-analyzer` im Projektordner. Es liest das Protokoll dieser Session: Dauer, Eingaben des Menschen, Tokens je Session und Subagent, Tool-Aufrufe, Tool-Fehler, blockierte Aufrufe, Wiederholungen, Skills, Zusammenfassungen, gemessene MCP-Nutzung und Sparpotenzial. Eine andere Session statt `--session` mit `--file <pfad>`. Nur einen Teil der Session mit `--since-command <skill>`: ab dessen letztem Aufruf, mit `--occurrence <n>` ab dem n-ten, jeweils bis vor den nächsten. Die Zahlen kommen aus dem Skript, nicht aus deinem Gedächtnis; den Verlauf liest du nur an den Stellen nach, auf die sie zeigen.
    Ein Tool-Fehler ist erst ein Befund, wenn die Meldung einen echten Fehlschlag zeigt; ein Exit-Code ungleich 0 bei grünem Lauf zählt nicht. Laufen noch Subagents, wartest du auf sie oder vermerkst sie als offen.
 2. **Lücken finden:** Leg die Fakten neben den Verlauf und such die Signale aus `references/signals.md`. Je Stelle: was passiert ist, was es gekostet hat, welche Ursache und was in genau diesem Fall besser gewesen wäre. Frag bei jeder Handarbeit, die sich wiederholt oder deterministisch ist: Was könnte das künftig übernehmen, auch wenn es das noch nicht gibt?
 3. **Ziel bestimmen:** Jeder Vorschlag bekommt genau ein Ziel: Plugin, Skill, Agent, `CLAUDE.md`, Hook, Skript oder MCP-Server, mit Namen, falls es ihn gibt, oder `neu:` mit Arbeitsname. Was nur einmal passiert ist und keine Regel braucht, kommt ohne `Ziel:` unter Kleinigkeiten.
-4. **Schreiben:** nach `references/report-format.md` als `docs/wishes/<YYYY-MM-DD>-<thema>.md`. Existiert die Datei, hängst du `-2` an. Nicht committen, erst fragen.
+4. **Schreiben:** Denselben Aufruf wie in Schritt 1 mit `--skeleton docs/wishes/<YYYY-MM-DD>-<thema>.md` wiederholen; meldet er, die Datei existiere, hängst du `-2` an. Dann die Platzhalter nach `references/report-format.md` per `Edit` füllen. Nicht committen, erst fragen.
 5. **Im Chat:** nur Pfad, Zahl der Befunde, die drei teuersten Reibungspunkte und die drei größten Einsparungen in je einem Satz.
 
 ## Häufige Fehler
 | Fehler | Richtig |
 |---|---|
 | Aus dem Gedächtnis schätzen | Zahlen aus `session-facts.js` |
+| Zahlen oder MCP-Tabellen abtippen | Gerüst mit `--skeleton`, Rohdaten unverändert |
 | Alles loben | Positiv nur, was sich lohnt beizubehalten |
 | Nur dv-forge betrachten | Jedes Werkzeug und die Arbeitsweise selbst |
 | Nur Fehler suchen | Auch teure, aber fehlerfreie Läufe sind ein Befund |

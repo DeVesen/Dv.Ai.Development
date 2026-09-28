@@ -6,9 +6,16 @@ const os = require('node:os');
 const path = require('node:path');
 const mcpUsage = require('./mcp-usage.js');
 
-const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--cwd <projektordner>] [--expect <mcp-server,...>]\n';
+const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl> | --session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
+  + ' [--since-command <name> [--occurrence <n>]] [--skeleton <bericht.md>]\n';
 const NOTICE = /^\s*<(?:task-notification|agent-message|system-reminder|command-|local-command)/;
+const SLASH_COMMAND = /<command-name>\s*\/?([^<\s]+)\s*<\/command-name>/;
 const DENIAL = /denied|blocked|Permission|hook/i;
+const RECENT_MS = 10 * 60 * 1000;
+const REPORT_FORMAT = path.join(__dirname, '..', 'skills', 'prozess-retrospektive', 'references', 'report-format.md');
+const FACTS_SLOT = '<ZAHLEN: schreibt session-facts.js --skeleton>';
+const MCP_SLOT = '<MCP-NUTZUNG: schreibt session-facts.js --skeleton>';
+const RESULT_SLOT = 'Dauer <min>, Eingaben des Menschen <n>, Tokens neu <k> Hauptsession und <k> Subagents';
 
 class FactsError extends Error {}
 
@@ -16,13 +23,35 @@ function projectDir(cwd, home = os.homedir()) {
   return path.join(home, '.claude', 'projects', path.resolve(cwd).replace(/[^A-Za-z0-9]/g, '-'));
 }
 
+// Neueste Session im Projektordner. Wurden kurz davor weitere geschrieben, ist „neueste“ mehrdeutig: Warnung.
 function newestSession(dir) {
   if (!fs.existsSync(dir)) throw new FactsError(`Kein Session-Ordner: ${dir}`);
   const files = fs.readdirSync(dir).filter((name) => name.endsWith('.jsonl'))
-    .map((name) => path.join(dir, name))
-    .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+    .map((name) => ({ file: path.join(dir, name), mtime: fs.statSync(path.join(dir, name)).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime);
   if (files.length === 0) throw new FactsError(`Keine Session-Datei in ${dir}`);
-  return files[0];
+  const [newest, ...others] = files;
+  const rivals = others.filter(({ mtime }) => newest.mtime - mtime < RECENT_MS).map(({ file }) => path.basename(file, '.jsonl'));
+  const warning = rivals.length === 0 ? null
+    : `Warnung: ${rivals.length} weitere Session(s) in den letzten 10 min geschrieben (${rivals.join(', ')}); gelesen wird ${path.basename(newest.file, '.jsonl')}. Eigene Session mit --session <id> wählen.`;
+  return { file: newest.file, warning };
+}
+
+function sessionById(dir, id) {
+  const own = path.join(dir, `${id}.jsonl`);
+  if (fs.existsSync(own)) return own;
+  try {
+    return mcpUsage.findTranscript(id, path.dirname(dir));
+  } catch {
+    throw new FactsError(`Session ${id} nicht gefunden unter ${path.dirname(dir)}`);
+  }
+}
+
+function resolveSession(options) {
+  if (options.file) return { file: path.resolve(options.file), warning: null };
+  const dir = projectDir(options.cwd ?? process.cwd());
+  if (options.session) return { file: sessionById(dir, options.session), warning: null };
+  return newestSession(dir);
 }
 
 function readEntries(file) {
@@ -65,6 +94,48 @@ function commandHead(part) {
     .split(/\s+/).filter((word) => !/^\w+=/.test(word));
   if (words.length === 0) return null;
   return words.slice(0, /^[a-z][\w:-]*$/i.test(words[1] ?? '') ? 2 : 1).join(' ');
+}
+
+// Ein Slash-Befehl ist eine Eingabe des Menschen, auch wenn er mit <command-message> beginnt.
+function isHumanTurn(content) {
+  if (Array.isArray(content) && content.some((part) => part.type === 'tool_result')) return false;
+  const text = textOf(content);
+  return SLASH_COMMAND.test(text) || !NOTICE.test(text);
+}
+
+function invokes(entry, name) {
+  const wanted = name.replace(/^\//, '');
+  const same = (value) => {
+    const called = String(value ?? '').replace(/^\//, '');
+    return called === wanted || called.endsWith(`:${wanted}`);
+  };
+  const content = entry.message?.content;
+  if (entry.type === 'user') return same(textOf(content).match(SLASH_COMMAND)?.[1]);
+  if (entry.type !== 'assistant' || !Array.isArray(content)) return false;
+  return content.some((part) => part.type === 'tool_use' && part.name === 'Skill' && same(part.input?.skill));
+}
+
+function firstTime(entries, from) {
+  for (let index = from; index < entries.length; index += 1) {
+    if (entries[index].timestamp) return Date.parse(entries[index].timestamp);
+  }
+  return null;
+}
+
+// Ausschnitt vom n-ten Aufruf eines Befehls oder Skills bis vor seinen nächsten Aufruf; n < 0 zählt von hinten.
+function sliceByCommand(entries, name, occurrence) {
+  const starts = entries.flatMap((entry, index) => (invokes(entry, name) ? [index] : []));
+  if (starts.length === 0) throw new FactsError(`Kein Aufruf von ${name} in der Session`);
+  const position = occurrence < 0 ? starts.length + occurrence : occurrence - 1;
+  if (position < 0 || position >= starts.length) throw new FactsError(`Aufruf ${occurrence} von ${name} gibt es nicht, die Session hat ${starts.length}`);
+  const end = starts[position + 1] ?? entries.length;
+  const from = firstTime(entries, starts[position]) ?? -Infinity;
+  const to = firstTime(entries, end) ?? Infinity;
+  const keepSubagent = (agentEntries) => {
+    const start = firstTime(agentEntries, 0);
+    return start !== null && start >= from && start < to;
+  };
+  return { entries: entries.slice(starts[position], end), keepSubagent, label: `Ausschnitt: Aufruf ${position + 1} von ${starts.length} von ${name}` };
 }
 
 function analyze(entries) {
@@ -111,9 +182,7 @@ function analyze(entries) {
     }
     if (entry.type === 'user') {
       const content = message.content;
-      if (typeof content === 'string' ? !NOTICE.test(content) : !content.some((part) => part.type === 'tool_result') && !NOTICE.test(textOf(content))) {
-        facts.turns += 1;
-      }
+      if (isHumanTurn(content)) facts.turns += 1;
       for (const part of Array.isArray(content) ? content : []) {
         if (part.type === 'tool_result') facts.results.push({ call: calls.get(part.tool_use_id) ?? 'unbekannt', chars: textOf(part.content).length });
         if (part.type !== 'tool_result' || !part.is_error) continue;
@@ -138,13 +207,16 @@ function thousands(value) {
   return `${Math.round(value / 1000)}k`;
 }
 
-function subagentRows(sessionFile) {
+function subagentRows(sessionFile, keep = () => true) {
   const dir = path.join(sessionFile.slice(0, -'.jsonl'.length), 'subagents');
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((name) => name.endsWith('.jsonl')).map((name) => {
+  return fs.readdirSync(dir).filter((name) => name.endsWith('.jsonl')).flatMap((name) => {
+    const entries = readEntries(path.join(dir, name));
+    return keep(entries) ? [{ name, entries }] : [];
+  }).map(({ name, entries }) => {
     const metaFile = path.join(dir, name.replace(/\.jsonl$/, '.meta.json'));
     const meta = fs.existsSync(metaFile) ? JSON.parse(fs.readFileSync(metaFile, 'utf8')) : {};
-    const facts = analyze(readEntries(path.join(dir, name)));
+    const facts = analyze(entries);
     const errors = [...facts.errors.values()].reduce((sum, list) => sum + list.length, 0);
     return {
       facts,
@@ -165,12 +237,14 @@ function merge(target, map) {
 
 // Sparpotenzial über Hauptsession und Subagents: wo viel Kontext floss oder Arbeit sich wiederholte.
 function savings(all) {
+  return ['## Sparpotenzial (Hauptsession und Subagents)', '', savingsLists(all)].join('\n');
+}
+
+function savingsLists(all) {
   const results = all.flatMap((facts) => facts.results).sort((a, b) => b.chars - a.chars).slice(0, TOP_RESULTS);
   const reads = [...all.reduce((map, facts) => merge(map, facts.reads), new Map())].filter(([, count]) => count > 1).sort((a, b) => b[1] - a[1]);
   const commands = [...all.reduce((map, facts) => merge(map, facts.commands), new Map())].filter(([, count]) => count >= MIN_COMMAND_REPEATS).sort((a, b) => b[1] - a[1]);
   return [
-    '## Sparpotenzial (Hauptsession und Subagents)',
-    '',
     'Größte Tool-Ergebnisse (etwa 4 Zeichen je Token):',
     ...(results.length > 0 ? results.map((r) => `- ${thousands(r.chars / 4)} Tokens · ${r.call}`) : ['- keine']),
     '',
@@ -183,21 +257,32 @@ function savings(all) {
   ].join('\n');
 }
 
-function render(sessionFile, facts, agents) {
+function errorLinesOf(facts) {
+  return [...facts.errors.entries()].flatMap(([tool, list]) => list.map((text) => `- ${tool}: ${text}`));
+}
+
+function factLines(facts, agents) {
   const tools = [...facts.tools.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`).join(', ') || '-';
   const skills = [...facts.skills.entries()].map(([name, count]) => `${name} ${count}`).join(', ') || '-';
-  const errorLines = [...facts.errors.entries()].flatMap(([tool, list]) => list.map((text) => `- ${tool}: ${text}`));
   const agentTokens = agents.reduce((sum, agent) => sum + agent.tokens, 0);
   return [
-    `# Session-Fakten: ${path.basename(sessionFile, '.jsonl')}`,
-    '',
     `- Dauer: ${minutes(facts.first, facts.last)} min · Modelle: ${[...facts.models].join(', ') || '?'}`,
     `- Eingaben des Menschen: ${facts.turns} · API-Anfragen: ${facts.requests} · Zusammenfassungen: ${facts.compactions}`,
     `- Tokens Hauptsession: ${thousands(facts.input)} neu gelesen, ${thousands(facts.cached)} aus dem Cache, ${thousands(facts.output)} Ausgabe`,
     `- Tokens Subagents: ${thousands(agentTokens)} in ${agents.length} Agents`,
     `- Tool-Aufrufe: ${tools}`,
     `- Skills: ${skills}`,
-    `- Tool-Fehler: ${errorLines.length}, davon blockiert oder verweigert: ${facts.denials} · direkt wiederholte gleiche Aufrufe: ${facts.repeats}`,
+    `- Tool-Fehler: ${errorLinesOf(facts).length}, davon blockiert oder verweigert: ${facts.denials} · direkt wiederholte gleiche Aufrufe: ${facts.repeats}`,
+  ];
+}
+
+function render(sessionFile, facts, agents, label = null) {
+  const errorLines = errorLinesOf(facts);
+  return [
+    `# Session-Fakten: ${path.basename(sessionFile, '.jsonl')}`,
+    '',
+    ...(label ? [`- ${label}`] : []),
+    ...factLines(facts, agents),
     '',
     '## Subagents (nach Tokens)',
     '| Auftrag | Typ | Modell | Tokens gesamt | davon neu | Tools | Fehler | min |',
@@ -210,26 +295,70 @@ function render(sessionFile, facts, agents) {
   ].join('\n');
 }
 
+const FLAGS = {
+  '--file': 'file', '--session': 'session', '--cwd': 'cwd', '--expect': 'expect',
+  '--since-command': 'sinceCommand', '--occurrence': 'occurrence', '--skeleton': 'skeleton',
+};
+
 function parseArgs(args) {
   const options = {};
   for (let index = 0; index < args.length; index += 2) {
-    const key = { '--file': 'file', '--cwd': 'cwd', '--expect': 'expect' }[args[index]];
+    const key = FLAGS[args[index]];
     if (!key || args[index + 1] === undefined) return null;
     options[key] = args[index + 1];
   }
+  if (options.file && options.session) return null;
   if (options.expect) options.expect = options.expect.split(',').map((name) => name.trim()).filter(Boolean);
+  if (options.occurrence !== undefined) {
+    if (!/^-?[1-9]\d*$/.test(options.occurrence) || !options.sinceCommand) return null;
+    options.occurrence = Number(options.occurrence);
+  }
   return options;
 }
 
+// Berichtsgerüst aus references/report-format.md: Zahlen und MCP-Nutzung deterministisch, der Rest bleibt Platzhalter.
+function skeleton({ facts, agents, mcp, lists }) {
+  const format = fs.readFileSync(REPORT_FORMAT, 'utf8');
+  const template = format.match(/```markdown\n([\s\S]*?)\n```/)?.[1];
+  if (!template || ![FACTS_SLOT, MCP_SLOT, RESULT_SLOT].every((slot) => template.includes(slot))) {
+    throw new FactsError(`Vorlage in ${REPORT_FORMAT} passt nicht zu --skeleton`);
+  }
+  const agentInput = agents.reduce((sum, agent) => sum + agent.facts.input, 0);
+  const result = `Dauer ${minutes(facts.first, facts.last)} min, Eingaben des Menschen ${facts.turns}, Tokens neu ${thousands(facts.input)} Hauptsession und ${thousands(agentInput)} Subagents`;
+  const mcpBody = mcp.replace(/^## MCP-Nutzung \(gemessen\)\n/, '').trimEnd();
+  return `${template
+    .replace(RESULT_SLOT, () => result)
+    .replace(FACTS_SLOT, () => [...factLines(facts, agents), '', lists.trimEnd()].join('\n'))
+    .replace(MCP_SLOT, () => mcpBody)}\n`;
+}
+
+function writeSkeleton(target, text) {
+  const file = path.resolve(target);
+  if (fs.existsSync(file)) throw new FactsError(`Bericht existiert schon, nichts geschrieben: ${file}`);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, text);
+  return file;
+}
+
 function run(options) {
-  const file = options.file ? path.resolve(options.file) : newestSession(projectDir(options.cwd ?? process.cwd()));
+  const { file, warning } = resolveSession(options);
   if (!fs.existsSync(file)) throw new FactsError(`Session-Datei nicht gefunden: ${file}`);
-  const session = mcpUsage.loadSession(file);
+  const all = readEntries(file);
+  const slice = options.sinceCommand ? sliceByCommand(all, options.sinceCommand, options.occurrence ?? -1) : null;
+  const entries = slice?.entries ?? all;
+  const keep = slice?.keepSubagent ?? (() => true);
+  const session = mcpUsage.loadSession(file, { entries, keepSubagent: keep });
   if (options.cwd) session.cwd = options.cwd;
-  const facts = analyze(readEntries(file));
-  const agents = subagentRows(file);
+  const facts = analyze(entries);
+  const agents = subagentRows(file, keep);
   const mcp = mcpUsage.render(session, { expect: options.expect, transcript: file });
-  return `${render(file, facts, agents)}\n${savings([facts, ...agents.map((agent) => agent.facts)])}\n${mcp}`;
+  const allFacts = [facts, ...agents.map((agent) => agent.facts)];
+  let output = `${render(file, facts, agents, slice?.label)}\n${savings(allFacts)}\n${mcp}`;
+  if (options.skeleton) {
+    const written = writeSkeleton(options.skeleton, skeleton({ facts, agents, mcp, lists: savingsLists(allFacts) }));
+    output += `\nGerüst geschrieben: ${written}\n`;
+  }
+  return { output, warning };
 }
 
 function main() {
@@ -239,7 +368,9 @@ function main() {
     process.exit(2);
   }
   try {
-    process.stdout.write(run(options));
+    const { output, warning } = run(options);
+    if (warning) process.stderr.write(`${warning}\n`);
+    process.stdout.write(output);
   } catch (error) {
     if (!(error instanceof FactsError)) throw error;
     process.stderr.write(`${error.message}\n`);
@@ -249,4 +380,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, run };
+module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, sliceByCommand, run };

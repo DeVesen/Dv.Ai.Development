@@ -41,6 +41,21 @@ test('prozessRetrospektive_Body_RunsFactsScriptFromPluginRoot', () => {
   assert.ok(fs.existsSync(path.join(PLUGIN_ROOT, 'scripts', 'mcp-usage.js')));
 });
 
+test('prozessRetrospektive_Body_ReadsOwnSessionAndWritesSkeleton', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('--session ${CLAUDE_SESSION_ID}'));
+  assert.ok(body.includes('--since-command <skill>'));
+  assert.ok(body.includes('--skeleton docs/wishes/<YYYY-MM-DD>-<thema>.md'));
+});
+
+test('reportFormat_Template_HasSlotsTheSkeletonFills', () => {
+  const text = reference('report-format.md');
+  for (const slot of ['<ZAHLEN: schreibt session-facts.js --skeleton>', '<MCP-NUTZUNG: schreibt session-facts.js --skeleton>',
+    'Dauer <min>, Eingaben des Menschen <n>, Tokens neu <k> Hauptsession und <k> Subagents']) {
+    assert.ok(text.includes(slot), `${slot} fehlt`);
+  }
+});
+
 test('prozessRetrospektive_Body_LooksBeyondForge', () => {
   const { body } = readMarkdown(SKILL);
   assert.match(body, /nicht nur in dv-forge/);

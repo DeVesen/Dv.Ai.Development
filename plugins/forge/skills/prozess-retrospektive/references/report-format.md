@@ -2,6 +2,8 @@
 
 Gleiches Format wie die bisherigen Berichte unter `docs/wishes/`, damit mehrere Berichte später zu einer Wunschliste zusammengeführt werden können.
 
+`session-facts.js --skeleton <datei>` schreibt diese Vorlage als Datei: „Zahlen“, „MCP-Nutzung“ und die Zahlen in „Ergebnis“ sind dann schon ausgefüllt. Diese Teile sind Rohdaten; du änderst sie nicht und tippst sie nie ab. Du ersetzt nur die übrigen `<…>`-Platzhalter.
+
 ```markdown
 # Erfahrungsbericht <Art der Arbeit, allgemein>
 
@@ -9,10 +11,10 @@ Gleiches Format wie die bisherigen Berichte unter `docs/wishes/`, damit mehrere 
 **Ergebnis:** <was herauskam>. Dauer <min>, Eingaben des Menschen <n>, Tokens neu <k> Hauptsession und <k> Subagents.
 
 ## Zahlen
-<die Zeilen oben aus session-facts.js, unverändert, ohne Tabellen, dazu die Listen aus „Sparpotenzial“>
+<ZAHLEN: schreibt session-facts.js --skeleton>
 
 ## MCP-Nutzung
-<Abschnitt „MCP-Nutzung (gemessen)“ aus session-facts.js, unverändert mit Tabellen>
+<MCP-NUTZUNG: schreibt session-facts.js --skeleton>
 
 **Relevanz:** je erwartetem MCP ein Satz: gebraucht · verzichtbar in dieser Session · hätte genützt, weil <Beleg>
 

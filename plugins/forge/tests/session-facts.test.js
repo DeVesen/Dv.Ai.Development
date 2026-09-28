@@ -79,6 +79,132 @@ test('cli_BadArgsOrMissingFile_ExitCodes', () => {
   assert.equal(spawnSync(process.execPath, [SCRIPT, '--file', '/gibt/es/nicht.jsonl'], { encoding: 'utf8' }).status, 1);
 });
 
+function projectWith(sessions) {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'home-'));
+  const cwd = path.join(home, 'repo');
+  const dir = facts.projectDir(cwd, home);
+  fs.mkdirSync(dir, { recursive: true });
+  const now = Date.now();
+  for (const [id, ageMinutes] of sessions) {
+    const file = path.join(dir, `${id}.jsonl`);
+    fs.writeFileSync(file, line({ type: 'user', timestamp: '2026-09-27T10:00:00Z', message: { role: 'user', content: `Session ${id}` } }));
+    const time = new Date(now - ageMinutes * 60000);
+    fs.utimesSync(file, time, time);
+  }
+  return { home, cwd };
+}
+
+function runIn({ home, cwd }, args) {
+  return spawnSync(process.execPath, [SCRIPT, '--cwd', cwd, ...args], { encoding: 'utf8', env: { ...process.env, HOME: home, USERPROFILE: home } });
+}
+
+test('cli_Session_ReadsThatSessionEvenIfAnotherIsNewer', () => {
+  const project = projectWith([['eigene', 30], ['fremde', 0]]);
+  const result = runIn(project, ['--session', 'eigene']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /# Session-Fakten: eigene/);
+  assert.equal(result.stderr, '');
+});
+
+test('cli_UnknownSession_ExitsWithOne', () => {
+  const result = runIn(projectWith([['eigene', 0]]), ['--session', 'gibt-es-nicht']);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /gibt-es-nicht/);
+});
+
+test('cli_NoSession_WarnsWhenOtherSessionsWereWrittenRecently', () => {
+  const result = runIn(projectWith([['a', 0], ['b', 3], ['alt', 60]]), []);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /# Session-Fakten: a/);
+  assert.match(result.stderr, /Warnung: 1 weitere Session/);
+  assert.match(result.stderr, /--session/);
+  assert.doesNotMatch(result.stderr, /alt/);
+});
+
+test('cli_NoSession_NoWarningWhenOnlyOneRecentSession', () => {
+  const result = runIn(projectWith([['a', 0], ['alt', 60]]), []);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stderr, '');
+});
+
+function commandSession() {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-cmd-'));
+  const file = path.join(dir, 's2.jsonl');
+  const slash = (name, time) => line({ type: 'user', timestamp: time, message: { role: 'user', content: `<command-message>${name}</command-message>\n<command-name>/${name}</command-name>` } });
+  const say = (text, time) => line({ type: 'user', timestamp: time, message: { role: 'user', content: text } });
+  const tool = (id, name, input, time) => line({ type: 'assistant', requestId: id, timestamp: time, message: { model: 'claude-x', content: [{ type: 'tool_use', id, name, input }] } });
+  fs.writeFileSync(file, [
+    say('Plane X', '2026-09-27T10:00:00Z'),
+    tool('p1', 'Bash', { command: 'git status' }, '2026-09-27T10:01:00Z'),
+    slash('dv-forge:prozess-retrospektive', '2026-09-27T11:00:00Z'),
+    tool('r1', 'Write', { file_path: 'bericht.md' }, '2026-09-27T11:02:00Z'),
+    say('commit den Bericht', '2026-09-27T11:05:00Z'),
+    tool('s1', 'Skill', { skill: 'dv-forge:prozess-retrospektive' }, '2026-09-27T11:10:00Z'),
+    tool('r2', 'Read', { file_path: 'x.md' }, '2026-09-27T11:11:00Z'),
+  ].join('\n'));
+  const agents = path.join(dir, 's2', 'subagents');
+  fs.mkdirSync(agents, { recursive: true });
+  const agent = (name, time) => fs.writeFileSync(path.join(agents, `agent-${name}.jsonl`),
+    line({ type: 'assistant', requestId: name, timestamp: time, message: { model: 'sonnet', content: [{ type: 'tool_use', id: `${name}-t`, name: 'Grep', input: {} }] } }));
+  agent('vorher', '2026-09-27T10:30:00Z');
+  agent('waehrend', '2026-09-27T11:03:00Z');
+  return file;
+}
+
+test('cli_SinceCommand_CountsOnlyFromLastInvocation', () => {
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', commandSession(), '--since-command', 'prozess-retrospektive'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Ausschnitt: Aufruf 2 von 2 von prozess-retrospektive/);
+  assert.match(result.stdout, /- Tool-Aufrufe: Skill 1, Read 1\n/);
+  assert.match(result.stdout, /- Dauer: 1 min/);
+  assert.match(result.stdout, /Tokens Subagents: 0k in 0 Agents/);
+});
+
+test('cli_SinceCommandWithOccurrence_EndsBeforeNextInvocationAndKeepsSubagentsInWindow', () => {
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', commandSession(), '--since-command', 'prozess-retrospektive', '--occurrence', '1'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Ausschnitt: Aufruf 1 von 2 von prozess-retrospektive/);
+  assert.match(result.stdout, /- Eingaben des Menschen: 2 · /);
+  assert.match(result.stdout, /- Tool-Aufrufe: Write 1\n/);
+  assert.match(result.stdout, /Tokens Subagents: 0k in 1 Agents/);
+  assert.match(result.stdout, /Hauptagent \+ 1 SubAgent\(s\) · 2 Tool-Aufrufe/);
+});
+
+test('cli_SinceCommand_UnknownCommandOrOccurrence_ExitsWithOne', () => {
+  const file = commandSession();
+  assert.equal(spawnSync(process.execPath, [SCRIPT, '--file', file, '--since-command', 'gibt-es-nicht'], { encoding: 'utf8' }).status, 1);
+  assert.equal(spawnSync(process.execPath, [SCRIPT, '--file', file, '--since-command', 'prozess-retrospektive', '--occurrence', '3'], { encoding: 'utf8' }).status, 1);
+  assert.equal(spawnSync(process.execPath, [SCRIPT, '--file', file, '--occurrence', 'x'], { encoding: 'utf8' }).status, 2);
+});
+
+test('cli_Skeleton_WritesReportWithFactsAndMcpVerbatimAndPlaceholdersForTheRest', () => {
+  const target = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wishes-')), 'docs', 'wishes', 'bericht.md');
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', session(), '--expect', 'dev-mcp', '--skeleton', target], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, new RegExp(`Gerüst geschrieben: ${target.replace(/\\/g, '\\\\')}`));
+  const text = fs.readFileSync(target, 'utf8');
+  assert.match(text, /^# Erfahrungsbericht <Art der Arbeit, allgemein>/);
+  assert.match(text, /Dauer 10 min, Eingaben des Menschen 2, Tokens neu 2k Hauptsession und 1k Subagents\./);
+  assert.match(text, /## Zahlen\n- Dauer: 10 min · Modelle: claude-x\n/);
+  assert.match(text, /Mehrfach gelesene Dateien:\n- keine/);
+  assert.match(text, /## MCP-Nutzung\n\nQuelle: /);
+  assert.match(text, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
+  assert.doesNotMatch(text, /MCP-Nutzung \(gemessen\)|## Sparpotenzial \(Hauptsession|\| Auftrag \| Typ \|/);
+  assert.doesNotMatch(text, /session-facts\.js/);
+  for (const heading of ['## Positiv', '## Reibung', '## Sparpotenzial', '## Neue Ideen', '## Kleinigkeiten', '**Relevanz:**']) {
+    assert.ok(text.includes(heading), `${heading} fehlt`);
+  }
+});
+
+test('cli_Skeleton_ExistingTarget_RefusesAndKeepsFile', () => {
+  const target = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wishes-')), 'bericht.md');
+  fs.writeFileSync(target, 'alt');
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', session(), '--skeleton', target], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /existiert/);
+  assert.equal(fs.readFileSync(target, 'utf8'), 'alt');
+});
+
 test('savings_LargeResultsRepeatedReadsAndCommands_Listed', () => {
   const use = (id, name, input) => ({ type: 'assistant', requestId: id, message: { content: [{ type: 'tool_use', id, name, input }] } });
   const result = (id, chars) => ({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: id, content: 'x'.repeat(chars) }] } });

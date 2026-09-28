@@ -122,11 +122,11 @@ test('check_InWorktree_ReportsWorktreeAndMainCheckout', () => {
   assert.ok(samePath(out.haupt, repo));
 });
 
-test('remove_InWorktree_KeepsBranchWithAllCommits', () => {
+test('remove_WorktreeWithCommit_KeepsBranchWithAllCommits', () => {
   const repo = worktreeRepo();
   const dir = values(run(repo, 'start', 'demo')).R;
   const commit = commitFile(dir, 'feature.txt', 'neu\n', 'feature');
-  const result = run(dir, 'remove');
+  const result = run(repo, 'remove', dir);
   assert.equal(result.status, 0, result.stderr);
   const out = values(result);
   assert.equal(out.commit, commit);

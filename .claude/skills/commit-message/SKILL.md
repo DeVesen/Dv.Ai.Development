@@ -22,6 +22,7 @@ Alle drei ausführen — staged und unstaged zusammen ergeben das vollständige 
 ### 1.5 — Auto-Review (entfällt bei `ohne review`)
 
 Wenn der Trigger `ohne review` oder `--no-review` enthält → Schritt 1.5 überspringen.
+Enthält `git diff --staged --name-only` keine Code-Dateien (nur `.md`, `.txt`, Bilder) → Schritt 1.5 überspringen; der Review-Server prüft nur .NET- und Angular-Code.
 
 Tool: `codebase-analyzer` → `review_git_diff` mit `staged: true`.
 

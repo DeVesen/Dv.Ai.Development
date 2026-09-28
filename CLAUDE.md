@@ -74,6 +74,15 @@ Pflicht-Konventionen (Kurzfassung):
 
 **Konventionsentscheidungen:** Wenn mehr als eine valide Option existiert und die Wahl User-sichtbar ist — Entscheidung in einem Halbsatz nennen, inkl. Alternativ-Hinweis. Nicht fragen, nicht schweigen.
 
+**Plan und Umsetzung immer nach dv-forge:** Auch ohne ausdrücklichen Skill-Namen gilt:
+
+| Anliegen | Skill |
+|---|---|
+| Plan erstellen (z. B. „mach einen Plan“, „plane das“, „Umsetzungsplan“) | `plugins/forge/skills/plan-writing/SKILL.md` |
+| Umsetzen (z. B. „setz den Plan um“, „implementiere das“) | `plugins/forge/skills/implementation/SKILL.md` |
+
+Beide Skills sind nicht per Skill-Tool aufrufbar (`disable-model-invocation`). Deshalb: `SKILL.md` samt `references/` lesen und Schritt für Schritt befolgen; `${CLAUDE_PLUGIN_ROOT}` = `plugins/forge`. Zu Beginn ankündigen, nach welchem Skill gearbeitet wird. Kein eigener Ablauf, auch nicht Superpowers `writing-plans` oder `executing-plans`.
+
 ---
 
 ## Repo-Struktur

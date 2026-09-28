@@ -187,9 +187,13 @@ test('reworkAndScouts_Body_ReadFindingsFromAggregateFile', () => {
     assert.ok(body.includes('- `Ergebnis:` absoluter Pfad deiner Ergebnisdatei'), name);
     assert.ok(body.includes('"results"'), name);
   }
-  for (const name of ['spec-review-scout', 'plan-review-scout', 'implementation-review-scout']) {
-    assert.ok(readAgent(name).body.includes('`Findings:` Datei der letzten Aggregation'), name);
+  for (const name of ['spec-review-scout', 'plan-review-scout']) {
+    const { body } = readAgent(name);
+    assert.ok(body.includes('`Findings:` Datei mit den Gruppen, die das Skript für dich ausgewählt hat'), name);
+    assert.ok(body.includes('1. Du bearbeitest jede Gruppe der Datei `Findings:`'), name);
+    assert.ok(body.includes('nach Runde 1 oder nach der Nachprüfung'), name);
   }
+  assert.ok(readAgent('implementation-review-scout').body.includes('`Findings:` Datei der letzten Aggregation'));
 });
 
 test('plan-review-buildability_Body_GatesSchemaAndForeignCode', () => {

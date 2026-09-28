@@ -24,7 +24,7 @@ Existiert der Auszug, liest du nur ihn statt der Profile. Berührt die Spec eine
 2. Begriffe der Spec, die im Glossar anders heißen oder dort als „nicht verwenden“ markiert sind. `rationale` nennt den Glossar-Begriff.
 3. Aussagen der Spec über den Ist-Stand (vorhandene Funktionen, Module, Zuständigkeiten), die einem Modul- oder Feature-Profil widersprechen. `rationale` nennt die Profil-Datei und zitiert die Profil-Aussage.
 4. Gleichnamige Profil-Dateien an verschiedenen Orten, die sich zu einer Aussage widersprechen, sind ein eigenes Finding an der betroffenen Spec-Stelle. `rationale` nennt beide Dateien.
-5. Ein falscher Begriff ist `yellow`, außer er macht eine Anforderung mehrdeutig, dann ist er `red`. Ein Widerspruch zum Ist-Stand ist `red`.
+5. Ein falscher Begriff hat die Kategorie `detail`, außer er macht eine Anforderung mehrdeutig, dann `widerspruch`. Ein Widerspruch zum Ist-Stand hat `widerspruch`.
 
 ## Nicht deine Aufgabe
 Innere Widersprüche der Spec, fehlende Akzeptanzkriterien, Machbarkeit, Stil.
@@ -32,10 +32,13 @@ Innere Widersprüche der Spec, fehlende Akzeptanzkriterien, Machbarkeit, Stil.
 ## W-Einträge
 Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Ein W-Eintrag ist nie selbst ein Finding. Widerspricht ein Inhalt der Spec einem W-Eintrag, ist das ein Finding an der Stelle dieses Inhalts. Einträge im Abschnitt „Offen, bewusst nicht weiterverfolgt (Abbruch)“ hat der Mensch bewusst offen gelassen — das ist kein Finding und keine Lücke.
 
-## Einstufung
-- `red` — Ein Planer oder Implementierer würde so etwas Falsches bauen oder müsste raten.
-- `yellow` — Echte Schwäche, die nicht zwingend zu falschem Bau führt.
-- `green` — Anmerkung, Formulierung.
+## Kategorie
+Jedes Finding bekommt genau eine Kategorie und keine Farbe; die Farbe leitet ein Skript ab. Ein Feld `severity` oder `color` macht dein Ergebnis ungültig.
+- `widerspruch` — zwei Aussagen schließen sich aus.
+- `fehlendes-verhalten` — eine beschriebene Funktion hat gar kein AC oder eine Aktion gar kein Ergebnis.
+- `unerfuellbar` — eine Anforderung lässt sich nicht erfüllen oder setzt etwas voraus, das die Spec nie herstellt.
+- `detail` — Randfall, Schreibweise, Sortierung und jede Einzelheit, die der Plan selbst entscheiden kann.
+- `formulierung` — Anmerkung, Formulierung.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
@@ -48,7 +51,7 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
     {
       "location": "AC-07",
       "quote": "wörtliches Zitat aus der Spec",
-      "severity": "red",
+      "category": "widerspruch",
       "consequence": "Was schiefgeht, wenn so gebaut wird",
       "rationale": "Warum das ein Befund ist"
     }
@@ -58,5 +61,5 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
 
 - `location`: `AC-<Zahl>` oder die exakte Abschnittsüberschrift ohne `#` und ohne Nummerierung davor.
 - `summary`: ein Satz zum Prüfumfang, z. B. `12 ACs geprüft, 3 Dateien gelesen, 0 Findings`.
-- Alle Felder sind Strings und Pflicht.
+- Alle Felder sind Strings und Pflicht. `category` ist genau eine Kategorie aus `## Kategorie`.
 - Ohne Findings schreibst du genau diese Form: `{"reviewer": "profiles", "summary": "<Prüfumfang>", "findings": []}`.

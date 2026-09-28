@@ -40,10 +40,15 @@ Einträge der Form `- **W · <Kurztitel>** · …` in Spec und Plan sind bindend
 ## Kalibrierung
 Melde nur, was bei der Umsetzung zu falschem Bau oder zum Steckenbleiben führt. Formulierung, Stilvorlieben und „wäre schön“ sind keine Findings.
 
-## Einstufung
-- `red` — Ein Umsetzer bliebe stecken, müsste raten oder dürfte einen Schritt nicht ausführen.
-- `yellow` — Echte Schwäche, die nicht zwingend zu falschem Bau führt.
-- `green` — Anmerkung.
+## Kategorie
+Jedes Finding bekommt genau eine Kategorie und keine Farbe; die Farbe leitet ein Skript ab. Ein Feld `severity` oder `color` macht dein Ergebnis ungültig.
+- `widerspruch` — zwei Aussagen in Plan oder Spec schließen sich aus, oder der Plan widerspricht der Spec, dem Code oder einer Regel des Projekts.
+- `fehlendes-verhalten` — eine Funktion, die der Plan baut, hat gar keinen Test oder eine Aktion gar kein Ergebnis.
+- `unerfuellbar` — ein Schritt lässt sich nicht erfüllen oder setzt etwas voraus, das kein Task herstellt.
+- `ac-fehlt-im-plan` — ein AC der Spec fehlt im Plan oder ist nur teilweise umgesetzt.
+- `umsetzer-steckt-fest` — ein Umsetzer bliebe stecken, müsste raten oder dürfte einen Schritt nicht ausführen, auch bei einem Befehl, den das Projekt verbietet.
+- `detail` — Randfall, Schreibweise, Sortierung und jede Einzelheit, die der Umsetzer selbst entscheiden kann.
+- `formulierung` — Anmerkung, Formulierung.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
@@ -56,7 +61,7 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
     {
       "location": "Task 2",
       "quote": "wörtliches Zitat aus dem Plan",
-      "severity": "red",
+      "category": "umsetzer-steckt-fest",
       "consequence": "Was schiefgeht, wenn so gebaut wird",
       "rationale": "Warum das ein Befund ist"
     }
@@ -66,5 +71,5 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
 
 - `location`: `Task <n>`, `AC-<Zahl>`, `Global Constraints` oder die exakte Abschnittsüberschrift ohne `#`. Details auf Schritt-Ebene gehören in `quote`.
 - `summary`: ein Satz zum Prüfumfang, z. B. `12 ACs geprüft, 3 Dateien gelesen, 0 Findings`.
-- Alle Felder sind Strings und Pflicht.
+- Alle Felder sind Strings und Pflicht. `category` ist genau eine Kategorie aus `## Kategorie`.
 - Ohne Findings schreibst du genau diese Form: `{"reviewer": "buildability", "summary": "<Prüfumfang>", "findings": []}`.

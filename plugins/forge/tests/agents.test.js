@@ -7,7 +7,15 @@ const path = require('node:path');
 
 const AGENTS = path.join(__dirname, '..', 'agents');
 const REVIEWERS = ['completeness', 'consistency', 'feasibility', 'clarity', 'profiles'];
-const FORMAT_KEYS = ['"reviewer"', '"summary"', '"findings"', '"location"', '"quote"', '"severity"', '"consequence"', '"rationale"'];
+const FORMAT_KEYS = ['"reviewer"', '"summary"', '"findings"', '"location"', '"quote"', '"category"', '"consequence"', '"rationale"'];
+const SPEC_CATEGORIES = ['widerspruch', 'fehlendes-verhalten', 'unerfuellbar', 'detail', 'formulierung'];
+const PLAN_CATEGORIES = [...SPEC_CATEGORIES, 'ac-fehlt-im-plan', 'umsetzer-steckt-fest'];
+
+function categorySection(body) {
+  const text = body.replace(/\r\n/g, '\n');
+  const start = text.indexOf('## Kategorie\n');
+  return start === -1 ? '' : text.slice(start, text.indexOf('\n## ', start + 1));
+}
 
 function readAgent(name) {
   const text = fs.readFileSync(path.join(AGENTS, `${name}.md`), 'utf8');
@@ -112,7 +120,7 @@ for (const [reviewer, tools] of Object.entries(PLAN_REVIEWERS)) {
 test('plan-review-coverage_Body_ReadsNoCodeAndMissingAcIsAlwaysRed', () => {
   const { body } = readAgent('plan-review-coverage');
   assert.match(body, /keinen Code/);
-  assert.match(body, /immer `red`/);
+  assert.match(body, /immer Kategorie `ac-fehlt-im-plan`/);
 });
 
 test('plan-review-codeReaders_Body_TakeRepoInput', () => {
@@ -279,4 +287,21 @@ test('spec-rework_Body_ChosenProposalCountsAsHumanDecision', () => {
   const { body } = readAgent('spec-rework');
   assert.ok(body.includes('Der gewählte Vorschlag ist die Entscheidung des Menschen; Regel 3 greift für ihn nicht.'));
   assert.ok(!body.includes('Regel 3 gilt auch hier'));
+});
+
+test('specAndPlanReviewers_Body_NameCategoriesNeverColours', () => {
+  const reviewers = [
+    ...['completeness', 'consistency', 'feasibility', 'clarity', 'profiles'].map((name) => [`spec-review-${name}`, SPEC_CATEGORIES]),
+    ...['coverage', 'feasibility', 'architecture', 'risks', 'buildability'].map((name) => [`plan-review-${name}`, PLAN_CATEGORIES]),
+  ];
+  for (const [name, categories] of reviewers) {
+    const { body } = readAgent(name);
+    const section = categorySection(body);
+    for (const category of categories) assert.ok(section.includes(`- \`${category}\` — `), `${name}: ${category} fehlt`);
+    if (name.startsWith('spec-')) assert.ok(!section.includes('ac-fehlt-im-plan'), `${name}: Plan-Kategorie`);
+    assert.ok(!body.includes('## Einstufung'), `${name}: alte Einstufung`);
+    assert.ok(!body.includes('"severity"'), `${name}: severity`);
+    assert.ok(!/`(red|yellow|green)`/.test(body), `${name}: Farbe als Wert`);
+    assert.ok(body.includes('Ein Feld `severity` oder `color` macht dein Ergebnis ungültig.'), `${name}: Hinweis auf ungültige Farbe`);
+  }
 });

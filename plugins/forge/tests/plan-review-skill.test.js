@@ -84,3 +84,9 @@ test('planReviewSkill_Body_NextStepOffersReviewFollowup', () => {
   assert.ok(body.includes('Offene 🟡: optional /dv-forge:review-followup <P> <auswahl>.'));
   assert.ok(body.includes('`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`'));
 });
+
+test('planReviewSkill_Body_AnchorFileRefreshedAfterEveryRework', () => {
+  const { body } = readMarkdown(SKILL);
+  const stops = body.slice(body.indexOf('## Zusatz-Stopps'), body.indexOf('## Abschluss-Scout'));
+  assert.ok(stops.includes('${CLAUDE_PLUGIN_ROOT}/scripts/plan-tasks.js" anchors "<P>" "<R>" "<W>"'));
+});

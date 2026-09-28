@@ -300,9 +300,11 @@ test('reviewFollowup_PlanPreferred_OnlyAffectedReviewersAndSelectionFile', () =>
   const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'b');
   assert.equal(result.status, 0, result.stderr);
   const out = values(result);
-  assert.equal(out.art, 'plan-review');
+  assert.equal(out.original, 'plan-review');
+  assert.equal(out.art, undefined);
   assert.equal(out.aktiv, 'coverage,feasibility,buildability');
   assert.equal(out.gruppen, '1,2');
+  assert.equal(out.offen, '');
   assert.deepEqual([].concat(out.WAHL), ['1 · 🔴 Task 2 · Vorschlag 2', '2 · 🟡 AC-03 · Vorschlag 1']);
   assert.ok(samePath(path.dirname(out.F), out.W));
   const selection = fs.readFileSync(out.F, 'utf8');
@@ -317,6 +319,7 @@ test('reviewFollowup_PerGroupSelection_WritesOnlyChosenGroup', () => {
   const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', '2:1'));
   assert.equal(out.aktiv, 'coverage');
   assert.equal(out.gruppen, '2');
+  assert.equal(out.offen, '1');
   assert.ok(!fs.readFileSync(out.F, 'utf8').includes('Task 2'));
 });
 
@@ -356,7 +359,7 @@ test('reviewFollowup_ImplementationSavedLater_WinsWithFixBase', () => {
   const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', '1');
   assert.equal(result.status, 0, result.stderr);
   const out = values(result);
-  assert.equal(out.art, 'implementation-review');
+  assert.equal(out.original, 'implementation-review');
   assert.equal(out.aktiv, 'risks');
   assert.equal(out.FIX_BASE, git(repo, 'rev-parse', 'HEAD'));
 });
@@ -368,6 +371,34 @@ test('reviewFollowup_SpecArtifact_UsesSpecReviewSave', () => {
     '=== REWORK ===\n### 🟡 AC-01 (clarity)\n- [clarity · yellow] Zitat: „x“ · Konsequenz: k · Begründung: b\n',
     '## Scout-Vorschläge\n\n### 🟡 AC-01\n1. Wortlaut schärfen\n**Bevorzugt: 1** — klar\n');
   const out = values(run(repo, 'review-followup', 'docs/forge/demo/spec.md', 'b'));
-  assert.equal(out.art, 'spec-review');
+  assert.equal(out.original, 'spec-review');
+  assert.equal(out.art, 'verankert');
   assert.equal(out.aktiv, 'clarity');
+});
+
+test('reviewFollowup_ReworkAggregate_LetsReworkOutcomeSeeEscalations', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'b'));
+  const dir = path.join(out.W, 'nacharbeit');
+  assert.match(fs.readFileSync(path.join(dir, 'aggregate.md'), 'utf8'), /=== REWORK ===\n### 🔴 Task 2 \(buildability, feasibility\)\n- \[buildability/);
+  fs.writeFileSync(path.join(dir, 'rework.json'), JSON.stringify({ results: [{ location: 'Task 2', status: 'spec-question' }, { location: 'AC-03', status: 'changed' }] }));
+  const outcome = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'rework-outcome.js'), '--escalation-status', 'spec-question', '--dir', dir], { encoding: 'utf8' });
+  assert.equal(outcome.status, 0, outcome.stderr);
+  assert.match(outcome.stdout, /OUTCOME all-red-escalated=true/);
+  assert.match(outcome.stdout, /ESCALATED Task 2/);
+});
+
+test('reviewFollowup_ExplicitSpecAndBase_PassedToOriginalPreparer', () => {
+  const repo = planRepo(PLAN, false);
+  commitFile(repo, 'other/spec.md', '# Spec\n', 'spec elsewhere');
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const plan = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'b', '--spec', 'other/spec.md'));
+  assert.ok(samePath(plan.S, path.join(repo, 'other/spec.md')));
+  saveFollowup(repo, 'review', '2026-09-28T11:00:00.000Z',
+    '=== REWORK ===\n### 🔴 src/a.ts (risks)\n- [risks · red] Zitat: „x“ · Konsequenz: k · Begründung: b\n',
+    '## Scout-Vorschläge\n\n### 🔴 src/a.ts\n1. Prüfung ergänzen\n**Bevorzugt: 1** — klar\n');
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', '1', '--spec', 'other/spec.md', '--base', 'HEAD~1');
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(values(result).B, 'HEAD~1');
 });

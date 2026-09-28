@@ -19,7 +19,7 @@ const USAGE = [
   '       node prepare.js plan-review <plan> [spec] [--rounds N] [--only <reviewer,...>]',
   '       node prepare.js implementation <plan> [spec]',
   '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]',
-  '       node prepare.js review-followup <spec|plan> <auswahl>   (auswahl: b | <n> | <g>:<n|b>,...)',
+  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>]   (auswahl: b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
@@ -33,7 +33,7 @@ const FLAGS = {
   'plan-review': ['--rounds', '--only'],
   implementation: [],
   'implementation-review': ['--spec', '--context', '--base', '--only'],
-  'review-followup': [],
+  'review-followup': ['--spec', '--base'],
 };
 
 // Reviewer je Review in fester Reihenfolge; --only wählt daraus, die Reihenfolge bleibt.
@@ -322,13 +322,34 @@ function selectionText(chosen) {
   return `# Gewählte Scout-Vorschläge\n\n${blocks.join('\n\n')}\n`;
 }
 
+// Die gewählten Gruppen im Aggregat-Format, damit rework-outcome.js die Nacharbeit wie eine Loop-Runde auswertet.
+function reworkText(chosen) {
+  const blocks = chosen.map(({ group }) => [
+    `### ${group.severity} ${group.location} (${group.reviewers.join(', ')})`,
+    ...group.findings,
+  ].join('\n'));
+  return `=== REWORK ===\n${blocks.join('\n\n')}\n`;
+}
+
+// Reicht --spec und --base in der Form weiter, die der Original-Preparer erwartet.
+function originalCall(art, artifact, flags, affected) {
+  const only = { '--only': [affected.join(',')] };
+  const spec = flags['--spec']?.[0];
+  if (art === 'plan-review') return { positional: spec ? [artifact, spec] : [artifact], flags: only };
+  if (art === 'implementation-review') {
+    const passed = Object.fromEntries(['--spec', '--base'].filter((flag) => flags[flag]).map((flag) => [flag, flags[flag]]));
+    return { positional: [artifact], flags: { ...only, ...passed } };
+  }
+  return { positional: [artifact], flags: only };
+}
+
 function headCommit(root) {
   const result = spawnSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' });
   if (result.status !== 0) throw new PrepareError(`HEAD nicht lesbar: ${toPosix(root)}`);
   return result.stdout.trim();
 }
 
-function prepareReviewFollowup({ positional }) {
+function prepareReviewFollowup({ positional, flags }) {
   if (positional.length !== 2) throw new UsageError('review-followup braucht <artefakt> <auswahl>');
   const artifact = existingFile(path.resolve(positional[0]), 'Artefakt');
   const root = gitRoot(path.dirname(artifact));
@@ -336,15 +357,20 @@ function prepareReviewFollowup({ positional }) {
   const slug = slugFor(artifact, roles);
   const saved = latest(root, slug, roles);
   if (!saved) throw new PrepareError(`Keine Scout-Vorschläge gesichert für ${slug}. Zuerst das Review laufen lassen.`);
-  const chosen = parseSelection(positional[1], loadGroups(saved.dir));
+  const groups = loadGroups(saved.dir);
+  const chosen = parseSelection(positional[1], groups);
   const affected = [...new Set(chosen.flatMap(({ group }) => group.reviewers))];
   const art = ART_OF_ROLE[saved.role];
-  const values = PREPARERS[art]({ positional: [artifact], flags: { '--only': [affected.join(',')] } });
+  const values = PREPARERS[art](originalCall(art, artifact, flags, affected));
   const selection = path.join(values.W, 'auswahl.md');
   fs.writeFileSync(selection, selectionText(chosen));
-  values.art = art;
+  fs.mkdirSync(path.join(values.W, 'nacharbeit'), { recursive: true });
+  fs.writeFileSync(path.join(values.W, 'nacharbeit', 'aggregate.md'), reworkText(chosen));
+  const chosenNumbers = chosen.map(({ group }) => group.number);
+  values.original = art;
   values.F = selection;
-  values.gruppen = chosen.map(({ group }) => group.number).join(',');
+  values.gruppen = chosenNumbers.join(',');
+  values.offen = groups.filter((group) => !chosenNumbers.includes(group.number)).map((group) => group.number).join(',');
   values.WAHL = chosen.map(({ group, choice }) => `${group.number} · ${group.severity} ${group.location} · Vorschlag ${choice}`);
   if (art === 'implementation-review') values.FIX_BASE = headCommit(values.R);
   return values;

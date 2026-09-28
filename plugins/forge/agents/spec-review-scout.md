@@ -36,4 +36,5 @@ Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` genau diese
 ```
 
 - Reihenfolge und Stufe der Gruppen wie in `Findings:`.
+- `<Stelle>` und die Stufe übernimmst du exakt aus der Gruppen-Überschrift, ohne die Reviewer-Klammer.
 - Pro Gruppe genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`, exakt mit Geviertstrich `—` nach dem fetten Teil, kein Doppelpunkt.

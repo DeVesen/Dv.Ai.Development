@@ -153,3 +153,9 @@ test('resolveFollowup_PlanOrSpecByContent_PicksMatchingRole', () => {
   assert.equal(followup.resolveFollowup(path.join(repo, 'docs/forge/demo/spec.md'), repo).role, 'spec-review');
   assert.equal(followup.resolveFollowup(path.join(repo, 'docs/forge/demo/plan.md'), repo).role, 'plan-review');
 });
+
+test('save_ScoutGroupNotInAggregate_TreatedAsNoScout', () => {
+  const env = roundDir({ 'aggregate.md': AGGREGATE, 'scout.md': SCOUT.replace('### 🟡 AC-03', '### 🟡 AC-03 (coverage)') });
+  assert.equal(followup.save('plan-review', 'demo', env.dir), 'KEIN SCOUT');
+  assert.equal(fs.existsSync(env.saved), false);
+});

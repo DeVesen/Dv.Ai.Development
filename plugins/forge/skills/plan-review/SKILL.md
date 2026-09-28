@@ -32,6 +32,7 @@ Jeder Reviewer bekommt zusätzlich `Anker: <A>`, wenn es `A` gibt.
 2. Exit 1: den Nacharbeiter einmal per `SendMessage` bitten, nur sein Ergebnis nach `<W>/runde-<r>/rework.json` zu schreiben, und Schritt 1 wiederholen. Wieder Exit 1: weiter ohne Eskalation.
 3. Jede Zeile `ESCALATED <Stelle>` an `spec_rueckfragen` anhängen, ohne Doppelte.
 4. `OUTCOME all-red-escalated=true` → Ende `Spec-Rückfrage in Runde r`.
+5. Gibt es `A`: `node "${CLAUDE_PLUGIN_ROOT}/scripts/plan-tasks.js" anchors "<P>" "<R>" "<W>"`; die nächste Runde sieht so die Anker des geänderten Plans.
 
 ## Abschluss-Scout
 `dv-forge:plan-review-scout` — `Plan: <P>`, `Spec: <S>`, `Repo: <R>`

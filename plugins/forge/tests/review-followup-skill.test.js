@@ -25,7 +25,7 @@ test('reviewFollowupSkill_Body_StaysUnder500Words', () => {
 test('reviewFollowupSkill_Body_OrchestratesPrepareUmsetzenNachReviewEnde', () => {
   const { body } = readMarkdown(SKILL);
   for (const part of ['${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" review-followup $ARGUMENTS', 'references/flow.md',
-    '${CLAUDE_PLUGIN_ROOT}/skills/<art>/SKILL.md', 'dv-forge:implementation-implementer', 'dv-forge:implementation-re-reviewer',
+    '${CLAUDE_PLUGIN_ROOT}/skills/<original>/SKILL.md', '`original`', '`offen`', 'dv-forge:implementation-implementer', 'dv-forge:implementation-re-reviewer',
     'genau eine Runde', 'scripts/workspace.js" remove <rolle> <slug>', 'scripts/guard-orchestrator.js" release', 'run_in_background: false']) {
     assert.ok(body.includes(part), `${part} fehlt`);
   }
@@ -36,7 +36,7 @@ test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => 
   const text = readText(FLOW);
   for (const part of ['Vorschläge: <F>', 'Ergebnis: <W>/nacharbeit/rework.json', '--dir "<W>/nacharbeit"', '--expect <aktiv> --round 1',
     'followup.js" save <rolle> <slug> "<D>"', 'plan-tasks.js" header "<P>" "<W>"', 'review-package.js" <FIX_BASE> HEAD "<W>"',
-    'followup.js" drop review <slug>', 'Kein Scout', '### Umgesetzt', 'WAHL', 'keine Änderung', 'blockiert']) {
+    'followup.js" drop review <slug>', 'Kein Scout', 'plan-tasks.js" anchors "<P>" "<R>" "<W>"', 'nicht gewählt', 'bleibt die alte Sicherung', '### Umgesetzt', 'WAHL', 'keine Änderung', 'blockiert']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
 });

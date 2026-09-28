@@ -261,6 +261,7 @@ test('scouts_Body_WriteResultFileAndAnswerWithPathOnly', () => {
     assert.ok(body.includes('Deine letzte Aktion: Schreib mit `Write`'), name);
     assert.ok(body.includes('Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.'), name);
     assert.ok(!body.includes('Deine Antwort besteht nur aus diesem Abschnitt'), name);
+    assert.ok(body.includes('`<Stelle>` und die Stufe übernimmst du exakt aus der Gruppen-Überschrift, ohne die Reviewer-Klammer.'), name);
   }
 });
 

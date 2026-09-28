@@ -54,12 +54,13 @@ function save(role, slug, dir) {
   const target = followupDir(repoRoot(dir), role, slug);
   const scoutFile = path.join(dir, 'scout.md');
   const scout = fs.existsSync(scoutFile) ? readLines(scoutFile) : [];
-  if (scoutSection(scout).length === 0) {
+  const aggregateFile = path.join(dir, 'aggregate.md');
+  if (scoutSection(scout).length > 0 && !fs.existsSync(aggregateFile)) throw new FollowupError(`aggregate.md fehlt: ${toPosix(aggregateFile)}`);
+  // Eine Scout-Gruppe ohne passende Aggregat-Gruppe macht die Sicherung unbrauchbar: wie kein Scout, der Loop startet ihn neu.
+  if (scoutSection(scout).length === 0 || !matchesAggregate(readLines(aggregateFile), scout)) {
     fs.rmSync(target, { recursive: true, force: true });
     return 'KEIN SCOUT';
   }
-  const aggregateFile = path.join(dir, 'aggregate.md');
-  if (!fs.existsSync(aggregateFile)) throw new FollowupError(`aggregate.md fehlt: ${toPosix(aggregateFile)}`);
   fs.rmSync(target, { recursive: true, force: true });
   fs.mkdirSync(target, { recursive: true });
   fs.copyFileSync(aggregateFile, path.join(target, 'aggregate.md'));
@@ -125,13 +126,27 @@ function parseRework(lines) {
   return groups;
 }
 
-function loadGroups(saveDir) {
-  const rework = parseRework(readLines(path.join(saveDir, 'aggregate.md')));
-  return parseScout(readLines(path.join(saveDir, 'scout.md'))).map((group, index) => {
+function groupsOf(aggregateLines, scoutLines) {
+  const rework = parseRework(aggregateLines);
+  return parseScout(scoutLines).map((group, index) => {
     const match = rework.find((item) => item.severity === group.severity && item.location === group.location);
     if (!match) throw new FollowupError(`Keine Aggregat-Gruppe zu ${group.severity} ${group.location}`);
     return { number: index + 1, ...group, reviewers: match.reviewers, findings: match.findings };
   });
+}
+
+function matchesAggregate(aggregateLines, scoutLines) {
+  try {
+    groupsOf(aggregateLines, scoutLines);
+    return true;
+  } catch (error) {
+    if (error instanceof FollowupError) return false;
+    throw error;
+  }
+}
+
+function loadGroups(saveDir) {
+  return groupsOf(readLines(path.join(saveDir, 'aggregate.md')), readLines(path.join(saveDir, 'scout.md')));
 }
 
 // Ein Plan hat Task-Überschriften, eine Spec nicht; Spec und Plan im selben Ordner teilen den Slug.

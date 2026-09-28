@@ -216,6 +216,12 @@ test('decidePreTool_DirectoryEntryGrepInside_Denies', () => {
   assert.ok(preTool(env, { tool_name: 'Grep', tool_input: { pattern: 'x', path: path.join(env.repo, 'src') } }));
 });
 
+test('decidePreTool_DirectoryEntryFollowupScriptNamesWorkspace_Allows', () => {
+  const env = setupDirectory();
+  const command = `node "/plugins/forge/scripts/followup.js" save review demo "${path.join(env.repo, '.forge', 'review', 'demo', 'runde-1')}"`;
+  assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
+});
+
 test('decidePreTool_DirectoryEntryShellNamesDirectory_Denies', () => {
   const env = setupDirectory();
   assert.ok(preTool(env, { tool_name: 'Bash', tool_input: { command: `ls "${env.repo}"` } }));

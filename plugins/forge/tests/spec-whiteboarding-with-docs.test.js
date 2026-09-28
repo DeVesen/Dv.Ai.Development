@@ -46,3 +46,15 @@ test('withDocs_Body_NamesReferencePerStepAndStaysLean', () => {
   assert.ok(wordCount(body) < 350);
   assert.ok(!fs.existsSync(path.join(SKILL_DIR, 'references')));
 });
+
+test('specWhiteboardingWithDocs_Body_ReadsAffectedProfilesFullyAndChecksAbsolutes', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /Feature-Profile der betroffenen Bildschirme liest du vollständig/);
+  assert.match(body, /„exakt“, „immer“, „nie“/);
+});
+
+test('specWhiteboardingWithDocs_Body_SearchAgentsOnSmallerModelWithFixedReturn', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /Such-Agents nur mit `model: sonnet`/);
+  assert.match(body, /Datei:Zeile/);
+});

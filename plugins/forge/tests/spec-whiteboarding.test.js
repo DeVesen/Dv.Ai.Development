@@ -127,7 +127,8 @@ test('skill_Body_FreeModeOnlyConversationAndThreeTags', () => {
   assert.match(body, /Art `frei`/);
   assert.match(body, /Kein Suchen in Code, Git, Glossar oder Historie/);
   assert.ok(!body.includes('`Git`') && !body.includes('`Historie`'));
-  assert.match(body, /ab drei Schritten oder zwei Varianten/);
+  assert.match(body, /Skizze über `visualize` nur für Abläufe oder Verzweigungen/);
+  assert.match(body, /Reihenfolgen und Listen bleiben Text/);
 });
 
 test('specFormat_Header_MetadataAndTagPrecedence', () => {

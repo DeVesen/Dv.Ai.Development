@@ -10,7 +10,7 @@ Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergeb
 ## Grundhaltung — ab Aufruf, bis die Spec geschrieben und bestätigt ist
 
 1. **Nur das Gespräch.** Quelle ist, was der Mensch sagt und ausdrücklich übergibt. Kein Suchen in Code, Git, Glossar oder Historie; Unbekanntes fragst du sofort. Bestandsabgleich macht `dv-forge:spec-whiteboarding-with-docs`.
-2. **Whiteboard.** Kein Code. Skizze über `visualize` ab drei Schritten oder zwei Varianten (Boxen ≤ fünf Wörter, ≤ zwei Farben); darunter reicht Text.
+2. **Whiteboard.** Kein Code. Skizze über `visualize` nur für Abläufe oder Verzweigungen (Boxen ≤ fünf Wörter, ≤ zwei Farben). Reihenfolgen und Listen bleiben Text.
 3. **Belegpflicht.** Jede Aussage, Empfehlung und Option trägt einen Beleg-Tag: `Aussage` (im Chat zitierbar), `Anhang` (übergebenes Workitem, Bild, Datei) oder `ungeklärt` — dann fragen, nie raten.
 4. **Sperre.** Kein brainstorming, kein Plan, kein Code, bis die Spec geschrieben und bestätigt ist.
 5. **Vor Ort.** Die Spec entsteht im aktuellen Checkout. Kein Branch, kein Worktree.

@@ -26,12 +26,12 @@
 **ACs:** AC-14, AC-17, AC-32
 
 **Dateien:**
-- Modify: `plugins/forge/agents/spec-review-completeness.md:17` · vor `## Prüfauftrag` einfügen; `## Kategorie` ersetzen
-- Modify: `plugins/forge/agents/spec-review-consistency.md:16` · vor `## Prüfauftrag` einfügen; `## Kategorie` ersetzen
-- Modify: `plugins/forge/agents/spec-review-feasibility.md:16` · vor `## Prüfauftrag` einfügen; `## Kategorie` ersetzen
-- Modify: `plugins/forge/agents/spec-review-clarity.md:16` · vor `## Prüfauftrag` einfügen; `## Kategorie` ersetzen
-- Modify: `plugins/forge/agents/spec-review-profiles.md:22` · vor `## Prüfauftrag` einfügen; `## Kategorie` ersetzen
-- Test: `plugins/forge/tests/agents.test.js` · nach `specAndPlanReviewers_Body_NameCategoriesNeverColours`
+- Modify: `plugins/forge/agents/spec-review-completeness.md:17` · `## Prüfauftrag` (davor einfügen), dazu `## Kategorie` (ersetzen)
+- Modify: `plugins/forge/agents/spec-review-consistency.md:16` · `## Prüfauftrag` (davor einfügen), dazu `## Kategorie` (ersetzen)
+- Modify: `plugins/forge/agents/spec-review-feasibility.md:16` · `## Prüfauftrag` (davor einfügen), dazu `## Kategorie` (ersetzen)
+- Modify: `plugins/forge/agents/spec-review-clarity.md:16` · `## Prüfauftrag` (davor einfügen), dazu `## Kategorie` (ersetzen)
+- Modify: `plugins/forge/agents/spec-review-profiles.md:22` · `## Prüfauftrag` (davor einfügen), dazu `## Kategorie` (ersetzen)
+- Test: `plugins/forge/tests/agents.test.js` · `specAndPlanReviewers_Body_NameCategoriesNeverColours` (danach einfügen)
 
 **Interfaces:**
 - Consumes: —
@@ -93,8 +93,8 @@
 
 **Dateien:**
 - Modify: `plugins/forge/agents/spec-review-completeness.md:17-23` · `## Prüfauftrag`
-- Test: `plugins/forge/tests/agents.test.js` · nach `specReviewers_Body_GoalSpellingExampleAndNoFormulierung`
-- Test: `plugins/forge/tests/review-groups.test.js` · nach `classify_SameInputTwice_SameGroupsAndDrops`
+- Test: `plugins/forge/tests/agents.test.js` · `specReviewers_Body_GoalSpellingExampleAndNoFormulierung` (danach einfügen)
+- Test: `plugins/forge/tests/review-groups.test.js` · `classify_SameInputTwice_SameGroupsAndDrops` (danach einfügen)
 
 **Interfaces:**
 - Consumes: `## Ziel` und `## Kategorie` aus Task 1 (bleiben unverändert)
@@ -158,7 +158,7 @@
 
 **Dateien:**
 - Modify: `plugins/forge/agents/spec-review-consistency.md:16-20` · `## Prüfauftrag`
-- Test: `plugins/forge/tests/agents.test.js` · nach `spec-review-completeness_Body_CategoriesPerCaseTitleHeadingAndSourceForEveryArt`
+- Test: `plugins/forge/tests/agents.test.js` · `spec-review-completeness_Body_CategoriesPerCaseTitleHeadingAndSourceForEveryArt` (danach einfügen)
 
 **Interfaces:**
 - Consumes: `## Ziel` und `## Kategorie` aus Task 1
@@ -202,7 +202,7 @@
 
 **Dateien:**
 - Modify: `plugins/forge/agents/spec-review-feasibility.md:16-20` · `## Prüfauftrag`
-- Test: `plugins/forge/tests/agents.test.js` · nach `spec-review-consistency_Body_ContradictionAndReferenceCategories`
+- Test: `plugins/forge/tests/agents.test.js` · `spec-review-consistency_Body_ContradictionAndReferenceCategories` (danach einfügen)
 
 **Interfaces:**
 - Consumes: `## Ziel` und `## Kategorie` aus Task 1
@@ -244,8 +244,8 @@
 **ACs:** AC-11, AC-12, AC-13
 
 **Dateien:**
-- Modify: `plugins/forge/agents/spec-review-clarity.md:1-23` · Frontmatter `description`, Überschrift `# Spec-Review: Klarheit und Lücken`, `## Prüfauftrag`, `## Nicht deine Aufgabe`
-- Test: `plugins/forge/tests/agents.test.js` · nach `spec-review-feasibility_Body_UnfulfillableAtRequirementAndPreconditionIsDetail`
+- Modify: `plugins/forge/agents/spec-review-clarity.md:1-23` · `# Spec-Review: Klarheit und Lücken`, dazu Frontmatter `description`, `## Prüfauftrag`, `## Nicht deine Aufgabe`
+- Test: `plugins/forge/tests/agents.test.js` · `spec-review-feasibility_Body_UnfulfillableAtRequirementAndPreconditionIsDetail` (danach einfügen)
 
 **Interfaces:**
 - Consumes: `## Ziel` und `## Kategorie` aus Task 1
@@ -306,7 +306,7 @@
 
 **Dateien:**
 - Modify: `plugins/forge/agents/spec-review-profiles.md:22-28` · `## Prüfauftrag`
-- Test: `plugins/forge/tests/agents.test.js` · nach `spec-review-clarity_Body_TwoReadingsHowInsteadOfWhatNoEdgeCaseSearch`
+- Test: `plugins/forge/tests/agents.test.js` · `spec-review-clarity_Body_TwoReadingsHowInsteadOfWhatNoEdgeCaseSearch` (danach einfügen)
 
 **Interfaces:**
 - Consumes: `## Ziel` und `## Kategorie` aus Task 1
@@ -349,11 +349,11 @@
 **ACs:** AC-18, AC-19, AC-20
 
 **Dateien:**
-- Modify: `plugins/forge/agents/spec-review-scout.md:8-40` · alles ab `# Spec-Review: Scout` bis Dateiende
+- Modify: `plugins/forge/agents/spec-review-scout.md:8-40` · `# Spec-Review: Scout` (ab dieser Zeile bis Dateiende ersetzen)
 - Modify: `plugins/forge/skills/spec-review/SKILL.md:34-35` · `## Scout`
-- Test: `plugins/forge/tests/agents.test.js` · nach `spec-review-scout_Body_DefinesProposalFormat`
-- Test: `plugins/forge/tests/skill.test.js` · nach `skill_Body_ListsAllAgents`
-- Test: `plugins/forge/tests/review-flow-round1.test.js` · nach `round1_RedAndYellow_ScoutSeesBothReworkOnlyRedWithProposals`
+- Test: `plugins/forge/tests/agents.test.js` · `spec-review-scout_Body_DefinesProposalFormat` (danach einfügen)
+- Test: `plugins/forge/tests/skill.test.js` · `skill_Body_ListsAllAgents` (danach einfügen)
+- Test: `plugins/forge/tests/review-flow-round1.test.js` · `round1_RedAndYellow_ScoutSeesBothReworkOnlyRedWithProposals` (danach einfügen)
 
 **Interfaces:**
 - Consumes: Profil-Index `PI` aus `prepare.js` (Zeile je Datei unter Glossar- und Profil-Ordner, Pfad relativ zum Repo), bei `profile=ja`
@@ -459,15 +459,18 @@
 **ACs:** AC-21, AC-22, AC-23, AC-31
 
 **Dateien:**
+- Modify: `plugins/forge/agents/spec-rework.md:10-13` · `Du liest keinen Code, keine anderen Dateien und keinen Chatverlauf.` (Satz ersetzen), dazu `## Eingabe` (Zeile nach dem `Spec:`-Eintrag einfügen)
 - Modify: `plugins/forge/agents/spec-rework.md:20-33` · `## Regeln`, Regeln 2, 3 und 9
 - Modify: `plugins/forge/agents/spec-rework.md:53-73` · `## Ausgabe`
-- Modify: `plugins/forge/scripts/lib/flow-questions.js:17-23` · `resultProblem`
-- Test: `plugins/forge/tests/agents.test.js` · nach `spec-rework_Body_NewBehaviourBecomesQuestionNotDecision`
-- Test: `plugins/forge/tests/flow-questions.test.js` · nach `reworkProblems_MissingDuplicateOrForeignOutcome_Named`
+- Modify: `plugins/forge/skills/spec-review/SKILL.md:28-29` · `## Nacharbeiter`
+- Modify: `plugins/forge/scripts/lib/flow-questions.js:17-23` · `resultProblem`, neue Funktion `evidenceForm` davor
+- Test: `plugins/forge/tests/agents.test.js` · `spec-rework_Body_NewBehaviourBecomesQuestionNotDecision` (danach einfügen)
+- Test: `plugins/forge/tests/flow-questions.test.js` · `reworkProblems_MissingDuplicateOrForeignOutcome_Named` (danach einfügen)
+- Test: `plugins/forge/tests/skill.test.js` · `skill_Body_ScoutGetsRepoWhenAnchoredAndProfileIndexWithProfiles` (danach einfügen; aus Task 7)
 
 **Interfaces:**
-- Consumes: Scout-Zeilen `   Beleg: <Beleg>` / `   Beleg: keiner` und `**Bevorzugt: <Nr>** — <Begründung>` aus Task 7 (stehen in `nacharbeit.md` unter `Scout-Vorschläge:`)
-- Produces: Ausgang in `rework.json` mit optionalem Feld `evidence: string`, nur bei `status: 'changed'`; `resultProblem(result, kind)` liefert `'<location>: evidence ist kein Text'` bzw. `'<location>: evidence nur bei changed'`. Task 9 liest `evidence`.
+- Consumes: Scout-Zeilen `   Beleg: <Beleg>` / `   Beleg: keiner` und `**Bevorzugt: <Nr>** — <Begründung>` aus Task 7 (stehen in `nacharbeit.md` unter `Scout-Vorschläge:`); Projektwurzel `R` und `art` aus `prepare.js`
+- Produces: Ausgang in `rework.json` mit optionalem Feld `evidence: string`, nur bei `status: 'changed'`; `resultProblem(result, kind)` liefert `'<location>: evidence ist kein Text'`, `'<location>: evidence keiner ist kein Beleg'` (für `kein`, `keine` oder `keiner`, ohne Beachtung der Groß- und Kleinschreibung, auch mit angehängten Satzzeichen), `'<location>: evidence hat keine Beleg-Form'` (nicht `<Datei>`, `<Datei> · <Begriff>` oder `Spec · <Stelle>`; `<Datei>` ohne Leerraum) bzw. `'<location>: evidence nur bei changed'`; `evidenceForm(evidence)` liefert `true` für die drei Beleg-Formen; die Prüfung gilt für beide `kind`, weil `plan-rework` das Feld nie schreibt. Die Nacharbeit bekommt bei `art=verankert` `Repo: <R>` und schlägt Belege aus dem Bestand darunter nach. Task 9 liest `evidence`.
 
 - [ ] **Schritt 1: Fehlschlagende Tests schreiben**
   a) In `plugins/forge/tests/agents.test.js` direkt nach `spec-rework_Body_NewBehaviourBecomesQuestionNotDecision` einfügen:
@@ -477,16 +480,23 @@
     for (const part of [
       'weil eine andere Aussage oder ein W-Eintrag eine der beiden Seiten stützt',
       'Eine Klarstellung schreibst du selbst, ohne Frage an den Menschen.',
+      'Ist der bevorzugte Scout-Vorschlag eine Klarstellung, setzt du ihn um.',
       'ist neues Verhalten, auch wenn sie nur eine Aussage streicht.',
       'Hat die Stelle keine solche Zeile, mehr als eine oder gar keine Scout-Vorschläge, gilt keiner als bevorzugt.',
       'steht im Kopf der Spec `Art: frei`, zählt nur ein Beleg aus der Spec.',
       '`Beleg: keiner` ist kein Beleg.',
+      'Ein Beleg zählt nur in einer dieser Formen: `<Datei>`, `<Datei> · <Begriff>` oder `Spec · <Stelle>`.',
+      'Einen Beleg `Spec · <Stelle>` schlägst du in der Spec nach; sagt die Stelle nicht, was der Vorschlag festlegt, ist er kein Beleg.',
       '`- **R<r> · <Stelle>** — geändert — Neues Verhalten, Beleg: <Beleg> — <Begründung>`',
       '`"evidence": "<Beleg>"`',
       'Nur neues Verhalten ohne Beleg entscheidet der Mensch',
       'Ein Beleg aus dem Bestand geht nie vor einen W-Eintrag.',
       'widerspricht der bevorzugte Scout-Vorschlag einem W-Eintrag, mit oder ohne Beleg',
       '- `evidence`: nur bei `changed` mit neuem Verhalten nach Regel 3',
+      'Mit `Repo:` liest du darunter zusätzlich nur die Dateien, die ein Scout-Beleg nennt.',
+      '- `Repo:` optional, nur bei `art=verankert`',
+      'Ohne `Repo:` zählt ebenfalls nur ein Beleg aus der Spec.',
+      'Einen Beleg `<Datei>` oder `<Datei> · <Begriff>` schlägst du unter `Repo:` nach; fehlt die Datei, steht der Begriff nicht in ihr oder sagt sie nicht, was der Vorschlag festlegt, ist er kein Beleg.',
     ]) {
       assert.ok(body.includes(part), part);
     }
@@ -501,12 +511,31 @@
     assert.deepEqual(questions.reworkProblems(valid, 'spec-review', ['AC-04']), []);
     const blank = rework([{ location: 'AC-04', status: 'changed', evidence: ' ' }]);
     assert.deepEqual(questions.reworkProblems(blank, 'spec-review', ['AC-04']), ['AC-04: evidence ist kein Text']);
+    const none = rework([{ location: 'AC-04', status: 'changed', evidence: ' Keiner ' }]);
+    assert.deepEqual(questions.reworkProblems(none, 'spec-review', ['AC-04']), ['AC-04: evidence keiner ist kein Beleg']);
+    const noneDot = rework([{ location: 'AC-04', status: 'changed', evidence: 'keiner.' }]);
+    assert.deepEqual(questions.reworkProblems(noneDot, 'spec-review', ['AC-04']), ['AC-04: evidence keiner ist kein Beleg']);
+    for (const evidence of ['kein Beleg', 'Spec', 'Spec · ', 'src/export.js · Export · Import']) {
+      const invalid = rework([{ location: 'AC-04', status: 'changed', evidence }]);
+      assert.deepEqual(questions.reworkProblems(invalid, 'spec-review', ['AC-04']), ['AC-04: evidence hat keine Beleg-Form'], evidence);
+    }
+    for (const evidence of ['Spec · AC-02', 'docs/glossary/terms.md · Export', 'docs/keiner.md']) {
+      const form = rework([{ location: 'AC-04', status: 'changed', evidence }]);
+      assert.deepEqual(questions.reworkProblems(form, 'spec-review', ['AC-04']), [], evidence);
+    }
     const onQuestion = rework([{ location: 'AC-04', status: 'human-question', evidence: 'src/export.js' }]);
     assert.deepEqual(questions.reworkProblems(onQuestion, 'spec-review', ['AC-04']), ['AC-04: evidence nur bei changed']);
   });
   ```
+  c) In `plugins/forge/tests/skill.test.js` direkt nach `skill_Body_ScoutGetsRepoWhenAnchoredAndProfileIndexWithProfiles` einfügen:
+  ```js
+  test('skill_Body_ReworkGetsRepoOnlyWhenAnchored', () => {
+    const { body } = readMarkdown(SKILL);
+    assert.ok(body.includes('`dv-forge:spec-rework` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`'));
+  });
+  ```
 - [ ] **Schritt 2: Tests rot laufen lassen**
-  Befehl: `node --test <R>/plugins/forge/tests/agents.test.js <R>/plugins/forge/tests/flow-questions.test.js` — erwartet: FAIL `spec-rework_Body_ClarificationAndNewBehaviourWithEvidenceWrittenWithoutQuestion` und FAIL `reworkProblems_EvidenceOnlyAsTextOnChanged_ElseInvalid`
+  Befehl: `node --test <R>/plugins/forge/tests/agents.test.js <R>/plugins/forge/tests/flow-questions.test.js <R>/plugins/forge/tests/skill.test.js` — erwartet: FAIL `spec-rework_Body_ClarificationAndNewBehaviourWithEvidenceWrittenWithoutQuestion`, FAIL `reworkProblems_EvidenceOnlyAsTextOnChanged_ElseInvalid` und FAIL `skill_Body_ReworkGetsRepoOnlyWhenAnchored`
 - [ ] **Schritt 3: Minimal implementieren**
   a) In `plugins/forge/agents/spec-rework.md`, Abschnitt `## Regeln`, Regel 2 ersetzen durch:
   ```markdown
@@ -515,10 +544,10 @@
   b) Regel 3 ersetzen durch:
   ```markdown
   3. Vor jeder Änderung prüfst du, was sie ist:
-     - Eine **Klarstellung** schärft, was die Spec schon festlegt: Wortlaut, Messbarkeit oder ein Widerspruch, dessen Auflösung aus der Spec folgt, weil eine andere Aussage oder ein W-Eintrag eine der beiden Seiten stützt. Eine Klarstellung schreibst du selbst, ohne Frage an den Menschen.
+     - Eine **Klarstellung** schärft, was die Spec schon festlegt: Wortlaut, Messbarkeit oder ein Widerspruch, dessen Auflösung aus der Spec folgt, weil eine andere Aussage oder ein W-Eintrag eine der beiden Seiten stützt. Eine Klarstellung schreibst du selbst, ohne Frage an den Menschen. Ist der bevorzugte Scout-Vorschlag eine Klarstellung, setzt du ihn um.
      - **Neues Verhalten** legt einen neuen Fall, eine neue Regel oder ein neues AC fest. Eine Auflösung eines Widerspruchs, die nicht so aus der Spec folgt, ist neues Verhalten, auch wenn sie nur eine Aussage streicht.
      - Bevorzugt ist der Vorschlag, den die Zeile `**Bevorzugt: <Nr>**` der Stelle nennt. Hat die Stelle keine solche Zeile, mehr als eine oder gar keine Scout-Vorschläge, gilt keiner als bevorzugt.
-     - Neues Verhalten schreibst du selbst, wenn der bevorzugte Vorschlag einen Beleg aus der Spec oder aus dem Bestand nennt. Bestand sind Profile, Glossar und Code; steht im Kopf der Spec `Art: frei`, zählt nur ein Beleg aus der Spec. `Beleg: keiner` ist kein Beleg. Du setzt dann den bevorzugten Vorschlag um. Dein Eintrag lautet `- **R<r> · <Stelle>** — geändert — Neues Verhalten, Beleg: <Beleg> — <Begründung>`, und der Ausgang der Stelle im Ergebnis trägt `"evidence": "<Beleg>"`.
+     - Neues Verhalten schreibst du selbst, wenn der bevorzugte Vorschlag einen Beleg aus der Spec oder aus dem Bestand nennt. Bestand sind Profile, Glossar und Code; steht im Kopf der Spec `Art: frei`, zählt nur ein Beleg aus der Spec. Ohne `Repo:` zählt ebenfalls nur ein Beleg aus der Spec. `Beleg: keiner` ist kein Beleg. Ein Beleg zählt nur in einer dieser Formen: `<Datei>`, `<Datei> · <Begriff>` oder `Spec · <Stelle>`. Einen Beleg `Spec · <Stelle>` schlägst du in der Spec nach; sagt die Stelle nicht, was der Vorschlag festlegt, ist er kein Beleg. Einen Beleg `<Datei>` oder `<Datei> · <Begriff>` schlägst du unter `Repo:` nach; fehlt die Datei, steht der Begriff nicht in ihr oder sagt sie nicht, was der Vorschlag festlegt, ist er kein Beleg. Du setzt dann den bevorzugten Vorschlag um. Dein Eintrag lautet `- **R<r> · <Stelle>** — geändert — Neues Verhalten, Beleg: <Beleg> — <Begründung>`, und der Ausgang der Stelle im Ergebnis trägt `"evidence": "<Beleg>"`.
      - Nur neues Verhalten ohne Beleg entscheidet der Mensch: Du änderst die Stelle nicht und wählst `frage an den menschen`.
      - Regel 9 geht dieser Regel vor.
   ```
@@ -554,22 +583,52 @@
   - `evidence`: nur bei `changed` mit neuem Verhalten nach Regel 3, der Beleg wörtlich wie im R-Eintrag; sonst lässt du das Feld weg.
   - `questions`: jede gebündelte Frage einmal; ohne Fragen `"questions": []`.
   ````
-  e) In `plugins/forge/scripts/lib/flow-questions.js` die Funktion `resultProblem` ersetzen durch:
+  e) In `plugins/forge/scripts/lib/flow-questions.js` direkt vor `function resultProblem(` einfügen:
   ```js
+  // Beleg-Formen der Nacharbeit: <Datei>, <Datei> · <Begriff>, Spec · <Stelle>; <Datei> ohne Leerraum.
+  // Ob die Datei existiert, prüft die Nacharbeit unter Repo:, nicht das Skript.
+  function evidenceForm(evidence) {
+    const [head, ...rest] = evidence.trim().split(' · ');
+    if (rest.length > 1) return false;
+    if (rest.length === 1 && rest[0].trim() === '') return false;
+    if (head === 'Spec') return rest.length === 1;
+    return /^\S+$/.test(head);
+  }
+
+  ```
+  und die Funktion `resultProblem` ersetzen durch (die `evidence`-Prüfung ist bewusst nicht an `kind` gebunden: `plan-rework` schreibt das Feld nie, und ein Feld `evidence` wäre dort ebenso nur bei `changed` sinnvoll):
+  ```js
+  // evidence gilt für beide kind; plan-rework schreibt das Feld nie.
   function resultProblem(result, kind) {
     if (result === null || typeof result !== 'object') return 'Eintrag in results ist kein Objekt';
     if (!isText(result.location)) return 'Eintrag in results ohne location';
     if (!statusesOf(kind).includes(result.status)) return `${result.location}: unbekannter status ${String(result.status)}`;
     if (result.status === 'unchanged' && !isText(result.rationale)) return `${result.location}: “nicht geändert” ohne rationale`;
     if (result.evidence !== undefined && !isText(result.evidence)) return `${result.location}: evidence ist kein Text`;
+    if (result.evidence !== undefined && /^kein(e|er)?\W*$/i.test(result.evidence.trim())) return `${result.location}: evidence keiner ist kein Beleg`;
+    if (result.evidence !== undefined && !evidenceForm(result.evidence)) return `${result.location}: evidence hat keine Beleg-Form`;
     if (result.evidence !== undefined && result.status !== 'changed') return `${result.location}: evidence nur bei changed`;
     return null;
   }
   ```
+  f) In `plugins/forge/agents/spec-rework.md` in der Einleitung unter `# Spec-Nacharbeit` den Satz `Du liest keinen Code, keine anderen Dateien und keinen Chatverlauf.` ersetzen durch:
+  ```markdown
+  Mit `Repo:` liest du darunter zusätzlich nur die Dateien, die ein Scout-Beleg nennt. Sonst liest du keinen Code, keine anderen Dateien und keinen Chatverlauf.
+  ```
+  und im Abschnitt `## Eingabe` direkt nach der Zeile `` - `Spec:` absoluter Pfad zur `spec.md` `` einfügen:
+  ```markdown
+  - `Repo:` optional, nur bei `art=verankert`: absoluter Pfad zur Projektwurzel; Belege aus dem Bestand sind relativ dazu
+  ```
+  g) In `plugins/forge/skills/spec-review/SKILL.md` unter `## Nacharbeiter` die Zeile
+  `` `dv-forge:spec-rework` — `Spec: <S>` ``
+  ersetzen durch:
+  ```markdown
+  `dv-forge:spec-rework` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`
+  ```
 - [ ] **Schritt 4: Tests grün laufen lassen**
-  Befehl: `node --test <R>/plugins/forge/tests/agents.test.js <R>/plugins/forge/tests/flow-questions.test.js <R>/plugins/forge/tests/review-flow-followup.test.js` — erwartet: PASS, darunter `spec-rework_Body_ClarificationAndNewBehaviourWithEvidenceWrittenWithoutQuestion`, `reworkProblems_EvidenceOnlyAsTextOnChanged_ElseInvalid`, `spec-rework_Body_DefinesDecisionEntryFormat`, `spec-rework_Body_NewBehaviourBecomesQuestionNotDecision` und `spec-rework_Body_ChosenProposalCountsAsHumanDecision`
+  Befehl: `node --test <R>/plugins/forge/tests/agents.test.js <R>/plugins/forge/tests/flow-questions.test.js <R>/plugins/forge/tests/review-flow-followup.test.js <R>/plugins/forge/tests/skill.test.js` — erwartet: PASS, darunter `spec-rework_Body_ClarificationAndNewBehaviourWithEvidenceWrittenWithoutQuestion`, `reworkProblems_EvidenceOnlyAsTextOnChanged_ElseInvalid`, `skill_Body_ReworkGetsRepoOnlyWhenAnchored`, `skill_Body_StaysUnder500WordsWithPairedQuotes`, `spec-rework_Body_DefinesDecisionEntryFormat` (prüft weiter `keinen Code`), `spec-rework_Body_NewBehaviourBecomesQuestionNotDecision` und `spec-rework_Body_ChosenProposalCountsAsHumanDecision`
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/agents/spec-rework.md plugins/forge/scripts/lib/flow-questions.js plugins/forge/tests/agents.test.js plugins/forge/tests/flow-questions.test.js` · `git commit -m "feat(forge): spec rework writes new behaviour backed by scout evidence"`
+  `git add plugins/forge/agents/spec-rework.md plugins/forge/skills/spec-review/SKILL.md plugins/forge/scripts/lib/flow-questions.js plugins/forge/tests/agents.test.js plugins/forge/tests/flow-questions.test.js plugins/forge/tests/skill.test.js` · `git commit -m "feat(forge): spec rework writes new behaviour backed by checked scout evidence"`
 
 ---
 
@@ -579,13 +638,14 @@
 
 **Dateien:**
 - Modify: `plugins/forge/scripts/lib/flow-report.js:48-63` · `report`, neue Funktion `evidenceSection` davor
-- Modify: `plugins/forge/scripts/review-flow.js:343-354` · `finish`, neue Funktion `evidenceOf` davor
-- Test: `plugins/forge/tests/flow-report.test.js` · nach `report_RoundOneOnly_OneRoundNoRework`
-- Test: `plugins/forge/tests/review-flow-round2.test.js` · nach `checklist_ThreeRedWithoutQuestions_ThreePointsAndVerdictEach`
+- Modify: `plugins/forge/scripts/review-flow.js:343-354` · `finish`, neue Funktionen `reworkFiles` und `evidenceOf` davor
+- Test: `plugins/forge/tests/flow-report.test.js` · `report_RoundOneOnly_OneRoundNoRework` (danach einfügen)
+- Test: `plugins/forge/tests/review-flow-round2.test.js` · `checklist_ThreeRedWithoutQuestions_ThreePointsAndVerdictEach` (danach einfügen)
+- Test: `plugins/forge/tests/review-flow-followup.test.js` · `followupVerify_AllDoneNoContradiction_CleanAfterVerification` (danach einfügen)
 
 **Interfaces:**
-- Consumes: Feld `evidence: string` an Ausgängen mit `status: 'changed'` in `<W>/runde-1/rework.json` (Task 8)
-- Produces: `flowReport.report({ title, artifact, status, roundOne, verification, reworked, open, asked, evidence = [] })`, `evidence` ist `Array<{ key: string, evidence: string }>`; Abschnitt `### Neues Verhalten mit Beleg` mit Zeilen `- <Stelle> — <Beleg>`; `evidenceOf(workspace)` in `review-flow.js` liefert dieses Array.
+- Consumes: Feld `evidence: string` an Ausgängen mit `status: 'changed'` in `<W>/runde-1/rework.json` und `<W>/nacharbeit/rework.json` (Task 8; `resultProblem` prüft das Feld in beiden Dateien)
+- Produces: `flowReport.report({ title, artifact, status, roundOne, verification, reworked, open, asked, evidence = [] })`, `evidence` ist `Array<{ key: string, evidence: string }>`; Abschnitt `### Neues Verhalten mit Beleg` mit Zeilen `- <Stelle> — <Beleg>`; `reworkFiles(workspace)` in `review-flow.js` liefert die zwei Fundorte `[<W>/runde-1/rework.json, <W>/nacharbeit/rework.json]`; `finish` bestimmt daraus `reworked`, `evidenceOf(workspace)` liest daraus in dieser Reihenfolge das Array. `evidenceOf` übergeht Ausgänge ohne Text in `location` oder `evidence` und wirft nie, auch nicht bei einer von `rework-check` abgewiesenen `rework.json`.
 
 - [ ] **Schritt 1: Fehlschlagende Tests schreiben**
   a) In `plugins/forge/tests/flow-report.test.js` direkt nach `report_RoundOneOnly_OneRoundNoRework` einfügen:
@@ -618,9 +678,33 @@
     assert.ok(out.includes('### Neues Verhalten mit Beleg\n- AC-04 — src/export.js\n- AC-07 — docs/glossary/terms.md · Export\n'));
     assert.ok(!out.includes('- AC-09 — '));
   });
+
+  test('finish_InvalidReworkResultWithoutLocation_ReportWithoutCrash', () => {
+    const ws = flowWorkspace();
+    afterRework(ws, ['AC-04'], [
+      { status: 'changed', evidence: 'src/export.js' },
+      { location: 42, status: 'changed', evidence: 'src/export.js' },
+      { location: 'AC-04', status: 'changed', evidence: 'src/export.js' },
+    ]);
+    const out = finish(ws);
+    assert.match(out, /^STATUS /);
+    assert.ok(out.includes('### Neues Verhalten mit Beleg\n- AC-04 — src/export.js\n'));
+  });
+  ```
+  c) In `plugins/forge/tests/review-flow-followup.test.js` direkt nach `followupVerify_AllDoneNoContradiction_CleanAfterVerification` einfügen:
+  ```js
+  test('finish_FollowupReworkWithEvidence_ReportListsIt', () => {
+    const ws = chosenTwo([{ location: 'AC-04', status: 'changed', evidence: 'src/export.js' }, { location: 'AC-07', status: 'changed' }]);
+    ws.run('followup-checklist', 'spec-review', ws.doc, ws.workspace);
+    ws.json('runde-2/verifier.json', { reviewer: 'verifier', verdicts: [verdict('AC-04', 'erledigt'), verdict('AC-07', 'erledigt')], findings: [] });
+    ws.run('verify', 'spec-review', ws.doc, ws.workspace);
+    const out = finish(ws);
+    assert.ok(out.includes('### Neues Verhalten mit Beleg\n- AC-04 — src/export.js\n'));
+    assert.ok(!out.includes('- AC-07 — '));
+  });
   ```
 - [ ] **Schritt 2: Tests rot laufen lassen**
-  Befehl: `node --test <R>/plugins/forge/tests/flow-report.test.js <R>/plugins/forge/tests/review-flow-round2.test.js` — erwartet: FAIL `report_ReworkWroteNewBehaviourAtTwoStellen_ListsBothWithEvidence` und FAIL `finish_ReworkChangedTwoStellenWithEvidence_ReportListsBoth`
+  Befehl: `node --test <R>/plugins/forge/tests/flow-report.test.js <R>/plugins/forge/tests/review-flow-round2.test.js <R>/plugins/forge/tests/review-flow-followup.test.js` — erwartet: FAIL `report_ReworkWroteNewBehaviourAtTwoStellen_ListsBothWithEvidence`, FAIL `finish_ReworkChangedTwoStellenWithEvidence_ReportListsBoth`, FAIL `finish_InvalidReworkResultWithoutLocation_ReportWithoutCrash` und FAIL `finish_FollowupReworkWithEvidence_ReportListsIt`
 - [ ] **Schritt 3: Minimal implementieren**
   a) In `plugins/forge/scripts/lib/flow-report.js` direkt vor `function report(` einfügen:
   ```js
@@ -653,16 +737,34 @@
   ```
   b) In `plugins/forge/scripts/review-flow.js` direkt vor `function finish(` einfügen:
   ```js
-  // Stellen, an denen die Nacharbeit in Runde 1 neues Verhalten mit Beleg geschrieben hat.
+  // Fundorte der Nacharbeit eines Laufs: Runde 1 und Folge-Nacharbeit.
+  function reworkFiles(workspace) {
+    return [path.join(roundDir(workspace, 1), 'rework.json'), path.join(workspace, 'nacharbeit', 'rework.json')];
+  }
+
+  const isFilled = (value) => typeof value === 'string' && value.trim() !== '';
+
+  // Stellen, an denen eine Nacharbeit des Laufs neues Verhalten mit Beleg geschrieben hat.
+  // Liest auch eine abgewiesene rework.json und übergeht dabei Ausgänge ohne location oder evidence.
   function evidenceOf(workspace) {
-    const { value } = readJson(path.join(roundDir(workspace, 1), 'rework.json'));
-    const results = Array.isArray(value?.results) ? value.results : [];
-    return results.filter((result) => result?.status === 'changed' && typeof result.evidence === 'string' && result.evidence.trim() !== '')
-      .map((result) => ({ key: result.location.trim(), evidence: result.evidence.trim() }));
+    return reworkFiles(workspace).flatMap((file) => {
+      const { value } = readJson(file);
+      const results = Array.isArray(value?.results) ? value.results : [];
+      return results.filter((result) => result?.status === 'changed' && isFilled(result.location) && isFilled(result.evidence))
+        .map((result) => ({ key: result.location.trim(), evidence: result.evidence.trim() }));
+    });
   }
 
   ```
-  und in `finish` die Zeile
+  In `finish` die Zeile
+  ```js
+    const reworked = [path.join(roundDir(workspace, 1), 'rework.json'), path.join(workspace, 'nacharbeit', 'rework.json')].some((file) => fs.existsSync(file));
+  ```
+  ersetzen durch:
+  ```js
+    const reworked = reworkFiles(workspace).some((file) => fs.existsSync(file));
+  ```
+  und die Zeile
   ```js
     const text = flowReport.report({ title, artifact: doc, status, roundOne: roundOneState, verification, reworked, open, asked });
   ```
@@ -670,10 +772,11 @@
   ```js
     const text = flowReport.report({ title, artifact: doc, status, roundOne: roundOneState, verification, reworked, open, asked, evidence: evidenceOf(workspace) });
   ```
+  `changedKeys` und `parseResults` in `rework-outcome.js` nutzt `evidenceOf` bewusst nicht: `rework-outcome.js` ist ein eigenes CLI-Skript, exportiert beide nicht und liest je Runden-Ordner statt beider Fundorte.
 - [ ] **Schritt 4: Tests grün laufen lassen**
-  Befehl: `node --test <R>/plugins/forge/tests/flow-report.test.js <R>/plugins/forge/tests/review-flow-round2.test.js <R>/plugins/forge/tests/review-flow-round1.test.js` — erwartet: PASS, darunter `report_ReworkWroteNewBehaviourAtTwoStellen_ListsBothWithEvidence`, `report_WithoutEvidence_NoEvidenceSection` und `finish_ReworkChangedTwoStellenWithEvidence_ReportListsBoth`
+  Befehl: `node --test <R>/plugins/forge/tests/flow-report.test.js <R>/plugins/forge/tests/review-flow-round2.test.js <R>/plugins/forge/tests/review-flow-round1.test.js <R>/plugins/forge/tests/review-flow-followup.test.js` — erwartet: PASS, darunter `report_ReworkWroteNewBehaviourAtTwoStellen_ListsBothWithEvidence`, `report_WithoutEvidence_NoEvidenceSection`, `finish_ReworkChangedTwoStellenWithEvidence_ReportListsBoth`, `finish_InvalidReworkResultWithoutLocation_ReportWithoutCrash` und `finish_FollowupReworkWithEvidence_ReportListsIt`
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/flow-report.js plugins/forge/scripts/review-flow.js plugins/forge/tests/flow-report.test.js plugins/forge/tests/review-flow-round2.test.js` · `git commit -m "feat(forge): spec review report lists new behaviour with its evidence"`
+  `git add plugins/forge/scripts/lib/flow-report.js plugins/forge/scripts/review-flow.js plugins/forge/tests/flow-report.test.js plugins/forge/tests/review-flow-round2.test.js plugins/forge/tests/review-flow-followup.test.js` · `git commit -m "feat(forge): spec review report lists new behaviour with its evidence"`
 
 ---
 
@@ -682,8 +785,8 @@
 **ACs:** AC-25, AC-26, AC-27, AC-28, AC-29, AC-30
 
 **Dateien:**
-- Test: `plugins/forge/tests/skill.test.js` · nach `skill_Body_NextStepPerStatus`
-- Test: `plugins/forge/tests/review-rules.test.js` · nach `rateFinding_AdvisoryReviewerContradiction_CappedYellow`
+- Test: `plugins/forge/tests/skill.test.js` · `skill_Body_NextStepPerStatus` (danach einfügen)
+- Test: `plugins/forge/tests/review-rules.test.js` · `rateFinding_AdvisoryReviewerContradiction_CappedYellow` (danach einfügen)
 - Test: `plugins/forge/tests/prepare.test.js` · `specReview_FreeSpec_NoProfilesEvenIfPresent` (bestehend)
 
 **Interfaces:**
@@ -734,3 +837,17 @@
 - **E · Scout liest Profile über `Profil-Index`** · Planer — Der Scout bekommt bei `profile=ja` denselben Index wie der Reviewer `profiles`; ohne Profile liest er nur Spec und Code. Das nutzt die vorhandene Eingabe aus `prepare.js`.
 - **E · Wortlaut „Nachprüfung und Scout-Vorschläge lesen“ bleibt** · Planer — `nicht bereit …` entsteht nur nach der Nachprüfung, deren Findings damit gemeint sind; `plan-review` formuliert gleich. AC-28 fordert nur die beiden Befehle, Task 10 sichert sie ab.
 - **E · Kein Versions-Bump** · Planer — Der Bestand hebt `plugins/forge/.claude-plugin/plugin.json` in eigenen `chore`-Commits an; das bleibt außerhalb dieses Plans.
+- **E · Nacharbeit prüft nur Spec-Belege nach** · Planer — Die Nacharbeit liest laut ihrem Auftrag keinen Code und keine anderen Dateien und bekommt kein `Repo:`; einen Beleg aus dem Bestand liest sie deshalb nicht nach. Sie prüft die Form jedes Belegs und schlägt `Spec · <Stelle>` in der Spec nach; das Skript weist `keiner` als `evidence` zurück. Belege aus dem Bestand sieht der Mensch im Abschnitt `### Neues Verhalten mit Beleg` des Berichts.
+- **R1 · Task 8** — geändert — Anker der Test-Zeilen als reiner Testname in Backticks (`reworkProblems_MissingDuplicateOrForeignOutcome_Named` steht in `flow-questions.test.js` Zeile 18; das Anker-Skript nahm „nach …“ wörtlich). Gegen ungeprüfte Belege: `resultProblem` weist `evidence` = `keiner` (ohne Groß- und Kleinschreibung) zurück, Test ergänzt; Regel 3 lässt nur die drei Beleg-Formen zu und verlangt, `Spec · <Stelle>` in der Spec nachzuschlagen. Belege aus dem Bestand liest die Nacharbeit nicht nach (siehe E · Nacharbeit prüft nur Spec-Belege nach).
+- **R1 · Task 9** — geändert — `evidenceOf` liest wie `finish` beide Fundorte, `runde-1/rework.json` und `nacharbeit/rework.json`; neuer Test `finish_FollowupReworkWithEvidence_ReportListsIt` in `review-flow-followup.test.js` deckt den Folge-Pfad ab. Test-Anker als reine Testnamen in Backticks; beide Tests stehen im Bestand (`flow-report.test.js` Zeile 64, `review-flow-round2.test.js` Zeile 23).
+- **R1 · AC-31** — geändert — Regel 3 sagt jetzt „Ist der bevorzugte Scout-Vorschlag eine Klarstellung, setzt du ihn um.“; der Test in Task 8 prüft den Satz. Der zweite Teil von AC-31 (keine Frage an den Menschen) war schon abgedeckt.
+- **R1 · Task 1** — geändert — Anker der Modify-Zeilen sind jetzt `## Prüfauftrag` und `## Kategorie` in Backticks, die Handlung steht in Klammern dahinter; Test-Anker als reiner Testname (`specAndPlanReviewers_Body_NameCategoriesNeverColours` steht in `agents.test.js` Zeile 296). Die Test-Anker der Tasks 2 bis 6 folgen derselben Form; Task 5 hat den Anker `# Spec-Review: Klarheit und Lücken` vorangestellt.
+- **R1 · Task 10** — geändert — Test-Anker als reine Testnamen in Backticks; `rateFinding_AdvisoryReviewerContradiction_CappedYellow` steht in `review-rules.test.js` Zeile 53, `skill_Body_NextStepPerStatus` in `skill.test.js` Zeile 38.
+- **R1 · Task 2** — geändert — Test-Anker als reiner Testname in Backticks; `classify_SameInputTwice_SameGroupsAndDrops` steht in `review-groups.test.js` Zeile 34.
+- **R1 · Task 7** — geändert — Modify-Anker ist jetzt `# Spec-Review: Scout` in Backticks, die Handlung steht in Klammern dahinter; Test-Anker als reine Testnamen (`skill_Body_ListsAllAgents` in `skill.test.js` Zeile 31, `round1_RedAndYellow_ScoutSeesBothReworkOnlyRedWithProposals` in `review-flow-round1.test.js` Zeile 25).
+- **E · Nacharbeit schlägt Belege aus dem Bestand nach** · Planer — Ersetzt „E · Nacharbeit prüft nur Spec-Belege nach“. Die Nacharbeit bekommt bei `art=verankert` `Repo: <R>` (wie der Scout) und liest darunter nur die Dateien, die ein Scout-Beleg nennt; fehlt die Datei oder trägt sie den Vorschlag nicht, ist der Beleg keiner, und neues Verhalten wird eine Frage an den Menschen. Ein Existenz-Check im Skript entfällt, weil `rework-check` die Projektwurzel nicht kennt und `shared/review-flow/flow.md` unverändert bleibt.
+- **E · `evidence`-Prüfung unabhängig von `kind`** · Planer — `resultProblem` prüft `evidence` auch bei `plan-review`; das ist gewollt, weil `plan-rework` das Feld nie schreibt und eine eigene Verzweigung nach `kind` nichts abfängt.
+- **R2 · Task 8** — geändert — Gegen erfundene oder falsch zugeordnete Belege: Die Nacharbeit bekommt bei `art=verankert` `Repo: <R>` (SKILL.md `## Nacharbeiter`, `## Eingabe` von `spec-rework.md`) und schlägt `<Datei>` bzw. `<Datei> · <Begriff>` darunter nach; ohne `Repo:` zählt nur ein Spec-Beleg. Tests in `agents.test.js` und neuer Test `skill_Body_ReworkGetsRepoOnlyWhenAnchored` in `skill.test.js`. Die kind-unabhängige `evidence`-Prüfung ist jetzt im Code-Kommentar, in Interfaces und in „E · `evidence`-Prüfung unabhängig von `kind`“ als gewollt festgehalten. Einen Skript-Existenz-Check gibt es nicht (siehe E · Nacharbeit schlägt Belege aus dem Bestand nach).
+- **E · Skript prüft die Beleg-Form ohne Dateizugriff** · Planer — `resultProblem` weist `kein`, `keine` und `keiner` (auch mit Satzzeichen) sowie jede Form außer `<Datei>`, `<Datei> · <Begriff>` und `Spec · <Stelle>` zurück; `<Datei>` darf keinen Leerraum enthalten, weil die Plugin-Pfade keinen tragen und so „kein Beleg“ scheitert. Ob die Datei existiert und den Vorschlag trägt, prüft weiter nur die Nacharbeit unter `Repo:`.
+- **R3 · Task 9** — geändert — Die Fundorte stehen jetzt einmal in `reworkFiles(workspace)`, das `finish` (für `reworked`) und `evidenceOf` nutzen. `evidenceOf` übergeht Ausgänge ohne Text in `location` und wirft so auch bei einer abgewiesenen `rework.json` nicht; neuer Test `finish_InvalidReworkResultWithoutLocation_ReportWithoutCrash` in `review-flow-round2.test.js`. `changedKeys`/`parseResults` aus `rework-outcome.js` werden nicht genutzt, weil das Skript sie nicht exportiert und je Runden-Ordner liest.
+- **R3 · Task 8** — geändert — Neue Funktion `evidenceForm` in `flow-questions.js`; `resultProblem` weist `keiner`-Varianten (`kein`, `keine`, `keiner.`) und Werte ohne Beleg-Form zurück (`'<location>: evidence hat keine Beleg-Form'`), Test um gültige und ungültige Formen erweitert. Erfundene Pfade fängt weiter nur die Nacharbeit (siehe E · Skript prüft die Beleg-Form ohne Dateizugriff).

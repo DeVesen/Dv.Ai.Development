@@ -38,6 +38,14 @@ test('classify_SameInputTwice_SameGroupsAndDrops', () => {
   assert.deepEqual(classify(input).groups.map((group) => `${group.color}:${group.key}`), ['red:AC-04', 'green:AC-01']);
 });
 
+test('classify_FindingAtTitleHeadingWithoutAcQuote_RedAtTitle', () => {
+  const text = ['# Export neu', '', 'Status: bestätigt am 2026-09-28', 'Art: verankert', '', '## Verhalten', 'Der Export läuft.', ''].join('\n');
+  const titleFinding = { location: 'Export neu', quote: 'Keine AC-ID in der Spec', category: 'fehlendes-verhalten', consequence: 'c', rationale: 'r' };
+  const result = groups.classify([{ reviewer: 'completeness', finding: titleFinding }], { kind: 'spec-review', text });
+  assert.deepEqual(result.groups.map((group) => `${group.color}:${group.key}`), ['red:Export neu']);
+  assert.deepEqual(result.dropped, []);
+});
+
 test('classify_HeaderFinding_DroppedAndNotInReworkSection', () => {
   const result = classify([entry('completeness', { location: 'Basis', category: 'widerspruch' })]);
   assert.deepEqual(result.groups, []);

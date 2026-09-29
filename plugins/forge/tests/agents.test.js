@@ -326,6 +326,23 @@ test('specReviewers_Body_GoalSpellingExampleAndNoFormulierung', () => {
   }
 });
 
+test('spec-review-completeness_Body_CategoriesPerCaseTitleHeadingAndSourceForEveryArt', () => {
+  const { body } = readAgent('spec-review-completeness');
+  for (const part of [
+    'Fehlt es, meldest du ein Finding der Kategorie `fehlendes-verhalten` an der Abschnittsüberschrift der Funktion.',
+    'etwa „dann funktioniert der Export korrekt“, meldest du an seiner AC-ID ein Finding der Kategorie `fehlendes-verhalten`.',
+    'Nennt es ein Ergebnis ohne Maß, etwa „dann lädt die Liste schnell“, ist das Finding `detail`.',
+    'genau ein Finding der Kategorie `fehlendes-verhalten` an der Titelüberschrift (`#`) des Dokuments und keine weiteren Findings je Funktion ohne AC.',
+    '`location` ist der Text der Titelüberschrift ohne `#`, `quote` ist `Keine AC-ID in der Spec`.',
+    'gleichst du sie bei jeder Art der Spec ab, auch bei `Art: frei`',
+    '`quote` beginnt dann mit `Quelle: `.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(!body.includes('an der ersten Überschrift der Spec'), 'alte Stelle ohne AC-ID');
+  assert.ok(!body.includes('„korrekt", „möglich", „sinnvoll"'), 'alte Liste vager Wörter');
+});
+
 for (const [name, tools, inputs, categories] of [
   ['spec-review-verifier', 'Read, Write', ['- `Spec:`'], SPEC_CATEGORIES],
   ['plan-review-verifier', 'Read, Grep, Glob, Write', ['- `Plan:`', '- `Spec:`', '- `Repo:`'], PLAN_CATEGORIES],

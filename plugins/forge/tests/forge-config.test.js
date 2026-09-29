@@ -160,3 +160,19 @@ test('initSkill_McpExpected_NamesPlaceKeyAndExampleWithTwoServers', () => {
   assert.ok(text.includes('- MCP-Erwartet: dev-mcp, codebase-analyzer'));
   assert.ok(text.includes('Abschnitt `## dv-forge` der Projekt-`CLAUDE.md`'));
 });
+
+test('branchWorkitem_PatternInBranch_ReturnsMatch', () => {
+  assert.equal(config.branchWorkitem({ Workitem: '\\d{6}' }, 'feature/307326-result'), '307326');
+});
+
+test('branchWorkitem_NoneEmptyInvalidNoBranchOrNoMatch_Null', () => {
+  const cases = [
+    [{ Workitem: 'keine' }, 'feature/307326-x'],
+    [{ Workitem: '' }, 'feature/307326-x'],
+    [{ Workitem: '(' }, 'feature/307326-x'],
+    [{ Workitem: '\\d{6}' }, ''],
+    [{ Workitem: '\\d{6}' }, 'feature/x'],
+  ];
+
+  assert.deepEqual(cases.map(([values, branch]) => config.branchWorkitem(values, branch)), [null, null, null, null, null]);
+});

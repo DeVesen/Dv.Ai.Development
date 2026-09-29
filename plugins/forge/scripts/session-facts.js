@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const mcpUsage = require('./mcp-usage.js');
 const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents, shorten } = require('./lib/transcript');
+const { thousands } = require('./lib/retro-format');
 const { rangeOf } = require('./lib/retro-range');
 const { subagentFiles } = require('./lib/session-files');
 const { requestsOf } = require('./lib/retro-requests');
@@ -141,10 +142,6 @@ function analyze(entries) {
 function minutes(first, last) {
   if (!first || !last) return '?';
   return Math.round((Date.parse(last) - Date.parse(first)) / 60000);
-}
-
-function thousands(value) {
-  return `${Math.round(value / 1000)}k`;
 }
 
 // Die .meta.json eines Subagents fehlt, ist leer oder halb geschrieben, wenn die Session noch läuft oder abbrach;

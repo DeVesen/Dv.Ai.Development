@@ -102,6 +102,24 @@ function workitemOf(specPath) {
   return match ? stripTicks(match[1]) : '';
 }
 
+function workitemPattern(source) {
+  if (!source || source === 'keine') return null;
+  try {
+    return new RegExp(source);
+  } catch {
+    // Ein ungültiges Muster in den Projekt-Einstellungen findet kein Workitem.
+    return null;
+  }
+}
+
+// Das Workitem-Muster der Projekt-Einstellungen im Branch: null bei `keine`, leerem oder ungültigem Muster,
+// leerem Branch oder ohne Treffer, sonst der Treffer. Die einzige Stelle dieser Regel.
+function branchWorkitem(config, branch) {
+  const pattern = workitemPattern(config.Workitem);
+  const found = pattern && branch ? pattern.exec(branch) : null;
+  return found ? found[0] : null;
+}
+
 const LEADING_DATE = /^\d{4}-\d{2}-\d{2}-/;
 
 function escapeRegExp(text) {
@@ -169,4 +187,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, workitemOf, branchFor, branchCandidates };
+module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, workitemOf, branchWorkitem, branchFor, branchCandidates };

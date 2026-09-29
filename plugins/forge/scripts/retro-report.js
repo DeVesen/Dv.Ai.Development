@@ -10,6 +10,7 @@ const { corpusOf } = require('./lib/retro-corpus');
 const { draftPath, readSnapshot, snapshotPath } = require('./lib/retro-files');
 const { violations } = require('./lib/retro-draft');
 const { compose } = require('./lib/retro-compose');
+const { summaryLines } = require('./lib/retro-summary');
 const { secretViolations, withFileNameSource, relativeToProject } = require('./lib/retro-secrets');
 const { subagentFiles } = require('./lib/session-files');
 
@@ -141,6 +142,15 @@ function parsedOrExit(args) {
   }
 }
 
+// Der Bericht ist schon geschrieben; scheitert die Kurzfassung, bleiben Pfad und Prüfergebnis die Rückmeldung.
+function summaryOrFallback(result) {
+  try {
+    return summaryLines(result);
+  } catch (error) {
+    return [`Bericht: ${result.file}`, 'Prüfung: 0 Verstöße', `Warnung: Kurzfassung nicht verfügbar: ${error.message}`];
+  }
+}
+
 function main() {
   const options = parsedOrExit(process.argv.slice(2));
   if (options.format) {
@@ -148,9 +158,9 @@ function main() {
     return;
   }
   try {
-    const { file, warnings } = build(options);
-    process.stdout.write(`Bericht: ${file}\nPrüfung: 0 Verstöße\n`);
-    for (const warning of warnings) process.stderr.write(`${warning}\n`);
+    const result = build(options);
+    process.stdout.write(`${summaryOrFallback(result).join('\n')}\n`);
+    for (const warning of result.warnings) process.stderr.write(`${warning}\n`);
   } catch (error) {
     if (!(error instanceof RetroError)) throw error;
     process.stderr.write(`${error.message}\n`);

@@ -5,7 +5,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 const fs = require('node:fs');
-const { ConfigError, readConfig, branchFor, branchCandidates, workitemOf } = require('./forge-config');
+const { ConfigError, readConfig, branchFor, branchCandidates, workitemOf, branchWorkitem } = require('./forge-config');
 const { describeTasks, PlanError } = require('./plan-tasks');
 
 const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -75,16 +75,9 @@ function suggestedBranch(config, slug, spec) {
 }
 
 function workitemConflict(config, branch, spec) {
-  if (config.Workitem === 'keine' || !config.Workitem) return null;
   const own = workitemOf(spec);
-  let pattern;
-  try {
-    pattern = new RegExp(config.Workitem);
-  } catch {
-    return null;
-  }
-  const found = pattern.exec(branch);
-  return own && found && found[0] !== own ? found[0] : null;
+  const found = branchWorkitem(config, branch);
+  return own && found && found !== own ? found : null;
 }
 
 function startInPlace(root, config, slug, spec) {

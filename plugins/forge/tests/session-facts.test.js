@@ -112,6 +112,13 @@ test('cli_UnknownSession_ExitsWithOne', () => {
   assert.match(result.stderr, /gibt-es-nicht/);
 });
 
+test('cli_LenientAndUnknownSession_ReportsReasonAndExitsWithZero', () => {
+  const result = runIn(projectWith([['eigene', 0]]), ['--session', 'gibt-es-nicht', '--lenient']);
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /^Fakten nicht verfügbar: Session gibt-es-nicht nicht gefunden/);
+});
+
 test('cli_NoSession_WarnsWhenOtherSessionsWereWrittenRecently', () => {
   const result = runIn(projectWith([['a', 0], ['b', 3], ['alt', 60]]), []);
   assert.equal(result.status, 0, result.stderr);

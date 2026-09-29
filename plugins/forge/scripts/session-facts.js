@@ -8,7 +8,7 @@ const mcpUsage = require('./mcp-usage.js');
 const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
 const { rangeOf } = require('./lib/retro-range');
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
-  + ' [--since-command <name>] [--before-retro] [--skeleton <bericht.md>]\n';
+  + ' [--since-command <name>] [--before-retro] [--lenient] [--skeleton <bericht.md>]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
 const RECENT_MS = 10 * 60 * 1000;
 const REPORT_FORMAT = path.join(__dirname, '..', 'skills', 'prozess-retrospektive', 'references', 'report-format.md');
@@ -235,7 +235,7 @@ const FLAGS = {
   '--file': 'file', '--session': 'session', '--cwd': 'cwd', '--expect': 'expect',
   '--since-command': 'sinceCommand', '--skeleton': 'skeleton',
 };
-const SWITCHES = { '--before-retro': 'beforeRetro' };
+const SWITCHES = { '--before-retro': 'beforeRetro', '--lenient': 'lenient' };
 
 // `--file` und `--session` dürfen zusammen stehen: ausgewertet wird die Datei, die Session benennt Snapshot und Entwurf.
 function parseArgs(args) {
@@ -297,6 +297,8 @@ function run(options) {
   return { output, warning };
 }
 
+// Im fehlerverzeihenden Modus endet jeder Fehler mit einer Meldung auf stdout und Exit-Code 0, damit der
+// Skill, der die Fakten beim Laden einbettet, trotzdem lädt.
 function main() {
   const options = parseArgs(process.argv.slice(2));
   if (!options) {
@@ -308,6 +310,11 @@ function main() {
     if (warning) process.stderr.write(`${warning}\n`);
     process.stdout.write(output);
   } catch (error) {
+    if (options.lenient) {
+      process.stdout.write(`Fakten nicht verfügbar: ${error.message}
+`);
+      return;
+    }
     if (!(error instanceof FactsError)) throw error;
     process.stderr.write(`${error.message}\n`);
     process.exit(1);

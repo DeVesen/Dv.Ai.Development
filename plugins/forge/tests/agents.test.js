@@ -403,6 +403,8 @@ for (const [name, tools, inputs, categories] of [
       assert.ok(body.includes(part), `${name}: ${part}`);
     }
     for (const category of categories) assert.ok(categorySection(body).includes(`- \`${category}\` — `), `${name}: ${category}`);
+    assert.ok(body.includes('"category": "widerspruch"'), `${name}: Beispiel-Kategorie`);
+    assert.doesNotMatch(body, /[🔴🟡🟢]/u, `${name}: Farbe im Text`);
     assert.ok(!body.includes('"severity"'));
     assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
   });

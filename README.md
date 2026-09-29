@@ -140,24 +140,19 @@ Applies a personal software design philosophy during design decisions and code r
 
 `Process` `Retrospective` `MCP Quality` `Improvement` `Session Analysis`
 
-Part of the `dv-forge` plugin (`plugins/forge/skills/prozess-retrospektive/`, invoked as `/dv-forge:prozess-retrospektive`), but it looks for gaps in any session, not only in dv-forge runs.
+Part of the `dv-forge` plugin (`plugins/forge/skills/prozess-retrospektive/`), invoked only by the human as `/dv-forge:prozess-retrospektive [--file <session.jsonl> | --since-command <command>]`; the model never loads it on its own. It looks for gaps in any session, not only in dv-forge runs.
 
-Analyzes the *process* of a session — not what was delivered, but how it ran. A script (`plugins/forge/scripts/session-facts.js`) reads the Claude Code session transcript and reports duration, human turns, token use per session and subagent, tool calls, tool errors, blocked calls, repeats and compactions. The skill turns these facts into an experience report under `docs/wishes/`, each wish with its target: plugin, skill, agent, CLAUDE.md, hook or MCP server.
+Everything deterministic runs in scripts, the model only judges and writes. While the skill loads, `plugins/forge/scripts/session-facts.js` puts the session facts into it: human inputs with entry numbers, active and waiting time, context per request, baseline of the first request, cache rebuilds, largest context loads, long tool runs, reruns without change, harness hints, measured MCP usage and one hint per signal that fires. The retrospective itself is cut out of these numbers.
 
-MCP usage is measured, not recalled: the same run appends a section from `plugins/forge/scripts/mcp-usage.js` with calls, errors and repeats per MCP server and native tool, per agent (subagent transcripts included), plus expected-but-unused servers and shell-fallback candidates. Across several reports this shows which MCPs are irrelevant.
+The model reads single places through `plugins/forge/scripts/retro-timeline.js`, never by text search in the raw transcript. It writes one draft; `plugins/forge/scripts/retro-report.js` checks it, composes the report under `docs/wishes/`, picks the file name and prints the chat summary, the cost of the retrospective and a workitem candidate. `plugins/forge/scripts/retro-sort.js` groups the findings of all reports by target and counts MCP relevance before they are merged into a wish list.
 
-Besides friction the skill looks for savings in time, tokens and money: the script lists the largest tool results, files read more than once and recurring shell commands. Wishes may target existing plugins, skills, hooks and MCPs or something new (`neu:`), such as a script or MCP tool that takes over repeated manual work.
+Expected MCP servers come from `MCP-Erwartet` in the `## dv-forge` section of the project `CLAUDE.md`. Every finding is written for an outsider; project files and verbatim quotes go into a separate *Im Projekt* line.
 
-Every finding is written for an outsider: the situation describes project parts by their role instead of project names, tools are named with a half-sentence on what they do, and each finding states what would have been the better approach in that very case. Project files and terms go into a separate *Im Projekt* line, so a finding can be handed to someone who has never seen the project.
-
-| Command / Trigger | Purpose |
+| Command | Purpose |
 |---|---|
-| "retrospektive" · "session review" · "prozess analyse" | Start session retrospective |
-| "harness verbessern" · "was koennen wir verbessern" | Natural language trigger |
-| "wie lief das" · "erkenntnisse" · "learnings" | Natural language trigger |
-| `kein-retrospektive` · `no-retrospektive` | Opt-out |
-
-> Always explicit — never auto-triggers.
+| `/dv-forge:prozess-retrospektive` | Retrospective of the current session |
+| `/dv-forge:prozess-retrospektive --file <session.jsonl>` | Retrospective of another transcript |
+| `/dv-forge:prozess-retrospektive --since-command <command>` | Only the part from the last call of a command |
 
 ---
 

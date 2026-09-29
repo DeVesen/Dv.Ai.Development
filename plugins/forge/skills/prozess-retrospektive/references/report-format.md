@@ -2,21 +2,18 @@
 
 Gleiches Format wie die bisherigen Berichte unter `docs/wishes/`, damit mehrere Berichte später zu einer Wunschliste zusammengeführt werden können.
 
-`session-facts.js --skeleton <datei>` schreibt diese Vorlage als Datei: „Zahlen“, „MCP-Nutzung“ und die Zahlen in „Ergebnis“ sind dann schon ausgefüllt. Diese Teile sind Rohdaten; du änderst sie nicht und tippst sie nie ab. Du ersetzt nur die übrigen `<…>`-Platzhalter.
+Du schreibst nur den **Entwurf**. `retro-report.js` prüft ihn und setzt daraus den Bericht zusammen: Modell, Skills, Datum und Kennzahlen in den Kopf, „Zahlen“ und „MCP-Nutzung“ aus dem Snapshot, danach deine Abschnitte. Diese Rohdaten tippst du nie ab.
+
+## Entwurf
 
 ```markdown
 # Erfahrungsbericht <Art der Arbeit, allgemein>
 
-**Lauf:** <was gemacht wurde, welche Skills und Plugins, Session-Modell, Datum>
-**Ergebnis:** <was herauskam>. Dauer <min>, Eingaben des Menschen <n>, Tokens neu <k> Hauptsession und <k> Subagents.
+**Lauf:** <was gemacht wurde, welche Skills und Plugins>
+**Ergebnis:** <was herauskam>
 
-## Zahlen
-<ZAHLEN: schreibt session-facts.js --skeleton>
-
-## MCP-Nutzung
-<MCP-NUTZUNG: schreibt session-facts.js --skeleton>
-
-**Relevanz:** je erwartetem MCP ein Satz: gebraucht · verzichtbar in dieser Session · hätte genützt, weil <Beleg>
+**Relevanz:**
+- <erwartetes MCP>: gebraucht · verzichtbar in dieser Session · hätte genützt, weil <Beleg>
 
 ## Positiv
 
@@ -26,22 +23,22 @@ Gleiches Format wie die bisherigen Berichte unter `docs/wishes/`, damit mehrere 
 
 1. **<Kurzbefund, allgemein>.**
    *Situation:* <was passiert ist, für Außenstehende erzählt, mit Zahl oder Zitat>
-   *Kosten:* <Tokens, Minuten, Runden, Rückfragen>
+   *Kosten:* <Tokens, Minuten, Runden, Rückfragen: mit Zahl oder am Ende ` · Eindruck`>
    *Ursache:* <warum>
    *Besser gewesen:* <das Vorgehen, das in genau diesem Fall schneller, billiger oder richtig gewesen wäre, als Schritte>
    *Vorschlag:* <was sich dauerhaft ändern soll, damit es nicht wieder passiert>
-   *Ziel:* <Plugin | Skill | Agent | CLAUDE.md | Hook | Skript | MCP> · `<Name>` oder `neu:` <Art> · <Arbeitsname> oder `Ziel offen`
-   *Im Projekt:* <Dateien, Klassen, Fachbegriffe dieses Projekts, nur für die eigene Nacharbeit>
+   *Ziel:* <Art> · `<Name>` | <Art> · neu: <Arbeitsname> | Ziel offen
+   *Im Projekt:* <Dateien, Klassen, Fachbegriffe und wörtliche Zitate dieses Projekts, in einer Zeile>
 
 ## Sparpotenzial
 
 1. **<Kurzbefund, allgemein>.**
    *Situation:* <welcher Lauf wiederkehrend oder unnötig war, für Außenstehende erzählt, mit Zahl>
-   *Ersparnis:* <geschätzt je Session: Tokens, Minuten, Runden; Geld nur mit bekanntem Preis>
+   *Ersparnis:* <geschätzt je Session: Tokens, Minuten, Runden; mit Zahl oder am Ende ` · Eindruck`>
    *Besser gewesen:* <wie es in genau diesem Fall billiger gegangen wäre, als Schritte>
    *Vorschlag:* <was das künftig übernimmt>
-   *Ziel:* <Plugin | Skill | Agent | CLAUDE.md | Hook | Skript | MCP> · `<Name>` oder `neu:` <Art> · <Arbeitsname>
-   *Im Projekt:* <Dateien, Klassen, Fachbegriffe dieses Projekts, nur für die eigene Nacharbeit>
+   *Ziel:* <Art> · `<Name>` | <Art> · neu: <Arbeitsname> | Ziel offen
+   *Im Projekt:* <Dateien, Klassen, Fachbegriffe und wörtliche Zitate dieses Projekts, in einer Zeile>
 
 ## Neue Ideen
 
@@ -51,6 +48,20 @@ Gleiches Format wie die bisherigen Berichte unter `docs/wishes/`, damit mehrere 
 
 - <Einzeiler>
 ```
+
+`<Art>` ist Plugin, Skill, Agent, CLAUDE.md, Hook, Skript oder MCP. Der Kurzbefund ist der fett gesetzte Titel; die Kurzfassung im Chat zeigt ihn. Hat ein Abschnitt keinen Befund, steht dort ein Satz wie „Keine nennenswerten Punkte.“
+
+## Was das Skript prüft
+
+Solange einer dieser Verstöße besteht, schreibt es keinen Bericht und nennt jeden einzeln:
+- ein Pflichtabschnitt oder Pflichtfeld fehlt: Titel, **Lauf:**, **Ergebnis:**, **Relevanz:**, die fünf Abschnitte, die Felder jedes Befunds unter Reibung und Sparpotenzial;
+- eine Ziel-Zeile folgt keiner der drei Formen;
+- *Kosten:* oder *Ersparnis:* trägt weder Zahl noch ` · Eindruck`;
+- für ein erwartetes MCP fehlt die Relevanz-Zeile;
+- ein Dateiname des Projekts steht außerhalb von *Im Projekt:*;
+- ein Zitat unter *Im Projekt:* steht nicht wörtlich im Protokoll.
+
+Jedes `neu:`-Ziel steht im Bericht genau einmal unter „Neue Ideen“; fehlt es dort, ergänzt es das Skript.
 
 ## Für Außenstehende schreiben
 
@@ -80,7 +91,10 @@ Beispiel:
 ## Regeln
 - Sortiert nach Kosten: teuerster Reibungspunkt zuerst, größte Einsparung zuerst.
 - Ein Punkt steht entweder unter Reibung (etwas hakte) oder unter Sparpotenzial (lief, aber zu teuer), nicht in beiden.
-- Eine Aussage ohne Zahl oder Zitat trägt am Ende ` · Eindruck`.
+- Eine Aussage ohne Zahl oder Zitat trägt am Ende ` · Eindruck`. Eine Zahl, die das Skript nicht liefert, schätzt du nicht.
+- Die Regel eines anderen Werkzeugs gibst du nie aus dem Gedächtnis wieder: Regeltext mit `datei:zeile` zitieren oder ` · Eindruck`. Ein Vorschlag dagegen ist eine Regeländerung, keine erlaubte Variante.
 - Ein Fehler in einem Werkzeug ist nie eine Kleinigkeit: Er tritt bei jedem Lauf wieder auf und bekommt einen Befund mit `Ziel:`.
-- Kein Befund ohne *Besser gewesen:* und ohne `Ziel:`-Zeile. `neu:` heißt: Das gibt es noch nicht, es lohnt sich, darüber nachzudenken; jedes `neu:` steht zusätzlich unter „Neue Ideen“.
+- Kein Befund ohne *Besser gewesen:* und ohne `Ziel:`-Zeile. `neu:` heißt: Das gibt es noch nicht, es lohnt sich, darüber nachzudenken.
+- Positiv steht nur, was sich lohnt beizubehalten. Auch teure, aber fehlerfreie Läufe sind ein Befund.
+- Maßstab für Sparpotenzial: Spart es Zeit, Tokens oder Geld, ohne dass der Ersatz teurer ist? Einen Betrag nennst du nur mit bekanntem Preis.
 - Die Relevanz-Sätze sammeln sich über mehrere Berichte; erst dann wird ein MCP gestrichen, nicht nach einer Session.

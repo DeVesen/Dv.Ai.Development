@@ -9,123 +9,130 @@ const { readText, readMarkdown, wordCount } = require('./lib/markdown');
 const PLUGIN_ROOT = path.join(__dirname, '..');
 const SKILL_DIR = path.join(PLUGIN_ROOT, 'skills', 'prozess-retrospektive');
 const SKILL = path.join(SKILL_DIR, 'SKILL.md');
-const REFERENCES = ['signals.md', 'report-format.md', 'common-mistakes.md'];
+const README = path.join(PLUGIN_ROOT, '..', '..', 'README.md');
+const SCRIPTS = ['session-facts.js', 'retro-report.js', 'retro-timeline.js', 'retro-sort.js'];
+const JUDGEMENT_SIGNALS = [
+  'Rückfrage oder Korrektur durch den Menschen',
+  'Skill geladen, aber nicht befolgt',
+  'Ergebnis erzeugt, aber nie genutzt',
+  'teures Modell oder breiter Lauf, wo ein schmaler reicht',
+  'Mensch wartet auf etwas, das parallel laufen könnte',
+];
 
-function reference(name) {
-  return readText(path.join(SKILL_DIR, 'references', name));
+function reportFormat() {
+  return readText(path.join(SKILL_DIR, 'references', 'report-format.md'));
 }
 
-test('prozessRetrospektive_Frontmatter_OnlyNameAndDescription', () => {
+test('prozessRetrospektive_Frontmatter_ManualOnlyWithAllowedScripts', () => {
   const { fields } = readMarkdown(SKILL);
-  assert.deepEqual(Object.keys(fields), ['name', 'description']);
-  assert.equal(fields.name, 'prozess-retrospektive');
-  assert.match(fields.description, /^Use when/);
+
+  assert.deepEqual(Object.keys(fields), ['name', 'description', 'disable-model-invocation', 'allowed-tools']);
+  assert.equal(fields['disable-model-invocation'], 'true');
+  assert.match(fields.description, /^Use when the human types \/dv-forge:prozess-retrospektive/);
+});
+
+test('prozessRetrospektive_AllowedTools_EveryScriptInBashAndPowerShell', () => {
+  const { fields } = readMarkdown(SKILL);
+
+  for (const shell of ['Bash', 'PowerShell']) {
+    for (const script of SCRIPTS) {
+      assert.ok(fields['allowed-tools'].includes(`${shell}(node "\${CLAUDE_PLUGIN_ROOT}/scripts/${script}" *)`), `${shell} ${script}`);
+    }
+  }
+});
+
+test('prozessRetrospektive_AllowedTools_DraftFolderWritableWithoutAsking', () => {
+  const { fields } = readMarkdown(SKILL);
+
+  assert.ok(fields['allowed-tools'].split(' ').includes('Edit(~/.dv-forge/retro/*)'));
+});
+
+test('prozessRetrospektive_Body_InjectsFactsAndFormatBeforeTheModelReads', () => {
+  const lines = readMarkdown(SKILL).body.split('\n');
+
+  assert.ok(lines.includes('!`node "${CLAUDE_PLUGIN_ROOT}/scripts/session-facts.js" --session ${CLAUDE_SESSION_ID} --before-retro --snapshot --lenient`'));
+  assert.ok(lines.includes('!`node "${CLAUDE_PLUGIN_ROOT}/scripts/retro-report.js" --format`'));
 });
 
 test('prozessRetrospektive_Body_StaysUnder500Words', () => {
   assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
 });
 
-test('prozessRetrospektive_Body_LinksAllReferencesThatExist', () => {
+test('prozessRetrospektive_Body_TimelineInsteadOfTextSearch', () => {
   const { body } = readMarkdown(SKILL);
-  for (const name of REFERENCES) {
-    assert.ok(body.includes(`references/${name}`), `${name} nicht verlinkt`);
-    assert.ok(fs.existsSync(path.join(SKILL_DIR, 'references', name)), `${name} fehlt`);
-  }
+
+  assert.ok(body.includes('retro-timeline.js" --session ${CLAUDE_SESSION_ID} --entry <n>'));
+  assert.match(body, /nie per Textsuche im Protokoll/);
 });
 
-test('prozessRetrospektive_Body_RunsFactsScriptFromPluginRoot', () => {
+test('prozessRetrospektive_Body_DraftPlusScriptInsteadOfSkeleton', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('node "${CLAUDE_PLUGIN_ROOT}/scripts/session-facts.js"'));
-  assert.ok(fs.existsSync(path.join(PLUGIN_ROOT, 'scripts', 'session-facts.js')));
-  assert.ok(fs.existsSync(path.join(PLUGIN_ROOT, 'scripts', 'mcp-usage.js')));
+
+  assert.ok(body.includes('retro-report.js" --session ${CLAUDE_SESSION_ID} --topic <thema>'));
+  assert.match(body, /Entwurf/);
+  assert.doesNotMatch(body, /Gerüst|--skeleton/);
 });
 
-test('prozessRetrospektive_Body_ReadsOwnSessionAndWritesSkeleton', () => {
+test('prozessRetrospektive_Body_NamesTheFiveJudgementSignals', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('--session ${CLAUDE_SESSION_ID}'));
-  assert.ok(body.includes('--since-command <skill>'));
-  assert.ok(body.includes('--skeleton docs/wishes/<YYYY-MM-DD>-<thema>.md'));
+
+  for (const signal of JUDGEMENT_SIGNALS) assert.ok(body.includes(signal), signal);
 });
 
-test('reportFormat_Template_HasSlotsTheSkeletonFills', () => {
-  const text = reference('report-format.md');
-  for (const slot of ['<ZAHLEN: schreibt session-facts.js --skeleton>', '<MCP-NUTZUNG: schreibt session-facts.js --skeleton>',
-    'Dauer <min>, Eingaben des Menschen <n>, Tokens neu <k> Hauptsession und <k> Subagents']) {
-    assert.ok(text.includes(slot), `${slot} fehlt`);
-  }
+test('prozessRetrospektive_Body_CommitRuleWithWorkitemCandidate', () => {
+  const { body } = readMarkdown(SKILL);
+
+  assert.ok(body.includes('forge-config.js" get Commit-Konvention'));
+  assert.match(body, /Workitem-Kandidaten/);
+  assert.match(body, /Nicht committen, erst fragen/);
 });
 
-test('prozessRetrospektive_Body_LooksBeyondForge', () => {
+test('prozessRetrospektive_Body_NoFixedContextThresholdAndOnlyFormatReference', () => {
   const { body } = readMarkdown(SKILL);
-  assert.match(body, /nicht nur in dv-forge/);
-  assert.match(body, /wiederkehrende oder unnötige Läufe/);
-  assert.match(body, /ohne jede Kenntnis des Projekts/);
+
+  assert.doesNotMatch(body, /\d+k/);
+  assert.deepEqual([...new Set(body.match(/references\/[\w.-]+/g))], ['references/report-format.md']);
+  assert.deepEqual(fs.readdirSync(path.join(SKILL_DIR, 'references')), ['report-format.md']);
+});
+
+test('prozessRetrospektive_Body_ArgumentsRerunFactsAndSortForWishlist', () => {
+  const { body } = readMarkdown(SKILL);
+
+  assert.match(body, /`ARGUMENTS`/);
+  assert.ok(body.includes('retro-sort.js'));
+});
+
+test('readme_Retrospective_NamesNewCallAndNoNaturalLanguageTrigger', () => {
+  const text = readText(README);
+  const section = text.slice(text.indexOf('#### `prozess-retrospektive`'), text.indexOf('#### `regression-audit`'));
+
+  assert.ok(section.includes('/dv-forge:prozess-retrospektive [--file <session.jsonl> | --since-command <command>]'));
+  for (const script of SCRIPTS) assert.ok(section.includes(script), script);
+  assert.doesNotMatch(section, /wie lief das|kein-retrospektive/);
+});
+
+test('reportFormat_Draft_NoSlotsAndThreeTargetForms', () => {
+  const text = reportFormat();
+
+  assert.doesNotMatch(text, /<ZAHLEN|<MCP-NUTZUNG|--skeleton/);
+  assert.ok(text.includes('*Ziel:* <Art> · `<Name>` | <Art> · neu: <Arbeitsname> | Ziel offen'));
+  assert.match(text, /## Was das Skript prüft/);
 });
 
 test('reportFormat_EveryFinding_HasSituationBetterApproachTargetAndProjectLine', () => {
-  const text = reference('report-format.md');
+  const text = reportFormat();
   const template = text.slice(text.indexOf('## Reibung'), text.indexOf('## Neue Ideen'));
+
   for (const slot of ['*Situation:*', '*Besser gewesen:*', '*Vorschlag:*', '*Ziel:*', '*Im Projekt:*']) {
     assert.equal(template.split(slot).length - 1, 2, `${slot} nicht in Reibung und Sparpotenzial`);
   }
-  assert.match(text, /## Neue Ideen/);
   assert.match(text, /Kein Befund ohne \*Besser gewesen:\*/);
 });
 
-test('reportFormat_Outsiders_RolesInsteadOfProjectNamesToolsByName', () => {
-  const text = reference('report-format.md');
-  assert.match(text, /## Für Außenstehende schreiben/);
-  assert.match(text, /als ihre \*\*Rolle\*\*/);
-  assert.match(text, /beim \*\*Namen\*\*/);
-  assert.match(text, /nur unter \*Im Projekt:\*/);
-});
+test('reportFormat_Outsiders_RolesPlaceholdersAndRawDataExempt', () => {
+  const text = reportFormat();
 
-test('reportFormat_QuotesAndCommands_UsePlaceholdersForProjectNames', () => {
-  const text = reference('report-format.md');
-  assert.match(text, /Platzhalter in eckigen Klammern/);
-  assert.ok(text.includes('`dotnet build <Solution>`'));
-  assert.match(text, /Vor dem Speichern gehst du jeden Befund durch/);
-});
-
-test('signals_Savings_CoverNeedlessRuns', () => {
-  const text = reference('signals.md');
-  assert.match(text, /Lauf ohne neue Information/);
-  assert.match(text, /breiter Lauf, wo ein schmaler reicht/);
-  assert.match(text, /Ergebnis erzeugt, aber nie genutzt/);
-});
-
-test('commonMistakes_Table_KeepsRowsAndAddsRuleQuotesAndCountedNumbers', () => {
-  const text = reference('common-mistakes.md');
-  for (const row of ['Aus dem Gedächtnis schätzen', 'Zahlen oder MCP-Tabellen abtippen', 'Bericht nur im Chat']) {
-    assert.ok(text.includes(row), `${row} fehlt`);
+  for (const phrase of ['## Für Außenstehende schreiben', 'als ihre **Rolle**', 'beim **Namen**', 'nur unter *Im Projekt:*', 'Platzhalter in eckigen Klammern', '`dotnet build <Solution>`', 'Vor dem Speichern gehst du jeden Befund durch', '„Zahlen“ und „MCP-Nutzung“ sind davon ausgenommen', 'Ein Fehler in einem Werkzeug ist nie eine Kleinigkeit', '`datei:zeile`']) {
+    assert.ok(text.includes(phrase), phrase);
   }
-  assert.match(text, /Regel eines anderen Werkzeugs aus dem Gedächtnis/);
-  assert.ok(text.includes('`datei:zeile`'));
-  assert.ok(text.includes('`grep -c`'));
-});
-
-test('prozessRetrospektive_Body_TableMovedOutAndLinked', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.doesNotMatch(body, /\| Aus dem Gedächtnis schätzen \|/);
-  assert.ok(body.includes('references/common-mistakes.md'));
-});
-
-test('prozessRetrospektive_Body_CommitWithConventionAndSessionWorkitem', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('forge-config.js" get Commit-Konvention'));
-  assert.match(body, /Workitem-Nummer.*unklar.*fragst du/);
-});
-
-test('prozessRetrospektive_Body_LargeContextSuggestsFreshSession', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.match(body, /frischen? Session/);
-  assert.ok(body.includes('--file <pfad>'));
-  assert.match(body, /200k/);
-});
-
-test('reportFormat_ToolErrorIsNeverTrivialAndRawDataExempt', () => {
-  const text = reference('report-format.md');
-  assert.match(text, /Ein Fehler in einem Werkzeug ist nie eine Kleinigkeit/);
-  assert.match(text, /„Zahlen“ und „MCP-Nutzung“ sind davon ausgenommen/);
 });

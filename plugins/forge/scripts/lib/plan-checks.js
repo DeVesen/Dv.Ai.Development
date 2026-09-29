@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const { normalizeLocation } = require('../aggregate-findings');
 const { markFences, numberingError, scanPlan, splitLines, taskSections } = require('../plan-tasks');
 const { anchorMarks } = require('../plan-anchors');
-const { parseUnits, collapse } = require('./document-units');
+const { parsePlaces, collapse } = require('./places');
 
 // Skript-Prüfungen des Plan-Reviews. Sie urteilen ohne KI über den Plan-Text und über Spec und Repo aus { doc, spec, repo }.
 // Weiter als TASK_HEADING in plan-tasks.js: Jede Überschrift ### Task <x>: zählt, auch mit einer Nummer wie 3a.
@@ -59,11 +59,7 @@ function plannedAcs(text) {
 }
 
 function specAcs(specText) {
-  const acs = new Map();
-  for (const unit of parseUnits(specText).units) {
-    if (unit.kind === 'item' && AC_KEY.test(unit.key) && !acs.has(unit.canon)) acs.set(unit.canon, unit);
-  }
-  return [...acs.values()];
+  return [...parsePlaces(specText).values()].filter((place) => AC_KEY.test(place.label));
 }
 
 function readSpec(context) {
@@ -80,9 +76,9 @@ function coverageFindings(text, context) {
   const spec = readSpec(context);
   if (spec.error) return [failure('AC-Abdeckung', spec.error)];
   const planned = plannedAcs(text);
-  return specAcs(spec.text).filter((unit) => !planned.has(unit.canon)).map((unit) => finding(unit.key,
-    `Quelle: Spec · ${collapse(unit.lines[0])}`, 'ac-fehlt-im-plan',
-    `${unit.key} steht in keinem Task unter **ACs:**; kein Task setzt es um.`, 'Skript-Prüfung AC-Abdeckung'));
+  return specAcs(spec.text).filter((place) => !planned.has(place.key)).map((place) => finding(place.label,
+    `Quelle: Spec · ${collapse(place.text.split('\n')[0])}`, 'ac-fehlt-im-plan',
+    `${place.label} steht in keinem Task unter **ACs:**; kein Task setzt es um.`, 'Skript-Prüfung AC-Abdeckung'));
 }
 
 // Jede ❌-Zeile der bestehenden Anker-Prüfung ist ein Befund an ihrem Task; ⚠-Zeilen prüft feasibility.

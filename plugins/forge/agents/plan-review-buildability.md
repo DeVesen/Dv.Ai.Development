@@ -24,7 +24,7 @@ Quellen und Tests des Plugins liest du nicht; welche Befehle erlaubt sind, steht
 ## Prüfauftrag
 Dateien, Anker und Nummerierung prüfst du nicht; das tun Skripte.
 
-1. **Platzhalter:** „TBD”, „TODO”, „später umsetzen”, „Details ergänzen”, „passende Fehlerbehandlung ergänzen”, „Validierung hinzufügen”, „Randfälle behandeln”, „Tests für das Obige schreiben” ohne Testcode, „wie Task N”, Verweise auf Typen oder Funktionen, die in keinem Task definiert sind und im Repo nicht existieren. Ein Platzhalter statt Code ist `umsetzer-steckt-fest`.
+1. **Platzhalter:** „TBD“, „TODO“, „später umsetzen“, „Details ergänzen“, „passende Fehlerbehandlung ergänzen“, „Validierung hinzufügen“, „Randfälle behandeln“, „Tests für das Obige schreiben“ ohne Testcode, „wie Task N“, Verweise auf Typen oder Funktionen, die in keinem Task definiert sind und im Repo nicht existieren. Ein Platzhalter statt Code ist `umsetzer-steckt-fest`.
 2. **Code-Schritte ohne Code:** Ein Schritt, der Code verlangt, enthält einen vollständigen Code-Block. Fehlt er: `umsetzer-steckt-fest`.
 3. **Befehle und Tool-Aufrufe:** Jeder ist ausführbar und laut Projekt-`CLAUDE.md` im Repo erlaubt. Ein verbotener Weg ist `umsetzer-steckt-fest`. Jeden Tool-Aufruf gleichst du mit dem echten Schema ab, das du per `ToolSearch` lädst: falscher oder fehlender Parametername ist `umsetzer-steckt-fest`. Ältere Pläne sind kein Beleg.
 4. **Gates verdrahtet:** Für jeden vorgeschriebenen Build-, Test- oder Lint-Schritt prüfst du, dass er im Projekt eingerichtet ist: Script in der Build-Datei, Target, installierte Abhängigkeit oder Tool. Ein Gate, das nicht verdrahtet ist, ist `umsetzer-steckt-fest`, auch wenn der Weg erlaubt wäre.

@@ -147,4 +147,69 @@ function contextLoads(entries, requests) {
     .slice(0, TOP_LOADS);
 }
 
-module.exports = { timeOf, minutes, timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads };
+const LONG_RUN_MS = 60000;
+const MAX_LONG_RUNS = 10;
+const CHANGE_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
+const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
+const RUN_WORD = /^(?:build|test|lint|vitest|jest|eslint|tsc|--test)(?::[\w-]+)?$/i;
+const TOOLCHAIN_SCRIPT = /(?:^|[\\/])(?:angular|dotnet)-(?:build|test|lint)(?:\.js)?$/i;
+const MCP_RUN = /^mcp__.+__.*(?:build|test|lint)/i;
+
+function resultsOf(entry) {
+  return isToolResultEntry(entry) ? entry.message.content.filter((part) => part.type === 'tool_result') : [];
+}
+
+// Start jedes Aufrufs nach seiner Kennung.
+function startsOf(entries) {
+  return new Map(entries.flatMap((entry) => toolUses(entry)
+    .map((part) => [part.id, { time: timeOf(entry), label: callLabel(part), entryNo: entry.entryNo }])));
+}
+
+function runOf(start, end) {
+  const ms = start && start.time !== null && end !== null ? end - start.time : 0;
+  return ms >= LONG_RUN_MS ? [{ seconds: Math.round(ms / 1000), label: start.label, entryNo: start.entryNo }] : [];
+}
+
+// Dauer eines Laufs = Zeit vom Aufruf bis zu seinem Ergebnis.
+function longRuns(entries) {
+  const started = startsOf(entries);
+  return entries.flatMap((entry) => resultsOf(entry).flatMap((part) => runOf(started.get(part.tool_use_id), timeOf(entry))))
+    .sort((a, b) => b.seconds - a.seconds).slice(0, MAX_LONG_RUNS);
+}
+
+function isBuildTestLint(command) {
+  return command.split(/[\s;&|]+/).map((word) => word.replace(/^["']|["']$/g, ''))
+    .some((word) => RUN_WORD.test(word) || TOOLCHAIN_SCRIPT.test(word));
+}
+
+// Schlüssel eines Build-, Test- oder Lint-Laufs: der ganze Befehl, bei MCP-Tools Name und Eingabe; sonst null.
+function runKey(part) {
+  if (SHELL_TOOLS.has(part.name)) {
+    const command = String(part.input?.command ?? '').replace(/\s+/g, ' ').trim();
+    return isBuildTestLint(command) ? command : null;
+  }
+  return MCP_RUN.test(part.name) ? `${part.name} ${JSON.stringify(part.input ?? {})}` : null;
+}
+
+// Schritte eines Eintrags in Protokoll-Reihenfolge: der Hinweis auf eine geänderte Datei, dann jeder Aufruf.
+function stepsOf(entry) {
+  const notice = entry.attachment?.type === 'edited_text_file' ? [{ change: true, key: null }] : [];
+  return [...notice, ...toolUses(entry).map((part) => ({ change: CHANGE_TOOLS.has(part.name), key: runKey(part) }))];
+}
+
+// Eine Änderung macht alle Läufe wieder nötig; ein Lauf, der seit der letzten Änderung schon lief, zählt als erneut.
+function countRerun(state, step) {
+  if (step.change) state.clean.clear();
+  if (!step.key) return state;
+  if (state.clean.has(step.key)) state.reruns.set(step.key, (state.reruns.get(step.key) ?? 0) + 1);
+  state.clean.add(step.key);
+  return state;
+}
+
+// Build-, Test- und Lint-Läufe, die genauso erneut liefen, ohne dass dazwischen eine Datei geändert wurde.
+function idleReruns(entries) {
+  const { reruns } = entries.flatMap(stepsOf).reduce(countRerun, { clean: new Set(), reruns: new Map() });
+  return [...reruns.entries()].map(([command, count]) => ({ command, count })).sort((a, b) => b.count - a.count);
+}
+
+module.exports = { timeOf, minutes, timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns };

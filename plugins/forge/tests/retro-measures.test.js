@@ -155,3 +155,56 @@ test('cli_LoadSession_ListsContextLoadsWithTrigger', () => {
   assert.equal(output.status, 0, output.stderr);
   assert.match(output.stdout, /Größte Kontextlasten \(Größe × folgende Anfragen, ab 1k Tokens\):\n- 2k × 3 Anfragen = 6k · Read src\/big\.ts \(Eintrag 3\)\n- 2k × 2 Anfragen = 3k · Skill-Text nach Skill dv-forge:plan-writing \(Eintrag 6\)\n/);
 });
+
+function runSession() {
+  const long = 'a'.repeat(90);
+  return writeSession([
+    human('Los', '10:00'),
+    request('r1', '10:01', [call('t1', 'Bash', { command: 'npm test' })]),
+    result('t1', '10:03', 'ok'),
+    request('r2', '10:04', [call('t2', 'Bash', { command: 'npm test' })]),
+    result('t2', '10:04:30', 'ok'),
+    request('r3', '10:05', [call('t3', 'Edit', { file_path: 'a.ts' })]),
+    result('t3', '10:05', 'ok'),
+    request('r4', '10:06', [call('t4', 'Bash', { command: 'npm test' })]),
+    result('t4', '10:06:10', 'ok'),
+    request('r5', '10:07', [call('t5', 'Bash', { command: 'cat src/x.test.js' })]),
+    result('t5', '10:07', 'x'),
+    request('r6', '10:07:10', [call('t6', 'Bash', { command: 'cat src/x.test.js' })]),
+    result('t6', '10:07:10', 'x'),
+    request('r7', '10:08', [call('t7', 'Bash', { command: `node --test ${long}/one.test.js` })]),
+    result('t7', '10:08', 'ok'),
+    request('r8', '10:09', [call('t8', 'Bash', { command: `node --test ${long}/two.test.js` })]),
+    result('t8', '10:09', 'ok'),
+  ]);
+}
+
+test('longRuns_CallToResultAtLeastSixtySeconds_Listed', () => {
+  const runs = measures.longRuns(readEntries(runSession()));
+
+  assert.deepEqual(runs, [{ seconds: 120, label: 'Bash npm test', entryNo: 2 }]);
+});
+
+test('idleReruns_SameBuildTestLintWithoutChange_CountedOnce', () => {
+  const reruns = measures.idleReruns(readEntries(runSession()));
+
+  assert.deepEqual(reruns, [{ command: 'npm test', count: 1 }]);
+});
+
+test('idleReruns_EditedFileNoticeBetween_NotCounted', () => {
+  const entries = readEntries(writeSession([
+    request('r1', '10:00', [call('t1', 'Bash', { command: 'dotnet build App.sln' })]),
+    hint('edited_text_file', '10:01', { filename: 'a.cs' }),
+    request('r2', '10:02', [call('t2', 'Bash', { command: 'dotnet build App.sln' })]),
+  ]));
+
+  assert.deepEqual(measures.idleReruns(entries), []);
+});
+
+test('cli_RunSession_ListsLongRunsAndIdleReruns', () => {
+  const output = facts(runSession());
+
+  assert.equal(output.status, 0, output.stderr);
+  assert.match(output.stdout, /Lange Tool-Läufe \(ab 60 s\):\n- 120 s · Bash npm test \(Eintrag 2\)\n/);
+  assert.match(output.stdout, /Build-, Test- und Lint-Läufe ohne Änderung dazwischen:\n- 1× erneut: npm test\n/);
+});

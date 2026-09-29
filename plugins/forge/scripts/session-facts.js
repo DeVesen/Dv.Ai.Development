@@ -5,10 +5,10 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const mcpUsage = require('./mcp-usage.js');
-const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
+const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents, shorten } = require('./lib/transcript');
 const { rangeOf } = require('./lib/retro-range');
 const { requestsOf } = require('./lib/retro-requests');
-const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads } = require('./lib/retro-measures');
+const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns } = require('./lib/retro-measures');
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
   + ' [--since-command <name>] [--before-retro] [--lenient] [--skeleton <bericht.md>]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
@@ -132,6 +132,8 @@ function analyze(entries) {
   facts.baseline = firstRequest(entries, requests);
   facts.rebuilds = cacheRebuilds(requests);
   facts.loads = contextLoads(entries, requests);
+  facts.longRuns = longRuns(entries);
+  facts.idleReruns = idleReruns(entries);
   return facts;
 }
 
@@ -251,6 +253,12 @@ function measureLines(facts) {
   return [
     'Größte Kontextlasten (Größe × folgende Anfragen, ab 1k Tokens):',
     ...listOrNone(facts.loads.map((load) => `- ${thousands(load.tokens)} × ${load.following} Anfragen = ${thousands(load.load)} · ${load.label} (Eintrag ${load.entryNo})`)),
+    '',
+    'Lange Tool-Läufe (ab 60 s):',
+    ...listOrNone(facts.longRuns.map((run) => `- ${run.seconds} s · ${run.label} (Eintrag ${run.entryNo})`)),
+    '',
+    'Build-, Test- und Lint-Läufe ohne Änderung dazwischen:',
+    ...listOrNone(facts.idleReruns.map((rerun) => `- ${rerun.count}× erneut: ${shorten(rerun.command, 100)}`)),
     '',
   ];
 }

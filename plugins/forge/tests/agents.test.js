@@ -60,7 +60,7 @@ test('spec-rework_Frontmatter_ReadEditOpus', () => {
 
 test('spec-rework_Body_DefinesDecisionEntryFormat', () => {
   const { body } = readAgent('spec-rework');
-  assert.ok(body.includes('- **R<r> · <Stelle>** — geändert | nicht geändert | frage an den menschen — <Begründung oder Frage>'));
+  assert.ok(body.includes('- **R<n> · <Stelle>** — geändert | nicht geändert | frage an den menschen — <Begründung oder Frage>'));
   assert.ok(body.includes('nicht geändert — Stelle existiert nicht'));
   assert.match(body, /keinen Code/);
   assert.ok(body.includes('W-Eintrag ist bindend'));
@@ -138,7 +138,7 @@ test('plan-rework_Frontmatter_ReadGrepGlobEditOpus', () => {
 
 test('plan-rework_Body_DecisionEntryRenumberingAndJsonResult', () => {
   const { body } = readAgent('plan-rework');
-  assert.ok(body.includes('- **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>'));
+  assert.ok(body.includes('- **R<n> · <Stelle>** — geändert | nicht geändert — <Begründung>'));
   assert.ok(body.includes('nicht geändert — Stelle existiert nicht'));
   assert.ok(body.includes('`Task 3 → Task 3, Task 4`'));
   assert.ok(body.includes('"results"'));
@@ -161,7 +161,7 @@ test('plan-review-scout_Body_FormatProposalsPreferredAndNoEdits', () => {
   assert.ok(body.includes('**Bevorzugt: <Nr>** — <Begründung>'));
   assert.match(body, /1 bis 3/);
   assert.match(body, /änderst keine Datei/);
-  assert.match(body, /🟢-Gruppen/);
+  assert.ok(body.includes('1. Du bearbeitest jede Gruppe aus `Findings:`, sonst keine.'));
   assert.match(body, /Spec so ändern/);
   assert.ok(body.includes('`Repo:`'));
     assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
@@ -188,10 +188,7 @@ test('reworkAndScouts_Body_ReadFindingsFromAggregateFile', () => {
     assert.ok(body.includes('"results"'), name);
   }
   for (const name of ['spec-review-scout', 'plan-review-scout']) {
-    const { body } = readAgent(name);
-    assert.ok(body.includes('`Findings:` Datei mit den Gruppen, die das Skript für dich ausgewählt hat'), name);
-    assert.ok(body.includes('1. Du bearbeitest jede Gruppe der Datei `Findings:`'), name);
-    assert.ok(body.includes('nach Runde 1 oder nach der Nachprüfung'), name);
+    assert.ok(readAgent(name).body.includes('- `Findings:` Datei mit den Gruppen, zu denen du Vorschläge machst'), name);
   }
   assert.ok(readAgent('implementation-review-scout').body.includes('`Findings:` Datei der letzten Aggregation'));
 });
@@ -413,18 +410,21 @@ for (const [name, tools, inputs, categories] of [
 test('reworkAgents_Body_OnlyRedStellenThreeOutcomesAndBundledQuestions', () => {
   for (const [name, question] of [['spec-rework', 'human-question'], ['plan-rework', 'spec-question']]) {
     const { body } = readAgent(name);
-    for (const part of ['- `Nacharbeit:` Datei mit `## 🔴-Stellen`', 'Hinweise und 🟢-Findings bearbeitest du nicht', '"questions"', '"locations"', '"cases"',
-      '"recommendation"', '"reason"', `\`${question}\``, 'Jede Stelle mit Frage steht in genau einer gebündelten Frage', 'je Regel']) {
+    for (const part of ['- `Findings:` Datei mit den 🔴-Stellen nach `=== REWORK ===`', 'Hinweise und 🟢-Findings bekommst du nicht', '"reason"', `\`${question}\``]) {
       assert.ok(body.includes(part), `${name}: ${part}`);
     }
     assert.ok(!body.includes('Du bearbeitest jede 🔴- und jede 🟡-Gruppe'), `${name}: alte Regel`);
+  }
+  const { body } = readAgent('spec-rework');
+  for (const part of ['"questions"', '"places"', '"cases"', '"recommendation"', 'Jede Stelle mit Frage steht in genau einer gebündelten Frage', 'je Regel']) {
+    assert.ok(body.includes(part), `spec-rework: ${part}`);
   }
 });
 
 test('spec-rework_Body_AnswerModeWritesWEntriesAfterREntries', () => {
   const { body } = readAgent('spec-rework');
-  for (const part of ['## Antwort-Modus', '- `Fragen:`', '- `Antworten:`', '"answers"', '`answered`', '`partial`', '`open`', 'nach allen R-Einträgen',
-    '- **W · <Stelle>[, <Stelle>…]** · Aussage — <Antwort>', '„später“', '## Offene Fragen aus früheren Läufen']) {
+  for (const part of ['## Antworten eintragen', '- `Antworten des Menschen:`', '"results"', '"status": "answered"', '"status": "open"', 'ans Ende des Abschnitts Entscheidungen',
+    '- **W · <Stelle>** · Aussage — Antwort auf „R<n> · <Stelle>“: <Antwort>', '„später“', '## Offene Fragen']) {
     assert.ok(body.includes(part), part);
   }
 });
@@ -496,4 +496,25 @@ test('specAndPlanReviewers_Body_LocationNamesFirstPlaceAndFieldsAreNeverEmpty', 
     assert.ok(body.includes(location), `${name}: location`);
     assert.ok(body.includes('- Alle Felder sind Strings und Pflicht, keines leer.'), `${name}: keines leer`);
   }
+});
+
+test('spec-rework_Body_BundlesQuestionsAndEntersAnswers', () => {
+  const { body } = readAgent('spec-rework');
+  for (const part of ['- `Eintrag:`', 'Hinweise und 🟢-Findings bekommst du nicht.', '## Fragen bündeln', 'Jede Stelle mit Frage steht in genau einer gebündelten Frage.',
+    'die Unterfälle und eine empfohlene Antwort', '## Antworten eintragen', '„später“ gilt je Frage', 'Antwort auf „R<n> · <Stelle>“', '"questions"', '"status": "answered"']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+});
+
+test('plan-rework_Body_OnlyRedPlacesAndSpecQuestionWithReason', () => {
+  const { body } = readAgent('plan-rework');
+  assert.ok(body.includes('- `Eintrag:`'));
+  assert.ok(body.includes('Hinweise und 🟢-Findings bekommst du nicht.'));
+  assert.ok(body.includes('`reason` ist Pflicht bei `unchanged` und `spec-question`'));
+});
+
+test('plan-rework_Body_SpecQuestionWrittenAsQuestionToTheHuman', () => {
+  const { body } = readAgent('plan-rework');
+  assert.ok(body.includes('Bei einer spec-rückfrage lautet er wie jede Frage an den Menschen `- **R<n> · <Stelle>** — frage an den menschen — <Rückfrage>`.'));
+  assert.ok(body.includes('Bei `spec-rückfrage` schreibst du zusätzlich den R-Eintrag aus Regel 7.'));
 });

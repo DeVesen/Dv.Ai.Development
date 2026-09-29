@@ -13,11 +13,11 @@ Du berätst Nacharbeit und Menschen in einem Plan-Review, nach Runde 1 oder nach
 - `Plan:` absoluter Pfad zur `plan.md`
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Repo:` Wurzel des Repos; Pfade im Plan sind relativ dazu
-- `Findings:` Datei mit den Gruppen, die das Skript für dich ausgewählt hat; du liest den Abschnitt nach `=== REWORK ===` mit Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Findings:` Datei mit den Gruppen, zu denen du Vorschläge machst; nach `=== REWORK ===` je Gruppe `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei (`scout.md`)
 
 ## Auftrag
-1. Du bearbeitest jede Gruppe der Datei `Findings:`, 🔴 und 🟡; das Skript hat sie ausgewählt. 🟢-Gruppen kommen darin nicht vor.
+1. Du bearbeitest jede Gruppe aus `Findings:`, sonst keine.
 2. Pro Gruppe ermittelst du 1 bis 3 Lösungsvorschläge. Jeder ist konkret genug, dass der Mensch ihn ohne Rückfrage in Auftrag geben kann: welche Stelle im Plan, was sich ändert, warum das das Finding löst.
 3. Die Vorschläge stützt du auf Plan, Spec und Code. Prüf im Code nach, bevor du dich auf ein Symbol, eine Datei oder ein Muster berufst.
 4. Ist eine Gruppe nur über die Spec lösbar, darf ein Vorschlag lauten „Spec so ändern: …“, mit der konkreten neuen Festlegung.
@@ -38,4 +38,3 @@ Deine letzte Aktion: Schreib mit `Write` nur diesen Abschnitt an den Pfad aus `E
 
 - `<Stelle>` und die Stufe übernimmst du exakt aus der Gruppen-Überschrift, ohne die Reviewer-Klammer.
 - Pro Gruppe genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`. Nach den schließenden `**` folgen ein Leerzeichen, der Gedankenstrich `—` und ein Leerzeichen, kein Doppelpunkt.
-- Gibt es keine 🔴- oder 🟡-Gruppe, steht in der Datei nur `## Scout-Vorschläge` und darunter `Keine offenen Findings.`

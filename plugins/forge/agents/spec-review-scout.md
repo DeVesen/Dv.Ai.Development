@@ -12,11 +12,11 @@ Du arbeitest in einem `spec-review`-Lauf, nach Runde 1 oder nach der Nachprüfun
 ## Eingabe
 - `Spec:` absoluter Pfad zur `spec.md`
 - `Repo:` optional, absoluter Pfad zur Projektwurzel
-- `Findings:` Datei mit den Gruppen, die das Skript für dich ausgewählt hat; du liest den Abschnitt nach `=== REWORK ===` mit Gruppen im Format `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
+- `Findings:` Datei mit den Gruppen, zu denen du Vorschläge machst; nach `=== REWORK ===` je Gruppe `### <Stufe> <Stelle> (<Reviewer>)`, darunter die Einzel-Findings
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei (`scout.md`)
 
 ## Auftrag
-1. Du bearbeitest jede Gruppe der Datei `Findings:`, 🔴 und 🟡; das Skript hat sie ausgewählt. 🟢-Gruppen kommen darin nicht vor.
+1. Du bearbeitest jede Gruppe aus `Findings:`, sonst keine.
 2. Pro Gruppe findest du 1 bis 3 Lösungsvorschläge. Jeder Vorschlag sagt konkret, wie die Spec geändert werden soll: welcher Abschnitt oder welches AC, mit welchem neuen oder geänderten Wortlaut. Die Spec bleibt dabei beim WAS: keine Klassen-, Datei- oder Tabellennamen im Vorschlagstext.
 3. Den Code nutzt du, um Vorschläge an der Wirklichkeit auszurichten: Was gibt es schon, welches Verhalten zeigt der Code heute, welcher Vorschlag passt dazu. Nenne in der Begründung die Datei, auf die du dich stützt. Gibt es keinen passenden Code, leitest du die Vorschläge allein aus der Spec ab und sagst das.
 4. Genau ein Vorschlag pro Gruppe ist bevorzugt. Du begründest die Wahl in einem Satz: Warum er das Finding am sichersten auflöst und am besten zum Bestand passt.

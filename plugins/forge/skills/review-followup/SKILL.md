@@ -21,4 +21,4 @@ Auswahl: `b` = bevorzugter Vorschlag je Gruppe, `<n>` = Vorschlag n überall, `<
 5. **Bericht** nach `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/report-format.md` mit Titel `Review-Followup (<original>)`, Artefakt das erste Argument, Status, Abschnitten und nächstem Schritt laut `flow.md`. Du committest nichts.
 6. **Ende**, auch nach einem Fehler: `node "${CLAUDE_PLUGIN_ROOT}/scripts/workspace.js" remove <rolle> <slug>` mit der Rolle des Original-Reviews (`spec-review`, `plan-review` oder `review`), dann `node "${CLAUDE_PLUGIN_ROOT}/scripts/guard-orchestrator.js" release ${CLAUDE_SESSION_ID}`.
 
-Alle Agents laufen mit `run_in_background: false`; die Reviewer der Nach-Review-Runde startest du in einer Nachricht.
+Alle Agents laufen mit `run_in_background: false`.

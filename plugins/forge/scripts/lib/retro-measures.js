@@ -3,6 +3,7 @@
 // Messwerte über die Einträge der Hauptsession: Zeit, Harness-Hinweise, Kontext und Tool-Läufe.
 
 const { humanEvents, textOf, isToolResultEntry } = require('./transcript');
+const { contextOf } = require('./retro-requests');
 
 const MINUTE_MS = 60000;
 const NOTICE_TAG = /^\s*<([a-z-]+)>/;
@@ -65,4 +66,43 @@ function harnessHints(entries) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 }
 
-module.exports = { timeOf, minutes, timeProfile, harnessHints };
+const REBUILD_MIN_CREATED = 20000;
+const CHARS_PER_TOKEN = 4;
+const TOP_ATTACHMENTS = 3;
+
+function requestContext(requests) {
+  if (requests.length === 0) return null;
+  const sizes = requests.map((request) => contextOf(request.usage));
+  return { average: sizes.reduce((sum, size) => sum + size, 0) / sizes.length, largest: Math.max(...sizes) };
+}
+
+function attachmentOf(entry) {
+  const body = entry.attachment ?? entry.message?.content ?? '';
+  return { name: entry.attachment?.type ?? 'Skill-Text', tokens: Math.round(JSON.stringify(body).length / CHARS_PER_TOKEN) };
+}
+
+// Kontext der ersten Anfrage und die größten Anhänge davor: Harness-Anhänge und eingeblendete Skill-Texte.
+function firstRequest(entries, requests) {
+  if (requests.length === 0) return null;
+  const [first] = requests;
+  const attachments = entries.filter((entry) => entry.entryNo < first.entryNo && (entry.type === 'attachment' || entry.isMeta))
+    .map(attachmentOf).sort((a, b) => b.tokens - a.tokens).slice(0, TOP_ATTACHMENTS);
+  return { context: contextOf(first.usage), attachments };
+}
+
+function pauseBetween(previous, request) {
+  return request.time && previous.time ? minutes(Date.parse(request.time) - Date.parse(previous.time)) : 0;
+}
+
+// Neuaufbau: mindestens 20k Tokens neu in den Cache geschrieben und weniger als die Hälfte des vorigen Kontexts aus dem Cache gelesen.
+function cacheRebuilds(requests) {
+  return requests.slice(1).flatMap((request, index) => {
+    const previous = requests[index];
+    const created = request.usage.cache_creation_input_tokens ?? 0;
+    const read = request.usage.cache_read_input_tokens ?? 0;
+    if (created < REBUILD_MIN_CREATED || read >= contextOf(previous.usage) / 2) return [];
+    return [{ time: request.time, pause: pauseBetween(previous, request), created }];
+  });
+}
+
+module.exports = { timeOf, minutes, timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds };

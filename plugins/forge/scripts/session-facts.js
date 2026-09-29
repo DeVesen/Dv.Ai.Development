@@ -7,7 +7,8 @@ const path = require('node:path');
 const mcpUsage = require('./mcp-usage.js');
 const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
 const { rangeOf } = require('./lib/retro-range');
-const { timeProfile, harnessHints } = require('./lib/retro-measures');
+const { requestsOf } = require('./lib/retro-requests');
+const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds } = require('./lib/retro-measures');
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
   + ' [--since-command <name>] [--before-retro] [--lenient] [--skeleton <bericht.md>]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
@@ -126,6 +127,10 @@ function analyze(entries) {
   facts.turns = facts.humans.filter((event) => event.kind === 'Eingabe').length;
   facts.time = timeProfile(entries);
   facts.hints = harnessHints(entries);
+  const requests = requestsOf(entries);
+  facts.context = requestContext(requests);
+  facts.baseline = firstRequest(entries, requests);
+  facts.rebuilds = cacheRebuilds(requests);
   return facts;
 }
 
@@ -197,6 +202,21 @@ function timeLine(time) {
   return `- Zeit: aktiv ${time.active} min · Warten auf den Menschen ${time.waiting} min · längste Strecke ohne Text an den Menschen ${time.silence} min${from}`;
 }
 
+function contextLine(context) {
+  return `- Kontext je Anfrage: ${context ? `Ø ${thousands(context.average)}, größte ${thousands(context.largest)}` : 'keine Anfrage'}`;
+}
+
+function baselineLine(baseline) {
+  if (!baseline) return '- Grundlast erste Anfrage: keine Anfrage';
+  const attachments = baseline.attachments.map((attachment) => `${attachment.name} ${thousands(attachment.tokens)}`).join(', ') || 'keine';
+  return `- Grundlast erste Anfrage: ${thousands(baseline.context)} Kontext · größte Anhänge davor: ${attachments}`;
+}
+
+function rebuildLine(rebuilds) {
+  const listed = rebuilds.map((rebuild) => `${clock(rebuild.time)} nach ${rebuild.pause} min Pause (${thousands(rebuild.created)} neu)`);
+  return `- Cache-Neuaufbauten: ${listed.join(', ') || 'keiner'}`;
+}
+
 function factLines(facts, agents) {
   const tools = [...facts.tools.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`).join(', ') || '-';
   const skills = [...facts.skills.entries()].map(([name, count]) => `${name} ${count}`).join(', ') || '-';
@@ -211,6 +231,9 @@ function factLines(facts, agents) {
     `- Tool-Fehler: ${errorLinesOf(facts).length}, davon blockiert oder verweigert: ${facts.denials} · direkt wiederholte gleiche Aufrufe: ${facts.repeats}`,
     timeLine(facts.time),
     `- Harness-Hinweise: ${facts.hints.map(([kind, count]) => `${kind} ${count}`).join(', ') || 'keine'}`,
+    contextLine(facts.context),
+    baselineLine(facts.baseline),
+    rebuildLine(facts.rebuilds),
   ];
 }
 

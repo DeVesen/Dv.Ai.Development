@@ -38,7 +38,7 @@ Keine.
 `dv-forge:spec-review-verifier` — `Spec: <S>`
 
 ## Scout
-`dv-forge:spec-review-scout` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`
+`dv-forge:spec-review-scout` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`; bei `profile=ja` zusätzlich `Profil-Index: <PI>`
 
 ## Bericht
 Titel `Spec-Review`, Artefakt `<S>`.

@@ -11,6 +11,7 @@ const SCOUT = [
   '### 🔴 AC-04', '1. D festlegen.', '2. E streichen.', '**Bevorzugt: 1** — passt zum Bestand.', '',
   '### 🟡 AC-07', '1. H schärfen.', '**Bevorzugt: 1** — eindeutig.', '',
 ].join('\n');
+const EVIDENCE_SCOUT = '## Scout-Vorschläge\n\n### 🔴 AC-04\n1. Vorschlag A\n   Beleg: src/export.js\n2. Vorschlag B\n   Beleg: keiner\n**Bevorzugt: 1** — sicher\n';
 
 test('rate_TwoHintsNoRedNoQuestion_ScoutForHintsWithoutRework', () => {
   // Arrange
@@ -144,6 +145,53 @@ test('reworkInput_RedAndYellowPlace_OnlyRedWithScoutProposals', () => {
   assert.equal(fs.readFileSync(path.join(env.workspace, 'vorher.md'), 'utf8'), SPEC);
 });
 
+test('reworkInput_ProposalsWithEvidenceLines_EvidenceReachesRework', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  rate(env, 'consistency');
+  fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'), EVIDENCE_SCOUT);
+
+  // Act
+  flow('rework-input', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
+
+  // Assert
+  const input = fs.readFileSync(path.join(env.workspace, 'runde-1', 'nacharbeit-eingabe.md'), 'utf8');
+  assert.ok(input.includes('Scout-Vorschläge:\n1. Vorschlag A\n   Beleg: src/export.js\n2. Vorschlag B\n   Beleg: keiner\n**Bevorzugt: 1**'));
+});
+
+test('reworkInput_TwoPreferredLines_NoPreferredLine', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  rate(env, 'consistency');
+  fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'), '## Scout-Vorschläge\n\n### 🔴 AC-04\n1. a\n2. b\n**Bevorzugt: 1** — x\n**Bevorzugt: 2** — y\n');
+
+  // Act
+  flow('rework-input', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
+
+  // Assert
+  const input = fs.readFileSync(path.join(env.workspace, 'runde-1', 'nacharbeit-eingabe.md'), 'utf8');
+  assert.match(input, /Scout-Vorschläge:\n1\. a\n2\. b\n/);
+  assert.doesNotMatch(input, /\*\*Bevorzugt:/);
+});
+
+test('reworkInput_PreferredNumberBeyondProposals_NoPreferredLine', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  rate(env, 'consistency');
+  fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'), '## Scout-Vorschläge\n\n### 🔴 AC-04\n1. a\n2. b\n**Bevorzugt: 3** — x\n');
+
+  // Act
+  flow('rework-input', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
+
+  // Assert
+  const input = fs.readFileSync(path.join(env.workspace, 'runde-1', 'nacharbeit-eingabe.md'), 'utf8');
+  assert.match(input, /Scout-Vorschläge:\n1\. a\n2\. b\n/);
+  assert.doesNotMatch(input, /\*\*Bevorzugt:/);
+});
+
 test('reworkInput_OpenQuestionWithoutRed_ListsQuestionOnly', () => {
   // Arrange
   const env = setup(SPEC.replace('- **W · Deckel**', '- **R2 · AC-04** — frage an den menschen — Gilt F?\n- **W · Deckel**'));
@@ -197,6 +245,20 @@ test('scoutCheck_OneToThreeProposalsOnePreferred_Ok', () => {
   assert.equal(result.stdout, 'SCOUT ok\n');
 });
 
+test('scoutCheck_ProposalsWithEvidenceLines_Ok', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  rate(env, 'consistency');
+  fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'), EVIDENCE_SCOUT);
+
+  // Act
+  const result = flow('scout-check', '--dir', path.join(env.workspace, 'runde-1'));
+
+  // Assert
+  assert.equal(result.stdout, 'SCOUT ok\n');
+});
+
 test('scoutCheck_FourProposals_Invalid', () => {
   // Arrange
   const env = setup();
@@ -209,6 +271,48 @@ test('scoutCheck_FourProposals_Invalid', () => {
 
   // Assert
   assert.equal(result.stdout, 'SCOUT ungültig: 🔴 AC-04: 4 Vorschläge statt 1 bis 3\n');
+});
+
+test('scoutCheck_TwoPreferredLines_Invalid', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  rate(env, 'consistency');
+  fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'), '## Scout-Vorschläge\n\n### 🔴 AC-04\n1. a\n2. b\n**Bevorzugt: 1** — x\n**Bevorzugt: 2** — y\n');
+
+  // Act
+  const result = flow('scout-check', '--dir', path.join(env.workspace, 'runde-1'));
+
+  // Assert
+  assert.equal(result.stdout, 'SCOUT ungültig: 🔴 AC-04: nicht genau ein bevorzugter Vorschlag\n');
+});
+
+test('scoutCheck_NoPreferredLine_Invalid', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  rate(env, 'consistency');
+  fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'), '## Scout-Vorschläge\n\n### 🔴 AC-04\n1. a\n2. b\n');
+
+  // Act
+  const result = flow('scout-check', '--dir', path.join(env.workspace, 'runde-1'));
+
+  // Assert
+  assert.equal(result.stdout, 'SCOUT ungültig: 🔴 AC-04: nicht genau ein bevorzugter Vorschlag\n');
+});
+
+test('scoutCheck_PreferredNumberBeyondProposals_Invalid', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  rate(env, 'consistency');
+  fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'), '## Scout-Vorschläge\n\n### 🔴 AC-04\n1. a\n2. b\n**Bevorzugt: 3** — x\n');
+
+  // Act
+  const result = flow('scout-check', '--dir', path.join(env.workspace, 'runde-1'));
+
+  // Assert
+  assert.equal(result.stdout, 'SCOUT ungültig: 🔴 AC-04: kein gültiger bevorzugter Vorschlag\n');
 });
 
 test('scoutCheck_HintOnlyScope_RedGroupNotExpected', () => {

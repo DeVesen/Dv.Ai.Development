@@ -52,6 +52,14 @@ test('skill_Body_ProfilesReviewerGetsIndexAndExcerpt', () => {
   assert.ok(body.includes('`Profil-Auszug: <PA>`'));
 });
 
+test('skill_Body_ScoutGetsRepoWhenAnchoredAndProfileIndexWithProfiles', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('`dv-forge:spec-review-scout` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`; bei `profile=ja` zusätzlich `Profil-Index: <PI>`'));
+});
+
 test('skill_Body_NextStepPerStatus', () => {
   // Act
   const { body } = readMarkdown(SKILL);

@@ -9,10 +9,16 @@ function groupId(group) {
   return `${group.severity} ${group.location}`;
 }
 
+// Bevorzugt ist der Vorschlag, den genau eine Bevorzugt-Zeile mit der Nummer eines Vorschlags nennt; sonst gilt keiner als bevorzugt.
+function preferredProblem(group) {
+  if (group.preferredCount !== 1) return 'nicht genau ein bevorzugter Vorschlag';
+  return Number.isInteger(group.preferred) && group.preferred >= 1 && group.preferred <= group.proposals.length ? null : 'kein gültiger bevorzugter Vorschlag';
+}
+
 function groupProblem(group) {
   if (!group) return 'Gruppe fehlt';
   if (group.proposals.length < 1 || group.proposals.length > 3) return `${group.proposals.length} Vorschläge statt 1 bis 3`;
-  return Number.isInteger(group.preferred) && group.preferred >= 1 && group.preferred <= group.proposals.length ? null : 'kein gültiger bevorzugter Vorschlag';
+  return preferredProblem(group);
 }
 
 // Jede Gruppe der Scout-Eingabe hat ein bis drei Vorschläge, genau einer bevorzugt; andere Gruppen gibt es nicht.
@@ -27,4 +33,4 @@ function checkScout(dir) {
   return extra.length > 0 ? `SCOUT ungültig: Gruppe nicht in der Eingabe: ${extra.join(', ')}` : 'SCOUT ok';
 }
 
-module.exports = { checkScout };
+module.exports = { checkScout, preferredProblem };

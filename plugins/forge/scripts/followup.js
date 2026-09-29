@@ -87,6 +87,12 @@ function appendToProposal(group, line) {
   group.proposals[last] = `${group.proposals[last]}\n${line}`;
 }
 
+// `preferredCount` zählt die Bevorzugt-Zeilen außerhalb von Code-Fences; `preferred` ist die Nummer der letzten.
+function markPreferred(group, number) {
+  group.preferred = number;
+  group.preferredCount += 1;
+}
+
 function parseScout(lines) {
   const groups = [];
   let current = null;
@@ -94,7 +100,7 @@ function parseScout(lines) {
   for (const line of scoutSection(lines)) {
     const heading = inFence ? null : GROUP_HEADING.exec(line);
     if (heading) {
-      current = { severity: heading[1], location: heading[2], proposals: [], preferred: null };
+      current = { severity: heading[1], location: heading[2], proposals: [], preferred: null, preferredCount: 0 };
       groups.push(current);
       continue;
     }
@@ -103,7 +109,7 @@ function parseScout(lines) {
     const proposal = inFence || opensOrClosesFence ? null : PROPOSAL.exec(line);
     const preferred = inFence ? null : PREFERRED.exec(line);
     if (proposal) current.proposals.push(proposal[1]);
-    else if (preferred) current.preferred = Number(preferred[1]);
+    else if (preferred) markPreferred(current, Number(preferred[1]));
     else if (current.proposals.length > 0 && current.preferred === null) appendToProposal(current, line);
     if (opensOrClosesFence) inFence = !inFence;
   }

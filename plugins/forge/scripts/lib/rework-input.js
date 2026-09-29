@@ -5,6 +5,7 @@ const path = require('node:path');
 const { nextEntryNumber, documentQuestions } = require('./questions');
 const { renderGroup, REWORK_MARK } = require('./groups');
 const { parseScout } = require('../followup');
+const { preferredProblem } = require('./scout-check');
 const { ROUND_ONE, readText, readLines, readJson, writeText } = require('./flow-files');
 
 // Stand vor der Nacharbeit sichern und die Nummer ihrer R-Einträge vergeben.
@@ -19,10 +20,15 @@ function proposalsByGroup(file) {
   return new Map(parseScout(readLines(file)).map((group) => [`${group.severity} ${group.location}`, group]));
 }
 
+// Ohne eindeutig gekennzeichneten Vorschlag gilt keiner als bevorzugt: dann steht keine Bevorzugt-Zeile in der Eingabe.
+function preferredLines(scouted) {
+  return preferredProblem(scouted) === null ? [`**Bevorzugt: ${scouted.preferred}**`] : [];
+}
+
 function proposalLines(group, proposals) {
   const scouted = proposals.get(`🔴 ${group.label}`);
   if (!scouted) return ['Scout-Vorschläge: keine'];
-  return ['Scout-Vorschläge:', ...scouted.proposals.map((text, index) => `${index + 1}. ${text}`), `**Bevorzugt: ${scouted.preferred}**`];
+  return ['Scout-Vorschläge:', ...scouted.proposals.map((text, index) => `${index + 1}. ${text}`), ...preferredLines(scouted)];
 }
 
 function questionLines(questions) {

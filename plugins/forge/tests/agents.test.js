@@ -87,6 +87,21 @@ test('spec-review-scout_Body_DefinesProposalFormat', () => {
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 
+test('spec-review-scout_Body_EvidenceLinePerProposalAndSpecOnlyWhenFree', () => {
+  const { body } = readAgent('spec-review-scout');
+  for (const part of [
+    '- `Profil-Index:` optional, nur mit `Repo:`',
+    'Beantwortet der Code ein Finding, nennt der Vorschlag die Code-Datei als Beleg; beantwortet es ein Glossar-Eintrag, nennt er diesen Eintrag als Beleg.',
+    'Ohne `Repo:` stützt du dich nur auf die Spec, und kein Beleg nennt etwas außerhalb der Spec.',
+    '`Beleg: <Datei> · <Begriff>`',
+    '`Beleg: Spec · <Stelle>`',
+    '`Beleg: keiner`',
+    '   Beleg: <Beleg>',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+});
+
 const PLAN_REVIEWERS = {
   coverage: 'Read, Write',
   feasibility: 'Read, Grep, Glob, Write',

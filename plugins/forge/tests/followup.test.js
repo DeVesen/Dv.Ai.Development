@@ -121,6 +121,18 @@ test('loadGroups_SavedFiles_JoinsProposalsPreferredReviewersAndFindings', () => 
   assert.deepEqual(groups[1].reviewers, ['coverage']);
 });
 
+test('parseScout_TwoPreferredLines_CountsBoth', () => {
+  const lines = ['## Scout-Vorschläge', '', '### 🔴 AC-04', '1. a', '2. b', '**Bevorzugt: 1** — x', '**Bevorzugt: 2** — y'];
+  const [group] = followup.parseScout(lines);
+  assert.equal(group.preferredCount, 2);
+});
+
+test('parseScout_PreferredLineInsideCodeFence_NotCounted', () => {
+  const lines = ['## Scout-Vorschläge', '', '### 🔴 AC-04', '1. a', '```', '**Bevorzugt: 2** — nur Beispiel', '```', '**Bevorzugt: 1** — echt'];
+  const [group] = followup.parseScout(lines);
+  assert.equal(group.preferredCount, 1);
+});
+
 test('loadGroups_LocationWithParentheses_ReviewersFromLastParenthesis', () => {
   const repo = makeRepo();
   const aggregate = '=== REWORK ===\n### 🟡 `src/a.ts` (Zeile 3) (risks)\n- [risks · yellow] Zitat: „x“ · Konsequenz: k · Begründung: b\n';

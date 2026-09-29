@@ -159,3 +159,20 @@ test('roundOne_PlanAdvisoryReviewersWithRedCategories_AtMostYellow', () => {
   assert.equal(out, 'RUNDE1 rot=0 gelb=2 gruen=0 fragen=0 ausgefallen=-\nNEXT scout=ja nacharbeit=nein');
   assert.deepEqual(ws.readJson('runde-1/runde.json').groups.map((group) => group.items[0].capped), [['beratend'], ['beratend']]);
 });
+
+test('round1_EarlierSpecQuestionAtAc_FindingKeptWithCategoryAndColour', () => {
+  const spec = '# S\n\n## Akzeptanzkriterien\n- **AC-01** Gegeben A, dann B.\n- **AC-04** Gegeben C, dann D.\n';
+  const plan = '# P — Umsetzungsplan\n\n**Basis:** abc\n\n### Task 1: Eins\n\n**ACs:** AC-01, AC-04\n\nA.\n\n## Entscheidungen\n- Keine Fragen an den Menschen.\n';
+  const earlierQuestion = plan.replace('- Keine Fragen an den Menschen.', '- **R1 · AC-04** — spec-rückfrage — Die Spec lässt den leeren Fall offen.');
+  const stateAfterRoundOne = (text) => {
+    const ws = flowWorkspace(text, 'plan.md');
+    ws.context(spec);
+    ws.review('coverage', [finding('AC-04', 'ac-fehlt-im-plan', { quote: 'A.' })]);
+    ws.run('round1', 'plan-review', ws.doc, ws.workspace, 'coverage');
+    const { groups, dropped } = ws.readJson('runde-1/runde.json');
+    return { groups: groups.map((group) => [group.key, group.color, group.items.map((item) => item.category)]), dropped };
+  };
+  const withEarlier = stateAfterRoundOne(earlierQuestion);
+  assert.deepEqual(withEarlier, stateAfterRoundOne(plan));
+  assert.deepEqual(withEarlier, { groups: [['AC-04', 'red', ['ac-fehlt-im-plan']]], dropped: [] });
+});

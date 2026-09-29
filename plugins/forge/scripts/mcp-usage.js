@@ -7,6 +7,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { readEntries } = require('./lib/transcript');
 
 const MCP_TOOL = /^mcp__(.+?)__(.+)$/;
 const NATIVE_TOOLS = new Set(['Read', 'Grep', 'Glob', 'Bash', 'PowerShell', 'Edit', 'Write', 'MultiEdit']);
@@ -43,16 +44,6 @@ function findTranscript(sessionId, projectsDir = path.join(configDir(), 'project
   const hit = dirs.map((dir) => path.join(projectsDir, dir, `${sessionId}.jsonl`)).find((file) => fs.existsSync(file));
   if (!hit) throw new UsageError(`Transkript zur Session ${sessionId} nicht gefunden unter ${projectsDir}\n`);
   return hit;
-}
-
-function readJsonl(file) {
-  return fs.readFileSync(file, 'utf8').split(/\r?\n/).filter((line) => line.trim() !== '').flatMap((line) => {
-    try {
-      return [JSON.parse(line)];
-    } catch {
-      return [];
-    }
-  });
 }
 
 function readJson(file) {
@@ -134,7 +125,7 @@ function configuredServers(cwd) {
 
 // entries/keepSubagent schränken auf einen Ausschnitt der Session ein; ohne sie zählt die ganze Session.
 function loadSession(transcript, { entries, keepSubagent = () => true } = {}) {
-  const all = readJsonl(transcript);
+  const all = readEntries(transcript);
   const main = entries ?? all;
   const typeByAgent = agentTypesFromMain(all);
   const inlineLabel = (entry) => (entry.isSidechain && entry.agentId
@@ -142,7 +133,7 @@ function loadSession(transcript, { entries, keepSubagent = () => true } = {}) {
   const calls = collectCalls(main, inlineLabel);
   let subagentCount = 0;
   for (const file of subagentFiles(transcript)) {
-    const agentEntries = readJsonl(file);
+    const agentEntries = readEntries(file);
     if (!keepSubagent(agentEntries)) continue;
     subagentCount += 1;
     const label = agentLabel(agentIdOf(file), file, typeByAgent);

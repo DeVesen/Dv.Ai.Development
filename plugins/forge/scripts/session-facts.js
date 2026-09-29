@@ -5,19 +5,16 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const mcpUsage = require('./mcp-usage.js');
+const { RetroError: FactsError, SLASH_COMMAND, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
 
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl> | --session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
   + ' [--since-command <name> [--occurrence <n>]] [--skeleton <bericht.md>]\n';
-const NOTICE = /^\s*<(?:task-notification|agent-message|system-reminder|command-|local-command)/;
-const SLASH_COMMAND = /<command-name>\s*\/?([^<\s]+)\s*<\/command-name>/;
 const DENIAL = /denied|blocked|Permission|hook/i;
 const RECENT_MS = 10 * 60 * 1000;
 const REPORT_FORMAT = path.join(__dirname, '..', 'skills', 'prozess-retrospektive', 'references', 'report-format.md');
 const FACTS_SLOT = '<ZAHLEN: schreibt session-facts.js --skeleton>';
 const MCP_SLOT = '<MCP-NUTZUNG: schreibt session-facts.js --skeleton>';
 const RESULT_SLOT = 'Dauer <min>, Eingaben des Menschen <n>, Tokens neu <k> Hauptsession und <k> Subagents';
-
-class FactsError extends Error {}
 
 function projectDir(cwd, home = os.homedir()) {
   return path.join(home, '.claude', 'projects', path.resolve(cwd).replace(/[^A-Za-z0-9]/g, '-'));
@@ -54,36 +51,8 @@ function resolveSession(options) {
   return newestSession(dir);
 }
 
-function readEntries(file) {
-  return fs.readFileSync(file, 'utf8').split('\n').filter((line) => line.trim() !== '').flatMap((line) => {
-    try {
-      return [JSON.parse(line)];
-    } catch {
-      return [];
-    }
-  });
-}
-
-function textOf(content) {
-  if (typeof content === 'string') return content;
-  if (!Array.isArray(content)) return '';
-  return content.map((part) => (typeof part === 'string' ? part : part?.text ?? '')).join('\n');
-}
-
-function tokensOf(usage = {}) {
-  const input = (usage.input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0);
-  return { input, cached: usage.cache_read_input_tokens ?? 0, output: usage.output_tokens ?? 0 };
-}
-
 function shortError(text) {
   return textOf(text).replace(/\s+/g, ' ').trim().slice(0, 120);
-}
-
-// Kurzform eines Aufrufs für die Sparpotenzial-Liste: Tool plus wichtigstes Argument.
-function callLabel(part) {
-  const input = part.input ?? {};
-  const detail = input.command ?? input.file_path ?? input.pattern ?? input.path ?? input.skill ?? input.description ?? '';
-  return `${part.name}${detail ? ` ${String(detail).replace(/\s+/g, ' ').slice(0, 80)}` : ''}`;
 }
 
 // Die ersten zwei Wörter eines Shell-Befehls, z. B. "git status" oder "dotnet test".
@@ -94,13 +63,6 @@ function commandHead(part) {
     .split(/\s+/).filter((word) => !/^\w+=/.test(word));
   if (words.length === 0) return null;
   return words.slice(0, /^[a-z][\w:-]*$/i.test(words[1] ?? '') ? 2 : 1).join(' ');
-}
-
-// Ein Slash-Befehl ist eine Eingabe des Menschen, auch wenn er mit <command-message> beginnt.
-function isHumanTurn(content) {
-  if (Array.isArray(content) && content.some((part) => part.type === 'tool_result')) return false;
-  const text = textOf(content);
-  return SLASH_COMMAND.test(text) || !NOTICE.test(text);
 }
 
 function invokes(entry, name) {
@@ -153,7 +115,7 @@ function analyze(entries) {
       facts.first ??= entry.timestamp;
       facts.last = entry.timestamp;
     }
-    if (entry.type === 'system' && /compact/i.test(`${entry.subtype ?? ''} ${entry.content ?? ''}`)) facts.compactions += 1;
+    if (isCompactEntry(entry)) facts.compactions += 1;
     const message = entry.message;
     if (!message) continue;
     if (entry.type === 'assistant') {
@@ -182,7 +144,6 @@ function analyze(entries) {
     }
     if (entry.type === 'user') {
       const content = message.content;
-      if (isHumanTurn(content)) facts.turns += 1;
       for (const part of Array.isArray(content) ? content : []) {
         if (part.type === 'tool_result') facts.results.push({ call: calls.get(part.tool_use_id) ?? 'unbekannt', chars: textOf(part.content).length });
         if (part.type !== 'tool_result' || !part.is_error) continue;
@@ -195,6 +156,8 @@ function analyze(entries) {
       }
     }
   }
+  facts.humans = humanEvents(entries);
+  facts.turns = facts.humans.filter((event) => event.kind === 'Eingabe').length;
   return facts;
 }
 
@@ -276,6 +239,11 @@ function factLines(facts, agents) {
   ];
 }
 
+function humanLines(humans) {
+  if (humans.length === 0) return ['- keine'];
+  return humans.map((event) => `- #${event.entryNo} ${clock(event.time)} ${event.kind}: ${event.text}`);
+}
+
 function render(sessionFile, facts, agents, label = null) {
   const errorLines = errorLinesOf(facts);
   return [
@@ -288,6 +256,9 @@ function render(sessionFile, facts, agents, label = null) {
     '| Auftrag | Typ | Modell | Tokens gesamt | davon neu | Tools | Fehler | min |',
     '|---|---|---|---|---|---|---|---|',
     ...agents.map((agent) => `| ${agent.description} | ${agent.type} | ${agent.model} | ${thousands(agent.tokens)} | ${thousands(agent.fresh)} | ${agent.tools} | ${agent.errors} | ${agent.duration} |`),
+    '',
+    '## Eingaben des Menschen',
+    ...humanLines(facts.humans),
     '',
     '## Tool-Fehler der Hauptsession',
     ...(errorLines.length > 0 ? errorLines : ['- keine']),

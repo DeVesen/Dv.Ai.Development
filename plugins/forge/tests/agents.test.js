@@ -221,7 +221,7 @@ test('plan-review-buildability_Body_CommandsFromInputNoPluginResearch', () => {
   const { body } = readAgent('plan-review-buildability');
   assert.ok(body.includes('- `Build:`, `Test:`, `Lint:`'));
   assert.match(body, /Quellen und Tests des Plugins liest du nicht/);
-  assert.match(body, /In `node_modules` liest du nur für Auftrag 8/);
+  assert.match(body, /In `node_modules` liest du nur für Auftrag 6/);
 });
 
 test('plan-review-architecture_Body_LooksForExistingCounterparts', () => {
@@ -253,11 +253,28 @@ test('planReviewers_Body_TakeAnchorFileAndReadPlanOnce', () => {
   }
 });
 
-test('plan-review-buildability_Body_ReportsOnlyRedAnchorLines', () => {
+test('plan-review-buildability_Body_NoFilesAnchorsOrNumbering', () => {
   const { body } = readAgent('plan-review-buildability');
-  assert.ok(body.includes('ist jede ❌-Zeile aus der Anker-Datei ein Finding an ihrem Task'));
-  assert.ok(body.includes('⚠- und ✅-Zeilen meldest du nicht'));
-  assert.ok(body.includes('Ohne `Anker:`: Die Datei einer `Modify`-Zeile existiert im Repo'));
+  assert.ok(body.includes('Dateien, Anker und Nummerierung prüfst du nicht; das tun Skripte.'));
+  for (const old of ['**Dateien und Anker:**', '**Nummerierung:**', 'ist jede ❌-Zeile aus der Anker-Datei ein Finding an ihrem Task']) {
+    assert.ok(!body.includes(old), old);
+  }
+});
+
+test('plan-review-buildability_Body_CoreIsStuckRestIsDetail', () => {
+  const { body } = readAgent('plan-review-buildability');
+  for (const part of [
+    'Ein Platzhalter statt Code ist `umsetzer-steckt-fest`.',
+    'Ein Schritt, der Code verlangt, enthält einen vollständigen Code-Block. Fehlt er: `umsetzer-steckt-fest`.',
+    'Ein verbotener Weg ist `umsetzer-steckt-fest`.',
+    'falscher oder fehlender Parametername ist `umsetzer-steckt-fest`',
+    'Ein Gate, das nicht verdrahtet ist, ist `umsetzer-steckt-fest`, auch wenn der Weg erlaubt wäre.',
+    'Schritte, die deutlich mehr als eine Aktion sind: `detail`.',
+    'Fremd-Code ist, was der Plan von einer Bibliothek übernimmt oder voraussetzt, die das Projekt nicht selbst schreibt',
+    'passt etwas nicht zur installierten Version: `detail`.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
 });
 
 test('plan-review-feasibility_Body_NoExistenceCheckButWarningLines', () => {

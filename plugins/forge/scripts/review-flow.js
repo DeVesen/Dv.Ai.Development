@@ -7,6 +7,7 @@ const { isReview } = require('./lib/rules');
 const { isKind, nextAttempt } = require('./lib/attempts');
 const { rateRoundOne } = require('./lib/round-one');
 const { snapshot, writeReworkInput } = require('./lib/rework-input');
+const { checkRework, checkAnswers } = require('./lib/rework-check');
 const { checkScout } = require('./lib/scout-check');
 const { writeScriptChecks } = require('./lib/script-checks');
 const { LEGACY_USAGE, LegacyUsageError, isLegacyCommand, runLegacy } = require('./lib/flow-legacy');
@@ -18,6 +19,8 @@ const USAGE = [
   '       node review-flow.js scout-check --dir <runden-ordner>',
   '       node review-flow.js snapshot --dir <W> --doc <datei>',
   '       node review-flow.js rework-input --review <..> --dir <W> --doc <datei>',
+  '       node review-flow.js rework-check --review <..> --dir <W> --doc <datei> [--quelle runde-1|nacharbeit]',
+  '       node review-flow.js answers-check --review spec-review --dir <W> --doc <datei>',
   '       node review-flow.js script-checks --review <..> --dir <W> --doc <datei> [--spec <datei>]',
   '',
 ].join('\n');
@@ -86,6 +89,8 @@ const COMMANDS = {
   'scout-check': (values) => checkScout(path.resolve(required(values, 'dir'))),
   snapshot: (values) => snapshot(path.resolve(required(values, 'dir')), existing(required(values, 'doc'), 'Dokument')),
   'rework-input': (values) => writeReworkInput(flowOptions(values)),
+  'rework-check': (values) => checkRework(flowOptions(values)),
+  'answers-check': (values) => checkAnswers(flowOptions(values)),
   'script-checks': (values) => writeScriptChecks(flowOptions(values)),
 };
 

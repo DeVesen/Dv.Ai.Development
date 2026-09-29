@@ -11,14 +11,12 @@ const { requestsOf } = require('./lib/retro-requests');
 const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns } = require('./lib/retro-measures');
 const { readConfig } = require('./forge-config.js');
 const { signalHints } = require('./lib/retro-signals');
+const { writeSnapshot, draftPath } = require('./lib/retro-files');
+const { buildSnapshot } = require('./lib/retro-snapshot');
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
-  + ' [--since-command <name>] [--before-retro] [--lenient] [--skeleton <bericht.md>]\n';
+  + ' [--since-command <name>] [--before-retro] [--snapshot] [--lenient]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
 const RECENT_MS = 10 * 60 * 1000;
-const REPORT_FORMAT = path.join(__dirname, '..', 'skills', 'prozess-retrospektive', 'references', 'report-format.md');
-const FACTS_SLOT = '<ZAHLEN: schreibt session-facts.js --skeleton>';
-const MCP_SLOT = '<MCP-NUTZUNG: schreibt session-facts.js --skeleton>';
-const RESULT_SLOT = 'Dauer <min>, Eingaben des Menschen <n>, Tokens neu <k> Hauptsession und <k> Subagents';
 
 function projectDir(cwd, home = os.homedir()) {
   return path.join(home, '.claude', 'projects', path.resolve(cwd).replace(/[^A-Za-z0-9]/g, '-'));
@@ -309,11 +307,8 @@ function render(sessionFile, facts, agents, labels = []) {
   ].join('\n');
 }
 
-const FLAGS = {
-  '--file': 'file', '--session': 'session', '--cwd': 'cwd', '--expect': 'expect',
-  '--since-command': 'sinceCommand', '--skeleton': 'skeleton',
-};
-const SWITCHES = { '--before-retro': 'beforeRetro', '--lenient': 'lenient' };
+const FLAGS = { '--file': 'file', '--session': 'session', '--cwd': 'cwd', '--expect': 'expect', '--since-command': 'sinceCommand' };
+const SWITCHES = { '--before-retro': 'beforeRetro', '--lenient': 'lenient', '--snapshot': 'snapshot' };
 
 // `--file` und `--session` dürfen zusammen stehen: ausgewertet wird die Datei, die Session benennt Snapshot und Entwurf.
 function parseArgs(args) {
@@ -333,28 +328,31 @@ function parseArgs(args) {
   return options;
 }
 
-// Berichtsgerüst aus references/report-format.md: Zahlen und MCP-Nutzung deterministisch, der Rest bleibt Platzhalter.
-function skeleton({ facts, agents, mcp, lists }) {
-  const format = fs.readFileSync(REPORT_FORMAT, 'utf8');
-  const template = format.match(/```markdown\n([\s\S]*?)\n```/)?.[1];
-  if (!template || ![FACTS_SLOT, MCP_SLOT, RESULT_SLOT].every((slot) => template.includes(slot))) {
-    throw new FactsError(`Vorlage in ${REPORT_FORMAT} passt nicht zu --skeleton`);
+// Protokoll der eigenen Session: bei `--file` plus `--session` gehört der Snapshot zur eigenen Session.
+function ownTranscriptOf(options, file) {
+  if (!options.session || !options.file) return file;
+  try {
+    return sessionById(projectDir(options.cwd ?? process.cwd()), options.session);
+  } catch {
+    // Ohne eigenes Protokoll lassen sich später nur die Kosten der Retrospektive nicht messen.
+    return null;
   }
-  const agentInput = agents.reduce((sum, agent) => sum + agent.facts.input, 0);
-  const result = `Dauer ${minutes(facts.first, facts.last)} min, Eingaben des Menschen ${facts.turns}, Tokens neu ${thousands(facts.input)} Hauptsession und ${thousands(agentInput)} Subagents`;
-  const mcpBody = mcp.replace(/^## MCP-Nutzung \(gemessen\)\n/, '').trimEnd();
-  return `${template
-    .replace(RESULT_SLOT, () => result)
-    .replace(FACTS_SLOT, () => [...factLines(facts, agents), '', lists.trimEnd()].join('\n'))
-    .replace(MCP_SLOT, () => mcpBody)}\n`;
 }
 
-function writeSkeleton(target, text) {
-  const file = path.resolve(target);
-  if (fs.existsSync(file)) throw new FactsError(`Bericht existiert schon, nichts geschrieben: ${file}`);
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, text);
-  return file;
+function headlineOf(facts, agents) {
+  const agentInput = agents.reduce((sum, agent) => sum + agent.facts.input, 0);
+  return `Dauer ${minutes(facts.first, facts.last)} min, Eingaben des Menschen ${facts.turns}, Tokens neu ${thousands(facts.input)} Hauptsession und ${thousands(agentInput)} Subagents`;
+}
+
+function numbersOf(facts, agents, allFacts) {
+  return [...factLines(facts, agents), '', ...measureLines(facts), savingsLists(allFacts).trimEnd()].join('\n');
+}
+
+// Ein Entwurf eines abgebrochenen früheren Laufs gehört nicht zum neuen Snapshot; so legt das `Write` des Skills die Datei immer neu an.
+function saveSnapshot(snapshot) {
+  const written = writeSnapshot(snapshot);
+  fs.rmSync(draftPath(snapshot.session), { force: true });
+  return `\nSnapshot: ${written}\nEntwurf: ${draftPath(snapshot.session)}\n`;
 }
 
 // Erwartete MCP-Server aus `MCP-Erwartet` der Projekt-Einstellungen.
@@ -379,10 +377,13 @@ function projectOf(options, session, warn = (text) => process.stderr.write(`Warn
   return path.resolve(process.cwd());
 }
 
+// `transcriptEntries` ist der Stand des Hauptprotokolls jetzt, vor der ersten Modell-Anfrage der Retrospektive:
+// Ihr späteres `Write` des Entwurfs gehört damit nie zum Korpus der Zitat-Prüfung.
 function run(options) {
   const { file, warning } = resolveSession(options);
   if (!fs.existsSync(file)) throw new FactsError(`Session-Datei nicht gefunden: ${file}`);
-  const range = rangeOf(readEntries(file), options);
+  const entries = readEntries(file);
+  const range = rangeOf(entries, options);
   const session = mcpUsage.loadSession(file, { entries: range.entries, keepSubagent: range.keepSubagent });
   const cwd = projectOf(options, session);
   if (options.cwd) session.cwd = options.cwd;
@@ -392,12 +393,14 @@ function run(options) {
   const mcp = mcpUsage.render(session, { expect, transcript: file });
   const allFacts = [facts, ...agents.map((agent) => agent.facts)];
   const measured = measuredOf(facts, allFacts, mcpUsage.measure(session, { expect }));
-  let output = `${render(file, facts, agents, range.labels)}\n${savings(allFacts)}\n${mcp}\n## Hinweise zu den Signalen\n${signalHints(measured).join('\n')}\n`;
-  if (options.skeleton) {
-    const written = writeSkeleton(options.skeleton, skeleton({ facts, agents, mcp, lists: savingsLists(allFacts) }));
-    output += `\nGerüst geschrieben: ${written}\n`;
-  }
-  return { output, warning };
+  const output = `${render(file, facts, agents, range.labels)}\n${savings(allFacts)}\n${mcp}\n## Hinweise zu den Signalen\n${signalHints(measured).join('\n')}\n`;
+  if (!options.snapshot) return { output, warning };
+  const snapshot = buildSnapshot({
+    id: options.session ?? path.basename(file, '.jsonl'), transcript: file, ownTranscript: ownTranscriptOf(options, file),
+    transcriptEntries: entries.at(-1)?.entryNo ?? 0, cwd, range, facts,
+    headline: headlineOf(facts, agents), numbers: numbersOf(facts, agents, allFacts), mcp, expect,
+  });
+  return { output: `${output}${saveSnapshot(snapshot)}`, warning };
 }
 
 // Im fehlerverzeihenden Modus endet jeder Fehler mit einer Meldung auf stdout und Exit-Code 0, damit der

@@ -264,32 +264,98 @@ test('cli_FileAndSession_EvaluatesFile', () => {
   assert.match(result.stdout, /# Session-Fakten: s1/);
 });
 
-test('cli_Skeleton_WritesReportWithFactsAndMcpVerbatimAndPlaceholdersForTheRest', () => {
-  const target = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wishes-')), 'docs', 'wishes', 'bericht.md');
-  const result = spawnSync(process.execPath, [SCRIPT, '--file', session(), '--expect', 'dev-mcp', '--skeleton', target], { encoding: 'utf8' });
+function snapshotHome() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'retro-home-'));
+}
+
+function withHome(home, args) {
+  return spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8', env: { ...process.env, HOME: home, USERPROFILE: home, TZ: 'UTC' } });
+}
+
+function readSnapshotOf(home, id) {
+  return JSON.parse(fs.readFileSync(path.join(home, '.dv-forge', 'retro', `${id}.snapshot.json`), 'utf8'));
+}
+
+test('cli_Snapshot_WritesSnapshotOutsideProjectAndNamesDraft', () => {
+  const home = snapshotHome();
+  const file = session();
+
+  const result = withHome(home, ['--file', file, '--snapshot']);
+
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, new RegExp(`Gerüst geschrieben: ${target.replace(/\\/g, '\\\\')}`));
-  const text = fs.readFileSync(target, 'utf8');
-  assert.match(text, /^# Erfahrungsbericht <Art der Arbeit, allgemein>/);
-  assert.match(text, /Dauer 10 min, Eingaben des Menschen 2, Tokens neu 2k Hauptsession und 1k Subagents\./);
-  assert.match(text, /## Zahlen\n- Dauer: 10 min · Modelle: claude-x\n/);
-  assert.match(text, /Mehrfach gelesene Dateien:\n- keine/);
-  assert.match(text, /## MCP-Nutzung\n\nQuelle: /);
-  assert.match(text, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
-  assert.doesNotMatch(text, /MCP-Nutzung \(gemessen\)|## Sparpotenzial \(Hauptsession|\| Auftrag \| Typ \|/);
-  assert.doesNotMatch(text, /session-facts\.js/);
-  for (const heading of ['## Positiv', '## Reibung', '## Sparpotenzial', '## Neue Ideen', '## Kleinigkeiten', '**Relevanz:**']) {
-    assert.ok(text.includes(heading), `${heading} fehlt`);
-  }
+  assert.ok(result.stdout.includes(`Snapshot: ${path.join(home, '.dv-forge', 'retro', 's1.snapshot.json')}`));
+  assert.ok(result.stdout.includes(`Entwurf: ${path.join(home, '.dv-forge', 'retro', 's1.entwurf.md')}`));
 });
 
-test('cli_Skeleton_ExistingTarget_RefusesAndKeepsFile', () => {
-  const target = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wishes-')), 'bericht.md');
-  fs.writeFileSync(target, 'alt');
-  const result = spawnSync(process.execPath, [SCRIPT, '--file', session(), '--skeleton', target], { encoding: 'utf8' });
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /existiert/);
-  assert.equal(fs.readFileSync(target, 'utf8'), 'alt');
+test('cli_Snapshot_HoldsNumbersMcpAndSessionFacts', () => {
+  const home = snapshotHome();
+  const file = session();
+  withHome(home, ['--file', file, '--snapshot']);
+
+  const snapshot = readSnapshotOf(home, 's1');
+
+  assert.equal(snapshot.transcript, file);
+  assert.equal(snapshot.model, 'claude-x');
+  assert.deepEqual(snapshot.skills, ['dv-forge:init']);
+  assert.equal(snapshot.cut, null);
+  assert.match(snapshot.numbers, /^- Dauer: 10 min · Modelle: claude-x\n/);
+  assert.match(snapshot.mcp, /^Quelle: /);
+  assert.equal(snapshot.headline, 'Dauer 10 min, Eingaben des Menschen 2, Tokens neu 2k Hauptsession und 1k Subagents');
+  for (const key of ['branch', 'specs', 'expected', 'projectFiles', 'ownTranscript', 'cwd', 'transcriptEntries', 'labels']) assert.ok(key in snapshot, `${key} fehlt`);
+});
+
+test('cli_Snapshot_RecordsLastEntryOfProtocolForQuoteCheck', () => {
+  const home = snapshotHome();
+  const file = session();
+
+  withHome(home, ['--file', file, '--snapshot']);
+
+  assert.equal(readSnapshotOf(home, 's1').transcriptEntries, facts.readEntries(file).at(-1).entryNo);
+});
+
+test('cli_SnapshotWithCut_RecordsCutTime', () => {
+  const home = snapshotHome();
+
+  withHome(home, ['--file', commandSession(), '--before-retro', '--snapshot']);
+
+  assert.equal(readSnapshotOf(home, 's2').cut, '2026-09-27T11:10:00Z');
+});
+
+test('cli_SnapshotOfTwoSessions_BothKept', () => {
+  const home = snapshotHome();
+
+  withHome(home, ['--file', session(), '--snapshot']);
+  withHome(home, ['--file', commandSession(), '--snapshot']);
+
+  assert.deepEqual(fs.readdirSync(path.join(home, '.dv-forge', 'retro')).sort(), ['s1.snapshot.json', 's2.snapshot.json']);
+});
+
+test('cli_SnapshotWithFileAndSession_NamedAfterOwnSession', () => {
+  const project = projectWith([['eigene', 0]]);
+  const other = session();
+
+  const result = spawnSync(process.execPath, [SCRIPT, '--cwd', project.cwd, '--file', other, '--session', 'eigene', '--snapshot'], { encoding: 'utf8', env: { ...process.env, HOME: project.home, USERPROFILE: project.home } });
+
+  assert.equal(result.status, 0, result.stderr);
+  const snapshot = readSnapshotOf(project.home, 'eigene');
+  assert.equal(snapshot.transcript, other);
+  assert.equal(snapshot.ownTranscript, path.join(facts.projectDir(project.cwd, project.home), 'eigene.jsonl'));
+});
+
+test('cli_Snapshot_RemovesStaleDraftOfSameSession', () => {
+  const home = snapshotHome();
+  const stale = path.join(home, '.dv-forge', 'retro', 's1.entwurf.md');
+  fs.mkdirSync(path.dirname(stale), { recursive: true });
+  fs.writeFileSync(stale, '# alter Entwurf\n');
+
+  const result = withHome(home, ['--file', session(), '--snapshot']);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(stale), false);
+});
+
+test('cli_WithoutSnapshot_NoSkeletonFlagAnymore', () => {
+  assert.equal(spawnSync(process.execPath, [SCRIPT, '--file', session(), '--skeleton', 'x.md'], { encoding: 'utf8' }).status, 2);
 });
 
 test('savings_LargeResultsRepeatedReadsAndCommands_Listed', () => {

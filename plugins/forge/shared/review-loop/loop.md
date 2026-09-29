@@ -1,6 +1,6 @@
 # Review-Loop
 
-Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills. `<PLUGIN>` und `<SESSION>` nennt dir der aufrufende Skill. Er legt außerdem fest:
+Ablauf des Implementierungs-Reviews; Spec- und Plan-Review folgen `shared/review-flow/flow.md`. Die Abschnitte „Rolle“ und „Hintergrund oder Vordergrund“ gelten für beide Abläufe. `<PLUGIN>` und `<SESSION>` nennt dir der aufrufende Skill. Er legt außerdem fest:
 
 | Baustein | Bedeutung |
 |---|---|

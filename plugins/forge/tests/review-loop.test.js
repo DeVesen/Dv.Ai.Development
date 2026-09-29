@@ -82,6 +82,11 @@ test('reportFormat_Generic_TitleAndSkillSpecificParts', () => {
   assert.ok(!text.includes('Spec-Review:'));
 });
 
+test('loop_Intro_PointsSpecAndPlanToSharedFlow', () => {
+  const text = readText(path.join(SHARED, 'loop.md'));
+  assert.ok(text.includes('Spec- und Plan-Review folgen `shared/review-flow/flow.md`.'));
+});
+
 test('findingFormat_Generic_LocationKeysIncludeTask', () => {
   const text = readText(path.join(SHARED, 'finding-format.md'));
   assert.ok(text.includes('`Task <n>`'));

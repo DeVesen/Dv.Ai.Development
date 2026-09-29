@@ -7,6 +7,7 @@ const path = require('node:path');
 const mcpUsage = require('./mcp-usage.js');
 const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents, shorten } = require('./lib/transcript');
 const { rangeOf } = require('./lib/retro-range');
+const { subagentFiles } = require('./lib/session-files');
 const { requestsOf } = require('./lib/retro-requests');
 const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns } = require('./lib/retro-measures');
 const { readConfig } = require('./forge-config.js');
@@ -146,20 +147,27 @@ function thousands(value) {
   return `${Math.round(value / 1000)}k`;
 }
 
+// Die .meta.json eines Subagents fehlt, ist leer oder halb geschrieben, wenn die Session noch läuft oder abbrach;
+// die Zeile fällt dann auf Dateiname, `?` und das Modell aus den Fakten zurück, statt die Fakten abzubrechen.
+function readMeta(metaFile) {
+  try {
+    return JSON.parse(fs.readFileSync(metaFile, 'utf8')) ?? {};
+  } catch {
+    return {};
+  }
+}
+
 function subagentRows(sessionFile, keep = () => true) {
-  const dir = path.join(sessionFile.slice(0, -'.jsonl'.length), 'subagents');
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((name) => name.endsWith('.jsonl')).flatMap((name) => {
-    const entries = readEntries(path.join(dir, name));
-    return keep(entries) ? [{ name, entries }] : [];
-  }).map(({ name, entries }) => {
-    const metaFile = path.join(dir, name.replace(/\.jsonl$/, '.meta.json'));
-    const meta = fs.existsSync(metaFile) ? JSON.parse(fs.readFileSync(metaFile, 'utf8')) : {};
+  return subagentFiles(sessionFile).flatMap((file) => {
+    const entries = readEntries(file);
+    return keep(entries) ? [{ file, entries }] : [];
+  }).map(({ file, entries }) => {
+    const meta = readMeta(file.replace(/\.jsonl$/, '.meta.json'));
     const facts = analyze(entries);
     const errors = [...facts.errors.values()].reduce((sum, list) => sum + list.length, 0);
     return {
       facts,
-      description: meta.description ?? name, type: meta.agentType ?? '?', model: meta.model ?? [...facts.models].join(','),
+      description: meta.description ?? path.basename(file), type: meta.agentType ?? '?', model: meta.model ?? [...facts.models].join(','),
       tokens: facts.input + facts.cached + facts.output, fresh: facts.input + facts.output, tools: [...facts.tools.values()].reduce((a, b) => a + b, 0), errors,
       duration: minutes(facts.first, facts.last),
     };

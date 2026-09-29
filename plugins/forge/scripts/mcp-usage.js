@@ -5,9 +5,9 @@
 // wurden wie oft, von wem und mit welchem Ergebnis aufgerufen.
 
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
-const { readEntries } = require('./lib/transcript');
+const { readEntries, RetroError } = require('./lib/transcript');
+const { findTranscript, subagentFiles } = require('./lib/session-files');
 
 const MCP_TOOL = /^mcp__(.+?)__(.+)$/;
 const NATIVE_TOOLS = new Set(['Read', 'Grep', 'Glob', 'Bash', 'PowerShell', 'Edit', 'Write', 'MultiEdit']);
@@ -39,17 +39,6 @@ function parseArgs(argv) {
   return args;
 }
 
-function configDir() {
-  return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
-}
-
-function findTranscript(sessionId, projectsDir = path.join(configDir(), 'projects')) {
-  const dirs = fs.existsSync(projectsDir) ? fs.readdirSync(projectsDir) : [];
-  const hit = dirs.map((dir) => path.join(projectsDir, dir, `${sessionId}.jsonl`)).find((file) => fs.existsSync(file));
-  if (!hit) throw new UsageError(`Transkript zur Session ${sessionId} nicht gefunden unter ${projectsDir}\n`);
-  return hit;
-}
-
 function readJson(file) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -61,12 +50,6 @@ function readJson(file) {
 function contentBlocks(entry) {
   const content = entry.message?.content;
   return Array.isArray(content) ? content : [];
-}
-
-function subagentFiles(transcript) {
-  const dir = path.join(transcript.replace(/\.jsonl$/, ''), 'subagents');
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((name) => name.endsWith('.jsonl')).map((name) => path.join(dir, name));
 }
 
 function agentIdOf(file) {
@@ -259,10 +242,21 @@ function render(session, { expect = [], transcript }) {
   return `${lines.join('\n')}\n`;
 }
 
+// Die Ortung meldet „nicht gefunden“ als RetroError; für dieses Skript bleibt es ein Aufruffehler mit Exit 1.
+function transcriptOf(args) {
+  if (args.transcript) return args.transcript;
+  try {
+    return findTranscript(args.session);
+  } catch (error) {
+    if (!(error instanceof RetroError)) throw error;
+    throw new UsageError(`${error.message}\n`);
+  }
+}
+
 function main() {
   try {
     const args = parseArgs(process.argv.slice(2));
-    const transcript = args.transcript ?? findTranscript(args.session);
+    const transcript = transcriptOf(args);
     const session = loadSession(transcript);
     if (args.cwd) session.cwd = args.cwd;
     process.stdout.write(render(session, { expect: args.expect, transcript }));

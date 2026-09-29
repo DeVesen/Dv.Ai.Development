@@ -60,6 +60,18 @@ test('cli_File_RendersFactsAndSubagents', () => {
   assert.match(result.stdout, /- Bash: Permission denied by hook/);
 });
 
+test('cli_BrokenSubagentMeta_RowFallsBackWithoutError', () => {
+  for (const content of ['', '{"description": "Rev']) {
+    const file = session();
+    fs.writeFileSync(path.join(path.dirname(file), 's1', 'subagents', 'agent-a.meta.json'), content);
+
+    const result = spawnSync(process.execPath, [SCRIPT, '--file', file], { encoding: 'utf8' });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /\| agent-a\.jsonl \| \? \| sonnet \| /, JSON.stringify(content));
+  }
+});
+
 test('cli_Expect_AppendsMeasuredMcpUsage', () => {
   const result = spawnSync(process.execPath, [SCRIPT, '--file', session(), '--expect', 'dev-mcp'], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);

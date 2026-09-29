@@ -366,6 +366,8 @@ function prepareReviewFollowup({ positional, flags }) {
   fs.writeFileSync(selection, selectionText(chosen));
   fs.mkdirSync(path.join(values.W, 'nacharbeit'), { recursive: true });
   fs.writeFileSync(path.join(values.W, 'nacharbeit', 'aggregate.md'), reworkText(chosen));
+  // Vorher-Stand für die geänderten Bereiche der Nachprüfung (review-flow.js followup-checklist).
+  if (art !== 'implementation-review') fs.copyFileSync(artifact, path.join(values.W, 'dokument-vorher.md'));
   const chosenNumbers = chosen.map(({ group }) => group.number);
   values.original = art;
   values.F = selection;

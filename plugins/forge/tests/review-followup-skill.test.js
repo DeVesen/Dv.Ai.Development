@@ -34,9 +34,13 @@ test('reviewFollowupSkill_Body_OrchestratesPrepareUmsetzenNachReviewEnde', () =>
 test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => {
   assert.ok(fs.existsSync(FLOW));
   const text = readText(FLOW);
-  for (const part of ['Vorschläge: <F>', 'Ergebnis: <W>/nacharbeit/rework.json', '--dir "<W>/nacharbeit"', '--expect <aktiv> --round 1',
-    'followup.js" save <rolle> <slug> "<D>"', 'plan-tasks.js" header "<P>" "<W>"', 'review-package.js" <FIX_BASE> HEAD "<W>"',
+  for (const part of ['Vorschläge: <F>', 'Ergebnis: <W>/nacharbeit/rework.json', 'review-flow.js" followup-checklist <original> "<DOK>" "<W>"',
+    'review-flow.js" verify <original> "<DOK>" "<W>"', 'review-flow.js" finish <original> "<DOK>" "<W>" --title "Review-Followup (<original>)"',
+    'Prüfliste: <W>/runde-2/pruefliste.md', 'Nachprüfer des Original-Skills', 'Kein Reviewer läuft',
+    'followup.js" save <rolle> <slug> "<W>/bericht"', 'plan-tasks.js" header "<P>" "<W>"', 'review-package.js" <FIX_BASE> HEAD "<W>"',
     'followup.js" drop review <slug>', 'Kein Scout', 'plan-tasks.js" anchors "<P>" "<R>" "<W>"', 'nicht gewählt', 'bleibt die alte Sicherung', '### Umgesetzt', 'WAHL', 'keine Änderung', 'blockiert']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
+  assert.ok(!text.includes('--expect <aktiv> --round 1'));
+  assert.ok(!text.includes('--dir "<W>/nacharbeit"'));
 });

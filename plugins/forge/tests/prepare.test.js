@@ -376,6 +376,13 @@ test('reviewFollowup_SpecArtifact_UsesSpecReviewSave', () => {
   assert.equal(out.aktiv, 'clarity');
 });
 
+test('reviewFollowup_PlanArtifact_WritesSnapshotForChangedAreas', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'b'));
+  assert.equal(fs.readFileSync(path.join(out.W, 'dokument-vorher.md'), 'utf8'), PLAN);
+});
+
 test('reviewFollowup_ReworkAggregate_LetsReworkOutcomeSeeEscalations', () => {
   const repo = planRepo();
   saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');

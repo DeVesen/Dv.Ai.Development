@@ -22,11 +22,30 @@ function expectedKeys(workspace, source) {
   return parseRework(readText(inputFile(workspace, source)).split('\n')).map((group) => placeKey(group.location));
 }
 
+// Beleg-Formen der Nacharbeit: <Datei>, <Datei> · <Begriff>, Spec · <Stelle>; <Datei> ohne Leerraum.
+// Ob die Datei existiert, prüft die Nacharbeit unter Repo:, nicht das Skript.
+function evidenceForm(evidence) {
+  const [head, ...rest] = evidence.trim().split(' · ');
+  if (rest.length > 1) return false;
+  if (rest.length === 1 && rest[0].trim() === '') return false;
+  if (head === 'Spec') return rest.length === 1;
+  return /^\S+$/.test(head);
+}
+
+// evidence gilt für beide Reviews; plan-rework schreibt das Feld nie.
+function evidenceProblem(entry) {
+  if (entry.evidence === undefined) return null;
+  if (typeof entry.evidence !== 'string' || entry.evidence.trim() === '') return `evidence ist kein Text (${entry.location})`;
+  if (/^kein(e|er)?\W*$/i.test(entry.evidence.trim())) return `evidence keiner ist kein Beleg (${entry.location})`;
+  if (!evidenceForm(entry.evidence)) return `evidence hat keine Beleg-Form (${entry.location})`;
+  return entry.status === 'changed' ? null : `evidence nur bei changed (${entry.location})`;
+}
+
 function entryProblem(entry, review) {
   if (entry === null || typeof entry !== 'object' || typeof entry.location !== 'string' || entry.location.trim() === '') return 'Eintrag ohne location';
   if (!STATUSES[review].includes(entry.status)) return `status unbekannt: ${entry.status} (${entry.location})`;
   if (NEEDS_REASON.has(entry.status) && !(typeof entry.reason === 'string' && entry.reason.trim() !== '')) return `reason fehlt (${entry.location})`;
-  return null;
+  return evidenceProblem(entry);
 }
 
 // Je erwarteter Stelle genau ein Ausgang.
@@ -110,4 +129,4 @@ function checkAnswers(options) {
   return `ANTWORTEN ok beantwortet=${answered} offen=${asked.length - answered}`;
 }
 
-module.exports = { checkRework, checkAnswers };
+module.exports = { checkRework, checkAnswers, evidenceProblem, evidenceForm };

@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { evidenceProblem } = require('../scripts/lib/rework-check');
 const { finding, setup, writeJsonFile, flow, readJsonFile, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
 
 function prepareRework(env, review = 'spec-review', findings = [finding({ location: 'AC-04', category: 'widerspruch' }), finding({ location: 'AC-07', category: 'widerspruch' })]) {
@@ -59,6 +60,85 @@ test('reworkCheck_UnchangedWithoutReason_Invalid', () => {
 
   // Assert
   assert.equal(output, 'NACHARBEIT ungültig: reason fehlt (AC-07)\n');
+});
+
+function changedWith(evidence) {
+  return { location: 'AC-04', status: 'changed', evidence };
+}
+
+test('evidenceProblem_FourBelegForms_NoProblem', () => {
+  // Arrange
+  const forms = ['src/export.js', 'Spec · AC-02', 'docs/glossary/terms.md · Export', 'docs/keiner.md'];
+
+  // Act
+  const problems = forms.map((evidence) => evidenceProblem(changedWith(evidence)));
+
+  // Assert
+  assert.deepEqual(problems, forms.map(() => null));
+});
+
+test('evidenceProblem_BlankText_NotText', () => {
+  // Act
+  const problem = evidenceProblem(changedWith(' '));
+
+  // Assert
+  assert.equal(problem, 'evidence ist kein Text (AC-04)');
+});
+
+test('evidenceProblem_KeinerVariants_NoBeleg', () => {
+  // Arrange
+  const variants = [' Keiner ', 'keiner.'];
+
+  // Act
+  const problems = variants.map((evidence) => evidenceProblem(changedWith(evidence)));
+
+  // Assert
+  assert.deepEqual(problems, variants.map(() => 'evidence keiner ist kein Beleg (AC-04)'));
+});
+
+test('evidenceProblem_OtherShapes_NoBelegForm', () => {
+  // Arrange
+  const shapes = ['kein Beleg', 'Spec', 'Spec · ', 'src/export.js · Export · Import'];
+
+  // Act
+  const problems = shapes.map((evidence) => evidenceProblem(changedWith(evidence)));
+
+  // Assert
+  assert.deepEqual(problems, shapes.map(() => 'evidence hat keine Beleg-Form (AC-04)'));
+});
+
+test('evidenceProblem_OnHumanQuestion_OnlyOnChanged', () => {
+  // Act
+  const problem = evidenceProblem({ location: 'AC-04', status: 'human-question', reason: 'neu', evidence: 'src/export.js' });
+
+  // Assert
+  assert.equal(problem, 'evidence nur bei changed (AC-04)');
+});
+
+test('reworkCheck_ChangedWithEvidence_Ok', () => {
+  // Arrange
+  const env = setup();
+  prepareRework(env, 'spec-review', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  writeRework(env, { results: [changedWith('src/export.js')] });
+
+  // Act
+  const output = checkRework(env);
+
+  // Assert
+  assert.equal(output, 'NACHARBEIT ok fragen=0 anhalten=nein\n');
+});
+
+test('reworkCheck_EvidenceKeiner_Invalid', () => {
+  // Arrange
+  const env = setup();
+  prepareRework(env, 'spec-review', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  writeRework(env, { results: [changedWith('keiner')] });
+
+  // Act
+  const output = checkRework(env);
+
+  // Assert
+  assert.equal(output, 'NACHARBEIT ungültig: evidence keiner ist kein Beleg (AC-04)\n');
 });
 
 test('reworkCheck_QuestionsBundled_PausesAndWritesQuestions', () => {

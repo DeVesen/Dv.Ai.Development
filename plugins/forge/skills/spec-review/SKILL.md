@@ -32,7 +32,7 @@ Keine.
 Keine.
 
 ## Nacharbeiter
-`dv-forge:spec-rework` — `Spec: <S>`
+`dv-forge:spec-rework` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`
 
 ## Nachprüfer
 `dv-forge:spec-review-verifier` — `Spec: <S>`

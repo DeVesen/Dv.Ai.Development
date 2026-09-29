@@ -250,6 +250,44 @@ test('spec-rework_Body_NewBehaviourBecomesQuestionNotDecision', () => {
   assert.ok(body.includes('`human-question`'));
 });
 
+test('spec-rework_Body_ClarificationAndNewBehaviourWithEvidenceWrittenWithoutQuestion', () => {
+  const { body } = readAgent('spec-rework');
+  for (const part of [
+    'weil eine andere Aussage oder ein W-Eintrag eine der beiden Seiten stützt',
+    'Eine Klarstellung schreibst du selbst, ohne Frage an den Menschen.',
+    'Ist der bevorzugte Scout-Vorschlag eine Klarstellung, setzt du ihn um.',
+    'ist neues Verhalten, auch wenn sie nur eine Aussage streicht.',
+    'Hat die Stelle keine solche Zeile, mehr als eine oder gar keine Scout-Vorschläge, gilt keiner als bevorzugt.',
+    'steht im Kopf der Spec `Art: frei`, zählt nur ein Beleg aus der Spec.',
+    '`Beleg: keiner` ist kein Beleg.',
+    'Ein Beleg zählt nur in einer dieser Formen: `<Datei>`, `<Datei> · <Begriff>` oder `Spec · <Stelle>`.',
+    'Einen Beleg `Spec · <Stelle>` schlägst du in der Spec nach; sagt die Stelle nicht, was der Vorschlag festlegt, ist er kein Beleg.',
+    '`- **R<n> · <Stelle>** — geändert — Neues Verhalten, Beleg: <Beleg> — <Begründung>`',
+    '`"evidence": "<Beleg>"`',
+    'Nur neues Verhalten ohne Beleg entscheidet der Mensch',
+    'Ein Beleg aus dem Bestand geht nie vor einen W-Eintrag.',
+    'widerspricht der bevorzugte Scout-Vorschlag einem W-Eintrag, mit oder ohne Beleg',
+    '- `evidence`: nur bei `changed` mit neuem Verhalten nach Regel 3',
+    'Mit `Repo:` liest du darunter zusätzlich nur die Dateien, die ein Scout-Beleg nennt.',
+    '- `Repo:` optional, nur bei `art=verankert`',
+    'Ohne `Repo:` zählt ebenfalls nur ein Beleg aus der Spec.',
+    'Einen Beleg `<Datei>` oder `<Datei> · <Begriff>` schlägst du unter `Repo:` nach; fehlt die Datei, steht der Begriff nicht in ihr oder sagt sie nicht, was der Vorschlag festlegt, ist er kein Beleg.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(!body.includes('du bist nicht an sie gebunden'), 'alte Scout-Regel');
+  assert.ok(!body.includes('entscheidet das nur der Mensch: Du änderst die Spec an dieser Stelle nicht'), 'alte Regel 3');
+});
+
+test('spec-rework_Body_EvidenceLineNeverCopiedIntoSpecInRulesAndFollowupMode', () => {
+  const { body } = readAgent('spec-rework');
+  const sentence = 'Eine eingerückte Zeile `Beleg: …` unter einem Scout-Vorschlag ist ein Beleg, kein Vorschlagstext; du übernimmst sie nie in die Spec.';
+  const rules = body.slice(body.indexOf('## Regeln'), body.indexOf('## Fragen bündeln'));
+  const followup = body.slice(body.indexOf('## Folge-Modus'), body.indexOf('## Ausgabe'));
+  assert.ok(rules.includes(sentence), 'Regeln');
+  assert.ok(followup.includes(sentence), 'Folge-Modus');
+});
+
 test('spec-review-profiles_Body_WritesExcerptOnceAndReadsItInLaterRounds', () => {
   const { body } = readAgent('spec-review-profiles');
   assert.ok(body.includes('- `Profil-Auszug:`'));

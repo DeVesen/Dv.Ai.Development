@@ -10,6 +10,7 @@ const rules = require('./lib/review-rules');
 const groupsLib = require('./lib/review-groups');
 const questions = require('./lib/flow-questions');
 const flowReport = require('./lib/flow-report');
+const { readContext } = require('./workspace');
 
 const KINDS = ['spec-review', 'plan-review'];
 const SNAPSHOT = 'dokument-vorher.md';
@@ -98,6 +99,12 @@ function reworkInput(state, scoutBlocks = new Map()) {
   return ['# Nacharbeit', '', '## 🔴-Stellen', '', redPart.join('\n\n'), '', '## Offene Fragen aus früheren Läufen', '', ...openPart, ''].join('\n');
 }
 
+// Eingaben der Skript-Prüfungen: das geprüfte Dokument und, was prepare.js im Arbeitsbereich festhält.
+function scriptContext(doc, workspace) {
+  const { spec = null, repo = null } = readContext(workspace);
+  return { doc, spec, repo };
+}
+
 function roundOne(kind, doc, workspace, active, checks = groupsLib.SCRIPT_CHECKS[kind]) {
   const dir = roundDir(workspace, 1);
   const text = readText(doc);
@@ -105,7 +112,7 @@ function roundOne(kind, doc, workspace, active, checks = groupsLib.SCRIPT_CHECKS
   const { entries, failed, errors } = readReviews(dir, active, kind);
   const open = earlierOpen(kind, text);
   const openKeys = new Set(open.map((question) => question.canon));
-  const { groups, dropped } = groupsLib.classify([...entries, ...groupsLib.runScriptChecks(text, checks)], { kind, text, openKeys });
+  const { groups, dropped } = groupsLib.classify([...entries, ...groupsLib.runScriptChecks(text, checks, scriptContext(doc, workspace))], { kind, text, openKeys });
   const counts = groupsLib.countColors(groups);
   const scoutGroups = groups.filter((group) => group.color === 'yellow' || (counts.red > 0 && group.color === 'red'));
   const state = { kind, groups, dropped, open, counts, failed };
@@ -311,7 +318,7 @@ function verify(kind, doc, workspace, checks = groupsLib.SCRIPT_CHECKS[kind]) {
   }
   const text = readText(doc);
   const verification = { checklist: new Set(list.items.map((item) => item.canon)), changed: new Set(list.changed.map((unit) => unit.canon)) };
-  const entries = [...result.findings.map((finding) => ({ reviewer: 'verifier', finding })), ...groupsLib.runScriptChecks(text, checks)];
+  const entries = [...result.findings.map((finding) => ({ reviewer: 'verifier', finding })), ...groupsLib.runScriptChecks(text, checks, scriptContext(doc, workspace))];
   const { groups, dropped } = groupsLib.classify(entries, { kind, text, openKeys: new Set(list.open.map((question) => question.canon)), verification });
   const redScript = new Set(groups.filter((group) => group.color === 'red' && group.items.some((item) => item.script)).map((group) => group.canon));
   const verdicts = list.items.map((item) => {

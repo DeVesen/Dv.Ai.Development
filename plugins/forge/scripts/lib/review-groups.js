@@ -2,11 +2,12 @@
 
 const { parseUnits, resolveUnit, quoteFromW } = require('./document-units');
 const rules = require('./review-rules');
+const { PLAN_CHECKS } = require('./plan-checks');
 
 const CLOSING_QUOTE = String.fromCharCode(0x201c);
 
 // Skript-Prüfungen je Review: { name, run(text, context) → [{ location, quote, category, consequence, rationale }] }.
-const SCRIPT_CHECKS = { 'spec-review': [], 'plan-review': [] };
+const SCRIPT_CHECKS = { 'spec-review': [], 'plan-review': PLAN_CHECKS };
 
 function runScriptChecks(text, checks, context = {}) {
   return checks.flatMap((check) => check.run(text, context).map((finding) => ({ reviewer: `skript:${check.name}`, finding, script: true })));

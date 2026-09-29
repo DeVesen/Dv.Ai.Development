@@ -6,6 +6,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const SCRIPT = path.join(__dirname, '..', '..', 'scripts', 'review-flow.js');
+const { writeContext } = require('../../scripts/workspace');
 
 const SPEC = [
   '# Demo', '', 'Status: bestätigt am 2026-09-28', 'Art: verankert', 'Basis: 3ce509e', '',
@@ -41,6 +42,7 @@ function flowWorkspace(text = SPEC, name = 'spec.md') {
   fs.mkdirSync(path.join(workspace, 'runde-1'), { recursive: true });
   const file = (relative) => path.join(workspace, relative);
   return {
+    root,
     doc,
     workspace,
     file,
@@ -57,6 +59,17 @@ function flowWorkspace(text = SPEC, name = 'spec.md') {
     readJson: (relative) => JSON.parse(fs.readFileSync(file(relative), 'utf8')),
     edit: (change) => fs.writeFileSync(doc, change(fs.readFileSync(doc, 'utf8'))),
     run: (...args) => spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8' }),
+    repoFile: (relative, value) => {
+      const target = path.join(root, relative);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, value);
+    },
+    // Kontext wie von prepare.js: eine Spec neben dem Dokument, Repo ist der Test-Ordner.
+    context: (specText) => {
+      const spec = path.join(root, 'kontext-spec.md');
+      fs.writeFileSync(spec, specText);
+      writeContext(workspace, { spec, repo: root });
+    },
   };
 }
 

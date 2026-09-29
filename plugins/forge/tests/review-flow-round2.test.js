@@ -195,6 +195,7 @@ test('verify_ScriptRedOutsideChecklist_StaysRed', () => {
 test('planReview_SpecQuestion_NoHaltCheckedOthersQuestionsOpen', () => {
   const plan = '# P — Umsetzungsplan\n\n**Basis:** abc\n\n## Global Constraints\n- x\n\n### Task 1: Eins\nA.\n\n### Task 2: Zwei\nB.\n\n## Entscheidungen\n- Keine Fragen an den Menschen.\n';
   const ws = flowWorkspace(plan, 'plan.md');
+  ws.context('# Spec\n');
   ws.review('coverage', [finding('Task 1', 'ac-fehlt-im-plan', { quote: 'A.' }), finding('Task 2', 'umsetzer-steckt-fest', { quote: 'B.' })]);
   ws.run('round1', 'plan-review', ws.doc, ws.workspace, 'coverage');
   ws.json('runde-1/rework.json', { results: [{ location: 'Task 1', status: 'changed' }, { location: 'Task 2', status: 'spec-question' }],

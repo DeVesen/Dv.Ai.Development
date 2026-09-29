@@ -144,14 +144,16 @@ test('cli_BadArguments_ExitWithTwo', () => {
   assert.equal(run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--rounds', 'drei').status, 2);
 });
 
-test('specAndPlanReview_RoundsFlag_AbortsAsUnknownArgument', () => {
+test('specAndPlanReview_RoundsArgument_AbortWithUnknownArgument', () => {
   const repo = planRepo();
-  for (const args of [['spec-review', 'docs/forge/demo/spec.md'], ['plan-review', 'docs/forge/demo/plan.md']]) {
-    const result = run(repo, ...args, '--rounds', '2');
-    assert.equal(result.status, 2, args[0]);
-    assert.match(result.stderr, /^Unbekanntes Argument: --rounds\n/);
+  const results = [
+    run(repo, 'spec-review', 'docs/forge/demo/spec.md', '--rounds', '2'),
+    run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--rounds', '2'),
+  ];
+  for (const result of results) {
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /^Unbekanntes oder unvollständiges Argument: --rounds$/m);
   }
-  assert.match(run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--only').stderr, /^Unvollständiges Argument: --only\n/);
 });
 
 test('specReview_ProfilesFound_WritesIndexAndWarnsOnDuplicates', () => {

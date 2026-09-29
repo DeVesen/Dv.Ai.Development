@@ -52,8 +52,9 @@ function parseArgs(skill, args) {
       positional.push(arg.replace(/^@/, ''));
       continue;
     }
-    if (!FLAGS[skill].includes(arg)) throw new UsageError(`Unbekanntes Argument: ${arg}`);
-    if (index + 1 >= args.length) throw new UsageError(`Unvollständiges Argument: ${arg}`);
+    const isKnown = FLAGS[skill].includes(arg);
+    const hasMissingValue = index + 1 >= args.length;
+    if (!isKnown || hasMissingValue) throw new UsageError(`Unbekanntes oder unvollständiges Argument: ${arg}`);
     index += 1;
     (flags[arg] ??= []).push(args[index].replace(/^@/, ''));
   }

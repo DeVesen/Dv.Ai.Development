@@ -25,7 +25,7 @@ Die Spec soll stimmig, verständlich und grob umsetzbar sein, nicht perfekt. Det
 Rand- und Fehlerfälle — nach ihnen suchst du nicht. Fehlende Akzeptanzkriterien, Widersprüche, Machbarkeit, externe Verweise.
 
 ## W-Einträge
-Einträge der Form `- **W · <Kurztitel>** · <Belag-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Ein W-Eintrag ist nie selbst ein Finding. Widerspricht ein Inhalt der Spec einem W-Eintrag, ist das ein Finding an der Stelle dieses Inhalts. Einträge im Abschnitt „Offen, bewusst nicht weiterverfolgt (Abbruch)“ hat der Mensch bewusst offen gelassen — das ist kein Finding und keine Lücke.
+Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Ein W-Eintrag ist nie selbst ein Finding. Widerspricht ein Inhalt der Spec einem W-Eintrag, ist das ein Finding an der Stelle dieses Inhalts. Einträge im Abschnitt „Offen, bewusst nicht weiterverfolgt (Abbruch)“ hat der Mensch bewusst offen gelassen — das ist kein Finding und keine Lücke.
 
 ## Kategorie
 Jedes Finding bekommt genau eine Kategorie und keine Farbe; die Farbe leitet ein Skript ab. Ein Feld `severity` oder `color` macht dein Ergebnis ungültig. Welche Kategorie ein Befund bekommt, legt dein Prüfauftrag fest.

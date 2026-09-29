@@ -57,3 +57,21 @@ test('planReviewSkill_Body_NextStepPerStatusWithCommitQuestion', () => {
 test('planReviewSkill_Body_StaysUnder500Words', () => {
   assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
 });
+
+test('planReviewSkill_NextStep_TextPerStatusWithOnlyHintAndCommitOutcomes', () => {
+  const { body } = readMarkdown(SKILL);
+  const next = body.slice(body.indexOf('## Nächster Schritt'));
+  for (const part of [
+    'Hat `save` Scout-Vorschläge ausgegeben, steht zuerst `Offene 🟡: optional /dv-forge:review-followup <P> <auswahl>.` und der Auswahl-Hinweis.',
+    'Leere Ausgabe: keine Frage, beide sind committet',
+    'Sonst: `Plan ist bereit. Soll ich Spec und Plan jetzt committen?`',
+    'Nach dem Ja committest du beide Dateien',
+    'Dann in einer frischen Session ein Code-Block `/dv-forge:implementation <P>`.',
+    'Bei Nein oder ohne Antwort: kein Commit und kein weiterer Schritt.',
+    'Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben, kein `/dv-forge:implementation <P>`.',
+    '`Spec-Rückfragen offen. Spec anpassen, dann /dv-forge:spec-review <S>, danach /dv-forge:plan-review <P> erneut.`',
+    'oder Plan selbst anpassen und /dv-forge:plan-review <P> erneut; betreffen die Änderungen nur einzelne Reviewer, mit --only <reviewer,...>.',
+  ]) {
+    assert.ok(next.includes(part), `${part} fehlt`);
+  }
+});

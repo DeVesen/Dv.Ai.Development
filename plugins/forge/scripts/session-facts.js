@@ -2,13 +2,12 @@
 'use strict';
 
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const mcpUsage = require('./mcp-usage.js');
-const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents, shorten } = require('./lib/transcript');
+const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isSummary, humanEvents, shorten } = require('./lib/transcript');
 const { thousands } = require('./lib/retro-format');
 const { rangeOf } = require('./lib/retro-range');
-const { subagentFiles } = require('./lib/session-files');
+const { projectDir, resolveSession, ownTranscriptOf, subagentFiles } = require('./lib/session-files');
 const { requestsOf } = require('./lib/retro-requests');
 const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns } = require('./lib/retro-measures');
 const { readConfig } = require('./forge-config.js');
@@ -18,42 +17,6 @@ const { buildSnapshot } = require('./lib/retro-snapshot');
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
   + ' [--since-command <name>] [--before-retro] [--snapshot] [--lenient]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
-const RECENT_MS = 10 * 60 * 1000;
-
-function projectDir(cwd, home = os.homedir()) {
-  return path.join(home, '.claude', 'projects', path.resolve(cwd).replace(/[^A-Za-z0-9]/g, '-'));
-}
-
-// Neueste Session im Projektordner. Wurden kurz davor weitere geschrieben, ist „neueste“ mehrdeutig: Warnung.
-function newestSession(dir) {
-  if (!fs.existsSync(dir)) throw new FactsError(`Kein Session-Ordner: ${dir}`);
-  const files = fs.readdirSync(dir).filter((name) => name.endsWith('.jsonl'))
-    .map((name) => ({ file: path.join(dir, name), mtime: fs.statSync(path.join(dir, name)).mtimeMs }))
-    .sort((a, b) => b.mtime - a.mtime);
-  if (files.length === 0) throw new FactsError(`Keine Session-Datei in ${dir}`);
-  const [newest, ...others] = files;
-  const rivals = others.filter(({ mtime }) => newest.mtime - mtime < RECENT_MS).map(({ file }) => path.basename(file, '.jsonl'));
-  const warning = rivals.length === 0 ? null
-    : `Warnung: ${rivals.length} weitere Session(s) in den letzten 10 min geschrieben (${rivals.join(', ')}); gelesen wird ${path.basename(newest.file, '.jsonl')}. Eigene Session mit --session <id> wählen.`;
-  return { file: newest.file, warning };
-}
-
-function sessionById(dir, id) {
-  const own = path.join(dir, `${id}.jsonl`);
-  if (fs.existsSync(own)) return own;
-  try {
-    return mcpUsage.findTranscript(id, path.dirname(dir));
-  } catch {
-    throw new FactsError(`Session ${id} nicht gefunden unter ${path.dirname(dir)}`);
-  }
-}
-
-function resolveSession(options) {
-  if (options.file) return { file: path.resolve(options.file), warning: null };
-  const dir = projectDir(options.cwd ?? process.cwd());
-  if (options.session) return { file: sessionById(dir, options.session), warning: null };
-  return newestSession(dir);
-}
 
 function shortError(text) {
   return textOf(text).replace(/\s+/g, ' ').trim().slice(0, 120);
@@ -79,12 +42,13 @@ function analyze(entries) {
   const calls = new Map();
   let previousCall = null;
   const seenRequests = new Set();
+  const marked = entries.some((entry) => entry.origin);
   for (const entry of entries) {
     if (entry.timestamp) {
       facts.first ??= entry.timestamp;
       facts.last = entry.timestamp;
     }
-    if (isCompactEntry(entry)) facts.compactions += 1;
+    if (isSummary(entry, marked)) facts.compactions += 1;
     const message = entry.message;
     if (!message) continue;
     if (entry.type === 'assistant') {
@@ -331,17 +295,6 @@ function parseArgs(args) {
   }
   if (options.expect) options.expect = options.expect.split(',').map((name) => name.trim()).filter(Boolean);
   return options;
-}
-
-// Protokoll der eigenen Session: bei `--file` plus `--session` gehört der Snapshot zur eigenen Session.
-function ownTranscriptOf(options, file) {
-  if (!options.session || !options.file) return file;
-  try {
-    return sessionById(projectDir(options.cwd ?? process.cwd()), options.session);
-  } catch {
-    // Ohne eigenes Protokoll lassen sich später nur die Kosten der Retrospektive nicht messen.
-    return null;
-  }
 }
 
 function headlineOf(facts, agents) {

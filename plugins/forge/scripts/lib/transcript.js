@@ -27,6 +27,10 @@ function readEntries(file) {
   });
 }
 
+function lineCount(file) {
+  return fs.readFileSync(file, 'utf8').replace(/\n$/, '').split('\n').length;
+}
+
 function textOf(content) {
   if (typeof content === 'string') return content;
   if (!Array.isArray(content)) return '';
@@ -107,4 +111,13 @@ function humanEvents(entries) {
   return entries.filter((entry) => entry.type === 'user' && entry.message).flatMap((entry) => eventsOf(entry, marked));
 }
 
-module.exports = { RetroError, SLASH_COMMAND, readEntries, textOf, tokensOf, shorten, clock, callLabel, isToolResultEntry, isCompactEntry, humanEvents };
+// `isCompactSummary` kam in keinem echten Protokoll vor (W · Protokoll-Marker). Kennt das Protokoll `origin`, ist eine
+// Zusammenfassung ein Text-Eintrag des Nutzers ohne `origin`; dieselben Prädikate wie Zählung und Eingaben.
+function isSummary(entry, marked) {
+  if (entry.isCompactSummary || isCompactEntry(entry)) return true;
+  return marked && !entry.origin && isPlainUserText(entry);
+}
+
+module.exports = {
+  RetroError, SLASH_COMMAND, readEntries, lineCount, textOf, tokensOf, shorten, clock, callLabel, isToolResultEntry, isCompactEntry, humanEvents, isSummary,
+};

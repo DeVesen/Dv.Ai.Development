@@ -310,6 +310,22 @@ test('specAndPlanReviewers_Body_NameCategoriesNeverColours', () => {
   }
 });
 
+test('specReviewers_Body_GoalSpellingExampleAndNoFormulierung', () => {
+  for (const reviewer of REVIEWERS) {
+    const { body } = readAgent(`spec-review-${reviewer}`);
+    assert.match(body, /^## Ziel\r?$/m, `${reviewer}: Ziel fehlt`);
+    assert.ok(body.includes('Die Spec soll stimmig, verständlich und grob umsetzbar sein, nicht perfekt. Details entscheidet der Plan.'), `${reviewer}: Ziel`);
+    assert.ok(body.includes('Eine Formulierung, einen Stil oder einen Randfall meldest du nie.'), `${reviewer}: Stil`);
+    assert.ok(body.includes('(Groß- oder Kleinschreibung, ß oder ss, Umlaute) sind kein Stil, sondern `detail`'), `${reviewer}: Schreibweisen`);
+    const own = reviewer === 'clarity' ? 'sondern `detail`; du meldest sie.' : 'sondern `detail`; sie meldet nur `clarity`, du meldest sie nicht.';
+    assert.ok(body.includes(own), `${reviewer}: Zuständigkeit für Schreibweisen`);
+    const section = categorySection(body);
+    assert.ok(section.includes('- `formulierung` — meldest du nie.'), `${reviewer}: formulierung`);
+    assert.ok(!/Randfall|Schreibweise/.test(section), `${reviewer}: Randfall oder Schreibweise in der Kategorie`);
+    assert.ok(!section.includes('setzt etwas voraus, das die Spec nie herstellt'), `${reviewer}: alte unerfuellbar-Regel`);
+  }
+});
+
 for (const [name, tools, inputs, categories] of [
   ['spec-review-verifier', 'Read, Write', ['- `Spec:`'], SPEC_CATEGORIES],
   ['plan-review-verifier', 'Read, Grep, Glob, Write', ['- `Plan:`', '- `Spec:`', '- `Repo:`'], PLAN_CATEGORIES],

@@ -16,9 +16,9 @@ function titleNamesPlace(title, place) {
   return new RegExp(`(?<!${PLACE_EDGE})${escapeRegex(place)}(?!${PLACE_EDGE})`, 'u').test(title);
 }
 
-// Schreibwerkzeuge machen aus „…" gern "…" oder „…"; jede dieser Formen nennt den R-Eintrag.
+// Schreibwerkzeuge machen aus “…” gern "…" oder „…”; jede dieser Formen nennt den R-Eintrag.
 function textNamesEntry(text, id, place) {
-  return new RegExp(`["„]${escapeRegex(`${id} · ${place}`)}["""]`, 'u').test(text);
+  return new RegExp(`["„]${escapeRegex(`${id} · ${place}`)}["“”]`, 'u').test(text);
 }
 
 function wEntries(lines) {

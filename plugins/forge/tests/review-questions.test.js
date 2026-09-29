@@ -25,7 +25,7 @@ test('openQuestions_REntryWithoutWEntry_IsOpen', () => {
 
 test('openQuestions_WEntryNamesPlaceAndREntry_IsAnswered', () => {
   // Act
-  const open = openQuestions(specWith(QUESTION, '- **W · AC-04** · Aussage — Antwort auf „R2 · AC-04": ja.'));
+  const open = openQuestions(specWith(QUESTION, '- **W · AC-04** · Aussage — Antwort auf „R2 · AC-04“: ja.'));
 
   // Assert
   assert.deepEqual(open, []);
@@ -50,9 +50,17 @@ test('openQuestions_WEntryWithAsciiQuotes_IsAnswered', () => {
   assert.deepEqual(open, []);
 });
 
+test('openQuestions_WEntryWithTypographicCloseQuote_IsAnswered', () => {
+  // Act
+  const open = openQuestions(specWith(QUESTION, '- **W · AC-04** · Aussage — Antwort auf „R2 · AC-04“: ja.'));
+
+  // Assert
+  assert.deepEqual(open, []);
+});
+
 test('openQuestions_WEntryNamesTwoPlaces_AnswersBoth', () => {
   // Arrange
-  const text = specWith(QUESTION, '- **R2 · AC-07** — frage an den menschen — Und I?', '- **W · AC-04 und AC-07** · Aussage — Antwort auf „R2 · AC-04" und „R2 · AC-07".');
+  const text = specWith(QUESTION, '- **R2 · AC-07** — frage an den menschen — Und I?', '- **W · AC-04 und AC-07** · Aussage — Antwort auf „R2 · AC-04“ und „R2 · AC-07“.');
 
   // Act
   const open = openQuestions(text);

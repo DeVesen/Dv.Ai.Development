@@ -11,6 +11,7 @@ const { ROUND_ONE, ROUND_TWO, readText, readLines, readJson, readAgentJson, writ
 
 const VERDICTS = ['erledigt', 'nicht erledigt'];
 const VERIFIER = 'nachprüfer';
+const OUTCOME_LABELS = { changed: 'geändert', unchanged: 'nicht geändert', 'human-question': 'frage an den menschen', 'spec-question': 'spec-rückfrage' };
 
 function sourceDir(options) {
   return path.join(options.workspace, options.source);
@@ -55,8 +56,24 @@ function withoutDuplicates(items) {
   return items.filter((item, index) => items.findIndex((other) => other.key === item.key && other.source === item.source) === index);
 }
 
-function renderChecklist(aiItems, changed) {
-  const points = aiItems.length > 0 ? aiItems.map((item) => [`### ${item.label}`, ...item.lines].join('\n')) : ['Keine Punkte.'];
+function outcomeLine(entry) {
+  const label = OUTCOME_LABELS[entry.status] ?? entry.status;
+  return entry.reason ? `- Ausgang: ${label} — ${entry.reason}` : `- Ausgang: ${label}`;
+}
+
+// Ausgang der Nacharbeit je Stelle; so kann der Nachprüfer auch einen Ausgang nicht geändert samt Begründung werten.
+function reworkOutcomes(options) {
+  const { results } = readJson(path.join(sourceDir(options), 'rework.json'), { results: [] });
+  return new Map(results.map((entry) => [placeKey(entry.location), outcomeLine(entry)]));
+}
+
+function pointText(item, outcomes) {
+  const outcome = outcomes.has(item.key) ? [outcomes.get(item.key)] : [];
+  return [`### ${item.label}`, ...item.lines, ...outcome].join('\n');
+}
+
+function renderChecklist(aiItems, changed, outcomes) {
+  const points = aiItems.length > 0 ? aiItems.map((item) => pointText(item, outcomes)) : ['Keine Punkte.'];
   const areas = changed.length > 0 ? changed.map((label) => `- ${label}`) : ['Keine.'];
   return ['# Prüfliste', '', '## Punkte', '', points.join('\n\n'), '', '## Geänderte Bereiche', '', ...areas].join('\n');
 }
@@ -71,7 +88,7 @@ function buildChecklist(options) {
   const dir = path.join(options.workspace, ROUND_TWO);
   const aiItems = items.filter((item) => item.source === 'ki');
   writeJson(path.join(dir, 'pruefliste.json'), { items, changed });
-  writeText(path.join(dir, 'pruefliste.md'), renderChecklist(aiItems, changed));
+  writeText(path.join(dir, 'pruefliste.md'), renderChecklist(aiItems, changed, reworkOutcomes(options)));
   const verifier = aiItems.length > 0 || changed.length > 0 ? 'ja' : 'nein';
   return `PRUEFLISTE punkte=${aiItems.length} skript=${items.length - aiItems.length} bereiche=${changed.length}\nNACHPRUEFER ${verifier}`;
 }

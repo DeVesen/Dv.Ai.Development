@@ -102,6 +102,36 @@ test('checklist_ReworkChangedOnlyDecisions_NoArea', () => {
   assert.equal(output, 'PRUEFLISTE punkte=1 skript=0 bereiche=0\nNACHPRUEFER ja\n');
 });
 
+test('checklist_UnchangedWithReason_PointShowsOutcomeAndReason', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  addEntries(env, '- **R1 · AC-04** — nicht geändert — Fehllesung');
+  finishRework(env, [{ location: 'AC-04', status: 'unchanged', reason: 'Fehllesung' }]);
+
+  // Act
+  checklist(env);
+
+  // Assert
+  const shown = fs.readFileSync(path.join(env.workspace, 'runde-2', 'pruefliste.md'), 'utf8');
+  assert.match(shown, /### AC-04\n- \[[^\n]*\n- Ausgang: nicht geändert — Fehllesung\n/);
+});
+
+test('checklist_ChangedWithoutReason_PointShowsOutcomeOnly', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  editDoc(env, 'dann C.', 'dann C2.');
+  finishRework(env, [{ location: 'AC-04', status: 'changed' }]);
+
+  // Act
+  checklist(env);
+
+  // Assert
+  const shown = fs.readFileSync(path.join(env.workspace, 'runde-2', 'pruefliste.md'), 'utf8');
+  assert.match(shown, /### AC-04\n- \[[^\n]*\n- Ausgang: geändert\n/);
+});
+
 test('checklist_ScriptFindingOfRoundOne_JudgedByScript', () => {
   // Arrange
   const env = setup();

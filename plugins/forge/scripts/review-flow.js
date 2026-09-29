@@ -8,10 +8,11 @@ const { isKind, nextAttempt } = require('./lib/attempts');
 const { rateRoundOne } = require('./lib/round-one');
 const { snapshot, writeReworkInput } = require('./lib/rework-input');
 const { checkRework, checkAnswers } = require('./lib/rework-check');
+const { buildChecklist, verifyRoundTwo } = require('./lib/round-two');
 const { checkScout } = require('./lib/scout-check');
 const { writeScriptChecks } = require('./lib/script-checks');
 const { LEGACY_USAGE, LegacyUsageError, isLegacyCommand, runLegacy } = require('./lib/flow-legacy');
-const { ROUND_ONE, FOLLOWUP, FlowError } = require('./lib/flow-files');
+const { ROUND_ONE, ROUND_TWO, FOLLOWUP, FlowError } = require('./lib/flow-files');
 
 const USAGE = [
   'Aufruf: node review-flow.js rate --review <spec-review|plan-review> --dir <W> --doc <datei> [--spec <datei>] --expect <a,b> [--beratend <a,b>]',
@@ -21,10 +22,12 @@ const USAGE = [
   '       node review-flow.js rework-input --review <..> --dir <W> --doc <datei>',
   '       node review-flow.js rework-check --review <..> --dir <W> --doc <datei> [--quelle runde-1|nacharbeit]',
   '       node review-flow.js answers-check --review spec-review --dir <W> --doc <datei>',
-  '       node review-flow.js script-checks --review <..> --dir <W> --doc <datei> [--spec <datei>]',
+  '       node review-flow.js checklist --review <..> --dir <W> --doc <datei> [--quelle runde-1|nacharbeit]',
+  '       node review-flow.js verify --review <..> --dir <W> --doc <datei> [--spec <datei>] [--quelle runde-1|nacharbeit]',
+  '       node review-flow.js script-checks --review <..> --dir <W> --doc <datei> [--spec <datei>] [--runde runde-1|runde-2]',
   '',
 ].join('\n');
-const VALUE_OPTIONS = ['--review', '--dir', '--doc', '--spec', '--expect', '--beratend', '--instanz', '--art', '--quelle', '--titel', '--artefakt'];
+const VALUE_OPTIONS = ['--review', '--dir', '--doc', '--spec', '--expect', '--beratend', '--instanz', '--art', '--quelle', '--runde', '--titel', '--artefakt'];
 const SOURCES = [ROUND_ONE, FOLLOWUP];
 // Namen werden Dateinamen im Arbeitsbereich: kein `.`, kein Pfadtrenner.
 const INSTANCE_NAME = /^[\p{Ll}\d]+(?:-[\p{Ll}\d]+)*$/u;
@@ -83,6 +86,11 @@ function attempt(values) {
   return nextAttempt(path.resolve(required(values, 'dir')), checkedName(required(values, 'instanz'), 'instanz'), kind);
 }
 
+function checkedRound(round = ROUND_ONE) {
+  if (![ROUND_ONE, ROUND_TWO].includes(round)) throw new UsageError(`--runde erlaubt: ${ROUND_ONE}, ${ROUND_TWO}`);
+  return round;
+}
+
 const COMMANDS = {
   rate: (values) => rateRoundOne({ ...flowOptions(values), expected: names(required(values, 'expect'), 'expect'), advisory: names(values.beratend, 'beratend') }),
   attempt,
@@ -91,7 +99,9 @@ const COMMANDS = {
   'rework-input': (values) => writeReworkInput(flowOptions(values)),
   'rework-check': (values) => checkRework(flowOptions(values)),
   'answers-check': (values) => checkAnswers(flowOptions(values)),
-  'script-checks': (values) => writeScriptChecks(flowOptions(values)),
+  checklist: (values) => buildChecklist(flowOptions(values)),
+  verify: (values) => verifyRoundTwo(flowOptions(values)),
+  'script-checks': (values) => writeScriptChecks({ ...flowOptions(values), round: checkedRound(values.runde) }),
 };
 
 // Aufrufe mit Positionsargumenten gehören zum älteren Ablauf, den flow.md und die Skills noch nutzen.

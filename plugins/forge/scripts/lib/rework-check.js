@@ -23,12 +23,16 @@ function expectedKeys(workspace, source) {
 }
 
 // Beleg-Formen der Nacharbeit: <Datei>, <Datei> · <Begriff>, Spec · <Stelle>; <Datei> ohne Leerraum.
+// <Stelle> darf selbst ' · ' enthalten (W- und R-Einträge); deshalb entscheidet der Spec-Fall vor dem Teilen.
 // Ob die Datei existiert, prüft die Nacharbeit unter Repo:, nicht das Skript.
 function evidenceForm(evidence) {
-  const [head, ...rest] = evidence.trim().split(' · ');
+  const text = evidence.trim();
+  const specPrefix = 'Spec · ';
+  if (text.startsWith(specPrefix)) return text.slice(specPrefix.length).trim() !== '';
+  const [head, ...rest] = text.split(' · ');
   if (rest.length > 1) return false;
   if (rest.length === 1 && rest[0].trim() === '') return false;
-  if (head === 'Spec') return rest.length === 1;
+  if (head === 'Spec') return false;
   return /^\S+$/.test(head);
 }
 

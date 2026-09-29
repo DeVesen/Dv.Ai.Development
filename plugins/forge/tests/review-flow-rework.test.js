@@ -77,6 +77,17 @@ test('evidenceProblem_FourBelegForms_NoProblem', () => {
   assert.deepEqual(problems, forms.map(() => null));
 });
 
+test('evidenceProblem_SpecPlaceWithMiddleDot_NoProblem', () => {
+  // Arrange
+  const forms = ['Spec · W · Beleg und bevorzugter Vorschlag', 'Spec · R1 · AC-02'];
+
+  // Act
+  const problems = forms.map((evidence) => evidenceProblem(changedWith(evidence)));
+
+  // Assert
+  assert.deepEqual(problems, forms.map(() => null));
+});
+
 test('evidenceProblem_BlankText_NotText', () => {
   // Act
   const problem = evidenceProblem(changedWith(' '));

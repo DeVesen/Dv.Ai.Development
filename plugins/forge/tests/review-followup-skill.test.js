@@ -36,6 +36,11 @@ test('reviewFollowupFlow_Reference_SpecAndPlanWithoutReviewerRound', () => {
   assert.doesNotMatch(text, /--expect <aktiv>|--round 1|plan-tasks.js" anchors/);
 });
 
+test('reviewFollowupFlow_Reference_FailedReworkOrVerifierStillReportsWithoutSaveOrDrop', () => {
+  const text = readText(FLOW);
+  assert.ok(text.includes('Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es statt mit dem Abschnitt Ende von `flow.md` mit Schritt 5 der Nachprüfung (`report`) weiter, danach Schritt 6 ohne `save` und ohne `drop`.'));
+});
+
 test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => {
   assert.ok(fs.existsSync(FLOW));
   const text = readText(FLOW);

@@ -156,6 +156,13 @@ test('specAndPlanReview_RoundsArgument_AbortWithUnknownArgument', () => {
   }
 });
 
+test('planReview_OnlyWithoutValue_AbortsWithIncompleteArgument', () => {
+  const repo = planRepo();
+  const result = run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--only');
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /^Unbekanntes oder unvollständiges Argument: --only$/m);
+});
+
 test('specReview_ProfilesFound_WritesIndexAndWarnsOnDuplicates', () => {
   const repo = planRepo();
   commitFile(repo, 'docs/glossary/domain-terms.md', '# Fachbegriffe\n\nKunde heißt Auftraggeber.\n', 'glossary');

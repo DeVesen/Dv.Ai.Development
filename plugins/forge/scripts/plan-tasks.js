@@ -14,9 +14,14 @@ const USAGE = 'Aufruf: node plan-tasks.js list <plan> | brief <plan> <n> <dir> |
 
 class PlanError extends Error {}
 
+// Die eine Zerlegung eines Plan-Texts in Zeilen; readLines und die Skript-Prüfungen in plan-checks.js teilen sie.
+function splitLines(text) {
+  return String(text).replace(/\r\n/g, '\n').split('\n');
+}
+
 function readLines(planPath) {
   try {
-    return fs.readFileSync(planPath, 'utf8').replace(/\r\n/g, '\n').split('\n');
+    return splitLines(fs.readFileSync(planPath, 'utf8'));
   } catch {
     throw new PlanError(`Plan nicht gefunden oder nicht lesbar: ${planPath}`);
   }
@@ -39,23 +44,29 @@ function markFences(lines) {
   });
 }
 
-function scanPlan(lines) {
-  const fenced = markFences(lines);
-  const tasks = [];
-  let headerEnd = -1;
+// Die eine Task-Zerlegung: Ein Task beginnt an einer Überschrift nach heading und endet an der nächsten Task- oder ##-Überschrift.
+function taskSections(lines, heading = TASK_HEADING, fenced = markFences(lines)) {
+  const sections = [];
   let open = null;
   lines.forEach((line, index) => {
     if (fenced[index]) return;
-    const heading = TASK_HEADING.exec(line);
-    if (heading || (open && SECTION_HEADING.test(line))) {
-      if (open) open.end = index;
-      open = heading ? { number: Number(heading[1]), start: index, end: lines.length } : null;
-      if (open) tasks.push(open);
-      return;
-    }
-    if (headerEnd === -1 && tasks.length === 0 && RULE.test(line)) headerEnd = index;
+    const match = heading.exec(line);
+    if (!match && !(open && SECTION_HEADING.test(line))) return;
+    if (open) open.end = index;
+    open = match ? { token: match[1], start: index, end: lines.length } : null;
+    if (open) sections.push(open);
   });
+  return sections;
+}
+
+function scanPlan(lines) {
+  const fenced = markFences(lines);
+  const tasks = taskSections(lines, TASK_HEADING, fenced).map(({ token, start, end }) => ({ number: Number(token), start, end }));
   const firstTask = tasks.length > 0 ? tasks[0].start : lines.length;
+  let headerEnd = -1;
+  for (let index = 0; index < firstTask && headerEnd === -1; index += 1) {
+    if (!fenced[index] && RULE.test(lines[index])) headerEnd = index;
+  }
   return { tasks, headerEnd: headerEnd === -1 ? firstTask : headerEnd };
 }
 
@@ -225,7 +236,7 @@ function main() {
 
 module.exports = {
   PlanError, scanPlan, numberingError, listTasks, describeTasks, recommendModel, formatOverview, buildHeader, buildBrief, writeBrief, writeHeader, slugOf,
-  checkedPlan, markFences, parseFileLine, taskTitle,
+  checkedPlan, markFences, parseFileLine, taskTitle, taskSections, splitLines,
 };
 
 // Nach module.exports: das Kommando anchors lädt plan-anchors.js, das diese Exporte braucht.

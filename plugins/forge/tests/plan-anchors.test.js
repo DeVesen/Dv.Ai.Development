@@ -10,7 +10,7 @@ const anchors = require('../scripts/plan-anchors.js');
 const planTasks = require('../scripts/plan-tasks.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'plan-tasks.js');
-const SOURCE = 'class Klasse {\n  methode() {\n    return 1;\n  }\n}\n';
+const { SOURCE } = require('./lib/plan-fixtures');
 
 function planWith(...tasks) {
   return ['# Demo — Umsetzungsplan', '', '**Ziel:** Demo.', '', '---', '',

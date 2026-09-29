@@ -27,6 +27,7 @@ const DEFAULTS = {
   Lint: '',
   Suche: '',
   'Commit-Konvention': '',
+  'MCP-Erwartet': '',
 };
 
 class ConfigError extends Error {}

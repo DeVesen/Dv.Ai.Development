@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const facts = require('../scripts/session-facts.js');
+const { makeRepo, commitFile } = require('./lib/git-repo');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'session-facts.js');
 
@@ -65,6 +66,60 @@ test('cli_Expect_AppendsMeasuredMcpUsage', () => {
   assert.match(result.stdout, /## MCP-Nutzung \(gemessen\)/);
   assert.match(result.stdout, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
   assert.match(result.stdout, /\| Bash \| 2 \| 1 \| 1 \| Hauptagent \(2\) \|/);
+});
+
+test('cli_ProjectListsExpectedMcp_UnusedMarkedWithoutFlag', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'CLAUDE.md', '# Projekt\n\n## dv-forge\n\n- MCP-Erwartet: dev-mcp, codebase-analyzer\n', 'config');
+
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: repo });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
+  assert.match(result.stdout, /\| codebase-analyzer \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
+});
+
+test('cli_ProjectWithoutExpectedList_NoExpectedUnusedRow', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'CLAUDE.md', '# Projekt\n\n## dv-forge\n\n- MCP-Erwartet:\n', 'config');
+
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: repo });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /erwartet, ungenutzt/);
+});
+
+test('cli_ForeignProtocol_ExpectationFromProtocolProject', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'CLAUDE.md', '# Projekt\n\n## dv-forge\n\n- MCP-Erwartet: dev-mcp\n', 'config');
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'retro-')), 's3.jsonl');
+  fs.writeFileSync(file, `${[
+    line({ type: 'user', cwd: repo, timestamp: '2026-09-27T10:00:00Z', message: { role: 'user', content: 'Los' } }),
+    line({ type: 'assistant', cwd: repo, requestId: 'r1', timestamp: '2026-09-27T10:01:00Z', message: { model: 'claude-x', usage: { input_tokens: 10, output_tokens: 1 }, content: [] } }),
+  ].join('\n')}\n`);
+
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', file], { encoding: 'utf8', cwd: os.tmpdir() });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
+});
+
+test('projectOf_OwnSession_UsesProcessCwd', () => {
+  const first = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-erststart-'));
+
+  assert.equal(facts.projectOf({ session: 'eigene' }, { cwd: first }), path.resolve(process.cwd()));
+});
+
+test('projectOf_ForeignFileMissingCwd_FallsBackWithWarning', () => {
+  const missing = path.join(os.tmpdir(), 'retro-gibt-es-nicht-8f3a');
+  const warnings = [];
+
+  const project = facts.projectOf({ file: 'x.jsonl' }, { cwd: missing }, (text) => warnings.push(text));
+
+  assert.equal(project, path.resolve(process.cwd()));
+  assert.equal(warnings.length, 1);
+  assert.ok(warnings[0].includes(missing));
+  assert.ok(warnings[0].includes('--cwd <projektordner>'));
 });
 
 test('projectDir_EscapesPathLikeClaudeCode', () => {

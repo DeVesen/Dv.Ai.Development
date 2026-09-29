@@ -32,6 +32,7 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 | `Build`, `Test`, `Lint` | Befehl oder dv-forge-Skript aus „Vorschläge“ von `setup-check.js`, z. B. `dv-forge: dotnet-test --path src/App.sln`; mehrere mit ` ; ` | leer |
 | `Suche` | Such- und Index-Werkzeuge | leer |
 | `Commit-Konvention` | Regel oder Skill, z. B. `commit-message` | leer |
+| `MCP-Erwartet` | MCP-Server je Session, mit Komma getrennt; ungenutzte meldet die Retrospektive als „erwartet, ungenutzt“ | leer |
 
 ## Format
 ```markdown
@@ -40,6 +41,7 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 - Spec-Ablage: `docs/forge/<datum>-<slug>/spec.md`
 - Worktree: ja
 - Planungs-Skills: unit-integration-testing, software-design-principles
+- MCP-Erwartet: dev-mcp, codebase-analyzer
 ```
 
 Alle Schlüssel der Tabelle, je eine Zeile, genau `- <Schlüssel>: <Wert>`. Ein bewusst leerer Wert bleibt als `- <Schlüssel>:` stehen. Muster schreibst du mit Platzhaltern, nie aufgelöst: `../<repo>-worktrees`, nicht der Ordnername aus `show`. Werte mit `<` oder `\` in Backticks.
@@ -47,7 +49,5 @@ Alle Schlüssel der Tabelle, je eine Zeile, genau `- <Schlüssel>: <Wert>`. Ein 
 ## Häufige Fehler
 | Fehler | Richtig |
 |---|---|
-| Alle Fragen in einer Nachricht | Eine Frage pro Nachricht. |
 | Eigene Schlüssel oder Überschriften erfinden | Nur die Schlüssel der Tabelle, Überschrift genau `## dv-forge`. |
 | Einstellungen in eine andere Datei schreiben | Nur die Projekt-`CLAUDE.md` im Repo-Wurzelordner. |
-| Stolperfallen ungefragt umschreiben | Je Datei fragen, dann nur die freigegebenen Zeilen ändern. |

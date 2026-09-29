@@ -194,19 +194,26 @@ function oneLine(command) {
   return line.length > 100 ? `${line.slice(0, 97)}...` : line;
 }
 
-function render({ calls, available, cwd, subagentCount }, { expect = [], transcript }) {
-  const { servers, native, fallbacks } = summarize(calls);
-  const used = [...servers.keys()];
+// Kennzahlen der MCP-Nutzung. Erwartet sind nur die übergebenen Server; konfigurierte und angebotene gelten als verfügbar.
+function measure({ calls, available, cwd }, { expect = [] } = {}) {
+  const summary = summarize(calls);
+  const used = [...summary.servers.keys()];
   const isUsed = (name) => used.some((server) => sameServer(server, name));
-  const expected = [...new Set([...expect, ...configuredServers(cwd)])];
+  const expected = [...new Set(expect)];
+  const offered = [...new Set([...available, ...configuredServers(cwd)])];
   const expectedUnused = expected.filter((name) => !isUsed(name));
-  const availableUnused = [...available].filter((name) => !isUsed(name) && !expected.some((e) => sameServer(name, e)));
+  const availableUnused = offered.filter((name) => !isUsed(name) && !expected.some((wanted) => sameServer(name, wanted)));
+  return { ...summary, used, expectedUnused, availableUnused };
+}
+
+function render(session, { expect = [], transcript }) {
+  const { servers, native, fallbacks, used, expectedUnused, availableUnused } = measure(session, { expect });
   const mcpTotal = used.reduce((sum, name) => sum + servers.get(name).calls, 0);
 
   const lines = [
     '## MCP-Nutzung (gemessen)',
     '',
-    `Quelle: \`${transcript}\` · Hauptagent + ${subagentCount} SubAgent(s) · ${calls.length} Tool-Aufrufe, davon ${mcpTotal} MCP`,
+    `Quelle: \`${transcript}\` · Hauptagent + ${session.subagentCount} SubAgent(s) · ${session.calls.length} Tool-Aufrufe, davon ${mcpTotal} MCP`,
     '',
     '| Server | Status | Aufrufe | Fehler | Wiederholt | Tools | Agents |',
     '|---|---|---|---|---|---|---|',
@@ -248,4 +255,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { parseArgs, findTranscript, loadSession, summarize, render, sameServer };
+module.exports = { parseArgs, findTranscript, loadSession, summarize, measure, render, sameServer };

@@ -40,6 +40,7 @@ test('readConfig_NoClaudeMd_AllDefaults', () => {
   assert.equal(values['Branch-Schema'], 'feature/<slug>');
   assert.equal(values.Profile, 'docs/glossary');
   assert.equal(values['Worktree-Ordner'], `../${path.basename(repo)}-worktrees`);
+  assert.equal(values['MCP-Erwartet'], '');
   assert.deepEqual(configured, []);
 });
 
@@ -141,6 +142,7 @@ test('cli_ShowAndGet_MarkDefaults', () => {
   assert.equal(shown.status, 0);
   assert.match(shown.stdout, /^Worktree=ja$/m);
   assert.match(shown.stdout, /^Lint=  \(Default\)$/m);
+  assert.match(shown.stdout, /^MCP-Erwartet=  \(Default\)$/m);
   assert.equal(run(repo, 'get', 'Glossar').stdout, 'docs/terms\n');
   assert.equal(run(repo, 'get', 'Quatsch').status, 1);
   assert.equal(run(repo, 'bogus').status, 2);
@@ -149,4 +151,12 @@ test('cli_ShowAndGet_MarkDefaults', () => {
 test('parseSection_TwoSections_BothReadLaterWins', () => {
   const text = '## dv-forge\n- Worktree: ja\n- Glossar: a\n\n## Sonst\n- Glossar: x\n\n## dv-forge\n- Glossar: b\n';
   assert.deepEqual(config.parseSection(text), { Worktree: 'ja', Glossar: 'b' });
+});
+
+test('initSkill_McpExpected_NamesPlaceKeyAndExampleWithTwoServers', () => {
+  const text = fs.readFileSync(path.join(__dirname, '..', 'skills', 'init', 'SKILL.md'), 'utf8');
+
+  assert.match(text, /\| `MCP-Erwartet` \|/);
+  assert.ok(text.includes('- MCP-Erwartet: dev-mcp, codebase-analyzer'));
+  assert.ok(text.includes('Abschnitt `## dv-forge` der Projekt-`CLAUDE.md`'));
 });

@@ -9,6 +9,7 @@ const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel,
 const { rangeOf } = require('./lib/retro-range');
 const { requestsOf } = require('./lib/retro-requests');
 const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns } = require('./lib/retro-measures');
+const { readConfig } = require('./forge-config.js');
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
   + ' [--since-command <name>] [--before-retro] [--lenient] [--skeleton <bericht.md>]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
@@ -334,15 +335,39 @@ function writeSkeleton(target, text) {
   return file;
 }
 
+// Erwartete MCP-Server aus `MCP-Erwartet` der Projekt-Einstellungen.
+function configuredExpect(cwd) {
+  try {
+    return readConfig(cwd).config['MCP-Erwartet'].split(',').map((name) => name.trim()).filter(Boolean);
+  } catch {
+    // Ohne Git-Repo gibt es keine Projekt-Einstellungen und damit keine Erwartung.
+    return [];
+  }
+}
+
+// Projekt des ausgewerteten Protokolls. `--cwd` gilt immer. Ohne `--file` ist es die eigene Session, gesucht über den
+// aktuellen Ordner; der ist damit das Projekt, auch nach einem Wechsel in einen Worktree. Nur bei `--file` gilt das
+// `cwd` der Protokolleinträge, damit Erwartung, Branch und Projekt-Dateien aus dem Projekt des fremden Protokolls
+// kommen; fehlt dieser Ordner, gilt der aktuelle Ordner mit Warnung.
+function projectOf(options, session, warn = (text) => process.stderr.write(`Warnung: ${text}\n`)) {
+  if (options.cwd) return path.resolve(options.cwd);
+  if (!options.file || !session.cwd) return path.resolve(process.cwd());
+  if (fs.existsSync(session.cwd)) return path.resolve(session.cwd);
+  warn(`Projektordner des Protokolls fehlt: ${session.cwd}; ausgewertet wird im aktuellen Ordner, sonst mit --cwd <projektordner> angeben`);
+  return path.resolve(process.cwd());
+}
+
 function run(options) {
   const { file, warning } = resolveSession(options);
   if (!fs.existsSync(file)) throw new FactsError(`Session-Datei nicht gefunden: ${file}`);
   const range = rangeOf(readEntries(file), options);
   const session = mcpUsage.loadSession(file, { entries: range.entries, keepSubagent: range.keepSubagent });
+  const cwd = projectOf(options, session);
   if (options.cwd) session.cwd = options.cwd;
+  const expect = [...new Set([...(options.expect ?? []), ...configuredExpect(cwd)])];
   const facts = analyze(range.entries);
   const agents = subagentRows(file, range.keepSubagent);
-  const mcp = mcpUsage.render(session, { expect: options.expect, transcript: file });
+  const mcp = mcpUsage.render(session, { expect, transcript: file });
   const allFacts = [facts, ...agents.map((agent) => agent.facts)];
   let output = `${render(file, facts, agents, range.labels)}\n${savings(allFacts)}\n${mcp}`;
   if (options.skeleton) {
@@ -378,4 +403,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, run, parseArgs, resolveSession };
+module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, run, parseArgs, resolveSession, projectOf };

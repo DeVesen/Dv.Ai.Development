@@ -70,13 +70,23 @@ test('render_ErrorsAndRepeats_AreCountedPerServer', () => {
   assert.match(output, /\| dev-mcp \| genutzt \| 2 \| 1 \| 1 \| find_file \(2\) \| Hauptagent \(2\) \|/);
 });
 
-test('render_ExpectedAndConfiguredButUnused_AreMarked', () => {
+test('render_ExpectedButUnused_MarkedAndConfiguredOnlyAvailable', () => {
   const { transcript } = fixture();
+
   const output = render(loadSession(transcript), { transcript, expect: ['dev-mcp', 'codebase-analyzer', 'context7'] });
+
   assert.match(output, /\| context7 \| \*\*erwartet, ungenutzt\*\*/);
-  assert.match(output, /\| build-log-filter \| \*\*erwartet, ungenutzt\*\*/);
+  assert.doesNotMatch(output, /\| build-log-filter \| \*\*erwartet/);
   assert.doesNotMatch(output, /\| codebase-analyzer \| \*\*erwartet/);
-  assert.match(output, /Verfügbar, aber ungenutzt: Microsoft_Learn/);
+  assert.match(output, /Verfügbar, aber ungenutzt: Microsoft_Learn, build-log-filter/);
+});
+
+test('render_NoExpectedList_NoExpectedUnusedRow', () => {
+  const { transcript } = fixture();
+
+  const output = render(loadSession(transcript), { transcript });
+
+  assert.doesNotMatch(output, /erwartet, ungenutzt/);
 });
 
 test('render_ShellToolchainCall_IsListedAsFallbackCandidate', () => {

@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const flowReport = require('../scripts/lib/flow-report.js');
+const flowReport = require('../scripts/lib/flow-report-legacy.js');
 
 const item = (overrides = {}) => ({
   reviewer: 'verifier', location: 'AC-12', quote: 'q', category: 'widerspruch', consequence: 'k', rationale: 'r', color: 'red', capped: [], ...overrides,

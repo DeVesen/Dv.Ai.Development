@@ -10,6 +10,7 @@ const { snapshot, writeReworkInput } = require('./lib/rework-input');
 const { checkRework, checkAnswers } = require('./lib/rework-check');
 const { buildChecklist, verifyRoundTwo } = require('./lib/round-two');
 const { checkScout } = require('./lib/scout-check');
+const { report } = require('./lib/flow-report');
 const { writeScriptChecks } = require('./lib/script-checks');
 const { LEGACY_USAGE, LegacyUsageError, isLegacyCommand, runLegacy } = require('./lib/flow-legacy');
 const { ROUND_ONE, ROUND_TWO, FOLLOWUP, FlowError } = require('./lib/flow-files');
@@ -24,6 +25,7 @@ const USAGE = [
   '       node review-flow.js answers-check --review spec-review --dir <W> --doc <datei>',
   '       node review-flow.js checklist --review <..> --dir <W> --doc <datei> [--quelle runde-1|nacharbeit]',
   '       node review-flow.js verify --review <..> --dir <W> --doc <datei> [--spec <datei>] [--quelle runde-1|nacharbeit]',
+  '       node review-flow.js report --review <..> --dir <W> --doc <datei> --titel <text> --artefakt <pfad> [--quelle runde-1|nacharbeit]',
   '       node review-flow.js script-checks --review <..> --dir <W> --doc <datei> [--spec <datei>] [--runde runde-1|runde-2]',
   '',
 ].join('\n');
@@ -101,6 +103,7 @@ const COMMANDS = {
   'answers-check': (values) => checkAnswers(flowOptions(values)),
   checklist: (values) => buildChecklist(flowOptions(values)),
   verify: (values) => verifyRoundTwo(flowOptions(values)),
+  report: (values) => report({ ...flowOptions(values), title: required(values, 'titel'), artifact: required(values, 'artefakt') }),
   'script-checks': (values) => writeScriptChecks({ ...flowOptions(values), round: checkedRound(values.runde) }),
 };
 

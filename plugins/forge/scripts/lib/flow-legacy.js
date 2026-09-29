@@ -8,7 +8,7 @@ const units = require('./document-units');
 const rules = require('./review-rules');
 const groupsLib = require('./review-groups');
 const questions = require('./flow-questions');
-const flowReport = require('./flow-report');
+const flowReport = require('./flow-report-legacy');
 const { readContext } = require('../workspace');
 
 const KINDS = ['spec-review', 'plan-review'];

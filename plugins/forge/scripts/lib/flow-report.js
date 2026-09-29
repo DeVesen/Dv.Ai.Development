@@ -1,60 +1,132 @@
 'use strict';
 
-const { normalizeLocation } = require('../aggregate-findings');
-const { table, consequences, cell, hasScript } = require('./review-groups');
+const fs = require('node:fs');
+const path = require('node:path');
+const { openQuestions } = require('./questions');
+const { ICON, cell, renderGroups, renderTable } = require('./groups');
+const { SCRIPT_CATEGORY } = require('./rated-items');
+const { failedInstances } = require('./attempts');
+const { ROUND_ONE, ROUND_TWO, CLOSING, FlowError, readText, readLines, readJson, writeText } = require('./flow-files');
 
-// Status in fester Rangfolge; es gilt der erste, der zutrifft.
-function statusOf({ failed, open, verification }) {
+const SCOUT_HEADING = '## Scout-Vorschläge';
+
+// Rangfolge: unvollständig → Fragen offen → nicht bereit → sauber.
+function flowStatus({ failed, openQuestions: questions, openRed, reworked }) {
   if (failed.length > 0) return `unvollständig, ausgefallen: ${failed.join(', ')}`;
-  if (open.length > 0) return 'Fragen offen';
-  if (verification && verification.offen > 0) return `nicht bereit, ${verification.offen} × 🔴 offen`;
-  return verification ? 'sauber nach Nachprüfung' : 'sauber nach Runde 1';
+  if (questions > 0) return 'Fragen offen';
+  if (openRed > 0) return `nicht bereit, ${openRed} × 🔴 offen`;
+  return reworked ? 'sauber nach Nachprüfung' : 'sauber nach Runde 1';
 }
 
-function verdictTable(verdicts) {
-  if (verdicts.length === 0) return 'Keine Punkte auf der Prüfliste.';
-  const rows = verdicts.map((verdict) => {
-    const shown = verdict.script && verdict.verdict === 'nicht erledigt' ? '🔴 Skript-Prüfung' : verdict.verdict;
-    return `| ${cell(verdict.key)} | ${shown} | ${cell(verdict.rationale)} |`;
-  });
-  return ['| Stelle | Urteil | Begründung |', '|---|---|---|', ...rows].join('\n');
+function questionsAtEnd(options) {
+  if (options.review === 'plan-review') return readJson(path.join(options.workspace, options.source, 'fragen.json'), []);
+  return openQuestions(readText(options.doc));
 }
 
-function listSection(title, groups) {
-  if (groups.length === 0) return [];
-  return [`### ${title}`, ...groups.map((group) => `- ${group.color === 'red' ? '🔴 ' : ''}${group.key} — ${consequences(group)}`), ''];
+function redGroupCount(one) {
+  return (one?.groups ?? []).filter((group) => group.color === 'red').length;
 }
 
-// Offene Fragen: gebündelt wie gefragt, nur mit den noch offenen Stellen; Übrige einzeln.
-function openLines(open, asked) {
-  const openCanon = new Set(open.map((question) => question.canon));
-  const covered = new Set();
-  const lines = [];
-  for (const question of asked) {
-    const stillOpen = question.locations.filter((location) => openCanon.has(normalizeLocation(location)));
-    if (stillOpen.length === 0) continue;
-    stillOpen.forEach((location) => covered.add(normalizeLocation(location)));
-    lines.push(`- ${question.number} · ${stillOpen.join(', ')} — ${question.question}`);
-  }
-  for (const question of open) if (!covered.has(question.canon)) lines.push(`- ${question.key} — ${question.question}`);
-  return lines;
+// Offene 🔴: aus der Nachprüfung; ohne Nacharbeit die 🔴-Gruppen aus Runde 1. Eine Nacharbeit ohne Nachprüfung
+// und ohne Ausfall ist ein fehlender Schritt und darf den Status nicht ins Positive kippen.
+function openRedOf(one, two, reworked, failed) {
+  if (two) return two.openRed;
+  if (reworked && failed.length === 0) throw new FlowError('Nachprüfung fehlt: runde-2/einstufung.json');
+  return redGroupCount(one);
 }
 
-function report({ title, artifact, status, roundOne, verification, reworked, open, asked }) {
-  const rounds = (roundOne ? 1 : 0) + (verification ? 1 : 0);
-  const parts = [`## ${title}: ${artifact}`, '', `**Status:** ${status}`, `**Runden:** ${rounds} · **Nacharbeiten:** ${reworked ? 1 : 0}`, ''];
-  if (roundOne) parts.push('### Runde 1', table(roundOne.groups), '');
-  if (verification) {
-    const red = verification.groups.filter((group) => group.color === 'red');
-    parts.push('### Nachprüfung', verdictTable(verification.verdicts), '');
-    parts.push(...listSection('Widersprüche', red.filter((group) => !hasScript(group))));
-    parts.push(...listSection('Skript-Befunde', red.filter(hasScript)));
-  }
-  const lines = openLines(open, asked);
-  if (lines.length > 0) parts.push('### Offene Fragen', ...lines, '');
-  const green = [...(roundOne?.groups ?? []), ...(verification?.groups ?? [])].filter((group) => group.color === 'green');
-  parts.push(...listSection('Anmerkungen (🟢)', green));
-  return `${parts.join('\n').trimEnd()}\n`;
+function collect(options) {
+  const attempts = failedInstances(options.workspace);
+  const failed = attempts.filter((name) => !name.startsWith('scout'));
+  const one = readJson(path.join(options.workspace, ROUND_ONE, 'einstufung.json'), null);
+  const two = readJson(path.join(options.workspace, ROUND_TWO, 'einstufung.json'), null);
+  const reworked = fs.existsSync(path.join(options.workspace, options.source, 'rework.json'));
+  return {
+    one, two, reworked, failed,
+    openRed: openRedOf(one, two, reworked, failed),
+    checked: fs.existsSync(path.join(options.workspace, ROUND_TWO, 'pruefliste.json')),
+    questions: questionsAtEnd(options),
+    scoutFailed: attempts.some((name) => name.startsWith('scout')),
+  };
 }
 
-module.exports = { statusOf, report, verdictTable, openLines };
+function groupLine(group) {
+  const consequences = group.items.map((item) => cell(item.finding.consequence)).join('; ');
+  return `- ${ICON[group.color]} ${group.label}: ${consequences}`;
+}
+
+function listSection(title, lines) {
+  return lines.length > 0 ? [`### ${title}`, ...lines, ''] : [];
+}
+
+function verdictRow(verdict) {
+  const text = verdict.verdict === 'nicht erledigt' ? `nicht erledigt — ${cell(verdict.rationale)}` : 'erledigt';
+  return `| ${cell(verdict.location)} | ${text} |`;
+}
+
+function verdictSection(two) {
+  if (!two) return [];
+  const rows = two.verdicts.length > 0 ? two.verdicts.map(verdictRow) : ['| – | keine Punkte |'];
+  return ['### Nachprüfung', '| Stelle | Urteil |', '|---|---|', ...rows, ''];
+}
+
+const isContradiction = (item) => item.category === 'widerspruch';
+const isScript = (item) => item.category === SCRIPT_CATEGORY;
+const isOtherRed = (item) => item.color === 'red' && !isContradiction(item) && !isScript(item);
+
+function redOfTwo(two, predicate) {
+  return (two?.groups ?? []).filter((group) => group.color === 'red' && group.items.some(predicate));
+}
+
+function greenGroups(data) {
+  return [...(data.one?.groups ?? []), ...(data.two?.groups ?? [])].filter((group) => group.color === 'green');
+}
+
+function header(data, options, status) {
+  const rounds = (data.one ? 1 : 0) + (data.checked ? 1 : 0);
+  return [
+    `## ${options.title}: ${options.artifact}`, '',
+    `**Status:** ${status}`,
+    `**Runden:** ${rounds} · **Nacharbeiten:** ${data.reworked ? 1 : 0}`, '',
+  ];
+}
+
+function renderReport(data, options, status) {
+  return [
+    ...header(data, options, status),
+    ...(data.one ? ['### Runde 1', renderTable(data.one.groups), ''] : []),
+    ...verdictSection(data.two),
+    ...listSection('Widersprüche', redOfTwo(data.two, isContradiction).map(groupLine)),
+    ...listSection('Skript-Prüfungen', redOfTwo(data.two, isScript).map(groupLine)),
+    ...listSection('Weitere 🔴 der Nachprüfung', redOfTwo(data.two, isOtherRed).map(groupLine)),
+    ...listSection('Hinweise der Nachprüfung', (data.two?.groups ?? []).filter((group) => group.color === 'yellow').map(groupLine)),
+    ...listSection('Offene Fragen', data.questions.map((question) => `- ${question.place}: ${question.question}`)),
+    ...listSection('Anmerkungen (🟢)', greenGroups(data).map(groupLine)),
+    ...listSection('Scout', data.scoutFailed ? ['- Scout ausgefallen'] : []),
+  ].join('\n').trimEnd();
+}
+
+function scoutBody(file) {
+  const lines = readLines(file);
+  const start = lines.indexOf(SCOUT_HEADING);
+  return start === -1 ? [] : lines.slice(start + 1);
+}
+
+// Sicherung für review-followup: alle Gruppen mit Scout-Vorschlägen aus Runde 1 und Nachprüfung.
+function writeClosing(options, data) {
+  const dir = path.join(options.workspace, CLOSING);
+  fs.rmSync(dir, { recursive: true, force: true });
+  const bodies = [ROUND_ONE, ROUND_TWO].flatMap((round) => scoutBody(path.join(options.workspace, round, 'scout.md')));
+  const groups = [...(data.one?.groups ?? []), ...(data.two?.groups ?? [])].filter((group) => group.color !== 'green');
+  writeText(path.join(dir, 'aggregate.md'), renderGroups(groups));
+  if (bodies.some((line) => line.trim() !== '')) writeText(path.join(dir, 'scout.md'), [SCOUT_HEADING, ...bodies].join('\n'));
+}
+
+function report(options) {
+  const data = collect(options);
+  const status = flowStatus({ failed: data.failed, openQuestions: data.questions.length, openRed: data.openRed, reworked: data.reworked });
+  writeClosing(options, data);
+  return [`ENDE ${status}`, '=== BERICHT ===', renderReport(data, options, status)].join('\n');
+}
+
+module.exports = { flowStatus, report };

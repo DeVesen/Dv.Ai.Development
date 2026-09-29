@@ -7,6 +7,7 @@ const path = require('node:path');
 const mcpUsage = require('./mcp-usage.js');
 const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
 const { rangeOf } = require('./lib/retro-range');
+const { timeProfile, harnessHints } = require('./lib/retro-measures');
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
   + ' [--since-command <name>] [--before-retro] [--lenient] [--skeleton <bericht.md>]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
@@ -123,6 +124,8 @@ function analyze(entries) {
   }
   facts.humans = humanEvents(entries);
   facts.turns = facts.humans.filter((event) => event.kind === 'Eingabe').length;
+  facts.time = timeProfile(entries);
+  facts.hints = harnessHints(entries);
   return facts;
 }
 
@@ -189,6 +192,11 @@ function errorLinesOf(facts) {
   return [...facts.errors.entries()].flatMap(([tool, list]) => list.map((text) => `- ${tool}: ${text}`));
 }
 
+function timeLine(time) {
+  const from = time.silenceFrom ? ` (ab Eintrag ${time.silenceFrom})` : '';
+  return `- Zeit: aktiv ${time.active} min · Warten auf den Menschen ${time.waiting} min · längste Strecke ohne Text an den Menschen ${time.silence} min${from}`;
+}
+
 function factLines(facts, agents) {
   const tools = [...facts.tools.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`).join(', ') || '-';
   const skills = [...facts.skills.entries()].map(([name, count]) => `${name} ${count}`).join(', ') || '-';
@@ -201,6 +209,8 @@ function factLines(facts, agents) {
     `- Tool-Aufrufe: ${tools}`,
     `- Skills: ${skills}`,
     `- Tool-Fehler: ${errorLinesOf(facts).length}, davon blockiert oder verweigert: ${facts.denials} · direkt wiederholte gleiche Aufrufe: ${facts.repeats}`,
+    timeLine(facts.time),
+    `- Harness-Hinweise: ${facts.hints.map(([kind, count]) => `${kind} ${count}`).join(', ') || 'keine'}`,
   ];
 }
 

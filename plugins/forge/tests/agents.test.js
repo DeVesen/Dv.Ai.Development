@@ -330,8 +330,8 @@ test('spec-review-completeness_Body_CategoriesPerCaseTitleHeadingAndSourceForEve
   const { body } = readAgent('spec-review-completeness');
   for (const part of [
     'Fehlt es, meldest du ein Finding der Kategorie `fehlendes-verhalten` an der Abschnittsüberschrift der Funktion.',
-    'etwa „dann funktioniert der Export korrekt“, meldest du an seiner AC-ID ein Finding der Kategorie `fehlendes-verhalten`.',
-    'Nennt es ein Ergebnis ohne Maß, etwa „dann lädt die Liste schnell“, ist das Finding `detail`.',
+    'etwa „dann funktioniert der Export korrekt”, meldest du an seiner AC-ID ein Finding der Kategorie `fehlendes-verhalten`.',
+    'Nennt es ein Ergebnis ohne Maß, etwa „dann lädt die Liste schnell”, ist das Finding `detail`.',
     'genau ein Finding der Kategorie `fehlendes-verhalten` an der Titelüberschrift (`#`) des Dokuments und keine weiteren Findings je Funktion ohne AC.',
     '`location` ist der Text der Titelüberschrift ohne `#`, `quote` ist `Keine AC-ID in der Spec`.',
     'gleichst du sie bei jeder Art der Spec ab, auch bei `Art: frei`',
@@ -340,7 +340,19 @@ test('spec-review-completeness_Body_CategoriesPerCaseTitleHeadingAndSourceForEve
     assert.ok(body.includes(part), part);
   }
   assert.ok(!body.includes('an der ersten Überschrift der Spec'), 'alte Stelle ohne AC-ID');
-  assert.ok(!body.includes('„korrekt“, „möglich“, „sinnvoll“'), 'alte Liste vager Wörter');
+  assert.ok(!body.includes('„korrekt”, „möglich”, „sinnvoll”'), 'alte Liste vager Wörter');
+});
+
+test('spec-review-consistency_Body_ContradictionAndReferenceCategories', () => {
+  const { body } = readAgent('spec-review-consistency');
+  for (const part of [
+    'Jeden Widerspruch meldest du als `widerspruch` an der Stelle der späteren Aussage. In `quote` stehen beide Zitate, getrennt durch ` ↔ `.',
+    'Ein Verweis bei einer Funktion, die die Spec selbst beschreibt, ist `detail`.',
+    'Ist der Verweis die einzige Beschreibung einer Funktion, ist er `fehlendes-verhalten`.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(!body.includes('hat `unerfuellbar`, wenn der Bau seinen Inhalt braucht'), 'alte Verweis-Regel');
 });
 
 for (const [name, tools, inputs, categories] of [

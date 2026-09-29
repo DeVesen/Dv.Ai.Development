@@ -287,6 +287,20 @@ test('scoutCheck_TwoPreferredLines_Invalid', () => {
   assert.equal(result.stdout, 'SCOUT ungültig: 🔴 AC-04: nicht genau ein bevorzugter Vorschlag\n');
 });
 
+test('scoutCheck_DeviatingPreferredLineBesideValidOne_Invalid', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+  rate(env, 'consistency');
+  fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'), '## Scout-Vorschläge\n\n### 🔴 AC-04\n1. a\n2. b\n**Bevorzugt: 1** — x\n**Bevorzugt: 2 und 1** — y\n');
+
+  // Act
+  const result = flow('scout-check', '--dir', path.join(env.workspace, 'runde-1'));
+
+  // Assert
+  assert.equal(result.stdout, 'SCOUT ungültig: 🔴 AC-04: nicht genau ein bevorzugter Vorschlag\n');
+});
+
 test('scoutCheck_NoPreferredLine_Invalid', () => {
   // Arrange
   const env = setup();

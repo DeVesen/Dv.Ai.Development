@@ -133,6 +133,30 @@ test('parseScout_PreferredLineInsideCodeFence_NotCounted', () => {
   assert.equal(group.preferredCount, 1);
 });
 
+test('parseScout_ValidThenDeviatingPreferredLine_CountsBothAndKeepsProposalsClean', () => {
+  const lines = ['## Scout-Vorschläge', '', '### 🔴 AC-04', '1. a', '2. b', '**Bevorzugt: 1** — x', '**Bevorzugt: 2 und 1** — y'];
+  const [group] = followup.parseScout(lines);
+  assert.equal(group.preferredCount, 2);
+  assert.equal(group.preferred, 1);
+  assert.deepEqual(group.proposals, ['a', 'b']);
+});
+
+test('parseScout_DeviatingThenValidPreferredLine_CountsBothAndKeepsProposalsClean', () => {
+  const lines = ['## Scout-Vorschläge', '', '### 🔴 AC-04', '1. a', '2. b', '**Bevorzugt: 2 und 1** — y', '**Bevorzugt: 1** — x'];
+  const [group] = followup.parseScout(lines);
+  assert.equal(group.preferredCount, 2);
+  assert.equal(group.preferred, 1);
+  assert.deepEqual(group.proposals, ['a', 'b']);
+});
+
+test('parseScout_PreferredLineWithoutNumber_CountsWithoutPreferredAndEndsProposals', () => {
+  const lines = ['## Scout-Vorschläge', '', '### 🔴 AC-04', '1. a', '**Bevorzugt: <Nr>** — x', 'weil y'];
+  const [group] = followup.parseScout(lines);
+  assert.equal(group.preferredCount, 1);
+  assert.equal(group.preferred, null);
+  assert.deepEqual(group.proposals, ['a']);
+});
+
 test('loadGroups_LocationWithParentheses_ReviewersFromLastParenthesis', () => {
   const repo = makeRepo();
   const aggregate = '=== REWORK ===\n### 🟡 `src/a.ts` (Zeile 3) (risks)\n- [risks · yellow] Zitat: „x“ · Konsequenz: k · Begründung: b\n';

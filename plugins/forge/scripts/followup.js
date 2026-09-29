@@ -15,6 +15,7 @@ const SCOUT_HEADING = /^## Scout-Vorschläge\s*$/;
 const GROUP_HEADING = /^### (🔴|🟡|🟢) (.+?)\s*$/u;
 const REWORK_HEADING = /^### (🔴|🟡|🟢) (.+) \(([^()]*)\)\s*$/u;
 const PROPOSAL = /^\d+\.\s+(.*)$/;
+const PREFERRED_LINE = /^\*\*Bevorzugt:/;
 const PREFERRED = /^\*\*Bevorzugt: (\d+)\*\*/;
 const FENCE = /^\s*(```|~~~)/;
 const REWORK_MARK = '=== REWORK ===';
@@ -87,10 +88,12 @@ function appendToProposal(group, line) {
   group.proposals[last] = `${group.proposals[last]}\n${line}`;
 }
 
-// `preferredCount` zählt die Bevorzugt-Zeilen außerhalb von Code-Fences; `preferred` ist die Nummer der letzten.
-function markPreferred(group, number) {
-  group.preferred = number;
+// `preferredCount` zählt jede Zeile mit `**Bevorzugt:` außerhalb von Code-Fences, auch ohne gültige Nummer.
+// `preferred` bleibt die Nummer der letzten Zeile mit gültiger Nummer.
+function markPreferred(group, line) {
+  const number = PREFERRED.exec(line);
   group.preferredCount += 1;
+  if (number) group.preferred = Number(number[1]);
 }
 
 function parseScout(lines) {
@@ -107,10 +110,10 @@ function parseScout(lines) {
     if (!current) continue;
     const opensOrClosesFence = FENCE.test(line);
     const proposal = inFence || opensOrClosesFence ? null : PROPOSAL.exec(line);
-    const preferred = inFence ? null : PREFERRED.exec(line);
+    const preferredLine = !inFence && PREFERRED_LINE.test(line);
     if (proposal) current.proposals.push(proposal[1]);
-    else if (preferred) markPreferred(current, Number(preferred[1]));
-    else if (current.proposals.length > 0 && current.preferred === null) appendToProposal(current, line);
+    else if (preferredLine) markPreferred(current, line);
+    else if (current.proposals.length > 0 && current.preferredCount === 0) appendToProposal(current, line);
     if (opensOrClosesFence) inFence = !inFence;
   }
   for (const group of groups) group.proposals = group.proposals.map((text) => text.trimEnd());

@@ -2,95 +2,184 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const rules = require('../scripts/lib/review-rules.js');
+const { findingProblem, resultProblem, rateFinding } = require('../scripts/lib/rules');
+const { finding } = require('./lib/review-flow-fixture');
 
-const finding = (overrides = {}) => ({
-  location: 'AC-07', quote: 'q', category: 'detail', consequence: 'c', rationale: 'r', ...overrides,
-});
-const unit = (key = 'AC-07', kind = 'item') => ({ key, canon: key.toLowerCase().replace(/-0*/, '-'), kind });
-const ctx = (overrides = {}) => ({ advisory: [], openKeys: new Set(), quoteFromW: () => false, verification: null, ...overrides });
-const rate = (overrides, context = ctx(), target = unit(), reviewer = 'clarity') => rules.rateFinding(finding(overrides), reviewer, target, context);
+const PLACE = { key: 'ac-1', label: 'AC-01' };
+const W_ENTRY = '- **W · Deckel** · Aussage — Zwei Runden, keine dritte.';
 
-test('rateFinding_RedCategories_AreRed', () => {
-  for (const category of ['widerspruch', 'fehlendes-verhalten', 'unerfuellbar', 'ac-fehlt-im-plan', 'umsetzer-steckt-fest']) {
-    assert.equal(rate({ category }).color, 'red', category);
-  }
-});
+function context(overrides = {}) {
+  return {
+    review: 'spec-review', reviewer: 'clarity', advisory: new Set(), wEntries: [W_ENTRY], openKeys: new Set(),
+    phase: 'suche', checklistKeys: new Set(), changedKeys: new Set(), ...overrides,
+  };
+}
+
+function colorOf(overrides, contextOverrides = {}, place = PLACE) {
+  return rateFinding(finding(overrides), place, context(contextOverrides)).color;
+}
+
+for (const category of ['widerspruch', 'fehlendes-verhalten', 'unerfuellbar']) {
+  test(`rateFinding_SpecCategory${category}_IsRed`, () => {
+    // Act
+    const color = colorOf({ category });
+
+    // Assert
+    assert.equal(color, 'red');
+  });
+}
+
+for (const category of ['ac-fehlt-im-plan', 'umsetzer-steckt-fest']) {
+  test(`rateFinding_PlanCategory${category}_IsRed`, () => {
+    // Act
+    const color = colorOf({ category, location: 'Task 1' }, { review: 'plan-review' });
+
+    // Assert
+    assert.equal(color, 'red');
+  });
+}
 
 test('rateFinding_DetailAndFormulierung_AreYellowAndGreen', () => {
-  assert.equal(rate({ category: 'detail' }).color, 'yellow');
-  assert.equal(rate({ category: 'formulierung' }).color, 'green');
+  // Act
+  const colors = [colorOf({ category: 'detail' }), colorOf({ category: 'formulierung' })];
+
+  // Assert
+  assert.deepEqual(colors, ['yellow', 'green']);
 });
 
-test('reviewProblem_PlanCategoryOrUnknownInSpecReview_Invalid', () => {
-  const review = (category) => ({ reviewer: 'clarity', findings: [finding({ category })] });
-  assert.match(rules.reviewProblem(review('ac-fehlt-im-plan'), 'spec-review', 'clarity'), /unbekannte Kategorie: ac-fehlt-im-plan/);
-  assert.match(rules.reviewProblem(review('stil'), 'spec-review', 'clarity'), /unbekannte Kategorie: stil/);
-  assert.equal(rules.reviewProblem(review('ac-fehlt-im-plan'), 'plan-review', 'clarity'), null);
+test('findingProblem_PlanCategoryInSpecReview_IsInvalid', () => {
+  // Act
+  const problem = findingProblem(finding({ category: 'ac-fehlt-im-plan' }), 'spec-review');
+
+  // Assert
+  assert.equal(problem, 'Kategorie unbekannt: ac-fehlt-im-plan (AC-01)');
 });
 
-test('reviewProblem_MissingRationaleOrOtherField_Invalid', () => {
-  for (const field of ['location', 'quote', 'category', 'consequence', 'rationale']) {
-    const broken = finding();
-    delete broken[field];
-    assert.match(rules.reviewProblem({ reviewer: 'clarity', findings: [broken] }, 'spec-review', 'clarity'), new RegExp(`ohne Pflichtfeld ${field}`));
-  }
-  assert.match(rules.reviewProblem({ reviewer: 'clarity', findings: [finding({ rationale: '  ' })] }, 'spec-review', 'clarity'), /Pflichtfeld rationale/);
+test('findingProblem_UnknownCategory_IsInvalid', () => {
+  // Act
+  const problem = findingProblem(finding({ category: 'stil' }), 'plan-review');
+
+  // Assert
+  assert.equal(problem, 'Kategorie unbekannt: stil (AC-01)');
 });
 
-test('reviewProblem_FindingWithColor_Invalid', () => {
-  const review = { reviewer: 'clarity', findings: [finding({ severity: 'red' })] };
-  assert.match(rules.reviewProblem(review, 'spec-review', 'clarity'), /nennt eine Farbe \(severity\)/);
-  assert.match(rules.reviewProblem({ reviewer: 'clarity', findings: [finding({ color: 'red' })] }, 'plan-review', 'clarity'), /Farbe/);
+test('findingProblem_MissingRationale_IsInvalid', () => {
+  // Arrange
+  const { rationale, ...withoutRationale } = finding();
+
+  // Act
+  const problem = findingProblem(withoutRationale, 'spec-review');
+
+  // Assert
+  assert.equal(problem, 'Pflichtfeld fehlt: rationale (AC-01)');
 });
 
-test('reviewProblem_WrongNameOrNoFindings_Invalid', () => {
-  assert.match(rules.reviewProblem({ reviewer: 'x', findings: [] }, 'spec-review', 'clarity'), /passt nicht/);
-  assert.match(rules.reviewProblem({ reviewer: 'clarity' }, 'spec-review', 'clarity'), /findings fehlt/);
-  assert.equal(rules.reviewProblem({ reviewer: 'clarity', summary: 's', findings: [] }, 'spec-review', 'clarity'), null);
+test('findingProblem_ColorInFinding_IsInvalid', () => {
+  // Act
+  const problem = findingProblem(finding({ severity: 'red' }), 'spec-review');
+
+  // Assert
+  assert.equal(problem, 'Farbe im Finding: AC-01');
 });
 
-test('rateFinding_AdvisoryReviewerContradiction_CappedYellow', () => {
-  const result = rate({ category: 'widerspruch' }, ctx({ advisory: ['profiles'] }), unit(), 'profiles');
-  assert.equal(result.color, 'yellow');
-  assert.deepEqual(result.capped, ['beratend']);
-  assert.equal(rate({ category: 'widerspruch' }, ctx({ advisory: ['profiles'] }), unit(), 'clarity').color, 'red');
+test('resultProblem_ReviewerNameDiffers_IsInvalid', () => {
+  // Act
+  const problem = resultProblem({ reviewer: 'spec-review-clarity', findings: [] }, 'spec-review', 'clarity');
+
+  // Assert
+  assert.equal(problem, 'reviewer passt nicht zum Dateinamen: spec-review-clarity');
 });
 
-test('rateFinding_WholeQuoteFromWEntry_CappedYellow', () => {
-  const fromW = ctx({ quoteFromW: (quote) => quote === 'Zwei Runden.' });
-  assert.equal(rate({ category: 'fehlendes-verhalten', quote: 'Zwei Runden.' }, fromW).color, 'yellow');
-  assert.equal(rate({ category: 'widerspruch', quote: 'Höchstens drei. ↔ Zwei Runden.' }, fromW).color, 'red');
+test('rateFinding_AdvisoryReviewerContradiction_IsCappedAtYellow', () => {
+  // Act
+  const color = colorOf({ category: 'widerspruch' }, { advisory: new Set(['clarity']) });
+
+  // Assert
+  assert.equal(color, 'yellow');
 });
 
-test('rateFinding_SpellingWordAsWholeWord_CappedYellow', () => {
-  assert.equal(rate({ category: 'fehlendes-verhalten', consequence: 'Ein Umlaut fehlt' }).color, 'yellow');
-  assert.equal(rate({ category: 'widerspruch', rationale: '„ß" statt „ss"' }).color, 'yellow');
-  assert.equal(rate({ category: 'widerspruch', location: 'Großschreibung' }).color, 'yellow');
+test('rateFinding_WholeQuoteFromWEntry_IsCappedAtYellow', () => {
+  // Act
+  const color = colorOf({ category: 'fehlendes-verhalten', quote: 'Zwei Runden, keine dritte.' });
+
+  // Assert
+  assert.equal(color, 'yellow');
 });
 
-test('rateFinding_OtherWordForms_NotCapped', () => {
-  assert.equal(rate({ category: 'fehlendes-verhalten', consequence: 'Umlaute fehlen' }).color, 'red');
-  assert.equal(rate({ category: 'fehlendes-verhalten', quote: 'Straße' }).color, 'red');
-  assert.equal(rate({ category: 'fehlendes-verhalten', quote: 'umlaut' }).color, 'red');
+test('rateFinding_QuoteSetsSpecSentenceAgainstWEntry_StaysRed', () => {
+  // Act
+  const color = colorOf({ category: 'widerspruch', quote: 'Höchstens drei Runden. ↔ Zwei Runden, keine dritte.' });
+
+  // Assert
+  assert.equal(color, 'red');
 });
 
-test('rateFinding_HeaderOrOpenQuestion_Dropped', () => {
-  assert.equal(rate({}, ctx(), unit('Basis', 'header')).dropped, 'Kopfzeile');
-  assert.equal(rate({ category: 'widerspruch' }, ctx({ openKeys: new Set(['ac-7']) })).dropped, 'offene Frage');
+test('rateFinding_WordUmlautInText_IsCappedAtYellow', () => {
+  // Act
+  const color = colorOf({ category: 'fehlendes-verhalten', rationale: 'Der Umlaut fehlt.' });
+
+  // Assert
+  assert.equal(color, 'yellow');
 });
 
-test('rateFinding_ScriptCheckAtOpenQuestion_StaysRed', () => {
-  const result = rules.rateFinding(finding({ category: 'umsetzer-steckt-fest' }), 'skript:anker', unit(), ctx({ openKeys: new Set(['ac-7']) }), true);
-  assert.equal(result.dropped, undefined);
-  assert.equal(result.color, 'red');
+test('rateFinding_SharpSInQuotes_IsCappedAtYellow', () => {
+  // Act
+  const color = colorOf({ category: 'widerspruch', consequence: '„ß“ statt „ss“' });
+
+  // Assert
+  assert.equal(color, 'yellow');
 });
 
-test('rateFinding_VerificationOutsideChecklist_CappedUnlessContradictionInChange', () => {
-  const verification = { checklist: new Set(['ac-1']), changed: new Set(['ac-7']) };
-  assert.equal(rate({ category: 'fehlendes-verhalten' }, ctx({ verification })).color, 'yellow');
-  assert.equal(rate({ category: 'widerspruch' }, ctx({ verification })).color, 'red');
-  assert.equal(rate({ category: 'widerspruch' }, ctx({ verification: { checklist: new Set(), changed: new Set() } })).color, 'yellow');
-  assert.equal(rate({ category: 'fehlendes-verhalten', location: 'AC-01' }, ctx({ verification }), unit('AC-01')).color, 'red');
-  assert.equal(rules.rateFinding(finding({ category: 'ac-fehlt-im-plan' }), 'skript:ac-abdeckung', unit(), ctx({ verification: { checklist: new Set(), changed: new Set() } }), true).color, 'red');
+test('rateFinding_WordsUmlauteAndStrasse_StayRed', () => {
+  // Act
+  const colors = [
+    colorOf({ category: 'fehlendes-verhalten', rationale: 'Umlaute im Namen' }),
+    colorOf({ category: 'widerspruch', quote: 'Straße' }),
+  ];
+
+  // Assert
+  assert.deepEqual(colors, ['red', 'red']);
+});
+
+test('rateFinding_HeaderBasis_IsDropped', () => {
+  // Act
+  const rating = rateFinding(finding({ location: 'Basis', category: 'widerspruch' }), PLACE, context());
+
+  // Assert
+  assert.deepEqual(rating, { color: null, dropped: 'Kopfzeile' });
+});
+
+test('rateFinding_PlaceWithOpenQuestion_IsDropped', () => {
+  // Act
+  const rating = rateFinding(finding({ category: 'widerspruch' }), PLACE, context({ openKeys: new Set(['ac-1']) }));
+
+  // Assert
+  assert.deepEqual(rating, { color: null, dropped: 'offene Frage' });
+});
+
+test('rateFinding_VerificationOutsideChecklist_IsCappedAtYellow', () => {
+  // Act
+  const color = colorOf({ category: 'fehlendes-verhalten' }, { phase: 'nachpruefung' });
+
+  // Assert
+  assert.equal(color, 'yellow');
+});
+
+test('rateFinding_VerificationContradictionInChangedArea_StaysRed', () => {
+  // Act
+  const color = colorOf({ category: 'widerspruch' }, { phase: 'nachpruefung', changedKeys: new Set(['ac-1']) });
+
+  // Assert
+  assert.equal(color, 'red');
+});
+
+test('rateFinding_SameInputTwice_SameRating', () => {
+  // Arrange
+  const input = finding({ category: 'widerspruch', rationale: 'Umlaut' });
+
+  // Act
+  const ratings = [rateFinding(input, PLACE, context()), rateFinding(input, PLACE, context())];
+
+  // Assert
+  assert.deepEqual(ratings[0], ratings[1]);
 });

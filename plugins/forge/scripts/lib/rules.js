@@ -10,6 +10,7 @@ const CATEGORIES = {
   'plan-review': { ...SPEC_CATEGORIES, 'ac-fehlt-im-plan': 'red', 'umsetzer-steckt-fest': 'red' },
 };
 const REQUIRED_FIELDS = ['location', 'quote', 'category', 'consequence', 'rationale'];
+const COLOR_FIELDS = ['severity', 'color'];
 const SPELLING_WORDS = /(?<!\p{L})(?:Großschreibung|Kleinschreibung|ß|Umlaut|Diakritik)(?!\p{L})/u;
 
 function isReview(review) {
@@ -19,7 +20,7 @@ function isReview(review) {
 function findingProblem(finding, review) {
   if (finding === null || typeof finding !== 'object' || Array.isArray(finding)) return 'Finding ist kein Objekt';
   const where = String(finding.location ?? '?');
-  if (Object.hasOwn(finding, 'severity')) return `Farbe im Finding: ${where}`;
+  if (COLOR_FIELDS.some((field) => Object.hasOwn(finding, field))) return `Farbe im Finding: ${where}`;
   const missing = REQUIRED_FIELDS.find((field) => typeof finding[field] !== 'string' || finding[field].trim() === '');
   if (missing) return `Pflichtfeld fehlt: ${missing} (${where})`;
   if (!Object.hasOwn(CATEGORIES[review], finding.category)) return `Kategorie unbekannt: ${finding.category} (${where})`;

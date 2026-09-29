@@ -82,6 +82,14 @@ test('findingProblem_ColorInFinding_IsInvalid', () => {
   assert.equal(problem, 'Farbe im Finding: AC-01');
 });
 
+test('findingProblem_ColorFieldInFinding_IsInvalid', () => {
+  // Act
+  const problem = findingProblem(finding({ color: 'red' }), 'spec-review');
+
+  // Assert
+  assert.equal(problem, 'Farbe im Finding: AC-01');
+});
+
 test('resultProblem_ReviewerNameDiffers_IsInvalid', () => {
   // Act
   const problem = resultProblem({ reviewer: 'spec-review-clarity', findings: [] }, 'spec-review', 'clarity');

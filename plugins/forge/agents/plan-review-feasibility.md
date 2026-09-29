@@ -19,11 +19,11 @@ Du prüfst einen Umsetzungsplan darauf, ob er sich in der geplanten Reihenfolge 
 Gibt es `Anker:`, liest du den Plan einmal ganz und danach nur noch Abschnitte per Zeilenbereich laut Task-Übersicht in der Anker-Datei.
 
 ## Prüfauftrag
-1. **Reihenfolge:** Alles, was ein Task unter `Consumes` nennt, produziert ein früherer Task oder existiert bereits im Repo. Sonst: Finding an `Task <n>`.
-2. **Namen und Typen:** Dieselbe Funktion, derselbe Typ, dasselbe Feld heißt in allen Tasks gleich und hat dieselbe Signatur.
-3. **Externe Voraussetzungen:** Pakete, Dienste, Zugangsdaten oder Werkzeuge, die der Plan nutzt, aber weder herstellt noch im Repo als vorhanden belegt sind. Im Repo nachsehen, bevor du meldest.
-4. **Widersprüche zwischen Tasks:** Ein späterer Task macht zunichte, was ein früherer gebaut hat.
-5. **⚠-Zeilen:** Gibt es `Anker:`, prüfst du jede ⚠-Zeile gegen den Code, den der genannte frühere Task im Plan schreibt. Führt auch er den Anker nicht ein: Finding an `Task <n>` der ⚠-Zeile.
+1. **Reihenfolge:** Alles, was ein Task braucht, etwa unter `Consumes`, produziert ein früherer Task oder existiert bereits im Repo. Sonst: Finding an `Task <n>` des Tasks, der es braucht, Kategorie `umsetzer-steckt-fest`.
+2. **Namen und Typen:** Dieselbe Funktion, derselbe Typ, dasselbe Feld heißt in allen Tasks gleich und hat dieselbe Signatur. Sonst: Finding an einem der beiden Tasks, Kategorie `umsetzer-steckt-fest`.
+3. **Externe Voraussetzungen:** Pakete, Dienste, Zugangsdaten oder Werkzeuge, die der Plan nutzt, aber weder herstellt noch im Repo als vorhanden belegt sind. Im Repo nachsehen, bevor du meldest. Finding an einem Task, der die Voraussetzung nutzt, Kategorie `umsetzer-steckt-fest`.
+4. **Widersprüche zwischen Tasks:** Ein späterer Task hebt auf, was ein früherer gebaut hat. Finding an dem späteren Task, Kategorie `widerspruch`.
+5. **⚠-Zeilen:** Gibt es `Anker:`, prüfst du jede ⚠-Zeile gegen den Code, den die früheren Tasks im Plan schreiben. Führt keiner von ihnen den Anker ein: Finding an `Task <n>` der ⚠-Zeile, Kategorie `umsetzer-steckt-fest`. ❌-Zeilen meldet ein Skript; du meldest sie nie, damit derselbe Anker nicht doppelt gemeldet wird.
 
 ## Nicht deine Aufgabe
 Existenz von Dateien und Ankern prüfst du nicht; sie steht in der Anker-Datei. Zeit- und Aufwandsschätzung, Stil, Architektur-Vorlieben, Fehlerbehandlung, AC-Abdeckung. Doku-Zitate, Meldungstexte, Selektoren und Signaturen fremder Bibliotheken sowie Tool-Parameter prüft `buildability`.

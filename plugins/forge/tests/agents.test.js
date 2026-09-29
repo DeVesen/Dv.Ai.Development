@@ -437,3 +437,17 @@ test('plan-review-coverage_Body_CategoryPerCheckAndDefinitions', () => {
   }
   assert.ok(!body.includes('1. Jede AC-ID der Spec steht unter `**ACs:**` in mindestens einem Task.'), 'alte Handprüfung der AC-Abdeckung');
 });
+
+test('plan-review-feasibility_Body_CategoryPerCheckAndNoRedAnchorLines', () => {
+  const { body } = readAgent('plan-review-feasibility');
+  for (const part of [
+    'Sonst: Finding an `Task <n>` des Tasks, der es braucht, Kategorie `umsetzer-steckt-fest`.',
+    'Sonst: Finding an einem der beiden Tasks, Kategorie `umsetzer-steckt-fest`.',
+    'Finding an einem Task, der die Voraussetzung nutzt, Kategorie `umsetzer-steckt-fest`.',
+    'Ein späterer Task hebt auf, was ein früherer gebaut hat. Finding an dem späteren Task, Kategorie `widerspruch`.',
+    'Führt keiner von ihnen den Anker ein: Finding an `Task <n>` der ⚠-Zeile, Kategorie `umsetzer-steckt-fest`.',
+    '❌-Zeilen meldet ein Skript; du meldest sie nie, damit derselbe Anker nicht doppelt gemeldet wird.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+});

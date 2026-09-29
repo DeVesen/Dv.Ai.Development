@@ -147,3 +147,19 @@ test('describeTasks_FileLineWithRangeAndAnchor_KeepsKindAndPath', () => {
   assert.deepEqual(planTasks.describeTasks(env.plan)[0].files,
     [{ kind: 'Modify', path: 'src/a.js' }, { kind: 'Test', path: 'tests/a.test.js' }]);
 });
+
+test('anchorMarks_RedWarningAndGreenLines_SameMarksAsAnchorFile', () => {
+  const env = fixture({ 'src/a.js': SOURCE }, planWith(
+    ['- Modify: `src/a.js` · `methode`', '- Modify: `src/a.js` · `Klasse.fehlt`'],
+    ['- Modify: `src/a.js` · `neueFunktion`'],
+  ));
+  const marks = anchors.anchorMarks(env.plan, env.repo);
+  const file = fs.readFileSync(anchors.writeAnchors(env.plan, env.repo, env.out), 'utf8');
+  assert.deepEqual(marks.map(({ task, mark }) => `${task}:${mark}`), ['1:✅', '1:❌', '2:⚠']);
+  for (const { line } of marks) assert.ok(file.includes(line), line);
+});
+
+test('anchorMarks_BrokenNumbering_ThrowsPlanError', () => {
+  const env = fixture({}, planWith(['- Create: `src/a.js`']).replace('### Task 1: T1', '### Task 2: T1'));
+  assert.throws(() => anchors.anchorMarks(env.plan, env.repo), planTasks.PlanError);
+});

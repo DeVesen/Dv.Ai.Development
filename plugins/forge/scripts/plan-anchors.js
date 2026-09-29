@@ -115,24 +115,32 @@ function repoRoot(repo) {
   return fs.realpathSync.native(path.resolve(repo));
 }
 
+// Prüft jede Dateizeile jedes Tasks; eine Zeile sieht nur, was frühere Tasks mit derselben Datei tun.
+function checkTasks(root, lines, tasks) {
+  const fenced = markFences(lines);
+  const seen = new Map();
+  return tasks.map((task) => {
+    const entries = taskEntries(lines, fenced, task);
+    const rows = entries.map((entry) => ({ entry, result: checkLine(root, entry, seen.get(entry.path)) }));
+    for (const entry of entries) remember(seen, entry, task.number);
+    return { task, entries, rows };
+  });
+}
+
 function buildAnchors(planPath, repo) {
   const root = repoRoot(repo);
   const { lines, tasks } = checkedPlan(planPath);
-  const fenced = markFences(lines);
-  const seen = new Map();
   const overview = [];
   const checks = [];
   const excerpts = [];
-  for (const task of tasks) {
+  for (const { task, entries, rows } of checkTasks(root, lines, tasks)) {
     overview.push(`- Task ${task.number}: ${taskTitle(lines, task)} — Zeilen ${task.start + 1}-${task.end}`);
-    const entries = taskEntries(lines, fenced, task);
-    const rows = entries.map((entry) => formatCheck(entry, checkLine(root, entry, seen.get(entry.path))));
-    checks.push(`### Task ${task.number}`, ...(rows.length > 0 ? rows : ['Keine Dateizeilen.']), '');
+    const formatted = rows.map(({ entry, result }) => formatCheck(entry, result));
+    checks.push(`### Task ${task.number}`, ...(formatted.length > 0 ? formatted : ['Keine Dateizeilen.']), '');
     for (const entry of entries.filter((item) => item.range)) {
       const block = excerpt(root, entry, task.number);
       if (block) excerpts.push(block, '');
     }
-    for (const entry of entries) remember(seen, entry, task.number);
   }
   const planName = toPosix(path.relative(root, fs.realpathSync.native(path.resolve(planPath))));
   const count = lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
@@ -150,6 +158,14 @@ function buildAnchors(planPath, repo) {
   ].join('\n');
 }
 
+// Markierung je Dateizeile, genau wie sie in anchors.md steht; die Skript-Prüfung des Plan-Reviews wertet sie aus.
+function anchorMarks(planPath, repo) {
+  const root = repoRoot(repo);
+  const { lines, tasks } = checkedPlan(planPath);
+  return checkTasks(root, lines, tasks).flatMap(({ task, rows }) =>
+    rows.map(({ entry, result }) => ({ task: task.number, mark: result.mark, line: formatCheck(entry, result) })));
+}
+
 function writeAnchors(planPath, repo, dir) {
   const content = buildAnchors(planPath, repo);
   fs.mkdirSync(dir, { recursive: true });
@@ -158,4 +174,4 @@ function writeAnchors(planPath, repo, dir) {
   return toPosix(file);
 }
 
-module.exports = { buildAnchors, writeAnchors };
+module.exports = { buildAnchors, writeAnchors, anchorMarks };

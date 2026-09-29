@@ -5,10 +5,10 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const mcpUsage = require('./mcp-usage.js');
-const { RetroError: FactsError, SLASH_COMMAND, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
-
-const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl> | --session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
-  + ' [--since-command <name> [--occurrence <n>]] [--skeleton <bericht.md>]\n';
+const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
+const { rangeOf } = require('./lib/retro-range');
+const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
+  + ' [--since-command <name>] [--before-retro] [--skeleton <bericht.md>]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
 const RECENT_MS = 10 * 60 * 1000;
 const REPORT_FORMAT = path.join(__dirname, '..', 'skills', 'prozess-retrospektive', 'references', 'report-format.md');
@@ -63,41 +63,6 @@ function commandHead(part) {
     .split(/\s+/).filter((word) => !/^\w+=/.test(word));
   if (words.length === 0) return null;
   return words.slice(0, /^[a-z][\w:-]*$/i.test(words[1] ?? '') ? 2 : 1).join(' ');
-}
-
-function invokes(entry, name) {
-  const wanted = name.replace(/^\//, '');
-  const same = (value) => {
-    const called = String(value ?? '').replace(/^\//, '');
-    return called === wanted || called.endsWith(`:${wanted}`);
-  };
-  const content = entry.message?.content;
-  if (entry.type === 'user') return same(textOf(content).match(SLASH_COMMAND)?.[1]);
-  if (entry.type !== 'assistant' || !Array.isArray(content)) return false;
-  return content.some((part) => part.type === 'tool_use' && part.name === 'Skill' && same(part.input?.skill));
-}
-
-function firstTime(entries, from) {
-  for (let index = from; index < entries.length; index += 1) {
-    if (entries[index].timestamp) return Date.parse(entries[index].timestamp);
-  }
-  return null;
-}
-
-// Ausschnitt vom n-ten Aufruf eines Befehls oder Skills bis vor seinen nächsten Aufruf; n < 0 zählt von hinten.
-function sliceByCommand(entries, name, occurrence) {
-  const starts = entries.flatMap((entry, index) => (invokes(entry, name) ? [index] : []));
-  if (starts.length === 0) throw new FactsError(`Kein Aufruf von ${name} in der Session`);
-  const position = occurrence < 0 ? starts.length + occurrence : occurrence - 1;
-  if (position < 0 || position >= starts.length) throw new FactsError(`Aufruf ${occurrence} von ${name} gibt es nicht, die Session hat ${starts.length}`);
-  const end = starts[position + 1] ?? entries.length;
-  const from = firstTime(entries, starts[position]) ?? -Infinity;
-  const to = firstTime(entries, end) ?? Infinity;
-  const keepSubagent = (agentEntries) => {
-    const start = firstTime(agentEntries, 0);
-    return start !== null && start >= from && start < to;
-  };
-  return { entries: entries.slice(starts[position], end), keepSubagent, label: `Ausschnitt: Aufruf ${position + 1} von ${starts.length} von ${name}` };
 }
 
 function analyze(entries) {
@@ -244,12 +209,12 @@ function humanLines(humans) {
   return humans.map((event) => `- #${event.entryNo} ${clock(event.time)} ${event.kind}: ${event.text}`);
 }
 
-function render(sessionFile, facts, agents, label = null) {
+function render(sessionFile, facts, agents, labels = []) {
   const errorLines = errorLinesOf(facts);
   return [
     `# Session-Fakten: ${path.basename(sessionFile, '.jsonl')}`,
     '',
-    ...(label ? [`- ${label}`] : []),
+    ...labels.map((label) => `- ${label}`),
     ...factLines(facts, agents),
     '',
     '## Subagents (nach Tokens)',
@@ -268,22 +233,25 @@ function render(sessionFile, facts, agents, label = null) {
 
 const FLAGS = {
   '--file': 'file', '--session': 'session', '--cwd': 'cwd', '--expect': 'expect',
-  '--since-command': 'sinceCommand', '--occurrence': 'occurrence', '--skeleton': 'skeleton',
+  '--since-command': 'sinceCommand', '--skeleton': 'skeleton',
 };
+const SWITCHES = { '--before-retro': 'beforeRetro' };
 
+// `--file` und `--session` dürfen zusammen stehen: ausgewertet wird die Datei, die Session benennt Snapshot und Entwurf.
 function parseArgs(args) {
   const options = {};
-  for (let index = 0; index < args.length; index += 2) {
-    const key = FLAGS[args[index]];
+  for (let index = 0; index < args.length; index += 1) {
+    const flag = args[index];
+    if (SWITCHES[flag]) {
+      options[SWITCHES[flag]] = true;
+      continue;
+    }
+    const key = FLAGS[flag];
     if (!key || args[index + 1] === undefined) return null;
     options[key] = args[index + 1];
+    index += 1;
   }
-  if (options.file && options.session) return null;
   if (options.expect) options.expect = options.expect.split(',').map((name) => name.trim()).filter(Boolean);
-  if (options.occurrence !== undefined) {
-    if (!/^-?[1-9]\d*$/.test(options.occurrence) || !options.sinceCommand) return null;
-    options.occurrence = Number(options.occurrence);
-  }
   return options;
 }
 
@@ -314,17 +282,14 @@ function writeSkeleton(target, text) {
 function run(options) {
   const { file, warning } = resolveSession(options);
   if (!fs.existsSync(file)) throw new FactsError(`Session-Datei nicht gefunden: ${file}`);
-  const all = readEntries(file);
-  const slice = options.sinceCommand ? sliceByCommand(all, options.sinceCommand, options.occurrence ?? -1) : null;
-  const entries = slice?.entries ?? all;
-  const keep = slice?.keepSubagent ?? (() => true);
-  const session = mcpUsage.loadSession(file, { entries, keepSubagent: keep });
+  const range = rangeOf(readEntries(file), options);
+  const session = mcpUsage.loadSession(file, { entries: range.entries, keepSubagent: range.keepSubagent });
   if (options.cwd) session.cwd = options.cwd;
-  const facts = analyze(entries);
-  const agents = subagentRows(file, keep);
+  const facts = analyze(range.entries);
+  const agents = subagentRows(file, range.keepSubagent);
   const mcp = mcpUsage.render(session, { expect: options.expect, transcript: file });
   const allFacts = [facts, ...agents.map((agent) => agent.facts)];
-  let output = `${render(file, facts, agents, slice?.label)}\n${savings(allFacts)}\n${mcp}`;
+  let output = `${render(file, facts, agents, range.labels)}\n${savings(allFacts)}\n${mcp}`;
   if (options.skeleton) {
     const written = writeSkeleton(options.skeleton, skeleton({ facts, agents, mcp, lists: savingsLists(allFacts) }));
     output += `\nGerüst geschrieben: ${written}\n`;
@@ -351,4 +316,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, sliceByCommand, run };
+module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, run, parseArgs, resolveSession };

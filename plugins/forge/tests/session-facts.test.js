@@ -152,29 +152,54 @@ function commandSession() {
 }
 
 test('cli_SinceCommand_CountsOnlyFromLastInvocation', () => {
-  const result = spawnSync(process.execPath, [SCRIPT, '--file', commandSession(), '--since-command', 'prozess-retrospektive'], { encoding: 'utf8' });
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', commandSession(), '--since-command', 'prozess-retrospektive'], { encoding: 'utf8', env: { ...process.env, TZ: 'UTC' } });
+
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Ausschnitt: Aufruf 2 von 2 von prozess-retrospektive/);
+  assert.match(result.stdout, /- Start: letzter Aufruf von prozess-retrospektive \(Eintrag 6 · 11:10\)/);
   assert.match(result.stdout, /- Tool-Aufrufe: Skill 1, Read 1\n/);
-  assert.match(result.stdout, /- Dauer: 1 min/);
   assert.match(result.stdout, /Tokens Subagents: 0k in 0 Agents/);
 });
 
-test('cli_SinceCommandWithOccurrence_EndsBeforeNextInvocationAndKeepsSubagentsInWindow', () => {
-  const result = spawnSync(process.execPath, [SCRIPT, '--file', commandSession(), '--since-command', 'prozess-retrospektive', '--occurrence', '1'], { encoding: 'utf8' });
+test('cli_BeforeRetro_CutsBeforeLastRetroCallAndKeepsEarlierSubagents', () => {
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', commandSession(), '--before-retro'], { encoding: 'utf8', env: { ...process.env, TZ: 'UTC' } });
+
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Ausschnitt: Aufruf 1 von 2 von prozess-retrospektive/);
-  assert.match(result.stdout, /- Eingaben des Menschen: 2 · /);
-  assert.match(result.stdout, /- Tool-Aufrufe: Write 1\n/);
-  assert.match(result.stdout, /Tokens Subagents: 0k in 1 Agents/);
-  assert.match(result.stdout, /Hauptagent \+ 1 SubAgent\(s\) · 2 Tool-Aufrufe/);
+  assert.match(result.stdout, /- Schnitt: vor dem letzten Aufruf von prozess-retrospektive \(Eintrag 6 · 11:10\)/);
+  assert.match(result.stdout, /- Tool-Aufrufe: Bash 1, Write 1\n/);
+  assert.match(result.stdout, /Tokens Subagents: 0k in 2 Agents/);
 });
 
-test('cli_SinceCommand_UnknownCommandOrOccurrence_ExitsWithOne', () => {
-  const file = commandSession();
-  assert.equal(spawnSync(process.execPath, [SCRIPT, '--file', file, '--since-command', 'gibt-es-nicht'], { encoding: 'utf8' }).status, 1);
-  assert.equal(spawnSync(process.execPath, [SCRIPT, '--file', file, '--since-command', 'prozess-retrospektive', '--occurrence', '3'], { encoding: 'utf8' }).status, 1);
-  assert.equal(spawnSync(process.execPath, [SCRIPT, '--file', file, '--occurrence', 'x'], { encoding: 'utf8' }).status, 2);
+test('cli_BeforeRetroWithoutRetroCall_KeepsWholeSession', () => {
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', session(), '--before-retro'], { encoding: 'utf8' });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /Schnitt:/);
+  assert.match(result.stdout, /- Eingaben des Menschen: 2 · /);
+});
+
+test('cli_SinceCommandAndBeforeRetro_CountsOnlyBetweenBothBounds', () => {
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', commandSession(), '--since-command', 'prozess-retrospektive', '--before-retro'], { encoding: 'utf8', env: { ...process.env, TZ: 'UTC' } });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /- Start: letzter Aufruf von prozess-retrospektive \(Eintrag 3 · 11:00\)\n- Schnitt: /);
+  assert.match(result.stdout, /- Tool-Aufrufe: Write 1\n/);
+  assert.match(result.stdout, /Tokens Subagents: 0k in 1 Agents/);
+});
+
+test('cli_SinceCommandUnknown_ExitsWithOneAndNamesCommand', () => {
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', commandSession(), '--since-command', 'gibt-es-nicht'], { encoding: 'utf8' });
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Unbekannter Befehl: gibt-es-nicht/);
+});
+
+test('cli_FileAndSession_EvaluatesFile', () => {
+  const project = projectWith([['eigene', 0]]);
+
+  const result = runIn(project, ['--file', session(), '--session', 'eigene']);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /# Session-Fakten: s1/);
 });
 
 test('cli_Skeleton_WritesReportWithFactsAndMcpVerbatimAndPlaceholdersForTheRest', () => {

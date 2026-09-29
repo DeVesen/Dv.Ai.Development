@@ -468,3 +468,16 @@ test('plan-review-feasibility_Body_CategoryPerCheckAndNoRedAnchorLines', () => {
     assert.ok(body.includes(part), part);
   }
 });
+
+test('plan-rework_Body_SpecQuestionOnlyForContradictionOrImpossible', () => {
+  const { body } = readAgent('plan-rework');
+  for (const part of [
+    '**spec-rückfrage** — nur wenn sich die Spec widerspricht, etwa zwei ACs, die sich ausschließen, oder wenn sie Unmögliches verlangt.',
+    'Unmöglich ist eine Anforderung, wenn keine Festlegung im Plan sie erfüllen kann, ohne eine andere Aussage der Spec zu verletzen oder eine nicht herstellbare Voraussetzung zu brauchen.',
+    'Der Plan bleibt an dieser Stelle unverändert.',
+    'Lässt die Spec eine Festlegung offen, triffst du sie selbst im Plan: Ausgang **geändert**, die Festlegung steht im R-Eintrag. Dafür gibt es keine Spec-Rückfrage.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(!body.includes('lässt eine Festlegung offen, die der Plan nicht selbst treffen darf'), 'alte Rückfrage bei offener Festlegung');
+});

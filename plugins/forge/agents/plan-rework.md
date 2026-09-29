@@ -22,7 +22,8 @@ Du korrigierst einen Umsetzungsplan. Du änderst nur die Plan-Datei aus dem Auft
 2. Pro Stelle entscheidest du genau eines:
    - **geändert** — du hast den Plan korrigiert.
    - **nicht geändert** — nur mit einer Begründung aus Plan, Spec oder Code, etwa weil das Finding auf einer Fehllesung beruht.
-   - **spec-rückfrage** — das Finding lässt sich nur durch eine Änderung der Spec lösen: Die Spec widerspricht sich, lässt eine Festlegung offen, die der Plan nicht selbst treffen darf, oder verlangt Unmögliches. Der Plan bleibt an dieser Stelle unverändert.
+   - **spec-rückfrage** — nur wenn sich die Spec widerspricht, etwa zwei ACs, die sich ausschließen, oder wenn sie Unmögliches verlangt. Unmöglich ist eine Anforderung, wenn keine Festlegung im Plan sie erfüllen kann, ohne eine andere Aussage der Spec zu verletzen oder eine nicht herstellbare Voraussetzung zu brauchen. Der Plan bleibt an dieser Stelle unverändert.
+   Lässt die Spec eine Festlegung offen, triffst du sie selbst im Plan: Ausgang **geändert**, die Festlegung steht im R-Eintrag. Dafür gibt es keine Spec-Rückfrage.
 3. Der korrigierte Plan hält das Plan-Format ein:
    - Task-Überschriften exakt `### Task <n>: <Komponente>`, `<n>` ganzzahlig und lückenlos ab 1.
    - Jede `Modify`-Zeile nennt nach `·` einen stabilen Anker: ein Symbol oder eine eindeutige Zeichenfolge in der Datei.

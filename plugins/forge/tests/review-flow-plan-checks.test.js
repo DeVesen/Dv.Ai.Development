@@ -111,3 +111,30 @@ test('verify_RedAnchorLineFixedByRework_PointDoneBecauseScriptNoLongerReportsIt'
   assert.deepEqual(ws.readJson('runde-2/nachpruefung.json').verdicts,
     [{ key: 'Task 1', script: true, verdict: 'erledigt', rationale: 'Skript-Prüfung meldet die Stelle nicht mehr' }]);
 });
+
+// Neuer Ablauf: script-checks schreibt skript-pruefung.json, rate stuft die Befunde über scriptItems ein.
+function rateWithScriptChecks(ws, reviews = {}) {
+  const all = { coverage: [], ...reviews };
+  for (const [reviewer, findings] of Object.entries(all)) ws.review(reviewer, findings);
+  const checks = ws.run('script-checks', '--review', 'plan-review', '--dir', ws.workspace, '--doc', ws.doc).stdout;
+  const rate = ws.run('rate', '--review', 'plan-review', '--dir', ws.workspace, '--doc', ws.doc, '--expect', Object.keys(all).join(',')).stdout;
+  return { checks, rate };
+}
+
+const ratedRed = (ws) => ws.readJson('runde-1/einstufung.json').groups.filter((group) => group.color === 'red')
+  .map((group) => `${group.label}: ${group.items.map((item) => `${item.reviewer}/${item.category}`).join(' + ')}`);
+
+test('scriptChecks_AcInNoTask_RateCountsScriptRedWithCheckAndCategory', () => {
+  const ws = planWorkspace(plan(task(1, 'AC-01'), task(2, 'AC-03', ['Setzt auch AC-05 um.'])));
+  const out = rateWithScriptChecks(ws);
+  assert.equal(out.checks, 'SKRIPT befunde=1\n');
+  assert.equal(out.rate, 'STATUS red=1 yellow=0 green=0 fragen=0 failed=-\nWEITER scout=rot-und-gelb nacharbeit=ja\n');
+  assert.deepEqual(ratedRed(ws), ['AC-05: skript:ac-abdeckung/ac-fehlt-im-plan']);
+});
+
+test('scriptChecks_SpecReview_WritesNoFindings', () => {
+  const ws = flowWorkspace();
+  const out = ws.run('script-checks', '--review', 'spec-review', '--dir', ws.workspace, '--doc', ws.doc).stdout;
+  assert.equal(out, 'SKRIPT befunde=0\n');
+  assert.deepEqual(ws.readJson('runde-1/skript-pruefung.json'), { findings: [] });
+});

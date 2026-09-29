@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const flow = require('../scripts/review-flow.js');
+const flow = require('../scripts/lib/flow-legacy');
 const { SPEC, finding, scoutFor, flowWorkspace } = require('./lib/flow-workspace');
 const { TWO_TASKS } = require('./lib/plan-fixtures');
 

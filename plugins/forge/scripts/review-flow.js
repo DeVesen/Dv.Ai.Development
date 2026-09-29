@@ -249,7 +249,7 @@ function checklist(kind, doc, workspace) {
   const openCanon = new Set(open.map((question) => question.canon));
   const items = state.groups.filter((group) => group.color === 'red' && !openCanon.has(group.canon)).map((group) => ({
     key: group.key, canon: group.canon, origin: 'Finding aus Runde 1',
-    script: group.items.some((item) => item.script),
+    script: groupsLib.hasScript(group),
     details: [...group.items.map(groupsLib.itemLine), outcomeLine(rework, group.key)],
   }));
   for (const question of asked) {
@@ -320,7 +320,7 @@ function verify(kind, doc, workspace, checks = groupsLib.SCRIPT_CHECKS[kind]) {
   const verification = { checklist: new Set(list.items.map((item) => item.canon)), changed: new Set(list.changed.map((unit) => unit.canon)) };
   const entries = [...result.findings.map((finding) => ({ reviewer: 'verifier', finding })), ...groupsLib.runScriptChecks(text, checks, scriptContext(doc, workspace))];
   const { groups, dropped } = groupsLib.classify(entries, { kind, text, openKeys: new Set(list.open.map((question) => question.canon)), verification });
-  const redScript = new Set(groups.filter((group) => group.color === 'red' && group.items.some((item) => item.script)).map((group) => group.canon));
+  const redScript = new Set(groups.filter((group) => group.color === 'red' && groupsLib.hasScript(group)).map((group) => group.canon));
   const verdicts = list.items.map((item) => {
     if (item.script || redScript.has(item.canon)) return scriptVerdict(item, redScript);
     const verdict = result.verdicts.find((candidate) => normalizeLocation(candidate.location) === item.canon);

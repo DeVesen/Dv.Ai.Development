@@ -88,6 +88,10 @@ function table(groups) {
   return ['| Stufe | Stelle | Anzahl | Reviewer | Konsequenzen |', '|---|---|---|---|---|', ...rows].join('\n');
 }
 
+function hasScript(group) {
+  return group.items.some((item) => item.script);
+}
+
 module.exports = {
-  SCRIPT_CHECKS, runScriptChecks, classify, countColors, reviewersOf, heading, itemLine, groupBlock, reworkSection, consequences, table, cell,
+  SCRIPT_CHECKS, runScriptChecks, classify, countColors, reviewersOf, heading, itemLine, groupBlock, reworkSection, consequences, table, cell, hasScript,
 };

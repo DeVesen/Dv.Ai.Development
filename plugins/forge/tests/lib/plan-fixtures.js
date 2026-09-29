@@ -1,8 +1,6 @@
 'use strict';
 
 // Plan- und Spec-Fixtures der Tests zum Plan-Review an einer Stelle, damit eine Änderung am Plan-Format nur hier nachgezogen wird.
-const TWO_TASKS = '# P — Umsetzungsplan\n\n**Basis:** abc\n\n## Global Constraints\n- x\n\n### Task 1: Eins\nA.\n\n### Task 2: Zwei\nB.\n\n## Entscheidungen\n- Keine Fragen an den Menschen.\n';
-
 const PLAN_SPEC = [
   '# Demo', '', 'Status: bestätigt am 2026-09-29', 'Art: verankert', 'Basis: 3ce509e', '',
   '## Akzeptanzkriterien',
@@ -24,4 +22,4 @@ function planText(...tasks) {
     ...tasks.flat(), '## Entscheidungen', '- Keine Fragen an den Menschen.', ''].join('\n');
 }
 
-module.exports = { TWO_TASKS, PLAN_SPEC, SOURCE, ALL_ACS, planTask, planText };
+module.exports = { PLAN_SPEC, SOURCE, ALL_ACS, planTask, planText };

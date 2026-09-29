@@ -12,7 +12,6 @@ const { buildChecklist, verifyRoundTwo } = require('./lib/round-two');
 const { checkScout } = require('./lib/scout-check');
 const { report } = require('./lib/flow-report');
 const { writeScriptChecks } = require('./lib/script-checks');
-const { LEGACY_USAGE, LegacyUsageError, isLegacyCommand, runLegacy } = require('./lib/flow-legacy');
 const { ROUND_ONE, ROUND_TWO, FOLLOWUP, FlowError } = require('./lib/flow-files');
 
 const USAGE = [
@@ -107,24 +106,8 @@ const COMMANDS = {
   'script-checks': (values) => writeScriptChecks({ ...flowOptions(values), round: checkedRound(values.runde) }),
 };
 
-// Aufrufe mit Positionsargumenten gehören zum älteren Ablauf, den flow.md und die Skills noch nutzen.
-function isLegacyCall(command, rest) {
-  return isLegacyCommand(command) && !String(rest[0] ?? '').startsWith('--');
-}
-
-// Der ältere Ablauf meldete jeden Fehler mit Exit 1; das bleibt, bis seine Schritte abgelöst sind.
-function runLegacyCall(command, rest) {
-  try {
-    return runLegacy(command, rest);
-  } catch (error) {
-    if (error instanceof LegacyUsageError) throw new UsageError(error.message);
-    throw error instanceof FlowError ? error : new FlowError(error.message);
-  }
-}
-
 function run(args) {
   const [command, ...rest] = args;
-  if (isLegacyCall(command, rest)) return runLegacyCall(command, rest);
   if (!Object.hasOwn(COMMANDS, command)) throw new UsageError(`Unbekannter Schritt: ${command ?? '-'}`);
   return COMMANDS[command](parseOptions(rest));
 }
@@ -134,7 +117,7 @@ function main() {
     process.stdout.write(`${run(process.argv.slice(2))}\n`);
   } catch (error) {
     if (error instanceof UsageError) {
-      process.stderr.write(`${error.message}\n${USAGE}${LEGACY_USAGE}`);
+      process.stderr.write(`${error.message}\n${USAGE}`);
       process.exit(2);
     }
     if (!(error instanceof FlowError)) throw error;

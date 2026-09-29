@@ -19,7 +19,7 @@
 - Nachforderung: Ohne gültiges Ergebnis wird eine Instanz genau einmal nachgefordert und danach genau einmal neu gestartet; danach gilt sie als ausgefallen. Für den Scout gilt dasselbe, sein Ausfall ändert den Status nicht, der Bericht vermerkt „Scout ausgefallen“.
 - Höchstens 🟡: Findings beratender Reviewer (das Review legt sie fest, ohne beratende greift die Regel nicht); Findings, deren ganzes Zitat aus einem W-Eintrag stammt; Findings mit einem der Wörter `Großschreibung`, `Kleinschreibung`, `ß`, `Umlaut`, `Diakritik` als ganzes Wort in irgendeinem Feld (kein Buchstabe unmittelbar davor oder danach); in der Nachprüfung jedes Finding außerhalb der Prüfliste, außer einem Widerspruch in einem geänderten Bereich und außer dem Befund einer Skript-Prüfung.
 - Entfällt: Findings zu den Kopfzeilen `Status`, `Art`, `Workitem`, `Basis`; Findings an einer Stelle mit offener Frage, außer dem Befund einer Skript-Prüfung.
-- Offene Frage: `- **R<n> · <Stelle>** — frage an den menschen — <Frage>` im Abschnitt `Entscheidungen`; offen, bis ein W-Eintrag dieselbe Stelle als ganzes Wort im Titel trägt (davor und danach weder Buchstabe noch Ziffer noch `-` noch `_`) und den R-Eintrag im Text als `Antwort auf „R<n> · <Stelle>“` nennt. Die Nacharbeit schreibt je Stelle mit Frage genau einen R-Eintrag.
+- Offene Frage: `- **R<n> · <Stelle>** — frage an den menschen — <Frage>` im Abschnitt `Entscheidungen`; offen, bis ein W-Eintrag dieselbe Stelle als ganzes Wort im Titel trägt (davor und danach weder Buchstabe noch Ziffer noch `-` noch `_`) und den R-Eintrag im Text als `Antwort auf „R<n> · <Stelle>“` nennt. Eine Stelle aus mehreren Wörtern, etwa ein Abschnittsname, steht mit allen Wörtern in derselben Reihenfolge im Titel. Nennt ein W-Eintrag mehrere Stellen im Titel, beantwortet er jede, deren R-Eintrag er nennt. Die Nacharbeit schreibt je Stelle mit Frage genau einen R-Eintrag, auch wenn die Frage gebündelt mehrere Stellen nennt. Im Plan-Review steht eine Spec-Rückfrage in derselben Form im Plan.
 - Bündelung prüfen: Jede Stelle mit Frage steht in genau einer gebündelten Frage; fehlerhaft → eine Korrektur, danach ausgefallen.
 - Skript-Prüfungen laufen in Runde 1 und in der Nachprüfung; ihre Befunde bleiben 🔴 und zählen zu den offenen 🔴.
 - Geänderter Bereich: eine Stelle, die die Nacharbeit geändert hat, auch nebenbei; Änderungen im Abschnitt `Entscheidungen` zählen nicht.
@@ -151,10 +151,10 @@
   - `isDecisionSection(label: string): boolean` — `true`, wenn der Abschnittsname auf `Entscheidungen` endet.
   - `collapse(text: string): string` — Leerraum zu einem Leerzeichen, getrimmt.
   - `parsePlaces(text: string): Map<string, { key: string, label: string, section: string, text: string }>` — Stellen in Reihenfolge: `Kopf` (alles vor dem ersten `## `), je `## `-Abschnitt eine Stelle, darin je `- **AC-<n>**`, je `<n>. **<Name>:**` und je `- **<Name>:**` (nicht `W · `, `E · `, `F · `, `R<n> · `) eine eigene Stelle, im Plan je `### Task <n>` eine Stelle bis zur nächsten Überschrift oder `---`; Code-Blöcke gehören zur Stelle, in der sie stehen. Heißt eine benannte Einheit wie ein Abschnitt, lautet ihr Name `<Abschnitt> · <Name>`.
-  - `resolvePlace(location: string, quote: string, places: Map): { key: string, label: string }` — ganze Stelle, sonst erste bekannte Stelle aus `location` (Trenner `,`, `;`, ` und `), sonst Abschnitt, in dem das Zitat steht, sonst `location` selbst.
+  - `resolvePlace(location: string, quote: string, places: Map): { key: string, label: string }` — ganze Stelle, sonst erste bekannte Stelle aus `location` (Trenner `,`, `;`, ` und `), sonst Abschnitt, in dem das Zitat steht, sonst `location` selbst, mit Leerraum und Zeilenumbrüchen zu einem Leerzeichen zusammengezogen.
   - `changedPlaces(beforeText: string, afterText: string): string[]` — Namen der Stellen mit anderem Text, ohne Stellen aus Abschnitten `…Entscheidungen`.
   - `decisionLines(text: string): string[]` — Zeilen `- **…` der Abschnitte `…Entscheidungen`.
-- Produces: in `plugins/forge/tests/lib/review-flow-fixture.js`: `SCRIPT`, `SPEC` (Beispiel-Spec mit `Kopf`, `Was, wie, wo, warum`, Soll-Vorgaben `Deckel` und `Schreibweise`, `AC-01`, `AC-04`, `AC-07`, W-Eintrag `W · Deckel`), `finding(overrides)`, `tempDir(prefix)`, `setup(spec?) → { workspace, doc }`, `writeJsonFile(file, value)`, `writeReviewer(env, name, findings, round?)`, `flow(...args) → spawnSync-Ergebnis von review-flow.js`, `rate(env, expect, extra?)`, `readJsonFile(file)`.
+- Produces: in `plugins/forge/tests/lib/review-flow-fixture.js`: `SCRIPT`, `SPEC` (Beispiel-Spec mit `Kopf`, `Was, wie, wo, warum`, Soll-Vorgaben `Deckel` und `Schreibweise`, `AC-01`, `AC-04`, `AC-07`, W-Eintrag `W · Deckel`), `finding(overrides)`, `tempDir(prefix)`, `setup(spec?) → { workspace, doc }`, `writeJsonFile(file, value)`, `writeReviewer(env, name, findings, round?)`, `flow(...args) → spawnSync-Ergebnis von review-flow.js`, `rate(env, expect, extra?)`, `readJsonFile(file)`, `editDoc(env, from, to)` (ersetzt im Dokument den ersten Treffer von `from`), `addEntries(env, ...entries)` (fügt Einträge direkt vor `- **W · Deckel**` ein), `runUntilRework(env, findings, review = 'spec-review')` (Reviewer `consistency` liefert `findings`, dann `rate` und `rework-input`). Die Tests der Tasks 8, 9 und 10 importieren diese Helfer und definieren sie nicht selbst.
 
 - [ ] **Schritt 1: Fehlschlagenden Test und Test-Hilfe schreiben**
   `plugins/forge/tests/lib/review-flow-fixture.js`:
@@ -229,7 +229,25 @@ function readJsonFile(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
-module.exports = { SCRIPT, SPEC, finding, tempDir, setup, writeJsonFile, writeReviewer, flow, rate, readJsonFile };
+function editDoc(env, from, to) {
+  fs.writeFileSync(env.doc, fs.readFileSync(env.doc, 'utf8').replace(from, to));
+}
+
+// Einträge unter Entscheidungen, direkt vor dem W-Eintrag der Beispiel-Spec.
+function addEntries(env, ...entries) {
+  editDoc(env, '- **W · Deckel**', [...entries, '- **W · Deckel**'].join('\n'));
+}
+
+// Runde 1 mit einem Reviewer `consistency` einstufen und die Eingabe der Nacharbeit schreiben.
+function runUntilRework(env, findings, review = 'spec-review') {
+  writeReviewer(env, 'consistency', findings);
+  flow('rate', '--review', review, '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency');
+  flow('rework-input', '--review', review, '--dir', env.workspace, '--doc', env.doc);
+}
+
+module.exports = {
+  SCRIPT, SPEC, finding, tempDir, setup, writeJsonFile, writeReviewer, flow, rate, readJsonFile, editDoc, addEntries, runUntilRework,
+};
 ```
   `plugins/forge/tests/review-places.test.js`:
 ````javascript
@@ -328,6 +346,14 @@ test('resolvePlace_UnknownLocationAndQuote_KeepsLocationAsGiven', () => {
 
   // Assert
   assert.deepEqual(place, { key: 'ac-99', label: 'AC-99' });
+});
+
+test('resolvePlace_UnknownLocationWithLineBreak_LabelOnOneLine', () => {
+  // Act
+  const place = resolvePlace('Rand\n### 🔴 Fall', 'nirgends', parsePlaces(SPEC));
+
+  // Assert
+  assert.deepEqual(place, { key: 'rand ### 🔴 fall', label: 'Rand ### 🔴 Fall' });
 });
 
 test('changedPlaces_AcAndDecisionChanged_ListsOnlyAc', () => {
@@ -498,7 +524,7 @@ function resolvePlace(location, quote, places) {
   if (places.has(whole)) return places.get(whole);
   const first = String(location).split(/,|;| und /).map(placeKey).find((key) => places.has(key));
   if (first) return places.get(first);
-  return sectionOfQuote(quote, places) ?? { key: whole, label: String(location).trim() };
+  return sectionOfQuote(quote, places) ?? { key: whole, label: collapse(location) };
 }
 
 function changedPlaces(beforeText, afterText) {
@@ -522,7 +548,7 @@ function decisionLines(text) {
 module.exports = { placeKey, isHeaderKey, isDecisionSection, collapse, parsePlaces, resolvePlace, changedPlaces, decisionLines };
 ````
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/forge/tests/review-places.test.js` — erwartet: PASS (10 Tests)
+  Befehl: `node --test plugins/forge/tests/review-places.test.js` — erwartet: PASS (11 Tests)
 - [ ] **Schritt 5: Commit**
   `git add plugins/forge/scripts/lib/places.js plugins/forge/tests/lib/review-flow-fixture.js plugins/forge/tests/review-places.test.js` · `git commit -m "feat(forge): parse places of a spec or plan for the review flow"`
 
@@ -819,16 +845,20 @@ module.exports = { CATEGORIES, isReview, findingProblem, resultProblem, rateFind
 
 **Dateien:**
 - Create: `plugins/forge/scripts/lib/groups.js`
+- Modify: `plugins/forge/scripts/aggregate-findings.js` · `formatReworkGroup`
+- Modify: `plugins/forge/scripts/aggregate-findings.js` · `render`
+- Modify: `plugins/forge/scripts/aggregate-findings.js` · `module.exports`
 - Modify: `plugins/forge/scripts/followup.js:191-193` · `module.exports`
 - Test: `plugins/forge/tests/review-groups.test.js`
 
 **Interfaces:**
-- Consumes: `finding(overrides)` aus `plugins/forge/tests/lib/review-flow-fixture.js` (Task 2).
+- Consumes: `finding(overrides)` aus `plugins/forge/tests/lib/review-flow-fixture.js` (Task 2); `collapse` aus `plugins/forge/scripts/lib/places.js` (Task 2); `SEVERITY_RANK` aus `plugins/forge/scripts/aggregate-findings.js` (bestehend).
+- Produces: in `plugins/forge/scripts/aggregate-findings.js` zusätzlich exportiert, damit Aggregat und Review-Ablauf ein Format teilen: `SEVERITY_ICON`, `REWORK_MARK = '=== REWORK ==='`, `cell(text)`, `reworkHeading(icon, location, reviewers): string` (`### <icon> <Stelle> (<reviewer, …>)`), `reworkLine(reviewer, tag, finding): string` (`- [<reviewer> · <tag>] Zitat: „…“ · Konsequenz: … · Begründung: …`). `formatReworkGroup` und `render` nutzen sie; die Ausgabe von `aggregate-findings.js` bleibt Zeichen für Zeichen gleich.
 - Produces: in `plugins/forge/scripts/lib/groups.js`:
-  - `ICON: { red: '🔴', yellow: '🟡', green: '🟢' }`, `REWORK_MARK = '=== REWORK ==='`
+  - `ICON` (= `SEVERITY_ICON`), `REWORK_MARK` (aus `aggregate-findings.js` weitergereicht)
   - `groupRated(items: Array<{ reviewer, category, color, place: { key, label }, finding, script? }>): Array<{ key, label, items, color, reviewers: string[] }>` — höchste Farbe je Stelle, sortiert 🔴 → 🟡 → 🟢, dann Schlüssel.
   - `countColors(groups): { red: number, yellow: number, green: number }`
-  - `cell(text): string`, `renderGroup(group): string`, `renderGroups(groups): string` (Aggregat-Format `=== REWORK ===`, `### <icon> <Stelle> (<reviewer>)`, Zeilen `- [<reviewer> · <kategorie>] Zitat: „…“ · Konsequenz: … · Begründung: …`), `renderTable(groups): string` (Spalten `Stufe | Stelle | Kategorie | Reviewer | Konsequenzen`).
+  - `cell(text): string` (aus `aggregate-findings.js` weitergereicht), `renderGroup(group): string`, `renderGroups(groups): string` (Aggregat-Format über `reworkHeading` und `reworkLine`: `=== REWORK ===`, `### <icon> <Stelle> (<reviewer>)` mit der Stelle auf einer Zeile, Zeilen `- [<reviewer> · <kategorie>] Zitat: „…“ · Konsequenz: … · Begründung: …`), `renderTable(groups): string` (Spalten `Stufe | Stelle | Kategorie | Reviewer | Konsequenzen`).
 - Produces: in `plugins/forge/scripts/followup.js`: zusätzlich exportiert `parseScout(lines: string[]): Array<{ severity, location, proposals: string[], preferred: number|null }>` und `parseRework(lines: string[]): Array<{ severity, location, reviewers: string[], findings: string[] }>` (beide bestehend, bisher nicht exportiert).
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
@@ -889,6 +919,17 @@ test('renderGroups_Groups_ReadableByFollowupParser', () => {
   assert.deepEqual(parsed.map((group) => [group.severity, group.location, group.reviewers]), [['🔴', 'AC-07', ['consistency']], ['🟡', 'AC-04', ['clarity']]]);
 });
 
+test('renderGroups_LabelWithLineBreak_HeadingStaysOneLine', () => {
+  // Arrange
+  const text = renderGroups(groupRated([item('clarity', 'yellow', 'x ### 🔴 y', 'X\n### 🔴 Y')]));
+
+  // Act
+  const parsed = parseRework(text.split('\n'));
+
+  // Assert
+  assert.deepEqual(parsed.map((group) => group.location), ['X ### 🔴 Y']);
+});
+
 test('renderTable_Group_ShowsCategoryColumn', () => {
   // Act
   const table = renderTable(groupRated([item('clarity', 'red')]));
@@ -904,11 +945,11 @@ test('renderTable_Group_ShowsCategoryColumn', () => {
 ```javascript
 'use strict';
 
-const RANK = { green: 1, yellow: 2, red: 3 };
-const ICON = { red: '🔴', yellow: '🟡', green: '🟢' };
-const OPEN_QUOTE = String.fromCharCode(0x201e);
-const CLOSE_QUOTE = String.fromCharCode(0x201c);
-const REWORK_MARK = '=== REWORK ===';
+// Icons, Rangfolge, Zellen und Gruppenformat teilt der Review-Ablauf mit aggregate-findings.js, das followup.js liest.
+const {
+  SEVERITY_RANK: RANK, SEVERITY_ICON: ICON, REWORK_MARK, cell, reworkHeading, reworkLine,
+} = require('../aggregate-findings');
+const { collapse } = require('./places');
 
 function byRank(a, b) {
   return RANK[b.color] - RANK[a.color];
@@ -940,17 +981,13 @@ function countColors(groups) {
   return counts;
 }
 
-function cell(text) {
-  return String(text).replace(/\r?\n/g, ' ').replace(/\|/g, '\\|');
-}
-
 function itemLine(item) {
-  const { quote, consequence, rationale } = item.finding;
-  return `- [${item.reviewer} · ${item.category}] Zitat: ${OPEN_QUOTE}${cell(quote)}${CLOSE_QUOTE} · Konsequenz: ${cell(consequence)} · Begründung: ${cell(rationale)}`;
+  return reworkLine(item.reviewer, item.category, item.finding);
 }
 
+// Die Stelle steht auf einer Zeile, sonst läse followup.js parseRework falsche oder zusätzliche Gruppen.
 function groupHeading(group) {
-  return `### ${ICON[group.color]} ${group.label} (${group.reviewers.join(', ')})`;
+  return reworkHeading(ICON[group.color], collapse(group.label), group.reviewers);
 }
 
 function renderGroup(group) {
@@ -977,6 +1014,33 @@ function renderTable(groups) {
 
 module.exports = { ICON, REWORK_MARK, groupRated, countColors, cell, renderGroup, renderGroups, renderTable };
 ```
+  In `plugins/forge/scripts/aggregate-findings.js`:
+  - Direkt nach der Zeile `const CLOSING_QUOTE = String.fromCharCode(0x201c);` fügst du ein:
+  ```javascript
+  const REWORK_MARK = '=== REWORK ===';
+  ```
+  - `formatReworkGroup` ersetzt du ganz durch:
+  ```javascript
+  function reworkHeading(icon, location, reviewers) {
+    return `### ${icon} ${location} (${reviewers.join(', ')})`;
+  }
+
+  function reworkLine(reviewer, tag, finding) {
+    const quote = `${String.fromCharCode(0x201e)}${cell(finding.quote)}${CLOSING_QUOTE}`;
+    return `- [${reviewer} · ${tag}] Zitat: ${quote} · Konsequenz: ${cell(finding.consequence)} · Begründung: ${cell(finding.rationale)}`;
+  }
+
+  function formatReworkGroup(group) {
+    const lines = group.items.map((item) => reworkLine(item.reviewer, item.severity, item));
+    return [reworkHeading(SEVERITY_ICON[group.severity], group.location, group.reviewers), ...lines].join('\n');
+  }
+  ```
+  - In `render` wird die Zeile `    '=== REWORK ===',` zu `    REWORK_MARK,`.
+  - Im `module.exports` wird die Zeile `  SEVERITY_RANK, LOCATION_TYPES, fileLocationType, normalizeLocation, extractReviews, readReviewDir, aggregate, summarize, run, runDir, render,` zu:
+  ```javascript
+    SEVERITY_RANK, LOCATION_TYPES, fileLocationType, normalizeLocation, extractReviews, readReviewDir, aggregate, summarize, run, runDir, render,
+    SEVERITY_ICON, REWORK_MARK, cell, reworkHeading, reworkLine,
+  ```
   In `plugins/forge/scripts/followup.js` ersetzt du im `module.exports` die Zeile
   ```javascript
     FollowupError, ROLES, ART_OF_ROLE, followupDir, save, drop, latest, loadGroups, rolesFor, slugFor, resolveFollowup,
@@ -986,9 +1050,9 @@ module.exports = { ICON, REWORK_MARK, groupRated, countColors, cell, renderGroup
     FollowupError, ROLES, ART_OF_ROLE, followupDir, save, drop, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework,
   ```
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/forge/tests/review-groups.test.js plugins/forge/tests/followup.test.js` — erwartet: PASS
+  Befehl: `node --test plugins/forge/tests/review-groups.test.js plugins/forge/tests/followup.test.js plugins/forge/tests/aggregate-rate.test.js plugins/forge/tests/aggregate-file.test.js plugins/forge/tests/aggregate-parse.test.js` — erwartet: PASS (die Aggregat-Tests belegen, dass die Ausgabe von `aggregate-findings.js` gleich bleibt)
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/groups.js plugins/forge/scripts/followup.js plugins/forge/tests/review-groups.test.js` · `git commit -m "feat(forge): group rated findings per place with highest color"`
+  `git add plugins/forge/scripts/lib/groups.js plugins/forge/scripts/aggregate-findings.js plugins/forge/scripts/followup.js plugins/forge/tests/review-groups.test.js` · `git commit -m "feat(forge): group rated findings per place with highest color"`
 
 ---
 
@@ -1005,6 +1069,7 @@ module.exports = { ICON, REWORK_MARK, groupRated, countColors, cell, renderGroup
 - Produces: in `plugins/forge/scripts/lib/questions.js`:
   - `titleNamesPlace(title: string, place: string): boolean`
   - `openQuestions(text: string): Array<{ id: 'R<n>', place: string, key: string, question: string }>`
+  - `documentQuestions(options: { review }, text: string)` — im Spec-Review `openQuestions(text)`, im Plan-Review `[]` (R-Einträge `frage an den menschen` früherer Läufe sind dort Spec-Rückfragen und werden nicht ausgewertet). Runde 1 und die Eingabe der Nacharbeit (Task 7) importieren sie von hier.
   - `wEntryLines(text: string): string[]` — alle Zeilen `- **W · …` unter Entscheidungen.
   - `nextEntryNumber(text: string): number` — höchste R-Nummer unter Entscheidungen plus 1, ohne R-Eintrag 1.
   - `bundleShapeProblem(bundle: object, index: number): string | null` — Pflicht: `rule`, `question`, `recommendation` (Text), `places`, `cases` (nicht leere Textlisten).
@@ -1018,7 +1083,7 @@ module.exports = { ICON, REWORK_MARK, groupRated, countColors, cell, renderGroup
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { titleNamesPlace, openQuestions, nextEntryNumber, bundleShapeProblem, bundleProblem, renderQuestions } = require('../scripts/lib/questions');
+const { titleNamesPlace, openQuestions, documentQuestions, nextEntryNumber, bundleShapeProblem, bundleProblem, renderQuestions } = require('../scripts/lib/questions');
 const { SPEC } = require('./lib/review-flow-fixture');
 
 const QUESTION = '- **R2 · AC-04** — frage an den menschen — Gilt F auch bei leerem D?';
@@ -1075,6 +1140,17 @@ test('openQuestions_WEntryNamesTwoPlaces_AnswersBoth', () => {
 
   // Assert
   assert.deepEqual(open, []);
+});
+
+test('documentQuestions_SpecAndPlanReview_OnlySpecReviewCountsQuestions', () => {
+  // Arrange
+  const text = specWith(QUESTION);
+
+  // Act
+  const counts = [documentQuestions({ review: 'spec-review' }, text).length, documentQuestions({ review: 'plan-review' }, text).length];
+
+  // Assert
+  assert.deepEqual(counts, [1, 0]);
 });
 
 test('titleNamesPlace_LongerIdOrSuffix_DoesNotMatch', () => {
@@ -1172,6 +1248,11 @@ function openQuestions(text) {
     .filter((question) => !isAnswered(question, entries));
 }
 
+// Offene Fragen aus dem Dokument zählen nur im Spec-Review; Spec-Rückfragen früherer Läufe wertet das Plan-Review nicht aus.
+function documentQuestions(options, text) {
+  return options.review === 'spec-review' ? openQuestions(text) : [];
+}
+
 function wEntryLines(text) {
   return decisionLines(text).filter((line) => W_ENTRY.test(line));
 }
@@ -1223,11 +1304,11 @@ function renderQuestions(bundles) {
 }
 
 module.exports = {
-  titleNamesPlace, openQuestions, wEntryLines, nextEntryNumber, bundleShapeProblem, bundleProblem, renderQuestions,
+  titleNamesPlace, openQuestions, documentQuestions, wEntryLines, nextEntryNumber, bundleShapeProblem, bundleProblem, renderQuestions,
 };
 ```
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/forge/tests/review-questions.test.js` — erwartet: PASS (11 Tests)
+  Befehl: `node --test plugins/forge/tests/review-questions.test.js` — erwartet: PASS (12 Tests)
 - [ ] **Schritt 5: Commit**
   `git add plugins/forge/scripts/lib/questions.js plugins/forge/tests/review-questions.test.js` · `git commit -m "feat(forge): read open questions and check their bundling"`
 
@@ -1238,12 +1319,15 @@ module.exports = {
 **ACs:** AC-29, AC-30, AC-46, AC-54
 
 **Dateien:**
+- Create: `plugins/forge/scripts/lib/flow-error.js`
 - Create: `plugins/forge/scripts/lib/attempts.js`
 - Test: `plugins/forge/tests/review-attempts.test.js`
 
 **Interfaces:**
 - Consumes: `tempDir(prefix)` aus `plugins/forge/tests/lib/review-flow-fixture.js` (Task 2).
+- Produces: in `plugins/forge/scripts/lib/flow-error.js`: `class FlowError extends Error` — Fehler im Ablauf, den `review-flow.js` (Task 7) als `dv-forge review-flow: <grund>` mit Exit 1 meldet; `flow-files.js` (Task 7) re-exportiert die Klasse.
 - Produces: in `plugins/forge/scripts/lib/attempts.js`:
+  - `readAttempts(workspace: string): Record<string, number>` — Inhalt von `<workspace>/versuche.json`, ohne Datei `{}`; kaputtes JSON → `FlowError` mit `kein gültiges JSON: <datei>: <grund>`.
   - `isKind(kind: string): boolean` — `instanz` oder `buendelung`.
   - `nextAttempt(workspace: string, instance: string, kind = 'instanz'): 'NACHFORDERN'|'NEUSTART'|'AUSGEFALLEN'|'KORRIGIEREN'` — Folge `instanz`: `NACHFORDERN`, `NEUSTART`, `AUSGEFALLEN`; Folge `buendelung`: `KORRIGIEREN`, `AUSGEFALLEN`; Zähler in `<workspace>/versuche.json`.
   - `failedInstances(workspace: string): string[]` — Instanzen mit `AUSGEFALLEN`, jede einmal, in Reihenfolge des ersten Versuchs.
@@ -1255,7 +1339,10 @@ module.exports = {
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { nextAttempt, failedInstances } = require('../scripts/lib/attempts');
+const fs = require('node:fs');
+const path = require('node:path');
+const { readAttempts, nextAttempt, failedInstances } = require('../scripts/lib/attempts');
+const { FlowError } = require('../scripts/lib/flow-error');
 const { tempDir } = require('./lib/review-flow-fixture');
 
 test('nextAttempt_InstanceThreeTimes_RequestsRestartsThenFails', () => {
@@ -1306,16 +1393,38 @@ test('failedInstances_OnlyRequested_ListsNothing', () => {
   // Assert
   assert.deepEqual(failed, []);
 });
+
+test('readAttempts_BrokenJson_FlowError', () => {
+  // Arrange
+  const workspace = tempDir();
+  fs.writeFileSync(path.join(workspace, 'versuche.json'), '{"instanz:clarity": 1');
+
+  // Act
+  const read = () => readAttempts(workspace);
+
+  // Assert
+  assert.throws(read, (error) => error instanceof FlowError && /^kein gültiges JSON: .*versuche\.json: /.test(error.message));
+});
 ```
 - [ ] **Schritt 2: Test rot laufen lassen**
   Befehl: `node --test plugins/forge/tests/review-attempts.test.js` — erwartet: FAIL `Cannot find module '../scripts/lib/attempts'`
 - [ ] **Schritt 3: Minimal implementieren**
+  `plugins/forge/scripts/lib/flow-error.js`:
+```javascript
+'use strict';
+
+// Fehler im Ablauf; review-flow.js meldet ihn als `dv-forge review-flow: <grund>` mit Exit 1.
+class FlowError extends Error {}
+
+module.exports = { FlowError };
+```
   `plugins/forge/scripts/lib/attempts.js`:
 ```javascript
 'use strict';
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { FlowError } = require('./flow-error');
 
 const FILE = 'versuche.json';
 const SEQUENCES = {
@@ -1327,9 +1436,15 @@ function isKind(kind) {
   return Object.hasOwn(SEQUENCES, kind);
 }
 
+// Ein beschädigter Zähler bricht kontrolliert ab: Er ist der einzige Schutz gegen endlose Nachforderungen.
 function readAttempts(workspace) {
   const file = path.join(workspace, FILE);
-  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
+  if (!fs.existsSync(file)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (error) {
+    throw new FlowError(`kein gültiges JSON: ${file}: ${error.message}`);
+  }
 }
 
 // Nächster Schritt für eine Instanz ohne gültiges Ergebnis; der Zähler liegt im Arbeitsbereich und überdauert das Anhalten.
@@ -1349,12 +1464,12 @@ function failedInstances(workspace) {
   return [...new Set(failed)];
 }
 
-module.exports = { isKind, nextAttempt, failedInstances };
+module.exports = { readAttempts, isKind, nextAttempt, failedInstances };
 ```
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/forge/tests/review-attempts.test.js` — erwartet: PASS (4 Tests)
+  Befehl: `node --test plugins/forge/tests/review-attempts.test.js` — erwartet: PASS (5 Tests)
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/attempts.js plugins/forge/tests/review-attempts.test.js` · `git commit -m "feat(forge): count retry, restart and failure per review instance"`
+  `git add plugins/forge/scripts/lib/flow-error.js plugins/forge/scripts/lib/attempts.js plugins/forge/tests/review-attempts.test.js` · `git commit -m "feat(forge): count retry, restart and failure per review instance"`
 
 ---
 
@@ -1363,22 +1478,24 @@ module.exports = { isKind, nextAttempt, failedInstances };
 **ACs:** AC-04, AC-10, AC-11, AC-12, AC-13, AC-20, AC-37, AC-40, AC-53, AC-55
 
 **Dateien:**
-- Create: `plugins/forge/scripts/lib/flow-files.js`
+- Create: `plugins/forge/scripts/lib/flow-files.js` (importiert `FlowError` aus `plugins/forge/scripts/lib/flow-error.js`, Task 6)
 - Create: `plugins/forge/scripts/lib/rated-items.js`
 - Create: `plugins/forge/scripts/lib/round-one.js`
+- Create: `plugins/forge/scripts/lib/rework-input.js`
 - Create: `plugins/forge/scripts/lib/scout-check.js`
 - Create: `plugins/forge/scripts/review-flow.js`
 - Test: `plugins/forge/tests/review-flow-round-one.test.js`
 
 **Interfaces:**
-- Consumes: `parsePlaces`, `resolvePlace` (Task 2); `resultProblem`, `rateFinding`, `isReview` (Task 3); `groupRated`, `countColors`, `renderGroups`, `renderGroup`, `renderTable`, `REWORK_MARK` (Task 4); `parseScout`, `parseRework` aus `followup.js` (Task 4); `openQuestions`, `wEntryLines`, `nextEntryNumber` (Task 5); `isKind`, `nextAttempt` (Task 6); Test-Hilfe aus Task 2.
+- Consumes: `parsePlaces`, `resolvePlace` (Task 2); `resultProblem`, `rateFinding`, `isReview` (Task 3); `groupRated`, `countColors`, `renderGroups`, `renderGroup`, `renderTable`, `REWORK_MARK` (Task 4); `parseScout`, `parseRework` aus `followup.js` (Task 4); `documentQuestions`, `wEntryLines`, `nextEntryNumber` (Task 5); `isKind`, `nextAttempt`, `FlowError` aus `plugins/forge/scripts/lib/flow-error.js` (Task 6); Test-Hilfe aus Task 2.
 - Produces: diese Module, Dateien und Schritte:
-  - `plugins/forge/scripts/lib/flow-files.js`: `ROUND_ONE = 'runde-1'`, `ROUND_TWO = 'runde-2'`, `FOLLOWUP = 'nacharbeit'`, `CLOSING = 'abschluss'`, `class FlowError`, `readText(file)` (wirft `FlowError`, LF), `readLines(file)` (fehlende Datei → `[]`), `readJson(file, fallback?)`, `readAgentJson(file): { value, problem }`, `writeText(file, text)`, `writeJson(file, value)`.
-  - `plugins/forge/scripts/lib/rated-items.js`: `SCRIPT_CATEGORY = 'skript-prüfung'`, `rateReviewer(name, findings, places, context): Item[]`, `scriptItems(dir, places): Item[]` (liest `<dir>/skript-pruefung.json` `{ findings: [{ location, quote, consequence, rationale }] }`, immer `color: 'red'`, `script: true`), `droppedList(items): Array<{ reviewer, location, reason }>`. `Item = { reviewer, category, color, dropped, place: { key, label }, finding, script? }`.
-  - `plugins/forge/scripts/lib/round-one.js`: `rateRoundOne({ review, workspace, doc, spec, expected: string[], advisory: string[] }): string`, `snapshot(workspace, doc): string` (`EINTRAG R<n>`, schreibt `<workspace>/vorher.md`), `writeReworkInput({ review, workspace, doc }): string`.
+  - `plugins/forge/scripts/lib/flow-files.js`: `ROUND_ONE = 'runde-1'`, `ROUND_TWO = 'runde-2'`, `FOLLOWUP = 'nacharbeit'`, `CLOSING = 'abschluss'`, `FlowError` (Re-Export aus `flow-error.js`, Task 6), `readText(file)` (wirft `FlowError`, LF), `readLines(file)` (fehlende Datei → `[]`), `readJson(file, fallback?)` (kein JSON → `FlowError`), `readAgentJson(file): { value, problem }`, `writeText(file, text)`, `writeJson(file, value)`.
+  - `plugins/forge/scripts/lib/rated-items.js`: `SCRIPT_CATEGORY = 'skript-prüfung'`, `rateReviewer(name, findings, places, context): Item[]`, `scriptItems(dir, places): Item[]` (liest `<dir>/skript-pruefung.json` `{ findings: [{ location, quote, consequence, rationale }] }`, immer `color: 'red'`, `script: true`; andere Form → `FlowError`), `droppedList(items): Array<{ reviewer, location, reason }>`. `Item = { reviewer, category, color, dropped, place: { key, label }, finding, script? }`.
+  - `plugins/forge/scripts/lib/round-one.js`: `rateRoundOne({ review, workspace, doc, spec, expected: string[], advisory: string[] }): string` — nur die Einstufung von Runde 1; welche offenen Fragen zählen, entscheidet `documentQuestions` aus `questions.js` (Task 5).
+  - `plugins/forge/scripts/lib/rework-input.js`: alles, was die Nacharbeit vorbereitet: `snapshot(workspace, doc): string` (`EINTRAG R<n>`, schreibt `<workspace>/vorher.md`), `writeReworkInput({ review, workspace, doc }): string`.
   - Dateien in `<W>/runde-1/`: `einstufung.json` `{ groups, dropped, failed: [{ name, problem }], questions }`, `aggregate.md` (Tabelle und Gruppen), `scout-eingabe.md` (Gruppen für den Scout), `nacharbeit-eingabe.md` (nur 🔴-Gruppen mit `Scout-Vorschläge:` und `## Offene Fragen`).
   - `plugins/forge/scripts/lib/scout-check.js`: `checkScout(dir): 'SCOUT ok' | 'SCOUT ungültig: <grund>'`.
-  - `plugins/forge/scripts/review-flow.js`: `run(args: string[]): string`, `class UsageError`; Schritte `rate`, `attempt`, `scout-check`, `snapshot`, `rework-input`; Ausgabe von `rate`: `STATUS red=<n> yellow=<n> green=<n> fragen=<n> failed=<liste|->`, je ungültigem Reviewer `FEHLT <name> — <grund>`, ohne Ausfall `WEITER scout=<rot-und-gelb|hinweise|keiner> nacharbeit=<ja|nein>`. Exit 2 bei falschem Aufruf, Exit 1 bei `FlowError`.
+  - `plugins/forge/scripts/review-flow.js`: `run(args: string[]): string`, `class UsageError`; Schritte `rate`, `attempt`, `scout-check`, `snapshot`, `rework-input`; Ausgabe von `rate`: `STATUS red=<n> yellow=<n> green=<n> fragen=<n> failed=<liste|->`, je ungültigem Reviewer `FEHLT <name> — <grund>`, ohne Ausfall `WEITER scout=<rot-und-gelb|hinweise|keiner> nacharbeit=<ja|nein>`. Exit 2 bei falschem Aufruf, auch bei einem Namen in `--expect`, `--beratend` oder `--instanz`, der nicht nur aus Kleinbuchstaben, Ziffern und einzelnen `-` besteht (kein `.`, kein Pfadtrenner). Exit 1 bei `FlowError` mit `dv-forge review-flow: <grund>` auf stderr.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   `plugins/forge/tests/review-flow-round-one.test.js`:
@@ -1543,6 +1660,31 @@ test('reworkInput_OpenQuestionWithoutRed_ListsQuestionOnly', () => {
   assert.match(fs.readFileSync(path.join(env.workspace, 'runde-1', 'nacharbeit-eingabe.md'), 'utf8'), /Keine 🔴-Stellen\.\n\n## Offene Fragen\n- R2 · AC-04 — Gilt F\?/);
 });
 
+test('rate_PlanReviewWithQuestionEntryOfEarlierRun_FindingStaysAndNoQuestion', () => {
+  // Arrange
+  const env = setup(SPEC.replace('- **W · Deckel**', '- **R1 · AC-04** — frage an den menschen — Legt die Spec F fest?\n- **W · Deckel**'));
+  writeReviewer(env, 'risks', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+
+  // Act
+  const result = flow('rate', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'risks');
+
+  // Assert
+  assert.equal(result.stdout.split('\n')[0], 'STATUS red=1 yellow=0 green=0 fragen=0 failed=-');
+});
+
+test('reworkInput_PlanReviewWithQuestionEntryOfEarlierRun_ListsNoQuestion', () => {
+  // Arrange
+  const env = setup(SPEC.replace('- **W · Deckel**', '- **R1 · AC-04** — frage an den menschen — Legt die Spec F fest?\n- **W · Deckel**'));
+  writeReviewer(env, 'risks', []);
+  flow('rate', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'risks');
+
+  // Act
+  const result = flow('rework-input', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc);
+
+  // Assert
+  assert.equal(result.stdout, 'NACHARBEIT stellen=0 fragen=0\nEINTRAG R2\n');
+});
+
 test('scoutCheck_OneToThreeProposalsOnePreferred_Ok', () => {
   // Arrange
   const env = setup();
@@ -1617,6 +1759,56 @@ test('cli_UnknownStepOrReview_ExitsWithTwo', () => {
   // Assert
   assert.deepEqual(results.map((result) => result.status), [2, 2]);
 });
+
+test('cli_NameWithPathParts_ExitsWithTwo', () => {
+  // Arrange
+  const env = setup();
+
+  // Act
+  const results = [rate(env, '../clarity'), rate(env, 'clarity', ['--beratend', 'a/b']), flow('attempt', '--dir', env.workspace, '--instanz', '..\\x')];
+
+  // Assert
+  assert.deepEqual(results.map((result) => result.status), [2, 2, 2]);
+});
+
+test('attempt_InstanceNameWithUmlaut_Accepted', () => {
+  // Arrange
+  const env = setup();
+
+  // Act
+  const result = flow('attempt', '--dir', env.workspace, '--instanz', 'nachprüfer');
+
+  // Assert
+  assert.equal(result.stdout, 'NACHFORDERN\n');
+});
+
+test('rate_ScriptCheckFileNoJson_ExitsWithOneAndReason', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'clarity', []);
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'skript-pruefung.json'), 'kein json');
+
+  // Act
+  const result = rate(env, 'clarity');
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^dv-forge review-flow: kein gültiges JSON: /);
+});
+
+test('rate_ScriptFindingWithoutLocation_ExitsWithOneAndReason', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'clarity', []);
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'skript-pruefung.json'), { findings: [{ quote: 'x', consequence: 'y', rationale: 'z' }] });
+
+  // Act
+  const result = rate(env, 'clarity');
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^dv-forge review-flow: skript-pruefung\.json verletzt das Format/);
+});
 ```
 - [ ] **Schritt 2: Test rot laufen lassen**
   Befehl: `node --test plugins/forge/tests/review-flow-round-one.test.js` — erwartet: FAIL `rate_TwoHintsNoRedNoQuestion_ScoutForHintsWithoutRework` (Skript `review-flow.js` fehlt, `stdout` ist leer)
@@ -1627,13 +1819,12 @@ test('cli_UnknownStepOrReview_ExitsWithTwo', () => {
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { FlowError } = require('./flow-error');
 
 const ROUND_ONE = 'runde-1';
 const ROUND_TWO = 'runde-2';
 const FOLLOWUP = 'nacharbeit';
 const CLOSING = 'abschluss';
-
-class FlowError extends Error {}
 
 function readText(file) {
   if (!fs.existsSync(file)) throw new FlowError(`Datei fehlt: ${file}`);
@@ -1644,9 +1835,18 @@ function readLines(file) {
   return fs.existsSync(file) ? readText(file).split('\n') : [];
 }
 
+function parseJson(text, file) {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new FlowError(`kein gültiges JSON: ${file}: ${error.message}`);
+  }
+}
+
+// Vom Skript oder Orchestrator geschriebene Datei; kaputtes JSON bricht als FlowError mit Exit 1 ab.
 function readJson(file, fallback) {
   if (!fs.existsSync(file) && fallback !== undefined) return fallback;
-  return JSON.parse(readText(file));
+  return parseJson(readText(file), file);
 }
 
 // Ergebnis eines Agenten: fehlt die Datei oder ist sie kein JSON, steht der Grund in `problem`.
@@ -1680,11 +1880,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { resolvePlace } = require('./places');
 const { rateFinding } = require('./rules');
-const { readJson } = require('./flow-files');
+const { FlowError, readJson } = require('./flow-files');
 
 const SCRIPT_FILE = 'skript-pruefung.json';
 const SCRIPT_REVIEWER = 'skript';
 const SCRIPT_CATEGORY = 'skript-prüfung';
+const SCRIPT_FIELDS = ['location', 'quote', 'consequence', 'rationale'];
 
 function placeOf(finding, places) {
   const place = resolvePlace(finding.location, finding.quote, places);
@@ -1699,11 +1900,25 @@ function rateReviewer(name, findings, places, context) {
   });
 }
 
+function isScriptFinding(finding) {
+  return finding !== null && typeof finding === 'object'
+    && SCRIPT_FIELDS.every((field) => typeof finding[field] === 'string')
+    && finding.location.trim() !== '';
+}
+
+function scriptFindings(file) {
+  const findings = readJson(file)?.findings;
+  if (!Array.isArray(findings) || !findings.every(isScriptFinding)) {
+    throw new FlowError(`${SCRIPT_FILE} verletzt das Format { findings: [{ location, quote, consequence, rationale }] }: ${file}`);
+  }
+  return findings;
+}
+
 // Befunde einer Skript-Prüfung sind immer 🔴 und entfallen nie.
 function scriptItems(dir, places) {
   const file = path.join(dir, SCRIPT_FILE);
   if (!fs.existsSync(file)) return [];
-  return readJson(file).findings.map((finding) => ({
+  return scriptFindings(file).map((finding) => ({
     reviewer: SCRIPT_REVIEWER, category: SCRIPT_CATEGORY, color: 'red', dropped: null, script: true,
     place: placeOf(finding, places), finding,
   }));
@@ -1719,15 +1934,13 @@ module.exports = { SCRIPT_CATEGORY, rateReviewer, scriptItems, droppedList };
 ```javascript
 'use strict';
 
-const fs = require('node:fs');
 const path = require('node:path');
 const { parsePlaces } = require('./places');
 const { resultProblem } = require('./rules');
-const { openQuestions, wEntryLines, nextEntryNumber } = require('./questions');
-const { groupRated, countColors, renderGroups, renderGroup, renderTable, REWORK_MARK } = require('./groups');
+const { documentQuestions, wEntryLines } = require('./questions');
+const { groupRated, countColors, renderGroups, renderTable } = require('./groups');
 const { rateReviewer, scriptItems, droppedList } = require('./rated-items');
-const { parseScout } = require('../followup');
-const { ROUND_ONE, readText, readLines, readJson, readAgentJson, writeText, writeJson } = require('./flow-files');
+const { ROUND_ONE, readText, readAgentJson, writeText, writeJson } = require('./flow-files');
 
 function readReviewerResult(dir, name, review) {
   const { value, problem } = readAgentJson(path.join(dir, `${name}.json`));
@@ -1768,7 +1981,7 @@ function rateRoundOne(options) {
   const dir = path.join(options.workspace, ROUND_ONE);
   const text = readText(options.doc);
   const places = parsePlaces(text);
-  const questions = openQuestions(text);
+  const questions = documentQuestions(options, text);
   const context = {
     review: options.review, advisory: new Set(options.advisory), wEntries: wEntriesOf(options),
     openKeys: new Set(questions.map((question) => question.key)), phase: 'suche', checklistKeys: new Set(), changedKeys: new Set(),
@@ -1787,6 +2000,19 @@ function rateRoundOne(options) {
   const lines = statusLines(counts, questions.length, failed);
   return (failed.length > 0 ? lines : [...lines, nextLine(counts, questions.length)]).join('\n');
 }
+
+module.exports = { rateRoundOne };
+```
+  `plugins/forge/scripts/lib/rework-input.js`:
+```javascript
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+const { nextEntryNumber, documentQuestions } = require('./questions');
+const { renderGroup, REWORK_MARK } = require('./groups');
+const { parseScout } = require('../followup');
+const { ROUND_ONE, readText, readLines, readJson, writeText } = require('./flow-files');
 
 // Stand vor der Nacharbeit sichern und die Nummer ihrer R-Einträge vergeben.
 function snapshot(workspace, doc) {
@@ -1816,14 +2042,14 @@ function writeReworkInput(options) {
   const dir = path.join(options.workspace, ROUND_ONE);
   const reds = readJson(path.join(dir, 'einstufung.json')).groups.filter((group) => group.color === 'red');
   const proposals = proposalsByGroup(path.join(dir, 'scout.md'));
-  const questions = openQuestions(readText(options.doc));
+  const questions = documentQuestions(options, readText(options.doc));
   const blocks = reds.map((group) => [renderGroup(group), ...proposalLines(group, proposals)].join('\n'));
   const body = blocks.length > 0 ? blocks.join('\n\n') : 'Keine 🔴-Stellen.';
   writeText(path.join(dir, 'nacharbeit-eingabe.md'), [REWORK_MARK, '', body, ...questionLines(questions)].join('\n'));
   return [`NACHARBEIT stellen=${reds.length} fragen=${questions.length}`, snapshot(options.workspace, options.doc)].join('\n');
 }
 
-module.exports = { rateRoundOne, snapshot, writeReworkInput };
+module.exports = { snapshot, writeReworkInput };
 ```
   `plugins/forge/scripts/lib/scout-check.js`:
 ```javascript
@@ -1867,7 +2093,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { isReview } = require('./lib/rules');
 const { isKind, nextAttempt } = require('./lib/attempts');
-const { rateRoundOne, snapshot, writeReworkInput } = require('./lib/round-one');
+const { rateRoundOne } = require('./lib/round-one');
+const { snapshot, writeReworkInput } = require('./lib/rework-input');
 const { checkScout } = require('./lib/scout-check');
 const { ROUND_ONE, FOLLOWUP, FlowError } = require('./lib/flow-files');
 
@@ -1881,6 +2108,8 @@ const USAGE = [
 ].join('\n');
 const VALUE_OPTIONS = ['--review', '--dir', '--doc', '--spec', '--expect', '--beratend', '--instanz', '--art', '--quelle', '--titel', '--artefakt'];
 const SOURCES = [ROUND_ONE, FOLLOWUP];
+// Namen werden Dateinamen im Arbeitsbereich: kein `.`, kein Pfadtrenner.
+const INSTANCE_NAME = /^[\p{Ll}\d]+(?:-[\p{Ll}\d]+)*$/u;
 
 class UsageError extends Error {}
 
@@ -1900,6 +2129,15 @@ function list(value) {
 function required(values, name) {
   if (!values[name]) throw new UsageError(`--${name} fehlt`);
   return values[name];
+}
+
+function checkedName(name, option) {
+  if (!INSTANCE_NAME.test(name)) throw new UsageError(`--${option}: ungültiger Name: ${name}`);
+  return name;
+}
+
+function names(value, option) {
+  return list(value).map((name) => checkedName(name, option));
 }
 
 function existing(file, label) {
@@ -1924,11 +2162,11 @@ function flowOptions(values) {
 function attempt(values) {
   const kind = values.art ?? 'instanz';
   if (!isKind(kind)) throw new UsageError(`--art erlaubt: instanz, buendelung; nicht ${kind}`);
-  return nextAttempt(path.resolve(required(values, 'dir')), required(values, 'instanz'), kind);
+  return nextAttempt(path.resolve(required(values, 'dir')), checkedName(required(values, 'instanz'), 'instanz'), kind);
 }
 
 const COMMANDS = {
-  rate: (values) => rateRoundOne({ ...flowOptions(values), expected: list(required(values, 'expect')), advisory: list(values.beratend) }),
+  rate: (values) => rateRoundOne({ ...flowOptions(values), expected: names(required(values, 'expect'), 'expect'), advisory: names(values.beratend, 'beratend') }),
   attempt,
   'scout-check': (values) => checkScout(path.resolve(required(values, 'dir'))),
   snapshot: (values) => snapshot(path.resolve(required(values, 'dir')), existing(required(values, 'doc'), 'Dokument')),
@@ -1960,9 +2198,9 @@ if (require.main === module) main();
 module.exports = { run, UsageError };
 ```
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/forge/tests/review-flow-round-one.test.js` — erwartet: PASS (17 Tests)
+  Befehl: `node --test plugins/forge/tests/review-flow-round-one.test.js` — erwartet: PASS (23 Tests)
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/flow-files.js plugins/forge/scripts/lib/rated-items.js plugins/forge/scripts/lib/round-one.js plugins/forge/scripts/lib/scout-check.js plugins/forge/scripts/review-flow.js plugins/forge/tests/review-flow-round-one.test.js` · `git commit -m "feat(forge): rate round one of the review flow by script"`
+  `git add plugins/forge/scripts/lib/flow-files.js plugins/forge/scripts/lib/rated-items.js plugins/forge/scripts/lib/round-one.js plugins/forge/scripts/lib/rework-input.js plugins/forge/scripts/lib/scout-check.js plugins/forge/scripts/review-flow.js plugins/forge/tests/review-flow-round-one.test.js` · `git commit -m "feat(forge): rate round one of the review flow by script"`
 
 ---
 
@@ -1972,13 +2210,13 @@ module.exports = { run, UsageError };
 
 **Dateien:**
 - Create: `plugins/forge/scripts/lib/rework-check.js`
-- Modify: `plugins/forge/scripts/review-flow.js` · `const { rateRoundOne, snapshot, writeReworkInput } = require('./lib/round-one');`
+- Modify: `plugins/forge/scripts/review-flow.js` · `const { snapshot, writeReworkInput } = require('./lib/rework-input');`
 - Modify: `plugins/forge/scripts/review-flow.js` · `USAGE`
 - Modify: `plugins/forge/scripts/review-flow.js` · `COMMANDS`
 - Test: `plugins/forge/tests/review-flow-rework.test.js`
 
 **Interfaces:**
-- Consumes: `ROUND_ONE`, `readText`, `readLines`, `readJson`, `readAgentJson`, `writeText`, `writeJson` (Task 7); `placeKey` (Task 2); `openQuestions`, `bundleShapeProblem`, `bundleProblem`, `renderQuestions` (Task 5); `parseRework` (Task 4); `flowOptions(values)` in `review-flow.js` (Task 7).
+- Consumes: `ROUND_ONE`, `readText`, `readLines`, `readJson`, `readAgentJson`, `writeText`, `writeJson` (Task 7); `placeKey` (Task 2); `openQuestions`, `bundleShapeProblem`, `bundleProblem`, `renderQuestions` (Task 5); `parseRework` (Task 4); `flowOptions(values)` in `review-flow.js` (Task 7); `finding`, `setup`, `writeJsonFile`, `flow`, `readJsonFile`, `addEntries`, `runUntilRework` aus `plugins/forge/tests/lib/review-flow-fixture.js` (Task 2).
 - Produces: diese Module, Dateien und Schritte:
   - `plugins/forge/scripts/lib/rework-check.js`: `checkRework({ review, workspace, doc, source }): string` — `NACHARBEIT ungültig: <grund>`, `BUENDELUNG fehlerhaft: <grund>`, `NACHARBEIT ok fragen=<n> anhalten=nein` oder `NACHARBEIT ok fragen=<n> anhalten=ja`, gefolgt von `=== FRAGEN ===` und den gezeigten Fragen; schreibt `<W>/<source>/fragen.json` `[{ place, key, question }]` und bei `anhalten=ja` `fragen.md`. `checkAnswers({ workspace, doc }): string` — `ANTWORTEN ok beantwortet=<n> offen=<n>` oder `ANTWORTEN ungültig: <grund>`.
   - Ergebnis der Nacharbeit `<W>/<source>/rework.json`: `{ results: [{ location, status: 'changed'|'unchanged'|'human-question'|'spec-question', reason? }], questions?: [{ rule, question, places, cases, recommendation }] }`; `reason` Pflicht bei `unchanged`, `human-question`, `spec-question`.
@@ -1992,14 +2230,11 @@ module.exports = { run, UsageError };
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
-const { finding, setup, writeJsonFile, writeReviewer, flow, readJsonFile } = require('./lib/review-flow-fixture');
+const { finding, setup, writeJsonFile, flow, readJsonFile, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
 
 function prepareRework(env, review = 'spec-review', findings = [finding({ location: 'AC-04', category: 'widerspruch' }), finding({ location: 'AC-07', category: 'widerspruch' })]) {
-  writeReviewer(env, 'consistency', findings);
-  flow('rate', '--review', review, '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency');
-  flow('rework-input', '--review', review, '--dir', env.workspace, '--doc', env.doc);
+  runUntilRework(env, findings, review);
 }
 
 function writeRework(env, value, source = 'runde-1') {
@@ -2008,11 +2243,6 @@ function writeRework(env, value, source = 'runde-1') {
 
 function checkRework(env, review = 'spec-review', source = 'runde-1') {
   return flow('rework-check', '--review', review, '--dir', env.workspace, '--doc', env.doc, '--quelle', source).stdout;
-}
-
-function addEntries(env, ...entries) {
-  const text = fs.readFileSync(env.doc, 'utf8');
-  fs.writeFileSync(env.doc, text.replace('- **W · Deckel**', [...entries, '- **W · Deckel**'].join('\n')));
 }
 
 function bundle(places) {
@@ -2284,7 +2514,7 @@ function checkAnswers(options) {
 
 module.exports = { checkRework, checkAnswers };
 ```
-  In `plugins/forge/scripts/review-flow.js` fügst du direkt nach der Zeile `const { rateRoundOne, snapshot, writeReworkInput } = require('./lib/round-one');` ein:
+  In `plugins/forge/scripts/review-flow.js` fügst du direkt nach der Zeile `const { snapshot, writeReworkInput } = require('./lib/rework-input');` ein:
   ```javascript
   const { checkRework, checkAnswers } = require('./lib/rework-check');
   ```
@@ -2317,7 +2547,7 @@ module.exports = { checkRework, checkAnswers };
 - Test: `plugins/forge/tests/review-flow-round-two.test.js`
 
 **Interfaces:**
-- Consumes: `placeKey`, `parsePlaces`, `changedPlaces` (Task 2); `findingProblem` (Task 3); `groupRated`, `countColors`, `renderGroups` (Task 4); `openQuestions`, `wEntryLines` (Task 5); `rateReviewer`, `scriptItems`, `droppedList`, Datei-Hilfen (Task 7); `parseRework` (Task 4); `fragen.json` aus Task 8.
+- Consumes: `placeKey`, `parsePlaces`, `changedPlaces` (Task 2); `findingProblem` (Task 3); `groupRated`, `countColors`, `renderGroups` (Task 4); `openQuestions`, `wEntryLines` (Task 5); `rateReviewer`, `scriptItems`, `droppedList`, Datei-Hilfen (Task 7); `parseRework` (Task 4); `fragen.json` aus Task 8; `finding`, `setup`, `writeJsonFile`, `flow`, `readJsonFile`, `editDoc`, `addEntries`, `runUntilRework` aus `plugins/forge/tests/lib/review-flow-fixture.js` (Task 2).
 - Produces: diese Module, Dateien und Schritte:
   - `plugins/forge/scripts/lib/round-two.js`: `buildChecklist({ review, workspace, doc, source }): string` — `PRUEFLISTE punkte=<ki> skript=<n> bereiche=<n>` und `NACHPRUEFER ja|nein`; schreibt `<W>/runde-2/pruefliste.json` `{ items: [{ key, label, source: 'ki'|'skript', lines }], changed: string[] }` und `pruefliste.md` (`# Prüfliste`, `## Punkte` mit `### <Stelle>`, `## Geänderte Bereiche`). `verifyRoundTwo({ review, workspace, doc, spec, source }): string` — `NACHPRUEFUNG ungültig: <grund>` oder `NACHPRUEFUNG ok offen=<k> hinweise=<n>` und `WEITER scout=hinweise|keiner`; schreibt `<W>/runde-2/einstufung.json` `{ verdicts, groups, dropped, openRed }` und `scout-eingabe.md`.
   - Ergebnis des Nachprüfers `<W>/runde-2/nachpruefung.json`: `{ verdicts: [{ location, verdict: 'erledigt'|'nicht erledigt', rationale }], findings: [<Finding mit category>] }`.
@@ -2332,23 +2562,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { finding, setup, writeJsonFile, writeReviewer, flow, readJsonFile } = require('./lib/review-flow-fixture');
+const { finding, setup, writeJsonFile, flow, readJsonFile, editDoc, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
 
 const RED = (location) => finding({ location, quote: 'x', category: 'widerspruch' });
-
-function runUntilRework(env, findings) {
-  writeReviewer(env, 'consistency', findings);
-  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency');
-  flow('rework-input', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
-}
-
-function editDoc(env, from, to) {
-  fs.writeFileSync(env.doc, fs.readFileSync(env.doc, 'utf8').replace(from, to));
-}
-
-function addEntries(env, ...entries) {
-  editDoc(env, '- **W · Deckel**', [...entries, '- **W · Deckel**'].join('\n'));
-}
 
 function finishRework(env, results, questions = []) {
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results, questions });
@@ -2386,15 +2602,31 @@ test('checklist_ThreeRedPlacesWithoutQuestion_ExactlyTheseThree', () => {
 test('checklist_AnsweredQuestion_PlaceOnChecklist', () => {
   // Arrange
   const env = setup();
-  runUntilRework(env, [RED('AC-04')]);
   addEntries(env, '- **R1 · AC-04** — frage an den menschen — F?');
-  finishRework(env, [{ location: 'AC-04', status: 'human-question', reason: 'neu' }], [{ rule: 'R', question: 'F?', places: ['AC-04'], cases: ['a) ja'], recommendation: 'a' }]);
+  runUntilRework(env, []);
+  finishRework(env, [], [{ rule: 'R', question: 'F?', places: ['AC-04'], cases: ['a) ja'], recommendation: 'a' }]);
   addEntries(env, '- **W · AC-04** · Aussage — Antwort auf „R1 · AC-04“: ja.');
 
   // Act
   checklist(env);
 
   // Assert
+  assert.deepEqual(checklistItems(env), ['AC-04:ki']);
+});
+
+test('checklist_RedWithAnsweredQuestion_PlaceOnceOnChecklist', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  addEntries(env, '- **R1 · AC-04** — frage an den menschen — F?');
+  finishRework(env, [{ location: 'AC-04', status: 'human-question', reason: 'neu' }], [{ rule: 'R', question: 'F?', places: ['AC-04'], cases: ['a) ja'], recommendation: 'a' }]);
+  addEntries(env, '- **W · AC-04** · Aussage — Antwort auf „R1 · AC-04“: ja.');
+
+  // Act
+  const output = checklist(env);
+
+  // Assert
+  assert.equal(output, 'PRUEFLISTE punkte=1 skript=0 bereiche=0\nNACHPRUEFER ja\n');
   assert.deepEqual(checklistItems(env), ['AC-04:ki']);
 });
 
@@ -2505,6 +2737,20 @@ test('verify_MissingVerdict_Invalid', () => {
   assert.equal(output, 'NACHPRUEFUNG ungültig: Urteil fehlt oder doppelt: AC-07\n');
 });
 
+test('verify_VerdictForPlaceNotOnChecklist_Invalid', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  finishRework(env, [{ location: 'AC-04', status: 'changed' }]);
+  checklist(env);
+
+  // Act
+  const output = verify(env, { verdicts: [{ location: 'AC-04', verdict: 'erledigt', rationale: 'ok' }, { location: 'AC-07', verdict: 'nicht erledigt', rationale: 'x' }], findings: [] });
+
+  // Assert
+  assert.equal(output, 'NACHPRUEFUNG ungültig: Urteil ohne Punkt der Prüfliste: AC-07\n');
+});
+
 test('verify_FindingWithColor_Invalid', () => {
   // Arrange
   const env = setup();
@@ -2606,6 +2852,10 @@ function verdictProblem(verdicts, aiItems) {
   const wrong = verdicts.find((verdict) => typeof verdict?.location !== 'string' || !VERDICTS.includes(verdict.verdict) || typeof verdict.rationale !== 'string');
   if (wrong) return `Urteil ungültig: ${JSON.stringify(wrong)}`;
   const named = verdicts.map((verdict) => placeKey(verdict.location));
+  const listed = new Set(aiItems.map((item) => item.key));
+  // Urteile außerhalb der Prüfliste würden k in `nicht bereit, k × 🔴 offen` verfälschen.
+  const extra = verdicts.filter((verdict, index) => !listed.has(named[index]));
+  if (extra.length > 0) return `Urteil ohne Punkt der Prüfliste: ${extra.map((verdict) => verdict.location).join(', ')}`;
   const missing = aiItems.filter((item) => named.filter((key) => key === item.key).length !== 1);
   return missing.length > 0 ? `Urteil fehlt oder doppelt: ${missing.map((item) => item.label).join(', ')}` : null;
 }
@@ -2691,9 +2941,9 @@ module.exports = { buildChecklist, verifyRoundTwo };
 - Test: `plugins/forge/tests/review-flow-report.test.js`
 
 **Interfaces:**
-- Consumes: `openQuestions` (Task 5); `ICON`, `cell`, `renderGroups`, `renderTable` (Task 4); `SCRIPT_CATEGORY` (Task 7); `failedInstances`, `nextAttempt` (Task 6); Dateien aus Task 7 bis 9.
+- Consumes: `openQuestions` (Task 5); `ICON`, `cell`, `renderGroups`, `renderTable` (Task 4); `SCRIPT_CATEGORY`, `FlowError` aus `flow-files.js` (Task 7); `failedInstances`, `nextAttempt` (Task 6); Dateien aus Task 7 bis 9; `SPEC`, `finding`, `setup`, `writeJsonFile`, `writeReviewer`, `flow`, `editDoc`, `addEntries`, `runUntilRework` aus `plugins/forge/tests/lib/review-flow-fixture.js` (Task 2).
 - Produces: diese Module, Dateien und Schritte:
-  - `plugins/forge/scripts/lib/flow-report.js`: `flowStatus({ failed: string[], openQuestions: number, openRed: number, reworked: boolean }): string`; `report({ review, workspace, doc, source, title, artifact }): string` — erste Zeile `ENDE <status>`, dann `=== BERICHT ===` und der Bericht (`## <Titel>: <Artefakt>`, `**Status:**`, `**Runden:** <n> · **Nacharbeiten:** <m>`, `### Runde 1`, `### Nachprüfung`, `### Widersprüche`, `### Skript-Prüfungen`, `### Weitere 🔴 der Nachprüfung`, `### Hinweise der Nachprüfung`, `### Offene Fragen`, `### Anmerkungen (🟢)`, `### Scout`, jeder nur mit Inhalt); schreibt `<W>/abschluss/aggregate.md` (alle 🔴- und 🟡-Gruppen) und, wenn ein Scout lief, `<W>/abschluss/scout.md` (Vorschläge aus Runde 1 und Nachprüfung) für `followup.js save`.
+  - `plugins/forge/scripts/lib/flow-report.js`: `flowStatus({ failed: string[], openQuestions: number, openRed: number, reworked: boolean }): string`; `report({ review, workspace, doc, source, title, artifact }): string` — die offenen 🔴 kommen aus `runde-2/einstufung.json` (`openRed`); fehlt die Datei nach einer Nacharbeit ohne Ausfall, wirft `report` `FlowError('Nachprüfung fehlt: runde-2/einstufung.json')`; fehlt sie ohne Nacharbeit, zählen die 🔴-Gruppen aus `runde-1/einstufung.json`. Erste Zeile `ENDE <status>`, dann `=== BERICHT ===` und der Bericht (`## <Titel>: <Artefakt>`, `**Status:**`, `**Runden:** <n> · **Nacharbeiten:** <m>`, `### Runde 1`, `### Nachprüfung`, `### Widersprüche`, `### Skript-Prüfungen`, `### Weitere 🔴 der Nachprüfung`, `### Hinweise der Nachprüfung`, `### Offene Fragen`, `### Anmerkungen (🟢)`, `### Scout`, jeder nur mit Inhalt); schreibt `<W>/abschluss/aggregate.md` (alle 🔴- und 🟡-Gruppen) und, wenn ein Scout lief, `<W>/abschluss/scout.md` (Vorschläge aus Runde 1 und Nachprüfung) für `followup.js save`.
   - `review-flow.js`: Schritt `report --titel <text> --artefakt <pfad>`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
@@ -2707,7 +2957,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { flowStatus } = require('../scripts/lib/flow-report');
 const { nextAttempt } = require('../scripts/lib/attempts');
-const { SPEC, finding, setup, writeJsonFile, writeReviewer, flow } = require('./lib/review-flow-fixture');
+const { SPEC, finding, setup, writeJsonFile, writeReviewer, flow, editDoc, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
 
 const RED = (location) => finding({ location, quote: 'x', category: 'widerspruch' });
 const VERDICT = (location, verdict) => ({ location, verdict, rationale: verdict === 'erledigt' ? 'ok' : 'F fehlt noch' });
@@ -2716,19 +2966,17 @@ function status(overrides) {
   return flowStatus({ failed: [], openQuestions: 0, openRed: 0, reworked: true, ...overrides });
 }
 
-function report(env, review = 'spec-review') {
-  return flow('report', '--review', review, '--dir', env.workspace, '--doc', env.doc, '--titel', 'Spec-Review', '--artefakt', 'docs/x/spec.md').stdout;
+function runReport(env, review = 'spec-review') {
+  return flow('report', '--review', review, '--dir', env.workspace, '--doc', env.doc, '--titel', 'Spec-Review', '--artefakt', 'docs/x/spec.md');
 }
 
-function addEntries(env, ...entries) {
-  fs.writeFileSync(env.doc, fs.readFileSync(env.doc, 'utf8').replace('- **W · Deckel**', [...entries, '- **W · Deckel**'].join('\n')));
+function report(env, review = 'spec-review') {
+  return runReport(env, review).stdout;
 }
 
 // Ganzer Lauf bis nach der Nachprüfung; `verification` ist das Ergebnis des Nachprüfers.
 function runWithVerification(env, findings, results, verification) {
-  writeReviewer(env, 'consistency', findings);
-  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency');
-  flow('rework-input', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
+  runUntilRework(env, findings);
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results, questions: [] });
   flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
@@ -2783,6 +3031,46 @@ test('report_TwoHintsWithoutRework_CleanAfterRoundOneAndClosingForFollowup', () 
   assert.match(fs.readFileSync(path.join(env.workspace, 'abschluss', 'scout.md'), 'utf8'), /### 🟡 AC-01[\s\S]*### 🟡 AC-07/);
 });
 
+test('report_NoRedInRoundOneWithoutRework_CleanAfterRoundOne', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'clarity', []);
+  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'clarity');
+
+  // Act
+  const output = report(env);
+
+  // Assert
+  assert.match(output, /^ENDE sauber nach Runde 1\n/);
+});
+
+test('report_RedInRoundOneWithoutRoundTwo_NichtBereitWithRedOfRoundOne', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'consistency', [RED('AC-04')]);
+  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency');
+
+  // Act
+  const output = report(env);
+
+  // Assert
+  assert.match(output, /^ENDE nicht bereit, 1 × 🔴 offen\n/);
+});
+
+test('report_ReworkWithoutRoundTwo_ExitsWithOneAndReason', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed' }], questions: [] });
+
+  // Act
+  const result = runReport(env);
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^dv-forge review-flow: Nachprüfung fehlt: runde-2\/einstufung\.json/);
+});
+
 test('report_AllDone_CleanAfterVerificationWithVerdicts', () => {
   // Arrange
   const env = setup();
@@ -2815,10 +3103,8 @@ test('report_NotDoneContradictionAndScript_NichtBereitThree', () => {
   const env = setup();
   writeJsonFile(path.join(env.workspace, 'runde-2', 'skript-pruefung.json'), { findings: [{ location: 'AC-01', quote: 'x', consequence: 'doppelt', rationale: 'Skript' }] });
   const verification = { verdicts: [VERDICT('AC-04', 'nicht erledigt')], findings: [finding({ location: 'Deckel', quote: 'Höchstens drei Runden.', category: 'widerspruch' })] };
-  writeReviewer(env, 'consistency', [RED('AC-04')]);
-  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency');
-  flow('rework-input', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
-  fs.writeFileSync(env.doc, fs.readFileSync(env.doc, 'utf8').replace('Höchstens zwei Runden.', 'Höchstens drei Runden.'));
+  runUntilRework(env, [RED('AC-04')]);
+  editDoc(env, 'Höchstens zwei Runden.', 'Höchstens drei Runden.');
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed' }], questions: [] });
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
   writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), verification);
@@ -2954,7 +3240,7 @@ const { openQuestions } = require('./questions');
 const { ICON, cell, renderGroups, renderTable } = require('./groups');
 const { SCRIPT_CATEGORY } = require('./rated-items');
 const { failedInstances } = require('./attempts');
-const { ROUND_ONE, ROUND_TWO, CLOSING, readText, readLines, readJson, writeText } = require('./flow-files');
+const { ROUND_ONE, ROUND_TWO, CLOSING, FlowError, readText, readLines, readJson, writeText } = require('./flow-files');
 
 const SCOUT_HEADING = '## Scout-Vorschläge';
 
@@ -2971,16 +3257,30 @@ function questionsAtEnd(options) {
   return openQuestions(readText(options.doc));
 }
 
+function redGroupCount(one) {
+  return (one?.groups ?? []).filter((group) => group.color === 'red').length;
+}
+
+// Offene 🔴: aus der Nachprüfung; ohne Nacharbeit die 🔴-Gruppen aus Runde 1. Eine Nacharbeit ohne Nachprüfung
+// und ohne Ausfall ist ein fehlender Schritt und darf den Status nicht ins Positive kippen.
+function openRedOf(one, two, reworked, failed) {
+  if (two) return two.openRed;
+  if (reworked && failed.length === 0) throw new FlowError('Nachprüfung fehlt: runde-2/einstufung.json');
+  return redGroupCount(one);
+}
+
 function collect(options) {
-  const failed = failedInstances(options.workspace);
+  const attempts = failedInstances(options.workspace);
+  const failed = attempts.filter((name) => !name.startsWith('scout'));
+  const one = readJson(path.join(options.workspace, ROUND_ONE, 'einstufung.json'), null);
+  const two = readJson(path.join(options.workspace, ROUND_TWO, 'einstufung.json'), null);
+  const reworked = fs.existsSync(path.join(options.workspace, options.source, 'rework.json'));
   return {
-    one: readJson(path.join(options.workspace, ROUND_ONE, 'einstufung.json'), null),
-    two: readJson(path.join(options.workspace, ROUND_TWO, 'einstufung.json'), null),
+    one, two, reworked, failed,
+    openRed: openRedOf(one, two, reworked, failed),
     checked: fs.existsSync(path.join(options.workspace, ROUND_TWO, 'pruefliste.json')),
-    reworked: fs.existsSync(path.join(options.workspace, options.source, 'rework.json')),
     questions: questionsAtEnd(options),
-    failed: failed.filter((name) => !name.startsWith('scout')),
-    scoutFailed: failed.some((name) => name.startsWith('scout')),
+    scoutFailed: attempts.some((name) => name.startsWith('scout')),
   };
 }
 
@@ -3058,7 +3358,7 @@ function writeClosing(options, data) {
 
 function report(options) {
   const data = collect(options);
-  const status = flowStatus({ failed: data.failed, openQuestions: data.questions.length, openRed: data.two?.openRed ?? 0, reworked: data.reworked });
+  const status = flowStatus({ failed: data.failed, openQuestions: data.questions.length, openRed: data.openRed, reworked: data.reworked });
   writeClosing(options, data);
   return [`ENDE ${status}`, '=== BERICHT ===', renderReport(data, options, status)].join('\n');
 }
@@ -3493,8 +3793,8 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
 **ACs:** AC-13, AC-14, AC-15, AC-17, AC-36, AC-37, AC-40, AC-41, AC-53
 
 **Dateien:**
-- Modify: `plugins/forge/agents/spec-rework.md` · ganze Datei
-- Modify: `plugins/forge/agents/plan-rework.md` · ganze Datei
+- Modify: `plugins/forge/agents/spec-rework.md` · `name: spec-rework` (Schritt 3 ersetzt die ganze Datei)
+- Modify: `plugins/forge/agents/plan-rework.md` · `name: plan-rework` (Schritt 3 ersetzt die ganze Datei)
 - Modify: `plugins/forge/agents/spec-review-scout.md` · `## Auftrag`
 - Modify: `plugins/forge/agents/plan-review-scout.md` · `## Auftrag`
 - Test: `plugins/forge/tests/agents.test.js` · `reworkAndScouts_Body_ReadFindingsFromAggregateFile`
@@ -3506,7 +3806,7 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   In `plugins/forge/tests/agents.test.js`:
   - Im Test `spec-rework_Body_DefinesDecisionEntryFormat` wird `'- **R<r> · <Stelle>** — geändert | nicht geändert | frage an den menschen — <Begründung oder Frage>'` zu `'- **R<n> · <Stelle>** — geändert | nicht geändert | frage an den menschen — <Begründung oder Frage>'`.
-  - Im Test `plan-rework_Body_DecisionEntryRenumberingAndJsonResult` wird `'- **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>'` zu `'- **R<n> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>'`.
+  - Im Test `plan-rework_Body_DecisionEntryRenumberingAndJsonResult` wird `'- **R<r> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>'` zu `'- **R<n> · <Stelle>** — geändert | nicht geändert — <Begründung>'`.
   - Im Test `plan-review-scout_Body_FormatProposalsPreferredAndNoEdits` wird `  assert.match(body, /🟢-Gruppen/);` zu ``   assert.ok(body.includes('1. Du bearbeitest jede Gruppe aus `Findings:`, sonst keine.')); ``.
   - Im Test `reworkAndScouts_Body_ReadFindingsFromAggregateFile` ersetzt du die zweite Schleife durch:
   ```javascript
@@ -3531,9 +3831,15 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
     assert.ok(body.includes('Hinweise und 🟢-Findings bekommst du nicht.'));
     assert.ok(body.includes('`reason` ist Pflicht bei `unchanged` und `spec-question`'));
   });
+
+  test('plan-rework_Body_SpecQuestionWrittenAsQuestionToTheHuman', () => {
+    const { body } = readAgent('plan-rework');
+    assert.ok(body.includes('Bei einer spec-rückfrage lautet er wie jede Frage an den Menschen `- **R<n> · <Stelle>** — frage an den menschen — <Rückfrage>`.'));
+    assert.ok(body.includes('Bei `spec-rückfrage` schreibst du zusätzlich den R-Eintrag aus Regel 7.'));
+  });
   ```
 - [ ] **Schritt 2: Test rot laufen lassen**
-  Befehl: `node --test plugins/forge/tests/agents.test.js` — erwartet: FAIL `spec-rework_Body_DefinesDecisionEntryFormat`, `plan-rework_Body_DecisionEntryRenumberingAndJsonResult`, `plan-review-scout_Body_FormatProposalsPreferredAndNoEdits`, `reworkAndScouts_Body_ReadFindingsFromAggregateFile`, `spec-rework_Body_BundlesQuestionsAndEntersAnswers`, `plan-rework_Body_OnlyRedPlacesAndSpecQuestionWithReason`
+  Befehl: `node --test plugins/forge/tests/agents.test.js` — erwartet: FAIL `spec-rework_Body_DefinesDecisionEntryFormat`, `plan-rework_Body_DecisionEntryRenumberingAndJsonResult`, `plan-review-scout_Body_FormatProposalsPreferredAndNoEdits`, `reworkAndScouts_Body_ReadFindingsFromAggregateFile`, `spec-rework_Body_BundlesQuestionsAndEntersAnswers`, `plan-rework_Body_OnlyRedPlacesAndSpecQuestionWithReason`, `plan-rework_Body_SpecQuestionWrittenAsQuestionToTheHuman`
 - [ ] **Schritt 3: Minimal implementieren**
   `plugins/forge/agents/spec-rework.md` ersetzt du ganz durch:
 ````markdown
@@ -3651,7 +3957,8 @@ Du korrigierst einen Umsetzungsplan an den 🔴-Stellen eines Reviews. Du änder
 5. W-Einträge sind bindende Entscheidungen des Menschen. Du änderst und entfernst sie nie.
 6. Am Ende des Plans steht `## Entscheidungen`. Fehlt der Abschnitt, legst du ihn an. Bestehende Einträge löschst du nie.
 7. Pro Stelle schreibst du genau einen Eintrag:
-   `- **R<n> · <Stelle>** — geändert | nicht geändert | spec-rückfrage — <Begründung>`
+   `- **R<n> · <Stelle>** — geändert | nicht geändert — <Begründung>`
+   Bei einer spec-rückfrage lautet er wie jede Frage an den Menschen `- **R<n> · <Stelle>** — frage an den menschen — <Rückfrage>`.
 8. Bei einem Finding an `AC-<Zahl>` prüfst du das ganze AC aus der Spec gegen den Plan, nicht nur den zitierten Teil, und schließt alle Lücken dieses AC in derselben Nacharbeit.
 9. Existiert die Stelle nicht im Plan, lautet der Eintrag `- **R<n> · <Stelle>** — nicht geändert — Stelle existiert nicht`.
 
@@ -3659,7 +3966,7 @@ Du korrigierst einen Umsetzungsplan an den 🔴-Stellen eines Reviews. Du änder
 Bekommst du `Vorschläge:` statt `Findings:`, gelten die Regeln oben mit diesen Abweichungen:
 1. Du bearbeitest nur die Gruppen dieser Datei, jede mit ihrer Stufe.
 2. Du setzt den gewählten Vorschlag um. Scheitert er an Spec, Plan oder Code, änderst du die Stelle nicht und begründest das.
-3. Statt des R-Eintrags schreibst du pro Gruppe genau einen Eintrag `- **F · <Stelle>** — geändert | nicht geändert | spec-rückfrage — Vorschlag <n>: <Begründung>`.
+3. Statt des R-Eintrags schreibst du pro Gruppe genau einen Eintrag `- **F · <Stelle>** — geändert | nicht geändert | spec-rückfrage — Vorschlag <n>: <Begründung>`. Bei `spec-rückfrage` schreibst du zusätzlich den R-Eintrag aus Regel 7.
 4. Im Ergebnis gilt: `location` ist die `<Stelle>` ohne Gruppennummer und Stufe.
 
 ## Ausgabe
@@ -3699,7 +4006,7 @@ Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Stelle einen Eintrag a
 - Test: `plugins/forge/tests/review-flow-doc.test.js`
 
 **Interfaces:**
-- Consumes: Schritte und Ausgabezeilen von `review-flow.js` aus Task 7 bis 10; `guard-orchestrator.js pause` aus Task 12; `followup.js save` (bestehend).
+- Consumes: Schritte und Ausgabezeilen von `review-flow.js` aus Task 7 bis 10 (Exit 1 mit `dv-forge review-flow: <grund>` aus Task 7); `guard-orchestrator.js pause` aus Task 12; `followup.js save` (bestehend); die Abschnitte `## Rolle` und `## Hintergrund oder Vordergrund` in `plugins/forge/shared/review-loop/loop.md` (bestehend, bleiben unverändert und gelten für beide Abläufe).
 - Produces: Bausteine, die ein Orchestrator-Skill nennen muss: `Eingaben`, `Reviewer`, `Beratend`, `Skript-Prüfungen`, `Nacharbeiter`, `Nachprüfer`, `Scout`, `Bericht`; Platzhalter `<DOC>` und `<FLAGS>`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
@@ -3782,13 +4089,16 @@ test('flow_End_ReportSaveCleanupRelease', () => {
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
 });
 
-test('flow_Agents_ForegroundOnly', () => {
+test('flow_Role_ReferencesLoopRulesInsteadOfCopyingThem', () => {
   // Act
   const text = readText(FLOW);
 
   // Assert
-  assert.ok(text.includes('`run_in_background: false`'));
-  assert.ok(text.includes('Nie `run_in_background: true`'));
+  const role = section(text, 'Rolle');
+  for (const part of ['`<PLUGIN>/shared/review-loop/loop.md`', 'Rolle', 'Hintergrund oder Vordergrund', 'gibt die Antwort des Menschen den Hook nicht frei', 'mit Exit 1']) {
+    assert.ok(role.includes(part), `${part} fehlt`);
+  }
+  assert.doesNotMatch(text, /Du orchestrierst, sonst nichts|Nie `run_in_background: true`|der Hook blockt jede Verkettung/);
   assert.match(text, /in EINER Nachricht je aktivem Reviewer einen `Agent`-Call/);
 });
 
@@ -3824,11 +4134,10 @@ Gemeinsamer Ablauf von Spec- und Plan-Review: Runde 1 sucht, danach gibt es höc
 `<FLAGS>` steht für `--review <rolle> --dir "<W>" --doc "<DOC>"`, im Plan-Review dazu `--spec "<S>"`.
 
 ## Rolle
-Du orchestrierst, sonst nichts. Du liest die geprüften Dateien nicht, bewertest keine Findings, tippst keine Ergebnisse ab und änderst nichts selbst. Drängt jemand dich, „schnell selbst zu korrigieren“, lehnst du ab und setzt den Ablauf fort. Ein Hook blockt deine Zugriffe auf die geschützten Dateien, bis du ihn am Ende freigibst.
-
-Werkzeuge: Plugin-Dateien liest du mit `Read`. Jedes Skript startest du als einzelnen `node`-Aufruf, ohne `cat`, `&&`, `;`, `|` oder `echo` davor oder danach; der Hook blockt jede Verkettung. Ergebnisse laufen nur über Dateien im Arbeitsbereich `W`.
-
-Alle Agents laufen im Vordergrund mit `run_in_background: false`, weil der nächste Schritt auf sie wartet. Nie `run_in_background: true`.
+Vor Runde 1 liest du `<PLUGIN>/shared/review-loop/loop.md`, Abschnitte „Rolle“ und „Hintergrund oder Vordergrund“. Deine Rolle, die Werkzeuge ohne Verkettung und die Regel für Agents im Vordergrund gelten hier unverändert; sie stehen nur dort. Davon abweichend gilt hier:
+- Nach `pause` (siehe „Anhalten“) gibt die Antwort des Menschen den Hook nicht frei, erst seine Eingabe danach.
+- Ergebnisse laufen nur über Dateien im Arbeitsbereich `W`.
+- Endet ein Aufruf von `review-flow.js` mit Exit 1, gibst du seine Zeile `dv-forge review-flow: <grund>` unverändert aus und führst von „Ende“ nur Schritt 4 aus.
 
 ## Nachfordern
 Liefert eine Instanz kein gültiges Ergebnis: `node "<PLUGIN>/scripts/review-flow.js" attempt --dir "<W>" --instanz <name>`. `<name>` ist der Kurzname des Reviewers, `nacharbeit`, `nachprüfer`, `scout` oder `scout-nachpruefung`.
@@ -3893,11 +4202,11 @@ Jedes Ende, auch nach einem Ausfall:
 **ACs:** AC-12, AC-18, AC-19, AC-26, AC-27, AC-29, AC-30, AC-31, AC-44
 
 **Dateien:**
-- Modify: `plugins/forge/skills/spec-review/SKILL.md` · ganze Datei
-- Modify: `plugins/forge/skills/plan-review/SKILL.md` · ganze Datei
+- Modify: `plugins/forge/skills/spec-review/SKILL.md` · `name: spec-review` (Schritt 3 ersetzt die ganze Datei)
+- Modify: `plugins/forge/skills/plan-review/SKILL.md` · `name: plan-review` (Schritt 3 ersetzt die ganze Datei)
 - Modify: `plugins/forge/shared/review-loop/loop.md` · `Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills.`
-- Modify: `plugins/forge/tests/skill.test.js` · ganze Datei
-- Modify: `plugins/forge/tests/plan-review-skill.test.js` · ganze Datei
+- Modify: `plugins/forge/tests/skill.test.js` · `const SKILL = path.join(__dirname, '..', 'skills', 'spec-review', 'SKILL.md');` (Schritt 1 ersetzt die ganze Datei)
+- Modify: `plugins/forge/tests/plan-review-skill.test.js` · `const SKILL = path.join(__dirname, '..', 'skills', 'plan-review', 'SKILL.md');` (Schritt 1 ersetzt die ganze Datei)
 - Test: `plugins/forge/tests/review-loop.test.js` · `findingFormat_Generic_LocationKeysIncludeTask`
 
 **Interfaces:**
@@ -4216,7 +4525,7 @@ Nächster Schritt:
 - `nicht bereit, …`: `Plan nicht bereit. Findings und Scout-Vorschläge lesen, dann /dv-forge:review-followup <P> <auswahl>, oder Plan selbst anpassen und /dv-forge:plan-review <P> erneut; betreffen die Änderungen nur einzelne Reviewer, mit --only <reviewer,...>.` und der Auswahl-Hinweis.
 - `unvollständig, …`: `Ausgefallen: <liste>. Den Skill in einer frischen Session erneut starten.`
 ```
-  In `plugins/forge/shared/review-loop/loop.md` wird `Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills.` zu `` Ablauf des Implementierungs-Reviews; Spec- und Plan-Review folgen `shared/review-flow/flow.md`. ``
+  In `plugins/forge/shared/review-loop/loop.md` wird `Gemeinsamer Ablauf aller dv-forge-Orchestrator-Skills.` zu `` Ablauf des Implementierungs-Reviews; Spec- und Plan-Review folgen `shared/review-flow/flow.md`. Die Abschnitte „Rolle“ und „Hintergrund oder Vordergrund“ gelten für beide Abläufe. ``
 - [ ] **Schritt 4: Tests grün laufen lassen**
   Befehl: `node --test plugins/forge/tests/skill.test.js plugins/forge/tests/plan-review-skill.test.js plugins/forge/tests/review-loop.test.js plugins/forge/tests/implementation-review-skill.test.js` — erwartet: PASS
 - [ ] **Schritt 5: Commit**
@@ -4229,8 +4538,8 @@ Nächster Schritt:
 **ACs:** AC-32, AC-52
 
 **Dateien:**
-- Modify: `plugins/forge/skills/review-followup/SKILL.md` · ganze Datei
-- Modify: `plugins/forge/skills/review-followup/references/flow.md` · ganze Datei
+- Modify: `plugins/forge/skills/review-followup/SKILL.md` · `name: review-followup` (Schritt 3 ersetzt die ganze Datei)
+- Modify: `plugins/forge/skills/review-followup/references/flow.md` · `# Review-Followup: Ablauf im Einzelnen` (Schritt 3 ersetzt die ganze Datei)
 - Test: `plugins/forge/tests/review-followup-skill.test.js` · `reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation`
 
 **Interfaces:**
@@ -4363,3 +4672,32 @@ Alle Agents laufen mit `run_in_background: false`.
 - **E · Anker nach der Nacharbeit** · Planer — `plan-tasks.js anchors` läuft im Plan-Review und im Followup nicht mehr nach der Nacharbeit. Grund: Es gibt keine zweite Reviewer-Runde, die die Anker liest.
 - **E · rework-outcome.js** · Planer — bleibt unverändert; Spec- und Plan-Review rufen es nicht mehr auf, `loop.md` des Implementierungs-Reviews nennt es weiter. Grund: kein Umbau außerhalb des Umfangs.
 - **E · Instanznamen im Status** · Planer — `unvollständig, ausgefallen: <liste>` nennt Reviewer mit Kurznamen, dazu `nacharbeit` und `nachprüfer`.
+- **R1 · Task 16** — geändert — `flow.md`, Abschnitt Rolle, kopiert Rolle, Werkzeuge und Hintergrund-Regel nicht mehr aus `loop.md`, sondern verweist auf dessen Abschnitte „Rolle“ und „Hintergrund oder Vordergrund“ und nennt nur die Abweichungen (Hook nach `pause`, Dateien in `W`, Exit 1 von `review-flow.js`). Der Test `flow_Agents_ForegroundOnly` wird zu `flow_Role_ReferencesLoopRulesInsteadOfCopyingThem`. Task 17 ergänzt in `loop.md`, dass beide Abschnitte für beide Abläufe gelten. Dass `flow.md` und `review-flow-doc.test.js` schon existieren, liegt am Arbeitsstand: Laut W · Plan-Basis setzt die Umsetzung auf `3ce509e` auf, dort gibt es beide Dateien nicht, `Create` ist dort richtig.
+- **R1 · Task 4** — geändert — `groups.js` führt keine eigene Fassung von Rangfolge, Icons, Anführungszeichen, `cell` und Gruppenformat mehr. Task 4 exportiert aus `aggregate-findings.js` `SEVERITY_ICON`, `REWORK_MARK`, `cell`, `reworkHeading` und `reworkLine`, `formatReworkGroup` und `render` nutzen sie, `groups.js` übernimmt sie. Die Aggregat-Tests laufen in Schritt 4 mit. Die Überschrift einer Gruppe zieht die Stelle auf eine Zeile zusammen, `resolvePlace` (Task 2) tut das schon für unbekannte Stellen. Neue Tests: `renderGroups_LabelWithLineBreak_HeadingStaysOneLine` und `resolvePlace_UnknownLocationWithLineBreak_LabelOnOneLine`, Task 2 hat damit 11 Tests. Dass `review-groups.test.js` schon existiert, liegt am Arbeitsstand; laut W · Plan-Basis fehlt die Datei in `3ce509e`.
+- **R1 · Task 7** — geändert — `snapshot` und `writeReworkInput` stehen im neuen Modul `lib/rework-input.js`, `round-one.js` stuft nur noch ein. Task 8 verankert seine Einfügung in `review-flow.js` an der neuen require-Zeile. `readJson` wandelt kaputtes JSON in `FlowError`, `scriptItems` prüft die Form von `skript-pruefung.json` und bricht sonst mit `FlowError` ab (Exit 1). Für diesen Abbruch nennt `flow.md` (Task 16) den Weg. Namen aus `--expect`, `--beratend` und `--instanz` müssen `^[\p{Ll}\d]+(?:-[\p{Ll}\d]+)*$` treffen, sonst Exit 2. `nachprüfer` bleibt gültig. Dazu 4 neue Tests, 21 insgesamt. `--dir` bleibt ohne Wurzelprüfung: Tests und `prepare.js` legen Arbeitsbereiche an verschiedenen Orten an, und `report` löscht nur den festen Unterordner `abschluss`. Dass `review-flow.js` schon existiert, liegt am Arbeitsstand; laut W · Plan-Basis fehlt die Datei in `3ce509e`.
+- **R1 · Task 1** — nicht geändert — W · Plan-Basis ist bindend: Der Plan setzt auf `3ce509e` auf, als wäre nichts umgesetzt. Dort gibt es `formatEscalated`, die Zeile `HOCHGESTUFT`, die Regel `4. Nennen ≥ 2 verschiedene Reviewer` und die Tests `aggregate_YellowFromTwoReviewers_EscalatesToRed` und `run_FileTypes_GroupsAcrossReviewersAndEscalates`. Der aktuelle Arbeitsstand enthält die Umsetzung des bisherigen `plan.md` schon. Das steht auch unter „Checkout“ in den Global Constraints.
+- **R1 · Task 10** — nicht geändert — `flow-report.js` stammt aus dem Arbeitsstand mit dem umgesetzten `plan.md`. Laut W · Plan-Basis und „Checkout“ in den Global Constraints setzt die Umsetzung auf `3ce509e` auf, dort fehlt die Datei. `Create` ist richtig.
+- **R1 · Task 11** — nicht geändert — Im Stand `3ce509e` (W · Plan-Basis) hat `prepare.js` noch `DEFAULT_ROUNDS` und `rounds(flags)`. Erst der umgesetzte `plan.md` im aktuellen Arbeitsstand hat sie entfernt.
+- **R1 · Task 13** — nicht geändert — Im Stand `3ce509e` (W · Plan-Basis) haben alle zehn Reviewer-Agenten noch `## Einstufung` mit `red`/`yellow`/`green`. Das `## Kategorie` im aktuellen Arbeitsstand ist schon die Umsetzung des bisherigen `plan.md`.
+- **R1 · Task 14** — nicht geändert — Beide Nachprüfer-Agenten fehlen im Stand `3ce509e` (W · Plan-Basis, „Checkout“ in den Global Constraints). Sie existieren nur im aktuellen Arbeitsstand, weil der bisherige `plan.md` dort umgesetzt ist. `Create` ist richtig.
+- **R1 · Task 15** — geändert — Der Anker `ganze Datei` ist keine Zeichenfolge in der Datei. Jetzt stehen dort `name: spec-rework` bzw. `name: plan-rework`, dazu der Hinweis, dass Schritt 3 die ganze Datei ersetzt.
+- **R1 · Task 17** — geändert — Statt `ganze Datei` stehen jetzt echte Anker: `name: spec-review`, `name: plan-review` und in den Testdateien die Zeile `const SKILL = path.join(__dirname, '..', 'skills', '<skill>', 'SKILL.md');`. Dazu der Hinweis, welcher Schritt die ganze Datei ersetzt.
+- **R1 · Task 18** — geändert — Statt `ganze Datei` stehen jetzt die Anker `name: review-followup` und `# Review-Followup: Ablauf im Einzelnen`, dazu der Hinweis, dass Schritt 3 die ganze Datei ersetzt.
+- **R1 · Task 3** — nicht geändert — `review-rules.test.js` fehlt im Stand `3ce509e` (W · Plan-Basis) und stammt aus der Umsetzung des bisherigen `plan.md` im aktuellen Arbeitsstand. Der Task legt die Datei dort neu an, deshalb steht bei `Test` kein Anker.
+- **R1 · Task 9** — geändert — `verdictProblem` lehnt jetzt ein Urteil an einer Stelle ab, die nicht auf der Prüfliste steht (`Urteil ohne Punkt der Prüfliste: <stellen>`). So kann ein abweichender Nachprüfer `notDone` und k nicht verfälschen. Neuer Test: `verify_VerdictForPlaceNotOnChecklist_Invalid`.
+- **R2 · Task 1** — nicht geändert — Wie R1 · Task 1: W · Plan-Basis ist bindend, die Umsetzung setzt auf `3ce509e` auf („Checkout“ in den Global Constraints). Dort stehen `formatEscalated`, die Regel `4. Nennen ≥ 2 verschiedene Reviewer` und die Tests `aggregate_YellowFromTwoReviewers_EscalatesToRed` und `run_FileTypes_GroupsAcrossReviewersAndEscalates`. Die Anker-Prüfung lief gegen den Arbeitsstand, in dem der bisherige `plan.md` schon umgesetzt ist.
+- **R2 · Task 10** — nicht geändert — Wie R1 · Task 10: `flow-report.js` fehlt im Stand `3ce509e` (W · Plan-Basis), `Create` ist dort richtig. Die Datei im Arbeitsstand stammt aus dem umgesetzten `plan.md`.
+- **R2 · Task 11** — nicht geändert — Wie R1 · Task 11: Im Stand `3ce509e` (W · Plan-Basis) hat `prepare.js` noch `DEFAULT_ROUNDS` und `rounds`; erst der umgesetzte `plan.md` im Arbeitsstand hat sie entfernt.
+- **R2 · Task 13** — nicht geändert — Wie R1 · Task 13: Im Stand `3ce509e` (W · Plan-Basis) tragen alle zehn Reviewer-Agenten noch `## Einstufung`; `## Kategorie` im Arbeitsstand ist die Umsetzung des bisherigen `plan.md`.
+- **R2 · Task 14** — nicht geändert — Wie R1 · Task 14: `spec-review-verifier.md` und `plan-review-verifier.md` fehlen im Stand `3ce509e` (W · Plan-Basis), `Create` ist dort richtig.
+- **R2 · Task 16** — nicht geändert — Wie R1 · Task 16: `flow.md` und `review-flow-doc.test.js` fehlen im Stand `3ce509e` (W · Plan-Basis); `Create` und die Test-Zeile ohne Anker sind dort richtig, weil der Task beide Dateien neu anlegt.
+- **R2 · Task 3** — nicht geändert — Wie R1 · Task 3: `review-rules.test.js` fehlt im Stand `3ce509e` (W · Plan-Basis); der Task legt die Datei neu an, deshalb trägt die Test-Zeile keinen Anker.
+- **R2 · Task 4** — nicht geändert — Wie R1 · Task 4: `review-groups.test.js` fehlt im Stand `3ce509e` (W · Plan-Basis); der Task legt die Datei neu an, deshalb trägt die Test-Zeile keinen Anker.
+- **R2 · Task 7** — nicht geändert — Wie R1 · Task 7: `review-flow.js` fehlt im Stand `3ce509e` (W · Plan-Basis), `Create` ist dort richtig; die Tasks 8 bis 10 bauen per Modify auf der Datei auf, die Task 7 dort anlegt.
+- **R2 · Global Constraints** — geändert — „Offene Frage“ nennt jetzt auch die übrigen Teile der Soll-Vorgabe: Eine Stelle aus mehreren Wörtern steht mit allen Wörtern in derselben Reihenfolge im Titel, ein W-Eintrag mit mehreren Stellen im Titel beantwortet jede, deren R-Eintrag er nennt, und der R-Eintrag je Stelle gilt auch bei gebündelter Frage. Dazu kommt der Hinweis, dass eine Spec-Rückfrage im Plan dieselbe Form hat (siehe R2 · Task 15).
+- **R2 · Task 12** — nicht geändert — Der Befund beschreibt den Arbeitsstand, in dem der bisherige `plan.md` umgesetzt ist. Laut W · Plan-Basis und „Checkout“ in den Global Constraints setzt die Umsetzung auf `3ce509e` auf, und der Code wurde in diesem Stand gelesen. `pause` und das `paused`-Verhalten kamen erst mit der Umsetzung des bisherigen `plan.md` in `guard-orchestrator.js`. Auf `3ce509e` fügen die Schritte sie also zum ersten Mal ein, und die Rot-Prüfung schlägt fehl, wie der Plan es erwartet. Derselbe Grund wie bei R1 · Task 1, Task 10, Task 11, Task 13 und Task 14.
+- **R2 · Task 15** — geändert — Nach Schritt 8 der Spec steht eine Spec-Rückfrage „wie jede Frage an den Menschen“ als R-Eintrag im Plan, im Format aus „Offene Frage“. `plan-rework` Regel 7 schreibt sie deshalb als `— frage an den menschen — <Rückfrage>`, im Folge-Modus zusätzlich zum F-Eintrag. Der Status `spec-question` in `rework.json` bleibt. Damit überholt dieser Eintrag das Format aus „E · Spec-Rückfrage im Plan“. Damit solche Einträge früherer Läufe im Plan-Review keine Findings verwerfen und keine Nacharbeit auslösen, liefert `documentQuestions` in `round-one.js` (Task 7) im Plan-Review `[]`. `rateRoundOne` und `writeReworkInput` nutzen es. Der Umgang mit früheren Rückfragen bleibt so, wie „E · Spec-Rückfrage im Plan“ ihn festlegt. Neue Tests: `plan-rework_Body_SpecQuestionWrittenAsQuestionToTheHuman` (Task 15), `rate_PlanReviewWithQuestionEntryOfEarlierRun_FindingStaysAndNoQuestion` und `reworkInput_PlanReviewWithQuestionEntryOfEarlierRun_ListsNoQuestion` (Task 7, jetzt 23 Tests).
+- **F · Task 10** — geändert — Vorschlag 1: (a) `editDoc`, `addEntries` und `runUntilRework(env, findings, review = 'spec-review')` stehen jetzt in `tests/lib/review-flow-fixture.js` (Task 2, Produces ergänzt). Die Tests der Tasks 8, 9 und 10 importieren sie, statt sie selbst zu definieren. `prepareRework` (Task 8) und `runWithVerification` (Task 10) rufen `runUntilRework` auf, und die Consumes-Zeilen nennen die Helfer. (b) `collect` in `flow-report.js` berechnet `openRed` über `openRedOf`. Gibt es `runde-2/einstufung.json`, gilt deren `openRed`. Fehlt die Datei nach einer Nacharbeit, wirft `collect` `FlowError('Nachprüfung fehlt: runde-2/einstufung.json')`. Ohne Nacharbeit zählen die 🔴-Gruppen aus Runde 1. Abweichend vom Vorschlag wirft `collect` nicht, wenn eine Instanz ausgefallen ist: Laut `flow.md` „Ende“ läuft `report` auch nach einem Ausfall von Nacharbeit oder Nachprüfer, und dann muss `unvollständig, ausgefallen: …` erscheinen. Neue Tests: `report_NoRedInRoundOneWithoutRework_CleanAfterRoundOne`, `report_RedInRoundOneWithoutRoundTwo_NichtBereitWithRedOfRoundOne` und `report_ReworkWithoutRoundTwo_ExitsWithOneAndReason`.
+- **F · Task 6** — geändert — Vorschlag 2: `FlowError` steht jetzt im neuen Modul `lib/flow-error.js` (Task 6). `readAttempts` wird exportiert und wandelt kaputtes JSON in `versuche.json` in einen `FlowError` mit `kein gültiges JSON: <datei>: <grund>` um. `review-flow.js` meldet ihn deshalb mit Exit 1, auch bei `attempt` und `report`. `flow-files.js` (Task 7) importiert die Klasse und exportiert sie weiter, `flow-report.js` bezieht sie von dort. Neuer Test: `readAttempts_BrokenJson_FlowError`, Task 6 hat damit 5 Tests.
+- **F · Task 7** — geändert — Vorschlag 1: `documentQuestions(options, text)` steht jetzt in `lib/questions.js` (Task 5, Produces ergänzt, dazu der neue Test `documentQuestions_SpecAndPlanReview_OnlySpecReviewCountsQuestions`, Task 5 hat damit 12 Tests). `round-one.js` und `rework-input.js` importieren die Funktion aus `questions.js`. `round-one.js` exportiert nur noch `rateRoundOne`, und `rework-input.js` hängt nicht mehr an `round-one.js`. Die Interfaces-Zeilen von Task 7 sind angepasst. Die Module aus Task 8 (`rework-check.js`) und Task 9 (`round-two.js`) rufen `documentQuestions` nicht auf. Sie lesen die Fragen mit `openQuestions` bzw. `fragen.json` und brauchen deshalb keinen Import. Damit gilt R2 · Task 15 mit neuem Ort der Funktion weiter.
+- **F · Task 9** — geändert — Vorschlag 1: Im Test `checklist_AnsweredQuestion_PlaceOnChecklist` steht der R1-Eintrag an AC-04 jetzt vor `runUntilRework(env, [])` im Dokument. Runde 1 hat also kein 🔴, `finishRework` liefert `results: []`, und nach der W-Antwort stammt `AC-04:ki` nur aus `answeredItems`. Der bisherige Fall mit 🔴 heißt jetzt `checklist_RedWithAnsweredQuestion_PlaceOnceOnChecklist`. Er prüft zusätzlich `PRUEFLISTE punkte=1 skript=0 bereiche=0` und belegt damit, dass `withoutDuplicates` die Stelle nur einmal aufnimmt.

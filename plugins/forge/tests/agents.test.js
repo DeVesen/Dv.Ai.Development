@@ -340,7 +340,7 @@ test('spec-review-completeness_Body_CategoriesPerCaseTitleHeadingAndSourceForEve
     assert.ok(body.includes(part), part);
   }
   assert.ok(!body.includes('an der ersten Überschrift der Spec'), 'alte Stelle ohne AC-ID');
-  assert.ok(!body.includes('„korrekt", „möglich", „sinnvoll"'), 'alte Liste vager Wörter');
+  assert.ok(!body.includes('„korrekt“, „möglich“, „sinnvoll“'), 'alte Liste vager Wörter');
 });
 
 for (const [name, tools, inputs, categories] of [

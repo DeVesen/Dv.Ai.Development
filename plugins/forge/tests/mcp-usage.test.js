@@ -117,3 +117,30 @@ test('cli_NoArguments_ExitsWithTwo', () => {
   const result = spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' });
   assert.equal(result.status, 2);
 });
+
+function readSession(calls) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-reads-'));
+  const transcript = path.join(root, `${SESSION}.jsonl`);
+  writeJsonl(transcript, calls.map(([id, name, input]) => toolUse(id, name, input)));
+  return transcript;
+}
+
+test('render_ExpectedUnused_NamesReadGrepGlobAndShellFallbacks', () => {
+  const transcript = readSession([
+    ['a', 'Read', { file_path: 'x' }], ['b', 'Grep', { pattern: 'y' }], ['c', 'Grep', { pattern: 'z' }], ['d', 'Glob', { pattern: '*.md' }],
+    ['e', 'Bash', { command: 'cd src && cat a.txt' }], ['f', 'PowerShell', { command: 'Get-Content b.txt' }],
+    ['g', 'Bash', { command: 'git status' }], ['h', 'Bash', { command: 'git log | head -5' }],
+  ]);
+
+  const output = render(loadSession(transcript), { transcript, expect: ['dev-mcp'] });
+
+  assert.match(output, /Ersatz-Kandidaten für ungenutzte erwartete MCP: Read 1, Grep 2, Glob 1, Shell-Fallbacks 2 \(Shell-Aufrufe, die Dateien lesen oder durchsuchen\)/);
+});
+
+test('render_AllExpectedUsed_NoReplacementLine', () => {
+  const { transcript } = fixture();
+
+  const output = render(loadSession(transcript), { transcript, expect: ['dev-mcp'] });
+
+  assert.doesNotMatch(output, /Ersatz-Kandidaten/);
+});

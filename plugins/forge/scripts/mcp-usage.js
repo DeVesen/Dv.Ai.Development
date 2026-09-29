@@ -14,6 +14,10 @@ const NATIVE_TOOLS = new Set(['Read', 'Grep', 'Glob', 'Bash', 'PowerShell', 'Edi
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
 const AGENT_TOOLS = new Set(['Agent', 'Task']);
 const SHELL_FALLBACK = /(?:^|&&|;|\|\|)\s*(dotnet|ng|npm|npx|pnpm|yarn|git\s+mv)\b/;
+const READ_TOOLS = new Set(['Read', 'Grep', 'Glob']);
+const READ_COMMANDS = new Set(['cat', 'head', 'tail', 'less', 'more', 'grep', 'egrep', 'rg', 'find', 'ls', 'sed', 'awk', 'wc',
+  'get-content', 'gc', 'select-string', 'sls', 'get-childitem', 'gci', 'dir', 'type', 'findstr']);
+const SHELL_KEYWORD = /^(?:do|then|else)\s+/;
 const MAIN_AGENT = 'Hauptagent';
 const MAX_FALLBACK_LINES = 10;
 const USAGE = 'Aufruf: node mcp-usage.js (--session <id> | --transcript <pfad>) [--expect <server,...>] [--cwd <pfad>]\n';
@@ -156,12 +160,25 @@ function increment(map, key, by = 1) {
   map.set(key, (map.get(key) ?? 0) + by);
 }
 
+// Shell-Aufruf, der wie Read, Grep oder Glob Dateien liest oder durchsucht: ein Glied der Befehlskette beginnt mit einem Lese-Befehl.
+function isReadFallback(command) {
+  return command.split(/&&|\|\||;|\n/).map((segment) => segment.trim().replace(SHELL_KEYWORD, ''))
+    .some((segment) => READ_COMMANDS.has((segment.split(/\s+/)[0] ?? '').toLowerCase()));
+}
+
+function countRead(reads, call) {
+  if (READ_TOOLS.has(call.name)) reads[call.name] += 1;
+  if (SHELL_TOOLS.has(call.name) && isReadFallback(String(call.input.command ?? ''))) reads.shell += 1;
+}
+
 function summarize(calls) {
   const servers = new Map();
   const native = new Map();
   const fallbacks = [];
+  const reads = { Read: 0, Grep: 0, Glob: 0, shell: 0 };
   const seen = new Set();
   for (const call of calls) {
+    countRead(reads, call);
     const mcp = call.name.match(MCP_TOOL);
     const key = mcp ? mcp[1] : call.name;
     const target = mcp ? servers : NATIVE_TOOLS.has(call.name) ? native : null;
@@ -178,7 +195,7 @@ function summarize(calls) {
     const command = String(call.input.command ?? '');
     if (SHELL_TOOLS.has(call.name) && SHELL_FALLBACK.test(command)) fallbacks.push({ agent: call.agent, command });
   }
-  return { servers, native, fallbacks };
+  return { servers, native, fallbacks, reads };
 }
 
 function listCounts(map) {
@@ -207,7 +224,7 @@ function measure({ calls, available, cwd }, { expect = [] } = {}) {
 }
 
 function render(session, { expect = [], transcript }) {
-  const { servers, native, fallbacks, used, expectedUnused, availableUnused } = measure(session, { expect });
+  const { servers, native, fallbacks, reads, used, expectedUnused, availableUnused } = measure(session, { expect });
   const mcpTotal = used.reduce((sum, name) => sum + servers.get(name).calls, 0);
 
   const lines = [
@@ -224,6 +241,9 @@ function render(session, { expect = [], transcript }) {
   }
   for (const name of expectedUnused) lines.push(`| ${name} | **erwartet, ungenutzt** | 0 | – | – | – | – |`);
   if (used.length === 0 && expectedUnused.length === 0) lines.push('| – | keine MCP-Calls | 0 | – | – | – | – |');
+  if (expectedUnused.length > 0) {
+    lines.push('', `Ersatz-Kandidaten für ungenutzte erwartete MCP: Read ${reads.Read}, Grep ${reads.Grep}, Glob ${reads.Glob}, Shell-Fallbacks ${reads.shell} (Shell-Aufrufe, die Dateien lesen oder durchsuchen)`);
+  }
   if (availableUnused.length > 0) lines.push('', `Verfügbar, aber ungenutzt: ${availableUnused.sort().join(', ')}`);
 
   lines.push('', '### Native Tools', '', '| Tool | Aufrufe | Fehler | Wiederholt | Agents |', '|---|---|---|---|---|');

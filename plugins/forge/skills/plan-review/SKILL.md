@@ -33,9 +33,6 @@ Keine.
 ## Nacharbeiter
 `dv-forge:plan-rework` — `Plan: <P>`, `Spec: <S>`, `Repo: <R>`
 
-## Nach der Nacharbeit
-Gibt es `A`: `node "${CLAUDE_PLUGIN_ROOT}/scripts/plan-tasks.js" anchors "<P>" "<R>" "<W>"`.
-
 ## Nachprüfer
 `dv-forge:plan-review-verifier` — `Plan: <P>`, `Spec: <S>`, `Repo: <R>`
 

@@ -63,13 +63,13 @@ test('planReviewSkill_Body_AnchorFileAndCommandsGoToReviewers', () => {
   assert.ok(body.includes('`Build: <Build>`, `Test: <Test>`, `Lint: <Lint>`'));
 });
 
-test('planReviewSkill_Body_AnchorsRefreshedAfterRework', () => {
+test('planReviewSkill_Body_NoAnchorRefreshAfterRework', () => {
   // Act
   const { body } = readMarkdown(SKILL);
-  const after = body.slice(body.indexOf('## Nach der Nacharbeit'), body.indexOf('## Nachprüfer'));
 
   // Assert
-  assert.ok(after.includes('${CLAUDE_PLUGIN_ROOT}/scripts/plan-tasks.js" anchors "<P>" "<R>" "<W>"'));
+  assert.doesNotMatch(body, /plan-tasks\.js" anchors/);
+  assert.ok(!body.includes('## Nach der Nacharbeit'));
 });
 
 test('planReviewSkill_Body_SpecQuestionDoesNotPause', () => {

@@ -102,6 +102,7 @@ function extractReviews(text) {
 
 const SEVERITY_ICON = { red: '🔴', yellow: '🟡', green: '🟢' };
 const CLOSING_QUOTE = String.fromCharCode(0x201c);
+const REWORK_MARK = '=== REWORK ===';
 
 function groupFindings(reviews, types = LOCATION_TYPES) {
   const groups = new Map();
@@ -191,11 +192,18 @@ function formatReport(groups, reviews = [], status = { failed: [] }, options = {
   return [...formatScope(reviews, status, options), formatTable(groups)].join('\n');
 }
 
+function reworkHeading(icon, location, reviewers) {
+  return `### ${icon} ${location} (${reviewers.join(', ')})`;
+}
+
+function reworkLine(reviewer, tag, finding) {
+  const quote = `${String.fromCharCode(0x201e)}${cell(finding.quote)}${CLOSING_QUOTE}`;
+  return `- [${reviewer} · ${tag}] Zitat: ${quote} · Konsequenz: ${cell(finding.consequence)} · Begründung: ${cell(finding.rationale)}`;
+}
+
 function formatReworkGroup(group) {
-  const header = `### ${SEVERITY_ICON[group.severity]} ${group.location} (${group.reviewers.join(', ')})`;
-  const lines = group.items.map((item) =>
-    `- [${item.reviewer} · ${item.severity}] Zitat: „${cell(item.quote)}${CLOSING_QUOTE} · Konsequenz: ${cell(item.consequence)} · Begründung: ${cell(item.rationale)}`);
-  return [header, ...lines].join('\n');
+  const lines = group.items.map((item) => reworkLine(item.reviewer, item.severity, item));
+  return [reworkHeading(SEVERITY_ICON[group.severity], group.location, group.reviewers), ...lines].join('\n');
 }
 
 function formatRework(groups) {
@@ -232,7 +240,7 @@ function render(result) {
     ...result.errors.map((error) => `ERROR ${error}`),
     '=== REPORT ===',
     formatReport(result.groups, result.reviews, result.status, { round: result.round, reasons: result.reasons }),
-    '=== REWORK ===',
+    REWORK_MARK,
     formatRework(result.groups),
   ].join('\n');
 }
@@ -273,4 +281,5 @@ if (require.main === module) main();
 
 module.exports = {
   SEVERITY_RANK, LOCATION_TYPES, fileLocationType, normalizeLocation, extractReviews, readReviewDir, aggregate, summarize, run, runDir, render,
+  SEVERITY_ICON, REWORK_MARK, cell, reworkHeading, reworkLine,
 };

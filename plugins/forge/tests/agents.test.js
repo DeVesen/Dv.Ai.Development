@@ -481,3 +481,17 @@ test('plan-rework_Body_SpecQuestionOnlyForContradictionOrImpossible', () => {
   }
   assert.ok(!body.includes('lässt eine Festlegung offen, die der Plan nicht selbst treffen darf'), 'alte Rückfrage bei offener Festlegung');
 });
+
+test('specAndPlanReviewers_Body_LocationNamesFirstPlaceAndFieldsAreNeverEmpty', () => {
+  const specLocation = '- `location`: `AC-<Zahl>`, der fett gesetzte Name eines Schritts oder einer Soll-Vorgabe ohne Doppelpunkt oder die exakte Abschnittsüberschrift ohne `#` und ohne Nummerierung davor; betrifft ein Finding mehrere Stellen, steht die erste zuerst.';
+  const planLocation = '- `location`: `Task <n>`, `AC-<Zahl>`, `Global Constraints` oder die exakte Abschnittsüberschrift ohne `#`; betrifft ein Finding mehrere Stellen, steht die erste zuerst. Details auf Schritt-Ebene gehören in `quote`.';
+  const reviewers = [
+    ...['completeness', 'consistency', 'feasibility', 'clarity', 'profiles'].map((name) => [`spec-review-${name}`, specLocation]),
+    ...['coverage', 'feasibility', 'architecture', 'risks', 'buildability'].map((name) => [`plan-review-${name}`, planLocation]),
+  ];
+  for (const [name, location] of reviewers) {
+    const { body } = readAgent(name);
+    assert.ok(body.includes(location), `${name}: location`);
+    assert.ok(body.includes('- Alle Felder sind Strings und Pflicht, keines leer.'), `${name}: keines leer`);
+  }
+});

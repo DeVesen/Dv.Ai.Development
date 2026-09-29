@@ -63,7 +63,7 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
 }
 ```
 
-- `location`: `Task <n>`, `AC-<Zahl>`, `Global Constraints` oder die exakte Abschnittsüberschrift ohne `#`. Details auf Schritt-Ebene gehören in `quote`.
+- `location`: `Task <n>`, `AC-<Zahl>`, `Global Constraints` oder die exakte Abschnittsüberschrift ohne `#`; betrifft ein Finding mehrere Stellen, steht die erste zuerst. Details auf Schritt-Ebene gehören in `quote`.
 - `summary`: ein Satz zum Prüfumfang, z. B. `12 ACs geprüft, 3 Dateien gelesen, 0 Findings`.
-- Alle Felder sind Strings und Pflicht. `category` ist genau eine Kategorie aus `## Kategorie`.
+- Alle Felder sind Strings und Pflicht, keines leer. `category` ist genau eine Kategorie aus `## Kategorie`.
 - Ohne Findings schreibst du genau diese Form: `{"reviewer": "feasibility", "summary": "<Prüfumfang>", "findings": []}`.

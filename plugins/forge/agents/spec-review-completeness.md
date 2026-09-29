@@ -57,7 +57,7 @@ Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus 
 }
 ```
 
-- `location`: `AC-<Zahl>` oder die exakte Abschnittsüberschrift ohne `#` und ohne Nummerierung davor.
+- `location`: `AC-<Zahl>`, der fett gesetzte Name eines Schritts oder einer Soll-Vorgabe ohne Doppelpunkt oder die exakte Abschnittsüberschrift ohne `#` und ohne Nummerierung davor; betrifft ein Finding mehrere Stellen, steht die erste zuerst.
 - `summary`: ein Satz zum Prüfumfang, z. B. `12 ACs geprüft, 3 Dateien gelesen, 0 Findings`.
-- Alle Felder sind Strings und Pflicht. `category` ist genau eine Kategorie aus `## Kategorie`.
+- Alle Felder sind Strings und Pflicht, keines leer. `category` ist genau eine Kategorie aus `## Kategorie`.
 - Ohne Findings schreibst du genau diese Form: `{"reviewer": "completeness", "summary": "<Prüfumfang>", "findings": []}`.

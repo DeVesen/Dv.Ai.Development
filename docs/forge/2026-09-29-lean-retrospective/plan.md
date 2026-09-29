@@ -3,7 +3,7 @@
 > Umsetzung mit `/dv-forge:implementation docs/forge/2026-09-29-lean-retrospective/plan.md`, Task für Task, sequentiell. Schritte nutzen Checkbox-Syntax (`- [ ]`).
 
 **Ziel:** Die Prozess-Retrospektive rechnet, prüft, benennt und setzt zusammen nur noch in Skripten, zählt richtig, misst neue Kosten und braucht dadurch 2 bis 3 Modell-Anfragen.
-**Architektur:** `session-facts.js` bleibt das Fakten-Skript und nutzt neue Bibliotheken unter `plugins/forge/scripts/lib/` (`transcript.js` liest das Protokoll, `retro-range.js` schneidet den Bereich, `retro-measures.js` misst, `retro-signals.js` deutet, `retro-files.js` legt Snapshot und Entwurf ab, `retro-format.js` schreibt Token-Zahlen). Drei neue Skripte übernehmen den Rest: `retro-report.js` (Format, Prüfung, Bericht, Kurzfassung, mit `lib/retro-draft.js`, `lib/retro-compose.js`, `lib/retro-summary.js`), `retro-timeline.js` (Zeitleiste) und `retro-sort.js` (Vorsortierung). Der Skill lädt Fakten und Format per `` !`…` `` schon beim Aufruf und lädt sich nie selbst.
+**Architektur:** `session-facts.js` bleibt das Fakten-Skript und nutzt neue Bibliotheken unter `plugins/forge/scripts/lib/` (`transcript.js` liest das Protokoll, `retro-range.js` schneidet den Bereich, `retro-requests.js` fasst Modell-Anfragen und ihren Kontext, `retro-measures.js` misst, `retro-signals.js` deutet, `retro-files.js` legt Snapshot und Entwurf ab, `retro-format.js` schreibt Token-Zahlen). Drei neue Skripte übernehmen den Rest: `retro-report.js` (Format, Prüfung, Bericht, Kurzfassung, mit `lib/retro-draft.js`, `lib/retro-corpus.js`, `lib/retro-compose.js`, `lib/retro-secrets.js`, `lib/retro-summary.js`), `retro-timeline.js` (Zeitleiste) und `retro-sort.js` (Vorsortierung). Der Skill lädt Fakten und Format per `` !`…` `` schon beim Aufruf und lädt sich nie selbst.
 **Tech-Stack:** Node.js 24 (nur `node:`-Module), `node:test`, Markdown-Skills von Claude Code.
 **Spec:** docs/forge/2026-09-29-lean-retrospective/spec.md
 **Basis:** c2338aa
@@ -46,7 +46,7 @@
 
 **Interfaces:**
 - Consumes: —
-- Produces: `lib/transcript.js`: `class RetroError extends Error`; `SLASH_COMMAND: RegExp`; `readEntries(file: string): object[]` (jeder Eintrag mit `entryNo: number`, Zeilennummer ab 1); `textOf(content): string`; `tokensOf(usage): { input, cached, output }`; `shorten(text: string, max: number): string`; `clock(timestamp: string|null): string` (`HH:MM` lokal, sonst `--:--`); `callLabel(part: object): string`; `isToolResultEntry(entry): boolean`; `humanEvents(entries): { entryNo: number, time: string|null, kind: 'Eingabe'|'Unterbrechung'|'Ablehnung', text: string }[]`. · `tests/lib/retro-session.js`: `stamp(at)`, `human(text, at)`, `slash(name, args, at)`, `skillText(text, at)`, `summary(text, at)`, `interrupt(at)`, `usage(fresh, created, read, output = 100)`, `request(id, at, parts = [], tokens = usage(10, 0, 0))`, `say(text)`, `call(id, name, input)`, `result(id, at, content, isError = false)`, `rejection(id, at)`, `hint(type, at, extra = {})`, `writeSession(entries, id = 's1'): string`. · `session-facts.js`: `analyze(entries)` liefert zusätzlich `humans` (Ergebnis von `humanEvents`); `turns` zählt nur `kind === 'Eingabe'`. Die Ausgabe hat den Abschnitt `## Eingaben des Menschen` mit Zeilen `- #<entryNo> <HH:MM> <kind>: <text>`. · `mcp-usage.js`: `readJsonl` entfällt, `loadSession` liest Haupt- und Subagent-Protokolle mit `readEntries`; es gibt damit genau einen JSONL-Leser. · `tests/lib/retro-session.js` ist der Baukasten für alle neuen Test-Dateien; die bestehenden Helfer `session()` und `commandSession()` in `session-facts.test.js` bleiben, weil ihre festen Einträge die erwarteten Zahlen der bestehenden Tests tragen (Tokens, Aufrufe, Eintragsnummern), die die Tasks 2, 3, 8 und 11 weiter prüfen.
+- Produces: `lib/transcript.js`: `class RetroError extends Error`; `SLASH_COMMAND: RegExp`; `readEntries(file: string): object[]` (jeder Eintrag mit `entryNo: number`, Zeilennummer ab 1); `textOf(content): string`; `tokensOf(usage): { input, cached, output }`; `shorten(text: string, max: number): string`; `clock(timestamp: string|null): string` (`HH:MM` lokal, sonst `--:--`); `callLabel(part: object): string`; `isToolResultEntry(entry): boolean`; `isCompactEntry(entry): boolean` (system-Eintrag mit `compact` in `subtype` oder `content`, die einzige Stelle dieser Regel); `humanEvents(entries): { entryNo: number, time: string|null, kind: 'Eingabe'|'Unterbrechung'|'Ablehnung', text: string }[]`. Intern (nicht exportiert) `isPlainUserText(entry)` (Text-Eintrag des Nutzers ohne `isMeta`, Tool-Ergebnis, Unterbrechung und Harness-Hinweis), das `isHumanInput` und in Task 16 `isSummary` gemeinsam nutzen. · `tests/lib/retro-session.js`: `stamp(at)`, `human(text, at)`, `slash(name, args, at)`, `skillText(text, at)`, `summary(text, at)` (mit `isCompactSummary`), `plainSummary(text, at)` (echte Form ohne `origin` und ohne Marker), `interrupt(at)`, `usage(fresh, created, read, output = 100)`, `request(id, at, parts = [], tokens = usage(10, 0, 0))`, `say(text)`, `call(id, name, input)`, `result(id, at, content, isError = false)`, `rejection(id, at)`, `hint(type, at, extra = {})`, `writeSession(entries, id = 's1'): string`. · `session-facts.js`: `analyze(entries)` liefert zusätzlich `humans` (Ergebnis von `humanEvents`); `turns` zählt nur `kind === 'Eingabe'`; `compactions` zählt über `isCompactEntry`. Die Ausgabe hat den Abschnitt `## Eingaben des Menschen` mit Zeilen `- #<entryNo> <HH:MM> <kind>: <text>`. · `mcp-usage.js`: `readJsonl` entfällt, `loadSession` liest Haupt- und Subagent-Protokolle mit `readEntries`; es gibt damit genau einen JSONL-Leser. · `tests/lib/retro-session.js` ist der Baukasten für alle neuen Test-Dateien; die bestehenden Helfer `session()` und `commandSession()` in `session-facts.test.js` bleiben, weil ihre festen Einträge die erwarteten Zahlen der bestehenden Tests tragen (Tokens, Aufrufe, Eintragsnummern), die die Tasks 2, 3, 8 und 11 weiter prüfen.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   Zuerst den Fixture-Baukasten `plugins/forge/tests/lib/retro-session.js`:
@@ -76,8 +76,14 @@
     return { type: 'user', isMeta: true, timestamp: stamp(at), message: { role: 'user', content: [{ type: 'text', text }] } };
   }
 
+  // Zusammenfassung mit Marker, wie ältere Protokolle sie schreiben könnten.
   function summary(text, at) {
     return { type: 'user', isCompactSummary: true, timestamp: stamp(at), message: { role: 'user', content: text } };
+  }
+
+  // So steht eine Zusammenfassung in echten Protokollen: ein Text-Eintrag des Nutzers ohne `origin` und ohne `isCompactSummary`.
+  function plainSummary(text, at) {
+    return { type: 'user', timestamp: stamp(at), message: { role: 'user', content: text } };
   }
 
   function interrupt(at) {
@@ -119,7 +125,7 @@
     return file;
   }
 
-  module.exports = { stamp, human, slash, skillText, summary, interrupt, usage, request, say, call, result, rejection, hint, writeSession };
+  module.exports = { stamp, human, slash, skillText, summary, plainSummary, interrupt, usage, request, say, call, result, rejection, hint, writeSession };
   ```
   Dann `plugins/forge/tests/transcript.test.js`:
   ```js
@@ -132,7 +138,7 @@
   const path = require('node:path');
   const { spawnSync } = require('node:child_process');
   const { readEntries, humanEvents } = require('../scripts/lib/transcript');
-  const { human, slash, skillText, summary, interrupt, request, call, rejection, writeSession } = require('./lib/retro-session');
+  const { human, slash, skillText, summary, plainSummary, interrupt, request, call, rejection, writeSession } = require('./lib/retro-session');
 
   const FACTS = path.join(__dirname, '..', 'scripts', 'session-facts.js');
 
@@ -149,9 +155,33 @@
     ]);
   }
 
+  // Die `human`-Einträge tragen `origin`, damit gilt das Protokoll als markiert; die Zusammenfassung hat weder `origin` noch Marker.
+  function sessionWithUnmarkedSummary() {
+    return writeSession([
+      human('Mach X', '10:00'),
+      plainSummary('This session is being continued from a previous conversation that ran out of context.', '10:30'),
+      human('Danke', '10:40'),
+    ]);
+  }
+
   function facts(file) {
     return spawnSync(process.execPath, [FACTS, '--file', file], { encoding: 'utf8', env: { ...process.env, TZ: 'UTC' } });
   }
+
+  test('humanEvents_UnmarkedSummaryInMarkedSession_IsNoInput', () => {
+    const entries = readEntries(sessionWithUnmarkedSummary());
+
+    const events = humanEvents(entries);
+
+    assert.deepEqual(events.map((event) => event.text), ['Mach X', 'Danke']);
+  });
+
+  test('cli_UnmarkedSummary_NotCountedAsHumanInput', () => {
+    const result = facts(sessionWithUnmarkedSummary());
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /- Eingaben des Menschen: 2 · /);
+  });
 
   test('humanEvents_SkillTextAndSummary_AreNoInput', () => {
     const entries = readEntries(sessionWithSkillAndSummary());
@@ -209,6 +239,7 @@
   const SLASH_ARGS = /<command-args>([\s\S]*?)<\/command-args>/;
   const INTERRUPT = /^\[Request interrupted by user/;
   const REJECTION = /The user doesn't want to proceed with this tool use/;
+  const COMPACT = /compact/i;
   const HUMAN_TEXT_MAX = 100;
 
   class RetroError extends Error {}
@@ -258,14 +289,28 @@
     return Array.isArray(content) && content.some((part) => part.type === 'tool_result');
   }
 
+  // Die eine Regel für Zusammenfassungen als system-Eintrag; Zählung (`analyze`) und Zeitleiste (`isSummary`) nutzen sie beide.
+  function isCompactEntry(entry) {
+    return entry.type === 'system' && COMPACT.test(`${entry.subtype ?? ''} ${entry.content ?? ''}`);
+  }
+
+  // Text-Eintrag des Nutzers ohne Skill-Text, Tool-Ergebnis, Unterbrechung und Harness-Hinweis; Grundlage für Eingaben und Zusammenfassungen.
+  function isPlainUserText(entry) {
+    if (entry.type !== 'user' || !entry.message || entry.isMeta || isToolResultEntry(entry)) return false;
+    const text = textOf(entry.message.content);
+    return !INTERRUPT.test(text) && !NOTICE.test(text);
+  }
+
+  // Ein Slash-Befehl beginnt mit `<command-message>` und sähe sonst wie ein Harness-Hinweis aus.
+  function isSlashCommand(entry) {
+    return entry.type === 'user' && !entry.isMeta && SLASH_COMMAND.test(textOf(entry.message?.content));
+  }
+
   // Protokolle mit `origin` markieren Eingaben des Menschen selbst; in älteren erkennt man sie am Text.
   function isHumanInput(entry, marked) {
-    if (entry.type !== 'user' || !entry.message || isToolResultEntry(entry)) return false;
-    if (entry.isMeta || entry.isCompactSummary) return false;
-    const text = textOf(entry.message.content);
-    if (INTERRUPT.test(text)) return false;
-    if (marked) return entry.origin?.kind === 'human';
-    return SLASH_COMMAND.test(text) || !NOTICE.test(text);
+    if (entry.isCompactSummary) return false;
+    const typed = isPlainUserText(entry) || isSlashCommand(entry);
+    return marked ? typed && entry.origin?.kind === 'human' : typed;
   }
 
   function slashText(text) {
@@ -292,16 +337,20 @@
     return entries.filter((entry) => entry.type === 'user' && entry.message).flatMap((entry) => eventsOf(entry, marked));
   }
 
-  module.exports = { RetroError, SLASH_COMMAND, readEntries, textOf, tokensOf, shorten, clock, callLabel, isToolResultEntry, humanEvents };
+  module.exports = { RetroError, SLASH_COMMAND, readEntries, textOf, tokensOf, shorten, clock, callLabel, isToolResultEntry, isCompactEntry, humanEvents };
   ```
   In `plugins/forge/scripts/session-facts.js`:
   (a) Die Zeile `const mcpUsage = require('./mcp-usage.js');` wird zu:
   ```js
   const mcpUsage = require('./mcp-usage.js');
-  const { RetroError: FactsError, SLASH_COMMAND, readEntries, textOf, tokensOf, clock, callLabel, humanEvents } = require('./lib/transcript');
+  const { RetroError: FactsError, SLASH_COMMAND, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
   ```
   (b) Die Zeilen `const NOTICE = …;`, `const SLASH_COMMAND = …;` und `class FactsError extends Error {}` entfallen ersatzlos, ebenso die Funktionen `readEntries`, `textOf`, `tokensOf`, `callLabel` (samt Kommentar „Kurzform eines Aufrufs …“) und `isHumanTurn` (samt Kommentar „Ein Slash-Befehl ist …“). `shortError` und `commandHead` bleiben.
-  (c) In `analyze` entfällt die Zeile `if (isHumanTurn(content)) facts.turns += 1;`; vor `return facts;` stehen neu:
+  (c) In `analyze` wird die Zeile, die mit `if (entry.type === 'system' && /compact/i.test(` beginnt und `facts.compactions += 1;` zählt (heute Zeile 156), zu
+  ```js
+    if (isCompactEntry(entry)) facts.compactions += 1;
+  ```
+  und die Zeile `if (isHumanTurn(content)) facts.turns += 1;` entfällt; vor `return facts;` stehen neu:
   ```js
     facts.humans = humanEvents(entries);
     facts.turns = facts.humans.filter((event) => event.kind === 'Eingabe').length;
@@ -367,8 +416,8 @@
 - Test: `plugins/forge/tests/session-facts.test.js` · `cli_SinceCommand_CountsOnlyFromLastInvocation`, `cli_SinceCommandWithOccurrence_EndsBeforeNextInvocationAndKeepsSubagentsInWindow`, `cli_SinceCommand_UnknownCommandOrOccurrence_ExitsWithOne`
 
 **Interfaces:**
-- Consumes: aus Task 1 `RetroError`, `SLASH_COMMAND`, `textOf`, `clock`, `readEntries`, `isToolResultEntry`; Fixtures `human`, `slash`, `request`, `call`, `result`, `hint`, `writeSession`.
-- Produces: `lib/retro-range.js`: `RETRO = 'prozess-retrospektive'`; `invokes(entry, name: string): boolean`; `indexesOf(entries, name: string): number[]` (Indizes im Array); `rangeOf(entries, { sinceCommand?: string, beforeRetro?: boolean }): { entries: object[], keepSubagent: (agentEntries) => boolean, labels: string[], cutTime: string|null }`; wirft `RetroError` mit `Unbekannter Befehl: <name> kommt in der Session nicht vor` oder `Leerer Bereich: kein Aufruf von <name> vor dem Schnitt` bzw. `… in der Session`; folgt dem letzten Aufruf der Retrospektive schon ein Aufruf von `retro-report.js … --session`, dessen Tool-Ergebnis kein Fehler ist und eine Zeile `Bericht: …` enthält, gilt sie als abgeschlossen (ein gescheiterter Lauf, etwa mit Verstößen und Exit 1, schließt sie nicht ab, der Schnitt bleibt): kein Schnitt, `cutTime` ist `null` und `labels` nennt `Schnitt: keiner, der letzte Aufruf von prozess-retrospektive (Eintrag <n> · <HH:MM>) hat seinen Bericht schon erzeugt`. · `session-facts.js`: Schalter `--before-retro`; `--occurrence` entfällt; `--file` zusammen mit `--session` ist erlaubt, ausgewertet wird `--file`. Exporte zusätzlich `parseArgs(args): object|null` und `resolveSession(options): { file: string, warning: string|null }`; `sliceByCommand` entfällt. `render(sessionFile, facts, agents, labels = [])`.
+- Consumes: aus Task 1 `RetroError`, `SLASH_COMMAND`, `textOf`, `clock`, `readEntries`, `isToolResultEntry`, `isCompactEntry`; Fixtures `human`, `slash`, `request`, `say`, `call`, `result`, `hint`, `writeSession`.
+- Produces: `lib/retro-range.js`: `RETRO = 'prozess-retrospektive'`; `invokes(entry, name: string): boolean`; `indexesOf(entries, name: string): number[]` (Indizes im Array); `rangeOf(entries, { sinceCommand?: string, beforeRetro?: boolean }): { entries: object[], keepSubagent: (agentEntries) => boolean, labels: string[], cutTime: string|null }`; wirft `RetroError` mit `Unbekannter Befehl: <name> kommt in der Session nicht vor` oder `Leerer Bereich: kein Aufruf von <name> vor dem Schnitt` bzw. `… in der Session`; folgt dem letzten Aufruf der Retrospektive schon ein Aufruf von `retro-report.js … --session`, dessen Tool-Ergebnis kein Fehler ist und eine Zeile `Bericht: …` enthält, gilt sie als abgeschlossen (ein gescheiterter Lauf, etwa mit Verstößen und Exit 1, schließt sie nicht ab, der Schnitt bleibt): kein Schnitt, `cutTime` ist `null` und `labels` nennt `Schnitt: keiner, der letzte Aufruf von prozess-retrospektive (Eintrag <n> · <HH:MM>) hat seinen Bericht schon erzeugt`. Folgt dem geschnittenen Aufruf schon eine Modell-Anfrage, die nicht nur die Fakten neu holt (`session-facts.js`, Schritt 1 des Skills), und wurde kein Bericht erzeugt, hängt `labels` die Zeile `Warnung: Schnitt vor einem früheren, nicht abgeschlossenen Aufruf von prozess-retrospektive (Eintrag <n>); Arbeit danach fehlt` an; das Verhalten des Schnitts bleibt. · `session-facts.js`: Schalter `--before-retro`; `--occurrence` entfällt; `--file` zusammen mit `--session` ist erlaubt, ausgewertet wird `--file`. Exporte zusätzlich `parseArgs(args): object|null` und `resolveSession(options): { file: string, warning: string|null }`; `sliceByCommand` entfällt. `render(sessionFile, facts, agents, labels = [])`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   `plugins/forge/tests/retro-range.test.js` neu:
@@ -381,8 +430,9 @@
   const assert = require('node:assert/strict');
   const { readEntries } = require('../scripts/lib/transcript');
   const { rangeOf } = require('../scripts/lib/retro-range');
-  const { human, slash, request, call, result, hint, stamp, writeSession } = require('./lib/retro-session');
+  const { human, slash, request, say, call, result, hint, stamp, writeSession } = require('./lib/retro-session');
 
+  // Der Aufruf der Retrospektive in Eintrag 7 ist der laufende: Ihm folgt noch keine Modell-Anfrage.
   function session({ withRetro = true } = {}) {
     return readEntries(writeSession([
       hint('skill_listing', '10:00', { content: '- dv-forge:domain-modeling: Use when terms are fuzzy' }),
@@ -392,7 +442,6 @@
       slash('dv-forge:plan-review', 'plan.md', '10:20'),
       request('r2', '10:21', [call('t2', 'Grep', { pattern: 'x' })]),
       ...(withRetro ? [slash('dv-forge:prozess-retrospektive', '', '10:30')] : []),
-      request('r3', '10:31', [call('t3', 'Write', { file_path: 'bericht.md' })]),
       slash('dv-forge:spec-review', 'spec.md', '10:40'),
     ]));
   }
@@ -447,6 +496,22 @@
     const range = rangeOf(entries, { beforeRetro: true });
 
     assert.deepEqual(range.entries.map((entry) => entry.entryNo), [1]);
+    assert.deepEqual(range.labels, [
+      'Schnitt: vor dem letzten Aufruf von prozess-retrospektive (Eintrag 2 · 10:30)',
+      'Warnung: Schnitt vor einem früheren, nicht abgeschlossenen Aufruf von prozess-retrospektive (Eintrag 2); Arbeit danach fehlt',
+    ]);
+  });
+
+  test('rangeOf_OnlyFactsRerunAfterRetroCall_CutsWithoutWarning', () => {
+    const entries = readEntries(writeSession([
+      human('Plane X', '10:00'),
+      slash('dv-forge:prozess-retrospektive', '--since-command plan-review', '10:30'),
+      request('r1', '10:31', [say('Ich hole die Fakten neu')]),
+      request('r1', '10:31', [call('t1', 'Bash', { command: 'node "/p/scripts/session-facts.js" --session s1 --before-retro --snapshot' })]),
+    ]));
+
+    const range = rangeOf(entries, { beforeRetro: true });
+
     assert.deepEqual(range.labels, ['Schnitt: vor dem letzten Aufruf von prozess-retrospektive (Eintrag 2 · 10:30)']);
   });
 
@@ -463,7 +528,7 @@
   test('rangeOf_SinceCommandWithoutCut_StartsAtLastCallAndRunsToEnd', () => {
     const range = rangeOf(session(), { sinceCommand: 'plan-review' });
 
-    assert.deepEqual(range.entries.map((entry) => entry.entryNo), [5, 6, 7, 8, 9]);
+    assert.deepEqual(range.entries.map((entry) => entry.entryNo), [5, 6, 7, 8]);
   });
 
   test('rangeOf_StartOnlyAfterCut_ReportsEmptyRange', () => {
@@ -634,10 +699,28 @@
 
   // Hat eine Retrospektive ihren Bericht schon erzeugt, ist sie abgeschlossen: Der Aufruf der laufenden steht dann
   // noch nicht im Protokoll, und ein Schnitt dort nähme nur die Arbeit bis zur früheren Retrospektive.
+  // Ungemessen ist, ob Claude Code den Slash-Befehl der laufenden Retrospektive schon vor ihren `!`-Befehlen ins Protokoll
+  // schreibt. Steht er noch nicht dort und brach die frühere vor ihrem Bericht ab, schneidet `rangeOf` vor der früheren;
+  // `workAfter` macht diesen Fall mit einer Warnung sichtbar, statt ihn still zu verlieren.
   function finished(entries, index) {
     const later = entries.slice(index + 1);
     const ids = new Set(later.flatMap(reportCallIds));
     return ids.size > 0 && later.some((entry) => reportWritten(entry, ids));
+  }
+
+  const FACTS_RUN = /session-facts\.js/;
+
+  function isFactsRun(entry) {
+    const content = entry.message?.content;
+    return Array.isArray(content) && content.some((part) => part.type === 'tool_use' && FACTS_RUN.test(String(part.input?.command ?? '')));
+  }
+
+  // Modell-Anfragen nach dem Aufruf; die Anfrage, die nur die Fakten neu holt (Schritt 1 des Skills), zählt nicht.
+  // Der laufenden Retrospektive folgt beim Lauf ihrer `!`-Befehle noch keine Anfrage.
+  function workAfter(entries, index) {
+    const later = entries.slice(index + 1).filter((entry) => entry.type === 'assistant');
+    const reruns = new Set(later.filter(isFactsRun).map((entry) => entry.requestId));
+    return later.some((entry) => !reruns.has(entry.requestId));
   }
 
   function rangeOf(entries, { sinceCommand, beforeRetro } = {}) {
@@ -645,6 +728,7 @@
     const last = retroCalls.length > 0 ? retroCalls[retroCalls.length - 1] : null;
     const done = last !== null && finished(entries, last);
     const cut = last !== null && !done;
+    const aborted = cut && workAfter(entries, last);
     const end = cut ? last : entries.length;
     const start = sinceCommand ? startOf(entries, sinceCommand, end, cut) : 0;
     const cutTime = cut ? firstTime(entries, end) : null;
@@ -652,6 +736,7 @@
       ...(sinceCommand ? [`Start: letzter Aufruf von ${sinceCommand} (${mark(entries, start)})`] : []),
       ...(cut ? [`Schnitt: vor dem letzten Aufruf von ${RETRO} (${mark(entries, end)})`] : []),
       ...(done ? [`Schnitt: keiner, der letzte Aufruf von ${RETRO} (${mark(entries, last)}) hat seinen Bericht schon erzeugt`] : []),
+      ...(aborted ? [`Warnung: Schnitt vor einem früheren, nicht abgeschlossenen Aufruf von ${RETRO} (Eintrag ${entries[last].entryNo}); Arbeit danach fehlt`] : []),
     ];
     const keepSubagent = subagentFilter(entries, start, cutTime, Boolean(sinceCommand) || cut);
     return { entries: entries.slice(start, end), keepSubagent, labels, cutTime };
@@ -668,7 +753,7 @@
   (b) Die Importzeilen werden zu:
   ```js
   const mcpUsage = require('./mcp-usage.js');
-  const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, humanEvents } = require('./lib/transcript');
+  const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
   const { rangeOf } = require('./lib/retro-range');
   ```
   (c) Die Funktionen `invokes`, `firstTime` und `sliceByCommand` (samt Kommentar „Ausschnitt vom n-ten Aufruf …“) entfallen.
@@ -997,9 +1082,9 @@
 **ACs:** AC-02, AC-10
 
 **Dateien:**
-- Modify: `plugins/forge/scripts/lib/transcript.js` · `tokensOf`, `module.exports`
+- Create: `plugins/forge/scripts/lib/retro-requests.js`
 - Modify: `plugins/forge/scripts/lib/retro-measures.js` · `const { humanEvents, textOf, isToolResultEntry }`, `module.exports`
-- Modify: `plugins/forge/scripts/session-facts.js` · `const { RetroError: FactsError`
+- Modify: `plugins/forge/scripts/session-facts.js` · `const { RetroError: FactsError` (neue Importzeile danach)
 - Modify: `plugins/forge/scripts/session-facts.js` · `const { timeProfile, harnessHints }`
 - Modify: `plugins/forge/scripts/session-facts.js` · `analyze`
 - Modify: `plugins/forge/scripts/session-facts.js` · `factLines`
@@ -1007,13 +1092,13 @@
 
 **Interfaces:**
 - Consumes: aus Task 1 `tokensOf`; aus Task 4 `minutes`, `timeOf`.
-- Produces: `lib/transcript.js`: `contextOf(usage): number` (neu + Cache-Schreiben + Cache-Lesen); `requestsOf(entries): { entryNo: number, time: string|null, usage: object }[]` (eine je `requestId`). · `lib/retro-measures.js`: `requestContext(requests): { average: number, largest: number }|null`; `firstRequest(entries, requests): { context: number, attachments: { name: string, tokens: number }[] }|null`; `cacheRebuilds(requests): { time: string|null, pause: number, created: number }[]`. · `analyze` liefert zusätzlich `context`, `baseline`, `rebuilds`; `factLines` hat die Zeilen `- Kontext je Anfrage: …`, `- Grundlast erste Anfrage: …`, `- Cache-Neuaufbauten: …`.
+- Produces: `lib/retro-requests.js` (Modell-Anfragen und ihr Kontext, eine Verantwortung; `tokensOf` bleibt in `lib/transcript.js`, weil `analyze` es schon nutzt): `contextOf(usage): number` (neu + Cache-Schreiben + Cache-Lesen); `requestsOf(entries): { entryNo: number, time: string|null, usage: object }[]` (eine je `requestId`). · `lib/retro-measures.js`: `requestContext(requests): { average: number, largest: number }|null`; `firstRequest(entries, requests): { context: number, attachments: { name: string, tokens: number }[] }|null`; `cacheRebuilds(requests): { time: string|null, pause: number, created: number }[]`. · `analyze` liefert zusätzlich `context`, `baseline`, `rebuilds`; `factLines` hat die Zeilen `- Kontext je Anfrage: …`, `- Grundlast erste Anfrage: …`, `- Cache-Neuaufbauten: …`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   In `plugins/forge/tests/retro-measures.test.js` die Importzeile der Fixtures ersetzen und am Dateiende anhängen:
   ```js
   const { human, request, say, call, result, hint, stamp, skillText, usage, writeSession } = require('./lib/retro-session');
-  const { requestsOf } = require('../scripts/lib/transcript');
+  const { requestsOf } = require('../scripts/lib/retro-requests');
   ```
   ```js
   function contextSession() {
@@ -1080,8 +1165,14 @@
 - [ ] **Schritt 2: Test rot laufen lassen**
   Befehl: `node --test plugins/forge/tests/retro-measures.test.js` — erwartet: FAIL `requestContext_FourRequests_AverageAndLargest`
 - [ ] **Schritt 3: Minimal implementieren**
-  In `plugins/forge/scripts/lib/transcript.js` direkt nach `tokensOf` einfügen und `module.exports` ersetzen:
+  `plugins/forge/scripts/lib/retro-requests.js` neu:
   ```js
+  'use strict';
+
+  // Modell-Anfragen eines Protokolls und die Größe ihres Kontexts.
+
+  const { tokensOf } = require('./transcript');
+
   function contextOf(usage = {}) {
     const { input, cached } = tokensOf(usage);
     return input + cached;
@@ -1098,15 +1189,12 @@
       return [{ entryNo: entry.entryNo, time: entry.timestamp ?? null, usage: entry.message.usage ?? {} }];
     });
   }
+
+  module.exports = { contextOf, requestsOf };
   ```
+  In `plugins/forge/scripts/lib/retro-measures.js`: nach der Importzeile `const { humanEvents, textOf, isToolResultEntry } = require('./transcript');` einfügen, vor `module.exports` einfügen und `module.exports` ersetzen:
   ```js
-  module.exports = {
-    RetroError, SLASH_COMMAND, readEntries, textOf, tokensOf, contextOf, requestsOf, shorten, clock, callLabel, isToolResultEntry, humanEvents,
-  };
-  ```
-  In `plugins/forge/scripts/lib/retro-measures.js`: Importzeile ersetzen, vor `module.exports` einfügen und `module.exports` ersetzen:
-  ```js
-  const { humanEvents, textOf, isToolResultEntry, contextOf } = require('./transcript');
+  const { contextOf } = require('./retro-requests');
   ```
   ```js
   const REBUILD_MIN_CREATED = 20000;
@@ -1152,9 +1240,9 @@
   module.exports = { timeOf, minutes, timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds };
   ```
   In `plugins/forge/scripts/session-facts.js`:
-  (a) Die Importzeilen aus `./lib/transcript` und `./lib/retro-measures` werden zu:
+  (a) Nach der Importzeile aus `./lib/transcript` kommt die erste Zeile dazu, die Importzeile aus `./lib/retro-measures` wird zur zweiten:
   ```js
-  const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, humanEvents, requestsOf } = require('./lib/transcript');
+  const { requestsOf } = require('./lib/retro-requests');
   ```
   ```js
   const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds } = require('./lib/retro-measures');
@@ -1211,7 +1299,7 @@
 - [ ] **Schritt 4: Test grün laufen lassen**
   Befehl: `node --test plugins/forge/tests/retro-measures.test.js plugins/forge/tests/session-facts.test.js plugins/forge/tests/transcript.test.js` — erwartet: PASS
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/transcript.js plugins/forge/scripts/lib/retro-measures.js plugins/forge/scripts/session-facts.js plugins/forge/tests/retro-measures.test.js` · `git commit -m "feat(forge): session-facts shows context per request, baseline and cache rebuilds"`
+  `git add plugins/forge/scripts/lib/retro-requests.js plugins/forge/scripts/lib/retro-measures.js plugins/forge/scripts/session-facts.js plugins/forge/tests/retro-measures.test.js` · `git commit -m "feat(forge): session-facts shows context per request, baseline and cache rebuilds"`
 
 ---
 
@@ -1220,14 +1308,14 @@
 **ACs:** AC-11
 
 **Dateien:**
-- Modify: `plugins/forge/scripts/lib/retro-measures.js` · `const { humanEvents, textOf, isToolResultEntry, contextOf }`, `module.exports`
+- Modify: `plugins/forge/scripts/lib/retro-measures.js` · `const { humanEvents, textOf, isToolResultEntry }`, `module.exports`
 - Modify: `plugins/forge/scripts/session-facts.js` · `const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds }`
 - Modify: `plugins/forge/scripts/session-facts.js` · `analyze`
 - Modify: `plugins/forge/scripts/session-facts.js` · `render`
 - Test: `plugins/forge/tests/retro-measures.test.js` · `cli_NoRebuild_SaysNone`
 
 **Interfaces:**
-- Consumes: aus Task 1 `callLabel`, `SLASH_COMMAND`, `textOf`; aus Task 5 `requestsOf`.
+- Consumes: aus Task 1 `callLabel`, `SLASH_COMMAND`, `textOf`; aus Task 5 `requestsOf` (`lib/retro-requests.js`).
 - Produces: `lib/retro-measures.js`: `contextLoads(entries, requests): { entryNo: number, tokens: number, label: string, following: number, load: number }[]` (höchstens 5, ab 1000 Tokens, absteigend nach `load`). `session-facts.js`: `measureLines(facts): string[]` (jeder Block endet mit `''`), in `render` nach `factLines`; `analyze` liefert zusätzlich `loads`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
@@ -1280,7 +1368,7 @@
 - [ ] **Schritt 3: Minimal implementieren**
   In `plugins/forge/scripts/lib/retro-measures.js`: Importzeile ersetzen, vor `module.exports` einfügen und `module.exports` ersetzen:
   ```js
-  const { humanEvents, textOf, isToolResultEntry, contextOf, callLabel, SLASH_COMMAND } = require('./transcript');
+  const { humanEvents, textOf, isToolResultEntry, callLabel, SLASH_COMMAND } = require('./transcript');
   ```
   ```js
   const LOAD_MIN_TOKENS = 1000;
@@ -1470,19 +1558,22 @@
     return isToolResultEntry(entry) ? entry.message.content.filter((part) => part.type === 'tool_result') : [];
   }
 
+  // Start jedes Aufrufs nach seiner Kennung.
+  function startsOf(entries) {
+    return new Map(entries.flatMap((entry) => toolUses(entry)
+      .map((part) => [part.id, { time: timeOf(entry), label: callLabel(part), entryNo: entry.entryNo }])));
+  }
+
+  function runOf(start, end) {
+    const ms = start && start.time !== null && end !== null ? end - start.time : 0;
+    return ms >= LONG_RUN_MS ? [{ seconds: Math.round(ms / 1000), label: start.label, entryNo: start.entryNo }] : [];
+  }
+
   // Dauer eines Laufs = Zeit vom Aufruf bis zu seinem Ergebnis.
   function longRuns(entries) {
-    const started = new Map();
-    const runs = [];
-    for (const entry of entries) {
-      for (const part of toolUses(entry)) started.set(part.id, { time: timeOf(entry), label: callLabel(part), entryNo: entry.entryNo });
-      for (const part of resultsOf(entry)) {
-        const start = started.get(part.tool_use_id);
-        const ms = start && start.time !== null && timeOf(entry) !== null ? timeOf(entry) - start.time : 0;
-        if (ms >= LONG_RUN_MS) runs.push({ seconds: Math.round(ms / 1000), label: start.label, entryNo: start.entryNo });
-      }
-    }
-    return runs.sort((a, b) => b.seconds - a.seconds).slice(0, MAX_LONG_RUNS);
+    const started = startsOf(entries);
+    return entries.flatMap((entry) => resultsOf(entry).flatMap((part) => runOf(started.get(part.tool_use_id), timeOf(entry))))
+      .sort((a, b) => b.seconds - a.seconds).slice(0, MAX_LONG_RUNS);
   }
 
   function isBuildTestLint(command) {
@@ -1499,24 +1590,24 @@
     return MCP_RUN.test(part.name) ? `${part.name} ${JSON.stringify(part.input ?? {})}` : null;
   }
 
-  function isChange(entry, part) {
-    return part ? CHANGE_TOOLS.has(part.name) : entry.attachment?.type === 'edited_text_file';
+  // Schritte eines Eintrags in Protokoll-Reihenfolge: der Hinweis auf eine geänderte Datei, dann jeder Aufruf.
+  function stepsOf(entry) {
+    const notice = entry.attachment?.type === 'edited_text_file' ? [{ change: true, key: null }] : [];
+    return [...notice, ...toolUses(entry).map((part) => ({ change: CHANGE_TOOLS.has(part.name), key: runKey(part) }))];
+  }
+
+  // Eine Änderung macht alle Läufe wieder nötig; ein Lauf, der seit der letzten Änderung schon lief, zählt als erneut.
+  function countRerun(state, step) {
+    if (step.change) state.clean.clear();
+    if (!step.key) return state;
+    if (state.clean.has(step.key)) state.reruns.set(step.key, (state.reruns.get(step.key) ?? 0) + 1);
+    state.clean.add(step.key);
+    return state;
   }
 
   // Build-, Test- und Lint-Läufe, die genauso erneut liefen, ohne dass dazwischen eine Datei geändert wurde.
   function idleReruns(entries) {
-    const clean = new Set();
-    const reruns = new Map();
-    for (const entry of entries) {
-      if (isChange(entry, null)) clean.clear();
-      for (const part of toolUses(entry)) {
-        if (isChange(entry, part)) clean.clear();
-        const key = runKey(part);
-        if (!key) continue;
-        if (clean.has(key)) reruns.set(key, (reruns.get(key) ?? 0) + 1);
-        clean.add(key);
-      }
-    }
+    const { reruns } = entries.flatMap(stepsOf).reduce(countRerun, { clean: new Set(), reruns: new Map() });
     return [...reruns.entries()].map(([command, count]) => ({ command, count })).sort((a, b) => b.count - a.count);
   }
   ```
@@ -1526,7 +1617,7 @@
   In `plugins/forge/scripts/session-facts.js`:
   (a) Die Importzeilen werden zu:
   ```js
-  const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, humanEvents, requestsOf, shorten } = require('./lib/transcript');
+  const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents, shorten } = require('./lib/transcript');
   ```
   ```js
   const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns } = require('./lib/retro-measures');
@@ -1569,6 +1660,7 @@
 - Modify: `plugins/forge/scripts/mcp-usage.js:251` · `module.exports`
 - Modify: `plugins/forge/scripts/session-facts.js` · `const { timeProfile, harnessHints, requestContext`
 - Modify: `plugins/forge/scripts/session-facts.js` · `run`
+- Modify: `plugins/forge/scripts/session-facts.js` · `module.exports = { projectDir, analyze`
 - Modify: `plugins/forge/skills/init/SKILL.md:20-45` · `## Schlüssel`, `## Format`
 - Modify: `plugins/forge/skills/init/SKILL.md:47-53` · `## Häufige Fehler`
 - Test: `plugins/forge/tests/forge-config.test.js` · `readConfig_NoClaudeMd_AllDefaults`, `cli_ShowAndGet_MarkDefaults`
@@ -1577,7 +1669,7 @@
 
 **Interfaces:**
 - Consumes: `readConfig(cwd)` aus `forge-config.js` (bestehend, wirft `ConfigError` ohne Git-Repo).
-- Produces: `forge-config.js`: Schlüssel `MCP-Erwartet` mit Default `''`. · `mcp-usage.js`: `measure(session, { expect = [] } = {}): { servers: Map, native: Map, fallbacks: object[], used: string[], expectedUnused: string[], availableUnused: string[] }`; in `.mcp.json` konfigurierte Server gelten nur noch als verfügbar, nicht als erwartet. · `session-facts.js`: `configuredExpect(cwd: string): string[]`; `projectOf(options, session): string` (Projekt des Protokolls: `--cwd`, sonst `cwd` der Protokolleinträge, sonst der aktuelle Ordner); `run` nutzt als erwartete Server `--expect` plus `MCP-Erwartet` des Projekts aus `projectOf`. · `init/SKILL.md`: die Zeilen „Alle Fragen in einer Nachricht“ und „Stolperfallen ungefragt umschreiben“ der Tabelle `## Häufige Fehler` entfallen (beide Regeln stehen schon im Ablauf, Schritt 3 und Schritt 1), damit der Body unter 500 Wörtern bleibt.
+- Produces: `forge-config.js`: Schlüssel `MCP-Erwartet` mit Default `''`. · `mcp-usage.js`: `measure(session, { expect = [] } = {}): { servers: Map, native: Map, fallbacks: object[], used: string[], expectedUnused: string[], availableUnused: string[] }`; in `.mcp.json` konfigurierte Server gelten nur noch als verfügbar, nicht als erwartet. · `session-facts.js`: `configuredExpect(cwd: string): string[]`; `projectOf(options, session, warn?): string` (exportiert; Projekt des Protokolls: `--cwd`; ohne `--file` der aktuelle Ordner, weil die eigene Session über ihn gesucht wird, auch nach Worktree-Wechsel; bei `--file` das `cwd` der Protokolleinträge, fehlt der Ordner, der aktuelle Ordner mit Warnung, die `--cwd <projektordner>` nennt, statt Exit 1); `run` nutzt als erwartete Server `--expect` plus `MCP-Erwartet` des Projekts aus `projectOf`. · `init/SKILL.md`: die Zeilen „Alle Fragen in einer Nachricht“ und „Stolperfallen ungefragt umschreiben“ der Tabelle `## Häufige Fehler` entfallen (beide Regeln stehen schon im Ablauf, Schritt 3 und Schritt 1), damit der Body unter 500 Wörtern bleibt.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   In `plugins/forge/tests/forge-config.test.js`: in `readConfig_NoClaudeMd_AllDefaults` vor `assert.deepEqual(configured, []);` die Zeile einfügen, in `cli_ShowAndGet_MarkDefaults` nach der `Lint=`-Zeile die zweite, und am Dateiende den Test anhängen:
@@ -1657,9 +1749,31 @@
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
   });
+
+  test('projectOf_OwnSession_UsesProcessCwd', () => {
+    const first = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-erststart-'));
+
+    assert.equal(facts.projectOf({ session: 'eigene' }, { cwd: first }), path.resolve(process.cwd()));
+  });
+
+  test('projectOf_ForeignFileMissingCwd_FallsBackWithWarning', () => {
+    const missing = path.join(os.tmpdir(), 'retro-gibt-es-nicht-8f3a');
+    const warnings = [];
+
+    const project = facts.projectOf({ file: 'x.jsonl' }, { cwd: missing }, (text) => warnings.push(text));
+
+    assert.equal(project, path.resolve(process.cwd()));
+    assert.equal(warnings.length, 1);
+    assert.ok(warnings[0].includes(missing));
+    assert.ok(warnings[0].includes('--cwd <projektordner>'));
+  });
+  ```
+  Steht oben in `session-facts.test.js` noch kein Import des Moduls, kommt diese Zeile zu den Importen:
+  ```js
+  const facts = require('../scripts/session-facts');
   ```
 - [ ] **Schritt 2: Test rot laufen lassen**
-  Befehl: `node --test plugins/forge/tests/forge-config.test.js plugins/forge/tests/mcp-usage.test.js plugins/forge/tests/session-facts.test.js` — erwartet: FAIL `readConfig_NoClaudeMd_AllDefaults`, FAIL `render_ExpectedButUnused_MarkedAndConfiguredOnlyAvailable`, FAIL `cli_ProjectListsExpectedMcp_UnusedMarkedWithoutFlag`, FAIL `cli_ForeignProtocol_ExpectationFromProtocolProject`
+  Befehl: `node --test plugins/forge/tests/forge-config.test.js plugins/forge/tests/mcp-usage.test.js plugins/forge/tests/session-facts.test.js` — erwartet: FAIL `readConfig_NoClaudeMd_AllDefaults`, FAIL `render_ExpectedButUnused_MarkedAndConfiguredOnlyAvailable`, FAIL `cli_ProjectListsExpectedMcp_UnusedMarkedWithoutFlag`, FAIL `cli_ForeignProtocol_ExpectationFromProtocolProject`, FAIL `projectOf_OwnSession_UsesProcessCwd` und FAIL `projectOf_ForeignFileMissingCwd_FallsBackWithWarning` (`facts.projectOf is not a function`)
 - [ ] **Schritt 3: Minimal implementieren**
   In `plugins/forge/scripts/forge-config.js` wird in `DEFAULTS` nach `'Commit-Konvention': '',` die Zeile ergänzt:
   ```js
@@ -1732,10 +1846,16 @@
     }
   }
 
-  // Projekt des ausgewerteten Protokolls: `--cwd`, sonst das `cwd` der Protokolleinträge, sonst der aktuelle Ordner.
-  // So kommen Erwartung, Branch und Projekt-Dateien bei `--file <fremdes Protokoll>` aus dessen Projekt.
-  function projectOf(options, session) {
-    return path.resolve(options.cwd ?? session.cwd ?? process.cwd());
+  // Projekt des ausgewerteten Protokolls. `--cwd` gilt immer. Ohne `--file` ist es die eigene Session, gesucht über den
+  // aktuellen Ordner; der ist damit das Projekt, auch nach einem Wechsel in einen Worktree. Nur bei `--file` gilt das
+  // `cwd` der Protokolleinträge, damit Erwartung, Branch und Projekt-Dateien aus dem Projekt des fremden Protokolls
+  // kommen; fehlt dieser Ordner, gilt der aktuelle Ordner mit Warnung.
+  function projectOf(options, session, warn = (text) => process.stderr.write(`Warnung: ${text}\n`)) {
+    if (options.cwd) return path.resolve(options.cwd);
+    if (!options.file || !session.cwd) return path.resolve(process.cwd());
+    if (fs.existsSync(session.cwd)) return path.resolve(session.cwd);
+    warn(`Projektordner des Protokolls fehlt: ${session.cwd}; ausgewertet wird im aktuellen Ordner, sonst mit --cwd <projektordner> angeben`);
+    return path.resolve(process.cwd());
   }
 
   function run(options) {
@@ -1757,6 +1877,10 @@
     }
     return { output, warning };
   }
+  ```
+  (c) `module.exports` wird zu:
+  ```js
+  module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, run, parseArgs, resolveSession, projectOf };
   ```
   In `plugins/forge/skills/init/SKILL.md`: in der Tabelle unter `## Schlüssel` nach der Zeile `| \`Commit-Konvention\` | … |` die Zeile ergänzen, und im Block unter `## Format` nach `- Planungs-Skills: unit-integration-testing, software-design-principles` die Beispielzeile:
   ```markdown
@@ -2088,8 +2212,8 @@
 - Test: `plugins/forge/tests/retro-snapshot.test.js`
 
 **Interfaces:**
-- Consumes: aus Task 2 `sessionById`, `projectDir`, `rangeOf` (`cutTime`); Task 4–7 `factLines`, `measureLines`; Task 10 `savingsLists`; Task 1 `facts.humans`.
-- Produces: `lib/retro-files.js`: `retroDir(): string` (`<home>/.dv-forge/retro`); `snapshotPath(session: string): string` (`<id>.snapshot.json`); `draftPath(session: string): string` (`<id>.entwurf.md`); `writeSnapshot(snapshot: object): string`; `readSnapshot(session: string): object` — wirft `RetroError` `Snapshot fehlt: <pfad>. …` oder `Snapshot unlesbar: <pfad>: <grund>`. · Snapshot-Felder: `session, transcript, ownTranscript, cwd, cut, branch, specs: string[], expected: string[], model, skills: string[], headline, numbers, mcp, projectFiles: string[]`. · `lib/retro-snapshot.js` (Angaben zur Session für den Snapshot, eine Verantwortung): `specPaths(entries, humans): string[]`; `projectFiles(entries, cwd: string): string[]`; `branchOf(entries, cwd: string): string|null`; `skillsOf(facts): string[]`. · `session-facts.js`: Schalter `--snapshot`; Ausgabe `Snapshot: <pfad>` und `Entwurf: <pfad>`; ein vorhandener Entwurf derselben Session wird dabei gelöscht; `--skeleton` entfällt; `snapshotOf` setzt den Snapshot nur aus den Zeilen der Fakten und den Angaben aus `lib/retro-snapshot.js` zusammen.
+- Consumes: aus Task 2 `sessionById`, `projectDir`, `rangeOf` (`cutTime`, `labels`); Task 1 `readEntries` (`entryNo`); Task 4–7 `factLines`, `measureLines`; Task 10 `savingsLists`; Task 1 `facts.humans`.
+- Produces: `lib/retro-files.js`: `retroDir(): string` (`<home>/.dv-forge/retro`); `snapshotPath(session: string): string` (`<id>.snapshot.json`); `draftPath(session: string): string` (`<id>.entwurf.md`); `writeSnapshot(snapshot: object): string`; `readSnapshot(session: string): object` — wirft `RetroError` `Snapshot fehlt: <pfad>. …`, `Snapshot unlesbar: <pfad>: <grund>` oder, ohne ganzzahliges `transcriptEntries`, `Snapshot unlesbar: <pfad>: transcriptEntries fehlt`. · Snapshot-Felder: `session, transcript, ownTranscript, transcriptEntries: number` (höchste `entryNo` des ganzen Hauptprotokolls beim Lauf von `--snapshot`, also vor der ersten Modell-Anfrage der Retrospektive; Task 14 prüft Zitate nur gegen Einträge bis dahin), `cwd, cut, labels: string[]` (die Labels des Bereichs aus `rangeOf`, samt Warnung), `branch, specs: string[], expected: string[], model, skills: string[], headline, numbers, mcp, projectFiles: string[]`. · `lib/retro-snapshot.js` (Angaben zur Session und Zusammenbau des Snapshots, eine Verantwortung): `specPaths(entries, humans): string[]`; `projectFiles(entries, cwd: string): string[]`; `branchOf(entries, cwd: string): string|null`; `skillsOf(facts): string[]`; `buildSnapshot({ id, transcript, ownTranscript, transcriptEntries, cwd, range, facts, headline, numbers, mcp, expect }): object` (ruft `branchOf`, `specPaths`, `skillsOf`, `projectFiles` auf und setzt das Objekt zusammen; eigene I/O hat es nicht, Git liest nur `branchOf`, Dateien prüft nur `projectFiles`). · `session-facts.js`: Schalter `--snapshot`; Ausgabe `Snapshot: <pfad>` und `Entwurf: <pfad>`; ein vorhandener Entwurf derselben Session wird dabei gelöscht; `--skeleton` entfällt; `headlineOf(facts, agents): string` und `numbersOf(facts, agents, allFacts): string` stehen neben `factLines`/`measureLines`, weil sie deren Formatierung (`thousands`, `minutes`) nutzen; `ownTranscriptOf(options, file): string|null` steht bis Task 16 hier; `saveSnapshot(snapshot): string` schreibt, löscht den alten Entwurf und liefert die Ausgabezeilen; `run` orchestriert nur: Bereich, Fakten, Ausgabe, `buildSnapshot`, `saveSnapshot`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   In `plugins/forge/tests/session-facts.test.js` werden `cli_Skeleton_WritesReportWithFactsAndMcpVerbatimAndPlaceholdersForTheRest` und `cli_Skeleton_ExistingTarget_RefusesAndKeepsFile` ersetzt durch die folgenden Tests:
@@ -2131,7 +2255,16 @@
     assert.match(snapshot.numbers, /^- Dauer: 10 min · Modelle: claude-x\n/);
     assert.match(snapshot.mcp, /^Quelle: /);
     assert.equal(snapshot.headline, 'Dauer 10 min, Eingaben des Menschen 2, Tokens neu 2k Hauptsession und 1k Subagents');
-    for (const key of ['branch', 'specs', 'expected', 'projectFiles', 'ownTranscript', 'cwd']) assert.ok(key in snapshot, `${key} fehlt`);
+    for (const key of ['branch', 'specs', 'expected', 'projectFiles', 'ownTranscript', 'cwd', 'transcriptEntries', 'labels']) assert.ok(key in snapshot, `${key} fehlt`);
+  });
+
+  test('cli_Snapshot_RecordsLastEntryOfProtocolForQuoteCheck', () => {
+    const home = snapshotHome();
+    const file = session();
+
+    withHome(home, ['--file', file, '--snapshot']);
+
+    assert.equal(readSnapshotOf(home, 's1').transcriptEntries, facts.readEntries(file).at(-1).entryNo);
   });
 
   test('cli_SnapshotWithCut_RecordsCutTime', () => {
@@ -2189,7 +2322,7 @@
   const os = require('node:os');
   const path = require('node:path');
   const { readEntries, humanEvents } = require('../scripts/lib/transcript');
-  const { specPaths, projectFiles } = require('../scripts/lib/retro-snapshot');
+  const { specPaths, projectFiles, buildSnapshot } = require('../scripts/lib/retro-snapshot');
   const { human, slash, request, call, writeSession } = require('./lib/retro-session');
 
   test('specPaths_ToolPathsAndHumanArguments_NewestFirst', () => {
@@ -2217,6 +2350,26 @@
     ]));
 
     assert.deepEqual(projectFiles(entries, root), ['Shift.ts']);
+  });
+
+  test('buildSnapshot_FactsAndSessionData_AssembledIntoFields', () => {
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-project-'));
+    const entries = readEntries(writeSession([
+      { ...request('r1', '10:00', [call('a', 'Read', { file_path: 'docs/specs/b.md' })]), gitBranch: 'feature/x' },
+    ]));
+    const facts = { models: new Set(['claude-x']), humans: [], skills: new Map([['dv-forge:init', 1]]) };
+    const range = { entries, cutTime: null, labels: ['Schnitt: keiner'] };
+
+    const snapshot = buildSnapshot({
+      id: 's1', transcript: 't.jsonl', ownTranscript: null, transcriptEntries: 1, cwd, range, facts,
+      headline: 'Kopf', numbers: '- Dauer: 1 min', mcp: '## MCP-Nutzung (gemessen)\nQuelle: `t.jsonl`\n', expect: ['dev-mcp'],
+    });
+
+    assert.deepEqual(snapshot, {
+      session: 's1', transcript: 't.jsonl', ownTranscript: null, transcriptEntries: 1, cwd, cut: null, labels: ['Schnitt: keiner'],
+      branch: 'feature/x', specs: ['docs/specs/b.md'], expected: ['dev-mcp'], model: 'claude-x', skills: ['dv-forge:init'],
+      headline: 'Kopf', numbers: '- Dauer: 1 min', mcp: 'Quelle: `t.jsonl`', projectFiles: ['b.md'],
+    });
   });
   ```
 - [ ] **Schritt 2: Test rot laufen lassen**
@@ -2256,14 +2409,22 @@
     return file;
   }
 
-  function readSnapshot(session) {
-    const file = snapshotPath(session);
-    if (!fs.existsSync(file)) throw new RetroError(`Snapshot fehlt: ${file}. Zuerst session-facts.js --session ${session} --snapshot aufrufen.`);
+  function parsedSnapshot(file) {
     try {
       return JSON.parse(fs.readFileSync(file, 'utf8'));
     } catch (error) {
       throw new RetroError(`Snapshot unlesbar: ${file}: ${error.message}`);
     }
+  }
+
+  // `transcriptEntries` begrenzt den Korpus der Zitat-Prüfung auf das Protokoll vor der Retrospektive; ohne das Feld
+  // prüfte sie gegen nichts oder gegen den eigenen Entwurf.
+  function readSnapshot(session) {
+    const file = snapshotPath(session);
+    if (!fs.existsSync(file)) throw new RetroError(`Snapshot fehlt: ${file}. Zuerst session-facts.js --session ${session} --snapshot aufrufen.`);
+    const snapshot = parsedSnapshot(file);
+    if (!Number.isInteger(snapshot.transcriptEntries)) throw new RetroError(`Snapshot unlesbar: ${file}: transcriptEntries fehlt`);
+    return snapshot;
   }
 
   module.exports = { retroDir, snapshotPath, draftPath, writeSnapshot, readSnapshot };
@@ -2273,7 +2434,7 @@
   ```js
   'use strict';
 
-  // Angaben zur Session für den Snapshot: Spec-Pfade, angefasste Projekt-Dateien, Branch und Skills.
+  // Angaben zur Session für den Snapshot (Spec-Pfade, angefasste Projekt-Dateien, Branch, Skills) und sein Zusammenbau.
 
   const fs = require('node:fs');
   const path = require('node:path');
@@ -2331,7 +2492,31 @@
     return [...new Set([...facts.skills.keys(), ...commands])];
   }
 
-  module.exports = { specPaths, projectFiles, branchOf, skillsOf };
+  const MCP_HEADING = /^## MCP-Nutzung \(gemessen\)\n/;
+
+  // Nur Zusammenbau: Zeilen und Zahlen kommen fertig aus session-facts.js, die Angaben zur Session aus den Funktionen oben.
+  function buildSnapshot({ id, transcript, ownTranscript, transcriptEntries, cwd, range, facts, headline, numbers, mcp, expect }) {
+    return {
+      session: id,
+      transcript,
+      ownTranscript,
+      transcriptEntries,
+      cwd,
+      cut: range.cutTime,
+      labels: range.labels,
+      branch: branchOf(range.entries, cwd),
+      specs: specPaths(range.entries, facts.humans),
+      expected: expect,
+      model: [...facts.models].join(', '),
+      skills: skillsOf(facts),
+      headline,
+      numbers,
+      mcp: mcp.replace(MCP_HEADING, '').trim(),
+      projectFiles: projectFiles(range.entries, cwd),
+    };
+  }
+
+  module.exports = { specPaths, projectFiles, branchOf, skillsOf, buildSnapshot };
   ```
   In `plugins/forge/scripts/session-facts.js`:
   (a) `USAGE` wird zu der folgenden Zeile; die Konstanten `REPORT_FORMAT`, `FACTS_SLOT`, `MCP_SLOT` und `RESULT_SLOT` entfallen:
@@ -2342,14 +2527,14 @@
   (b) Nach `const { signalHints } = require('./lib/retro-signals');` einfügen:
   ```js
   const { writeSnapshot, draftPath } = require('./lib/retro-files');
-  const { specPaths, projectFiles, branchOf, skillsOf } = require('./lib/retro-snapshot');
+  const { buildSnapshot } = require('./lib/retro-snapshot');
   ```
   (c) `FLAGS` und `SWITCHES` werden zu:
   ```js
   const FLAGS = { '--file': 'file', '--session': 'session', '--cwd': 'cwd', '--expect': 'expect', '--since-command': 'sinceCommand' };
   const SWITCHES = { '--before-retro': 'beforeRetro', '--lenient': 'lenient', '--snapshot': 'snapshot' };
   ```
-  (d) `skeleton` (samt Kommentar „Berichtsgerüst aus …“) und `writeSkeleton` werden ersetzt durch:
+  (d) `skeleton` (samt Kommentar „Berichtsgerüst aus …“) und `writeSkeleton` werden ersetzt durch `ownTranscriptOf`, `headlineOf`, `numbersOf` und `saveSnapshot`:
   ```js
   // Protokoll der eigenen Session: bei `--file` plus `--session` gehört der Snapshot zur eigenen Session.
   function ownTranscriptOf(options, file) {
@@ -2362,32 +2547,31 @@
     }
   }
 
-  function snapshotOf({ id, options, file, cwd, range, facts, agents, mcp, allFacts, expect }) {
+  function headlineOf(facts, agents) {
     const agentInput = agents.reduce((sum, agent) => sum + agent.facts.input, 0);
-    return {
-      session: id,
-      transcript: file,
-      ownTranscript: ownTranscriptOf(options, file),
-      cwd,
-      cut: range.cutTime,
-      branch: branchOf(range.entries, cwd),
-      specs: specPaths(range.entries, facts.humans),
-      expected: expect,
-      model: [...facts.models].join(', '),
-      skills: skillsOf(facts),
-      headline: `Dauer ${minutes(facts.first, facts.last)} min, Eingaben des Menschen ${facts.turns}, Tokens neu ${thousands(facts.input)} Hauptsession und ${thousands(agentInput)} Subagents`,
-      numbers: [...factLines(facts, agents), '', ...measureLines(facts), savingsLists(allFacts).trimEnd()].join('\n'),
-      mcp: mcp.replace(/^## MCP-Nutzung \(gemessen\)\n/, '').trim(),
-      projectFiles: projectFiles(range.entries, cwd),
-    };
+    return `Dauer ${minutes(facts.first, facts.last)} min, Eingaben des Menschen ${facts.turns}, Tokens neu ${thousands(facts.input)} Hauptsession und ${thousands(agentInput)} Subagents`;
+  }
+
+  function numbersOf(facts, agents, allFacts) {
+    return [...factLines(facts, agents), '', ...measureLines(facts), savingsLists(allFacts).trimEnd()].join('\n');
+  }
+
+  // Ein Entwurf eines abgebrochenen früheren Laufs gehört nicht zum neuen Snapshot; so legt das `Write` des Skills die Datei immer neu an.
+  function saveSnapshot(snapshot) {
+    const written = writeSnapshot(snapshot);
+    fs.rmSync(draftPath(snapshot.session), { force: true });
+    return `\nSnapshot: ${written}\nEntwurf: ${draftPath(snapshot.session)}\n`;
   }
   ```
   (e) `run` wird ersetzt durch:
   ```js
+  // `transcriptEntries` ist der Stand des Hauptprotokolls jetzt, vor der ersten Modell-Anfrage der Retrospektive:
+  // Ihr späteres `Write` des Entwurfs gehört damit nie zum Korpus der Zitat-Prüfung.
   function run(options) {
     const { file, warning } = resolveSession(options);
     if (!fs.existsSync(file)) throw new FactsError(`Session-Datei nicht gefunden: ${file}`);
-    const range = rangeOf(readEntries(file), options);
+    const entries = readEntries(file);
+    const range = rangeOf(entries, options);
     const session = mcpUsage.loadSession(file, { entries: range.entries, keepSubagent: range.keepSubagent });
     const cwd = projectOf(options, session);
     if (options.cwd) session.cwd = options.cwd;
@@ -2397,20 +2581,19 @@
     const mcp = mcpUsage.render(session, { expect, transcript: file });
     const allFacts = [facts, ...agents.map((agent) => agent.facts)];
     const measured = measuredOf(facts, allFacts, mcpUsage.measure(session, { expect }));
-    let output = `${render(file, facts, agents, range.labels)}\n${savings(allFacts)}\n${mcp}\n## Hinweise zu den Signalen\n${signalHints(measured).join('\n')}\n`;
-    if (options.snapshot) {
-      const id = options.session ?? path.basename(file, '.jsonl');
-      const written = writeSnapshot(snapshotOf({ id, options, file, cwd, range, facts, agents, mcp, allFacts, expect }));
-      // Ein Entwurf eines abgebrochenen früheren Laufs gehört nicht zum neuen Snapshot; so legt das `Write` des Skills die Datei immer neu an.
-      fs.rmSync(draftPath(id), { force: true });
-      output += `\nSnapshot: ${written}\nEntwurf: ${draftPath(id)}\n`;
-    }
-    return { output, warning };
+    const output = `${render(file, facts, agents, range.labels)}\n${savings(allFacts)}\n${mcp}\n## Hinweise zu den Signalen\n${signalHints(measured).join('\n')}\n`;
+    if (!options.snapshot) return { output, warning };
+    const snapshot = buildSnapshot({
+      id: options.session ?? path.basename(file, '.jsonl'), transcript: file, ownTranscript: ownTranscriptOf(options, file),
+      transcriptEntries: entries.at(-1)?.entryNo ?? 0, cwd, range, facts,
+      headline: headlineOf(facts, agents), numbers: numbersOf(facts, agents, allFacts), mcp, expect,
+    });
+    return { output: `${output}${saveSnapshot(snapshot)}`, warning };
   }
   ```
   (f) `module.exports` wird zu:
   ```js
-  module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, run, parseArgs, resolveSession };
+  module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, run, parseArgs, resolveSession, projectOf };
   ```
 - [ ] **Schritt 4: Test grün laufen lassen**
   Befehl: `node --test plugins/forge/tests/session-facts.test.js plugins/forge/tests/retro-snapshot.test.js plugins/forge/tests/retro-signals.test.js plugins/forge/tests/retro-measures.test.js plugins/forge/tests/transcript.test.js` — erwartet: PASS
@@ -2425,12 +2608,16 @@
 
 **Dateien:**
 - Create: `plugins/forge/scripts/lib/retro-draft.js`
+- Create: `plugins/forge/scripts/lib/retro-corpus.js`
+- Create: `plugins/forge/scripts/lib/regexp.js`
 - Create: `plugins/forge/tests/lib/retro-draft-fixture.js`
 - Test: `plugins/forge/tests/retro-draft.test.js`
+- Test: `plugins/forge/tests/retro-corpus.test.js`
+- Test: `plugins/forge/tests/regexp.test.js`
 
 **Interfaces:**
-- Consumes: `sameServer(used, wanted)` aus `plugins/forge/scripts/mcp-usage.js` (bestehend); Snapshot-Felder `expected`, `projectFiles` aus Task 11.
-- Produces: `lib/retro-draft.js`: `SECTIONS: string[]`; `parseDraft(text): { lines: string[], title: string|null, head: string[], sections: Map<string, string[]> }`; `findingsOf(sectionLines: string[] = []): { title: string, fields: Map<string, string> }[]`; `relevanceLines(lines: string[]): { mcp: string, value: string }[]`; `violations(text, { expected = [], projectFiles = [] }, corpus: string): string[]`; `newTargets(text): { art: string, name: string, finding: string }[]`; `corpusOf(entries): string`. · `tests/lib/retro-draft-fixture.js`: `VALID: string` (regelkonformer Entwurf), `SNAPSHOT: object`, `CORPUS: string`.
+- Consumes: `sameServer(used, wanted)` aus `plugins/forge/scripts/mcp-usage.js` (bestehend); Snapshot-Felder `expected`, `projectFiles`, `transcriptEntries`, `labels` aus Task 11.
+- Produces: `lib/retro-draft.js` (Format-Parser und Prüfregeln, kein Protokoll-Leser): `SECTIONS: string[]`; `parseDraft(text): { lines: string[], title: string|null, head: string[], sections: Map<string, string[]> }`; `findingsOf(sectionLines: string[] = []): { title: string, fields: Map<string, string> }[]`; `relevanceLines(lines: string[]): { mcp: string, value: string }[]`; `parseTarget(text: string|undefined): { art: string, name: string, isNew: boolean, open: boolean } | null` (die einzige Grammatik der Ziel-Zeile: „<Art> · `<Name>`“, „<Art> · neu: <Arbeitsname>“, „Ziel offen“; die Alt-Form „<Art> · `neu:` …“ und freier Text ergeben `null`); `violations(text, { expected = [], projectFiles = [] }, corpus: string): string[]`; `newTargets(text): { art: string, name: string, finding: string }[]`. · `lib/retro-corpus.js` (Zitat-Korpus der Prüfung, eine Verantwortung; `lib/transcript.js` bleibt beim Lesen des Protokolls): `corpusOf(entries): string` (Rohtext aus Nachrichten, Tool-Eingaben, Tool-Ergebnissen, Harness-Anhängen und `system`-Einträgen; `stringsOf`, `plainText` und `entryText` sind nicht exportiert, `plainText` liest anders als `textOf` auch `tool_use`-Eingaben). · `lib/regexp.js`: `escapeRegExp(text: string): string` (gemeinsame Funktion, Inhalt wie `lib/document-units.js:19`; `lib/retro-draft.js` importiert sie statt einer privaten Kopie; die bestehenden Kopien in `plan-anchors.js`, `forge-config.js` und `lib/document-units.js` bleiben in diesem Plan unangetastet und werden bei Gelegenheit umgestellt). · `tests/lib/retro-draft-fixture.js`: `VALID: string` (regelkonformer Entwurf), `SNAPSHOT: object` (mit `transcriptEntries: 1` und `labels: []`), `CORPUS: string`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   `plugins/forge/tests/lib/retro-draft-fixture.js` neu:
@@ -2484,7 +2671,7 @@
   ].join('\n');
 
   const SNAPSHOT = {
-    session: 's1', transcript: '', ownTranscript: null, cwd: '', cut: null, branch: 'feature/lean-retro', specs: [],
+    session: 's1', transcript: '', ownTranscript: null, transcriptEntries: 1, cwd: '', cut: null, labels: [], branch: 'feature/lean-retro', specs: [],
     expected: ['dev-mcp'], model: 'claude-x', skills: ['dv-forge:plan-writing'],
     headline: 'Dauer 10 min, Eingaben des Menschen 2, Tokens neu 2k Hauptsession und 1k Subagents',
     numbers: '- Dauer: 10 min · Modelle: claude-x', mcp: 'Quelle: `s1.jsonl`', projectFiles: ['Shift.ts'],
@@ -2500,7 +2687,7 @@
 
   const test = require('node:test');
   const assert = require('node:assert/strict');
-  const { violations, newTargets, corpusOf } = require('../scripts/lib/retro-draft');
+  const { violations, newTargets, parseTarget } = require('../scripts/lib/retro-draft');
   const { VALID, SNAPSHOT, CORPUS } = require('./lib/retro-draft-fixture');
 
   function check(text, snapshot = SNAPSHOT) {
@@ -2582,6 +2769,28 @@
     assert.deepEqual(newTargets(VALID), [{ art: 'Skript', name: 'protokoll-ausschnitt', finding: 'Zeitleiste statt Textsuche' }]);
   });
 
+  test('parseTarget_ThreeForms_ArtNameAndKind', () => {
+    const parsed = ['Skill · `dv-forge:plan-writing` (schreibt Pläne)', 'Skript · neu: protokoll-ausschnitt (klein)', 'Ziel offen'].map(parseTarget);
+
+    assert.deepEqual(parsed, [
+      { art: 'Skill', name: 'dv-forge:plan-writing', isNew: false, open: false },
+      { art: 'Skript', name: 'protokoll-ausschnitt', isNew: true, open: false },
+      { art: '', name: '', isNew: false, open: true },
+    ]);
+  });
+
+  test('parseTarget_LegacyNewFormOrFreeText_Null', () => {
+    assert.deepEqual(['Skript · `neu:` Skript · wait-results', 'ein Skill für Pläne', undefined].map(parseTarget), [null, null, null]);
+  });
+  ```
+  `plugins/forge/tests/retro-corpus.test.js` neu:
+  ```js
+  'use strict';
+
+  const test = require('node:test');
+  const assert = require('node:assert/strict');
+  const { corpusOf } = require('../scripts/lib/retro-corpus');
+
   test('corpusOf_TextResultsAndInputs_JoinedAsPlainText', () => {
     const entries = [
       { type: 'user', message: { content: 'Hallo' } },
@@ -2604,9 +2813,40 @@
     assert.deepEqual(['git commit -m "fix: x"', 'Hook sagt: Tests zuerst', 'Kontext wird knapp'].map((text) => corpus.includes(text)), [true, true, true]);
   });
   ```
+  `plugins/forge/tests/regexp.test.js` neu:
+  ```js
+  'use strict';
+
+  const test = require('node:test');
+  const assert = require('node:assert/strict');
+  const { escapeRegExp } = require('../scripts/lib/regexp');
+
+  test('escapeRegExp_SpecialCharacters_MatchedLiterally', () => {
+    const name = 'a.b*(c)[d]+?^$|{e}\\f';
+
+    assert.equal(new RegExp(`^${escapeRegExp(name)}$`).test(name), true);
+  });
+
+  test('escapeRegExp_Dot_DoesNotMatchOtherCharacter', () => {
+    assert.equal(new RegExp(`^${escapeRegExp('Shift.ts')}$`).test('Shift_ts'), false);
+  });
+  ```
 - [ ] **Schritt 2: Test rot laufen lassen**
-  Befehl: `node --test plugins/forge/tests/retro-draft.test.js` — erwartet: FAIL `violations_ValidDraft_None` (Modul fehlt)
+  Befehl: `node --test plugins/forge/tests/retro-draft.test.js plugins/forge/tests/retro-corpus.test.js plugins/forge/tests/regexp.test.js` — erwartet: FAIL `violations_ValidDraft_None` (Modul `../scripts/lib/retro-draft` fehlt), FAIL `corpusOf_TextResultsAndInputs_JoinedAsPlainText` (Modul `../scripts/lib/retro-corpus` fehlt) und FAIL `escapeRegExp_SpecialCharacters_MatchedLiterally` (Modul `../scripts/lib/regexp` fehlt)
 - [ ] **Schritt 3: Minimal implementieren**
+  `plugins/forge/scripts/lib/regexp.js` neu:
+  ```js
+  'use strict';
+
+  // Gemeinsame Hilfe für reguläre Ausdrücke aus freiem Text.
+
+  // Maskiert alle Sonderzeichen, damit `text` in einem RegExp wörtlich passt.
+  function escapeRegExp(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  module.exports = { escapeRegExp };
+  ```
   `plugins/forge/scripts/lib/retro-draft.js` neu:
   ```js
   'use strict';
@@ -2614,6 +2854,7 @@
   // Liest den Entwurf eines Erfahrungsberichts und prüft ihn gegen das Berichtsformat.
 
   const { sameServer } = require('../mcp-usage');
+  const { escapeRegExp } = require('./regexp');
 
   const SECTIONS = ['Positiv', 'Reibung', 'Sparpotenzial', 'Neue Ideen', 'Kleinigkeiten'];
   const HEAD_FIELDS = ['**Lauf:**', '**Ergebnis:**', '**Relevanz:**'];
@@ -2623,8 +2864,10 @@
   };
   const AMOUNT = { Reibung: 'Kosten', Sparpotenzial: 'Ersparnis' };
   const ART = '(Plugin|Skill|Agent|CLAUDE\\.md|Hook|Skript|MCP)';
-  const TARGET_FORMS = [new RegExp(`^${ART} · \`[^\`]+\``), new RegExp(`^${ART} · neu: \\S`), /^Ziel offen\b/];
+  const NAMED_TARGET = new RegExp(`^${ART} · \`([^\`]+)\``);
   const NEW_TARGET = new RegExp(`^${ART} · neu: (.+?)\\s*(?:[·(]|$)`);
+  const OPEN_TARGET = /^Ziel offen\b/;
+  const LEGACY_NEW_NAME = 'neu:';
   const FINDING = /^\d+\.\s+\*\*(.+?)\*\*/;
   const FIELD = /^\s+\*([^*]+):\*\s?(.*)$/;
   const PROJECT_FIELD = /^\s*\*Im Projekt:\*/;
@@ -2673,11 +2916,22 @@
     return found;
   }
 
+  // Die einzige Grammatik der Ziel-Zeile. Die Alt-Form „<Art> · `neu:` …“ lässt die Prüfung nicht mehr zu: null wie freier Text.
+  function parseTarget(text) {
+    const value = String(text ?? '').trim();
+    if (OPEN_TARGET.test(value)) return { art: '', name: '', isNew: false, open: true };
+    const fresh = value.match(NEW_TARGET);
+    if (fresh) return { art: fresh[1], name: fresh[2].trim(), isNew: true, open: false };
+    const named = value.match(NAMED_TARGET);
+    if (!named || named[2] === LEGACY_NEW_NAME) return null;
+    return { art: named[1], name: named[2], isNew: false, open: false };
+  }
+
   function findingViolations(section, number, finding) {
     const where = `${section} ${number} „${finding.title}“`;
     const found = FIELDS[section].filter((field) => !finding.fields.has(field)).map((field) => `${where}: Pflichtfeld fehlt: *${field}:*`);
     const target = finding.fields.get('Ziel');
-    if (target !== undefined && !TARGET_FORMS.some((form) => form.test(target))) {
+    if (target !== undefined && !parseTarget(target)) {
       found.push(`${where}: Ziel-Zeile folgt keiner der Formen „<Art> · \`<Name>\`“, „<Art> · neu: <Arbeitsname>“, „Ziel offen“`);
     }
     const amount = finding.fields.get(AMOUNT[section]);
@@ -2699,10 +2953,6 @@
     const named = relevanceLines(draft.head).map((line) => line.mcp);
     return expected.filter((name) => !named.some((line) => sameServer(line, name) || sameServer(name, line)))
       .map((name) => `Relevanz-Zeile fehlt für erwartetes MCP: ${name}`);
-  }
-
-  function escapeRegExp(text) {
-    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   function projectNameViolations(lines, projectFiles) {
@@ -2745,10 +2995,18 @@
   function newTargets(text) {
     const draft = parseDraft(text);
     return Object.keys(FIELDS).flatMap((section) => findingsOf(draft.sections.get(section)).flatMap((finding) => {
-      const match = (finding.fields.get('Ziel') ?? '').match(NEW_TARGET);
-      return match ? [{ art: match[1], name: match[2].trim(), finding: finding.title }] : [];
+      const target = parseTarget(finding.fields.get('Ziel'));
+      return target?.isNew ? [{ art: target.art, name: target.name, finding: finding.title }] : [];
     }));
   }
+
+  module.exports = { SECTIONS, parseDraft, findingsOf, relevanceLines, parseTarget, violations, newTargets };
+  ```
+  `plugins/forge/scripts/lib/retro-corpus.js` neu:
+  ```js
+  'use strict';
+
+  // Der Text eines Protokolls, gegen den die Zitate eines Entwurfs geprüft werden.
 
   // Alle Texte eines Werts als Rohtext, ohne JSON-Maskierung von Anführungszeichen, Zeilenumbrüchen und Backslashes.
   function stringsOf(value) {
@@ -2758,6 +3016,7 @@
     return [];
   }
 
+  // Wie `textOf`, liest aber auch Tool-Eingaben und verschachtelte Tool-Ergebnisse.
   function plainText(content) {
     if (typeof content === 'string') return content;
     if (!Array.isArray(content)) return '';
@@ -2776,16 +3035,17 @@
     return plainText(entry.message?.content);
   }
 
+  // Der ganze Text eines Protokolls, gegen den die Zitate eines Entwurfs geprüft werden.
   function corpusOf(entries) {
     return entries.map(entryText).filter(Boolean).join('\n');
   }
 
-  module.exports = { SECTIONS, parseDraft, findingsOf, relevanceLines, violations, newTargets, corpusOf };
+  module.exports = { corpusOf };
   ```
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/forge/tests/retro-draft.test.js` — erwartet: PASS
+  Befehl: `node --test plugins/forge/tests/retro-draft.test.js plugins/forge/tests/retro-corpus.test.js plugins/forge/tests/regexp.test.js plugins/forge/tests/transcript.test.js` — erwartet: PASS
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/retro-draft.js plugins/forge/tests/lib/retro-draft-fixture.js plugins/forge/tests/retro-draft.test.js` · `git commit -m "feat(forge): check a retrospective draft against the report format"`
+  `git add plugins/forge/scripts/lib/retro-draft.js plugins/forge/scripts/lib/retro-corpus.js plugins/forge/scripts/lib/regexp.js plugins/forge/tests/lib/retro-draft-fixture.js plugins/forge/tests/retro-draft.test.js plugins/forge/tests/retro-corpus.test.js plugins/forge/tests/regexp.test.js` · `git commit -m "feat(forge): check a retrospective draft against the report format"`
 
 ---
 
@@ -2963,13 +3223,18 @@
 
 **Dateien:**
 - Create: `plugins/forge/scripts/retro-report.js`
-- Modify: `plugins/forge/scripts/mcp-usage.js` · `module.exports = { parseArgs, findTranscript, loadSession, summarize, measure, render, sameServer };`
-- Modify: `plugins/forge/scripts/session-facts.js` · `function subagentRows`
+- Create: `plugins/forge/scripts/lib/session-files.js`
+- Create: `plugins/forge/scripts/lib/retro-secrets.js`
+- Modify: `plugins/forge/scripts/mcp-usage.js` · `const os = require('node:os');`, `const { readEntries } = require('./lib/transcript');`, `function configDir`, `function findTranscript`, `function subagentFiles`, `const transcript = args.transcript ?? findTranscript(args.session);`
+- Modify: `plugins/forge/scripts/session-facts.js` · `function subagentRows`, `const { rangeOf } = require('./lib/retro-range');`
 - Test: `plugins/forge/tests/retro-report.test.js`
+- Test: `plugins/forge/tests/session-files.test.js`
+- Test: `plugins/forge/tests/retro-secrets.test.js`
+- Test: `plugins/forge/tests/session-facts.test.js` · `cli_File_RendersFactsAndSubagents`
 
 **Interfaces:**
-- Consumes: aus Task 11 `draftPath`, `readSnapshot`, `snapshotPath`; Task 12 `violations`, `corpusOf`, `VALID`, `SNAPSHOT`; Task 13 `compose`; Task 1 `RetroError`, `readEntries`, Fixtures `human`, `writeSession`; `subagentFiles(transcript): string[]` aus `mcp-usage.js` (bestehend, bisher nicht exportiert; `mcp-usage.js` läuft `main` nur unter `require.main === module`).
-- Produces: `retro-report.js` CLI `--format` (gibt `skills/prozess-retrospektive/references/report-format.md` unverändert aus) und `--session <id> --topic <thema> [--cwd <projektordner>]`; Exit 2 bei falschem Aufruf oder Thema, Exit 1 bei fehlendem oder unlesbarem Snapshot, fehlendem Entwurf, Verstößen oder nicht schreibbarem Berichtsordner. Exporte `parseArgs(args): object` (wirft `UsageError`), `localDate(now = new Date()): string`, `removeLeftovers(files: string[]): string[]` (löscht jede Datei, liefert je gescheitertem Löschen eine Zeile `Warnung: <pfad> nicht gelöscht (…)`, wirft nie), `build(options): { file: string, cwd: string, text: string, snapshot: object, warnings: string[] }`. Scheitert nach dem Schreiben des Berichts das Löschen von Entwurf oder Snapshot, endet der Aufruf trotzdem mit Exit 0, nennt den Bericht und schreibt die Warnungen auf stderr. Zitate werden gegen das Protokoll der Hauptsession und ihrer Subagents geprüft; fehlt das Protokoll, Exit 1 mit `Protokoll fehlt: <pfad>; …` und ohne Berichtsdatei. · `mcp-usage.js` exportiert zusätzlich `subagentFiles`; `retro-report.js` und `subagentRows` in `session-facts.js` finden die Subagent-Protokolle nur noch über diese Funktion, der Ordneraufbau `<protokoll>/subagents/*.jsonl` steht damit an einer Stelle.
+- Consumes: aus Task 11 `draftPath`, `readSnapshot`, `snapshotPath`, Snapshot-Feld `transcriptEntries`; Task 12 `violations`, `VALID`, `SNAPSHOT`, `corpusOf` in `lib/retro-corpus.js` und `escapeRegExp` in `lib/regexp.js`; Task 13 `compose`; Task 1 `RetroError`, `readEntries`, Fixtures `human`, `request`, `call`, `writeSession`; `findTranscript(sessionId, projectsDir)`, `configDir()` und `subagentFiles(transcript): string[]` aus `mcp-usage.js` (bestehend, `mcp-usage.js:37`, `:41`, `:71`; ziehen hier nach `lib/session-files.js` um).
+- Produces: `retro-report.js` CLI `--format` (gibt `skills/prozess-retrospektive/references/report-format.md` unverändert aus) und `--session <id> --topic <thema> [--cwd <projektordner>]`; Exit 2 bei falschem Aufruf oder Thema, Exit 1 bei fehlendem oder unlesbarem Snapshot, fehlendem Entwurf, Verstößen, nicht schreibbarem Berichtsordner oder fehlendem Projektordner. Ohne `--cwd` ist der Projektordner das `cwd` des Snapshots (Task 8 `projectOf`); existiert er nicht, etwa weil das Protokoll von einer anderen Maschine oder aus einem gelöschten Worktree stammt, endet der Aufruf mit Exit 1, `Projektordner fehlt: <cwd>; das Protokoll stammt aus einem anderen Projekt oder einer anderen Maschine, mit --cwd <projektordner> angeben` und ohne angelegte Ordner. Exporte `parseArgs(args): object` (wirft `UsageError`), `localDate(now = new Date()): string`, `removeLeftovers(files: string[]): string[]` (löscht jede Datei, liefert je gescheitertem Löschen eine Zeile `Warnung: <pfad> nicht gelöscht (…)`, wirft nie), `build(options): { file: string, cwd: string, text: string, snapshot: object, warnings: string[] }`. Scheitert nach dem Schreiben des Berichts das Löschen von Entwurf oder Snapshot, endet der Aufruf trotzdem mit Exit 0, nennt den Bericht und schreibt die Warnungen auf stderr. Zitate werden gegen das Protokoll der Hauptsession bis Eintrag `transcriptEntries` des Snapshots und gegen die ganzen Protokolle ihrer Subagents geprüft, sodass das spätere `Write` des Entwurfs (oder ein Bash-Heredoc) nie als Beleg zählt; fehlt das Protokoll, Exit 1 mit `Protokoll fehlt: <pfad>; …` und ohne Berichtsdatei. Vor dem Schreiben prüft `build` den fertigen Berichtstext mit `secretViolations`; jeder Treffer steht als eigene Zeile `- Geheimnis im Bericht: <art> in Zeile <n>: <zeile mit *** statt des Werts>` unter `Prüfung: <n> Verstöße, keine Berichtsdatei geschrieben`, der Wert selbst erscheint nie in der Meldung, Exit 1, keine Berichtsdatei, Entwurf und Snapshot bleiben. Die Zeile `Quelle:` der MCP-Nutzung nennt im Bericht nur den Dateinamen des Protokolls, nie den absoluten Pfad mit dem Benutzerordner; Pfade unter dem Projektordner des Snapshots (`snapshot.cwd`) stehen unter Zahlen relativ zu ihm, etwa in „Größte Tool-Ergebnisse“ und „Mehrfach gelesene Dateien“. Pfade außerhalb des Projektordners (etwa unter `~/.claude`) bleiben unverändert. · `lib/retro-secrets.js` (was ein committeter Bericht nicht tragen darf, eine Verantwortung): `secretViolations(text: string): string[]` erkennt `password`, `passwort`, `passwd`, `secret`, `token`, `api_key`/`api-key`/`apikey`, auch als Endung eines Namens (`API_TOKEN`, `DB_PASSWORD`, `NPM_TOKEN`, `CLIENT_SECRET`), mit `:` oder `=` und einem Wert ab 8 Zeichen, `Bearer <wert>`, Zugangsdaten in URLs (`://user:pass@`), AWS-Schlüssel (`AKIA…`) und GitHub-Tokens (`ghp_…`, `gho_…`, `ghu_…`, `ghs_…`, `ghr_…`). Bekannte Grenze: Tokens ohne Schlüsselwort und ohne bekanntes Präfix (etwa Azure-DevOps-PATs als nackter Wert) erkennt die Prüfung nicht, ein Muster ohne Präfix träfe beliebige lange Zeichenfolgen wie Hashes und Kennungen. `withFileNameSource(mcp: string): string` kürzt den Pfad in `Quelle: \`…\`` auf den Dateinamen (Trenner `/` und `\`); `relativeToProject(text: string, cwd: string|undefined): string` entfernt `<cwd>` samt folgendem Trenner vor jedem Pfad (Trenner `/` und `\` beliebig gemischt, bei einem Laufwerksbuchstaben ohne Groß-/Kleinschreibung), ohne `cwd` oder bei leerem Ordnernamen bleibt der Text gleich. · `lib/session-files.js` (Ortung der Protokolldateien, eine Verantwortung): `findTranscript(sessionId: string, projectsDir = path.join(configDir(), 'projects')): string` (wirft `RetroError`, wenn keine Datei gefunden), `subagentFiles(transcript: string): string[]`; `configDir` bleibt intern. `mcp-usage.js` importiert beide von dort und exportiert `findTranscript` unverändert weiter, `module.exports` bleibt gleich, `mcp-usage.test.js` und `session-facts.js` (`sessionById`) brechen nicht; `main` wandelt den `RetroError` aus `findTranscript` in seinen `UsageError`, Meldung und Exit 1 bleiben. `retro-report.js` und `subagentRows` in `session-facts.js` finden die Subagent-Protokolle nur noch über `lib/session-files.js`, der Ordneraufbau `<protokoll>/subagents/*.jsonl` steht damit an einer Stelle. · `session-facts.js`: `readMeta(metaFile: string): object` (intern) liest eine `.meta.json` und gibt bei fehlender, leerer oder halb geschriebener Datei `{}` zurück; die Zeile fällt dann auf `description = basename`, `type = '?'` und das Modell aus den Fakten zurück.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   `plugins/forge/tests/retro-report.test.js` neu:
@@ -2983,7 +3248,7 @@
   const path = require('node:path');
   const { spawnSync } = require('node:child_process');
   const { localDate, removeLeftovers } = require('../scripts/retro-report');
-  const { human, writeSession } = require('./lib/retro-session');
+  const { human, request, call, writeSession } = require('./lib/retro-session');
   const { VALID, SNAPSHOT } = require('./lib/retro-draft-fixture');
 
   const SCRIPT = path.join(__dirname, '..', 'scripts', 'retro-report.js');
@@ -3063,6 +3328,29 @@
     assert.equal(fs.existsSync(wishes(env)), false);
   });
 
+  test('cli_SnapshotWithoutEntryCount_NoReportAndExitOne', () => {
+    const env = setup({ snapshot: { transcriptEntries: null } });
+
+    const result = report(env, '--session', 's1', '--topic', 'planung');
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Snapshot unlesbar: .*transcriptEntries fehlt/);
+    assert.equal(fs.existsSync(wishes(env)), false);
+  });
+
+  test('cli_QuoteOnlyInDraftWriteAfterSnapshot_ReportedAsNotInProtocol', () => {
+    const draft = VALID.replace('Zitat: „Suche einmal freigeben“', 'Zitat: „Das hat niemand gesagt“');
+    const env = setup({ draft });
+    const write = request('r9', '10:05', [call('w1', 'Write', { file_path: path.join(env.dir, 's1.entwurf.md'), content: draft })]);
+    fs.appendFileSync(env.transcript, `${JSON.stringify(write)}\n`);
+
+    const result = report(env, '--session', 's1', '--topic', 'planung');
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Zitat steht nicht im Protokoll: „Das hat niemand gesagt“/);
+    assert.equal(fs.existsSync(wishes(env)), false);
+  });
+
   test('cli_DraftWithViolations_ListsEachAndWritesNothing', () => {
     const draft = VALID.replace('## Kleinigkeiten\n', '').replace('*Ziel:* Skill · `dv-forge:plan-writing` (schreibt Pläne)', '*Ziel:* ein Skill');
     const env = setup({ draft });
@@ -3122,6 +3410,54 @@
     assert.equal(fs.existsSync(wishes(env)), false);
   });
 
+  test('cli_SnapshotCwdMissing_NamesCwdFlagAndWritesNothing', () => {
+    const missing = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'retro-gone-')), 'worktree');
+    const env = setup({ snapshot: { cwd: missing } });
+
+    const result = report(env, '--session', 's1', '--topic', 'planung');
+
+    assert.equal(result.status, 1);
+    assert.ok(result.stderr.includes(`Projektordner fehlt: ${missing}; das Protokoll stammt aus einem anderen Projekt oder einer anderen Maschine, mit --cwd <projektordner> angeben`));
+    assert.equal(fs.existsSync(missing), false);
+  });
+
+  test('cli_TokenInCommandList_ReportedAndNothingWritten', () => {
+    const numbers = '- Dauer: 10 min · Modelle: claude-x\n\n**Wiederkehrende Shell-Befehle:**\n- `curl -H "Authorization: Bearer abcdef1234567890" https://example.test` (3×)';
+    const env = setup({ snapshot: { numbers } });
+
+    const result = report(env, '--session', 's1', '--topic', 'planung');
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Prüfung: 1 Verstöße, keine Berichtsdatei geschrieben\n- Geheimnis im Bericht: Bearer-Token in Zeile \d+: .*Authorization: \*\*\*/);
+    assert.equal(result.stderr.includes('abcdef1234567890'), false);
+    assert.equal(fs.existsSync(wishes(env)), false);
+  });
+
+  test('cli_SourcePath_WrittenWithoutUserFolder', () => {
+    const mcp = 'Quelle: `C:\\Users\\max.muster\\.claude\\projects\\p\\s1.jsonl` · Hauptagent + 0 SubAgent(s) · 2 Tool-Aufrufe, davon 0 MCP';
+    const env = setup({ snapshot: { mcp } });
+
+    const result = report(env, '--session', 's1', '--topic', 'planung');
+
+    assert.equal(result.status, 0, result.stderr);
+    const text = fs.readFileSync(path.join(wishes(env), `${localDate()}-planung.md`), 'utf8');
+    assert.ok(text.includes('Quelle: `s1.jsonl` · Hauptagent + 0 SubAgent(s)'));
+    assert.equal(text.includes('max.muster'), false);
+  });
+
+  test('cli_ProjectPathsInNumbers_WrittenRelative', () => {
+    const env = setup();
+    const numbers = `- Dauer: 10 min · Modelle: claude-x\n\n**Mehrfach gelesene Dateien:**\n- 3× ${path.join(env.project, 'src', 'Shift.ts')}`;
+    fs.writeFileSync(path.join(env.dir, 's1.snapshot.json'), JSON.stringify({ ...SNAPSHOT, transcript: env.transcript, ownTranscript: env.transcript, cwd: env.project, numbers }));
+
+    const result = report(env, '--session', 's1', '--topic', 'planung');
+
+    assert.equal(result.status, 0, result.stderr);
+    const text = fs.readFileSync(path.join(wishes(env), `${localDate()}-planung.md`), 'utf8');
+    assert.ok(text.includes(`- 3× ${path.join('src', 'Shift.ts')}`));
+    assert.equal(text.includes(env.project), false);
+  });
+
   test('removeLeftovers_UndeletablePath_ReturnsWarningInsteadOfThrowing', () => {
     const blocked = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-blocked-'));
 
@@ -3131,8 +3467,99 @@
     assert.ok(warnings[0].startsWith(`Warnung: ${blocked} nicht gelöscht`));
   });
   ```
+  `plugins/forge/tests/session-files.test.js` neu:
+  ```js
+  'use strict';
+
+  const test = require('node:test');
+  const assert = require('node:assert/strict');
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { findTranscript, subagentFiles } = require('../scripts/lib/session-files');
+  const { RetroError } = require('../scripts/lib/transcript');
+
+  test('subagentFiles_SubagentFolder_ListsOnlyJsonl', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-files-'));
+    const transcript = path.join(dir, 's1.jsonl');
+    const agents = path.join(dir, 's1', 'subagents');
+    fs.mkdirSync(agents, { recursive: true });
+    fs.writeFileSync(path.join(agents, 'agent-a.jsonl'), '');
+    fs.writeFileSync(path.join(agents, 'agent-a.meta.json'), '{}');
+
+    assert.deepEqual(subagentFiles(transcript), [path.join(agents, 'agent-a.jsonl')]);
+  });
+
+  test('subagentFiles_NoSubagentFolder_Empty', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-files-'));
+
+    assert.deepEqual(subagentFiles(path.join(dir, 's1.jsonl')), []);
+  });
+
+  test('findTranscript_UnknownSession_ThrowsRetroErrorWithFolder', () => {
+    const projects = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-projects-'));
+
+    assert.throws(() => findTranscript('gibt-es-nicht', projects), (error) => error instanceof RetroError
+      && error.message.includes(`Transkript zur Session gibt-es-nicht nicht gefunden unter ${projects}`));
+  });
+  ```
+  `plugins/forge/tests/retro-secrets.test.js` neu:
+  ```js
+  'use strict';
+
+  const test = require('node:test');
+  const assert = require('node:assert/strict');
+  const { secretViolations, withFileNameSource, relativeToProject } = require('../scripts/lib/retro-secrets');
+
+  test('secretViolations_KeyAsEndOfVariableName_ReportedAndMasked', () => {
+    for (const assignment of ['API_TOKEN=abcdefgh1234', 'DB_PASSWORD=geheim-12345', 'NPM_TOKEN=npm_abcdefgh', 'CLIENT_SECRET=s3cr3t-wert-1']) {
+      const found = secretViolations(`- 2× ${assignment} npm publish`);
+
+      assert.deepEqual(found, ['Geheimnis im Bericht: Schlüssel mit Wert in Zeile 1: - 2× *** npm publish'], assignment);
+    }
+  });
+
+  test('secretViolations_CountsAndShortValues_None', () => {
+    assert.deepEqual(secretViolations('- Tokens: 1200000 · Token: nein\n- Tokens neu 2k Hauptsession'), []);
+  });
+
+  test('withFileNameSource_AbsolutePath_OnlyFileName', () => {
+    assert.equal(withFileNameSource('Quelle: `C:\\Users\\max\\.claude\\projects\\p\\s1.jsonl` · 2 Tool-Aufrufe'), 'Quelle: `s1.jsonl` · 2 Tool-Aufrufe');
+  });
+
+  test('relativeToProject_WindowsProject_RelativeInBothSeparatorsAndOthersKept', () => {
+    const text = '- 3× C:\\Users\\max\\repo\\src\\Shift.ts\n- 2 Tokens · Read c:/users/max/repo/docs/a.md\n- 1× C:\\Users\\max\\repo2\\b.md';
+
+    const result = relativeToProject(text, 'C:\\Users\\max\\repo');
+
+    assert.equal(result, '- 3× src\\Shift.ts\n- 2 Tokens · Read docs/a.md\n- 1× C:\\Users\\max\\repo2\\b.md');
+  });
+
+  test('relativeToProject_PosixProject_CaseSensitive', () => {
+    assert.equal(relativeToProject('- 2× /home/max/repo/a.md und /home/max/Repo/b.md', '/home/max/repo/'), '- 2× a.md und /home/max/Repo/b.md');
+  });
+
+  test('relativeToProject_NoOrRootFolder_TextUnchanged', () => {
+    assert.equal(relativeToProject('- 1× /a/b.md', undefined), '- 1× /a/b.md');
+    assert.equal(relativeToProject('- 1× /a/b.md', '/'), '- 1× /a/b.md');
+  });
+  ```
+  In `plugins/forge/tests/session-facts.test.js` direkt nach `cli_File_RendersFactsAndSubagents` einfügen:
+  ```js
+  test('cli_BrokenSubagentMeta_RowFallsBackWithoutError', () => {
+    for (const content of ['', '{"description": "Rev']) {
+      const file = session();
+      fs.writeFileSync(path.join(path.dirname(file), 's1', 'subagents', 'agent-a.meta.json'), content);
+
+      const result = spawnSync(process.execPath, [SCRIPT, '--file', file], { encoding: 'utf8' });
+
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stdout, /\| agent-a\.jsonl \| \? \| sonnet \| /, JSON.stringify(content));
+    }
+  });
+  ```
 - [ ] **Schritt 2: Test rot laufen lassen**
-  Befehl: `node --test plugins/forge/tests/retro-report.test.js` — erwartet: FAIL `cli_Format_PrintsReportFormatUnchanged` (Skript fehlt)
+  Befehl: `node --test plugins/forge/tests/retro-report.test.js plugins/forge/tests/session-files.test.js plugins/forge/tests/retro-secrets.test.js plugins/forge/tests/session-facts.test.js` — erwartet: FAIL `cli_Format_PrintsReportFormatUnchanged` (Skript fehlt), FAIL `subagentFiles_SubagentFolder_ListsOnlyJsonl` (Modul `../scripts/lib/session-files` fehlt), FAIL `secretViolations_KeyAsEndOfVariableName_ReportedAndMasked` (Modul `../scripts/lib/retro-secrets` fehlt) und FAIL `cli_BrokenSubagentMeta_RowFallsBackWithoutError` (`SyntaxError` aus `JSON.parse`)
 - [ ] **Schritt 3: Minimal implementieren**
   `plugins/forge/scripts/retro-report.js` neu:
   ```js
@@ -3144,10 +3571,12 @@
   const fs = require('node:fs');
   const path = require('node:path');
   const { RetroError, readEntries } = require('./lib/transcript');
+  const { corpusOf } = require('./lib/retro-corpus');
   const { draftPath, readSnapshot, snapshotPath } = require('./lib/retro-files');
-  const { violations, corpusOf } = require('./lib/retro-draft');
+  const { violations } = require('./lib/retro-draft');
   const { compose } = require('./lib/retro-compose');
-  const { subagentFiles } = require('./mcp-usage.js');
+  const { secretViolations, withFileNameSource, relativeToProject } = require('./lib/retro-secrets');
+  const { subagentFiles } = require('./lib/session-files');
 
   const REPORT_FORMAT = path.join(__dirname, '..', 'skills', 'prozess-retrospektive', 'references', 'report-format.md');
   const REPORT_DIR = path.join('docs', 'wishes');
@@ -3197,21 +3626,36 @@
   }
 
   // Zitate dürfen aus der Hauptsession und aus den Protokollen ihrer Subagents stammen; den Ordner der Subagents
-  // kennt nur `subagentFiles` in mcp-usage.js. Fehlt das Protokoll, nennt der Fehler den Pfad statt jedes Zitat abzulehnen.
+  // kennt nur `subagentFiles` in lib/session-files.js. Fehlt das Protokoll, nennt der Fehler den Pfad statt jedes Zitat abzulehnen.
+  // Die Hauptsession zählt nur bis zum Stand des Snapshots: Danach schreibt die laufende Retrospektive ihren Entwurf,
+  // und dessen `Write` enthielte jedes erfundene Zitat wörtlich.
   function corpus(snapshot) {
     if (!snapshot.transcript || !fs.existsSync(snapshot.transcript)) {
       throw new RetroError(`Protokoll fehlt: ${snapshot.transcript || '(kein Pfad im Snapshot)'}; ohne Protokoll lassen sich die Zitate nicht prüfen, keine Berichtsdatei geschrieben`);
     }
-    return [snapshot.transcript, ...subagentFiles(snapshot.transcript)].map((file) => corpusOf(readEntries(file))).join('\n');
+    const main = readEntries(snapshot.transcript).filter((entry) => entry.entryNo <= snapshot.transcriptEntries);
+    const agents = subagentFiles(snapshot.transcript).map((file) => readEntries(file));
+    return [main, ...agents].map(corpusOf).join('\n');
+  }
+
+  function failOnViolations(found, hint = []) {
+    if (found.length === 0) return;
+    throw new RetroError([`Prüfung: ${found.length} Verstöße, keine Berichtsdatei geschrieben`, ...found.map((item) => `- ${item}`), ...hint].join('\n'));
   }
 
   function checkedDraft(options, snapshot) {
     const draft = draftPath(options.session);
     if (!fs.existsSync(draft)) throw new RetroError(`Entwurf fehlt: ${draft}`);
     const text = fs.readFileSync(draft, 'utf8');
-    const found = violations(text, snapshot, corpus(snapshot));
-    if (found.length > 0) throw new RetroError([`Prüfung: ${found.length} Verstöße, keine Berichtsdatei geschrieben`, ...found.map((item) => `- ${item}`)].join('\n'));
+    failOnViolations(violations(text, snapshot, corpus(snapshot)));
     return { draft, text };
+  }
+
+  // Der fertige Bericht wird committet: Ein Geheimnis aus Befehlen, Eingaben oder Fehlertexten verhindert die Berichtsdatei.
+  // Zahlen und MCP-Nutzung stammen aus dem Snapshot; steht es dort, hilft nur, es im Snapshot zu ersetzen.
+  function checkedReport(text, session) {
+    failOnViolations(secretViolations(text), [`Geheimnis im Entwurf entfernen; steht es unter Zahlen oder MCP-Nutzung, im Snapshot ${snapshotPath(session)} ersetzen und neu aufrufen`]);
+    return text;
   }
 
   // Der Bericht steht schon; scheitert das Löschen (etwa eine gesperrte Datei unter Windows), bleibt er gültig und die
@@ -3227,13 +3671,27 @@
     });
   }
 
-  // Schreibt den Bericht erst, wenn Snapshot und Entwurf da sind und der Entwurf keinen Verstoß hat; danach sind beide gelöscht.
+  // Ohne --cwd kommt der Projektordner aus dem Protokoll. Fehlt er hier, stammt das Protokoll von woanders; ein Bericht
+  // dort legte einen ganzen Ordnerbaum an beliebiger Stelle an.
+  function projectRoot(options, snapshot) {
+    if (options.cwd) return path.resolve(options.cwd);
+    const cwd = path.resolve(snapshot.cwd || process.cwd());
+    if (!fs.existsSync(cwd)) {
+      throw new RetroError(`Projektordner fehlt: ${cwd}; das Protokoll stammt aus einem anderen Projekt oder einer anderen Maschine, mit --cwd <projektordner> angeben`);
+    }
+    return cwd;
+  }
+
+  // Schreibt den Bericht erst, wenn Snapshot und Entwurf da sind, der Entwurf keinen Verstoß hat, der Projektordner existiert
+  // und der fertige Bericht kein Geheimnis enthält; danach sind beide gelöscht.
   function build(options) {
     const snapshot = readSnapshot(options.session);
     const { draft, text } = checkedDraft(options, snapshot);
     const date = localDate();
-    const cwd = path.resolve(options.cwd ?? (snapshot.cwd || process.cwd()));
-    const file = writeReport(path.join(cwd, REPORT_DIR), `${date}-${options.topic}`, compose(text, snapshot, date));
+    const cwd = projectRoot(options, snapshot);
+    const shown = { ...snapshot, numbers: relativeToProject(snapshot.numbers, snapshot.cwd), mcp: withFileNameSource(snapshot.mcp) };
+    const report = checkedReport(compose(text, shown, date), options.session);
+    const file = writeReport(path.join(cwd, REPORT_DIR), `${date}-${options.topic}`, report);
     const warnings = removeLeftovers([draft, snapshotPath(options.session)]);
     return { file, cwd, text, snapshot, warnings };
   }
@@ -3269,19 +3727,133 @@
 
   module.exports = { parseArgs, localDate, removeLeftovers, build };
   ```
-  In `plugins/forge/scripts/mcp-usage.js` wird `module.exports` zu:
+  `plugins/forge/scripts/lib/session-files.js` neu (Inhalt von `configDir`, `findTranscript` und `subagentFiles` aus `mcp-usage.js` übernommen, der Fehler als `RetroError`):
   ```js
-  module.exports = { parseArgs, findTranscript, loadSession, subagentFiles, summarize, measure, render, sameServer };
+  'use strict';
+
+  // Findet die Protokolldateien einer Session: das Protokoll über die Session-Kennung und die Protokolle ihrer Subagents.
+
+  const fs = require('node:fs');
+  const os = require('node:os');
+  const path = require('node:path');
+  const { RetroError } = require('./transcript');
+
+  function configDir() {
+    return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+  }
+
+  function findTranscript(sessionId, projectsDir = path.join(configDir(), 'projects')) {
+    const dirs = fs.existsSync(projectsDir) ? fs.readdirSync(projectsDir) : [];
+    const hit = dirs.map((dir) => path.join(projectsDir, dir, `${sessionId}.jsonl`)).find((file) => fs.existsSync(file));
+    if (!hit) throw new RetroError(`Transkript zur Session ${sessionId} nicht gefunden unter ${projectsDir}`);
+    return hit;
+  }
+
+  // Der Ordneraufbau `<protokoll>/subagents/*.jsonl` steht nur hier.
+  function subagentFiles(transcript) {
+    const dir = path.join(transcript.replace(/\.jsonl$/, ''), 'subagents');
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir).filter((name) => name.endsWith('.jsonl')).map((name) => path.join(dir, name));
+  }
+
+  module.exports = { findTranscript, subagentFiles };
   ```
-  In `plugins/forge/scripts/session-facts.js` wird `subagentRows` ersetzt durch:
+  `plugins/forge/scripts/lib/retro-secrets.js` neu:
   ```js
+  'use strict';
+
+  // Was ein committeter Bericht nicht tragen darf: Geheimnisse aus Befehlen, Eingaben und Fehlertexten
+  // und lokale Pfade samt Benutzerordner, soweit sie auf das Protokoll oder den Projektordner zeigen.
+
+  const { escapeRegExp } = require('./regexp');
+
+  // Je Art ein Muster; ein Schlüsselwort zählt erst mit `:` oder `=` und einem Wert ab 8 Zeichen, damit Wörter wie „Tokens“ oder „Token: nein“ nicht anschlagen.
+  // Das Schlüsselwort darf die Endung eines Namens sein (`API_TOKEN=…`, `DB_PASSWORD=…`), die übliche Form in Shell-Befehlen.
+  // Grenze: Ein nackter Wert ohne Schlüsselwort und ohne bekanntes Präfix (etwa ein Azure-DevOps-PAT) bleibt unerkannt;
+  // ein Muster ohne Präfix träfe jeden Hash und jede lange Kennung.
+  const SECRETS = [
+    ['Schlüssel mit Wert', /[\w-]*(?:password|passwort|passwd|secret|token|api[_-]?key)\b\s*[:=]\s*["']?[^\s"'`,;]{8,}/gi],
+    ['Bearer-Token', /\bBearer\s+[A-Za-z0-9._~+/=-]{8,}/g],
+    ['Zugangsdaten in URL', /:\/\/[^\s/:@`]+:[^\s/@`]+@/g],
+    ['AWS-Schlüssel', /\bAKIA[0-9A-Z]{16}\b/g],
+    ['GitHub-Token', /\bgh[pousr]_[A-Za-z0-9]{20,}\b/g],
+  ];
+  const MASK = '***';
+  const SOURCE = /^Quelle: `([^`]+)`/m;
+
+  function masked(line) {
+    return SECRETS.reduce((text, [, pattern]) => text.replace(pattern, MASK), line);
+  }
+
+  // Jeder Treffer einzeln, mit Zeilennummer und maskierter Zeile: Die Meldung trägt das Geheimnis nicht selbst weiter.
+  // `search` beachtet `lastIndex` der globalen Muster nicht, jede Zeile wird unabhängig geprüft.
+  function secretViolations(text) {
+    return text.split('\n').flatMap((line, index) => SECRETS
+      .filter(([, pattern]) => line.search(pattern) !== -1)
+      .map(([kind]) => `Geheimnis im Bericht: ${kind} in Zeile ${index + 1}: ${masked(line).trim()}`));
+  }
+
+  // Nur die Zeile `Quelle:` der MCP-Nutzung: Sie nennt den Dateinamen des Protokolls statt seines absoluten Pfads.
+  function withFileNameSource(mcp) {
+    return mcp.replace(SOURCE, (_, file) => `Quelle: \`${file.split(/[\\/]/).pop()}\``);
+  }
+
+  // Pfade unter dem Projektordner der Session stehen im Bericht relativ zu ihm; Tool-Eingaben mischen `/` und `\`,
+  // Windows-Pfade (mit Laufwerksbuchstaben) vergleicht es ohne Groß-/Kleinschreibung. Pfade außerhalb bleiben, wie sie sind.
+  function relativeToProject(text, cwd) {
+    const root = String(cwd ?? '').replace(/[\\/]+$/, '');
+    if (!text || !root) return text;
+    const pattern = root.split(/[\\/]/).map(escapeRegExp).join('[\\\\/]');
+    return text.replace(new RegExp(`${pattern}[\\\\/]`, /^[A-Za-z]:/.test(root) ? 'gi' : 'g'), '');
+  }
+
+  module.exports = { secretViolations, withFileNameSource, relativeToProject };
+  ```
+  In `plugins/forge/scripts/mcp-usage.js`:
+  (a) Die Zeile `const os = require('node:os');` entfällt, ebenso die Funktionen `configDir`, `findTranscript` und `subagentFiles`.
+  (b) Die Zeile `const { readEntries } = require('./lib/transcript');` wird zu:
+  ```js
+  const { readEntries, RetroError } = require('./lib/transcript');
+  const { findTranscript, subagentFiles } = require('./lib/session-files');
+  ```
+  (c) Direkt vor `main` einfügen:
+  ```js
+  // Die Ortung meldet „nicht gefunden“ als RetroError; für dieses Skript bleibt es ein Aufruffehler mit Exit 1.
+  function transcriptOf(args) {
+    if (args.transcript) return args.transcript;
+    try {
+      return findTranscript(args.session);
+    } catch (error) {
+      if (!(error instanceof RetroError)) throw error;
+      throw new UsageError(`${error.message}\n`);
+    }
+  }
+  ```
+  (d) In `main` wird `const transcript = args.transcript ?? findTranscript(args.session);` zu `const transcript = transcriptOf(args);`.
+  `module.exports` bleibt unverändert; `findTranscript` wird damit unter dem alten Namen weiter exportiert.
+  In `plugins/forge/scripts/session-facts.js`:
+  (a) Nach `const { rangeOf } = require('./lib/retro-range');` einfügen:
+  ```js
+  const { subagentFiles } = require('./lib/session-files');
+  ```
+  (b) `subagentRows` wird ersetzt durch (davor die neue Funktion `readMeta`):
+  ```js
+  // Die .meta.json eines Subagents fehlt, ist leer oder halb geschrieben, wenn die Session noch läuft oder abbrach;
+  // die Zeile fällt dann auf Dateiname, `?` und das Modell aus den Fakten zurück, statt die Fakten abzubrechen.
+  function readMeta(metaFile) {
+    try {
+      return JSON.parse(fs.readFileSync(metaFile, 'utf8')) ?? {};
+    } catch {
+      return {};
+    }
+  }
+
   function subagentRows(sessionFile, keep = () => true) {
-    return mcpUsage.subagentFiles(sessionFile).flatMap((file) => {
+    return subagentFiles(sessionFile).flatMap((file) => {
       const entries = readEntries(file);
       return keep(entries) ? [{ file, entries }] : [];
     }).map(({ file, entries }) => {
-      const metaFile = file.replace(/\.jsonl$/, '.meta.json');
-      const meta = fs.existsSync(metaFile) ? JSON.parse(fs.readFileSync(metaFile, 'utf8')) : {};
+      const meta = readMeta(file.replace(/\.jsonl$/, '.meta.json'));
       const facts = analyze(entries);
       const errors = [...facts.errors.values()].reduce((sum, list) => sum + list.length, 0);
       return {
@@ -3294,9 +3866,9 @@
   }
   ```
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/forge/tests/retro-report.test.js plugins/forge/tests/session-facts.test.js plugins/forge/tests/mcp-usage.test.js` — erwartet: PASS
+  Befehl: `node --test plugins/forge/tests/retro-report.test.js plugins/forge/tests/session-files.test.js plugins/forge/tests/retro-secrets.test.js plugins/forge/tests/session-facts.test.js plugins/forge/tests/mcp-usage.test.js` — erwartet: PASS
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/retro-report.js plugins/forge/scripts/mcp-usage.js plugins/forge/scripts/session-facts.js plugins/forge/tests/retro-report.test.js` · `git commit -m "feat(forge): retro-report prints the format and writes the checked report"`
+  `git add plugins/forge/scripts/retro-report.js plugins/forge/scripts/lib/session-files.js plugins/forge/scripts/lib/retro-secrets.js plugins/forge/scripts/mcp-usage.js plugins/forge/scripts/session-facts.js plugins/forge/tests/retro-report.test.js plugins/forge/tests/session-files.test.js plugins/forge/tests/retro-secrets.test.js plugins/forge/tests/session-facts.test.js` · `git commit -m "feat(forge): retro-report prints the format and writes the checked report"`
 
 ---
 
@@ -3309,12 +3881,16 @@
 - Create: `plugins/forge/scripts/lib/retro-format.js`
 - Modify: `plugins/forge/scripts/session-facts.js` · `const { RetroError: FactsError`, `function thousands`
 - Modify: `plugins/forge/scripts/retro-report.js` · `const { compose } = require('./lib/retro-compose');`, `main`
+- Modify: `plugins/forge/scripts/forge-config.js` · `function workitemOf`, `module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, workitemOf, branchFor, branchCandidates };`
+- Modify: `plugins/forge/scripts/work.js` · `function workitemConflict`, `const { ConfigError, readConfig, branchFor, branchCandidates, workitemOf } = require('./forge-config');`
 - Test: `plugins/forge/tests/retro-summary.test.js`
 - Test: `plugins/forge/tests/retro-report.test.js` · `cli_ValidDraft_WritesDatedReportAndDeletesDraft`
+- Test: `plugins/forge/tests/forge-config.test.js` · `branchWorkitem_PatternInBranch_ReturnsMatch`
+- Test: `plugins/forge/tests/work.test.js` · `workitem-konflikt` (bestehend, unverändert)
 
 **Interfaces:**
-- Consumes: aus Task 14 `build(options)` mit `{ file, cwd, text, snapshot, warnings }`; Task 12 `parseDraft`, `findingsOf`; Task 2 `indexesOf`, `RETRO`; Task 5 `requestsOf`; Task 1 `tokensOf`, `readEntries`; `readConfig`, `workitemOf` aus `forge-config.js` (bestehend).
-- Produces: `lib/retro-format.js` (Anzeigeformat von Zahlen, eine Verantwortung): `thousands(value: number): string` (`<n>k`, gerundet); `session-facts.js` nutzt diese Funktion statt einer eigenen, sodass Fakten, Snapshot und Kurzfassung Tokens gleich schreiben. `shorten` und `clock` bleiben in `lib/transcript.js`, weil `humanEvents` und die Bereichs-Labels sie beim Lesen des Protokolls brauchen; `retro-format.js` hat nur das Zahlenformat, das kein Protokoll-Leser nutzt. · `lib/retro-summary.js`: `findingSummary(text): string[]`; `retroCost(transcript: string|null): string` (`null` heißt: eigenes Protokoll nicht gefunden, dann `Kosten der Retrospektive: nicht messbar (eigenes Protokoll nicht gefunden)`; gemessen wird nie in einem fremden Protokoll); `workitemCandidate(snapshot, cwd: string): string` (`<wert> (aus Spec <pfad>)`, `<wert> (aus Branch <branch>)` oder `keiner`); `summaryLines({ file, cwd, text, snapshot }): string[]`. · `retro-report.js`: scheitert die Kurzfassung nach geschriebenem Bericht, stehen auf stdout trotzdem `Bericht: <pfad>`, `Prüfung: 0 Verstöße` und `Warnung: Kurzfassung nicht verfügbar: <grund>`, Exit 0.
+- Consumes: aus Task 14 `build(options)` mit `{ file, cwd, text, snapshot, warnings }`; Task 12 `parseDraft`, `findingsOf`; Task 11 Snapshot-Felder `transcript`, `ownTranscript`, `transcriptEntries`; Task 5 `requestsOf` (`lib/retro-requests.js`); Task 1 `tokensOf`, `readEntries`; `readConfig`, `workitemOf` aus `forge-config.js` (bestehend); `workitemConflict(config, branch, spec)` in `work.js:77-88` (bestehend, stellt auf `branchWorkitem` um).
+- Produces: `lib/retro-format.js` (Anzeigeformat von Zahlen, eine Verantwortung): `thousands(value: number): string` (`<n>k`, gerundet); `session-facts.js` nutzt diese Funktion statt einer eigenen, sodass Fakten, Snapshot und Kurzfassung Tokens gleich schreiben. `shorten` und `clock` bleiben in `lib/transcript.js`, weil `humanEvents` und die Bereichs-Labels sie beim Lesen des Protokolls brauchen; `retro-format.js` hat nur das Zahlenformat, das kein Protokoll-Leser nutzt. · `lib/retro-summary.js`: `findingSummary(text): string[]`; `retroCost(transcript: string|null, fromEntryNo: number): string` (zählt die Anfragen mit `entryNo > fromEntryNo`, also nach dem Snapshot-Stand `transcriptEntries`, ohne Suche nach dem `RETRO`-Aufruf; `null` heißt: eigenes Protokoll nicht gefunden, dann `Kosten der Retrospektive: nicht messbar (eigenes Protokoll nicht gefunden)`; gemessen wird nie in einem fremden Protokoll: ist `snapshot.transcript` nicht `snapshot.ownTranscript`, meldet `summaryLines` `Kosten der Retrospektive: nicht messbar (eigenes Protokoll ist nicht das ausgewertete)`); `workitemCandidate(snapshot, cwd: string): string` (`<wert> (aus Spec <pfad>)`, `<wert> (aus Branch <branch>)` oder `keiner`; der Branch-Treffer kommt aus `branchWorkitem`); `summaryLines({ file, cwd, text, snapshot }): string[]`. · `forge-config.js`: `branchWorkitem(config: object, branch: string): string|null` (neben `workitemOf`, exportiert; `null` bei `Workitem` leer oder `keine`, ungültigem Muster, leerem Branch oder ohne Treffer, sonst der Treffer `found[0]`); die Regel „Workitem-Muster gegen Branch“ steht damit einmal, `work.js` `workitemConflict` und `lib/retro-summary.js` nutzen sie. · `retro-report.js`: scheitert die Kurzfassung nach geschriebenem Bericht, stehen auf stdout trotzdem `Bericht: <pfad>`, `Prüfung: 0 Verstöße` und `Warnung: Kurzfassung nicht verfügbar: <grund>`, Exit 0.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   `plugins/forge/tests/retro-summary.test.js` neu:
@@ -3326,6 +3902,7 @@
   const path = require('node:path');
   const { findingSummary, retroCost, workitemCandidate, summaryLines } = require('../scripts/lib/retro-summary');
   const { human, slash, request, usage, writeSession } = require('./lib/retro-session');
+  const { readEntries } = require('../scripts/lib/transcript');
   const { VALID, SNAPSHOT } = require('./lib/retro-draft-fixture');
   const { makeRepo, commitFile } = require('./lib/git-repo');
 
@@ -3352,7 +3929,7 @@
     assert.equal(lines[2], 'Reibung: Reibung 1 · Reibung 2 · Reibung 3');
   });
 
-  test('retroCost_FromLastRetroCall_RequestsAndTokensSplit', () => {
+  test('retroCost_AfterSnapshotEntry_RequestsAndTokensSplit', () => {
     const transcript = writeSession([
       request('r0', '09:00', [], usage(9000, 9000, 9000, 9000)),
       slash('dv-forge:prozess-retrospektive', '', '10:00'),
@@ -3360,14 +3937,31 @@
       request('r2', '10:02', [], usage(500, 0, 52000, 200)),
       request('r2', '10:02', [], usage(500, 0, 52000, 200)),
     ]);
+    const fromEntryNo = readEntries(transcript)[1].entryNo;
 
-    assert.equal(retroCost(transcript), 'Kosten der Retrospektive: 2 Anfragen · Tokens 4k neu verarbeitet, 102k aus dem Cache, 1k Ausgabe');
+    assert.equal(retroCost(transcript, fromEntryNo), 'Kosten der Retrospektive: 2 Anfragen · Tokens 4k neu verarbeitet, 102k aus dem Cache, 1k Ausgabe');
   });
 
-  test('retroCost_NoRetroCall_NotMeasurable', () => {
-    const transcript = writeSession([human('Los', '10:00')]);
+  test('retroCost_NoRetroCallButEarlierRetro_CountsOnlyAfterSnapshot', () => {
+    const transcript = writeSession([
+      slash('dv-forge:prozess-retrospektive', '', '08:00'),
+      request('r0', '08:01', [], usage(9000, 9000, 9000, 9000)),
+      human('Weiter', '09:00'),
+      request('r1', '10:01', [], usage(1000, 0, 0, 100)),
+    ]);
+    const fromEntryNo = readEntries(transcript)[2].entryNo;
 
-    assert.equal(retroCost(transcript), 'Kosten der Retrospektive: nicht messbar (kein Aufruf von prozess-retrospektive im Protokoll)');
+    assert.equal(retroCost(transcript, fromEntryNo), 'Kosten der Retrospektive: 1 Anfragen · Tokens 1k neu verarbeitet, 0k aus dem Cache, 0k Ausgabe');
+  });
+
+  test('summaryLines_OwnTranscriptNotEvaluated_CostNotMeasurable', () => {
+    const repo = makeRepo();
+    const own = writeSession([request('r1', '10:01', [], usage(1000, 0, 0, 100))]);
+    const snapshot = { ...SNAPSHOT, transcript: writeSession([human('Los', '10:00')]), ownTranscript: own, transcriptEntries: 0 };
+
+    const lines = summaryLines({ file: path.join(repo, 'docs', 'wishes', 'x.md'), cwd: repo, text: VALID, snapshot });
+
+    assert.ok(lines.includes('Kosten der Retrospektive: nicht messbar (eigenes Protokoll ist nicht das ausgewertete)'));
   });
 
   test('summaryLines_OwnTranscriptUnknown_CostNotTakenFromForeignProtocol', () => {
@@ -3414,8 +4008,26 @@
     assert.match(result.stdout, /Workitem-Kandidat: keiner\n/);
     assert.ok(result.stdout.includes(`Vormerken: git add "docs/wishes/${localDate()}-planung.md"`));
   ```
+  In `plugins/forge/tests/forge-config.test.js` am Dateiende anhängen:
+  ```js
+  test('branchWorkitem_PatternInBranch_ReturnsMatch', () => {
+    assert.equal(config.branchWorkitem({ Workitem: '\\d{6}' }, 'feature/307326-result'), '307326');
+  });
+
+  test('branchWorkitem_NoneEmptyInvalidNoBranchOrNoMatch_Null', () => {
+    const cases = [
+      [{ Workitem: 'keine' }, 'feature/307326-x'],
+      [{ Workitem: '' }, 'feature/307326-x'],
+      [{ Workitem: '(' }, 'feature/307326-x'],
+      [{ Workitem: '\\d{6}' }, ''],
+      [{ Workitem: '\\d{6}' }, 'feature/x'],
+    ];
+
+    assert.deepEqual(cases.map(([values, branch]) => config.branchWorkitem(values, branch)), [null, null, null, null, null]);
+  });
+  ```
 - [ ] **Schritt 2: Test rot laufen lassen**
-  Befehl: `node --test plugins/forge/tests/retro-summary.test.js plugins/forge/tests/retro-report.test.js` — erwartet: FAIL `findingSummary_ValidDraft_CountsAndShortFindingsPerSection` und FAIL `cli_ValidDraft_WritesDatedReportAndDeletesDraft`
+  Befehl: `node --test plugins/forge/tests/retro-summary.test.js plugins/forge/tests/retro-report.test.js plugins/forge/tests/forge-config.test.js` — erwartet: FAIL `findingSummary_ValidDraft_CountsAndShortFindingsPerSection`, FAIL `cli_ValidDraft_WritesDatedReportAndDeletesDraft` und FAIL `branchWorkitem_PatternInBranch_ReturnsMatch` (`config.branchWorkitem is not a function`)
 - [ ] **Schritt 3: Minimal implementieren**
   `plugins/forge/scripts/lib/retro-format.js` neu (Zahlenformat, das kein Protokoll-Leser braucht; `shorten` und `clock` bleiben bei ihren Nutzern in `lib/transcript.js`):
   ```js
@@ -3446,11 +4058,11 @@
 
   const fs = require('node:fs');
   const path = require('node:path');
-  const { readEntries, requestsOf, tokensOf } = require('./transcript');
+  const { readEntries, tokensOf } = require('./transcript');
+  const { requestsOf } = require('./retro-requests');
   const { thousands } = require('./retro-format');
-  const { indexesOf, RETRO } = require('./retro-range');
   const { parseDraft, findingsOf } = require('./retro-draft');
-  const { readConfig, workitemOf } = require('../forge-config');
+  const { readConfig, workitemOf, branchWorkitem } = require('../forge-config');
 
   const FINDING_SECTIONS = ['Positiv', 'Reibung', 'Sparpotenzial'];
   const SHOWN_FINDINGS = 3;
@@ -3471,26 +4083,23 @@
     }), { input: 0, cached: 0, output: 0 });
   }
 
-  // Kosten vom letzten Aufruf der Retrospektive bis jetzt, gezählt nur im Protokoll der eigenen Session;
-  // `null` heißt, das eigene Protokoll wurde nicht gefunden, ein fremdes Protokoll ersetzt es nie.
-  function retroCost(transcript) {
+  // Kosten der Retrospektive: alle Anfragen nach dem Stand des Snapshots (`fromEntryNo`), gemessen vor der ersten
+  // Modell-Anfrage der Retrospektive; der Slash-Befehl selbst löst keine Anfrage aus. Gezählt nur im Protokoll der
+  // eigenen Session; `null` heißt, das eigene Protokoll wurde nicht gefunden, ein fremdes Protokoll ersetzt es nie.
+  function retroCost(transcript, fromEntryNo) {
     if (transcript === null) return 'Kosten der Retrospektive: nicht messbar (eigenes Protokoll nicht gefunden)';
     if (!transcript || !fs.existsSync(transcript)) return 'Kosten der Retrospektive: nicht messbar (Protokoll fehlt)';
-    const entries = readEntries(transcript);
-    const calls = indexesOf(entries, RETRO);
-    if (calls.length === 0) return `Kosten der Retrospektive: nicht messbar (kein Aufruf von ${RETRO} im Protokoll)`;
-    const requests = requestsOf(entries.slice(calls[calls.length - 1]));
+    const requests = requestsOf(readEntries(transcript).filter((entry) => entry.entryNo > fromEntryNo));
     const sum = sumTokens(requests);
     return `Kosten der Retrospektive: ${requests.length} Anfragen · Tokens ${thousands(sum.input)} neu verarbeitet, ${thousands(sum.cached)} aus dem Cache, ${thousands(sum.output)} Ausgabe`;
   }
 
-  function workitemPattern(cwd) {
+  function configOf(cwd) {
     try {
-      const pattern = readConfig(cwd).config.Workitem;
-      return pattern && pattern !== 'keine' ? new RegExp(pattern) : null;
+      return readConfig(cwd).config;
     } catch {
-      // Ohne Projekt-Einstellungen oder mit ungültigem Muster gibt es keinen Kandidaten aus dem Branch.
-      return null;
+      // Ohne Projekt-Einstellungen (kein Git-Repo) gibt es keinen Kandidaten aus dem Branch.
+      return {};
     }
   }
 
@@ -3498,9 +4107,16 @@
   function workitemCandidate(snapshot, cwd) {
     const fromSpec = (snapshot.specs ?? []).map((spec) => [spec, workitemOf(path.resolve(cwd, spec))]).find(([, workitem]) => workitem);
     if (fromSpec) return `${fromSpec[1]} (aus Spec ${fromSpec[0]})`;
-    const pattern = workitemPattern(cwd);
-    const match = pattern && snapshot.branch ? snapshot.branch.match(pattern) : null;
-    return match ? `${match[0]} (aus Branch ${snapshot.branch})` : 'keiner';
+    const found = branchWorkitem(configOf(cwd), snapshot.branch);
+    return found ? `${found} (aus Branch ${snapshot.branch})` : 'keiner';
+  }
+
+  // `transcriptEntries` zählt im ausgewerteten Protokoll; nur wenn das das eigene ist, markiert es den Start der Retrospektive.
+  function costOf(snapshot) {
+    if (snapshot.ownTranscript !== null && snapshot.transcript !== snapshot.ownTranscript) {
+      return 'Kosten der Retrospektive: nicht messbar (eigenes Protokoll ist nicht das ausgewertete)';
+    }
+    return retroCost(snapshot.ownTranscript, snapshot.transcriptEntries);
   }
 
   function summaryLines({ file, cwd, text, snapshot }) {
@@ -3508,13 +4124,51 @@
       `Bericht: ${file}`,
       'Prüfung: 0 Verstöße',
       ...findingSummary(text),
-      retroCost(snapshot.ownTranscript),
+      costOf(snapshot),
       `Workitem-Kandidat: ${workitemCandidate(snapshot, cwd)}`,
       `Vormerken: git add "${path.relative(cwd, file).split(path.sep).join('/')}"`,
     ];
   }
 
   module.exports = { findingSummary, retroCost, workitemCandidate, summaryLines };
+  ```
+  In `plugins/forge/scripts/forge-config.js`:
+  (a) Direkt nach `workitemOf` einfügen:
+  ```js
+  function workitemPattern(source) {
+    if (!source || source === 'keine') return null;
+    try {
+      return new RegExp(source);
+    } catch {
+      // Ein ungültiges Muster in den Projekt-Einstellungen findet kein Workitem.
+      return null;
+    }
+  }
+
+  // Das Workitem-Muster der Projekt-Einstellungen im Branch: null bei `keine`, leerem oder ungültigem Muster,
+  // leerem Branch oder ohne Treffer, sonst der Treffer. Die einzige Stelle dieser Regel.
+  function branchWorkitem(config, branch) {
+    const pattern = workitemPattern(config.Workitem);
+    const found = pattern && branch ? pattern.exec(branch) : null;
+    return found ? found[0] : null;
+  }
+  ```
+  (b) `module.exports` wird zu:
+  ```js
+  module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, workitemOf, branchWorkitem, branchFor, branchCandidates };
+  ```
+  In `plugins/forge/scripts/work.js`:
+  (a) Die Zeile `const { ConfigError, readConfig, branchFor, branchCandidates, workitemOf } = require('./forge-config');` wird zu:
+  ```js
+  const { ConfigError, readConfig, branchFor, branchCandidates, workitemOf, branchWorkitem } = require('./forge-config');
+  ```
+  (b) `workitemConflict` wird ersetzt durch:
+  ```js
+  function workitemConflict(config, branch, spec) {
+    const own = workitemOf(spec);
+    const found = branchWorkitem(config, branch);
+    return own && found && found !== own ? found : null;
+  }
   ```
   In `plugins/forge/scripts/retro-report.js`: nach `const { compose } = require('./lib/retro-compose');` einfügen:
   ```js
@@ -3538,9 +4192,9 @@
       for (const warning of result.warnings) process.stderr.write(`${warning}\n`);
   ```
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/forge/tests/retro-summary.test.js plugins/forge/tests/retro-report.test.js plugins/forge/tests/session-facts.test.js plugins/forge/tests/retro-measures.test.js plugins/forge/tests/transcript.test.js` — erwartet: PASS
+  Befehl: `node --test plugins/forge/tests/retro-summary.test.js plugins/forge/tests/retro-report.test.js plugins/forge/tests/session-facts.test.js plugins/forge/tests/retro-measures.test.js plugins/forge/tests/transcript.test.js plugins/forge/tests/forge-config.test.js plugins/forge/tests/work.test.js` — erwartet: PASS (`work.test.js` belegt, dass `workitem-konflikt` mit `branchWorkitem` gleich bleibt)
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/retro-summary.js plugins/forge/scripts/lib/retro-format.js plugins/forge/scripts/session-facts.js plugins/forge/scripts/retro-report.js plugins/forge/tests/retro-summary.test.js plugins/forge/tests/retro-report.test.js` · `git commit -m "feat(forge): retro-report summarises findings, own cost and workitem candidate"`
+  `git add plugins/forge/scripts/lib/retro-summary.js plugins/forge/scripts/lib/retro-format.js plugins/forge/scripts/session-facts.js plugins/forge/scripts/retro-report.js plugins/forge/scripts/forge-config.js plugins/forge/scripts/work.js plugins/forge/tests/retro-summary.test.js plugins/forge/tests/retro-report.test.js plugins/forge/tests/forge-config.test.js` · `git commit -m "feat(forge): retro-report summarises findings, own cost and workitem candidate"`
 
 ---
 
@@ -3550,15 +4204,16 @@
 
 **Dateien:**
 - Create: `plugins/forge/scripts/retro-timeline.js`
-- Create: `plugins/forge/scripts/lib/session-files.js`
+- Modify: `plugins/forge/scripts/lib/session-files.js` · `function findTranscript`, `function subagentFiles`, `module.exports = { findTranscript, subagentFiles };`
 - Modify: `plugins/forge/scripts/lib/transcript.js` · `readEntries`, `humanEvents`, `module.exports`
 - Modify: `plugins/forge/scripts/session-facts.js:4-55` · `const os = require('node:os');`, `const RECENT_MS`, `projectDir`, `newestSession`, `sessionById`, `resolveSession`
-- Modify: `plugins/forge/scripts/session-facts.js` · `const { rangeOf } = require('./lib/retro-range');`
+- Modify: `plugins/forge/scripts/session-facts.js` · `ownTranscriptOf`
+- Modify: `plugins/forge/scripts/session-facts.js` · `const { subagentFiles } = require('./lib/session-files');`
 - Test: `plugins/forge/tests/retro-timeline.test.js`
 
 **Interfaces:**
-- Consumes: aus Task 2 `resolveSession(options)` (bisher in `session-facts.js`, zieht hier nach `lib/session-files.js` um); `findTranscript(id, projectsDir)` aus `mcp-usage.js` (bestehend); Task 1 `readEntries`, `textOf`, `shorten`, `clock`, `callLabel`, `humanEvents`, `RetroError`; Fixtures.
-- Produces: `lib/session-files.js`: `projectDir(cwd: string, home = os.homedir()): string`; `sessionById(dir: string, id: string): string`; `resolveSession(options): { file: string, warning: string|null }` (unverändertes Verhalten, Fehler als `RetroError`). `session-facts.js` importiert die drei Funktionen von dort und exportiert `projectDir` und `resolveSession` weiter; `retro-timeline.js` hängt nur an Bibliotheken, nicht an einem anderen CLI-Skript. · `lib/transcript.js`: `lineCount(file: string): number`; `isSummary(entry, marked: boolean): boolean` (wahr bei `isCompactSummary`, bei einem system-Eintrag mit `compact` und, wenn das Protokoll `origin` kennt, bei einem Text-Eintrag des Nutzers ohne `origin`, der weder Skill-Text, Tool-Ergebnis, Unterbrechung noch Harness-Hinweis ist). `retro-timeline.js` CLI `(--session <id> | --file <session.jsonl>) [--cwd <projektordner>] [--entry <n>]`; Zeilen `#<n> <HH:MM> <Art>: <Text>` mit Art `Mensch`, `Unterbrechung`, `Ablehnung`, `Text`, `Aufruf`, `Fehler`, `Zusammenfassung`; mit `--entry` Blöcke `## Eintrag <n> · <HH:MM> · <typ>`; Nummer außerhalb → Exit 1 `Eintrag <n> liegt außerhalb des Protokolls (1-<max>)`.
+- Consumes: aus Task 2 `resolveSession(options)` (bisher in `session-facts.js`, zieht hier nach `lib/session-files.js` um); aus Task 11 `ownTranscriptOf(options, file)` (zieht ebenfalls um); aus Task 14 `lib/session-files.js` mit `findTranscript(sessionId, projectsDir)` und `subagentFiles(transcript)`; Task 1 `readEntries`, `textOf`, `shorten`, `clock`, `callLabel`, `humanEvents`, `isCompactEntry`, `isPlainUserText`, `RetroError`; Fixtures `human`, `request`, `say`, `call`, `result`, `hint`, `summary`, `plainSummary`, `stamp`, `writeSession`.
+- Produces: `lib/session-files.js` erweitert um: `projectDir(cwd: string, home = os.homedir()): string`; `sessionById(dir: string, id: string): string`; `resolveSession(options): { file: string, warning: string|null }` (unverändertes Verhalten, Fehler als `RetroError`); `ownTranscriptOf(options, file): string|null` (unverändert aus Task 11); `findTranscript` und `subagentFiles` bleiben aus Task 14, `sessionById` nutzt `findTranscript` aus derselben Datei, `lib/session-files.js` hat kein `require('../mcp-usage')`. `session-facts.js` importiert `projectDir`, `resolveSession`, `ownTranscriptOf` und `subagentFiles` von dort und exportiert `projectDir` und `resolveSession` weiter; `retro-timeline.js` hängt nur an Bibliotheken, nicht an einem anderen CLI-Skript, und die Protokoll-Ortung der neuen Skripte liegt nur in `lib/session-files.js`. Bewusst genutzte Module außerhalb von `lib/` bleiben `forge-config.js` (Konfigurationsmodul, eingebunden in `lib/retro-summary.js`) und `sameServer` aus `mcp-usage.js` (Namensvergleich der MCP-Server, eingebunden in `lib/retro-draft.js`). · `lib/transcript.js`: `lineCount(file: string): number`; `isSummary(entry, marked: boolean): boolean` (wahr bei `isCompactSummary`, bei `isCompactEntry` und, wenn das Protokoll `origin` kennt, bei `isPlainUserText` ohne `origin`); dieselben Prädikate nutzen `analyze` (Zählung) und `isHumanInput`, Zählung und Zeitleiste erkennen eine Zusammenfassung damit gleich. `retro-timeline.js` CLI `(--session <id> | --file <session.jsonl>) [--cwd <projektordner>] [--entry <n> | --from <n>]`; Zeilen `#<n> <HH:MM> <Art>: <Text>` mit Art `Mensch`, `Unterbrechung`, `Ablehnung`, `Text`, `Aufruf`, `Fehler`, `Zusammenfassung`, ab Eintrag `--from` (Standard 1) und höchstens `MAX_ROWS = 300` Zeilen je Aufruf; darüber endet die Ausgabe vor dem ersten Eintrag, der nicht mehr ganz passt, mit `… weitere <n> Zeilen bis #<letzte>; mit --from <nächste> fortsetzen oder --entry nutzen`; mit `--entry` Blöcke `## Eintrag <n> · <HH:MM> · <typ>`; Nummer außerhalb → Exit 1 `Eintrag <n> liegt außerhalb des Protokolls (1-<max>)`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   `plugins/forge/tests/retro-timeline.test.js` neu:
@@ -3571,14 +4226,14 @@
   const { spawnSync } = require('node:child_process');
   const fs = require('node:fs');
   const os = require('node:os');
-  const { human, request, say, call, result, hint, summary, stamp, writeSession } = require('./lib/retro-session');
+  const { human, request, say, call, result, hint, summary, plainSummary, stamp, writeSession } = require('./lib/retro-session');
   const { projectDir } = require('../scripts/lib/session-files');
 
   const SCRIPT = path.join(__dirname, '..', 'scripts', 'retro-timeline.js');
+  const FACTS = path.join(__dirname, '..', 'scripts', 'session-facts.js');
 
-  // So steht eine Zusammenfassung in echten Protokollen: ein Text-Eintrag des Nutzers ohne `origin` und ohne `isCompactSummary`.
-  function realSummary(text, at) {
-    return { type: 'user', timestamp: stamp(at), message: { role: 'user', content: text } };
+  function longSession() {
+    return writeSession(Array.from({ length: 310 }, (_, index) => human(`Eingabe ${index + 1}`, '10:00')));
   }
 
   function timelineSession() {
@@ -3587,7 +4242,7 @@
       request('r1', '10:01', [say('Ich lese den Plan'), call('t1', 'Read', { file_path: 'plan.md' })]),
       result('t1', '10:01', 'Datei fehlt', true),
       hint('total_tokens_reminder', '10:01'),
-      realSummary('This session is being continued from a previous conversation.', '10:20'),
+      plainSummary('This session is being continued from a previous conversation.', '10:20'),
       human('Weiter', '10:30'),
     ]);
   }
@@ -3645,6 +4300,36 @@
     assert.equal(output.stdout, '#1 10:00 Mensch: Los\n#2 10:20 Zusammenfassung\n');
   });
 
+  test('cli_SystemCompactEntry_CountedAndShownAsSummaryAlike', () => {
+    const file = writeSession([
+      human('Los', '10:00'),
+      { type: 'system', subtype: 'compact_boundary', content: 'Conversation compacted', timestamp: stamp('10:20') },
+    ]);
+
+    const counted = spawnSync(process.execPath, [FACTS, '--file', file], { encoding: 'utf8' });
+    const shown = timeline('--file', file);
+
+    assert.match(counted.stdout, /Zusammenfassungen: 1\n/);
+    assert.equal(shown.stdout, '#1 10:00 Mensch: Los\n#2 10:20 Zusammenfassung\n');
+  });
+
+  test('cli_TimelineOverRowLimit_EndsWithHintToContinue', () => {
+    const output = timeline('--file', longSession());
+    const lines = output.stdout.trimEnd().split('\n');
+
+    assert.equal(output.status, 0, output.stderr);
+    assert.equal(lines.length, 301);
+    assert.equal(lines[299], '#300 10:00 Mensch: Eingabe 300');
+    assert.equal(lines[300], '… weitere 10 Zeilen bis #310; mit --from 301 fortsetzen oder --entry nutzen');
+  });
+
+  test('cli_TimelineFrom_ListsRemainingRowsWithoutHint', () => {
+    const output = timeline('--file', longSession(), '--from', '301');
+
+    assert.equal(output.status, 0, output.stderr);
+    assert.equal(output.stdout, `${Array.from({ length: 10 }, (_, index) => `#${301 + index} 10:00 Mensch: Eingabe ${301 + index}`).join('\n')}\n`);
+  });
+
   test('cli_Session_ReadsProtocolFromProjectFolder', () => {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-home-'));
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-project-'));
@@ -3669,33 +4354,48 @@
   ```
   ```js
   // `isCompactSummary` kam in keinem echten Protokoll vor (W · Protokoll-Marker). Kennt das Protokoll `origin`, ist eine
-  // Zusammenfassung ein Text-Eintrag des Nutzers ohne `origin`, der kein Skill-Text, Tool-Ergebnis, keine Unterbrechung und kein Hinweis ist.
+  // Zusammenfassung ein Text-Eintrag des Nutzers ohne `origin`; dieselben Prädikate wie Zählung und Eingaben.
   function isSummary(entry, marked) {
-    if (entry.isCompactSummary) return true;
-    if (entry.type === 'system') return /compact/i.test(`${entry.subtype ?? ''} ${entry.content ?? ''}`);
-    if (!marked || entry.type !== 'user' || !entry.message || entry.origin || entry.isMeta || isToolResultEntry(entry)) return false;
-    const text = textOf(entry.message.content);
-    return !INTERRUPT.test(text) && !NOTICE.test(text);
+    if (entry.isCompactSummary || isCompactEntry(entry)) return true;
+    return marked && !entry.origin && isPlainUserText(entry);
   }
   ```
   ```js
   module.exports = {
-    RetroError, SLASH_COMMAND, readEntries, lineCount, textOf, tokensOf, contextOf, requestsOf, shorten, clock, callLabel, isToolResultEntry, humanEvents, isSummary,
+    RetroError, SLASH_COMMAND, readEntries, lineCount, textOf, tokensOf, shorten, clock, callLabel, isToolResultEntry, isCompactEntry, humanEvents, isSummary,
   };
   ```
-  `plugins/forge/scripts/lib/session-files.js` neu (Inhalt aus `session-facts.js` übernommen, Fehler als `RetroError`):
+  `plugins/forge/scripts/lib/session-files.js` wird ganz ersetzt durch (Stand aus Task 14 plus Inhalt aus `session-facts.js`, Fehler als `RetroError`):
   ```js
   'use strict';
 
-  // Findet das Protokoll einer Session: als Datei, über die Session-Kennung oder als neuestes im Projektordner.
+  // Findet die Protokolldateien einer Session: als Datei, über die Session-Kennung, als neuestes im Projektordner
+  // und die Protokolle ihrer Subagents.
 
   const fs = require('node:fs');
   const os = require('node:os');
   const path = require('node:path');
-  const { findTranscript } = require('../mcp-usage');
   const { RetroError } = require('./transcript');
 
   const RECENT_MS = 10 * 60 * 1000;
+
+  function configDir() {
+    return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+  }
+
+  function findTranscript(sessionId, projectsDir = path.join(configDir(), 'projects')) {
+    const dirs = fs.existsSync(projectsDir) ? fs.readdirSync(projectsDir) : [];
+    const hit = dirs.map((dir) => path.join(projectsDir, dir, `${sessionId}.jsonl`)).find((file) => fs.existsSync(file));
+    if (!hit) throw new RetroError(`Transkript zur Session ${sessionId} nicht gefunden unter ${projectsDir}`);
+    return hit;
+  }
+
+  // Der Ordneraufbau `<protokoll>/subagents/*.jsonl` steht nur hier.
+  function subagentFiles(transcript) {
+    const dir = path.join(transcript.replace(/\.jsonl$/, ''), 'subagents');
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir).filter((name) => name.endsWith('.jsonl')).map((name) => path.join(dir, name));
+  }
 
   function projectDir(cwd, home = os.homedir()) {
     return path.join(home, '.claude', 'projects', path.resolve(cwd).replace(/[^A-Za-z0-9]/g, '-'));
@@ -3733,13 +4433,24 @@
     return newestSession(dir);
   }
 
-  module.exports = { projectDir, sessionById, resolveSession };
+  // Protokoll der eigenen Session: bei `--file` plus `--session` gehört der Snapshot zur eigenen Session.
+  function ownTranscriptOf(options, file) {
+    if (!options.session || !options.file) return file;
+    try {
+      return sessionById(projectDir(options.cwd ?? process.cwd()), options.session);
+    } catch {
+      // Ohne eigenes Protokoll lassen sich später nur die Kosten der Retrospektive nicht messen.
+      return null;
+    }
+  }
+
+  module.exports = { findTranscript, subagentFiles, projectDir, sessionById, resolveSession, ownTranscriptOf };
   ```
   In `plugins/forge/scripts/session-facts.js`:
-  (a) Die Zeilen `const os = require('node:os');` und `const RECENT_MS = 10 * 60 * 1000;` entfallen, ebenso die Funktionen `projectDir`, `newestSession` (samt Kommentar „Neueste Session im Projektordner …“), `sessionById` und `resolveSession`.
-  (b) Nach `const { rangeOf } = require('./lib/retro-range');` einfügen:
+  (a) Die Zeilen `const os = require('node:os');` und `const RECENT_MS = 10 * 60 * 1000;` entfallen, ebenso die Funktionen `projectDir`, `newestSession` (samt Kommentar „Neueste Session im Projektordner …“), `sessionById`, `resolveSession` und `ownTranscriptOf` (samt Kommentar „Protokoll der eigenen Session …“).
+  (b) Die Zeile `const { subagentFiles } = require('./lib/session-files');` aus Task 14 wird zu:
   ```js
-  const { projectDir, sessionById, resolveSession } = require('./lib/session-files');
+  const { projectDir, resolveSession, ownTranscriptOf, subagentFiles } = require('./lib/session-files');
   ```
   `module.exports` bleibt; `projectDir` und `resolveSession` werden weiter exportiert.
   `plugins/forge/scripts/retro-timeline.js` neu:
@@ -3753,11 +4464,18 @@
   const { RetroError, readEntries, lineCount, textOf, shorten, clock, callLabel, humanEvents, isSummary } = require('./lib/transcript');
   const { resolveSession } = require('./lib/session-files');
 
-  const USAGE = 'Aufruf: node retro-timeline.js (--session <id> | --file <session.jsonl>) [--cwd <projektordner>] [--entry <n>]\n';
-  const FLAGS = { '--session': 'session', '--file': 'file', '--cwd': 'cwd', '--entry': 'entry' };
+  const USAGE = 'Aufruf: node retro-timeline.js (--session <id> | --file <session.jsonl>) [--cwd <projektordner>] [--entry <n> | --from <n>]\n';
+  const FLAGS = { '--session': 'session', '--file': 'file', '--cwd': 'cwd', '--entry': 'entry', '--from': 'from' };
+  const NUMBER_OPTIONS = ['entry', 'from'];
   const LINE_TEXT = 80;
   const DETAIL_TEXT = 1500;
   const NEIGHBOURS = 2;
+  // Obergrenze je Aufruf, damit die Zeitleiste einer langen Session den Kontext der Retrospektive nicht füllt; `--from` setzt fort.
+  const MAX_ROWS = 300;
+
+  function numberOf(value) {
+    return value === undefined ? undefined : Number(value);
+  }
 
   function parseArgs(args) {
     const options = {};
@@ -3767,9 +4485,8 @@
       options[key] = args[index + 1];
     }
     if (!options.session && !options.file) return null;
-    if (options.entry === undefined) return options;
-    if (!/^\d+$/.test(options.entry)) return null;
-    return { ...options, entry: Number(options.entry) };
+    if (NUMBER_OPTIONS.some((key) => options[key] !== undefined && !/^\d+$/.test(options[key]))) return null;
+    return { ...options, entry: numberOf(options.entry), from: numberOf(options.from) };
   }
 
   function partRows(entry, at, human) {
@@ -3792,12 +4509,25 @@
     return [...human, ...partRows(entry, at, own.length > 0)];
   }
 
-  // Je Eingabe, Text, Tool-Aufruf, Fehler und Zusammenfassung eine gekürzte Zeile.
-  function timeline(entries) {
+  // Höchstens MAX_ROWS Zeilen. Der Schnitt fällt vor den ersten Eintrag, der nicht mehr ganz passt, damit `--from` ihn ganz
+  // zeigt; ein Eintrag hat nur wenige Zeilen (Eingabe, Text, Aufrufe, Fehler).
+  function page(rows) {
+    if (rows.length <= MAX_ROWS) return rows.map((row) => row.text);
+    const next = rows[MAX_ROWS].entryNo;
+    const shown = rows.filter((row) => row.entryNo < next);
+    const hint = `… weitere ${rows.length - shown.length} Zeilen bis #${rows[rows.length - 1].entryNo}; mit --from ${next} fortsetzen oder --entry nutzen`;
+    return [...shown.map((row) => row.text), hint];
+  }
+
+  // Je Eingabe, Text, Tool-Aufruf, Fehler und Zusammenfassung eine gekürzte Zeile, ab Eintrag `from`. Eingaben und
+  // Markierung kommen aus dem ganzen Protokoll, damit ein späterer Start dieselben Zeilen zeigt.
+  function timeline(entries, from = 1) {
     const humans = new Map();
     for (const event of humanEvents(entries)) humans.set(event.entryNo, [...(humans.get(event.entryNo) ?? []), event]);
     const marked = entries.some((entry) => entry.origin);
-    return entries.flatMap((entry) => rowsOf(entry, humans, marked));
+    const rows = entries.filter((entry) => entry.entryNo >= from)
+      .flatMap((entry) => rowsOf(entry, humans, marked).map((text) => ({ entryNo: entry.entryNo, text })));
+    return page(rows);
   }
 
   function partText(part) {
@@ -3827,7 +4557,7 @@
     const { file } = resolveSession(options);
     if (!fs.existsSync(file)) throw new RetroError(`Session-Datei nicht gefunden: ${file}`);
     const entries = readEntries(file);
-    return options.entry === undefined ? timeline(entries) : detail(entries, options.entry, lineCount(file));
+    return options.entry === undefined ? timeline(entries, options.from ?? 1) : detail(entries, options.entry, lineCount(file));
   }
 
   function main() {
@@ -3850,7 +4580,7 @@
   module.exports = { parseArgs, timeline, detail };
   ```
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/forge/tests/retro-timeline.test.js plugins/forge/tests/transcript.test.js plugins/forge/tests/session-facts.test.js` — erwartet: PASS
+  Befehl: `node --test plugins/forge/tests/retro-timeline.test.js plugins/forge/tests/transcript.test.js plugins/forge/tests/session-facts.test.js plugins/forge/tests/session-files.test.js plugins/forge/tests/mcp-usage.test.js` — erwartet: PASS
 - [ ] **Schritt 5: Commit**
   `git add plugins/forge/scripts/retro-timeline.js plugins/forge/scripts/lib/session-files.js plugins/forge/scripts/lib/transcript.js plugins/forge/scripts/session-facts.js plugins/forge/tests/retro-timeline.test.js` · `git commit -m "feat(forge): retro-timeline shows a short timeline and single entries"`
 
@@ -3865,7 +4595,7 @@
 - Test: `plugins/forge/tests/retro-sort.test.js`
 
 **Interfaces:**
-- Consumes: aus Task 12 `parseDraft(text)`, `findingsOf(sectionLines)`, `relevanceLines(lines)`.
+- Consumes: aus Task 12 `parseDraft(text)`, `findingsOf(sectionLines)`, `relevanceLines(lines)`, `parseTarget(text)` (Grammatik der Ziel-Zeile; `retro-sort.js` ergänzt nur die Alt-Form in `legacyTarget`).
 - Produces: `retro-sort.js` CLI `[--dir <berichtsordner>]` (Default `docs/wishes` im aktuellen Ordner), Exit 0 auch ohne Ordner oder Bericht. Exporte `targetKey(target: string|undefined): string`, `sort(dir: string): string`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
@@ -3975,7 +4705,7 @@
 
   const fs = require('node:fs');
   const path = require('node:path');
-  const { parseDraft, findingsOf, relevanceLines } = require('./lib/retro-draft');
+  const { parseDraft, findingsOf, relevanceLines, parseTarget } = require('./lib/retro-draft');
 
   const USAGE = 'Aufruf: node retro-sort.js [--dir <berichtsordner>]\n';
   const REPORT_FILE = /^\d{4}-\d{2}-\d{2}-.+\.md$/;
@@ -3983,6 +4713,9 @@
   const TARGET_SECTIONS = ['Reibung', 'Sparpotenzial'];
   const VALUES = [['gebraucht', /^gebraucht/i], ['hätte genützt', /^hätte genützt/i], ['verzichtbar', /^verzichtbar/i]];
   const RAW_TARGET_MAX = 40;
+  const OPEN_KEY = 'Ziel offen';
+  const LEGACY_TARGET = /^([^·]+?) · `neu:` (?:[^·]+?· )?(.+?)\s*(?:\(|$)/;
+  const RAW_TARGET = /^([^·]+?)\s+·\s+(.*)$/;
 
   // Berichte sind datierte Dateien mit dem Titel „# Erfahrungsbericht“; Wunschliste und andere Dokumente zählen nicht.
   function reportsIn(dir) {
@@ -3991,44 +4724,66 @@
       .filter(({ text }) => REPORT_TITLE.test(text.trimStart()));
   }
 
-  // Gruppenschlüssel „<Art> · <Name>“ oder „<Art> · neu: <Name>“; die ältere Form „<Art> · `neu:` <Art> · <Name>“ fällt in dieselbe Gruppe.
+  // Die ältere Form „<Art> · `neu:` <Art> · <Name>“ lässt die Prüfung nicht mehr zu; alte Berichte fallen trotzdem in die Gruppe des neu:-Ziels.
+  function legacyTarget(value) {
+    const match = value.match(LEGACY_TARGET);
+    return match ? { art: match[1].trim(), name: match[2].trim(), isNew: true, open: false } : null;
+  }
+
+  // Ziel-Zeilen außerhalb der Grammatik gruppieren nach Art und dem Anfang des Rests; ohne Art gelten sie als offen.
+  function rawKey(value) {
+    const match = value.match(RAW_TARGET);
+    return match ? `${match[1]} · ${match[2].trim().slice(0, RAW_TARGET_MAX)}` : OPEN_KEY;
+  }
+
+  // Gruppenschlüssel „<Art> · <Name>“ oder „<Art> · neu: <Name>“; die Grammatik kommt aus `parseTarget` in lib/retro-draft.js.
   function targetKey(target) {
     const value = (target ?? '').trim();
-    const art = value.match(/^([^·]+?)\s+·\s+/)?.[1];
-    if (!art || /^Ziel offen/.test(value)) return 'Ziel offen';
-    const rest = value.slice(value.indexOf('·') + 1).trim();
-    const fresh = rest.match(/^neu:\s*(.+?)\s*(?:[·(]|$)/)?.[1];
-    if (fresh) return `${art} · neu: ${fresh}`;
-    const name = rest.match(/^`([^`]+)`/)?.[1];
-    if (name === 'neu:') return `${art} · neu: ${rest.split('·').pop().replace(/\(.*$/, '').trim()}`;
-    return `${art} · ${name ?? rest.slice(0, RAW_TARGET_MAX)}`;
+    const parsed = parseTarget(value) ?? legacyTarget(value);
+    if (!parsed) return rawKey(value);
+    if (parsed.open) return OPEN_KEY;
+    return parsed.isNew ? `${parsed.art} · neu: ${parsed.name}` : `${parsed.art} · ${parsed.name}`;
   }
 
   function classify(value) {
     return VALUES.find(([, pattern]) => pattern.test(value))?.[0] ?? 'sonstig';
   }
 
-  function collect(reports) {
-    const groups = new Map();
-    const relevance = new Map();
-    const withoutRelevance = [];
-    for (const { name, text } of reports) {
+  // Je Befund unter Reibung und Sparpotenzial ein Gruppenschlüssel und seine Zeile.
+  function findingLines(reports) {
+    return reports.flatMap(({ name, text }) => {
       const draft = parseDraft(text);
-      for (const section of TARGET_SECTIONS) {
-        for (const finding of findingsOf(draft.sections.get(section))) {
-          const key = targetKey(finding.fields.get('Ziel'));
-          groups.set(key, [...(groups.get(key) ?? []), `- ${finding.title} · ${section} · ${name}`]);
-        }
-      }
-      const lines = relevanceLines(draft.lines);
-      if (lines.length === 0) withoutRelevance.push(name);
-      for (const { mcp, value } of lines) {
-        const row = relevance.get(mcp) ?? { gebraucht: 0, 'hätte genützt': 0, verzichtbar: 0, sonstig: 0 };
-        row[classify(value)] += 1;
-        relevance.set(mcp, row);
-      }
-    }
-    return { groups, relevance, withoutRelevance };
+      return TARGET_SECTIONS.flatMap((section) => findingsOf(draft.sections.get(section))
+        .map((finding) => ({ key: targetKey(finding.fields.get('Ziel')), line: `- ${finding.title} · ${section} · ${name}` })));
+    });
+  }
+
+  function relevanceRows(reports) {
+    return reports.flatMap(({ text }) => relevanceLines(parseDraft(text).lines));
+  }
+
+  function withoutRelevanceOf(reports) {
+    return reports.filter(({ text }) => relevanceLines(parseDraft(text).lines).length === 0).map(({ name }) => name);
+  }
+
+  function groupBy(items) {
+    return items.reduce((groups, { key, line }) => groups.set(key, [...(groups.get(key) ?? []), line]), new Map());
+  }
+
+  function countRelevance(rows) {
+    return rows.reduce((counts, { mcp, value }) => {
+      const row = counts.get(mcp) ?? { gebraucht: 0, 'hätte genützt': 0, verzichtbar: 0, sonstig: 0 };
+      row[classify(value)] += 1;
+      return counts.set(mcp, row);
+    }, new Map());
+  }
+
+  function collect(reports) {
+    return {
+      groups: groupBy(findingLines(reports)),
+      relevance: countRelevance(relevanceRows(reports)),
+      withoutRelevance: withoutRelevanceOf(reports),
+    };
   }
 
   function render(reports, { groups, relevance, withoutRelevance }) {
@@ -4262,8 +5017,8 @@
   !`node "${CLAUDE_PLUGIN_ROOT}/scripts/retro-report.js" --format`
 
   ## Ablauf
-  1. **Fakten prüfen.** Alle Zahlen oben stammen aus dem Skript; du schreibst keine ab und schätzt keine. Steht dort „Fakten nicht verfügbar“, nennst du den Grund und hörst auf. Steht unter `ARGUMENTS` eine andere Protokolldatei (`--file <pfad>`) oder ein Ausschnitt (`--since-command <befehl>`), holst du die Fakten einmal neu: `node "${CLAUDE_PLUGIN_ROOT}/scripts/session-facts.js" --session ${CLAUDE_SESSION_ID} --before-retro --snapshot <Argumente>`.
-  2. **Nachlesen.** Stellen, auf die die Fakten zeigen, liest du über die Zeitleiste nach, nie per Textsuche im Protokoll: `node "${CLAUDE_PLUGIN_ROOT}/scripts/retro-timeline.js" --session ${CLAUDE_SESSION_ID} --entry <n>` zeigt Eintrag `<n>` mit seinen Nachbarn; ohne `--entry` kommt die ganze Zeitleiste.
+  1. **Fakten prüfen.** Alle Zahlen oben stammen aus dem Skript; du schreibst keine ab und schätzt keine. Steht dort „Fakten nicht verfügbar“, nennst du den Grund und hörst auf. Steht unter `ARGUMENTS` eine andere Protokolldatei (`--file <pfad>`) oder ein Ausschnitt (`--since-command <befehl>`), holst du die Fakten einmal neu: `node "${CLAUDE_PLUGIN_ROOT}/scripts/session-facts.js" --session ${CLAUDE_SESSION_ID} --before-retro --snapshot <Argumente>`. Stammt die Datei aus einem anderen Projekt, hängst du `--cwd <projektordner>` an.
+  2. **Nachlesen.** Stellen, auf die die Fakten zeigen, liest du über die Zeitleiste nach, nie per Textsuche im Protokoll: `node "${CLAUDE_PLUGIN_ROOT}/scripts/retro-timeline.js" --session ${CLAUDE_SESSION_ID} --entry <n>` zeigt Eintrag `<n>` mit seinen Nachbarn; ohne `--entry` kommt die Zeitleiste stückweise.
   3. **Urteilen.** Die Messwert-Signale deuten die „Hinweise zu den Signalen“ oben. Diese fünf Urteils-Signale beurteilst du selbst: Rückfrage oder Korrektur durch den Menschen · Skill geladen, aber nicht befolgt · Ergebnis erzeugt, aber nie genutzt · teures Modell oder breiter Lauf, wo ein schmaler reicht · Mensch wartet auf etwas, das parallel laufen könnte. Ein Tool-Fehler ist erst ein Befund, wenn die Meldung einen echten Fehlschlag zeigt.
   4. **Entwurf schreiben.** Ein `Write` an den Pfad aus der Zeile `Entwurf:` oben, im Berichtsformat. „Zahlen“ und „MCP-Nutzung“ lässt du weg; die setzt das Skript ein.
   5. **Bericht erzeugen.** `node "${CLAUDE_PLUGIN_ROOT}/scripts/retro-report.js" --session ${CLAUDE_SESSION_ID} --topic <thema>`, das Thema aus Kleinbuchstaben, Ziffern und Bindestrichen. Meldet es Verstöße, korrigierst du den Entwurf und rufst es erneut auf.
@@ -4448,3 +5203,19 @@
 - **R3 · Task 15** — geändert — `summaryLines` misst nur noch in `snapshot.ownTranscript` ohne Rückfall auf `snapshot.transcript`; `retroCost(null)` liefert `Kosten der Retrospektive: nicht messbar (eigenes Protokoll nicht gefunden)`, wie Task 11 `null` begründet. Neuer Test `summaryLines_OwnTranscriptUnknown_CostNotTakenFromForeignProtocol`, Interface ergänzt. Die widersprüchliche Begründung „`lib/transcript.js` bleibt unverändert“ bzw. „bekommt kein Anzeigeformat dazu“ ist ersetzt: `shorten` und `clock` bleiben bei ihren Nutzern (`humanEvents`, Bereichs-Labels) in `transcript.js`, `retro-format.js` hat nur das Zahlenformat, das kein Protokoll-Leser braucht. Der Anker `cli_ValidDraft_WritesDatedReportAndDeletesDraft` entsteht in Task 14 Schritt 1 (Fehlalarm der Anker-Prüfung).
 - **R3 · Task 11** — nicht geändert — Begründung wie R2 · Task 11 gilt weiter: `snapshotOf` setzt Zeilen aus `factLines`, `measureLines`, `savingsLists` und `minutes` zusammen, die in `session-facts.js` auch die Fakten-Ausgabe schreiben, und `ownTranscriptOf` braucht `sessionById`/`projectDir`, die erst Task 16 nach `lib/session-files.js` zieht; nach `lib/retro-snapshot.js` verschoben, müsste die Bibliothek das CLI-Skript importieren. `measuredOf`, `configuredExpect` und `projectOf` entstehen in Task 8 und 10, nicht in Task 11; die rechnenden Bausteine des Snapshots liegen schon in `lib/retro-snapshot.js`.
 - **R3 · Task 2** — geändert — `finished` wertet eine Retrospektive erst als abgeschlossen, wenn zum Aufruf von `retro-report.js … --session` ein Tool-Ergebnis ohne `is_error` mit einer Zeile `Bericht: …` gehört (`reportCallIds`, `reportWritten`, `REPORT_WRITTEN`); ein Lauf mit Verstößen (Exit 1) lässt den Schnitt stehen. Der Test `rangeOf_LastRetroAlreadyWroteReport_KeepsWholeSessionAndNamesIt` bekommt das Ergebnis, neuer Test `rangeOf_LastRetroReportFailed_StillCutsBeforeIt`; Consumes (`isToolResultEntry`, Fixture `result`) und Produces nachgezogen.
+- **F · AC-01** — geändert — Vorschlag 1: Neue Fixture `plainSummary(text, at)` in `tests/lib/retro-session.js` (Nutzer-Text ohne `origin` und ohne `isCompactSummary`, die reale Form laut W · Protokoll-Marker); neue Tests `humanEvents_UnmarkedSummaryInMarkedSession_IsNoInput` und `cli_UnmarkedSummary_NotCountedAsHumanInput` in Task 1 belegen, dass sie in einem markierten Protokoll weder als Eingabe erscheint noch in `Eingaben des Menschen: <n>` zählt. `summary()` bleibt für den Marker; `isHumanInput` bleibt unverändert, weil `marked` schon über `origin?.kind === 'human'` filtert. Das ganze AC-01 ist abgedeckt: Skill-Text und beide Formen der Zusammenfassung in Task 1, die Zeitleiste in Task 16, die jetzt dieselbe Fixture statt eines eigenen `realSummary` nutzt.
+- **F · Task 12** — geändert — Vorschlag 1: `stringsOf`, `plainText`, `entryText` und `corpusOf` ziehen von `lib/retro-draft.js` nach `lib/transcript.js` (Task 12 fügt sie dort nach `humanEvents` ein und exportiert `corpusOf`, Task 16 behält den Export); `retro-draft.js` hat nur noch Format-Parser und Prüfregeln. Die beiden `corpusOf`-Tests stehen in `transcript.test.js`; Dateien, Interfaces, Testläufe und Commit von Task 12 sowie Consumes und Import in Task 14 nachgezogen. `plainText` bleibt neben `textOf` eine eigene Funktion, weil sie zusätzlich `tool_use`-Eingaben liest.
+- **F · Task 14** — geändert — Vorschlag 1: Neues `projectRoot` in `build` prüft vor `writeReport`, ob ein aus dem Snapshot stammender Projektordner existiert, sonst `RetroError` `Projektordner fehlt: <cwd>; … mit --cwd <projektordner> angeben`, Exit 1 ohne Berichtsdatei und ohne angelegten Ordner. Neuer Test `cli_SnapshotCwdMissing_NamesCwdFlagAndWritesNothing`, Produces ergänzt. Mit `--cwd` gilt der Ordner wie bisher; die Absicht von `projectOf` (Task 8) bleibt.
+- **F · Task 17** — geändert — Vorschlag 1: Die Grammatik der Ziel-Zeile steht nur noch in `parseTarget` (Task 12, `lib/retro-draft.js`); `findingViolations` und `newTargets` nutzen sie, `targetKey` in `retro-sort.js` ebenso und ergänzt nur die Alt-Form in `legacyTarget` und freien Text in `rawKey`. `parseTarget` lässt die Alt-Form „<Art> · `neu:` …“ nicht mehr zu (Tests `parseTarget_ThreeForms_ArtNameAndKind`, `parseTarget_LegacyNewFormOrFreeText_Null`); `targetKey_OldAndNewForms_SameGroup` bleibt gültig. `collect` delegiert an `findingLines`, `relevanceRows`, `withoutRelevanceOf`, `groupBy` und `countRelevance`; `longRuns` und `idleReruns` in Task 7 sind per `flatMap`/`reduce` (`startsOf`, `runOf`, `stepsOf`, `countRerun`) auf höchstens zwei Ebenen gebracht, `isChange` entfällt.
+- **F · Task 14** — geändert — Vorschlag 1: Der Snapshot trägt `transcriptEntries`, die höchste `entryNo` des ganzen Hauptprotokolls beim Lauf von `--snapshot` (Task 11, `run` liest `entries.at(-1).entryNo` vor `rangeOf`); `corpus` in `retro-report.js` filtert das Hauptprotokoll auf `entryNo <= snapshot.transcriptEntries`, die Subagent-Protokolle bleiben ganz. Der Snapshot entsteht per `!` vor der ersten Modell-Anfrage der Retrospektive, das `Write` des Entwurfs (oder ein Bash-Heredoc) steht damit nie im Korpus, gleich ob der Slash-Befehl schon im Protokoll steht. `readSnapshot` (Task 11) lehnt einen Snapshot ohne ganzzahliges `transcriptEntries` als unlesbar ab, damit die Prüfung nie gegen einen leeren Korpus läuft. Neue Tests `cli_QuoteOnlyInDraftWriteAfterSnapshot_ReportedAsNotInProtocol` und `cli_SnapshotWithoutEntryCount_NoReportAndExitOne` in Task 14, `cli_Snapshot_RecordsLastEntryOfProtocolForQuoteCheck` in Task 11; `SNAPSHOT` der Fixture (Task 12) hat `transcriptEntries: 1`. Das ganze AC-15 bleibt abgedeckt wie in R2 · Task 12, das Zitat-Kriterium greift jetzt auch in der eigenen Session.
+- **F · Task 16** — geändert — Vorschlag 1: (a) `stringsOf`, `plainText`, `entryText`, `corpusOf` stehen in neuem `lib/retro-corpus.js` (Task 12, Tests in neuem `tests/retro-corpus.test.js`, Task 14 importiert von dort); `contextOf` und `requestsOf` in neuem `lib/retro-requests.js` (Task 5; Tasks 5, 6, 15 und `retro-measures.test.js` importieren von dort); `tokensOf` bleibt in `transcript.js`, weil `analyze` es nutzt. `shorten`, `clock` und `callLabel` bleiben vorerst in `transcript.js` (die im Vorschlag genannte erste Option): `humanEvents` kürzt mit `shorten`, die Bereichs-Labels schreiben mit `clock`, `analyze` nutzt `callLabel`; ein eigenes `lib/line-format.js` für drei kleine Funktionen trennte sie nur von ihren Lesern. (b) `isCompactEntry` (einzige `compact`-Regel, exportiert) und das interne `isPlainUserText` stehen ab Task 1 in `transcript.js`; `analyze` zählt `compactions` darüber, `isHumanInput` nutzt `isPlainUserText` plus `isSlashCommand` (ein Slash-Befehl beginnt mit `<command-message>` und fiele sonst unter die Hinweise), `isSummary` (Task 16) nutzt beide. Neuer Test `cli_SystemCompactEntry_CountedAndShownAsSummaryAlike`; die Importzeilen von `session-facts.js` in Task 1, 2 und 7 tragen `isCompactEntry`. (c) `retro-timeline.js` hat `MAX_ROWS = 300` und `--from <n>`; darüber endet die Ausgabe vor dem ersten Eintrag, der nicht mehr ganz passt, mit `… weitere <n> Zeilen bis #<letzte>; mit --from <nächste> fortsetzen oder --entry nutzen`. Tests `cli_TimelineOverRowLimit_EndsWithHintToContinue` und `cli_TimelineFrom_ListsRemainingRowsWithoutHint`; der Skill-Text in Task 18 sagt „kommt die Zeitleiste stückweise“ statt „die ganze Zeitleiste“ (gleiche Wortzahl). E · Kürzung und Umfang der Zeitleiste gilt mit dieser Obergrenze; AC-20 bleibt über die Fortsetzung mit `--from` vollständig erfüllt, die Kürzungsmaße entscheidet der Plan (W · Detailtiefe).
+- **F · Task 11** — geändert — Vorschlag 1: `buildSnapshot({ id, transcript, ownTranscript, transcriptEntries, cwd, range, facts, headline, numbers, mcp, expect })` in `lib/retro-snapshot.js` ruft `branchOf`, `specPaths`, `skillsOf`, `projectFiles` auf und setzt das Objekt zusammen (Überschrift der MCP-Nutzung entfernt es dort); `headlineOf` und `numbersOf` bleiben in `session-facts.js` neben `factLines`/`measureLines`, `saveSnapshot` schreibt den Snapshot und löscht den alten Entwurf, `run` orchestriert nur noch. `ownTranscriptOf` steht bis Task 16 in `session-facts.js` und zieht dort mit `sessionById` nach `lib/session-files.js`, sodass die Bibliothek kein CLI-Skript importiert (der Einwand aus R2/R3 · Task 11 entfällt damit). Der Snapshot trägt zusätzlich `transcriptEntries` (F · Task 14) und `labels` (F · Task 2). Neuer Test `buildSnapshot_FactsAndSessionData_AssembledIntoFields`; Produces, Consumes und der Feldtest nachgezogen.
+- **F · Task 2** — geändert — Vorschlag 1, zum Teil: Umgesetzt ist der sichtbare Restfall. Folgt dem geschnittenen Aufruf eine Modell-Anfrage und wurde kein Bericht erzeugt, hängt `rangeOf` `Warnung: Schnitt vor einem früheren, nicht abgeschlossenen Aufruf von prozess-retrospektive (Eintrag <n>); Arbeit danach fehlt` an `labels`; die Fakten zeigen es, der Snapshot trägt `labels` (Task 11); der Schnitt selbst bleibt. Anders als im Vorschlag zählt eine Anfrage, die nur `session-facts.js` neu aufruft, nicht: Schritt 1 des Skills (Task 18) holt die Fakten bei Argumenten einmal neu, und dann folgt der laufenden Retrospektive schon eine Anfrage, eine Warnung wäre falsch (Test `rangeOf_OnlyFactsRerunAfterRetroCall_CutsWithoutWarning`). `rangeOf_LastRetroReportFailed_StillCutsBeforeIt` erwartet die Warnung; die Fixture `session()` verliert die Anfrage `r3` nach dem Aufruf der Retrospektive, damit er die laufende darstellt (`rangeOf_SinceCommandWithoutCut_StartsAtLastCallAndRunsToEnd` erwartet `[5, 6, 7, 8]`). Nicht umgesetzt ist der Schritt „Reihenfolge messen“ mit echter Fixture: Im Repo nutzt noch kein Skill `` !`…` `` (der erste entsteht in Task 18), ein echtes Protokoll mit diesem Ablauf gibt es also vor der Umsetzung nicht; eine erneute Suche in den Protokollen des Menschen deckt W · Protokoll-Marker nicht (einmalige Freigabe), und Kommentar wie Fixture hingen an einem unbekannten Ergebnis, was dem Plan-Format (vollständiger Code, erwartete Ausgabe) widerspricht. Der Kommentar an `finished` nennt die Annahme deshalb ausdrücklich als ungemessen und verweist auf die Warnung.
+- **F · Task 12** — geändert — Vorschlag 1: Neue Datei `plugins/forge/scripts/lib/regexp.js` mit `escapeRegExp` (Inhalt wie `lib/document-units.js:19`) samt Test `tests/regexp.test.js`; `lib/retro-draft.js` importiert sie statt einer privaten Kopie. Dateien, Interfaces, Testläufe und Commit von Task 12 nachgezogen. Die drei bestehenden Kopien in `plan-anchors.js:26`, `forge-config.js:106` und `lib/document-units.js:19` bleiben unangetastet und werden bei Gelegenheit umgestellt.
+- **F · Task 14** — geändert — Vorschlag 1: `subagentRows` liest die `.meta.json` über die neue Hilfsfunktion `readMeta(metaFile)` mit `try/catch` und Rückfall auf `{}` (auch bei `null`); fehlende, leere und halb geschriebene Dateien ergeben die Zeile mit Dateiname, `?` und dem Modell aus den Fakten. Neuer Test `cli_BrokenSubagentMeta_RowFallsBackWithoutError` in `session-facts.test.js` mit leerer und abgeschnittener `.meta.json` (keine Ausnahme, Zeile `| agent-a.jsonl | ? | sonnet |`); Dateien, Interfaces, Testläufe und Commit nachgezogen.
+- **F · Task 15** — geändert — Vorschlag 1: `forge-config.js` bekommt neben `workitemOf` die exportierte Funktion `branchWorkitem(config, branch)` (intern `workitemPattern(source)`); `null` bei `Workitem` leer oder `keine`, ungültigem Muster, leerem Branch oder ohne Treffer, sonst `found[0]`. `lib/retro-summary.js` ersetzt `workitemPattern` durch `branchWorkitem(configOf(cwd), snapshot.branch)`, `configOf` fängt `readConfig` ohne Projekt-Einstellungen ab. `work.js` `workitemConflict` nutzt dieselbe Funktion (`return own && found && found !== own ? found : null;`), das Verhalten bleibt, belegt durch den bestehenden `work.test.js`. Neue Tests `branchWorkitem_PatternInBranch_ReturnsMatch` und `branchWorkitem_NoneEmptyInvalidNoBranchOrNoMatch_Null` in `forge-config.test.js`.
+- **F · Task 15** — geändert — Vorschlag 1: Umgesetzt in Task 14, weil dort `build` den Bericht schreibt, auf den das `Vormerken` der Kurzfassung (Task 15) zeigt. Neues `lib/retro-secrets.js`: `secretViolations(text)` prüft den fertigen Berichtstext vor `writeReport` auf `password|passwort|passwd|secret|token|api[_-]?key` mit `:`/`=` und Wert ab 8 Zeichen, `Bearer <wert>`, `://user:pass@`, `AKIA…` und `gh[pousr]_…`; jeder Treffer steht einzeln unter `Prüfung: <n> Verstöße, keine Berichtsdatei geschrieben`, mit Zeilennummer und `***` statt des Werts, dazu der Hinweis auf Entwurf oder Snapshot; Exit 1, keine Berichtsdatei. `withFileNameSource` kürzt `Quelle: \`…\`` der MCP-Nutzung auf den Dateinamen; `mcp-usage.js` selbst gibt weiter den ganzen Pfad aus. `checkedDraft` und `checkedReport` teilen `failOnViolations`, die Meldung von `cli_DraftWithViolations_ListsEachAndWritesNothing` bleibt gleich. Neue Tests `cli_TokenInCommandList_ReportedAndNothingWritten` und `cli_SourcePath_WrittenWithoutUserFolder`; Dateien, Interfaces, Architektur-Zeile und Commit von Task 14 nachgezogen. Die Muster sind eine Prüfregel, die W · Detailtiefe (Spec) dem Plan überlässt; AC-15 und AC-16 bleiben gültig, weil die Prüfung nur zusätzlich blockt und der Aufbau des Berichts gleich bleibt.
+- **F · Task 16** — geändert — Vorschlag 1, mit verschobenem Zeitpunkt: Der Umzug von `findTranscript` und `subagentFiles` (samt `configDir`) nach `lib/session-files.js` geschieht in Task 14 statt Task 16, weil Task 14 `subagentFiles` für `retro-report.js` und `subagentRows` schon braucht und vor Task 16 läuft; so entfällt die Export-Anpassung in Task 14 wie verlangt. Task 14 legt `lib/session-files.js` mit beiden Funktionen und Test `tests/session-files.test.js` an; `mcp-usage.js` importiert sie von dort, `module.exports` bleibt unverändert (auch `findTranscript` unter dem alten Namen), und `transcriptOf` wandelt den neuen `RetroError` in den `UsageError` von `main` (Meldung und Exit 1 bleiben). `retro-report.js` und `session-facts.js` nutzen `lib/session-files.js`. Task 16 erweitert die Datei (Modify statt Create), `sessionById` nutzt das lokale `findTranscript`, ein `require('../mcp-usage')` gibt es dort nicht mehr. Der Satz „hängt nur an Bibliotheken“ gilt für `retro-timeline.js` und nennt die bewusst genutzten Module außerhalb von `lib/`: `forge-config.js` (in `lib/retro-summary.js`) und zusätzlich `sameServer` aus `mcp-usage.js` (in `lib/retro-draft.js`), da der Satz sonst nicht stimmte.
+- **F · Task 14** — geändert — Vorschlag 1: Das Muster „Schlüssel mit Wert“ in `lib/retro-secrets.js` beginnt mit `[\w-]*` statt `\b`, sodass `API_TOKEN=…`, `DB_PASSWORD=…`, `NPM_TOKEN=…` und `CLIENT_SECRET=…` anschlagen. Neuer Test `tests/retro-secrets.test.js` belegt das samt Maskierung, dazu „Tokens: 1200000“ und „Token: nein“ ohne Treffer. Tokens ohne Schlüsselwort und ohne bekanntes Präfix (Azure-DevOps-PATs) stehen als bekannte Grenze in Produces und im Kommentar. Nebenbefund Benutzerordner: Das Relativieren geschieht in Task 14 in neuem `relativeToProject` (in `lib/retro-secrets.js`, `build` wendet es auf `snapshot.numbers` mit `snapshot.cwd` an), nicht in `savingsLists`/`callLabel`. Grund: `callLabel` (Task 1) kennt keinen Projektordner, der Snapshot soll die Rohwerte behalten, und `escapeRegExp` aus `lib/regexp.js` gibt es erst ab Task 12. Test `cli_ProjectPathsInNumbers_WrittenRelative`. Der Kommentar an `withFileNameSource` gilt nur noch der Quelle. Dateien, Consumes, Testläufe und Commit sind nachgezogen.
+- **F · Task 15** — geändert — Vorschlag 1: `retroCost(transcript, fromEntryNo)` zählt nur Anfragen mit `entryNo > snapshot.transcriptEntries` statt ab dem letzten `RETRO`-Aufruf; neues `costOf` in `summaryLines` meldet „nicht messbar (eigenes Protokoll ist nicht das ausgewertete)“, wenn `snapshot.transcript` nicht `snapshot.ownTranscript` ist. Import `indexesOf`/`RETRO` entfällt, Consumes/Produces nachgezogen. Tests `retroCost_AfterSnapshotEntry_RequestsAndTokensSplit`, `retroCost_NoRetroCallButEarlierRetro_CountsOnlyAfterSnapshot`, `summaryLines_OwnTranscriptNotEvaluated_CostNotMeasurable` ersetzen die beiden alten `retroCost`-Tests. AC-17 bleibt erfüllt.
+- **F · Task 8** — geändert — Vorschlag 1: `projectOf(options, session, warn?)` nimmt `--cwd`, ohne `--file` den aktuellen Ordner (eigene Session, Worktree-sicher), bei `--file` das `cwd` des Protokolls; fehlt dieser Ordner, gilt der aktuelle Ordner mit Warnung, die `--cwd <projektordner>` nennt. `projectOf` wird exportiert (Task 8 und Task 11 `module.exports`). Tests `projectOf_OwnSession_UsesProcessCwd`, `projectOf_ForeignFileMissingCwd_FallsBackWithWarning`. Der Skill-Text in Task 18 nennt `--cwd` für Protokolle aus anderen Projekten.

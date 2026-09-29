@@ -113,3 +113,45 @@ test('cli_NoRebuild_SaysNone', () => {
   assert.equal(output.status, 0, output.stderr);
   assert.match(output.stdout, /- Cache-Neuaufbauten: keiner\n/);
 });
+
+function loadSession() {
+  return writeSession([
+    human('Los', '10:00'),
+    request('r1', '10:01', [call('t1', 'Read', { file_path: 'src/big.ts' })]),
+    result('t1', '10:02', 'x'.repeat(8000)),
+    request('r2', '10:03', [call('t2', 'Skill', { skill: 'dv-forge:plan-writing' })]),
+    result('t2', '10:03', 'Launching skill'),
+    skillText('y'.repeat(6000), '10:03'),
+    request('r3', '10:04', [call('t3', 'Bash', { command: 'ls' })]),
+    result('t3', '10:04', 'z'.repeat(400)),
+    request('r4', '10:05', []),
+  ]);
+}
+
+test('contextLoads_ResultsAndSkillText_SizeTimesFollowingRequests', () => {
+  const entries = readEntries(loadSession());
+
+  const loads = measures.contextLoads(entries, requestsOf(entries));
+
+  assert.deepEqual(loads.map((load) => [load.label, load.tokens, load.following, load.load]), [
+    ['Read src/big.ts', 2000, 3, 6000],
+    ['Skill-Text nach Skill dv-forge:plan-writing', 1500, 2, 3000],
+  ]);
+});
+
+test('contextLoads_MoreThanFive_OnlyFiveLargest', () => {
+  const calls = [1, 2, 3, 4, 5, 6].flatMap((n) => [request(`r${n}`, '10:00', [call(`t${n}`, 'Read', { file_path: `f${n}.ts` })]), result(`t${n}`, '10:00', 'x'.repeat(4000 * n * n))]);
+  const entries = readEntries(writeSession([...calls, request('r9', '10:01', [])]));
+
+  const loads = measures.contextLoads(entries, requestsOf(entries));
+
+  assert.equal(loads.length, 5);
+  assert.ok(!loads.some((load) => load.label === 'Read f1.ts'));
+});
+
+test('cli_LoadSession_ListsContextLoadsWithTrigger', () => {
+  const output = facts(loadSession());
+
+  assert.equal(output.status, 0, output.stderr);
+  assert.match(output.stdout, /Größte Kontextlasten \(Größe × folgende Anfragen, ab 1k Tokens\):\n- 2k × 3 Anfragen = 6k · Read src\/big\.ts \(Eintrag 3\)\n- 2k × 2 Anfragen = 3k · Skill-Text nach Skill dv-forge:plan-writing \(Eintrag 6\)\n/);
+});

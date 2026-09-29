@@ -8,7 +8,7 @@ const mcpUsage = require('./mcp-usage.js');
 const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isCompactEntry, humanEvents } = require('./lib/transcript');
 const { rangeOf } = require('./lib/retro-range');
 const { requestsOf } = require('./lib/retro-requests');
-const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds } = require('./lib/retro-measures');
+const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads } = require('./lib/retro-measures');
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
   + ' [--since-command <name>] [--before-retro] [--lenient] [--skeleton <bericht.md>]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
@@ -131,6 +131,7 @@ function analyze(entries) {
   facts.context = requestContext(requests);
   facts.baseline = firstRequest(entries, requests);
   facts.rebuilds = cacheRebuilds(requests);
+  facts.loads = contextLoads(entries, requests);
   return facts;
 }
 
@@ -242,6 +243,18 @@ function humanLines(humans) {
   return humans.map((event) => `- #${event.entryNo} ${clock(event.time)} ${event.kind}: ${event.text}`);
 }
 
+function listOrNone(lines) {
+  return lines.length > 0 ? lines : ['- keine'];
+}
+
+function measureLines(facts) {
+  return [
+    'Größte Kontextlasten (Größe × folgende Anfragen, ab 1k Tokens):',
+    ...listOrNone(facts.loads.map((load) => `- ${thousands(load.tokens)} × ${load.following} Anfragen = ${thousands(load.load)} · ${load.label} (Eintrag ${load.entryNo})`)),
+    '',
+  ];
+}
+
 function render(sessionFile, facts, agents, labels = []) {
   const errorLines = errorLinesOf(facts);
   return [
@@ -250,6 +263,7 @@ function render(sessionFile, facts, agents, labels = []) {
     ...labels.map((label) => `- ${label}`),
     ...factLines(facts, agents),
     '',
+    ...measureLines(facts),
     '## Subagents (nach Tokens)',
     '| Auftrag | Typ | Modell | Tokens gesamt | davon neu | Tools | Fehler | min |',
     '|---|---|---|---|---|---|---|---|',

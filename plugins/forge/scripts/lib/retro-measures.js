@@ -2,7 +2,7 @@
 
 // Messwerte über die Einträge der Hauptsession: Zeit, Harness-Hinweise, Kontext und Tool-Läufe.
 
-const { humanEvents, textOf, isToolResultEntry } = require('./transcript');
+const { humanEvents, textOf, isToolResultEntry, callLabel, SLASH_COMMAND } = require('./transcript');
 const { contextOf } = require('./retro-requests');
 
 const MINUTE_MS = 60000;
@@ -105,4 +105,46 @@ function cacheRebuilds(requests) {
   });
 }
 
-module.exports = { timeOf, minutes, timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds };
+const LOAD_MIN_TOKENS = 1000;
+const TOP_LOADS = 5;
+
+function toolUses(entry) {
+  const content = entry.message?.content;
+  return entry.type === 'assistant' && Array.isArray(content) ? content.filter((part) => part.type === 'tool_use') : [];
+}
+
+function tokensOfText(text) {
+  return Math.round(text.length / CHARS_PER_TOKEN);
+}
+
+// Jedes Tool-Ergebnis und jeder eingeblendete Skill-Text mit seiner Größe; der Skill-Text nennt den Aufruf, der ihn auslöste.
+function loadItems(entries) {
+  const calls = new Map();
+  const items = [];
+  let trigger = 'unbekannt';
+  for (const entry of entries) {
+    for (const part of toolUses(entry)) {
+      calls.set(part.id, callLabel(part));
+      if (part.name === 'Skill') trigger = callLabel(part);
+    }
+    if (entry.type !== 'user' || !entry.message) continue;
+    const content = entry.message.content;
+    const command = entry.isMeta ? null : textOf(content).match(SLASH_COMMAND)?.[1];
+    if (command) trigger = `/${command}`;
+    if (entry.isMeta) items.push({ entryNo: entry.entryNo, tokens: tokensOfText(textOf(content)), label: `Skill-Text nach ${trigger}` });
+    const results = Array.isArray(content) ? content.filter((part) => part.type === 'tool_result') : [];
+    items.push(...results.map((part) => ({ entryNo: entry.entryNo, tokens: tokensOfText(textOf(part.content)), label: calls.get(part.tool_use_id) ?? 'unbekannt' })));
+  }
+  return items;
+}
+
+// Kontextlast = Größe mal Zahl der Anfragen, die das Stück danach mitlesen.
+function contextLoads(entries, requests) {
+  return loadItems(entries).filter((item) => item.tokens >= LOAD_MIN_TOKENS)
+    .map((item) => ({ ...item, following: requests.filter((request) => request.entryNo > item.entryNo).length }))
+    .map((item) => ({ ...item, load: item.tokens * item.following }))
+    .sort((a, b) => b.load - a.load)
+    .slice(0, TOP_LOADS);
+}
+
+module.exports = { timeOf, minutes, timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads };

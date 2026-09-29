@@ -15,8 +15,8 @@ const CATEGORIES = {
   'spec-review': SHARED_CATEGORIES,
   'plan-review': [...SHARED_CATEGORIES, 'ac-fehlt-im-plan', 'umsetzer-steckt-fest'],
 };
-// Beratende Reviewer je Review; keiner ist beratend, solange ein Review keinen nennt.
-const ADVISORY = { 'spec-review': [], 'plan-review': [] };
+// Beratende Reviewer je Review; ihre Findings stehen höchstens als 🟡.
+const ADVISORY = { 'spec-review': [], 'plan-review': ['architecture', 'risks'] };
 const REQUIRED_FIELDS = ['location', 'quote', 'category', 'consequence', 'rationale'];
 const COLOR_FIELDS = ['severity', 'color'];
 const SPELLING_WORDS = ['Großschreibung', 'Kleinschreibung', 'ß', 'Umlaut', 'Diakritik'];

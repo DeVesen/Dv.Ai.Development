@@ -23,6 +23,9 @@ Gibt es `Anker:`, liest du den Plan einmal ganz und danach nur noch Abschnitte p
 2. **Security:** Eingabevalidierung, Injection, Geheimnisse im Code, fehlende Berechtigungsprüfung.
 3. **Ungeprüfte Annahmen:** Annahmen über Format, Verfügbarkeit oder Statuscodes einer Schnittstelle, die weder die Spec festlegt noch der Code im Repo belegt.
 
+## Beratend
+Du bist beratend. Ein Skript stuft jedes deiner Findings höchstens auf 🟡, gleich welche Kategorie es trägt; deine Findings blocken nie. Die Kategorie wählst du trotzdem nach der Sache.
+
 ## Nicht deine Aufgabe
 Organisatorische Themen, Zuständigkeiten, Zeit, Stil, Architektur, AC-Abdeckung. Doku-Zitate, Meldungstexte, Selektoren und Signaturen fremder Bibliotheken sowie Tool-Parameter prüft `buildability`.
 

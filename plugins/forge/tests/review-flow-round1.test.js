@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const flow = require('../scripts/review-flow.js');
 const { SPEC, finding, scoutFor, flowWorkspace } = require('./lib/flow-workspace');
+const { TWO_TASKS } = require('./lib/plan-fixtures');
 
 const OPEN_AC04 = SPEC.replace('- **W · Deckel** · Aussage — Zwei Runden.',
   '- **W · Deckel** · Aussage — Zwei Runden.\n- **R1 · AC-04** — frage an den menschen — Gilt D auch leer?');
@@ -147,4 +148,14 @@ test('cli_UnknownKindOrCommand_ExitsTwo', () => {
   assert.equal(ws.run('round1', 'implementation-review', ws.doc, ws.workspace, 'x').status, 2);
   assert.equal(ws.run('weiter', ws.workspace).status, 2);
   assert.equal(ws.run('scout-check', ws.workspace, '3').status, 2);
+});
+
+test('roundOne_PlanAdvisoryReviewersWithRedCategories_AtMostYellow', () => {
+  const ws = flowWorkspace(TWO_TASKS, 'plan.md');
+  ws.context('# Spec\n');
+  ws.review('architecture', [finding('Task 1', 'umsetzer-steckt-fest', { quote: 'A.' })]);
+  ws.review('risks', [finding('Task 2', 'widerspruch', { quote: 'B.' })]);
+  const out = flow.roundOne('plan-review', ws.doc, ws.workspace, ['architecture', 'risks'], []);
+  assert.equal(out, 'RUNDE1 rot=0 gelb=2 gruen=0 fragen=0 ausgefallen=-\nNEXT scout=ja nacharbeit=nein');
+  assert.deepEqual(ws.readJson('runde-1/runde.json').groups.map((group) => group.items[0].capped), [['beratend'], ['beratend']]);
 });

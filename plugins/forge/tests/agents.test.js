@@ -409,3 +409,11 @@ test('spec-rework_Body_AnswerModeWritesWEntriesAfterREntries', () => {
     assert.ok(body.includes(part), part);
   }
 });
+
+test('plan-review-advisory_Body_FindingsAtMostYellow', () => {
+  for (const name of ['architecture', 'risks']) {
+    const { body } = readAgent(`plan-review-${name}`);
+    assert.ok(body.includes('## Beratend'), name);
+    assert.ok(body.includes('Du bist beratend. Ein Skript stuft jedes deiner Findings höchstens auf 🟡, gleich welche Kategorie es trägt; deine Findings blocken nie.'), name);
+  }
+});

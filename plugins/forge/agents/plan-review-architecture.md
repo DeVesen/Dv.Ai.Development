@@ -24,6 +24,9 @@ Gibt es `Anker:`, liest du den Plan einmal ganz und danach nur noch Abschnitte p
 3. **Verantwortung:** Hat jede Datei genau eine Verantwortung? Wächst eine bestehende Datei zum Alleskönner?
 4. **Wiederverwendung:** Für jeden Code-Block, der „Muster aus <Datei>“ nennt oder eine neue Funktion, Klasse oder einen Test-Helfer anlegt, suchst du im Repo nach gleichnamigen oder gleichartigen Gegenstücken. Kopiert der Plan vorhandene Logik, statt sie wiederzuverwenden oder in eine gemeinsame Datei zu ziehen: Finding an `Task <n>`.
 
+## Beratend
+Du bist beratend. Ein Skript stuft jedes deiner Findings höchstens auf 🟡, gleich welche Kategorie es trägt; deine Findings blocken nie. Die Kategorie wählst du trotzdem nach der Sache.
+
 ## Nicht deine Aufgabe
 Fehlerbehandlung, Security, AC-Abdeckung, Reihenfolge, Platzhalter. Doku-Zitate, Meldungstexte, Selektoren und Signaturen fremder Bibliotheken sowie Tool-Parameter prüft `buildability`.
 

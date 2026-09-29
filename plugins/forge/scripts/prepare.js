@@ -15,22 +15,21 @@ const { writeAnchors } = require('./plan-anchors');
 const { ART_OF_ROLE, FollowupError, latest, loadGroups, rolesFor, slugFor } = require('./followup');
 
 const USAGE = [
-  'Aufruf: node prepare.js spec-review <spec> [quelle] [--rounds N] [--only <reviewer,...>]',
-  '       node prepare.js plan-review <plan> [spec] [--rounds N] [--only <reviewer,...>]',
+  'Aufruf: node prepare.js spec-review <spec> [quelle] [--only <reviewer,...>]',
+  '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>]',
   '       node prepare.js implementation <plan> [spec]',
   '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]',
   '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>]   (auswahl: b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
-const DEFAULT_ROUNDS = '3';
 
 class PrepareError extends Error {}
 class UsageError extends Error {}
 
 const FLAGS = {
-  'spec-review': ['--rounds', '--only'],
-  'plan-review': ['--rounds', '--only'],
+  'spec-review': ['--only'],
+  'plan-review': ['--only'],
   implementation: [],
   'implementation-review': ['--spec', '--context', '--base', '--only'],
   'review-followup': ['--spec', '--base'],
@@ -53,7 +52,8 @@ function parseArgs(skill, args) {
       positional.push(arg.replace(/^@/, ''));
       continue;
     }
-    if (!FLAGS[skill].includes(arg) || index + 1 >= args.length) throw new UsageError(`Unbekanntes oder unvollständiges Argument: ${arg}`);
+    if (!FLAGS[skill].includes(arg)) throw new UsageError(`Unbekanntes Argument: ${arg}`);
+    if (index + 1 >= args.length) throw new UsageError(`Unvollständiges Argument: ${arg}`);
     index += 1;
     (flags[arg] ??= []).push(args[index].replace(/^@/, ''));
   }
@@ -114,12 +114,6 @@ function explicitSpec(positional, flags) {
   const flag = flags['--spec']?.[0];
   if (second && flag && path.resolve(second) !== path.resolve(flag)) throw new PrepareError('Zwei verschiedene Specs angegeben.');
   return flag ?? second;
-}
-
-function rounds(flags) {
-  const value = flags['--rounds']?.[0] ?? DEFAULT_ROUNDS;
-  if (!/^\d+$/.test(value)) throw new UsageError(`--rounds braucht eine Zahl: ${value}`);
-  return value;
 }
 
 function chosenReviewers(skill, flags) {
@@ -190,7 +184,6 @@ function prepareSpecReview({ positional, flags }) {
   const root = gitRoot(path.dirname(spec));
   const values = { S: spec, R: root };
   if (positional[1]) values.Q = existingFile(path.resolve(positional[1]), 'Quelle');
-  values.N = rounds(flags);
   const chosen = chosenReviewers('spec-review', flags);
   const slug = path.basename(spec).toLowerCase() === 'spec.md' ? path.basename(path.dirname(spec)) : path.basename(spec, path.extname(spec));
   values.slug = slug;
@@ -220,7 +213,7 @@ function prepareSpecReview({ positional, flags }) {
 function preparePlanReview({ positional, flags }) {
   const plan = existingFile(path.resolve(positional[0]), 'Plan');
   const root = gitRoot(path.dirname(plan));
-  const values = { P: plan, S: resolveSpec(plan, positional[1], root), R: root, N: rounds(flags) };
+  const values = { P: plan, S: resolveSpec(plan, positional[1], root), R: root };
   const aktiv = chosenReviewers('plan-review', flags).join(',');
   const { config } = readConfig(root);
   values.slug = slugOf(plan);

@@ -38,7 +38,7 @@ test('planReview_SpecBesidePlan_ResolvedWithForwardSlashes', () => {
   const out = values(result);
   assert.ok(samePath(out.S, path.join(repo, 'docs/forge/demo/spec.md')));
   assert.ok(samePath(out.R, repo));
-  assert.equal(out.N, '3');
+  assert.equal(out.N, undefined);
   assert.doesNotMatch(result.stdout, /\\/);
 });
 
@@ -52,9 +52,8 @@ test('planReview_SpecLineInHeader_WinsOverSpecBeside', () => {
 test('planReview_ExplicitSpec_WinsOverHeader', () => {
   const repo = planRepo(PLAN.replace('**Ziel:** Demo.', '**Spec:** docs/forge/demo/spec.md'));
   commitFile(repo, 'explicit.md', '# E\n', 'explicit');
-  const out = values(run(repo, 'plan-review', 'docs/forge/demo/plan.md', 'explicit.md', '--rounds', '5'));
+  const out = values(run(repo, 'plan-review', 'docs/forge/demo/plan.md', 'explicit.md'));
   assert.ok(samePath(out.S, path.join(repo, 'explicit.md')));
-  assert.equal(out.N, '5');
 });
 
 test('planReview_NoSpec_AbortsWithCandidates', () => {
@@ -143,6 +142,16 @@ test('cli_BadArguments_ExitWithTwo', () => {
   assert.equal(run(repo, 'plan-review').status, 2);
   assert.equal(run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--base', 'x').status, 2);
   assert.equal(run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--rounds', 'drei').status, 2);
+});
+
+test('specAndPlanReview_RoundsFlag_AbortsAsUnknownArgument', () => {
+  const repo = planRepo();
+  for (const args of [['spec-review', 'docs/forge/demo/spec.md'], ['plan-review', 'docs/forge/demo/plan.md']]) {
+    const result = run(repo, ...args, '--rounds', '2');
+    assert.equal(result.status, 2, args[0]);
+    assert.match(result.stderr, /^Unbekanntes Argument: --rounds\n/);
+  }
+  assert.match(run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--only').stderr, /^Unvollständiges Argument: --only\n/);
 });
 
 test('specReview_ProfilesFound_WritesIndexAndWarnsOnDuplicates', () => {

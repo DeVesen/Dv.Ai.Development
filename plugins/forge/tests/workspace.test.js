@@ -59,3 +59,16 @@ test('cli_BadArguments_ExitWithTwo', () => {
   assert.equal(run(repo, 'create', 'review', '../x').status, 2);
   assert.equal(run(repo, 'delete', 'review', 'x').status, 2);
 });
+
+test('readContext_AfterWriteContext_ReturnsSameValues', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-context-'));
+  workspace.writeContext(dir, { spec: 'C:/r/spec.md', repo: 'C:/r' });
+  assert.deepEqual(workspace.readContext(dir), { spec: 'C:/r/spec.md', repo: 'C:/r' });
+});
+
+test('readContext_MissingOrBrokenFile_ReturnsEmptyContext', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-context-'));
+  const missing = workspace.readContext(dir);
+  fs.writeFileSync(path.join(dir, workspace.CONTEXT_FILE), '[1, 2');
+  assert.deepEqual([missing, workspace.readContext(dir)], [{}, {}]);
+});

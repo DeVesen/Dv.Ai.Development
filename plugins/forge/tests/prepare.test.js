@@ -274,6 +274,14 @@ test('planReview_AnchorCheckFails_WarnsWithoutAAndExitsZero', () => {
   assert.match([].concat(out.WARN).join('\n'), /Anker-Prüfung fehlgeschlagen: Task-Nummerierung/);
 });
 
+test('planReview_Context_NamesSpecAndRepoInWorkspace', () => {
+  const repo = planRepo();
+  const out = values(run(repo, 'plan-review', 'docs/forge/demo/plan.md'));
+  const context = JSON.parse(fs.readFileSync(path.join(out.W, 'kontext.json'), 'utf8'));
+  assert.ok(samePath(context.spec, out.S));
+  assert.ok(samePath(context.repo, out.R));
+});
+
 const FOLLOWUP_AGGREGATE = [
   '=== REWORK ===',
   '### 🔴 Task 2 (buildability, feasibility · hochgestuft)',

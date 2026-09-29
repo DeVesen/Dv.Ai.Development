@@ -7,7 +7,7 @@ const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 const { slugOf } = require('./plan-tasks');
 const { resolveTag, TagError } = require('./base-tag');
-const { createWorkspace } = require('./workspace');
+const { createWorkspace, writeContext } = require('./workspace');
 const { writePackage, PackageError } = require('./review-package');
 const { ConfigError, readConfig, branchFor } = require('./forge-config');
 const { archivePath } = require('./ledger');
@@ -219,6 +219,8 @@ function preparePlanReview({ positional, flags }) {
   values.slug = slugOf(plan);
   values.W = createWorkspace('plan-review', values.slug, root);
   values.aktiv = aktiv;
+  // Spec und Repo für die Skript-Prüfungen von review-flow.js, auch im Folge-Modus.
+  writeContext(values.W, { spec: toPosix(values.S), repo: toPosix(root) });
   // Anker einmal deterministisch prüfen; ein Fehler darf das Review nicht verhindern.
   try {
     values.A = writeAnchors(plan, root, values.W);

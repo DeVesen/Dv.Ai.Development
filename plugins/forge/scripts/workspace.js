@@ -35,6 +35,25 @@ function removeWorkspace(role, slug, cwd = process.cwd()) {
   return toPosix(dir);
 }
 
+const CONTEXT_FILE = 'kontext.json';
+
+// Eingaben der Skript-Prüfungen eines Laufs; prepare.js schreibt sie, review-flow.js liest sie.
+function writeContext(dir, context) {
+  const file = path.join(dir, CONTEXT_FILE);
+  fs.writeFileSync(file, `${JSON.stringify(context, null, 2)}\n`);
+  return toPosix(file);
+}
+
+// Fehlt die Datei oder ist sie kein JSON-Objekt, ist der Kontext leer; die Skript-Prüfungen melden das selbst.
+function readContext(dir) {
+  try {
+    const value = JSON.parse(fs.readFileSync(path.join(dir, CONTEXT_FILE), 'utf8'));
+    return value !== null && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+
 const ACTIONS = { create: createWorkspace, remove: removeWorkspace };
 
 function main() {
@@ -54,4 +73,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { WorkspaceError, workspacePath, createWorkspace, removeWorkspace };
+module.exports = { WorkspaceError, workspacePath, createWorkspace, removeWorkspace, writeContext, readContext, CONTEXT_FILE };

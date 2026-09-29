@@ -429,6 +429,12 @@ test('spec-rework_Body_AnswerModeWritesWEntriesAfterREntries', () => {
   }
 });
 
+test('spec-rework_Body_AnswerEntryNamesIdOfQuestionsREntryNotOwnId', () => {
+  const { body } = readAgent('spec-rework');
+  const answerSection = body.slice(body.indexOf('## Antworten eintragen'), body.indexOf('## Folge-Modus'));
+  assert.ok(answerSection.includes('Dort ist `R<n>` die Kennung aus dem R-Eintrag der Frage, wie er in der Spec oder unter `## Offene Fragen` steht, nicht deine Kennung aus `Eintrag:`.'));
+});
+
 test('plan-review-advisory_Body_FindingsAtMostYellow', () => {
   for (const name of ['architecture', 'risks']) {
     const { body } = readAgent(`plan-review-${name}`);

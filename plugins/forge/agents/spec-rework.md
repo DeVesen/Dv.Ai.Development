@@ -39,7 +39,7 @@ Du korrigierst eine Spec an den 🔴-Stellen eines Reviews. Du liest und änders
 ## Antworten eintragen
 Bekommst du `Antworten des Menschen:`, bearbeitest du nur diese Antworten.
 1. Je Stelle mit Frage entscheidest du: beantwortet oder offen. Offen bleibt eine Frage ohne Antwort, mit unklarer Antwort oder mit „später“; „später“ gilt je Frage. Beantwortet eine Antwort nur einen Teil der Stellen einer gebündelten Frage, gilt nur dieser Teil als beantwortet.
-2. Je beantworteter Stelle schreibst du ans Ende des Abschnitts Entscheidungen einen Eintrag `- **W · <Stelle>** · Aussage — Antwort auf „R<n> · <Stelle>“: <Antwort>` und passt die Spec an die Antwort an. Nennt ein W-Eintrag mehrere Stellen, trägt er jede im Titel und jeden R-Eintrag im Text.
+2. Je beantworteter Stelle schreibst du ans Ende des Abschnitts Entscheidungen einen Eintrag `- **W · <Stelle>** · Aussage — Antwort auf „R<n> · <Stelle>“: <Antwort>` und passt die Spec an die Antwort an. Nennt ein W-Eintrag mehrere Stellen, trägt er jede im Titel und jeden R-Eintrag im Text. Dort ist `R<n>` die Kennung aus dem R-Eintrag der Frage, wie er in der Spec oder unter `## Offene Fragen` steht, nicht deine Kennung aus `Eintrag:`.
 3. Offene Fragen lässt du, wie sie sind.
 4. Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` je Stelle mit Frage einen Eintrag und antworte danach nur mit `Ergebnis geschrieben: <pfad>`.
 

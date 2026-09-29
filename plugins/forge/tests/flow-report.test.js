@@ -31,7 +31,7 @@ const verification = {
   ],
   groups: [
     group('AC-12', 'red'),
-    group('AC-11', 'red', [item({ reviewer: 'skript:anker', category: 'skript-pruefung' })]),
+    group('AC-11', 'red', [item({ reviewer: 'skript:anker', category: 'umsetzer-steckt-fest', script: true })]),
     group('AC-05', 'yellow', [item({ color: 'yellow', category: 'detail' })]),
     group('AC-03', 'green', [item({ color: 'green', category: 'formulierung', consequence: 'Wortwahl' })]),
   ],
@@ -68,4 +68,17 @@ test('report_RoundOneOnly_OneRoundNoRework', () => {
   assert.ok(text.includes('**Runden:** 1 · **Nacharbeiten:** 0'));
   assert.ok(text.includes('### Runde 1\n| Stufe | Stelle | Anzahl | Reviewer | Konsequenzen |'));
   assert.ok(!text.includes('### Nachprüfung'));
+});
+
+test('report_RedStelleWithReviewerAndScriptItems_ListedAsScriptFinding', () => {
+  const both = group('Task 2', 'red', [
+    item({ reviewer: 'feasibility', category: 'umsetzer-steckt-fest', consequence: 'Vorleistung fehlt' }),
+    item({ reviewer: 'skript:anker', category: 'umsetzer-steckt-fest', script: true, consequence: 'Anker fehlt' }),
+  ]);
+  const text = flowReport.report({
+    title: 'Plan-Review', artifact: 'p.md', status: 'nicht bereit, 1 × 🔴 offen', roundOne: { groups: [] },
+    verification: { offen: 1, verdicts: [], groups: [both] }, reworked: true, open: [], asked: [],
+  });
+  assert.ok(text.includes('### Skript-Befunde\n- 🔴 Task 2 — 🔴 Vorleistung fehlt<br>🔴 Anker fehlt'));
+  assert.ok(!text.includes('### Widersprüche'));
 });

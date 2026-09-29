@@ -22,7 +22,6 @@ const COLOR_FIELDS = ['severity', 'color'];
 const SPELLING_WORDS = ['Großschreibung', 'Kleinschreibung', 'ß', 'Umlaut', 'Diakritik'];
 const COLOR_RANK = { green: 1, yellow: 2, red: 3 };
 const COLOR_ICON = { red: '🔴', yellow: '🟡', green: '🟢' };
-const SCRIPT_CATEGORY = 'skript-pruefung';
 
 function isText(value) {
   return typeof value === 'string' && value.trim() !== '';
@@ -61,11 +60,11 @@ function mentionsSpelling(finding) {
 }
 
 // ctx: { advisory, openKeys, quoteFromW(quote), verification: { checklist, changed } | null }; Mengen mit kanonischen Stellen.
-function rateFinding(finding, reviewer, unit, ctx) {
-  const script = finding.category === SCRIPT_CATEGORY;
-  if (!script && unit.kind === 'header') return { dropped: 'Kopfzeile' };
-  if (!script && ctx.openKeys.has(unit.canon)) return { dropped: 'offene Frage' };
+// script: Befund einer Skript-Prüfung; er steht immer als 🔴 und wird weder verworfen noch herabgestuft.
+function rateFinding(finding, reviewer, unit, ctx, script = false) {
   if (script) return { color: 'red', capped: [] };
+  if (unit.kind === 'header') return { dropped: 'Kopfzeile' };
+  if (ctx.openKeys.has(unit.canon)) return { dropped: 'offene Frage' };
   const capped = [];
   if (ctx.advisory.includes(reviewer)) capped.push('beratend');
   if (ctx.quoteFromW(finding.quote)) capped.push('Zitat aus W-Eintrag');
@@ -78,5 +77,5 @@ function rateFinding(finding, reviewer, unit, ctx) {
 }
 
 module.exports = {
-  CATEGORY_COLOR, CATEGORIES, ADVISORY, COLOR_RANK, COLOR_ICON, SCRIPT_CATEGORY, reviewProblem, findingProblem, mentionsSpelling, rateFinding,
+  CATEGORY_COLOR, CATEGORIES, ADVISORY, COLOR_RANK, COLOR_ICON, reviewProblem, findingProblem, mentionsSpelling, rateFinding,
 };

@@ -59,11 +59,16 @@ test('classify_RedAtOpenQuestion_Dropped', () => {
   assert.equal(result.dropped[0].reason, 'offene Frage');
 });
 
-test('runScriptChecks_Findings_AreRedScriptItems', () => {
-  const checks = [{ name: 'anker', run: () => [{ location: 'AC-01', quote: 'Gegeben A', consequence: 'k', rationale: 'b' }] }];
-  const result = classify(groups.runScriptChecks(SPEC, checks), { openKeys: new Set(['ac-1']) });
-  assert.equal(result.groups[0].color, 'red');
-  assert.equal(result.groups[0].items[0].reviewer, 'skript:anker');
+test('runScriptChecks_Findings_KeepCategoryAndAreRedScriptItems', () => {
+  const checks = [{ name: 'anker', run: (text, context) => [{ location: 'AC-01', quote: 'Gegeben A', category: 'umsetzer-steckt-fest', consequence: context.hint, rationale: 'b' }] }];
+  const result = classify(groups.runScriptChecks(SPEC, checks, { hint: 'k' }), { openKeys: new Set(['ac-1']) });
+  const item = result.groups[0].items[0];
+  assert.deepEqual([result.groups[0].color, item.reviewer, item.category, item.script, item.consequence], ['red', 'skript:anker', 'umsetzer-steckt-fest', true, 'k']);
+});
+
+test('classify_ReviewerFindingWithScriptField_StaysReviewerFinding', () => {
+  const result = classify([entry('clarity', { script: true })]);
+  assert.deepEqual([result.groups[0].color, result.groups[0].items[0].script], ['yellow', false]);
 });
 
 test('reworkSection_Groups_HeadingAndItemLineFormat', () => {

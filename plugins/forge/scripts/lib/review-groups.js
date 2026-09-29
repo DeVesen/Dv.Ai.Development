@@ -5,14 +5,11 @@ const rules = require('./review-rules');
 
 const CLOSING_QUOTE = String.fromCharCode(0x201c);
 
-// Skript-Prüfungen je Review: { name, run(text) → [{ location, quote, consequence, rationale }] }.
+// Skript-Prüfungen je Review: { name, run(text, context) → [{ location, quote, category, consequence, rationale }] }.
 const SCRIPT_CHECKS = { 'spec-review': [], 'plan-review': [] };
 
-function runScriptChecks(text, checks) {
-  return checks.flatMap((check) => check.run(text).map((finding) => ({
-    reviewer: `skript:${check.name}`,
-    finding: { ...finding, category: rules.SCRIPT_CATEGORY },
-  })));
+function runScriptChecks(text, checks, context = {}) {
+  return checks.flatMap((check) => check.run(text, context).map((finding) => ({ reviewer: `skript:${check.name}`, finding, script: true })));
 }
 
 function documentOrder(model) {
@@ -25,22 +22,22 @@ function byColorThenPlace(model) {
   return (a, b) => rules.COLOR_RANK[b.color] - rules.COLOR_RANK[a.color] || place(a) - place(b) || a.key.localeCompare(b.key);
 }
 
-// entries: [{ reviewer, finding }]; Ergebnis: Gruppen je Stelle mit der höchsten Farbe ihrer Findings.
+// entries: [{ reviewer, finding, script? }]; script setzt nur runScriptChecks. Ergebnis: Gruppen je Stelle mit der höchsten Farbe ihrer Findings.
 function classify(entries, { kind, text, openKeys = new Set(), verification = null, advisory = rules.ADVISORY[kind] }) {
   const model = parseUnits(text);
   const ctx = { advisory, openKeys, quoteFromW: (quote) => quoteFromW(quote, text), verification };
   const groups = new Map();
   const dropped = [];
-  for (const { reviewer, finding } of entries) {
+  for (const { reviewer, finding, script = false } of entries) {
     const unit = resolveUnit(finding, model);
-    const rating = rules.rateFinding(finding, reviewer, unit, ctx);
+    const rating = rules.rateFinding(finding, reviewer, unit, ctx, script);
     if (rating.dropped) {
       dropped.push({ reviewer, key: unit.key, reason: rating.dropped });
       continue;
     }
     if (!groups.has(unit.canon)) groups.set(unit.canon, { key: unit.key, canon: unit.canon, color: 'green', items: [] });
     const group = groups.get(unit.canon);
-    group.items.push({ reviewer, ...finding, color: rating.color, capped: rating.capped });
+    group.items.push({ reviewer, ...finding, script, color: rating.color, capped: rating.capped });
     if (rules.COLOR_RANK[rating.color] > rules.COLOR_RANK[group.color]) group.color = rating.color;
   }
   return { groups: [...groups.values()].sort(byColorThenPlace(model)), dropped };

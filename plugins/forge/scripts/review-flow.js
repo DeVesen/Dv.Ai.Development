@@ -242,7 +242,7 @@ function checklist(kind, doc, workspace) {
   const openCanon = new Set(open.map((question) => question.canon));
   const items = state.groups.filter((group) => group.color === 'red' && !openCanon.has(group.canon)).map((group) => ({
     key: group.key, canon: group.canon, origin: 'Finding aus Runde 1',
-    script: group.items.filter((item) => item.color === 'red').every((item) => item.category === rules.SCRIPT_CATEGORY),
+    script: group.items.some((item) => item.script),
     details: [...group.items.map(groupsLib.itemLine), outcomeLine(rework, group.key)],
   }));
   for (const question of asked) {
@@ -291,6 +291,13 @@ function verifierProblems(result, kind, aiItems) {
   return problems;
 }
 
+// Skript-Punkte und jede Stelle, an der jetzt ein roter Skript-Befund steht, entscheidet das Skript, nicht der Nachprüfer.
+function scriptVerdict(item, redScript) {
+  const reported = redScript.has(item.canon);
+  const rationale = reported ? `Skript-Prüfung meldet die Stelle${item.script ? ' erneut' : ''}` : 'Skript-Prüfung meldet die Stelle nicht mehr';
+  return { key: item.key, script: true, verdict: reported ? 'nicht erledigt' : 'erledigt', rationale };
+}
+
 function verify(kind, doc, workspace, checks = groupsLib.SCRIPT_CHECKS[kind]) {
   const dir = roundDir(workspace, 2);
   const list = readState(path.join(dir, 'pruefliste.json'));
@@ -306,12 +313,9 @@ function verify(kind, doc, workspace, checks = groupsLib.SCRIPT_CHECKS[kind]) {
   const verification = { checklist: new Set(list.items.map((item) => item.canon)), changed: new Set(list.changed.map((unit) => unit.canon)) };
   const entries = [...result.findings.map((finding) => ({ reviewer: 'verifier', finding })), ...groupsLib.runScriptChecks(text, checks)];
   const { groups, dropped } = groupsLib.classify(entries, { kind, text, openKeys: new Set(list.open.map((question) => question.canon)), verification });
-  const redScript = new Set(groups.filter((group) => group.color === 'red' && group.items.some((item) => item.category === rules.SCRIPT_CATEGORY)).map((group) => group.canon));
+  const redScript = new Set(groups.filter((group) => group.color === 'red' && group.items.some((item) => item.script)).map((group) => group.canon));
   const verdicts = list.items.map((item) => {
-    if (item.script) {
-      const again = redScript.has(item.canon);
-      return { key: item.key, script: true, verdict: again ? 'nicht erledigt' : 'erledigt', rationale: again ? 'Skript-Prüfung meldet die Stelle erneut' : 'Skript-Prüfung meldet die Stelle nicht mehr' };
-    }
+    if (item.script || redScript.has(item.canon)) return scriptVerdict(item, redScript);
     const verdict = result.verdicts.find((candidate) => normalizeLocation(candidate.location) === item.canon);
     return { key: item.key, script: false, verdict: verdict.verdict, rationale: verdict.rationale };
   });

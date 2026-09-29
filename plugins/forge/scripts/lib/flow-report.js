@@ -2,7 +2,6 @@
 
 const { normalizeLocation } = require('../aggregate-findings');
 const { table, consequences, cell } = require('./review-groups');
-const { SCRIPT_CATEGORY } = require('./review-rules');
 
 // Status in fester Rangfolge; es gilt der erste, der zutrifft.
 function statusOf({ failed, open, verification }) {
@@ -12,8 +11,9 @@ function statusOf({ failed, open, verification }) {
   return verification ? 'sauber nach Nachprüfung' : 'sauber nach Runde 1';
 }
 
-function isScriptOnly(group) {
-  return group.items.every((item) => item.category === SCRIPT_CATEGORY);
+// Eine rote Stelle mit Skript-Befund zählt als Skript-Befund, auch wenn ein Reviewer sie ebenfalls meldet.
+function hasScript(group) {
+  return group.items.some((item) => item.script);
 }
 
 function verdictTable(verdicts) {
@@ -52,8 +52,8 @@ function report({ title, artifact, status, roundOne, verification, reworked, ope
   if (verification) {
     const red = verification.groups.filter((group) => group.color === 'red');
     parts.push('### Nachprüfung', verdictTable(verification.verdicts), '');
-    parts.push(...listSection('Widersprüche', red.filter((group) => !isScriptOnly(group))));
-    parts.push(...listSection('Skript-Befunde', red.filter(isScriptOnly)));
+    parts.push(...listSection('Widersprüche', red.filter((group) => !hasScript(group))));
+    parts.push(...listSection('Skript-Befunde', red.filter(hasScript)));
   }
   const lines = openLines(open, asked);
   if (lines.length > 0) parts.push('### Offene Fragen', ...lines, '');

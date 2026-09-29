@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const flow = require('../scripts/review-flow.js');
 const { SPEC, finding, scoutFor, flowWorkspace } = require('./lib/flow-workspace');
+const { TWO_TASKS } = require('./lib/plan-fixtures');
 
 const question = (locations, text = 'Was gilt leer?') => ({ rule: 'Leere Eingabe', question: text, locations, cases: ['a) Fehler', 'b) leer'], recommendation: 'b', reason: 'Bestand' });
 const verdict = (location, value = 'erledigt') => ({ location, verdict: value, rationale: `Urteil ${location}` });
@@ -205,4 +206,28 @@ test('planReview_SpecQuestion_NoHaltCheckedOthersQuestionsOpen', () => {
   const out = ws.run('finish', 'plan-review', ws.doc, ws.workspace, '--title', 'Plan-Review').stdout;
   assert.match(out, /^STATUS Fragen offen/);
   assert.ok(out.includes('### Offene Fragen\n- F1 · Task 2 — Spec lässt die Grenze offen?'));
+});
+
+const anchorAt = (location) => [{ name: 'anker', run: () => [{ location, quote: 'B.', category: 'umsetzer-steckt-fest', consequence: 'Anker fehlt', rationale: 'Skript' }] }];
+
+test('checklist_ReviewerAndScriptAtSameTask_OneRedStelleJudgedByScript', () => {
+  const ws = flowWorkspace(TWO_TASKS, 'plan.md');
+  ws.review('feasibility', [finding('Task 2', 'umsetzer-steckt-fest', { quote: 'B.' })]);
+  const round = flow.roundOne('plan-review', ws.doc, ws.workspace, ['feasibility'], anchorAt('Task 2'));
+  ws.json('runde-1/rework.json', { results: [{ location: 'Task 2', status: 'changed' }], questions: [] });
+  const list = ws.run('checklist', 'plan-review', ws.doc, ws.workspace).stdout;
+  assert.match(round, /^RUNDE1 rot=1 gelb=0 /);
+  assert.equal(list, 'PRUEFLISTE punkte=0 skript=1 geaendert=0 nachpruefer=nein\n');
+});
+
+test('verify_ScriptNowReportsAiPoint_ScriptDecidesAndStelleCountsOnce', () => {
+  const ws = flowWorkspace(TWO_TASKS, 'plan.md');
+  ws.review('feasibility', [finding('Task 2', 'umsetzer-steckt-fest', { quote: 'B.' })]);
+  flow.roundOne('plan-review', ws.doc, ws.workspace, ['feasibility'], []);
+  ws.json('runde-1/rework.json', { results: [{ location: 'Task 2', status: 'changed' }], questions: [] });
+  ws.run('checklist', 'plan-review', ws.doc, ws.workspace);
+  ws.json('runde-2/verifier.json', { reviewer: 'verifier', verdicts: [verdict('Task 2', 'nicht erledigt')], findings: [] });
+  const out = flow.verify('plan-review', ws.doc, ws.workspace, anchorAt('Task 2'));
+  assert.match(out, /^NACHPRUEFUNG ok offen=1 /);
+  assert.deepEqual(ws.readJson('runde-2/nachpruefung.json').verdicts, [{ key: 'Task 2', script: true, verdict: 'nicht erledigt', rationale: 'Skript-Prüfung meldet die Stelle' }]);
 });

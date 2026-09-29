@@ -81,7 +81,7 @@ test('rateFinding_HeaderOrOpenQuestion_Dropped', () => {
 });
 
 test('rateFinding_ScriptCheckAtOpenQuestion_StaysRed', () => {
-  const result = rate({ category: rules.SCRIPT_CATEGORY }, ctx({ openKeys: new Set(['ac-7']) }));
+  const result = rules.rateFinding(finding({ category: 'umsetzer-steckt-fest' }), 'skript:anker', unit(), ctx({ openKeys: new Set(['ac-7']) }), true);
   assert.equal(result.dropped, undefined);
   assert.equal(result.color, 'red');
 });
@@ -92,5 +92,5 @@ test('rateFinding_VerificationOutsideChecklist_CappedUnlessContradictionInChange
   assert.equal(rate({ category: 'widerspruch' }, ctx({ verification })).color, 'red');
   assert.equal(rate({ category: 'widerspruch' }, ctx({ verification: { checklist: new Set(), changed: new Set() } })).color, 'yellow');
   assert.equal(rate({ category: 'fehlendes-verhalten', location: 'AC-01' }, ctx({ verification }), unit('AC-01')).color, 'red');
-  assert.equal(rate({ category: rules.SCRIPT_CATEGORY }, ctx({ verification: { checklist: new Set(), changed: new Set() } })).color, 'red');
+  assert.equal(rules.rateFinding(finding({ category: 'ac-fehlt-im-plan' }), 'skript:ac-abdeckung', unit(), ctx({ verification: { checklist: new Set(), changed: new Set() } }), true).color, 'red');
 });

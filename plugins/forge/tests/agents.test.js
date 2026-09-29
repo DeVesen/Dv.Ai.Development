@@ -380,6 +380,24 @@ test('spec-review-feasibility_Body_UnfulfillableAtRequirementAndPreconditionIsDe
   }
 });
 
+test('spec-review-clarity_Body_TwoReadingsHowInsteadOfWhatNoEdgeCaseSearch', () => {
+  const { fields, body } = readAgent('spec-review-clarity');
+  for (const part of [
+    '# Spec-Review: Klarheit',
+    'Ein AC mit zwei verschiedenen Lesarten ist `detail`. In `rationale` stehen beide Lesarten.',
+    'Namen von Klassen, Dateien, Tabellen oder Frameworks, Dateipfade und technische Schritte',
+    'Solche Details sind `detail`.',
+    'meldest du als `detail`.',
+    'Rand- und Fehlerfälle — nach ihnen suchst du nicht.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(!body.includes('Klarheit und Lücken'), 'alter Titel');
+  assert.ok(!body.includes('leere oder ungültige Eingaben, Grenzwerte'), 'alte Randfall-Suche');
+  assert.ok(!body.includes('außer sie widersprechen einer Anforderung'), 'alte WIE-Ausnahme');
+  assert.doesNotMatch(fields.description, /edge and error cases/);
+});
+
 for (const [name, tools, inputs, categories] of [
   ['spec-review-verifier', 'Read, Write', ['- `Spec:`'], SPEC_CATEGORIES],
   ['plan-review-verifier', 'Read, Grep, Glob, Write', ['- `Plan:`', '- `Spec:`', '- `Repo:`'], PLAN_CATEGORIES],

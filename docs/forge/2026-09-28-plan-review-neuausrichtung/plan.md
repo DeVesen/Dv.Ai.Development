@@ -235,10 +235,12 @@ const { createWorkspace, writeContext } = require('./workspace');
 - Test: `plugins/forge/tests/review-groups.test.js:54-59` · `runScriptChecks_Findings_AreRedScriptItems`
 - Test: `plugins/forge/tests/flow-report.test.js:24-40` · `const verification`
 - Test: `plugins/forge/tests/review-flow-round2.test.js:195-208` · `planReview_SpecQuestion_NoHaltCheckedOthersQuestionsOpen`
+- Create: `plugins/forge/tests/lib/plan-fixtures.js`
 
 **Interfaces:**
 - Consumes: keine
 - Produces:
+  - `TWO_TASKS: string` aus `plugins/forge/tests/lib/plan-fixtures.js`: Plan mit Task 1 (Text `A.`) und Task 2 (Text `B.`); die gemeinsame Stelle für Plan-Fixtures der Tests.
   - `runScriptChecks(text: string, checks: Array<{ name: string, run(text: string, context: object): Array<{ location: string, quote: string, category: string, consequence: string, rationale: string }> }>, context?: object): Array<{ reviewer: string, finding: object, script: true }>` in `plugins/forge/scripts/lib/review-groups.js`; `reviewer` ist `skript:<name>`, die Kategorie liefert die Prüfung selbst.
   - `classify(entries: Array<{ reviewer: string, finding: object, script?: boolean }>, options)`: jedes Item einer Gruppe trägt `script: boolean`; nur der Eintrag setzt es, nie ein Feld im Finding.
   - `rateFinding(finding, reviewer, unit, ctx, script = false)` in `plugins/forge/scripts/lib/review-rules.js`; `SCRIPT_CATEGORY` entfällt.
@@ -300,10 +302,26 @@ test('report_RedStelleWithReviewerAndScriptItems_ListedAsScriptFinding', () => {
 });
 ```
 
+  Neue Datei `plugins/forge/tests/lib/plan-fixtures.js`:
+
+```js
+'use strict';
+
+// Plan- und Spec-Fixtures der Tests zum Plan-Review an einer Stelle, damit eine Änderung am Plan-Format nur hier nachgezogen wird.
+const TWO_TASKS = '# P — Umsetzungsplan\n\n**Basis:** abc\n\n## Global Constraints\n- x\n\n### Task 1: Eins\nA.\n\n### Task 2: Zwei\nB.\n\n## Entscheidungen\n- Keine Fragen an den Menschen.\n';
+
+module.exports = { TWO_TASKS };
+```
+
+  In `plugins/forge/tests/review-flow-round2.test.js` nach der Zeile `const { SPEC, finding, scoutFor, flowWorkspace } = require('./lib/flow-workspace');` einfügen:
+
+```js
+const { TWO_TASKS } = require('./lib/plan-fixtures');
+```
+
   Am Ende von `plugins/forge/tests/review-flow-round2.test.js` anhängen:
 
 ```js
-const TWO_TASKS = '# P — Umsetzungsplan\n\n**Basis:** abc\n\n## Global Constraints\n- x\n\n### Task 1: Eins\nA.\n\n### Task 2: Zwei\nB.\n\n## Entscheidungen\n- Keine Fragen an den Menschen.\n';
 const anchorAt = (location) => [{ name: 'anker', run: () => [{ location, quote: 'B.', category: 'umsetzer-steckt-fest', consequence: 'Anker fehlt', rationale: 'Skript' }] }];
 
 test('checklist_ReviewerAndScriptAtSameTask_OneRedStelleJudgedByScript', () => {
@@ -455,21 +473,66 @@ function hasScript(group) {
   Befehl: `node --test plugins/forge/tests/review-rules.test.js plugins/forge/tests/review-groups.test.js plugins/forge/tests/flow-report.test.js plugins/forge/tests/review-flow-round2.test.js` — erwartet: PASS
   Befehl: `node --test "plugins/forge/tests/*.test.js"` — erwartet: PASS, `fail 0`
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/review-rules.js plugins/forge/scripts/lib/review-groups.js plugins/forge/scripts/review-flow.js plugins/forge/scripts/lib/flow-report.js plugins/forge/tests/review-rules.test.js plugins/forge/tests/review-groups.test.js plugins/forge/tests/flow-report.test.js plugins/forge/tests/review-flow-round2.test.js` · `git commit -m "feat(forge): script findings keep their category and decide their location" -- plugins/forge/scripts/lib/review-rules.js plugins/forge/scripts/lib/review-groups.js plugins/forge/scripts/review-flow.js plugins/forge/scripts/lib/flow-report.js plugins/forge/tests/review-rules.test.js plugins/forge/tests/review-groups.test.js plugins/forge/tests/flow-report.test.js plugins/forge/tests/review-flow-round2.test.js`
+  `git add plugins/forge/scripts/lib/review-rules.js plugins/forge/scripts/lib/review-groups.js plugins/forge/scripts/review-flow.js plugins/forge/scripts/lib/flow-report.js plugins/forge/tests/review-rules.test.js plugins/forge/tests/review-groups.test.js plugins/forge/tests/flow-report.test.js plugins/forge/tests/review-flow-round2.test.js plugins/forge/tests/lib/plan-fixtures.js` · `git commit -m "feat(forge): script findings keep their category and decide their location" -- plugins/forge/scripts/lib/review-rules.js plugins/forge/scripts/lib/review-groups.js plugins/forge/scripts/review-flow.js plugins/forge/scripts/lib/flow-report.js plugins/forge/tests/review-rules.test.js plugins/forge/tests/review-groups.test.js plugins/forge/tests/flow-report.test.js plugins/forge/tests/review-flow-round2.test.js plugins/forge/tests/lib/plan-fixtures.js`
 
 ### Task 4: Skript-Prüfungen des Plans
 
 **ACs:** AC-01, AC-02, AC-03, AC-30, AC-33, AC-36, AC-37
 
 **Dateien:**
+- Modify: `plugins/forge/scripts/plan-tasks.js:17-23` · `readLines`
+- Modify: `plugins/forge/scripts/plan-tasks.js:42-60` · `scanPlan`
 - Create: `plugins/forge/scripts/lib/plan-checks.js`
 - Test: `plugins/forge/tests/plan-checks.test.js`
+- Test: `plugins/forge/tests/lib/plan-fixtures.js` · `TWO_TASKS`
+- Test: `plugins/forge/tests/plan-anchors.test.js` · `const SOURCE`
 
 **Interfaces:**
-- Consumes: `anchorMarks(planPath: string, repo: string): Array<{ task: number, mark: '✅' | '⚠' | '❌', line: string }>` (Task 1); aus `plugins/forge/scripts/plan-tasks.js` (Bestand) `markFences(lines: string[]): boolean[]`, `scanPlan(lines: string[]): { tasks: Array<{ number: number, start: number, end: number }>, headerEnd: number }`, `numberingError(tasks): string | null`; aus `plugins/forge/scripts/lib/document-units.js` (Bestand) `parseUnits(text: string): { units: Array<{ key, canon, section, kind, lines }> }`, `collapse(text: string): string`; `normalizeLocation(location: string): string` aus `plugins/forge/scripts/aggregate-findings.js` (Bestand)
+- Consumes: `anchorMarks(planPath: string, repo: string): Array<{ task: number, mark: '✅' | '⚠' | '❌', line: string }>` (Task 1); `TWO_TASKS: string` aus `plugins/forge/tests/lib/plan-fixtures.js` (Task 3); aus `plugins/forge/scripts/plan-tasks.js` (Bestand) `markFences(lines: string[]): boolean[]`, `scanPlan(lines: string[]): { tasks: Array<{ number: number, start: number, end: number }>, headerEnd: number }`, `numberingError(tasks): string | null`; aus `plugins/forge/scripts/lib/document-units.js` (Bestand) `parseUnits(text: string): { units: Array<{ key, canon, section, kind, lines }> }`, `collapse(text: string): string`; `normalizeLocation(location: string): string` aus `plugins/forge/scripts/aggregate-findings.js` (Bestand)
 - Produces: `PLAN_CHECKS` aus `plugins/forge/scripts/lib/plan-checks.js`, in dieser Reihenfolge: `[{ name: 'nummerierung', run }, { name: 'ac-abdeckung', run }, { name: 'anker', run }]` mit `run(text: string, context: { doc?: string, spec?: string | null, repo?: string | null }): Array<{ location: string, quote: string, category: 'ac-fehlt-im-plan' | 'umsetzer-steckt-fest', consequence: string, rationale: string }>`. Stellen: `AC-<n>` wie in der Spec, `Task <x>` wie in der Überschrift, `Plan` für einen Plan ohne Tasks und für jede Prüfung, die nicht laufen kann.
+- Produces: `taskSections(lines: string[], heading: RegExp = TASK_HEADING, fenced: boolean[] = markFences(lines)): Array<{ token: string, start: number, end: number }>` aus `plugins/forge/scripts/plan-tasks.js`; die eine Task-Zerlegung, die `scanPlan` und die Nummerierungs-Prüfung teilen. `token` ist die erste Gruppe von `heading`.
+- Produces: `splitLines(text: string): string[]` aus `plugins/forge/scripts/plan-tasks.js`; die eine Zerlegung eines Plan-Texts in Zeilen (CRLF zu LF), die `readLines` und `plan-checks.js` teilen.
+- Produces: aus `plugins/forge/tests/lib/plan-fixtures.js` zusätzlich `PLAN_SPEC: string` (Spec mit AC-01, AC-03, AC-05), `SOURCE: string`, `ALL_ACS: string`, `planTask(heading: number | string, acs: string, extra?: string[]): string[]` und `planText(...tasks: string[][]): string`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
+  `plugins/forge/tests/lib/plan-fixtures.js` vollständig ersetzen durch:
+
+```js
+'use strict';
+
+// Plan- und Spec-Fixtures der Tests zum Plan-Review an einer Stelle, damit eine Änderung am Plan-Format nur hier nachgezogen wird.
+const TWO_TASKS = '# P — Umsetzungsplan\n\n**Basis:** abc\n\n## Global Constraints\n- x\n\n### Task 1: Eins\nA.\n\n### Task 2: Zwei\nB.\n\n## Entscheidungen\n- Keine Fragen an den Menschen.\n';
+
+const PLAN_SPEC = [
+  '# Demo', '', 'Status: bestätigt am 2026-09-29', 'Art: verankert', 'Basis: 3ce509e', '',
+  '## Akzeptanzkriterien',
+  '- **AC-01** Gegeben A, dann B.',
+  '- **AC-03** Gegeben C, dann D.',
+  '- **AC-05** Gegeben E, dann F.',
+  '', '## Entscheidungen', '- **W · Deckel** · Aussage — Zwei Runden.', '',
+].join('\n');
+const SOURCE = 'class Klasse {\n  methode() {\n    return 1;\n  }\n}\n';
+const ALL_ACS = 'AC-01, AC-03, AC-05';
+
+// Ein Task mit Überschrift, Zeile **ACs:**, Zusatzzeilen und der Zeile Text., die Reviewer-Findings zitieren können.
+function planTask(heading, acs, extra = []) {
+  return [`### Task ${heading}: T`, '', `**ACs:** ${acs}`, '', ...extra, 'Text.', ''];
+}
+
+function planText(...tasks) {
+  return ['# Demo — Umsetzungsplan', '', '**Basis:** abc', '', '## Global Constraints', '- Nur Node.js.', '', '---', '',
+    ...tasks.flat(), '## Entscheidungen', '- Keine Fragen an den Menschen.', ''].join('\n');
+}
+
+module.exports = { TWO_TASKS, PLAN_SPEC, SOURCE, ALL_ACS, planTask, planText };
+```
+
+  In `plugins/forge/tests/plan-anchors.test.js` die Zeile `const SOURCE = 'class Klasse {\n  methode() {\n    return 1;\n  }\n}\n';` ersetzen durch:
+
+```js
+const { SOURCE } = require('./lib/plan-fixtures');
+```
+
   Neue Datei `plugins/forge/tests/plan-checks.test.js`:
 
 ```js
@@ -481,26 +544,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { PLAN_CHECKS } = require('../scripts/lib/plan-checks.js');
-
-const SPEC = [
-  '# Demo', '', 'Status: bestätigt am 2026-09-29', '',
-  '## Akzeptanzkriterien',
-  '- **AC-01** Gegeben A, dann B.',
-  '- **AC-03** Gegeben C, dann D.',
-  '- **AC-05** Gegeben E, dann F.',
-  '', '## Entscheidungen', '- **W · Deckel** · Aussage — Zwei Runden.', '',
-].join('\n');
-const SOURCE = 'class Klasse {\n  methode() {\n    return 1;\n  }\n}\n';
-const ALL_ACS = 'AC-01, AC-03, AC-05';
-
-function task(heading, acs, extra = []) {
-  return [`### Task ${heading}: T`, '', `**ACs:** ${acs}`, '', ...extra, ''];
-}
-
-function plan(...tasks) {
-  return ['# Demo — Umsetzungsplan', '', '**Basis:** abc', '', '## Global Constraints', '- Nur Node.js.', '', '---', '',
-    ...tasks.flat(), '## Entscheidungen', '- Keine Fragen an den Menschen.', ''].join('\n');
-}
+const { PLAN_SPEC: SPEC, SOURCE, ALL_ACS, planTask: task, planText: plan } = require('./lib/plan-fixtures');
 
 // Eigenes Repo je Test mit Plan, Spec und Quelldateien; liefert Plan-Text und Kontext wie review-flow.js.
 function setup(planText, files = {}, spec = SPEC) {
@@ -618,6 +662,59 @@ test('planChecks_SamePlanSpecAndCodeTwice_SameFindings', () => {
 - [ ] **Schritt 2: Test rot laufen lassen**
   Befehl: `node --test plugins/forge/tests/plan-checks.test.js` — erwartet: FAIL, die Datei bricht beim Laden mit `Cannot find module '../scripts/lib/plan-checks.js'` ab
 - [ ] **Schritt 3: Minimal implementieren**
+  In `plugins/forge/scripts/plan-tasks.js` die Funktion `readLines` vollständig ersetzen durch:
+
+```js
+// Die eine Zerlegung eines Plan-Texts in Zeilen; readLines und die Skript-Prüfungen in plan-checks.js teilen sie.
+function splitLines(text) {
+  return String(text).replace(/\r\n/g, '\n').split('\n');
+}
+
+function readLines(planPath) {
+  try {
+    return splitLines(fs.readFileSync(planPath, 'utf8'));
+  } catch {
+    throw new PlanError(`Plan nicht gefunden oder nicht lesbar: ${planPath}`);
+  }
+}
+```
+
+  Dann die Funktion `scanPlan` vollständig ersetzen durch:
+
+```js
+// Die eine Task-Zerlegung: Ein Task beginnt an einer Überschrift nach heading und endet an der nächsten Task- oder ##-Überschrift.
+function taskSections(lines, heading = TASK_HEADING, fenced = markFences(lines)) {
+  const sections = [];
+  let open = null;
+  lines.forEach((line, index) => {
+    if (fenced[index]) return;
+    const match = heading.exec(line);
+    if (!match && !(open && SECTION_HEADING.test(line))) return;
+    if (open) open.end = index;
+    open = match ? { token: match[1], start: index, end: lines.length } : null;
+    if (open) sections.push(open);
+  });
+  return sections;
+}
+
+function scanPlan(lines) {
+  const fenced = markFences(lines);
+  const tasks = taskSections(lines, TASK_HEADING, fenced).map(({ token, start, end }) => ({ number: Number(token), start, end }));
+  const firstTask = tasks.length > 0 ? tasks[0].start : lines.length;
+  let headerEnd = -1;
+  for (let index = 0; index < firstTask && headerEnd === -1; index += 1) {
+    if (!fenced[index] && RULE.test(lines[index])) headerEnd = index;
+  }
+  return { tasks, headerEnd: headerEnd === -1 ? firstTask : headerEnd };
+}
+```
+
+  und in `module.exports` die Zeile `checkedPlan, markFences, parseFileLine, taskTitle,` ersetzen durch:
+
+```js
+  checkedPlan, markFences, parseFileLine, taskTitle, taskSections, splitLines,
+```
+
   Neue Datei `plugins/forge/scripts/lib/plan-checks.js`:
 
 ```js
@@ -625,13 +722,13 @@ test('planChecks_SamePlanSpecAndCodeTwice_SameFindings', () => {
 
 const fs = require('node:fs');
 const { normalizeLocation } = require('../aggregate-findings');
-const { markFences, numberingError, scanPlan } = require('../plan-tasks');
+const { markFences, numberingError, scanPlan, splitLines, taskSections } = require('../plan-tasks');
 const { anchorMarks } = require('../plan-anchors');
 const { parseUnits, collapse } = require('./document-units');
 
 // Skript-Prüfungen des Plan-Reviews. Sie urteilen ohne KI über den Plan-Text und über Spec und Repo aus { doc, spec, repo }.
-const TASK_HEADING = /^###\s+Task\s+([^\s:]+)\s*:/;
-const SECTION_HEADING = /^##\s/;
+// Weiter als TASK_HEADING in plan-tasks.js: Jede Überschrift ### Task <x>: zählt, auch mit einer Nummer wie 3a.
+const ANY_TASK_HEADING = /^###\s+Task\s+([^\s:]+)\s*:/;
 const AC_LINE = /^\s*\*\*ACs:\*\*(.*)$/;
 const AC_ID = /AC-\d+/gi;
 const AC_KEY = /^AC-\d+$/i;
@@ -647,29 +744,12 @@ function failure(check, message) {
     `Die Skript-Prüfung ${check} konnte nicht laufen; ihr Ergebnis fehlt.`, message);
 }
 
-function splitLines(text) {
-  return String(text).replace(/\r\n/g, '\n').split('\n');
-}
-
-// Jede Überschrift ### Task <x>: zählt, auch mit einer Nummer wie 3a; ein Task endet an der nächsten Task- oder ##-Überschrift.
-function taskBlocks(lines, fenced) {
-  const tasks = [];
-  let open = null;
-  lines.forEach((line, index) => {
-    if (fenced[index]) return;
-    const heading = TASK_HEADING.exec(line);
-    if (!heading && !(open && SECTION_HEADING.test(line))) return;
-    if (open) open.end = index;
-    open = heading ? { token: heading[1], heading: line, start: index, end: lines.length } : null;
-    if (open) tasks.push(open);
-  });
-  return tasks;
-}
-
+// Dieselbe Zerlegung wie die Umsetzung, nur mit der weiteren Überschrift.
 function readPlan(text) {
   const lines = splitLines(text);
   const fenced = markFences(lines);
-  return { lines, fenced, tasks: taskBlocks(lines, fenced) };
+  const tasks = taskSections(lines, ANY_TASK_HEADING, fenced).map((task) => ({ ...task, heading: lines[task.start] }));
+  return { lines, fenced, tasks };
 }
 
 function numberingFindings(text) {
@@ -750,8 +830,9 @@ module.exports = { PLAN_CHECKS };
 
 - [ ] **Schritt 4: Test grün laufen lassen**
   Befehl: `node --test plugins/forge/tests/plan-checks.test.js` — erwartet: PASS
+  Befehl: `node --test plugins/forge/tests/plan-tasks.test.js plugins/forge/tests/plan-anchors.test.js` — erwartet: PASS (`scanPlan` zerlegt über `taskSections` und `readLines` über `splitLines` unverändert; `plan-anchors.test.js` nutzt `SOURCE` aus `plan-fixtures.js`)
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/plan-checks.js plugins/forge/tests/plan-checks.test.js` · `git commit -m "feat(forge): add plan script checks for numbering, AC coverage and anchors" -- plugins/forge/scripts/lib/plan-checks.js plugins/forge/tests/plan-checks.test.js`
+  `git add plugins/forge/scripts/plan-tasks.js plugins/forge/scripts/lib/plan-checks.js plugins/forge/tests/plan-checks.test.js plugins/forge/tests/lib/plan-fixtures.js plugins/forge/tests/plan-anchors.test.js` · `git commit -m "feat(forge): add plan script checks for numbering, AC coverage and anchors" -- plugins/forge/scripts/plan-tasks.js plugins/forge/scripts/lib/plan-checks.js plugins/forge/tests/plan-checks.test.js plugins/forge/tests/lib/plan-fixtures.js plugins/forge/tests/plan-anchors.test.js`
 
 ### Task 5: Skript-Prüfungen im Plan-Review verdrahten
 
@@ -766,7 +847,7 @@ module.exports = { PLAN_CHECKS };
 - Test: `plugins/forge/tests/review-flow-round2.test.js:195-208` · `planReview_SpecQuestion_NoHaltCheckedOthersQuestionsOpen`
 
 **Interfaces:**
-- Consumes: `PLAN_CHECKS` (Task 4); `runScriptChecks(text, checks, context)` (Task 3); `readContext(dir: string): object` und `writeContext(dir: string, context: { spec: string, repo: string }): string` aus `plugins/forge/scripts/workspace.js` (Task 2)
+- Consumes: `PLAN_CHECKS` (Task 4); `PLAN_SPEC`, `SOURCE`, `ALL_ACS`, `planTask(heading, acs, extra)` und `planText(...tasks)` aus `plugins/forge/tests/lib/plan-fixtures.js` (Task 4); `runScriptChecks(text, checks, context)` (Task 3); `readContext(dir: string): object` und `writeContext(dir: string, context: { spec: string, repo: string }): string` aus `plugins/forge/scripts/workspace.js` (Task 2)
 - Produces: `SCRIPT_CHECKS['plan-review'] === PLAN_CHECKS`; `review-flow.js round1` und `verify` rufen die Prüfungen mit `{ doc, spec, repo }` auf. Test-Helfer `flowWorkspace(text, name)` liefert zusätzlich `root: string`, `repoFile(relative: string, value: string): void` und `context(specText: string): void` (schreibt die Spec nach `<root>/kontext-spec.md` und `<W>/kontext.json` mit `repo = root`).
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
@@ -833,27 +914,9 @@ function flowWorkspace(text = SPEC, name = 'spec.md') {
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { finding, flowWorkspace } = require('./lib/flow-workspace');
+const { PLAN_SPEC: SPEC, SOURCE, ALL_ACS, planTask: task, planText: plan } = require('./lib/plan-fixtures');
 
-const SPEC = [
-  '# Demo', '', 'Status: bestätigt am 2026-09-29', 'Art: verankert', 'Basis: 3ce509e', '',
-  '## Akzeptanzkriterien',
-  '- **AC-01** Gegeben A, dann B.',
-  '- **AC-03** Gegeben C, dann D.',
-  '- **AC-05** Gegeben E, dann F.',
-  '', '## Entscheidungen', '- **W · Deckel** · Aussage — Zwei Runden.', '',
-].join('\n');
-const SOURCE = 'class Klasse {\n  methode() {\n    return 1;\n  }\n}\n';
-const ALL_ACS = 'AC-01, AC-03, AC-05';
 const RULE = 'die Umsetzung zerlegt den Plan nach lückenlosen Task-Nummern ab 1.';
-
-function task(heading, acs, extra = []) {
-  return [`### Task ${heading}: T`, '', `**ACs:** ${acs}`, '', ...extra, 'Text.', ''];
-}
-
-function plan(...tasks) {
-  return ['# Demo — Umsetzungsplan', '', '**Basis:** abc', '', '## Global Constraints', '- Nur Node.js.', '', '---', '',
-    ...tasks.flat(), '## Entscheidungen', '- Keine Fragen an den Menschen.', ''].join('\n');
-}
 
 function planWorkspace(text, files = {}) {
   const ws = flowWorkspace(text, 'plan.md');
@@ -1016,16 +1079,21 @@ groupsLib.runScriptChecks(text, checks, scriptContext(doc, workspace))
 - Test: `plugins/forge/tests/agents.test.js:225-231` · `plan-review-architecture_Body_LooksForExistingCounterparts`
 
 **Interfaces:**
-- Consumes: `flow.roundOne(kind, doc, workspace, active, checks)` aus `plugins/forge/scripts/review-flow.js` (Bestand)
+- Consumes: `flow.roundOne(kind, doc, workspace, active, checks)` aus `plugins/forge/scripts/review-flow.js` (Bestand); `TWO_TASKS` aus `plugins/forge/tests/lib/plan-fixtures.js` (Task 3)
 - Produces: `ADVISORY['plan-review']` ist `['architecture', 'risks']`
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
+  In `plugins/forge/tests/review-flow-round1.test.js` nach der Zeile `const { SPEC, finding, scoutFor, flowWorkspace } = require('./lib/flow-workspace');` einfügen:
+
+```js
+const { TWO_TASKS } = require('./lib/plan-fixtures');
+```
+
   Am Ende von `plugins/forge/tests/review-flow-round1.test.js` anhängen:
 
 ```js
 test('roundOne_PlanAdvisoryReviewersWithRedCategories_AtMostYellow', () => {
-  const plan = '# P — Umsetzungsplan\n\n**Basis:** abc\n\n## Global Constraints\n- x\n\n### Task 1: Eins\nA.\n\n### Task 2: Zwei\nB.\n\n## Entscheidungen\n- Keine Fragen an den Menschen.\n';
-  const ws = flowWorkspace(plan, 'plan.md');
+  const ws = flowWorkspace(TWO_TASKS, 'plan.md');
   ws.review('architecture', [finding('Task 1', 'umsetzer-steckt-fest', { quote: 'A.' })]);
   ws.review('risks', [finding('Task 2', 'widerspruch', { quote: 'B.' })]);
   const out = flow.roundOne('plan-review', ws.doc, ws.workspace, ['architecture', 'risks'], []);
@@ -1425,3 +1493,6 @@ Auswahl-Hinweis: `Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall,
 - **E · Stelle `Plan`** · Planer — Der Befund eines Plans ohne Tasks und jeder Befund einer Skript-Prüfung, die nicht laufen kann, hängt an der Stelle `Plan`.
 - **E · Fremd-Code** · Planer — Fremd-Code ist, was der Plan von einer Bibliothek übernimmt oder voraussetzt, die das Projekt nicht selbst schreibt: Selektoren, Meldungstexte, Signaturen und Beispiele aus ihrer Doku (Festlegung nach „W · Randfälle an den Plan“ der Spec).
 - **E · Tests ohne AAA-Kommentare** · Planer — Neue Tests folgen der Reihenfolge Arrange, Act, Assert ohne die Kommentare aus `unit-integration-testing`, weil kein forge-Test sie nutzt und der Bestand Vorrang hat.
+- **R1 · Task 4** — geändert — Die zweite Task-Zerlegung `taskBlocks` samt `SECTION_HEADING` in `plan-checks.js` entfällt. `plan-tasks.js` bekommt `taskSections(lines, heading, fenced)` als einzige Zerlegung. `scanPlan` nutzt sie mit `TASK_HEADING`, die Nummerierungs-Prüfung mit der weiteren `ANY_TASK_HEADING` (nach E · Überschriften der Nummerierung). Task 4 führt dafür `plan-tasks.js` als Modify-Zeile mit Anker `scanPlan` und lässt zusätzlich `plan-tasks.test.js` und `plan-anchors.test.js` laufen. Der Hinweis zu `Task 3a` braucht keine Änderung: Laut E · Dieselbe Stelle wird innerhalb eines Tasks nicht feiner unterschieden, und der Befund bleibt 🔴.
+- **R1 · Task 5** — geändert — Plan- und Spec-Fixtures liegen jetzt an einer Stelle in `plugins/forge/tests/lib/plan-fixtures.js`. Task 3 legt die Datei mit `TWO_TASKS` an, Task 4 ergänzt `PLAN_SPEC`, `SOURCE`, `ALL_ACS`, `planTask` und `planText`. `plan-checks.test.js` (Task 4), `review-flow-plan-checks.test.js` (Task 5) und die neuen Tests in `review-flow-round2.test.js` (Task 3) und `review-flow-round1.test.js` (Task 6) importieren sie, statt sie zu kopieren. Die Inline-Literale in bestehenden Tests bleiben unverändert; das wäre ein Umbau des Bestands außerhalb der Spec.
+- **R2 · Task 4** — geändert — Task 3 führt `plugins/forge/tests/lib/plan-fixtures.js` jetzt als `Create`-Zeile statt als `Test`-Zeile ohne Anker. Damit merkt sich die Anker-Prüfung die Anlage (`remember` in `plan-anchors.js` wertet nur `Create`), und die Zeile `Test … · TWO_TASKS` in Task 4 wird ✅ „angelegt in Task 3“ statt ❌ „Datei fehlt“. Außerdem exportiert `plan-tasks.js` jetzt `splitLines(text)`. `readLines` nutzt die Funktion, und `plan-checks.js` importiert sie statt einer eigenen Kopie (neue Modify-Zeile mit Anker `readLines`). `plan-anchors.test.js` bezieht `SOURCE` aus `plan-fixtures.js` statt aus dem wortgleichen Literal (neue Test-Zeile mit Anker `const SOURCE`, Datei im Commit von Task 4).

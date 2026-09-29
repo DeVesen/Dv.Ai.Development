@@ -124,12 +124,16 @@ function rateWithScriptChecks(ws, reviews = {}) {
 const ratedRed = (ws) => ws.readJson('runde-1/einstufung.json').groups.filter((group) => group.color === 'red')
   .map((group) => `${group.label}: ${group.items.map((item) => `${item.reviewer}/${item.category}`).join(' + ')}`);
 
+const scriptItemsOf = (ws) => ws.readJson('runde-1/einstufung.json').groups.flatMap((group) => group.items.filter((item) => item.script)
+  .map((item) => ({ label: group.label, category: item.category, finding: `${item.finding.check}/${item.finding.category}` })));
+
 test('scriptChecks_AcInNoTask_RateCountsScriptRedWithCheckAndCategory', () => {
   const ws = planWorkspace(plan(task(1, 'AC-01'), task(2, 'AC-03', ['Setzt auch AC-05 um.'])));
   const out = rateWithScriptChecks(ws);
   assert.equal(out.checks, 'SKRIPT befunde=1\n');
   assert.equal(out.rate, 'STATUS red=1 yellow=0 green=0 fragen=0 failed=-\nWEITER scout=rot-und-gelb nacharbeit=ja\n');
-  assert.deepEqual(ratedRed(ws), ['AC-05: skript:ac-abdeckung/ac-fehlt-im-plan']);
+  assert.deepEqual(ratedRed(ws), ['AC-05: skript:ac-abdeckung/skript-prüfung']);
+  assert.deepEqual(scriptItemsOf(ws), [{ label: 'AC-05', category: 'skript-prüfung', finding: 'ac-abdeckung/ac-fehlt-im-plan' }]);
 });
 
 test('scriptChecks_SpecReview_WritesNoFindings', () => {

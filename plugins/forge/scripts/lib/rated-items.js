@@ -38,13 +38,9 @@ function scriptFindings(file) {
   return findings;
 }
 
-// Die Plan-Prüfungen aus plan-checks.js nennen ihre Prüfung und Kategorie; beide bleiben am Befund sichtbar.
+// Die Plan-Prüfungen aus plan-checks.js nennen ihre Prüfung und Kategorie; beide bleiben in item.finding sichtbar.
 function scriptReviewer(finding) {
   return typeof finding.check === 'string' ? `${SCRIPT_REVIEWER}:${finding.check}` : SCRIPT_REVIEWER;
-}
-
-function scriptCategory(finding) {
-  return typeof finding.category === 'string' ? finding.category : SCRIPT_CATEGORY;
 }
 
 // Befunde einer Skript-Prüfung sind immer 🔴 und entfallen nie.
@@ -52,7 +48,7 @@ function scriptItems(dir, places) {
   const file = path.join(dir, SCRIPT_FILE);
   if (!fs.existsSync(file)) return [];
   return scriptFindings(file).map((finding) => ({
-    reviewer: scriptReviewer(finding), category: scriptCategory(finding), color: 'red', dropped: null, script: true,
+    reviewer: scriptReviewer(finding), category: SCRIPT_CATEGORY, color: 'red', dropped: null, script: true,
     place: placeOf(finding, places), finding,
   }));
 }

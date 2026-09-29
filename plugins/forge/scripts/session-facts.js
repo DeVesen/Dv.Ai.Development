@@ -10,6 +10,7 @@ const { rangeOf } = require('./lib/retro-range');
 const { requestsOf } = require('./lib/retro-requests');
 const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns } = require('./lib/retro-measures');
 const { readConfig } = require('./forge-config.js');
+const { signalHints } = require('./lib/retro-signals');
 const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
   + ' [--since-command <name>] [--before-retro] [--lenient] [--skeleton <bericht.md>]\n';
 const DENIAL = /denied|blocked|Permission|hook/i;
@@ -180,10 +181,16 @@ function savings(all) {
   return ['## Sparpotenzial (Hauptsession und Subagents)', '', savingsLists(all)].join('\n');
 }
 
+function savingsData(all) {
+  return {
+    results: all.flatMap((facts) => facts.results).sort((a, b) => b.chars - a.chars).slice(0, TOP_RESULTS),
+    reads: [...all.reduce((map, facts) => merge(map, facts.reads), new Map())].filter(([, count]) => count > 1).sort((a, b) => b[1] - a[1]),
+    commands: [...all.reduce((map, facts) => merge(map, facts.commands), new Map())].filter(([, count]) => count >= MIN_COMMAND_REPEATS).sort((a, b) => b[1] - a[1]),
+  };
+}
+
 function savingsLists(all) {
-  const results = all.flatMap((facts) => facts.results).sort((a, b) => b.chars - a.chars).slice(0, TOP_RESULTS);
-  const reads = [...all.reduce((map, facts) => merge(map, facts.reads), new Map())].filter(([, count]) => count > 1).sort((a, b) => b[1] - a[1]);
-  const commands = [...all.reduce((map, facts) => merge(map, facts.commands), new Map())].filter(([, count]) => count >= MIN_COMMAND_REPEATS).sort((a, b) => b[1] - a[1]);
+  const { results, reads, commands } = savingsData(all);
   return [
     'Größte Tool-Ergebnisse (etwa 4 Zeichen je Token):',
     ...(results.length > 0 ? results.map((r) => `- ${thousands(r.chars / 4)} Tokens · ${r.call}`) : ['- keine']),
@@ -195,6 +202,21 @@ function savingsLists(all) {
     ...(commands.length > 0 ? commands.slice(0, 10).map(([head, count]) => `- ${count}× ${head}`) : ['- keine']),
     '',
   ].join('\n');
+}
+
+function kindCount(humans, kind) {
+  return humans.filter((event) => event.kind === kind).length;
+}
+
+function measuredOf(facts, allFacts, mcp) {
+  const { reads, commands } = savingsData(allFacts);
+  return {
+    errors: errorLinesOf(facts).length, denials: facts.denials, rejections: kindCount(facts.humans, 'Ablehnung'),
+    interruptions: kindCount(facts.humans, 'Unterbrechung'), repeats: facts.repeats, compactions: facts.compactions,
+    expectedUnused: mcp.expectedUnused.length, toolchainShell: mcp.fallbacks.length, baselineTokens: facts.baseline?.context ?? 0,
+    cacheRebuilds: facts.rebuilds.length, contextLoads: facts.loads.length, longRuns: facts.longRuns.length,
+    idleReruns: facts.idleReruns.length, repeatedReads: reads.length, recurringCommands: commands.length, silenceMinutes: facts.time.silence,
+  };
 }
 
 function errorLinesOf(facts) {
@@ -369,7 +391,8 @@ function run(options) {
   const agents = subagentRows(file, range.keepSubagent);
   const mcp = mcpUsage.render(session, { expect, transcript: file });
   const allFacts = [facts, ...agents.map((agent) => agent.facts)];
-  let output = `${render(file, facts, agents, range.labels)}\n${savings(allFacts)}\n${mcp}`;
+  const measured = measuredOf(facts, allFacts, mcpUsage.measure(session, { expect }));
+  let output = `${render(file, facts, agents, range.labels)}\n${savings(allFacts)}\n${mcp}\n## Hinweise zu den Signalen\n${signalHints(measured).join('\n')}\n`;
   if (options.skeleton) {
     const written = writeSkeleton(options.skeleton, skeleton({ facts, agents, mcp, lists: savingsLists(allFacts) }));
     output += `\nGerüst geschrieben: ${written}\n`;

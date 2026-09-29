@@ -397,6 +397,16 @@ test('spec-review-clarity_Body_TwoReadingsHowInsteadOfWhatNoEdgeCaseSearch', () 
   assert.ok(!body.includes('außer sie widersprechen einer Anforderung'), 'alte WIE-Ausnahme');
   assert.doesNotMatch(fields.description, /edge and error cases/);
 });
+test('spec-review-profiles_Body_ActualStateIsContradictionGlossaryTermIsDetail', () => {
+  const { body } = readAgent('spec-review-profiles');
+  for (const part of [
+    'die im Glossar anders heißen oder dort unter „Nicht verwenden“ stehen, sind `detail`. `rationale` nennt den Glossar-Begriff.',
+    'die einem Modul- oder Feature-Profil widersprechen, sind `widerspruch`. `rationale` nennt die Profil-Datei und zitiert die Profil-Aussage.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(!body.includes('außer er macht eine Anforderung mehrdeutig'), 'alte Begriffs-Ausnahme');
+});
 
 for (const [name, tools, inputs, categories] of [
   ['spec-review-verifier', 'Read, Write', ['- `Spec:`'], SPEC_CATEGORIES],

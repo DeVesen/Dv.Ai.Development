@@ -3,7 +3,7 @@
 const path = require('node:path');
 const { placeKey, parsePlaces, changedPlaces } = require('./places');
 const { findingProblem } = require('./rules');
-const { openQuestions, wEntryLines } = require('./questions');
+const { openQuestions, wEntriesOf } = require('./questions');
 const { groupRated, countColors, renderGroups } = require('./groups');
 const { rateReviewer, scriptItems, droppedList } = require('./rated-items');
 const { parseRework } = require('../followup');
@@ -133,9 +133,8 @@ function verifyRoundTwo(options) {
   if (verifier.problem) return `NACHPRUEFUNG ungültig: ${verifier.problem}`;
   const text = readText(options.doc);
   const places = parsePlaces(text);
-  const spec = options.spec ? wEntryLines(readText(options.spec)) : [];
   const context = {
-    review: options.review, advisory: new Set(), wEntries: [...wEntryLines(text), ...spec], openKeys: openKeysNow(options, text),
+    review: options.review, advisory: new Set(), wEntries: wEntriesOf(options), openKeys: openKeysNow(options, text),
     phase: 'nachpruefung', checklistKeys: new Set(checklist.items.map((item) => item.key)), changedKeys: new Set(checklist.changed.map(placeKey)),
   };
   const scripted = scriptItems(dir, places);

@@ -1,6 +1,7 @@
 'use strict';
 
 const { placeKey, decisionLines } = require('./places');
+const { readText } = require('./flow-files');
 
 const R_QUESTION = /^- \*\*(R\d+) · (.+?)\*\* — frage an den menschen — (.*)$/;
 const W_ENTRY = /^- \*\*W · (.+?)\*\*(.*)$/;
@@ -44,6 +45,12 @@ function documentQuestions(options, text) {
 
 function wEntryLines(text) {
   return decisionLines(text).filter((line) => W_ENTRY.test(line));
+}
+
+// Geltende W-Einträge: die des Dokuments plus, falls angegeben, die der Spec.
+function wEntriesOf(options) {
+  const spec = options.spec ? wEntryLines(readText(options.spec)) : [];
+  return [...wEntryLines(readText(options.doc)), ...spec];
 }
 
 function nextEntryNumber(text) {
@@ -93,5 +100,5 @@ function renderQuestions(bundles) {
 }
 
 module.exports = {
-  titleNamesPlace, openQuestions, documentQuestions, wEntryLines, nextEntryNumber, bundleShapeProblem, bundleProblem, renderQuestions,
+  titleNamesPlace, openQuestions, documentQuestions, wEntryLines, wEntriesOf, nextEntryNumber, bundleShapeProblem, bundleProblem, renderQuestions,
 };

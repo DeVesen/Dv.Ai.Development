@@ -2,6 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const { finding, setup, writeJsonFile, flow, readJsonFile, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
 
@@ -165,4 +166,19 @@ test('answersCheck_AnsweredWithoutWEntry_Invalid', () => {
 
   // Assert
   assert.equal(result.stdout, 'ANTWORTEN ungültig: Antwort passt nicht zum Dokument: AC-04\n');
+});
+
+test('reworkCheck_InputFileMissing_FailsWithFileMissing', () => {
+  // Arrange
+  const env = setup();
+  prepareRework(env);
+  fs.rmSync(path.join(env.workspace, 'runde-1', 'nacharbeit-eingabe.md'));
+  writeRework(env, { results: [] });
+
+  // Act
+  const result = flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--quelle', 'runde-1');
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Datei fehlt: .*nacharbeit-eingabe\.md/);
 });

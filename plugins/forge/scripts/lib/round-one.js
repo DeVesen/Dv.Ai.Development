@@ -3,7 +3,7 @@
 const path = require('node:path');
 const { parsePlaces } = require('./places');
 const { resultProblem } = require('./rules');
-const { documentQuestions, wEntryLines } = require('./questions');
+const { documentQuestions, wEntriesOf } = require('./questions');
 const { groupRated, countColors, renderGroups, renderTable } = require('./groups');
 const { rateReviewer, scriptItems, droppedList } = require('./rated-items');
 const { ROUND_ONE, readText, readAgentJson, writeText, writeJson } = require('./flow-files');
@@ -12,11 +12,6 @@ function readReviewerResult(dir, name, review) {
   const { value, problem } = readAgentJson(path.join(dir, `${name}.json`));
   const invalid = problem ?? resultProblem(value, review, name);
   return invalid ? { name, problem: `Ergebnis ungültig: ${invalid}` } : { name, findings: value.findings };
-}
-
-function wEntriesOf(options) {
-  const spec = options.spec ? wEntryLines(readText(options.spec)) : [];
-  return [...wEntryLines(readText(options.doc)), ...spec];
 }
 
 function scoutScope(counts) {

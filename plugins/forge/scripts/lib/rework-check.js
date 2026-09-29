@@ -4,7 +4,7 @@ const path = require('node:path');
 const { placeKey } = require('./places');
 const { openQuestions, bundleShapeProblem, bundleProblem, renderQuestions } = require('./questions');
 const { parseRework } = require('../followup');
-const { ROUND_ONE, readText, readLines, readJson, readAgentJson, writeText, writeJson } = require('./flow-files');
+const { ROUND_ONE, readText, readJson, readAgentJson, writeText, writeJson } = require('./flow-files');
 
 const STATUSES = {
   'spec-review': ['changed', 'unchanged', 'human-question'],
@@ -19,7 +19,7 @@ function inputFile(workspace, source) {
 }
 
 function expectedKeys(workspace, source) {
-  return parseRework(readLines(inputFile(workspace, source))).map((group) => placeKey(group.location));
+  return parseRework(readText(inputFile(workspace, source)).split('\n')).map((group) => placeKey(group.location));
 }
 
 function entryProblem(entry, review) {

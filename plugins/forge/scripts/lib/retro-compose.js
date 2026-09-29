@@ -32,13 +32,13 @@ function withoutDuplicateIdeas(lines) {
   });
 }
 
-// „Neue Ideen" nennt jedes neu:-Ziel genau einmal: fehlende hängt das Skript an, doppelte fallen weg.
+// „Neue Ideen“ nennt jedes neu:-Ziel genau einmal: fehlende hängt das Skript an, doppelte fallen weg.
 function ideaLines(sectionLines, targets) {
   const kept = withoutDuplicateIdeas(sectionLines);
   const named = new Set(kept.map((line) => line.match(IDEA)?.[1]).filter(Boolean));
   const missing = [...new Map(targets.filter((target) => !named.has(target.name)).map((target) => [target.name, target])).values()];
   if (missing.length === 0) return kept;
-  const added = missing.map((target) => `- **${target.name}** (\`neu:\` ${target.art}): sichtbar geworden an „${target.finding}"`);
+  const added = missing.map((target) => `- **${target.name}** (\`neu:\` ${target.art}): sichtbar geworden an „${target.finding}“`);
   return withAppended(kept.filter((line) => line.trim() !== '- keine'), added);
 }
 

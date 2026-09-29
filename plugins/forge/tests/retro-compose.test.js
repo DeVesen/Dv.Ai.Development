@@ -41,7 +41,7 @@ test('compose_Header_ModelSkillsDateAndScriptNumbersBeforeSections', () => {
 test('compose_NewTargetMissingInIdeas_AddedAndNoneRemoved', () => {
   const ideas = section(compose(VALID, SNAPSHOT, '2026-09-29'), 'Neue Ideen');
 
-  assert.equal(ideas, '## Neue Ideen\n\n- **protokoll-ausschnitt** (`neu:` Skript): sichtbar geworden an „Zeitleiste statt Textsuche"\n');
+  assert.equal(ideas, '## Neue Ideen\n\n- **protokoll-ausschnitt** (`neu:` Skript): sichtbar geworden an „Zeitleiste statt Textsuche“\n');
 });
 
 test('compose_NewTargetNamedTwiceInIdeas_KeptOnce', () => {

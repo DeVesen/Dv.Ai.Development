@@ -417,3 +417,23 @@ test('plan-review-advisory_Body_FindingsAtMostYellow', () => {
     assert.ok(body.includes('Du bist beratend. Ein Skript stuft jedes deiner Findings höchstens auf 🟡, gleich welche Kategorie es trägt; deine Findings blocken nie.'), name);
   }
 });
+
+test('plan-review-coverage_Body_CategoryPerCheckAndDefinitions', () => {
+  const { body } = readAgent('plan-review-coverage');
+  for (const part of [
+    'Ob jede AC-ID der Spec unter `**ACs:**` eines Tasks steht, prüft ein Skript; das meldest du nicht.',
+    '1. **Teilweise umgesetzt:**',
+    'Ein Test ist ein automatisierter Testfall, den der Plan anlegt, ändert oder als vorhanden nennt, samt dem Befehl, der ihn ausführt.',
+    'Ein Befehl oder Tool-Aufruf mit erwarteter Ausgabe ohne solchen Testfall ist Verifikation, aber kein Test.',
+    'Belegt kein Test das AC, auch wenn ein Befehl es prüft: Finding an `AC-<Zahl>`, immer Kategorie `ac-fehlt-im-plan`.',
+    'Jeder Aufzählungspunkt im Abschnitt `## Soll-Vorgaben` der Spec ist eine Soll-Vorgabe.',
+    'Fehlt sie dort oder weicht sie ab: je Soll-Vorgabe ein eigenes Finding an `Global Constraints`, immer Kategorie `ac-fehlt-im-plan`.',
+    'Fehlt der Abschnitt `## Global Constraints`, fehlt jede Soll-Vorgabe.',
+    'Hat die Spec keine Soll-Vorgaben, entsteht daraus kein Finding.',
+    'Fehlt sie: Finding an `Task <n>`, immer Kategorie `detail`.',
+    'Ein AC ohne Test und ein Task ohne Verifikation meldest du getrennt, jedes mit seinem eigenen Finding.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(!body.includes('1. Jede AC-ID der Spec steht unter `**ACs:**` in mindestens einem Task.'), 'alte Handprüfung der AC-Abdeckung');
+});

@@ -2,143 +2,159 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { finding, flowWorkspace } = require('./lib/flow-workspace');
-const { PLAN_SPEC: SPEC, SOURCE, ALL_ACS, planTask: task, planText: plan } = require('./lib/plan-fixtures');
+const fs = require('node:fs');
+const path = require('node:path');
+const { writeContext } = require('../scripts/workspace');
+const { finding, tempDir, setup, writeJsonFile, writeReviewer, flow, readJsonFile } = require('./lib/review-flow-fixture');
+const { PLAN_SPEC, SOURCE, ALL_ACS, planTask: task, planText: plan } = require('./lib/plan-fixtures');
 
-const RULE = 'die Umsetzung zerlegt den Plan nach lückenlosen Task-Nummern ab 1.';
-
-function planWorkspace(text, files = {}) {
-  const ws = flowWorkspace(text, 'plan.md');
-  ws.context(SPEC);
-  for (const [name, content] of Object.entries(files)) ws.repoFile(name, content);
-  return ws;
+// Plan im Repo-Ordner, Kontext wie von prepare.js: Spec neben dem Plan, Repo ist der Test-Ordner.
+function planEnv(text, files = {}) {
+  const root = tempDir('dv-forge-plan-');
+  const env = { root, doc: path.join(root, 'plan.md'), workspace: path.join(root, '.forge', 'ws') };
+  const spec = path.join(root, 'kontext-spec.md');
+  fs.writeFileSync(env.doc, text);
+  fs.writeFileSync(spec, PLAN_SPEC);
+  for (const [name, content] of Object.entries(files)) writeJsonFile(path.join(root, name), content);
+  fs.mkdirSync(env.workspace, { recursive: true });
+  writeContext(env.workspace, { spec, repo: root });
+  return env;
 }
 
-// Runde 1 mit coverage (ohne Findings, falls nicht anders gegeben) und den übrigen Reviews.
-function roundOne(ws, reviews = {}) {
+function flags(env) {
+  return ['--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc];
+}
+
+const planFinding = (location, category) => finding({ location, category, quote: 'Text.' });
+
+// Runde 1: Skript-Prüfungen, dann rate mit coverage (ohne Findings, falls nicht anders gegeben) und den übrigen Reviews.
+function roundOne(env, reviews = {}) {
   const all = { coverage: [], ...reviews };
-  for (const [reviewer, findings] of Object.entries(all)) ws.review(reviewer, findings);
-  return ws.run('round1', 'plan-review', ws.doc, ws.workspace, Object.keys(all).join(',')).stdout;
+  for (const [reviewer, findings] of Object.entries(all)) writeReviewer(env, reviewer, findings);
+  const checks = flow('script-checks', ...flags(env)).stdout;
+  const rated = flow('rate', ...flags(env), '--expect', Object.keys(all).join(',')).stdout;
+  return { checks, rated };
 }
 
-const red = (state) => state.groups.filter((group) => group.color === 'red')
-  .map((group) => `${group.key}: ${group.items.map((item) => `${item.reviewer}/${item.category}`).join(' + ')}`);
-const scriptConsequences = (ws) => ws.readJson('runde-1/runde.json').groups
-  .flatMap((group) => group.items.filter((item) => item.script).map((item) => `${group.key}: ${item.consequence}`));
-
-test('round1_AcInNoTask_ScriptRedAtThatAc', () => {
-  const ws = planWorkspace(plan(task(1, 'AC-01'), task(2, 'AC-03', ['Setzt auch AC-05 um.'])));
-  const out = roundOne(ws);
-  assert.equal(out, 'RUNDE1 rot=1 gelb=0 gruen=0 fragen=0 ausgefallen=-\nNEXT scout=ja nacharbeit=ja\n');
-  assert.deepEqual(red(ws.readJson('runde-1/runde.json')), ['AC-05: skript:ac-abdeckung/ac-fehlt-im-plan']);
-});
-
-test('round1_TasksOneTwoFour_ScriptRedAtTaskFour', () => {
-  const ws = planWorkspace(plan(task(1, 'AC-01'), task(2, 'AC-03'), task(4, 'AC-05')));
-  roundOne(ws);
-  assert.deepEqual(red(ws.readJson('runde-1/runde.json')), ['Task 4: skript:nummerierung/umsetzer-steckt-fest']);
-});
-
-test('round1_AnchorNotInFileAndNoEarlierTask_ScriptRedAtThatTask', () => {
-  const ws = planWorkspace(plan(task(1, ALL_ACS, ['- Modify: `src/a.js` · `Klasse.fehlt`'])), { 'src/a.js': SOURCE });
-  roundOne(ws);
-  assert.deepEqual(red(ws.readJson('runde-1/runde.json')), ['Task 1: skript:anker/umsetzer-steckt-fest']);
-});
-
-test('round1_DuplicateNumber_ScriptRedAtFirstTaskOffItsPosition', () => {
-  const ws = planWorkspace(plan(task(1, 'AC-01'), task(2, 'AC-03'), task(2, 'AC-05'), task(3, '')));
-  roundOne(ws);
-  assert.deepEqual(scriptConsequences(ws), [`Task 2: An Position 3 steht Task 2; ${RULE}`]);
-});
-
-test('round1_WrongOrder_ScriptRedAtFirstTaskOffItsPosition', () => {
-  const ws = planWorkspace(plan(task(1, 'AC-01'), task(3, 'AC-03'), task(2, 'AC-05')));
-  roundOne(ws);
-  assert.deepEqual(scriptConsequences(ws), [`Task 3: An Position 2 steht Task 3; ${RULE}`]);
-});
-
-test('round1_PlanWithoutTasks_PlanRedAndEveryAcRed', () => {
-  const ws = planWorkspace(plan());
-  const out = roundOne(ws);
-  assert.match(out, /^RUNDE1 rot=4 /);
-  assert.deepEqual(red(ws.readJson('runde-1/runde.json')), [
-    'AC-01: skript:ac-abdeckung/ac-fehlt-im-plan', 'AC-03: skript:ac-abdeckung/ac-fehlt-im-plan', 'AC-05: skript:ac-abdeckung/ac-fehlt-im-plan',
-    'Plan: skript:nummerierung/umsetzer-steckt-fest',
-  ]);
-});
-
-test('round1_SamePlanSpecAndCodeTwice_SameFindings', () => {
-  const ws = planWorkspace(plan(task(1, 'AC-01', ['- Modify: `src/a.js` · `fehlt`']), task(2, 'AC-03'), task('2a', '')), { 'src/a.js': SOURCE });
-  const first = [roundOne(ws), ws.read('runde-1/runde.json')];
-  const second = [roundOne(ws), ws.read('runde-1/runde.json')];
-  assert.deepEqual(second, first);
-  assert.match(first[0], /^RUNDE1 rot=3 /);
-});
-
-test('round1_ReviewerAndScriptAtSameAc_StelleCountsOnceScriptDecides', () => {
-  const ws = planWorkspace(plan(task(1, 'AC-01, AC-03')));
-  const out = roundOne(ws, { coverage: [finding('AC-05', 'ac-fehlt-im-plan', { quote: 'Text.' })] });
-  ws.json('runde-1/rework.json', { results: [{ location: 'AC-05', status: 'changed' }], questions: [] });
-  const list = ws.run('checklist', 'plan-review', ws.doc, ws.workspace).stdout;
-  assert.match(out, /^RUNDE1 rot=1 /);
-  assert.deepEqual(red(ws.readJson('runde-1/runde.json')), ['AC-05: coverage/ac-fehlt-im-plan + skript:ac-abdeckung/ac-fehlt-im-plan']);
-  assert.equal(list, 'PRUEFLISTE punkte=0 skript=1 geaendert=0 nachpruefer=nein\n');
-});
-
-test('verify_ReworkRemovesOnlyMentionOfAc_ScriptRedAtAcOutsideChecklist', () => {
-  const ws = planWorkspace(plan(task(1, 'AC-01, AC-03'), task(2, 'AC-05')));
-  roundOne(ws, { feasibility: [finding('Task 1', 'umsetzer-steckt-fest', { quote: 'Text.' })] });
-  ws.json('runde-1/rework.json', { results: [{ location: 'Task 1', status: 'changed' }], questions: [] });
-  ws.edit((text) => text.replace('**ACs:** AC-05', '**ACs:** -'));
-  ws.run('checklist', 'plan-review', ws.doc, ws.workspace);
-  ws.json('runde-2/verifier.json', { reviewer: 'verifier', verdicts: [{ location: 'Task 1', verdict: 'erledigt', rationale: 'passt' }], findings: [] });
-  const out = ws.run('verify', 'plan-review', ws.doc, ws.workspace).stdout;
-  assert.equal(out, 'NACHPRUEFUNG ok offen=1 hinweise=0\nNEXT scout=nein\n');
-  assert.deepEqual(red(ws.readJson('runde-2/nachpruefung.json')), ['AC-05: skript:ac-abdeckung/ac-fehlt-im-plan']);
-  assert.ok(!ws.readJson('runde-2/pruefliste.json').items.some((item) => item.key === 'AC-05'));
-});
-
-test('verify_RedAnchorLineFixedByRework_PointDoneBecauseScriptNoLongerReportsIt', () => {
-  const ws = planWorkspace(plan(task(1, ALL_ACS, ['- Modify: `src/a.js` · `Klasse.fehlt`'])), { 'src/a.js': SOURCE });
-  roundOne(ws);
-  ws.json('runde-1/rework.json', { results: [{ location: 'Task 1', status: 'changed' }], questions: [] });
-  ws.edit((text) => text.replace('`Klasse.fehlt`', '`Klasse.methode`'));
-  const list = ws.run('checklist', 'plan-review', ws.doc, ws.workspace).stdout;
-  ws.json('runde-2/verifier.json', { reviewer: 'verifier', verdicts: [], findings: [] });
-  const out = ws.run('verify', 'plan-review', ws.doc, ws.workspace).stdout;
-  assert.equal(list, 'PRUEFLISTE punkte=0 skript=1 geaendert=1 nachpruefer=ja\n');
-  assert.equal(out, 'NACHPRUEFUNG ok offen=0 hinweise=0\nNEXT scout=nein\n');
-  assert.deepEqual(ws.readJson('runde-2/nachpruefung.json').verdicts,
-    [{ key: 'Task 1', script: true, verdict: 'erledigt', rationale: 'Skript-Prüfung meldet die Stelle nicht mehr' }]);
-});
-
-// Neuer Ablauf: script-checks schreibt skript-pruefung.json, rate stuft die Befunde über scriptItems ein.
-function rateWithScriptChecks(ws, reviews = {}) {
-  const all = { coverage: [], ...reviews };
-  for (const [reviewer, findings] of Object.entries(all)) ws.review(reviewer, findings);
-  const checks = ws.run('script-checks', '--review', 'plan-review', '--dir', ws.workspace, '--doc', ws.doc).stdout;
-  const rate = ws.run('rate', '--review', 'plan-review', '--dir', ws.workspace, '--doc', ws.doc, '--expect', Object.keys(all).join(',')).stdout;
-  return { checks, rate };
+// Nacharbeit mit Ergebnis `results` und Änderung `change` am Plan, danach die Prüfliste.
+function reworkAndChecklist(env, results, change = (text) => text) {
+  flow('rework-input', ...flags(env));
+  fs.writeFileSync(env.doc, change(fs.readFileSync(env.doc, 'utf8')));
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results, questions: [] });
+  flow('rework-check', ...flags(env));
+  return flow('checklist', ...flags(env)).stdout;
 }
 
-const ratedRed = (ws) => ws.readJson('runde-1/einstufung.json').groups.filter((group) => group.color === 'red')
+function verify(env, verification) {
+  flow('script-checks', ...flags(env), '--runde', 'runde-2');
+  if (verification) writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), verification);
+  return flow('verify', ...flags(env)).stdout;
+}
+
+const readRound = (env, relative) => readJsonFile(path.join(env.workspace, relative));
+
+const redLabels = (state) => state.groups.filter((group) => group.color === 'red')
   .map((group) => `${group.label}: ${group.items.map((item) => `${item.reviewer}/${item.category}`).join(' + ')}`);
 
-const scriptItemsOf = (ws) => ws.readJson('runde-1/einstufung.json').groups.flatMap((group) => group.items.filter((item) => item.script)
+const scriptItemsOf = (env) => readRound(env, 'runde-1/einstufung.json').groups.flatMap((group) => group.items.filter((item) => item.script)
   .map((item) => ({ label: group.label, category: item.category, finding: `${item.finding.check}/${item.finding.category}` })));
 
 test('scriptChecks_AcInNoTask_RateCountsScriptRedWithCheckAndCategory', () => {
-  const ws = planWorkspace(plan(task(1, 'AC-01'), task(2, 'AC-03', ['Setzt auch AC-05 um.'])));
-  const out = rateWithScriptChecks(ws);
+  // Arrange
+  const env = planEnv(plan(task(1, 'AC-01'), task(2, 'AC-03', ['Setzt auch AC-05 um.'])));
+
+  // Act
+  const out = roundOne(env);
+
+  // Assert
   assert.equal(out.checks, 'SKRIPT befunde=1\n');
-  assert.equal(out.rate, 'STATUS red=1 yellow=0 green=0 fragen=0 failed=-\nWEITER scout=rot-und-gelb nacharbeit=ja\n');
-  assert.deepEqual(ratedRed(ws), ['AC-05: skript:ac-abdeckung/skript-prüfung']);
-  assert.deepEqual(scriptItemsOf(ws), [{ label: 'AC-05', category: 'skript-prüfung', finding: 'ac-abdeckung/ac-fehlt-im-plan' }]);
+  assert.equal(out.rated, 'STATUS red=1 yellow=0 green=0 fragen=0 failed=-\nWEITER scout=rot-und-gelb nacharbeit=ja\n');
+  assert.deepEqual(redLabels(readRound(env, 'runde-1/einstufung.json')), ['AC-05: skript:ac-abdeckung/skript-prüfung']);
+  assert.deepEqual(scriptItemsOf(env), [{ label: 'AC-05', category: 'skript-prüfung', finding: 'ac-abdeckung/ac-fehlt-im-plan' }]);
 });
 
 test('scriptChecks_SpecReview_WritesNoFindings', () => {
-  const ws = flowWorkspace();
-  const out = ws.run('script-checks', '--review', 'spec-review', '--dir', ws.workspace, '--doc', ws.doc).stdout;
+  // Arrange
+  const env = setup();
+
+  // Act
+  const out = flow('script-checks', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc).stdout;
+
+  // Assert
   assert.equal(out, 'SKRIPT befunde=0\n');
-  assert.deepEqual(ws.readJson('runde-1/skript-pruefung.json'), { findings: [] });
+  assert.deepEqual(readRound(env, 'runde-1/skript-pruefung.json'), { findings: [] });
+});
+
+test('rate_PlanWithoutTasks_PlanRedAndEveryAcRed', () => {
+  // Arrange
+  const env = planEnv(plan());
+
+  // Act
+  const out = roundOne(env);
+
+  // Assert
+  assert.match(out.rated, /^STATUS red=4 /);
+  assert.deepEqual(redLabels(readRound(env, 'runde-1/einstufung.json')).sort(), [
+    'AC-01: skript:ac-abdeckung/skript-prüfung', 'AC-03: skript:ac-abdeckung/skript-prüfung', 'AC-05: skript:ac-abdeckung/skript-prüfung',
+    'Plan: skript:nummerierung/skript-prüfung',
+  ]);
+});
+
+test('rate_SamePlanSpecAndCodeTwice_SameFindings', () => {
+  // Arrange
+  const env = planEnv(plan(task(1, 'AC-01', ['- Modify: `src/a.js` · `fehlt`']), task(2, 'AC-03'), task('2a', '')), { 'src/a.js': SOURCE });
+  const first = [roundOne(env), fs.readFileSync(path.join(env.workspace, 'runde-1', 'einstufung.json'), 'utf8')];
+
+  // Act
+  const second = [roundOne(env), fs.readFileSync(path.join(env.workspace, 'runde-1', 'einstufung.json'), 'utf8')];
+
+  // Assert
+  assert.deepEqual(second, first);
+  assert.match(first[0].rated, /^STATUS red=3 /);
+});
+
+test('checklist_ReviewerAndScriptAtSameAc_OneRedPlaceWithReviewerAndScriptPoint', () => {
+  // Arrange
+  const env = planEnv(plan(task(1, 'AC-01, AC-03')));
+  // Das Zitat stammt aus der Spec; im Plan fehlt AC-05, also bleibt die Stelle AC-05.
+  const out = roundOne(env, { coverage: [finding({ location: 'AC-05', category: 'ac-fehlt-im-plan', quote: 'Gegeben E, dann F.' })] });
+
+  // Act
+  const list = reworkAndChecklist(env, [{ location: 'AC-05', status: 'changed' }], (text) => text.replace('**ACs:** AC-01, AC-03', '**ACs:** AC-01, AC-03, AC-05'));
+
+  // Assert
+  assert.match(out.rated, /^STATUS red=1 /);
+  assert.deepEqual(redLabels(readRound(env, 'runde-1/einstufung.json')), ['AC-05: coverage/ac-fehlt-im-plan + skript:ac-abdeckung/skript-prüfung']);
+  assert.equal(list, 'PRUEFLISTE punkte=1 skript=1 bereiche=1\nNACHPRUEFER ja\n');
+});
+
+test('verify_ReworkRemovesOnlyMentionOfAc_ScriptRedAtAcOutsideChecklist', () => {
+  // Arrange
+  const env = planEnv(plan(task(1, 'AC-01, AC-03'), task(2, 'AC-05')));
+  roundOne(env, { feasibility: [planFinding('Task 1', 'umsetzer-steckt-fest')] });
+  reworkAndChecklist(env, [{ location: 'Task 1', status: 'changed' }], (text) => text.replace('**ACs:** AC-05', '**ACs:** -'));
+
+  // Act
+  const out = verify(env, { verdicts: [{ location: 'Task 1', verdict: 'erledigt', rationale: 'passt' }], findings: [] });
+
+  // Assert
+  assert.equal(out, 'NACHPRUEFUNG ok offen=1 hinweise=0\nWEITER scout=keiner\n');
+  assert.deepEqual(redLabels(readRound(env, 'runde-2/einstufung.json')), ['AC-05: skript:ac-abdeckung/skript-prüfung']);
+  assert.ok(!readRound(env, 'runde-2/pruefliste.json').items.some((item) => item.key === 'AC-05'));
+});
+
+test('verify_RedAnchorLineFixedByRework_ScriptPointDone', () => {
+  // Arrange
+  const env = planEnv(plan(task(1, ALL_ACS, ['- Modify: `src/a.js` · `Klasse.fehlt`'])), { 'src/a.js': SOURCE });
+  roundOne(env);
+  const list = reworkAndChecklist(env, [{ location: 'Task 1', status: 'changed' }], (text) => text.replace('`Klasse.fehlt`', '`Klasse.methode`'));
+
+  // Act
+  const out = verify(env, { verdicts: [], findings: [] });
+
+  // Assert
+  assert.equal(list, 'PRUEFLISTE punkte=0 skript=1 bereiche=1\nNACHPRUEFER ja\n');
+  assert.equal(out, 'NACHPRUEFUNG ok offen=0 hinweise=0\nWEITER scout=keiner\n');
+  assert.deepEqual(readRound(env, 'runde-2/einstufung.json').verdicts,
+    [{ location: 'Task 1', source: 'skript', rationale: 'Skript-Prüfung', verdict: 'erledigt' }]);
 });

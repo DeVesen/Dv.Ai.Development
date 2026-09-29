@@ -120,6 +120,45 @@ test('report_ReworkWithoutRoundTwo_ExitsWithOneAndReason', () => {
   assert.match(result.stderr, /^dv-forge review-flow: Nachprüfung fehlt: runde-2\/einstufung\.json/);
 });
 
+test('report_ReworkFailedWithInvalidEntries_ListsValidEvidenceWithoutCrash', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  // Verwertbar ist nur der letzte Eintrag (Leerraum um die Werte); davor: kein Objekt, ohne location, location kein Text, nicht changed.
+  const results = [
+    null,
+    { status: 'changed', evidence: 'src/export.js' },
+    { location: 42, status: 'changed', evidence: 'src/export.js' },
+    { location: 'AC-07', status: 'unchanged', reason: 'Fehllesung', evidence: 'src/export.js' },
+    { location: ' AC-04 ', status: 'changed', evidence: ' src/export.js ' },
+  ];
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results, questions: [] });
+  ['NACHFORDERN', 'NEUSTART', 'AUSGEFALLEN'].forEach(() => nextAttempt(env.workspace, 'nacharbeit'));
+
+  // Act
+  const output = report(env);
+
+  // Assert
+  assert.match(output, /^ENDE unvollständig, ausgefallen: nacharbeit\n/);
+  assert.match(output, /### Neues Verhalten mit Beleg\n- AC-04 — src\/export\.js\n/);
+});
+
+test('report_ReworkResultNoJson_ReportsWithoutEvidenceSection', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), '{kaputt');
+  ['NACHFORDERN', 'NEUSTART', 'AUSGEFALLEN'].forEach(() => nextAttempt(env.workspace, 'nacharbeit'));
+
+  // Act
+  const result = runReport(env);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^ENDE unvollständig, ausgefallen: nacharbeit\n/);
+  assert.doesNotMatch(result.stdout, /### Neues Verhalten mit Beleg/);
+});
+
 test('report_AllDone_CleanAfterVerificationWithVerdicts', () => {
   // Arrange
   const env = setup();
@@ -131,6 +170,37 @@ test('report_AllDone_CleanAfterVerificationWithVerdicts', () => {
   // Assert
   assert.match(output, /^ENDE sauber nach Nachprüfung\n/);
   assert.match(output, /### Nachprüfung\n\| Stelle \| Urteil \|\n\|---\|---\|\n\| AC-04 \| erledigt \|/);
+});
+
+test('report_ReworkWroteNewBehaviourAtTwoPlaces_ListsBothWithEvidence', () => {
+  // Arrange
+  const env = setup();
+  const results = [
+    { location: 'AC-04', status: 'changed', evidence: 'src/export.js' },
+    { location: 'AC-07', status: 'changed', evidence: 'docs/glossary/terms.md · Export' },
+    { location: 'AC-01', status: 'changed' },
+  ];
+  const verdicts = ['AC-01', 'AC-04', 'AC-07'].map((location) => VERDICT(location, 'erledigt'));
+  runWithVerification(env, [RED('AC-01'), RED('AC-04'), RED('AC-07')], results, { verdicts, findings: [] });
+
+  // Act
+  const output = report(env);
+
+  // Assert
+  assert.match(output, /### Neues Verhalten mit Beleg\n- AC-04 — src\/export\.js\n- AC-07 — docs\/glossary\/terms\.md · Export\n/);
+  assert.doesNotMatch(output, /- AC-01 — /);
+});
+
+test('report_ReworkWithoutEvidence_NoEvidenceSection', () => {
+  // Arrange
+  const env = setup();
+  runWithVerification(env, [RED('AC-04')], [{ location: 'AC-04', status: 'changed' }], { verdicts: [VERDICT('AC-04', 'erledigt')], findings: [] });
+
+  // Act
+  const output = report(env);
+
+  // Assert
+  assert.doesNotMatch(output, /### Neues Verhalten mit Beleg/);
 });
 
 test('report_TwoNotDone_NichtBereitTwo', () => {
@@ -274,4 +344,24 @@ test('report_FollowupWithNotDonePoint_NichtBereitOne', () => {
 
   // Assert
   assert.match(output, /^ENDE nicht bereit, 1 × 🔴 offen\n=== BERICHT ===\n## Review-Followup \(spec-review\): docs\/x\/spec\.md/);
+});
+
+test('report_FollowupReworkWithEvidence_ListsIt', () => {
+  // Arrange
+  const env = setup();
+  flow('snapshot', '--dir', env.workspace, '--doc', env.doc);
+  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'aggregate.md'), '=== REWORK ===\n### 🔴 AC-04 (consistency)\n- [consistency · widerspruch] Zitat: „x“\n\n### 🟡 AC-07 (clarity)\n- [clarity · detail] Zitat: „x“\n');
+  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', evidence: 'src/export.js' }, { location: 'AC-07', status: 'changed' }] });
+  const source = ['--quelle', 'nacharbeit'];
+  flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
+  flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
+  writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), { verdicts: [VERDICT('AC-04', 'erledigt'), VERDICT('AC-07', 'erledigt')], findings: [] });
+  flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
+
+  // Act
+  const output = flow('report', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review-Followup (spec-review)', '--artefakt', 'docs/x/spec.md', ...source).stdout;
+
+  // Assert
+  assert.match(output, /### Neues Verhalten mit Beleg\n- AC-04 — src\/export\.js\n/);
+  assert.doesNotMatch(output, /- AC-07 — /);
 });

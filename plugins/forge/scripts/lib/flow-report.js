@@ -6,7 +6,7 @@ const { openQuestions } = require('./questions');
 const { ICON, cell, renderGroups, renderTable } = require('./groups');
 const { SCRIPT_CATEGORY } = require('./rated-items');
 const { failedInstances } = require('./attempts');
-const { ROUND_ONE, ROUND_TWO, CLOSING, FlowError, readText, readLines, readJson, writeText } = require('./flow-files');
+const { ROUND_ONE, ROUND_TWO, CLOSING, FlowError, readText, readLines, readJson, readAgentJson, writeText } = require('./flow-files');
 
 const SCOUT_HEADING = '## Scout-Vorschläge';
 
@@ -35,17 +35,32 @@ function openRedOf(one, two, reworked, failed) {
   return redGroupCount(one);
 }
 
+const isFilled = (value) => typeof value === 'string' && value.trim() !== '';
+
+function reworkFile(options) {
+  return path.join(options.workspace, options.source, 'rework.json');
+}
+
+// Stellen, an denen die Nacharbeit neues Verhalten mit Beleg geschrieben hat; liest auch ein abgewiesenes Ergebnis und wirft nie.
+function evidenceOf(options) {
+  const { value } = readAgentJson(reworkFile(options));
+  const results = Array.isArray(value?.results) ? value.results : [];
+  return results.filter((entry) => entry?.status === 'changed' && isFilled(entry.location) && isFilled(entry.evidence))
+    .map((entry) => ({ place: entry.location.trim(), evidence: entry.evidence.trim() }));
+}
+
 function collect(options) {
   const attempts = failedInstances(options.workspace);
   const failed = attempts.filter((name) => !name.startsWith('scout'));
   const one = readJson(path.join(options.workspace, ROUND_ONE, 'einstufung.json'), null);
   const two = readJson(path.join(options.workspace, ROUND_TWO, 'einstufung.json'), null);
-  const reworked = fs.existsSync(path.join(options.workspace, options.source, 'rework.json'));
+  const reworked = fs.existsSync(reworkFile(options));
   return {
     one, two, reworked, failed,
     openRed: openRedOf(one, two, reworked, failed),
     checked: fs.existsSync(path.join(options.workspace, ROUND_TWO, 'pruefliste.json')),
     questions: questionsAtEnd(options),
+    evidence: evidenceOf(options),
     scoutFailed: attempts.some((name) => name.startsWith('scout')),
   };
 }
@@ -100,6 +115,7 @@ function renderReport(data, options, status) {
     ...listSection('Skript-Prüfungen', redOfTwo(data.two, isScript).map(groupLine)),
     ...listSection('Weitere 🔴 der Nachprüfung', redOfTwo(data.two, isOtherRed).map(groupLine)),
     ...listSection('Hinweise der Nachprüfung', (data.two?.groups ?? []).filter((group) => group.color === 'yellow').map(groupLine)),
+    ...listSection('Neues Verhalten mit Beleg', data.evidence.map((entry) => `- ${cell(entry.place)} — ${cell(entry.evidence)}`)),
     ...listSection('Offene Fragen', data.questions.map((question) => `- ${question.place}: ${question.question}`)),
     ...listSection('Anmerkungen (🟢)', greenGroups(data).map(groupLine)),
     ...listSection('Scout', data.scoutFailed ? ['- Scout ausgefallen'] : []),

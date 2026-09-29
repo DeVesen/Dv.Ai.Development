@@ -355,6 +355,17 @@ test('spec-review-consistency_Body_ContradictionAndReferenceCategories', () => {
   assert.ok(!body.includes('hat `unerfuellbar`, wenn der Bau seinen Inhalt braucht'), 'alte Verweis-Regel');
 });
 
+test('spec-review-feasibility_Body_UnfulfillableAtRequirementAndPreconditionIsDetail', () => {
+  const { body } = readAgent('spec-review-feasibility');
+  for (const part of [
+    'Anforderungen, die nicht zugleich erfüllbar sind, meldest du als `unerfuellbar`. Das Finding kommt an die spätere der beiden Stellen',
+    'meldest du als `unerfuellbar` an der Anforderung, nie am Eintrag der Entscheidung.',
+    'Eine Voraussetzung, die die Spec selbst nennt, aber nirgends herstellt, einfordert oder als gegeben festlegt, ist `detail`.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+});
+
 for (const [name, tools, inputs, categories] of [
   ['spec-review-verifier', 'Read, Write', ['- `Spec:`'], SPEC_CATEGORIES],
   ['plan-review-verifier', 'Read, Grep, Glob, Write', ['- `Plan:`', '- `Spec:`', '- `Repo:`'], PLAN_CATEGORIES],

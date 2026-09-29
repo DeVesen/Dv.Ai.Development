@@ -80,6 +80,22 @@ test('skill_Body_NextStepPerStatus', () => {
   assert.match(body, /Spec nicht bereit/);
 });
 
+test('skill_Body_NextStepCommandsPerStatus', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  for (const part of [
+    'Spec ist bereit. Spec committen, dann in einer frischen Session:',
+    'Offene 🟡: optional /dv-forge:review-followup <S> <auswahl>.',
+    '/dv-forge:spec-review <S> erneut; der Lauf stellt sie wieder.',
+    'dann /dv-forge:review-followup <S> <auswahl> oder Spec selbst anpassen und /dv-forge:spec-review <S> erneut.',
+  ]) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(body.indexOf('Offene 🟡: optional') < body.indexOf('Spec ist bereit.'), 'Folge-Schritt steht nicht zuerst');
+});
+
 test('skill_Body_NoRoundCapOrOldStops', () => {
   // Act
   const { body } = readMarkdown(SKILL);

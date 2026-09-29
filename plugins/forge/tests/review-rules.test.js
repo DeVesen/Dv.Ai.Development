@@ -106,6 +106,15 @@ test('rateFinding_AdvisoryReviewerContradiction_IsCappedAtYellow', () => {
   assert.equal(color, 'yellow');
 });
 
+test('rateFinding_RedCategoryFromAnySpecReviewer_StaysRed', () => {
+  // Act
+  const colors = ['completeness', 'consistency', 'feasibility', 'clarity', 'profiles']
+    .flatMap((reviewer) => ['widerspruch', 'fehlendes-verhalten', 'unerfuellbar'].map((category) => colorOf({ category }, { reviewer })));
+
+  // Assert
+  assert.deepEqual([...new Set(colors)], ['red']);
+});
+
 test('rateFinding_WholeQuoteFromWEntry_IsCappedAtYellow', () => {
   // Act
   const color = colorOf({ category: 'fehlendes-verhalten', quote: 'Zwei Runden, keine dritte.' });

@@ -75,6 +75,21 @@ test('rate_FindingAtBasisHeader_NeitherInReportNorInRework', () => {
   assert.deepEqual(readJsonFile(path.join(env.workspace, 'runde-1', 'einstufung.json')).dropped, [{ reviewer: 'consistency', location: 'Basis', reason: 'Kopfzeile' }]);
 });
 
+test('rate_FindingAtTitleHeadingWithoutAcQuote_RedAtTitle', () => {
+  // Arrange
+  const env = setup(['# Export neu', '', 'Status: bestätigt am 2026-09-28', 'Art: verankert', '', '## Verhalten', 'Der Export läuft.', ''].join('\n'));
+  writeReviewer(env, 'completeness', [finding({ location: 'Export neu', quote: 'Keine AC-ID in der Spec', category: 'fehlendes-verhalten' })]);
+
+  // Act
+  const result = rate(env, 'completeness');
+
+  // Assert
+  assert.equal(result.stdout, 'STATUS red=1 yellow=0 green=0 fragen=0 failed=-\nWEITER scout=rot-und-gelb nacharbeit=ja\n');
+  const einstufung = readJsonFile(path.join(env.workspace, 'runde-1', 'einstufung.json'));
+  assert.deepEqual(einstufung.groups.map((group) => `${group.color}:${group.label}`), ['red:Export neu']);
+  assert.deepEqual(einstufung.dropped, []);
+});
+
 test('rate_RedAtPlaceWithOpenQuestion_DroppedAndQuestionCounted', () => {
   // Arrange
   const env = setup(SPEC.replace('- **W · Deckel**', '- **R1 · AC-04** — frage an den menschen — Gilt F?\n- **W · Deckel**'));

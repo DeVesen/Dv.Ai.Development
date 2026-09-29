@@ -212,6 +212,14 @@ test('specReview_FreeSpec_NoProfilesEvenIfPresent', () => {
   assert.equal(out.PI, undefined);
 });
 
+test('specReview_FreeSpecWithGlossary_ProfilesNotActive', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'docs/forge/demo/spec.md', '# Spec\n\nStatus: bestätigt am 2026-09-26\nArt: frei\n', 'spec');
+  commitFile(repo, 'docs/glossary/terms.md', '# G\n\nx\n', 'glossary');
+  const out = values(run(repo, 'spec-review', 'docs/forge/demo/spec.md'));
+  assert.equal(out.aktiv, 'completeness,consistency,feasibility,clarity');
+});
+
 test('reviews_WithoutOnly_ListAllReviewersAsActive', () => {
   const repo = planRepo();
   assert.equal(values(run(repo, 'plan-review', 'docs/forge/demo/plan.md')).aktiv, 'coverage,feasibility,architecture,risks,buildability');

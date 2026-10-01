@@ -2,10 +2,12 @@
 
 // Bausteine der Init-Skills: Hinweisblock und MCP-Sätze in der CLAUDE.md, MCP-Einträge in der .mcp.json, Schalter für den Hook.
 // Die Textfunktionen sind rein; nur die Funktionen ab applyClaudeMd berühren Dateien.
+// Ab parseArgs folgt der Ablauf des Init; init.js jedes Plugins ruft ihn mit seinem Stack auf.
 // Diese Datei ist in dv-dotnet und dv-angular inhaltsgleich, weil Plugins keine Dateien teilen.
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
 const MCP_START = '<!-- dv-mcp:start -->';
 const MCP_END = '<!-- dv-mcp:end -->';
@@ -143,4 +145,82 @@ function hookEnabled(startDir, stack) {
   }
 }
 
-module.exports = { MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, applyClaudeMd, applyMcpServer, hookMarkerFile, writeHookMarker, hookEnabled };
+const USAGE = 'Aufruf: node init.js [--cwd <ordner>] [--hook ja|nein] [--mcp <context7,microsoft-learn>]\n';
+const MCP_ENTRY_TEXT = { angelegt: 'angelegt', ergaenzt: 'ergänzt', vorhanden: 'Eintrag vorhanden' };
+
+class UsageError extends Error {}
+
+const FLAGS = {
+  '--cwd': (args, value) => { args.cwd = value; },
+  '--hook': (args, value) => { args.hook = value; },
+  '--mcp': (args, value) => { args.mcp = value === '' ? [] : value.split(','); },
+};
+
+function parseArgs(argv) {
+  const args = { cwd: process.cwd(), hook: 'nein', mcp: [] };
+  for (let index = 0; index < argv.length; index += 2) {
+    const set = FLAGS[argv[index]];
+    if (!set || argv[index + 1] === undefined) throw new UsageError(USAGE);
+    set(args, argv[index + 1]);
+  }
+  if (!['ja', 'nein'].includes(args.hook)) throw new UsageError(USAGE);
+  const unknown = args.mcp.find((server) => !Object.hasOwn(MCP_SERVERS, server));
+  if (unknown) throw new UsageError(`Unbekannter MCP: ${unknown}\n${USAGE}`);
+  return args;
+}
+
+function projectRoot(cwd) {
+  const result = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' });
+  return result.status === 0 ? path.resolve(result.stdout.trim()) : path.resolve(cwd);
+}
+
+function toPosix(file) {
+  return file.split(path.sep).join('/');
+}
+
+function blockLines(root, stack) {
+  const changed = applyClaudeMd(root, (text) => withStackBlock(text, stack));
+  return [`CLAUDE.md: Hinweisblock ${stack.plugin} ${changed ? 'geschrieben' : 'unverändert'}`];
+}
+
+function hookLines(root, hook, stack) {
+  const marker = toPosix(hookMarkerFile(stack));
+  if (hook !== 'ja') return [`Hook: nicht eingerichtet. Ein vorhandener Schalter bleibt; zum Ausschalten ${marker} löschen.`];
+  writeHookMarker(root, stack);
+  return [`Hook: eingerichtet (${marker}). Die Datei committen, damit auch Worktrees den Hook haben.`];
+}
+
+function mcpLines(root, server) {
+  const status = applyMcpServer(root, server);
+  if (status === 'ungueltig') return [`WARNUNG MCP ${server}: .mcp.json ist kein gültiges JSON; weder Eintrag noch Satz angelegt.`];
+  const changed = applyClaudeMd(root, (text) => withMcpSentence(text, server));
+  return [`MCP ${server}: .mcp.json ${MCP_ENTRY_TEXT[status]}`, `CLAUDE.md: Satz zu ${server} ${changed ? 'geschrieben' : 'schon vorhanden'}`];
+}
+
+// Führt die Antworten des Init-Skills für einen Stack aus und gibt die Meldungszeilen zurück.
+function initProject(args, stack) {
+  const root = projectRoot(args.cwd);
+  return [
+    `Projekt: ${toPosix(root)}`,
+    ...blockLines(root, stack),
+    ...hookLines(root, args.hook, stack),
+    ...args.mcp.flatMap((server) => mcpLines(root, server)),
+    'Bestehende Regeln wie „Build und Test über dev-mcp“ ändert der Init nicht; die entfernst du von Hand.',
+  ];
+}
+
+// Ablauf von init.js: Argumente lesen, ausführen, Meldung ausgeben; bei falschen Argumenten Syntax und Exit 2.
+function runInit(stack, argv) {
+  try {
+    process.stdout.write(`${initProject(parseArgs(argv), stack).join('\n')}\n`);
+  } catch (error) {
+    if (!(error instanceof UsageError)) throw error;
+    process.stderr.write(error.message);
+    process.exit(2);
+  }
+}
+
+module.exports = {
+  MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, applyClaudeMd, applyMcpServer, hookMarkerFile, writeHookMarker, hookEnabled,
+  parseArgs, initProject, runInit,
+};

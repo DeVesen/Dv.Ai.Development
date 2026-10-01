@@ -176,3 +176,9 @@ test('branchWorkitem_NoneEmptyInvalidNoBranchOrNoMatch_Null', () => {
 
   assert.deepEqual(cases.map(([values, branch]) => config.branchWorkitem(values, branch)), [null, null, null, null, null]);
 });
+
+test('getValue_TestWithOldToolchainSpelling_ReturnsTheValueUnresolved', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'CLAUDE.md', '## dv-forge\n\n- Test: `dv-forge: dotnet-test --path src/App.sln`\n', 'config');
+  assert.equal(config.getValue('Test', repo), 'dv-forge: dotnet-test --path src/App.sln');
+});

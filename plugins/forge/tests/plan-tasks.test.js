@@ -177,8 +177,7 @@ test('cli_BadCall_ExitsWithTwo', () => {
   assert.equal(run('slug').status, 2);
 });
 
-test('buildBrief_ToolchainReference_ResolvedToScriptCall', () => {
+test('buildBrief_OldToolchainReference_StaysUnresolved', () => {
   const plan = writePlan(PLAN.replace('Text eins.', 'Befehl: `dv-forge: dotnet-test --path <R>/src/App.sln` — erwartet: PASS'));
-  const toolchain = path.join(__dirname, '..', 'scripts', 'toolchain', 'dotnet-test.js').replace(/\\/g, '/');
-  assert.ok(planTasks.buildBrief(plan, 1).includes(`Befehl: \`node "${toolchain}" --path <R>/src/App.sln\``));
+  assert.ok(planTasks.buildBrief(plan, 1).includes('Befehl: `dv-forge: dotnet-test --path <R>/src/App.sln`'));
 });

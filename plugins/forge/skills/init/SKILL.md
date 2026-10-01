@@ -1,6 +1,6 @@
 ---
 name: init
-description: Use when dv-forge is used in a project for the first time, when the project CLAUDE.md has no or an outdated dv-forge section, when a dv-forge skill reports a missing project setting such as storage paths, worktree, workitem numbers or planning skills, or when project rules, skills or MCP entries may still send build, test or lint through dev-mcp or build-log-filter.
+description: Use when dv-forge is used in a project for the first time, when the project CLAUDE.md has no or an outdated dv-forge section, when a dv-forge skill reports a missing project setting such as storage paths, worktree, workitem numbers or planning skills, or when project rules or skills may still use tools that no longer exist or the old dv-forge `<stack>-<kommando>` spelling of build, test and lint commands.
 disable-model-invocation: true
 ---
 
@@ -11,7 +11,7 @@ disable-model-invocation: true
 Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Projekt-Einstellungen in den Abschnitt `## dv-forge` der Projekt-`CLAUDE.md`. Alle dv-forge-Skills und Scripts lesen nur dort. Andere Stellen änderst du nur, wenn der Mensch sie einzeln freigibt.
 
 ## Ablauf
-1. **Stolperfallen:** `node "<PLUGIN>/scripts/setup-check.js"`. Es listet je Datei, was dv-forge ausbremst, etwa Build und Test nur über dev-mcp oder ein Shell-Verbot, das die dv-forge-Skripte trifft. Je Datei eine Nachricht: Fundstellen, Grund, Vorschlag. Der Mensch wählt: **alle nach Vorschlag**, **einzeln** oder **behalten**. Erst nach der Antwort änderst du, nur die genannten Zeilen. Globale Funde unter `~/.claude` änderst du nicht, du nennst nur die Quelle. Danach `setup-check.js` erneut, Rest melden.
+1. **Stolperfallen:** `node "<PLUGIN>/scripts/setup-check.js"`. Es listet je Datei, was dv-forge ausbremst, etwa Tools, die es nicht mehr gibt, oder die alte Schreibweise `dv-forge: <stack>-<kommando>`. Je Datei eine Nachricht: Fundstellen, Grund, Vorschlag. Der Mensch wählt: **alle nach Vorschlag**, **einzeln** oder **behalten**. Erst nach der Antwort änderst du, nur die genannten Zeilen. Globale Funde unter `~/.claude` änderst du nicht, du nennst nur die Quelle. Danach `setup-check.js` erneut, Rest melden.
 2. `node "<PLUGIN>/scripts/forge-config.js" show`. Jede Zeile ist `<Schlüssel>=<Wert>`; `(Default)` heißt: noch nicht gesetzt.
 3. Je Schlüssel der Tabelle, in dieser Reihenfolge, eine Frage pro Nachricht: aktueller Wert, dein Vorschlag mit einem Satz Grund. Den Vorschlag leitest du aus dem Projekt ab: vorhandene Ordner, Build-Dateien, installierte Skills. „Passt“ übernimmt den Vorschlag. Bei `Worktree: nein` entfällt `Worktree-Ordner`.
 4. Den Abschnitt im Format unten schreiben. Einen vorhandenen `## dv-forge`-Abschnitt ersetzt du vollständig, sonst hängst du ihn ans Ende der Datei.
@@ -29,7 +29,7 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 | `Branch-Schema` | Muster mit `<slug>`, optional `<workitem>`; `<slug>` = Plan-Dateiname ohne Datum und ohne doppelte Workitem-Nummer | `feature/<slug>` |
 | `Worktree-Ordner` | relativ zur Projektwurzel | `../<repo>-worktrees` |
 | `Planungs-Skills` | Skill-Namen, mit Komma getrennt; `<skill> @<pfad>` nur, wenn der Plan `<pfad>` berührt | leer: Plan-Writing fragt |
-| `Build`, `Test`, `Lint` | Befehl oder dv-forge-Skript aus „Vorschläge“ von `setup-check.js`, z. B. `dv-forge: dotnet-test --path src/App.sln`; mehrere mit ` ; ` | leer |
+| `Build`, `Test`, `Lint` | Befehl, z. B. `npm test`; mehrere mit ` ; ` | leer |
 | `Suche` | Such- und Index-Werkzeuge | leer |
 | `Commit-Konvention` | Regel oder Skill, z. B. `commit-message` | leer |
 | `MCP-Erwartet` | MCP-Server je Session, mit Komma getrennt; ungenutzte meldet die Retrospektive als „erwartet, ungenutzt“ | leer |

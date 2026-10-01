@@ -178,7 +178,8 @@ test('planFormat_DecisionEntries_DesignChoiceNotBindingAndNoQuestionsLine', () =
   assert.ok(text.includes('- **E · <Kurztitel>** · Planer — <Wahl und Grund>'));
   assert.match(text, /E-Einträge sind nicht bindend/);
   assert.ok(text.includes('- Keine Fragen an den Menschen.'));
-  assert.ok(text.includes('dv-forge: angular-test --root <R>/src/frontend -- --include src/app/<pfad>.spec.ts'));
+  assert.ok(text.includes('dv-angular-test --root <R>/src/frontend -- --include src/app/<pfad>.spec.ts'));
+  assert.doesNotMatch(text, /dv-forge: (?:angular|dotnet)-/);
 });
 
 test('selfCheck_ForeignCode_IncludesCliOptionsAndDryRun', () => {

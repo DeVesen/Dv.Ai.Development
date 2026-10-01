@@ -39,7 +39,18 @@ test('init_Body_ChecksSetupBeforeConfig', () => {
   const check = body.indexOf('setup-check.js"');
   assert.ok(check !== -1 && check < body.indexOf('forge-config.js" show'));
   assert.match(body, /\*\*alle nach Vorschlag\*\*, \*\*einzeln\*\* oder \*\*behalten\*\*/);
-  assert.ok(body.includes('dv-forge: dotnet-test'));
+  assert.doesNotMatch(body, /dv-forge: (?:angular|dotnet)-|Vorschläge/);
+});
+
+test('init_Row_BuildTestLintAcceptsAnyCommandWithoutToolSuggestions', () => {
+  const { body } = skill('init');
+  assert.ok(body.includes('| `Build`, `Test`, `Lint` | Befehl, z. B. `npm test`; mehrere mit ` ; ` | leer |'));
+});
+
+// Ein „: “ im unquotierten Wert lehnt ein strenger YAML-Parser ab.
+test('init_Description_HasNoColonSpace', () => {
+  const { fields } = skill('init');
+  assert.doesNotMatch(fields.description, /: /);
 });
 
 test('startWork_Body_DelegatesDecisionToScript', () => {

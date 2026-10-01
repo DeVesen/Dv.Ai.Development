@@ -32,7 +32,7 @@ function setup() {
     '- Komponenten mit `scaffold_angular_component` anlegen.',
     '',
     '## dv-forge',
-    '- Test: `dev-mcp: test_dotnet_solution`',
+    '- Test: `dv-forge: angular-test --root web`',
     '',
   ].join('\n'));
   write(repo, '.claude/skills/angular/references/op-tooling.md', 'VERBOTEN: `ng build` als Shell-Kommando.\nfind_implementations nutzen.\n');
@@ -40,29 +40,45 @@ function setup() {
   write(repo, '.claude/settings.json', JSON.stringify({ permissions: { deny: ['Bash(node:*)', 'Bash(rm -rf:*)'] } }));
   write(repo, 'src/App.sln', '');
   write(repo, 'web/angular.json', '{}');
-  write(home, 'skills/dev-mcp/SKILL.md', 'Use build_dotnet_solution via dev-mcp.\n');
-  write(home, 'plugins/cache/dv-market/dv-angular/1.0.0/skills/angular-migration/SKILL.md', 'Verify with build_angular_project via dev-mcp.\n');
-  write(home, 'plugins/cache/dv-market/dv-angular/1.0.0/README.md', 'build_angular_project outside skills\n');
-  write(home, 'plugins/cache/dv-market/dv-forge/0.6.0/skills/init/SKILL.md', 'dev-mcp or build-log-filter\n');
+  write(home, 'skills/dev-mcp/SKILL.md', 'Use build_dotnet_solution via dev-mcp.\nAlt: dv-forge: dotnet-lint --path x\n');
+  write(home, 'plugins/cache/dv-market/dv-angular/1.0.0/skills/angular-migration/SKILL.md', 'Verify with dv-forge: angular-build --root web.\n');
+  write(home, 'plugins/cache/dv-market/dv-angular/1.0.0/README.md', 'dv-forge: angular-build outside skills\n');
+  write(home, 'plugins/cache/dv-market/dv-forge/0.6.0/skills/init/SKILL.md', 'dv-forge: dotnet-test\n');
   return { repo, home };
 }
 
-test('cli_ProjectWithOldRules_FindingsGroupedPerFile', () => {
+test('cli_OldSpellingInClaudeMd_ReportedAsOutdatedWithNewCommand', () => {
   const { repo, home } = setup();
   const result = run(repo, home);
   assert.equal(result.status, 0, result.stderr);
   const out = result.stdout;
-  assert.match(out, /### CLAUDE\.md \(5 Stellen\)/);
-  assert.doesNotMatch(out, /Verbot von Build\/Test über die Shell · Z\. 6/);
+  assert.match(out, /### CLAUDE\.md \(\d+ Stellen\)/);
+  assert.match(out, /- dv-forge-Schreibweise veraltet · Z\. 6, 10 → durch den neuen Befehl ersetzen \(`dv-dotnet-test`, `dv-angular-test`\)/);
+});
+
+test('cli_EverySpellingOfTheSixTools_NamesItsReplacement', () => {
+  const repo = makeRepo();
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-home-'));
+  const tools = ['dotnet-build', 'dotnet-test', 'dotnet-lint', 'angular-build', 'angular-test', 'angular-lint'];
+  write(repo, 'CLAUDE.md', tools.map((tool) => `- Befehl: dv-forge: ${tool} --path x`).join('\n'));
+  const out = run(repo, home).stdout;
+  for (const tool of tools) assert.ok(out.includes(`\`dv-${tool}\``), `${tool} ohne Ersatz`);
+});
+
+test('cli_OldRulesAboutMovedTools_AreNoLongerReported', () => {
+  const { repo, home } = setup();
+  const out = run(repo, home).stdout;
+  assert.doesNotMatch(out, /Build\/Test\/Lint über dev-mcp|Verbot von Build\/Test|build-log-filter|Vorschläge für Build/);
+  assert.doesNotMatch(out, /### \.mcp\.json/);
+  assert.doesNotMatch(out, /dv-forge-Einstellung zeigt auf ein MCP-Tool/);
+});
+
+test('cli_RemainingRules_StillReported', () => {
+  const { repo, home } = setup();
+  const out = run(repo, home).stdout;
   assert.match(out, /- Anlegen über dev-mcp · Z\. 7 → auf `ng generate`/);
-  assert.match(out, /- Build\/Test\/Lint über dev-mcp · Z\. 2 → auf dv-forge-Skripte umstellen oder streichen \(`dv-forge: angular-test`\)/);
   assert.match(out, /- Lese-Tool beim dev-mcp verortet · Z\. 3 → `dev-mcp` durch `codebase-analyzer` ersetzen/);
-  assert.match(out, /- build-log-filter erwähnt · Z\. 4 → streichen/);
-  assert.match(out, /- dv-forge-Einstellung zeigt auf ein MCP-Tool → .*\(`Test: dv-forge: dotnet-test`\)/);
-  assert.doesNotMatch(out, /Z\. 5\b/, 'harmless build line must not be flagged');
-  assert.match(out, /### \.claude\/skills\/angular\/references\/op-tooling\.md \(2 Stellen\)\n- Verbot von Build\/Test über die Shell · Z\. 1/);
-  assert.match(out, /- Tool, das wegfällt · Z\. 2/);
-  assert.match(out, /### \.mcp\.json \(1 Stelle\)\n- build-log-filter in \.mcp\.json → Eintrag entfernen \(`build-log-filter`\)/);
+  assert.match(out, /### \.claude\/skills\/angular\/references\/op-tooling\.md \(1 Stelle\)\n- Tool, das wegfällt · Z\. 2/);
   assert.match(out, /### \.claude\/settings\.json \(1 Stelle\)\n- node über die Shell verboten → .*\(`Bash\(node:\*\)`\)/);
 });
 
@@ -75,20 +91,21 @@ test('cli_GlobalSkills_ListedSeparatelyAsSource', () => {
   assert.doesNotMatch(out, /dv-forge\/0\.6\.0|README\.md/);
 });
 
-test('cli_Platforms_SuggestToolchainCommands', () => {
-  const { repo, home } = setup();
-  const out = run(repo, home).stdout;
-  assert.match(out, /- \.NET src\/App\.sln: `dv-forge: dotnet-build --path src\/App\.sln`, `dv-forge: dotnet-test --path src\/App\.sln`/);
-  assert.match(out, /- Angular web: `dv-forge: angular-build --root web`/);
-});
-
-test('cli_CleanProject_NoFindings', () => {
+test('cli_NewSpelling_IsNotReported', () => {
   const repo = makeRepo();
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-home-'));
+  write(repo, 'CLAUDE.md', '# P\n- Test: dv-dotnet-test --path src/App.sln\n');
+  assert.match(run(repo, home).stdout, /Keine Stolperfallen\./);
+});
+
+test('cli_CleanProject_NoFindingsAndNoSuggestionsForMovedTools', () => {
+  const repo = makeRepo();
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-home-'));
+  write(repo, 'src/App.sln', '');
   const out = run(repo, home).stdout;
   assert.match(out, /Projekt: 0 Stellen/);
   assert.match(out, /Keine Stolperfallen\./);
-  assert.match(out, /keine \.sln oder angular\.json gefunden/);
+  assert.doesNotMatch(out, /Vorschläge|dv-dotnet-|dv-angular-|dv-forge: /);
 });
 
 test('cli_BadArgs_ExitTwo', () => {

@@ -1,6 +1,6 @@
 'use strict';
 
-// Startet das Toolchain-Skript, das zum Namen des Start-Befehls passt: dv-angular-test → scripts/toolchain/angular-test.js.
+// Startet das Toolchain-Skript, das zum Namen des Start-Befehls passt: dv-<stack>-test → scripts/toolchain/<stack>-test.js.
 
 const fs = require('node:fs');
 const path = require('node:path');

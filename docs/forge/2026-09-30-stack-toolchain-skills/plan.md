@@ -20,13 +20,13 @@
 - Der Init fragt Hook und jeden der MCPs Microsoft Learn und Context7 einzeln, der Standard ist Nein; die MCP-Frage weist darauf hin: Ist der MCP schon als Plugin installiert, Nein wählen; installierte Plugins werden nicht erkannt. (Spec)
 - Der Init ändert nichts an bestehenden Regeln der CLAUDE.md, etwa „Build und Test über dev-mcp“. (Spec)
 - Zieldatei der MCPs ist die projektweite `.mcp.json` im Wurzelordner: ein vorhandener Eintrag bleibt unverändert, andere Einträge bleiben unberührt, eine fehlende Datei wird angelegt; ist die Datei kein gültiges JSON, entstehen für die mit Ja gewählten MCPs weder Eintrag noch Satz, der Init meldet es und führt den übrigen Init fort. Je MCP steht höchstens ein Satz in der CLAUDE.md, gleich welches Plugin zuerst läuft. (Spec)
-- Der Hook erfasst die Build/Test-Werkzeuge von dev-mcp, `dotnet build|test` sowie `ng build|test|lint`, `npx ng build|test|lint`, `npm test` und `npm run build|test|lint`, jeweils im Bash-Tool; er lehnt den Aufruf ab und nennt den Skill. Im PowerShell-Tool lehnt er nichts ab; `ng generate` und `npx ng generate` lehnt er nicht ab. (Spec)
+- Der Hook erfasst die Build/Test-Werkzeuge von dev-mcp, `dotnet build|test` sowie `ng build|test|lint`, `npx ng build|test|lint`, `npm test` und `npm run build|test|lint`, jeweils im Bash-Tool; er lehnt den Aufruf ab und nennt den Skill. Im PowerShell-Tool lehnt er diese Aufrufe nicht ab. Andere Unterbefehle von `ng` und `npx ng`, etwa `generate`, lehnt er nicht ab. (Spec)
 - forge: `dv-forge: <stack>-<kommando>` wird für alle sechs Werkzeuge nicht mehr aufgelöst; `setup-check` meldet jede dieser Zeilen als veraltet und nennt den Befehl `dv-<stack>-<kommando>` als Ersatz; die Schlüssel `Build`, `Test` und `Lint` bleiben, ihr Wert ist ein beliebiger Befehl. (Spec)
 - Nicht Teil der Umsetzung: Build/Test-Tools aus dev-mcp entfernen, weitere .NET- und Angular-Skills umziehen, die CLAUDE.md dieses Repos kürzen, ein PowerShell-Gegenstück, weitere Stacks. (Spec)
 - Dateien mit dem Write- oder Edit-Tool schreiben, nie per Shell-Heredoc: Doppelte Backslashes in Regex-Literalen gehen dort verloren. Typografische Anführungszeichen („ “) in Skill- und Meldungstexten unverändert übernehmen. (Erfahrung aus der Planprobe)
-- Verifikation dieses Plans sind Node-Tests: `node --test <dateien>` im Repo-Wurzelordner; die PATH-Prüfungen laufen im Bash-Tool (Git Bash). Unter Windows überspringen sechs Tests der .NET-Skripte sich selbst („falsches dotnet nur unter POSIX“), das ist erwartet. (Projekt)
+- Verifikation dieses Plans sind Node-Tests: `node --test <dateien>` im Repo-Wurzelordner; die PATH-Prüfungen laufen im Bash-Tool (Git Bash). Unter Windows überspringen sechs Tests der .NET-Skripte sich selbst („falsches dotnet nur unter POSIX“), das ist erwartet. Ohne Git Bash überspringt sich zusätzlich je Plugin der Test `starters_OnPathInGitBash_AreFoundAndStarted` („keine Git Bash“); dann gilt der Halt aus Schritt 5 in Task 1 bzw. Task 7. (Projekt)
 - superpowers:writing-skills: Frontmatter eines Skills hat `name` und `description`; `description` beginnt mit „Use when“, steht in der dritten Person, nennt nur Auslöser und nie den Ablauf und bleibt unter 500 Zeichen; der Body bleibt unter 500 Wörtern (häufig geladene Skills unter 200); kein `@`-Link auf andere Dateien; nur ein Flussdiagramm, wenn eine Entscheidung nicht offensichtlich ist.
-- software-design-principles: keine Verschachtelung (Guard Clause mit früher Rückgabe, Verzweigung delegiert an eine benannte Funktion); kleine Funktionen mit einer Aufgabe; Namen ohne mentales Mapping, höchstens vier Parameter, kein Bool-Flag, das Verhalten umschaltet; Fehler nie verschlucken (der Hook fängt Fehler bewusst, meldet sie auf stderr und blockiert nie); kein toter Code; DRY gilt für Wissen, die Kopie von `project-setup.js` in beiden Plugins ist durch die Plugin-Isolation begründet.
+- software-design-principles: keine Verschachtelung (Guard Clause mit früher Rückgabe, Verzweigung delegiert an eine benannte Funktion); kleine Funktionen mit einer Aufgabe; Namen ohne mentales Mapping, höchstens vier Parameter, kein Bool-Flag, das Verhalten umschaltet; Fehler nie verschlucken (der Hook fängt Fehler bewusst, meldet sie auf stderr und blockiert nie); kein toter Code; DRY gilt für Wissen, die Kopie von `project-setup.js` (Bausteine und Init-Ablauf) in beiden Plugins ist durch die Plugin-Isolation begründet; `init.js` hält je Plugin nur den Stack.
 
 ---
 
@@ -44,7 +44,7 @@
 - Test: `plugins/dotnet/tests/run-toolchain.test.js`
 
 **Interfaces:**
-- Produces: `run(starterFile: string, args?: string[]): number` und `scriptFor(starterFile: string): string` aus `plugins/dotnet/bin/lib/run-toolchain.js`; `run` startet `scripts/toolchain/<name ohne "dv-">.js` des Plugins mit `process.execPath`, reicht `args` (Default `process.argv.slice(2)`) und gibt den Exit-Code zurück, bei fehlendem Skript 1 mit `<befehl>: Skript nicht gefunden: <pfad>` auf stderr.
+- Produces: `run(starterFile: string, args?: string[]): number`, `scriptFor(starterFile: string): string` und `failureMessage(starterFile: string, result: { error?: Error, signal?: string | null, status?: number | null }): string | null` aus `plugins/dotnet/bin/lib/run-toolchain.js`; `run` startet `scripts/toolchain/<name ohne "dv-">.js` des Plugins mit `process.execPath`, reicht `args` (Default `process.argv.slice(2)`) und gibt den Exit-Code zurück, bei fehlendem Skript 1 mit `<befehl>: Skript nicht gefunden: <pfad>` auf stderr, bei Startfehler oder Signal 1 mit der Zeile von `failureMessage` auf stderr (`<befehl>: Start fehlgeschlagen: <grund>` bzw. `<befehl>: beendet durch Signal <signal>`).
 - Produces: die Start-Befehle `dv-dotnet-build`, `dv-dotnet-test`, `dv-dotnet-lint` (Node-Shebang, ohne Endung) in `plugins/dotnet/bin/`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
@@ -59,11 +59,21 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { scriptFor } = require('../bin/lib/run-toolchain');
+const { scriptFor, failureMessage } = require('../bin/lib/run-toolchain');
 
 const BIN = path.join(__dirname, '..', 'bin');
 const STARTERS = ['dv-dotnet-build', 'dv-dotnet-test', 'dv-dotnet-lint'];
 const FAKE_SCRIPT = 'process.stdout.write(JSON.stringify({ args: process.argv.slice(2) }));\nprocess.exit(3);\n';
+const BASH = findBash();
+
+// Git Bash unter Windows über den Ort von git, nie das WSL-bash.exe aus System32; unter POSIX bash vom PATH. Ohne Bash null.
+function findBash() {
+  if (process.platform !== 'win32') return spawnSync('bash', ['-c', 'true']).status === 0 ? 'bash' : null;
+  const gitExecPath = spawnSync('git', ['--exec-path'], { encoding: 'utf8' });
+  if (gitExecPath.status !== 0) return null;
+  const bash = path.resolve(gitExecPath.stdout.trim(), '..', '..', '..', 'bin', 'bash.exe');
+  return fs.existsSync(bash) ? bash : null;
+}
 
 // Kopie des Plugins mit dem echten bin/ und, auf Wunsch, Ersatz-Skripten unter scripts/toolchain/.
 function pluginCopy(withScripts) {
@@ -98,6 +108,23 @@ test('scriptFor_StarterFile_MapsToToolchainScriptOfSameName', () => {
   const script = scriptFor(path.join('x', 'bin', 'dv-dotnet-lint'));
   assert.equal(path.basename(script), 'dotnet-lint.js');
   assert.equal(path.basename(path.dirname(script)), 'toolchain');
+});
+
+// Künstliche Ergebnisse von spawnSync statt eines echten Kindprozesses: auf Windows und POSIX gleich stabil.
+test('failureMessage_StartErrorSignalOrExitCode_NamesCauseOrIsNull', () => {
+  const starter = path.join('x', 'bin', 'dv-dotnet-test');
+  assert.equal(failureMessage(starter, { error: new Error('spawn EACCES') }), 'dv-dotnet-test: Start fehlgeschlagen: spawn EACCES');
+  assert.equal(failureMessage(starter, { signal: 'SIGTERM', status: null }), 'dv-dotnet-test: beendet durch Signal SIGTERM');
+  assert.equal(failureMessage(starter, { status: 3 }), null);
+});
+
+// AC-10: Git Bash findet die Start-Befehle ohne Endung über den PATH und startet sie über den Node-Shebang.
+test('starters_OnPathInGitBash_AreFoundAndStarted', { skip: BASH ? false : 'keine Git Bash' }, () => {
+  const bin = path.join(pluginCopy(true), 'bin');
+  for (const starter of STARTERS) fs.chmodSync(path.join(bin, starter), 0o755);
+  const script = 'd=$(cygpath -u "$1" 2>/dev/null || printf %s "$1"); PATH="$d:$PATH"; shift; for s in "$@"; do "$s" x; echo "exit=$?"; done';
+  const result = spawnSync(BASH, ['-c', script, '_', bin, ...STARTERS], { encoding: 'utf8' });
+  assert.equal(result.stdout, '{"args":["x"]}exit=3\n'.repeat(STARTERS.length), result.stderr);
 });
 ````
 
@@ -142,17 +169,29 @@ function scriptFor(starterFile) {
   return path.join(TOOLCHAIN_DIR, `${path.basename(starterFile).replace(/^dv-/, '')}.js`);
 }
 
-// Gibt den Exit-Code des Skripts zurück; fehlt das Skript, 1 mit Meldung auf stderr.
+// Meldung, wenn das Skript nicht starten konnte oder durch ein Signal endete; sonst null.
+function failureMessage(starterFile, result) {
+  const command = path.basename(starterFile);
+  if (result.error) return `${command}: Start fehlgeschlagen: ${result.error.message}`;
+  if (result.signal) return `${command}: beendet durch Signal ${result.signal}`;
+  return null;
+}
+
+// Gibt den Exit-Code des Skripts zurück; fehlt das Skript, startet es nicht oder endet es durch ein Signal, 1 mit Meldung auf stderr.
 function run(starterFile, args = process.argv.slice(2)) {
   const script = scriptFor(starterFile);
   if (!fs.existsSync(script)) {
     process.stderr.write(`${path.basename(starterFile)}: Skript nicht gefunden: ${script}\n`);
     return 1;
   }
-  return spawnSync(process.execPath, [script, ...args], { stdio: 'inherit' }).status ?? 1;
+  const result = spawnSync(process.execPath, [script, ...args], { stdio: 'inherit' });
+  const failure = failureMessage(starterFile, result);
+  if (failure === null) return result.status;
+  process.stderr.write(`${failure}\n`);
+  return 1;
 }
 
-module.exports = { run, scriptFor };
+module.exports = { run, scriptFor, failureMessage };
 ````
 
   Die drei Start-Befehle `plugins/dotnet/bin/dv-dotnet-build`, `plugins/dotnet/bin/dv-dotnet-test` und `plugins/dotnet/bin/dv-dotnet-lint` anlegen, alle drei mit genau diesem Inhalt:
@@ -165,7 +204,7 @@ process.exit(require('./lib/run-toolchain.js').run(__filename));
 ````
 
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/dotnet/tests/run-toolchain.test.js` — erwartet: PASS, 5 Tests
+  Befehl: `node --test plugins/dotnet/tests/run-toolchain.test.js` — erwartet: PASS, 7 Tests, 0 skipped; meldet `starters_OnPathInGitBash_AreFoundAndStarted` „keine Git Bash“ oder schlägt er fehl, gilt der Halt aus Schritt 5.
 - [ ] **Schritt 5: Windows-Prüfung der Start-Befehle (AC-10)**
   Befehl im Bash-Tool, im Repo-Wurzelordner: `PATH="$(pwd)/plugins/dotnet/bin:$PATH" dv-dotnet-test --path x; echo "exit=$?"` — erwartet: die Zeile `dv-dotnet-test: Skript nicht gefunden: <R>\plugins\dotnet\scripts\toolchain\dotnet-test.js` und danach `exit=1`. Sie beweist, dass Git Bash die Datei ohne Endung über den PATH findet und über den Node-Shebang startet; das Skript selbst zieht erst Task 2 um.
   **Halt:** Erscheint stattdessen `command not found`, `bad interpreter`, eine leere Ausgabe oder ein anderer Exit-Code, hält die Umsetzung an: nichts committen, den Anwender fragen und erst nach seiner Antwort weitermachen.
@@ -320,6 +359,11 @@ test('description_Triggers_NamesEveryPhraseOfTheSpec', () => {
   for (const phrase of TRIGGERS) assert.ok(fields.description.includes(phrase), `${phrase} fehlt`);
 });
 
+// Ein „: “ im unquotierten Wert lehnt ein strenger YAML-Parser ab.
+test('description_Text_HasNoColonSpace', () => {
+  assert.doesNotMatch(fields.description, /: /);
+});
+
 test('description_Tools_NamesTheToolsItReplaces', () => {
   for (const tool of ['build_dotnet_solution', 'test_dotnet_solution', 'dotnet build']) assert.ok(fields.description.includes(tool), `${tool} fehlt`);
 });
@@ -377,13 +421,13 @@ Nicht `build_dotnet_solution` oder `test_dotnet_solution` von dev-mcp und nicht 
 ````
 
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/dotnet/tests/skill-toolchain.test.js` — erwartet: PASS, 9 Tests
+  Befehl: `node --test plugins/dotnet/tests/skill-toolchain.test.js` — erwartet: PASS, 10 Tests
 - [ ] **Schritt 5: Commit**
   `git add plugins/dotnet` · `git commit -m "feat(dotnet): add toolchain skill"`
 
 ### Task 4: .NET-Init-Bausteine
 
-**ACs:** AC-12, AC-24, AC-25, AC-26
+**ACs:** AC-12, AC-24, AC-26
 
 **Dateien:**
 - Create: `plugins/dotnet/scripts/lib/project-setup.js`
@@ -694,9 +738,10 @@ module.exports = { MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, 
 
 ### Task 5: .NET-Init-Skript und Init-Skill
 
-**ACs:** AC-11, AC-13, AC-14, AC-21, AC-22, AC-23, AC-27, AC-37
+**ACs:** AC-11, AC-13, AC-14, AC-21, AC-22, AC-23, AC-25, AC-27, AC-37
 
 **Dateien:**
+- Modify: `plugins/dotnet/scripts/lib/project-setup.js` · `module.exports`
 - Create: `plugins/dotnet/scripts/init.js`
 - Create: `plugins/dotnet/skills/init/SKILL.md`
 - Test: `plugins/dotnet/tests/init.test.js`
@@ -704,7 +749,8 @@ module.exports = { MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, 
 
 **Interfaces:**
 - Consumes: `withStackBlock`, `withMcpSentence`, `applyClaudeMd`, `applyMcpServer`, `writeHookMarker`, `hookMarkerFile`, `MCP_SERVERS` aus Task 4.
-- Produces: `parseArgs(argv: string[]): { cwd: string, hook: 'ja' | 'nein', mcp: string[] }` (wirft bei unbekanntem Schalter, fehlendem Wert, `--hook` außer `ja|nein` und unbekanntem MCP einen Fehler mit dem Text `Aufruf: …`) und `initProject(args: { cwd: string, hook: string, mcp: string[] }): string[]` (Meldungszeilen) aus `plugins/dotnet/scripts/init.js`; Aufruf `node init.js [--cwd <ordner>] [--hook ja|nein] [--mcp <context7,microsoft-learn>]`, Exit 2 bei falschen Argumenten.
+- Produces: der Init-Ablauf in `plugins/dotnet/scripts/lib/project-setup.js`: `parseArgs(argv: string[]): { cwd: string, hook: 'ja' | 'nein', mcp: string[] }` (wirft bei unbekanntem Schalter, fehlendem Wert, `--hook` außer `ja|nein` und unbekanntem MCP einen Fehler mit dem Text `Aufruf: …`), `initProject(args: { cwd: string, hook: string, mcp: string[] }, stack): string[]` (Meldungszeilen) und `runInit(stack, argv: string[]): void` (gibt die Meldung auf stdout aus, bei falschen Argumenten die Syntax auf stderr und Exit 2).
+- Produces: `parseArgs(argv)` und `initProject(args): string[]` aus `plugins/dotnet/scripts/init.js`, dort mit `STACK = { plugin: 'dv-dotnet', skill: 'dv-dotnet:toolchain' }` gebunden; Aufruf `node init.js [--cwd <ordner>] [--hook ja|nein] [--mcp <context7,microsoft-learn>]`, Exit 2 bei falschen Argumenten. `init.js` enthält nur `STACK`, den Aufruf von `runInit` und die Exporte.
 - Produces: Skill `dv-dotnet:init` (`name: init`, manuell).
 
 - [ ] **Schritt 1: Fehlschlagende Tests schreiben**
@@ -812,7 +858,7 @@ test('initProject_InvalidMcpJson_KeepsFileWarnsAndStillWritesBlockAndHook', () =
   fs.writeFileSync(path.join(root, '.mcp.json'), '{ kaputt');
   const lines = initProject(args(root, { hook: 'ja', mcp: ['context7'] }));
   assert.equal(read(root, '.mcp.json'), '{ kaputt');
-  assert.ok(lines.some((line) => /WARNUNG.*kein gültiges JSON/.test(line)));
+  assert.ok(lines.some((line) => /WARNUNG MCP context7: \.mcp\.json ist kein gültiges JSON/.test(line)));
   assert.ok(!read(root, 'CLAUDE.md').includes('dv-mcp:context7'));
   assert.ok(read(root, 'CLAUDE.md').includes('`dv-dotnet:toolchain`'));
   assert.ok(fs.existsSync(path.join(root, '.claude', 'dv-dotnet.json')));
@@ -853,6 +899,11 @@ test('frontmatter_Fields_ManualOnlyUseWhen', () => {
   assert.equal(fields['disable-model-invocation'], 'true');
 });
 
+// Ein „: “ im unquotierten Wert lehnt ein strenger YAML-Parser ab.
+test('description_Text_HasNoColonSpace', () => {
+  assert.doesNotMatch(fields.description, /: /);
+});
+
 test('body_Length_StaysUnder500WordsAndUsesPluginRoot', () => {
   assert.ok(wordCount(body) < 500, `${wordCount(body)} Wörter`);
   assert.ok(body.includes('`<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`'));
@@ -882,20 +933,49 @@ test('body_ExistingRules_AreLeftToTheHuman', () => {
 - [ ] **Schritt 2: Tests rot laufen lassen**
   Befehl: `node --test plugins/dotnet/tests/init.test.js plugins/dotnet/tests/skill-init.test.js` — erwartet: FAIL, `Cannot find module '../scripts/init'` und `ENOENT … skills\init\SKILL.md`
 - [ ] **Schritt 3: Minimal implementieren**
-  Datei `plugins/dotnet/scripts/init.js` neu anlegen:
+  In `plugins/dotnet/scripts/lib/project-setup.js` den Init-Ablauf ergänzen, damit `init.js` in beiden Plugins nur den Stack hält und der Ablauf mit der ohnehin doppelten, per `cmp` geprüften Datei wandert (Edit-Tool, exakt, drei Stellen):
+
+Alt:
 
 ````js
-#!/usr/bin/env node
-'use strict';
+// Die Textfunktionen sind rein; nur die Funktionen ab applyClaudeMd berühren Dateien.
+````
 
-// Init für dv-dotnet: Hinweisblock in der CLAUDE.md, auf Wunsch Hook-Schalter und MCP-Server.
-// Die Fragen an den Menschen stellt der Skill init; dieses Skript führt nur die Antworten aus.
+Neu:
 
+````js
+// Die Textfunktionen sind rein; nur die Funktionen ab applyClaudeMd berühren Dateien.
+// Ab parseArgs folgt der Ablauf des Init; init.js jedes Plugins ruft ihn mit seinem Stack auf.
+````
+
+Alt:
+
+````js
+const fs = require('node:fs');
+const path = require('node:path');
+
+const MCP_START = '<!-- dv-mcp:start -->';
+````
+
+Neu:
+
+````js
+const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const setup = require('./lib/project-setup');
 
-const STACK = { plugin: 'dv-dotnet', skill: 'dv-dotnet:toolchain' };
+const MCP_START = '<!-- dv-mcp:start -->';
+````
+
+Alt:
+
+````js
+module.exports = { MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, applyClaudeMd, applyMcpServer, hookMarkerFile, writeHookMarker, hookEnabled };
+````
+
+Neu:
+
+````js
 const USAGE = 'Aufruf: node init.js [--cwd <ordner>] [--hook ja|nein] [--mcp <context7,microsoft-learn>]\n';
 const MCP_ENTRY_TEXT = { angelegt: 'angelegt', ergaenzt: 'ergänzt', vorhanden: 'Eintrag vorhanden' };
 
@@ -915,7 +995,7 @@ function parseArgs(argv) {
     set(args, argv[index + 1]);
   }
   if (!['ja', 'nein'].includes(args.hook)) throw new UsageError(USAGE);
-  const unknown = args.mcp.find((server) => !Object.hasOwn(setup.MCP_SERVERS, server));
+  const unknown = args.mcp.find((server) => !Object.hasOwn(MCP_SERVERS, server));
   if (unknown) throw new UsageError(`Unbekannter MCP: ${unknown}\n${USAGE}`);
   return args;
 }
@@ -929,39 +1009,41 @@ function toPosix(file) {
   return file.split(path.sep).join('/');
 }
 
-function blockLines(root) {
-  const changed = setup.applyClaudeMd(root, (text) => setup.withStackBlock(text, STACK));
-  return [`CLAUDE.md: Hinweisblock ${STACK.plugin} ${changed ? 'geschrieben' : 'unverändert'}`];
+function blockLines(root, stack) {
+  const changed = applyClaudeMd(root, (text) => withStackBlock(text, stack));
+  return [`CLAUDE.md: Hinweisblock ${stack.plugin} ${changed ? 'geschrieben' : 'unverändert'}`];
 }
 
-function hookLines(root, hook) {
-  const marker = toPosix(setup.hookMarkerFile(STACK));
+function hookLines(root, hook, stack) {
+  const marker = toPosix(hookMarkerFile(stack));
   if (hook !== 'ja') return [`Hook: nicht eingerichtet. Ein vorhandener Schalter bleibt; zum Ausschalten ${marker} löschen.`];
-  setup.writeHookMarker(root, STACK);
+  writeHookMarker(root, stack);
   return [`Hook: eingerichtet (${marker}). Die Datei committen, damit auch Worktrees den Hook haben.`];
 }
 
 function mcpLines(root, server) {
-  const status = setup.applyMcpServer(root, server);
+  const status = applyMcpServer(root, server);
   if (status === 'ungueltig') return [`WARNUNG MCP ${server}: .mcp.json ist kein gültiges JSON; weder Eintrag noch Satz angelegt.`];
-  const changed = setup.applyClaudeMd(root, (text) => setup.withMcpSentence(text, server));
+  const changed = applyClaudeMd(root, (text) => withMcpSentence(text, server));
   return [`MCP ${server}: .mcp.json ${MCP_ENTRY_TEXT[status]}`, `CLAUDE.md: Satz zu ${server} ${changed ? 'geschrieben' : 'schon vorhanden'}`];
 }
 
-function initProject(args) {
+// Führt die Antworten des Init-Skills für einen Stack aus und gibt die Meldungszeilen zurück.
+function initProject(args, stack) {
   const root = projectRoot(args.cwd);
   return [
     `Projekt: ${toPosix(root)}`,
-    ...blockLines(root),
-    ...hookLines(root, args.hook),
+    ...blockLines(root, stack),
+    ...hookLines(root, args.hook, stack),
     ...args.mcp.flatMap((server) => mcpLines(root, server)),
     'Bestehende Regeln wie „Build und Test über dev-mcp“ ändert der Init nicht; die entfernst du von Hand.',
   ];
 }
 
-function main() {
+// Ablauf von init.js: Argumente lesen, ausführen, Meldung ausgeben; bei falschen Argumenten Syntax und Exit 2.
+function runInit(stack, argv) {
   try {
-    process.stdout.write(`${initProject(parseArgs(process.argv.slice(2))).join('\n')}\n`);
+    process.stdout.write(`${initProject(parseArgs(argv), stack).join('\n')}\n`);
   } catch (error) {
     if (!(error instanceof UsageError)) throw error;
     process.stderr.write(error.message);
@@ -969,9 +1051,32 @@ function main() {
   }
 }
 
-if (require.main === module) main();
+module.exports = {
+  MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, applyClaudeMd, applyMcpServer, hookMarkerFile, writeHookMarker, hookEnabled,
+  parseArgs, initProject, runInit,
+};
+````
 
-module.exports = { parseArgs, initProject };
+  Datei `plugins/dotnet/scripts/init.js` neu anlegen:
+
+````js
+#!/usr/bin/env node
+'use strict';
+
+// Init für dv-dotnet: Hinweisblock in der CLAUDE.md, auf Wunsch Hook-Schalter und MCP-Server.
+// Die Fragen stellt der Skill init; den Ablauf hält lib/project-setup.js, hier steht nur der Stack.
+
+const setup = require('./lib/project-setup');
+
+const STACK = { plugin: 'dv-dotnet', skill: 'dv-dotnet:toolchain' };
+
+function initProject(args) {
+  return setup.initProject(args, STACK);
+}
+
+if (require.main === module) setup.runInit(STACK, process.argv.slice(2));
+
+module.exports = { parseArgs: setup.parseArgs, initProject };
 ````
 
   Datei `plugins/dotnet/skills/init/SKILL.md` neu anlegen:
@@ -1005,7 +1110,7 @@ Du stellst drei Fragen, jede mit Standard **Nein**, und ein Skript führt die An
 ````
 
 - [ ] **Schritt 4: Tests grün laufen lassen**
-  Befehl: `node --test plugins/dotnet/tests/init.test.js plugins/dotnet/tests/skill-init.test.js` — erwartet: PASS, 20 Tests (14 und 6)
+  Befehl: `node --test plugins/dotnet/tests/init.test.js plugins/dotnet/tests/skill-init.test.js plugins/dotnet/tests/project-setup.test.js` — erwartet: PASS, 39 Tests (14, 7 und 18)
 - [ ] **Schritt 5: Commit**
   `git add plugins/dotnet` · `git commit -m "feat(dotnet): add init skill and init script"`
 
@@ -1252,7 +1357,7 @@ Neu:
 - Test: `plugins/angular/tests/run-toolchain.test.js`
 
 **Interfaces:**
-- Produces: `run(starterFile: string, args?: string[]): number` und `scriptFor(starterFile: string): string` aus `plugins/angular/bin/lib/run-toolchain.js` (Verhalten wie in Task 1, Skripte unter `plugins/angular/scripts/toolchain/`), und die Start-Befehle `dv-angular-build`, `dv-angular-test`, `dv-angular-lint`.
+- Produces: `run(starterFile: string, args?: string[]): number`, `scriptFor(starterFile: string): string` und `failureMessage(starterFile: string, result: { error?: Error, signal?: string | null, status?: number | null }): string | null` aus `plugins/angular/bin/lib/run-toolchain.js` (Verhalten wie in Task 1 samt Meldung bei Startfehler oder Signal, Skripte unter `plugins/angular/scripts/toolchain/`), und die Start-Befehle `dv-angular-build`, `dv-angular-test`, `dv-angular-lint`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   Datei `plugins/angular/tests/run-toolchain.test.js` neu anlegen:
@@ -1266,11 +1371,21 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { scriptFor } = require('../bin/lib/run-toolchain');
+const { scriptFor, failureMessage } = require('../bin/lib/run-toolchain');
 
 const BIN = path.join(__dirname, '..', 'bin');
 const STARTERS = ['dv-angular-build', 'dv-angular-test', 'dv-angular-lint'];
 const FAKE_SCRIPT = 'process.stdout.write(JSON.stringify({ args: process.argv.slice(2) }));\nprocess.exit(3);\n';
+const BASH = findBash();
+
+// Git Bash unter Windows über den Ort von git, nie das WSL-bash.exe aus System32; unter POSIX bash vom PATH. Ohne Bash null.
+function findBash() {
+  if (process.platform !== 'win32') return spawnSync('bash', ['-c', 'true']).status === 0 ? 'bash' : null;
+  const gitExecPath = spawnSync('git', ['--exec-path'], { encoding: 'utf8' });
+  if (gitExecPath.status !== 0) return null;
+  const bash = path.resolve(gitExecPath.stdout.trim(), '..', '..', '..', 'bin', 'bash.exe');
+  return fs.existsSync(bash) ? bash : null;
+}
 
 // Kopie des Plugins mit dem echten bin/ und, auf Wunsch, Ersatz-Skripten unter scripts/toolchain/.
 function pluginCopy(withScripts) {
@@ -1306,6 +1421,23 @@ test('scriptFor_StarterFile_MapsToToolchainScriptOfSameName', () => {
   assert.equal(path.basename(script), 'angular-lint.js');
   assert.equal(path.basename(path.dirname(script)), 'toolchain');
 });
+
+// Künstliche Ergebnisse von spawnSync statt eines echten Kindprozesses: auf Windows und POSIX gleich stabil.
+test('failureMessage_StartErrorSignalOrExitCode_NamesCauseOrIsNull', () => {
+  const starter = path.join('x', 'bin', 'dv-angular-test');
+  assert.equal(failureMessage(starter, { error: new Error('spawn EACCES') }), 'dv-angular-test: Start fehlgeschlagen: spawn EACCES');
+  assert.equal(failureMessage(starter, { signal: 'SIGTERM', status: null }), 'dv-angular-test: beendet durch Signal SIGTERM');
+  assert.equal(failureMessage(starter, { status: 3 }), null);
+});
+
+// AC-10: Git Bash findet die Start-Befehle ohne Endung über den PATH und startet sie über den Node-Shebang.
+test('starters_OnPathInGitBash_AreFoundAndStarted', { skip: BASH ? false : 'keine Git Bash' }, () => {
+  const bin = path.join(pluginCopy(true), 'bin');
+  for (const starter of STARTERS) fs.chmodSync(path.join(bin, starter), 0o755);
+  const script = 'd=$(cygpath -u "$1" 2>/dev/null || printf %s "$1"); PATH="$d:$PATH"; shift; for s in "$@"; do "$s" x; echo "exit=$?"; done';
+  const result = spawnSync(BASH, ['-c', script, '_', bin, ...STARTERS], { encoding: 'utf8' });
+  assert.equal(result.stdout, '{"args":["x"]}exit=3\n'.repeat(STARTERS.length), result.stderr);
+});
 ````
 
 - [ ] **Schritt 2: Test rot laufen lassen**
@@ -1328,17 +1460,29 @@ function scriptFor(starterFile) {
   return path.join(TOOLCHAIN_DIR, `${path.basename(starterFile).replace(/^dv-/, '')}.js`);
 }
 
-// Gibt den Exit-Code des Skripts zurück; fehlt das Skript, 1 mit Meldung auf stderr.
+// Meldung, wenn das Skript nicht starten konnte oder durch ein Signal endete; sonst null.
+function failureMessage(starterFile, result) {
+  const command = path.basename(starterFile);
+  if (result.error) return `${command}: Start fehlgeschlagen: ${result.error.message}`;
+  if (result.signal) return `${command}: beendet durch Signal ${result.signal}`;
+  return null;
+}
+
+// Gibt den Exit-Code des Skripts zurück; fehlt das Skript, startet es nicht oder endet es durch ein Signal, 1 mit Meldung auf stderr.
 function run(starterFile, args = process.argv.slice(2)) {
   const script = scriptFor(starterFile);
   if (!fs.existsSync(script)) {
     process.stderr.write(`${path.basename(starterFile)}: Skript nicht gefunden: ${script}\n`);
     return 1;
   }
-  return spawnSync(process.execPath, [script, ...args], { stdio: 'inherit' }).status ?? 1;
+  const result = spawnSync(process.execPath, [script, ...args], { stdio: 'inherit' });
+  const failure = failureMessage(starterFile, result);
+  if (failure === null) return result.status;
+  process.stderr.write(`${failure}\n`);
+  return 1;
 }
 
-module.exports = { run, scriptFor };
+module.exports = { run, scriptFor, failureMessage };
 ````
 
   Die drei Start-Befehle `plugins/angular/bin/dv-angular-build`, `plugins/angular/bin/dv-angular-test` und `plugins/angular/bin/dv-angular-lint` anlegen, alle drei mit genau diesem Inhalt:
@@ -1351,10 +1495,10 @@ process.exit(require('./lib/run-toolchain.js').run(__filename));
 ````
 
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/angular/tests/run-toolchain.test.js` — erwartet: PASS, 5 Tests
+  Befehl: `node --test plugins/angular/tests/run-toolchain.test.js` — erwartet: PASS, 7 Tests, 0 skipped; meldet `starters_OnPathInGitBash_AreFoundAndStarted` „keine Git Bash“ oder schlägt er fehl, gilt der Halt aus Schritt 5.
 - [ ] **Schritt 5: Windows-Prüfung der Start-Befehle (AC-10)**
   Befehl im Bash-Tool, im Repo-Wurzelordner: `PATH="$(pwd)/plugins/angular/bin:$PATH" dv-angular-test --root x; echo "exit=$?"` — erwartet: die Zeile `dv-angular-test: Skript nicht gefunden: <R>\plugins\angular\scripts\toolchain\angular-test.js` und danach `exit=1`.
-  **Halt:** Erscheint `command not found`, `bad interpreter`, eine leere Ausgabe oder ein anderer Exit-Code, hält die Umsetzung an: nichts committen, den Anwender fragen.
+  **Halt:** Erscheint stattdessen `command not found`, `bad interpreter`, eine leere Ausgabe oder ein anderer Exit-Code, hält die Umsetzung an: nichts committen, den Anwender fragen und erst nach seiner Antwort weitermachen.
 - [ ] **Schritt 6: Commit**
   `git add plugins/angular` · `git add --chmod=+x plugins/angular/bin/dv-angular-build plugins/angular/bin/dv-angular-test plugins/angular/bin/dv-angular-lint`
   Prüfen: `git ls-files -s plugins/angular/bin` — erwartet: `100755` bei den drei Start-Befehlen.
@@ -1513,6 +1657,11 @@ test('description_Triggers_NamesEveryPhraseOfTheSpec', () => {
   for (const phrase of TRIGGERS) assert.ok(fields.description.includes(phrase), `${phrase} fehlt`);
 });
 
+// Ein „: “ im unquotierten Wert lehnt ein strenger YAML-Parser ab.
+test('description_Text_HasNoColonSpace', () => {
+  assert.doesNotMatch(fields.description, /: /);
+});
+
 test('description_Tools_NamesTheToolsItReplaces', () => {
   for (const tool of ['build_angular_project', 'test_angular_project', 'ng build', 'npm test']) assert.ok(fields.description.includes(tool), `${tool} fehlt`);
 });
@@ -1570,20 +1719,21 @@ Nicht `build_angular_project` oder `test_angular_project` von dev-mcp und nicht 
 ````
 
 - [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test plugins/angular/tests/skill-toolchain.test.js` — erwartet: PASS, 9 Tests
+  Befehl: `node --test plugins/angular/tests/skill-toolchain.test.js` — erwartet: PASS, 10 Tests
 - [ ] **Schritt 5: Commit**
   `git add plugins/angular` · `git commit -m "feat(angular): add toolchain skill"`
 
 ### Task 10: Angular-Init-Bausteine
 
-**ACs:** AC-12, AC-24, AC-25, AC-26
+**ACs:** AC-12, AC-24, AC-26
 
 **Dateien:**
 - Create: `plugins/angular/scripts/lib/project-setup.js`
 - Test: `plugins/angular/tests/project-setup.test.js`
 
 **Interfaces:**
-- Produces: dieselben Funktionen wie in Task 4 aus `plugins/angular/scripts/lib/project-setup.js` (`MCP_SERVERS`, `withStackBlock`, `withMcpSentence`, `withMcpServer`, `applyClaudeMd`, `applyMcpServer`, `hookMarkerFile`, `writeHookMarker`, `hookEnabled`), mit `stack` = `{ plugin: 'dv-angular', skill: 'dv-angular:toolchain' }` im Test; die Datei ist inhaltsgleich mit `plugins/dotnet/scripts/lib/project-setup.js`.
+- Consumes: `plugins/dotnet/scripts/lib/project-setup.js` im Stand nach Task 5 als Vorlage für die Kopie.
+- Produces: dieselben Funktionen wie in Task 4 und Task 5 aus `plugins/angular/scripts/lib/project-setup.js` (`MCP_SERVERS`, `withStackBlock`, `withMcpSentence`, `withMcpServer`, `applyClaudeMd`, `applyMcpServer`, `hookMarkerFile`, `writeHookMarker`, `hookEnabled`, `parseArgs`, `initProject(args, stack)`, `runInit(stack, argv)`), mit `stack` = `{ plugin: 'dv-angular', skill: 'dv-angular:toolchain' }` im Test; die Datei ist inhaltsgleich mit `plugins/dotnet/scripts/lib/project-setup.js`.
 
 - [ ] **Schritt 1: Fehlschlagenden Test schreiben**
   Datei `plugins/angular/tests/project-setup.test.js` neu anlegen:
@@ -1729,17 +1879,19 @@ test('hookEnabled_NoMarkerOrFalseOrBroken_IsFalse', () => {
 - [ ] **Schritt 2: Test rot laufen lassen**
   Befehl: `node --test plugins/angular/tests/project-setup.test.js` — erwartet: FAIL, `Cannot find module '../scripts/lib/project-setup'`
 - [ ] **Schritt 3: Minimal implementieren**
-  Datei `plugins/angular/scripts/lib/project-setup.js` neu anlegen, inhaltsgleich mit der .NET-Datei aus Task 4:
+  Datei `plugins/angular/scripts/lib/project-setup.js` neu anlegen, inhaltsgleich mit der .NET-Datei im Stand nach Task 5 (Bausteine aus Task 4 und Init-Ablauf aus Task 5):
 
 ````js
 'use strict';
 
 // Bausteine der Init-Skills: Hinweisblock und MCP-Sätze in der CLAUDE.md, MCP-Einträge in der .mcp.json, Schalter für den Hook.
 // Die Textfunktionen sind rein; nur die Funktionen ab applyClaudeMd berühren Dateien.
+// Ab parseArgs folgt der Ablauf des Init; init.js jedes Plugins ruft ihn mit seinem Stack auf.
 // Diese Datei ist in dv-dotnet und dv-angular inhaltsgleich, weil Plugins keine Dateien teilen.
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
 const MCP_START = '<!-- dv-mcp:start -->';
 const MCP_END = '<!-- dv-mcp:end -->';
@@ -1877,7 +2029,85 @@ function hookEnabled(startDir, stack) {
   }
 }
 
-module.exports = { MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, applyClaudeMd, applyMcpServer, hookMarkerFile, writeHookMarker, hookEnabled };
+const USAGE = 'Aufruf: node init.js [--cwd <ordner>] [--hook ja|nein] [--mcp <context7,microsoft-learn>]\n';
+const MCP_ENTRY_TEXT = { angelegt: 'angelegt', ergaenzt: 'ergänzt', vorhanden: 'Eintrag vorhanden' };
+
+class UsageError extends Error {}
+
+const FLAGS = {
+  '--cwd': (args, value) => { args.cwd = value; },
+  '--hook': (args, value) => { args.hook = value; },
+  '--mcp': (args, value) => { args.mcp = value === '' ? [] : value.split(','); },
+};
+
+function parseArgs(argv) {
+  const args = { cwd: process.cwd(), hook: 'nein', mcp: [] };
+  for (let index = 0; index < argv.length; index += 2) {
+    const set = FLAGS[argv[index]];
+    if (!set || argv[index + 1] === undefined) throw new UsageError(USAGE);
+    set(args, argv[index + 1]);
+  }
+  if (!['ja', 'nein'].includes(args.hook)) throw new UsageError(USAGE);
+  const unknown = args.mcp.find((server) => !Object.hasOwn(MCP_SERVERS, server));
+  if (unknown) throw new UsageError(`Unbekannter MCP: ${unknown}\n${USAGE}`);
+  return args;
+}
+
+function projectRoot(cwd) {
+  const result = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' });
+  return result.status === 0 ? path.resolve(result.stdout.trim()) : path.resolve(cwd);
+}
+
+function toPosix(file) {
+  return file.split(path.sep).join('/');
+}
+
+function blockLines(root, stack) {
+  const changed = applyClaudeMd(root, (text) => withStackBlock(text, stack));
+  return [`CLAUDE.md: Hinweisblock ${stack.plugin} ${changed ? 'geschrieben' : 'unverändert'}`];
+}
+
+function hookLines(root, hook, stack) {
+  const marker = toPosix(hookMarkerFile(stack));
+  if (hook !== 'ja') return [`Hook: nicht eingerichtet. Ein vorhandener Schalter bleibt; zum Ausschalten ${marker} löschen.`];
+  writeHookMarker(root, stack);
+  return [`Hook: eingerichtet (${marker}). Die Datei committen, damit auch Worktrees den Hook haben.`];
+}
+
+function mcpLines(root, server) {
+  const status = applyMcpServer(root, server);
+  if (status === 'ungueltig') return [`WARNUNG MCP ${server}: .mcp.json ist kein gültiges JSON; weder Eintrag noch Satz angelegt.`];
+  const changed = applyClaudeMd(root, (text) => withMcpSentence(text, server));
+  return [`MCP ${server}: .mcp.json ${MCP_ENTRY_TEXT[status]}`, `CLAUDE.md: Satz zu ${server} ${changed ? 'geschrieben' : 'schon vorhanden'}`];
+}
+
+// Führt die Antworten des Init-Skills für einen Stack aus und gibt die Meldungszeilen zurück.
+function initProject(args, stack) {
+  const root = projectRoot(args.cwd);
+  return [
+    `Projekt: ${toPosix(root)}`,
+    ...blockLines(root, stack),
+    ...hookLines(root, args.hook, stack),
+    ...args.mcp.flatMap((server) => mcpLines(root, server)),
+    'Bestehende Regeln wie „Build und Test über dev-mcp“ ändert der Init nicht; die entfernst du von Hand.',
+  ];
+}
+
+// Ablauf von init.js: Argumente lesen, ausführen, Meldung ausgeben; bei falschen Argumenten Syntax und Exit 2.
+function runInit(stack, argv) {
+  try {
+    process.stdout.write(`${initProject(parseArgs(argv), stack).join('\n')}\n`);
+  } catch (error) {
+    if (!(error instanceof UsageError)) throw error;
+    process.stderr.write(error.message);
+    process.exit(2);
+  }
+}
+
+module.exports = {
+  MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, applyClaudeMd, applyMcpServer, hookMarkerFile, writeHookMarker, hookEnabled,
+  parseArgs, initProject, runInit,
+};
 ````
 
 - [ ] **Schritt 4: Test grün laufen lassen**
@@ -1887,7 +2117,7 @@ module.exports = { MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, 
 
 ### Task 11: Angular-Init-Skript und Init-Skill
 
-**ACs:** AC-14, AC-21, AC-22, AC-23, AC-26, AC-27, AC-37
+**ACs:** AC-14, AC-21, AC-22, AC-23, AC-25, AC-26, AC-27, AC-37
 
 **Dateien:**
 - Create: `plugins/angular/scripts/init.js`
@@ -1896,8 +2126,8 @@ module.exports = { MCP_SERVERS, withStackBlock, withMcpSentence, withMcpServer, 
 - Test: `plugins/angular/tests/skill-init.test.js`
 
 **Interfaces:**
-- Consumes: die Funktionen aus Task 10.
-- Produces: `parseArgs(argv)` und `initProject(args)` aus `plugins/angular/scripts/init.js` mit denselben Signaturen und demselben Aufruf wie in Task 5, Hinweisblock und Hook-Schalter für `dv-angular` (`dv-angular:toolchain`, `.claude/dv-angular.json`); Skill `dv-angular:init` (`name: init`, manuell).
+- Consumes: `parseArgs(argv)`, `initProject(args, stack)` und `runInit(stack, argv)` aus `plugins/angular/scripts/lib/project-setup.js` (Task 10).
+- Produces: `parseArgs(argv)` und `initProject(args)` aus `plugins/angular/scripts/init.js` mit denselben Signaturen und demselben Aufruf wie in Task 5, Hinweisblock und Hook-Schalter für `dv-angular` (`dv-angular:toolchain`, `.claude/dv-angular.json`); `init.js` enthält nur `STACK`, den Aufruf von `runInit` und die Exporte und gleicht der .NET-Datei bis auf `dotnet` → `angular`. Skill `dv-angular:init` (`name: init`, manuell).
 
 - [ ] **Schritt 1: Fehlschlagende Tests schreiben**
   Datei `plugins/angular/tests/init.test.js` neu anlegen:
@@ -2004,7 +2234,7 @@ test('initProject_InvalidMcpJson_KeepsFileWarnsAndStillWritesBlockAndHook', () =
   fs.writeFileSync(path.join(root, '.mcp.json'), '{ kaputt');
   const lines = initProject(args(root, { hook: 'ja', mcp: ['context7'] }));
   assert.equal(read(root, '.mcp.json'), '{ kaputt');
-  assert.ok(lines.some((line) => /WARNUNG.*kein gültiges JSON/.test(line)));
+  assert.ok(lines.some((line) => /WARNUNG MCP context7: \.mcp\.json ist kein gültiges JSON/.test(line)));
   assert.ok(!read(root, 'CLAUDE.md').includes('dv-mcp:context7'));
   assert.ok(read(root, 'CLAUDE.md').includes('`dv-angular:toolchain`'));
   assert.ok(fs.existsSync(path.join(root, '.claude', 'dv-angular.json')));
@@ -2045,6 +2275,11 @@ test('frontmatter_Fields_ManualOnlyUseWhen', () => {
   assert.equal(fields['disable-model-invocation'], 'true');
 });
 
+// Ein „: “ im unquotierten Wert lehnt ein strenger YAML-Parser ab.
+test('description_Text_HasNoColonSpace', () => {
+  assert.doesNotMatch(fields.description, /: /);
+});
+
 test('body_Length_StaysUnder500WordsAndUsesPluginRoot', () => {
   assert.ok(wordCount(body) < 500, `${wordCount(body)} Wörter`);
   assert.ok(body.includes('`<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`'));
@@ -2081,89 +2316,19 @@ test('body_ExistingRules_AreLeftToTheHuman', () => {
 'use strict';
 
 // Init für dv-angular: Hinweisblock in der CLAUDE.md, auf Wunsch Hook-Schalter und MCP-Server.
-// Die Fragen an den Menschen stellt der Skill init; dieses Skript führt nur die Antworten aus.
+// Die Fragen stellt der Skill init; den Ablauf hält lib/project-setup.js, hier steht nur der Stack.
 
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
 const setup = require('./lib/project-setup');
 
 const STACK = { plugin: 'dv-angular', skill: 'dv-angular:toolchain' };
-const USAGE = 'Aufruf: node init.js [--cwd <ordner>] [--hook ja|nein] [--mcp <context7,microsoft-learn>]\n';
-const MCP_ENTRY_TEXT = { angelegt: 'angelegt', ergaenzt: 'ergänzt', vorhanden: 'Eintrag vorhanden' };
-
-class UsageError extends Error {}
-
-const FLAGS = {
-  '--cwd': (args, value) => { args.cwd = value; },
-  '--hook': (args, value) => { args.hook = value; },
-  '--mcp': (args, value) => { args.mcp = value === '' ? [] : value.split(','); },
-};
-
-function parseArgs(argv) {
-  const args = { cwd: process.cwd(), hook: 'nein', mcp: [] };
-  for (let index = 0; index < argv.length; index += 2) {
-    const set = FLAGS[argv[index]];
-    if (!set || argv[index + 1] === undefined) throw new UsageError(USAGE);
-    set(args, argv[index + 1]);
-  }
-  if (!['ja', 'nein'].includes(args.hook)) throw new UsageError(USAGE);
-  const unknown = args.mcp.find((server) => !Object.hasOwn(setup.MCP_SERVERS, server));
-  if (unknown) throw new UsageError(`Unbekannter MCP: ${unknown}\n${USAGE}`);
-  return args;
-}
-
-function projectRoot(cwd) {
-  const result = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8' });
-  return result.status === 0 ? path.resolve(result.stdout.trim()) : path.resolve(cwd);
-}
-
-function toPosix(file) {
-  return file.split(path.sep).join('/');
-}
-
-function blockLines(root) {
-  const changed = setup.applyClaudeMd(root, (text) => setup.withStackBlock(text, STACK));
-  return [`CLAUDE.md: Hinweisblock ${STACK.plugin} ${changed ? 'geschrieben' : 'unverändert'}`];
-}
-
-function hookLines(root, hook) {
-  const marker = toPosix(setup.hookMarkerFile(STACK));
-  if (hook !== 'ja') return [`Hook: nicht eingerichtet. Ein vorhandener Schalter bleibt; zum Ausschalten ${marker} löschen.`];
-  setup.writeHookMarker(root, STACK);
-  return [`Hook: eingerichtet (${marker}). Die Datei committen, damit auch Worktrees den Hook haben.`];
-}
-
-function mcpLines(root, server) {
-  const status = setup.applyMcpServer(root, server);
-  if (status === 'ungueltig') return [`WARNUNG MCP ${server}: .mcp.json ist kein gültiges JSON; weder Eintrag noch Satz angelegt.`];
-  const changed = setup.applyClaudeMd(root, (text) => setup.withMcpSentence(text, server));
-  return [`MCP ${server}: .mcp.json ${MCP_ENTRY_TEXT[status]}`, `CLAUDE.md: Satz zu ${server} ${changed ? 'geschrieben' : 'schon vorhanden'}`];
-}
 
 function initProject(args) {
-  const root = projectRoot(args.cwd);
-  return [
-    `Projekt: ${toPosix(root)}`,
-    ...blockLines(root),
-    ...hookLines(root, args.hook),
-    ...args.mcp.flatMap((server) => mcpLines(root, server)),
-    'Bestehende Regeln wie „Build und Test über dev-mcp“ ändert der Init nicht; die entfernst du von Hand.',
-  ];
+  return setup.initProject(args, STACK);
 }
 
-function main() {
-  try {
-    process.stdout.write(`${initProject(parseArgs(process.argv.slice(2))).join('\n')}\n`);
-  } catch (error) {
-    if (!(error instanceof UsageError)) throw error;
-    process.stderr.write(error.message);
-    process.exit(2);
-  }
-}
+if (require.main === module) setup.runInit(STACK, process.argv.slice(2));
 
-if (require.main === module) main();
-
-module.exports = { parseArgs, initProject };
+module.exports = { parseArgs: setup.parseArgs, initProject };
 ````
 
   Datei `plugins/angular/skills/init/SKILL.md` neu anlegen:
@@ -2197,7 +2362,8 @@ Du stellst drei Fragen, jede mit Standard **Nein**, und ein Skript führt die An
 ````
 
 - [ ] **Schritt 4: Tests grün laufen lassen**
-  Befehl: `node --test plugins/angular/tests/init.test.js plugins/angular/tests/skill-init.test.js` — erwartet: PASS, 20 Tests (14 und 6)
+  Befehl: `node --test plugins/angular/tests/init.test.js plugins/angular/tests/skill-init.test.js plugins/angular/tests/project-setup.test.js` — erwartet: PASS, 39 Tests (14, 7 und 18)
+  Gleichheit prüfen (Bash-Tool): `cmp plugins/dotnet/scripts/lib/project-setup.js plugins/angular/scripts/lib/project-setup.js` — erwartet: keine Ausgabe; `sed 's/dotnet/angular/g' plugins/dotnet/scripts/init.js | diff - plugins/angular/scripts/init.js` — erwartet: keine Ausgabe, Exit 0.
 - [ ] **Schritt 5: Commit**
   `git add plugins/angular` · `git commit -m "feat(angular): add init skill and init script"`
 
@@ -2269,7 +2435,7 @@ test('decide_NgNpxNgAndNpmBuildTestLintInBash_AreRejectedNamingTheSkill', () => 
 
 test('decide_NpxNgGenerateAndOtherShellCommands_AreAllowed', () => {
   const root = hookedProject();
-  const commands = ['npx ng generate component x', 'ng serve', 'ng version', 'npm install', 'npm run start', 'npm run buildx',
+  const commands = ['npx ng generate component x', 'npx ng serve', 'npx ng version', 'ng generate service y', 'ng serve', 'ng version', 'npm install', 'npm run start', 'npm run buildx',
     'dv-angular-test --root web', 'git commit -m "npm test fix"', 'echo npm test'];
   for (const command of commands) assert.equal(guard.decide(bash(root, command)), null, command);
 });
@@ -2917,6 +3083,12 @@ test('init_Row_BuildTestLintAcceptsAnyCommandWithoutToolSuggestions', () => {
   const { body } = skill('init');
   assert.ok(body.includes('| `Build`, `Test`, `Lint` | Befehl, z. B. `npm test`; mehrere mit ` ; ` | leer |'));
 });
+
+// Ein „: “ im unquotierten Wert lehnt ein strenger YAML-Parser ab.
+test('init_Description_HasNoColonSpace', () => {
+  const { fields } = skill('init');
+  assert.doesNotMatch(fields.description, /: /);
+});
 ````
 
   In `plugins/forge/tests/plan-writing.test.js` die Zeile mit dem Beispielbefehl ersetzen (Edit-Tool, exakt):
@@ -2935,7 +3107,7 @@ Neu:
 ````
 
 - [ ] **Schritt 2: Tests rot laufen lassen**
-  Befehl: `node --test plugins/forge/tests/work-skills.test.js plugins/forge/tests/plan-writing.test.js` — erwartet: FAIL `init_Body_ChecksSetupBeforeConfig`, FAIL `init_Row_BuildTestLintAcceptsAnyCommandWithoutToolSuggestions`, FAIL `planFormat_DecisionEntries_DesignChoiceNotBindingAndNoQuestionsLine`
+  Befehl: `node --test plugins/forge/tests/work-skills.test.js plugins/forge/tests/plan-writing.test.js` — erwartet: FAIL `init_Body_ChecksSetupBeforeConfig`, FAIL `init_Row_BuildTestLintAcceptsAnyCommandWithoutToolSuggestions`, FAIL `planFormat_DecisionEntries_DesignChoiceNotBindingAndNoQuestionsLine`; `init_Description_HasNoColonSpace` ist schon grün (die bisherige description enthält kein „: “) und sichert die neue ab
 - [ ] **Schritt 3: Minimal implementieren**
   In `plugins/forge/skills/init/SKILL.md` drei Stellen ersetzen (Edit-Tool, exakt):
 
@@ -2948,7 +3120,7 @@ or when project rules, skills or MCP entries may still send build, test or lint 
 Neu:
 
 ````markdown
-or when project rules or skills may still use tools that no longer exist or the old dv-forge: <stack>-<kommando> spelling of build, test and lint commands.
+or when project rules or skills may still use tools that no longer exist or the old dv-forge `<stack>-<kommando>` spelling of build, test and lint commands.
 ````
 
 Alt:
@@ -3008,6 +3180,145 @@ Neu:
 - [ ] **Schritt 5: Commit**
   `git add plugins/forge` · `git commit -m "docs(forge): point init skill and plan format to the stack plugins"`
 
+### Task 16: Verweise auf die alte Schreibweise im Repo umstellen
+
+**ACs:** keins (Folgearbeit der Soll-Vorgabe zu forge: die alte Schreibweise wird nicht mehr aufgelöst; siehe R1 · Entscheidungen)
+
+**Dateien:**
+- Modify: `CLAUDE.md:51-52` · `MCP-First (immer aktiv)`
+- Modify: `.claude/skills/dev-mcp/SKILL.md:6,18` · `Was wohin gehört`
+- Modify: `.claude/skills/dev-mcp/references/routing.md:3,9-10` · `dev-mcp Routing`
+- Modify: `.claude/skills/dev-mcp/references/workflows.md:16,28,45` · `dv-forge: dotnet-test --path <testprojekt>`
+- Modify: `.claude/skills/dev-mcp/references/tool-catalog.md:5` · `dv-forge: <plattform>-<kommando>`
+- Modify: `.claude/skills/dev-mcp/references/error-guide.md:9` · `Fehler im dv-forge-Skript`
+- Modify: `.claude/skills/codebase-analyzer/SKILL.md:340-494` · `dv-forge: dotnet-test --path <Testprojekt>`
+- Modify: `.claude/skills/angular/references/new-app/op-create-app.md:31-33` · `dv-forge: angular-build`
+- Modify: `.claude/skills/angular/references/developer/OVERVIEW.md:6-14` · `dv-forge: angular-build`
+- Modify: `.claude/skills/angular/references/developer/op-tooling.md:17-19` · `dv-forge: angular-lint --root <angular-ordner>`
+- Modify: `.claude/skills/angular/references/developer/testing.md:62-63` · `dv-forge: angular-test`
+- Modify: `.claude/skills/angular/references/developer/feature-first-layout.md:318,332` · `dv-forge: angular-build`
+- Modify: `.claude/skills/angular/references/developer/op-new-project.md:20-21` · `dv-forge: angular-build`
+- Modify: `.claude/skills/angular/references/developer/op-migration.md:29` · `dv-forge: angular-build`
+
+**Interfaces:**
+- Consumes: die Befehlsnamen `dv-dotnet-build|test|lint` (Task 1) und `dv-angular-build|test|lint` (Task 7); die Regel `legacyToolchain` von `setup-check` (Task 14) als Prüfung.
+- Produces: `CLAUDE.md`, `.claude/skills` und `.claude/agents` dieses Repos enthalten keine Zeile mehr in der Schreibweise `dv-forge: <stack>-<kommando>`. Die Projekt-CLAUDE.md wird nur in der Schreibweise der zwei Tabellenzeilen geändert, nicht gekürzt. `plugins/relay/`, `docs/` und die Testfixtures unter `plugins/forge/tests` bleiben unberührt.
+
+- [ ] **Schritt 1: Zeilen mit eigenem Wortlaut ersetzen**
+  In `.claude/skills/dev-mcp/references/routing.md` drei Stellen ersetzen (Edit-Tool, exakt):
+
+Alt:
+
+````markdown
+Lesen wenn unklar ist, ob dev-mcp, codebase-analyzer, ein dv-forge-Skript oder die Shell zuständig ist.
+````
+
+Neu:
+
+````markdown
+Lesen wenn unklar ist, ob dev-mcp, codebase-analyzer, ein Befehl von dv-dotnet bzw. dv-angular oder die Shell zuständig ist.
+````
+
+Alt:
+
+````markdown
+| Angular **bauen / testen / linten** | `dv-forge: angular-build`, `angular-test`, `angular-lint` |
+````
+
+Neu:
+
+````markdown
+| Angular **bauen / testen / linten** | `dv-angular-build`, `dv-angular-test`, `dv-angular-lint` im Bash-Tool |
+````
+
+Alt:
+
+````markdown
+| .NET **bauen / testen / linten** | `dv-forge: dotnet-build`, `dotnet-test`, `dotnet-lint` |
+````
+
+Neu:
+
+````markdown
+| .NET **bauen / testen / linten** | `dv-dotnet-build`, `dv-dotnet-test`, `dv-dotnet-lint` im Bash-Tool |
+````
+
+  In `.claude/skills/dev-mcp/SKILL.md` zwei Stellen ersetzen (Edit-Tool, exakt):
+
+Alt:
+
+````markdown
+  files or running processes via the dev-mcp server. Not for build/test/lint (→ dv-forge scripts),
+````
+
+Neu:
+
+````markdown
+  files or running processes via the dev-mcp server. Not for build/test/lint (→ dv-dotnet-*/dv-angular-* commands),
+````
+
+Alt:
+
+````markdown
+| Build, Test, Lint | `dv-forge: angular-build|test|lint`, `dv-forge: dotnet-build|test|lint` — nie direkt `ng`/`dotnet` |
+````
+
+Neu:
+
+````markdown
+| Build, Test, Lint | `dv-angular-build|test|lint`, `dv-dotnet-build|test|lint` im Bash-Tool — nie direkt `ng`/`dotnet` |
+````
+
+  In `.claude/skills/dev-mcp/references/tool-catalog.md` (Edit-Tool, exakt):
+
+Alt:
+
+````markdown
+Build, Test und Lint: `dv-forge: <plattform>-<kommando>`.
+````
+
+Neu:
+
+````markdown
+Build, Test und Lint: `dv-<stack>-<kommando>` im Bash-Tool (Plugins dv-dotnet und dv-angular).
+````
+
+  In `.claude/skills/dev-mcp/references/error-guide.md` (Edit-Tool, exakt):
+
+Alt:
+
+````markdown
+| Build/Test schlägt fehl | Fehler im dv-forge-Skript |
+````
+
+Neu:
+
+````markdown
+| Build/Test schlägt fehl | Fehler im Befehl `dv-<stack>-<kommando>` |
+````
+
+- [ ] **Schritt 2: Übrige Stellen ersetzen**
+  Je Datei die genannten Zeichenfolgen ersetzen (Edit-Tool, `replace_all: true`, exakt; links alt, rechts neu). Nur die Zeichenfolge ändert sich, der übrige Zeileninhalt bleibt:
+
+| Datei | Ersetzungen |
+|---|---|
+| `CLAUDE.md` | `dv-forge: angular-test` → `dv-angular-test`; `dv-forge: dotnet-test` → `dv-dotnet-test` |
+| `.claude/skills/dev-mcp/references/workflows.md` | `dv-forge: angular-test` → `dv-angular-test`; `dv-forge: dotnet-test` → `dv-dotnet-test`; `dv-forge: dotnet-build` → `dv-dotnet-build` |
+| `.claude/skills/codebase-analyzer/SKILL.md` | `dv-forge: dotnet-test` → `dv-dotnet-test`; `dv-forge: angular-test` → `dv-angular-test` |
+| `.claude/skills/angular/references/new-app/op-create-app.md` | `dv-forge: angular-build` → `dv-angular-build` |
+| `.claude/skills/angular/references/developer/OVERVIEW.md` | `dv-forge: angular-build` → `dv-angular-build`; `dv-forge: angular-test` → `dv-angular-test` |
+| `.claude/skills/angular/references/developer/op-tooling.md` | `dv-forge: angular-build` → `dv-angular-build`; `dv-forge: angular-test` → `dv-angular-test`; `dv-forge: angular-lint` → `dv-angular-lint` |
+| `.claude/skills/angular/references/developer/testing.md` | `dv-forge: angular-test` → `dv-angular-test`; `dv-forge: angular-build` → `dv-angular-build` |
+| `.claude/skills/angular/references/developer/feature-first-layout.md` | `dv-forge: angular-build` → `dv-angular-build` |
+| `.claude/skills/angular/references/developer/op-new-project.md` | `dv-forge: angular-build` → `dv-angular-build` |
+| `.claude/skills/angular/references/developer/op-migration.md` | `dv-forge: angular-build` → `dv-angular-build` |
+
+- [ ] **Schritt 3: Keine alte Schreibweise mehr prüfen**
+  Befehl im Bash-Tool, im Repo-Wurzelordner: `grep -rnE "dv-forge: ?(angular|dotnet)-(build|test|lint)|dv-forge: <|dv-forge-Skript|dv-forge scripts" CLAUDE.md .claude/skills .claude/agents` — erwartet: keine Ausgabe, Exit 1.
+  Befehl im Bash-Tool: `node plugins/forge/scripts/setup-check.js --cwd . | sed -n '/^## Projekt/,/^## Global/p' | grep -c "dv-forge-Schreibweise veraltet"` — erwartet: `0`.
+- [ ] **Schritt 4: Commit**
+  `git add CLAUDE.md .claude/skills` · `git commit -m "docs: switch repo skills to the dv-<stack>-<kommando> commands"`
+
 ## Entscheidungen
 - **W · Planungs-Skills** · Aussage — `superpowers:writing-skills` und `software-design-principles` gelten für diesen Plan („b aber auch /superpowers:writing-skills“).
 - **E · Ein Plan** · Planer — Die Plan-Regeln verlangen jedes AC der Spec in mindestens einem Task; Teilpläne je Stack würden jeweils fehlende ACs melden. Die Tasks sind so geordnet, dass jeder Stand grün bleibt: Start-Befehle mit Windows-Prüfung zuerst, dann .NET, dann Angular, forge zuletzt.
@@ -3022,3 +3333,11 @@ Neu:
 - **E · setup-check** · Planer — Regeln, deren Vorschlag auf die verschobenen Skripte zeigte (`toolchain`, `shellBan`, `buildLogFilter`, `config`, `mcpJson`, Abschnitt „Vorschläge“), entfallen, weil die Spec sagt, `setup-check` melde nur noch die alte Schreibweise; `scaffold`, `moved`, `dropped` und `denyNode` bleiben.
 - **E · Prüfung im Sitzungs-Kontext** · Planer — Ob eine Sitzung den Skill bei „baue mir das Backend“ wirklich lädt (AC-01, AC-02, AC-03, AC-28, AC-29) und ob ein Subagent den Start-Befehl über den PATH findet (AC-08), lässt sich nur in einer Sitzung mit installiertem Plugin prüfen. Der Plan prüft Beschreibung, Text und den Start-Befehl im Bash-Tool; die Abnahme in der Sitzung nach `/plugin update` steht in der Checkliste der Übergabe.
 - **E · Reste außerhalb der Spec** · Planer — `plugins/relay/` und `docs/offene-aufgaben.md` nennen die alten Skript-Pfade weiter; die Spec schließt sie nicht ein, der Plan fasst sie nicht an.
+- **E · AC-10, Halt** · Planer — Der Halt ist eine Vorgabe an den Umsetzer; Schritt 5 in Task 1 und Task 7 ist sein Beleg, der Test `starters_OnPathInGitBash_AreFoundAndStarted` belegt die Auffindbarkeit über den PATH. Das Anhalten und Fragen selbst lässt sich nicht automatisieren.
+- **R1 · AC-25** — geändert — AC-25 steht jetzt unter **ACs:** von Task 5 und Task 11, weil erst `init.js` mit `mcpLines` alle drei Teilaussagen umsetzt und `initProject_InvalidMcpJson_KeepsFileWarnsAndStillWritesBlockAndHook` sie prüft: Datei bleibt `{ kaputt`, kein Satz `dv-mcp:context7`, Meldung nennt die ungültige Datei. Aus Task 4 und Task 10 ist AC-25 gestrichen; sie behalten AC-12, AC-24 und AC-26, `applyMcpServer_InvalidFile_LeavesBytesUnchanged` bleibt dort als Baustein-Test. Der Regex der Meldung ist an den MCP gebunden: `/WARNUNG MCP context7: \.mcp\.json ist kein gültiges JSON/`.
+- **R1 · Entscheidungen** — geändert — Neuer Task 16 „Verweise auf die alte Schreibweise im Repo umstellen“ nach Task 15 (keine Umnummerierung, Task 1–15 bleiben). Er stellt `dv-forge: <stack>-<kommando>` auf `dv-<stack>-<kommando>` um in `CLAUDE.md` (nur die Schreibweise der zwei Tabellenzeilen 51–52, keine Kürzung; W · Abgrenzung und die Spec-Zeile „Nicht Teil … die Kürzung der CLAUDE.md dieses Repos“ bleiben gewahrt), in `.claude/skills/dev-mcp` (SKILL.md, routing.md, workflows.md, tool-catalog.md, error-guide.md), `.claude/skills/codebase-analyzer/SKILL.md` und sieben Angular-Referenzen; die Liste stammt aus einem Grep im Repo-Stand. Geprüft wird mit `grep` und mit `setup-check` (liest `CLAUDE.md`, `.claude/skills`, `.claude/agents`), ohne neuen Testcode. Unberührt bleiben `plugins/relay/`, `docs/` und die Testfixtures unter `plugins/forge/tests`; der E-Eintrag „Reste außerhalb der Spec“ gilt damit weiter für `plugins/relay/` und `docs/offene-aufgaben.md`. Festlegung: Task 16 setzt kein AC um und nennt das unter **ACs:**, weil die Spec die Umstellung der Repo-Verweise nicht als AC führt, sie aber aus der Soll-Vorgabe zu forge folgt.
+- **R1 · Global Constraints** — geändert — Die Constraint zum Hook-Umfang steht wieder im Spec-Wortlaut („Im PowerShell-Tool lehnt er diese Aufrufe nicht ab. Andere Unterbefehle von `ng` und `npx ng`, etwa `generate`, lehnt er nicht ab.“); `decide_NpxNgGenerateAndOtherShellCommands_AreAllowed` in Task 12 prüft dazu `npx ng serve`, `npx ng version` und `ng generate service y`. AC-10: Task 1 und Task 7 bekommen je den Test `starters_OnPathInGitBash_AreFoundAndStarted`, der die Start-Befehle in Git Bash über den PATH findet und startet (Git Bash über `git --exec-path`, nie das WSL-`bash.exe`; unter POSIX `bash`; ohne Bash übersprungen); die Testzahl in Schritt 4 steigt auf 6, ein Überspringen oder Fehlschlagen löst den Halt aus Schritt 5 aus. Das Anhalten und Fragen selbst lässt sich nicht automatisieren: Es ist eine Vorgabe an den Umsetzer, Schritt 5 in Task 1 und Task 7 ist sein Beleg; der Haltetext in Task 7 ist an Task 1 angeglichen („… und erst nach seiner Antwort weitermachen“). Die Constraint zur Verifikation nennt das Überspringen ohne Git Bash.
+- **R1 · Task 11** — geändert — Der Init-Ablauf (`UsageError`, `parseArgs`, `projectRoot`, `toPosix`, `blockLines`, `hookLines`, `mcpLines`, `initProject(args, stack)`, `runInit(stack, argv)`) liegt jetzt in `scripts/lib/project-setup.js`, das ohnehin in beiden Plugins inhaltsgleich ist: Task 5 ergänzt ihn per Edit in der .NET-Datei, Task 10 legt die Angular-Datei im Stand nach Task 5 an und prüft mit `cmp`. `scripts/init.js` hält in beiden Plugins nur `STACK`, den Aufruf von `runInit` und die Exporte `parseArgs` und `initProject(args)`; die Tests `init.test.js` und `toolchain-guard.test.js` bleiben unverändert. Task 11 Schritt 4 prüft zusätzlich `cmp` und `sed 's/dotnet/angular/g' … | diff -` für `init.js`. Die Constraint software-design-principles nennt die Kopie samt Init-Ablauf.
+- **F · Global Constraints** — geändert — Vorschlag 1: Test `starters_OnPathInGitBash_AreFoundAndStarted` in Task 1 und Task 7, angeglichener Haltetext in Task 7 Schritt 5, Constraint zum Hook-Umfang im Spec-Wortlaut und `npx ng serve`/`npx ng version` in `decide_NpxNgGenerateAndOtherShellCommands_AreAllowed` (Task 12) standen schon aus R1 · Global Constraints im Plan. Neu ist der E-Eintrag „AC-10, Halt“: Der Halt ist eine Vorgabe an den Umsetzer, Schritt 5 in Task 1 und Task 7 ist sein Beleg, der Test belegt die Auffindbarkeit über den PATH.
+- **F · Task 1** — geändert — Vorschlag 1: `plugins/dotnet/bin/lib/run-toolchain.js` (Task 1) und `plugins/angular/bin/lib/run-toolchain.js` (Task 7) bekommen die reine Funktion `failureMessage(starterFile, result)`: bei `result.error` die Zeile `<befehl>: Start fehlgeschlagen: <result.error.message>`, bei `result.signal` die Zeile `<befehl>: beendet durch Signal <signal>`, sonst `null`. `run` schreibt die Meldung samt Zeilenende auf stderr und gibt 1 zurück, sonst `result.status`; das stumme `?? 1` entfällt. Der neue Test `failureMessage_StartErrorSignalOrExitCode_NamesCauseOrIsNull` prüft mit künstlichen Ergebnisobjekten (`{ error: new Error('spawn EACCES') }`, `{ signal: 'SIGTERM', status: null }`, `{ status: 3 }`) statt eines echten Kindprozesses. Produces nennt `failureMessage`; die Testzahl in Schritt 4 von Task 1 und Task 7 steigt von 6 auf 7.
+- **F · Task 15** — geändert — Vorschlag 1: Die neue `description` des forge-Init-Skills lautet „… or the old dv-forge `<stack>-<kommando>` spelling of build, test and lint commands.“, also ohne „: “. `work-skills.test.js` bekommt den Test `init_Description_HasNoColonSpace` (`assert.doesNotMatch(fields.description, /: /)`); er ist in Schritt 2 schon grün, weil die bisherige description kein „: “ enthält, und sichert die neue ab. Festlegung: Für die vier neuen Skills steht derselbe Test als `description_Text_HasNoColonSpace` in deren Testdateien (Task 3 und Task 9 `skill-toolchain.test.js`, Task 5 und Task 11 `skill-init.test.js`), weil ein forge-Test keine Dateien anderer Plugins lesen soll. Die Testzahlen steigen in Task 3 und Task 9 von 9 auf 10, in Task 5 und Task 11 von 38 (14, 6 und 18) auf 39 (14, 7 und 18).

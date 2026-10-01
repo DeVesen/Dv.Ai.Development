@@ -2,7 +2,7 @@
 
 Parameter der Tools, die der dev-mcp weiter anbietet. Lesen wenn Tool-Aufruf unklar oder Parameter-Namen gefragt.
 
-Parameter der umgezogenen Lese- und Einfüge-Tools (`read_signatures_only`, `read_method`, `read_class_summary`, `read_component_bundle`, `insert_member`, `update_imports`): siehe codebase-analyzer. Build, Test und Lint: `dv-forge: <plattform>-<kommando>`. Scaffolding, EF, `npm`, `dotnet publish`: Shell.
+Parameter der umgezogenen Lese- und Einfüge-Tools (`read_signatures_only`, `read_method`, `read_class_summary`, `read_component_bundle`, `insert_member`, `update_imports`): siehe codebase-analyzer. Build, Test und Lint: `dv-<stack>-<kommando>` im Bash-Tool (Plugins dv-dotnet und dv-angular). Scaffolding, EF, `npm`, `dotnet publish`: Shell.
 
 ---
 

@@ -3,7 +3,7 @@ name: dev-mcp
 description: >
   Use when searching or reading files (.cs/.ts/.json/.md) by pattern, content or line range,
   patching or batch-replacing text, moving or renaming files with git history, checking changed
-  files or running processes via the dev-mcp server. Not for build/test/lint (→ dv-forge scripts),
+  files or running processes via the dev-mcp server. Not for build/test/lint (→ dv-dotnet-*/dv-angular-* commands),
   scaffolding (→ ng generate / dotnet new), code reading by symbol (→ codebase-analyzer).
 ---
 
@@ -15,7 +15,7 @@ Der dev-mcp ist nur noch für Dateizugriff, Textänderungen, Git und Prozesse zu
 
 | Aufgabe | Weg |
 |---|---|
-| Build, Test, Lint | `dv-forge: angular-build|test|lint`, `dv-forge: dotnet-build|test|lint` — nie direkt `ng`/`dotnet` |
+| Build, Test, Lint | `dv-angular-build|test|lint`, `dv-dotnet-build|test|lint` im Bash-Tool — nie direkt `ng`/`dotnet` |
 | Komponente, Service, Projekt anlegen | `ng generate`, `dotnet new` über die Shell |
 | EF-Migrationen | `dotnet ef` über die Shell, siehe dotnet-Skill |
 | `npm run`, `npm install`, `dotnet publish` | Shell |

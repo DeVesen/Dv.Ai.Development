@@ -48,8 +48,8 @@ Details: https://claudedirectory.org/plugins/context7
 | Symbol / Datei suchen | `dev-mcp`: `find_file`, `find_by_content` |
 | Klasse / Methode lesen | `codebase-analyzer`: `read_class_summary`, `read_signatures_only`, `read_method` |
 | Index / Abhängigkeiten | `codebase-analyzer`: `find_in_index`, `index_project` |
-| Angular-Tests ausführen | `dv-forge: angular-test --root <angular-ordner>` — nie direkt `ng test` über die Shell |
-| .NET-Tests ausführen | `dv-forge: dotnet-test --path <testprojekt>` — nie direkt `dotnet test` über die Shell |
+| Angular-Tests ausführen | `dv-angular-test --root <angular-ordner>` — nie direkt `ng test` über die Shell |
+| .NET-Tests ausführen | `dv-dotnet-test --path <testprojekt>` — nie direkt `dotnet test` über die Shell |
 | Native Read / Grep | nur als dokumentierter Fallback nach MCP-Versuch |
 
 ---

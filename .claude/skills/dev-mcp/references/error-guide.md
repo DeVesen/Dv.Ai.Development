@@ -6,7 +6,7 @@
 | `File not found: C:\...` | Pfad falsch oder Datei fehlt | Pfad prüfen, kein Retry mit demselben Format |
 | `file_path is required` | Key fehlt | `file_path` setzen |
 | `Source file not found` | `rename_file` Quelle fehlt | Quellpfad prüfen |
-| Build/Test schlägt fehl | Fehler im dv-forge-Skript | Fehlerliste auswerten, volles Log unter `Log:` |
+| Build/Test schlägt fehl | Fehler im Befehl `dv-<stack>-<kommando>` | Fehlerliste auswerten, volles Log unter `Log:` |
 | MCP nicht in Tool-Liste | exe nicht gestartet / `claude.json` falsch | → BLOCKER melden |
 | `git mv` schlägt fehl | Nicht in Git-Repo oder Pfad außerhalb Repo | `repo_root` prüfen, `git status` vorab |
 

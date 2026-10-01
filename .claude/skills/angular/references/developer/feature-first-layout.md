@@ -315,7 +315,7 @@ Reihenfolge — jeder Schritt einzeln baubar und committebar, **kein** Big-Bang:
 
 1. **Feature-Schnitt festlegen** entlang der Routen in `app.routes.ts`. Eine Route-Gruppe = ein Feature-Kandidat. Kein Schnitt entlang technischer Schichten.
 2. **Skelett anlegen:** `features/[name]/` je Kandidat, noch leer.
-3. **Pro Feature verschieben** — ausschließlich Dateien, die nur dieses Feature nutzt. Verschieben via `git mv`, damit die History erhalten bleibt. Nach jedem Feature: `dv-forge: angular-build`.
+3. **Pro Feature verschieben** — ausschließlich Dateien, die nur dieses Feature nutzt. Verschieben via `git mv`, damit die History erhalten bleibt. Nach jedem Feature: `dv-angular-build`.
 4. **Rest bleibt liegen.** Was von ≥2 Features genutzt wird, verbleibt in `components/` / `services/` / `models/` — das ist das Zielbild, kein Restposten.
 5. **Path-Aliase einführen**, sobald das erste Feature steht. Danach relative Cross-Feature-Pfade suchen — jeder `../../features/` ist eine Grenzverletzung.
 6. **Facade nachziehen:** `[feature].service.ts` anlegen, direkte API-Calls aus Komponenten dorthin verlagern ([signal-architecture.md](signal-architecture.md)).
@@ -329,4 +329,4 @@ Reihenfolge — jeder Schritt einzeln baubar und committebar, **kein** Big-Bang:
 ## Tooling
 
 - Scaffold via `ng generate`, dann Dateien zu Feature-/Components-Struktur verschieben.
-- Nach substantiellen Edits: `dv-forge: angular-build` ausführen und Compile-Fehler beheben.
+- Nach substantiellen Edits: `dv-angular-build` ausführen und Compile-Fehler beheben.

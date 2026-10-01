@@ -13,7 +13,7 @@ Lesen vor: Spec anlegen, Testklasse anlegen.
    - Nicht gefunden: Datei nach dem Vorbild anlegen (ng generate erzeugt für bestehende Dateien keine Spec)
    - Existiert:      read_lines(spec_path, …) → dann Agent-Edit
 4. Agent-Edit                               → Testinhalt nach Muster aus Schritt 2
-5. dv-forge: angular-test --root <r> -- --include <spec>
+5. dv-angular-test --root <r> -- --include <spec>
 ```
 
 ## .NET Testklasse anlegen
@@ -25,7 +25,7 @@ Lesen vor: Spec anlegen, Testklasse anlegen.
    - Nicht gefunden: Datei nach dem Vorbild anlegen
    - Existiert:      read_lines(test_path, …) → dann Agent-Edit
 4. Agent-Edit                               → Tests nach Muster aus Schritt 2
-5. dv-forge: dotnet-test --path <testprojekt> -- --filter "FullyQualifiedName~<ClassName>"
+5. dv-dotnet-test --path <testprojekt> -- --filter "FullyQualifiedName~<ClassName>"
 ```
 
 ## Scout-Fallback (Index-Miss)
@@ -42,5 +42,5 @@ Nicht sofort natives Grep — MCP-Kette zuerst.
 ## Compliance-Nachweis im Abschlussbericht
 
 ```
-Build/Test: dv-forge: dotnet-build OK (0 Fehler)
+Build/Test: dv-dotnet-build OK (0 Fehler)
 ```

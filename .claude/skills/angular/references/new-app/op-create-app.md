@@ -28,9 +28,9 @@ Nützliche Flags:
 
 ### 3. Build-Check
 
-Build über `dv-forge: angular-build` zum Fehler-Check.
+Build über `dv-angular-build` zum Fehler-Check.
 
-**VERBOTEN:** `ng build` direkt als Shell-Kommando; nur über `dv-forge: angular-build`.
+**VERBOTEN:** `ng build` direkt als Shell-Kommando; nur über `dv-angular-build`.
 
 
 

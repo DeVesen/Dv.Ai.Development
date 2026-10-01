@@ -3,15 +3,15 @@
 
 1. **Angular-Version** vor Antwort prüfen — Best Practices variieren stark zwischen Majors.
 2. Angular Style Guide + Best Practices für Wartbarkeit/Performance einhalten.
-3. Build über `dv-forge: angular-build` ausführen — **kein** direkter Shell-Aufruf `ng build`.
+3. Build über `dv-angular-build` ausführen — **kein** direkter Shell-Aufruf `ng build`.
 4. Komponenten und Services mit `ng generate` anlegen.
 
 ## Build/Test (Pflicht)
 
 | Verboten | Richtig |
 |----------|---------|
-| Shell: `ng build` | `dv-forge: angular-build` |
-| Shell: `ng test` | `dv-forge: angular-test` |
+| Shell: `ng build` | `dv-angular-build` |
+| Shell: `ng test` | `dv-angular-test` |
 
 Meldet das Skript „Angular CLI nicht gefunden“: `npm install` im Projekt ausführen — kein Ausweichen auf direktes `ng build`.
 

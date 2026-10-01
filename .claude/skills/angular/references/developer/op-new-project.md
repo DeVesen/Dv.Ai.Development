@@ -17,8 +17,8 @@
 
 ## Nach Projekterstellung
 
-- Build über `dv-forge: angular-build` ausführen — Fehler analysieren und beheben — Pflicht.
-- **VERBOTEN:** `ng build` direkt als Shell-Kommando; nur über `dv-forge: angular-build`.
+- Build über `dv-angular-build` ausführen — Fehler analysieren und beheben — Pflicht.
+- **VERBOTEN:** `ng build` direkt als Shell-Kommando; nur über `dv-angular-build`.
 
 
 

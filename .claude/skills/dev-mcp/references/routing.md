@@ -1,13 +1,13 @@
 # dev-mcp Routing — Welcher Weg wann?
 
-Lesen wenn unklar ist, ob dev-mcp, codebase-analyzer, ein dv-forge-Skript oder die Shell zuständig ist.
+Lesen wenn unklar ist, ob dev-mcp, codebase-analyzer, ein Befehl von dv-dotnet bzw. dv-angular oder die Shell zuständig ist.
 
 ---
 
 | Aufgabe | Weg |
 |---------|-----|
-| Angular **bauen / testen / linten** | `dv-forge: angular-build`, `angular-test`, `angular-lint` |
-| .NET **bauen / testen / linten** | `dv-forge: dotnet-build`, `dotnet-test`, `dotnet-lint` |
+| Angular **bauen / testen / linten** | `dv-angular-build`, `dv-angular-test`, `dv-angular-lint` im Bash-Tool |
+| .NET **bauen / testen / linten** | `dv-dotnet-build`, `dv-dotnet-test`, `dv-dotnet-lint` im Bash-Tool |
 | Angular-Komponente/Service/Spec **erzeugen** | Shell → `ng generate` |
 | .NET-Projekt/Solution **anlegen** | Shell → `dotnet new` |
 | EF-Migrationen | Shell → `dotnet ef`, siehe dotnet-Skill |

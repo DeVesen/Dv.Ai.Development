@@ -14,9 +14,9 @@
 
 | Aktion | Aufruf | Verboten |
 |--------|--------|----------|
-| Build | `dv-forge: angular-build --root <angular-ordner>` | `ng build` direkt |
-| Test | `dv-forge: angular-test --root <angular-ordner>` | `ng test` direkt |
-| Lint | `dv-forge: angular-lint --root <angular-ordner>` | `ng lint` direkt |
+| Build | `dv-angular-build --root <angular-ordner>` | `ng build` direkt |
+| Test | `dv-angular-test --root <angular-ordner>` | `ng test` direkt |
+| Lint | `dv-angular-lint --root <angular-ordner>` | `ng lint` direkt |
 
 Die Skripte liefern nur Fehler und eine Zusammenfassung, das volle Log liegt in einer Datei. Warnungen mit `--show warnings`.
 

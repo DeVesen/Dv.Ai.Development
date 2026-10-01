@@ -59,5 +59,5 @@ Treat integration-style tests as **specifications of desired product behavior**.
 
 ## Verification
 
-- Run **`dv-forge: angular-test`** after meaningful test or production changes.
-- After non-trivial Angular edits, run **`dv-forge: angular-build`**.
+- Run **`dv-angular-test`** after meaningful test or production changes.
+- After non-trivial Angular edits, run **`dv-angular-build`**.

@@ -337,7 +337,7 @@ Bei `review_files_batch` mit `format: "compact"` wird zusätzlich eine **Endpoin
 
 ```
 // 1. Nur das Testprojekt laufen lassen (kein solution-weiter Run)
-dv-forge: dotnet-test --path C:\Develop\MyProject\tests\MyLib.Tests.Unit\MyLib.Tests.Unit.csproj -- --collect:"XPlat Code Coverage" --results-directory ./TestResults
+dv-dotnet-test --path C:\Develop\MyProject\tests\MyLib.Tests.Unit\MyLib.Tests.Unit.csproj -- --collect:"XPlat Code Coverage" --results-directory ./TestResults
 
 // 2. Cobertura-XML direkt lesen — Pfad aus TestResults/<guid>/coverage.cobertura.xml
 // Glob nach der frischen XML-Datei:
@@ -362,12 +362,12 @@ Wenn `analyze_coverage` oder `analyze_test_health` meldet:
 - `"No coverage report found"`, oder
 - `lineCoverage: 0` / Coverage-Grade `[F]` mit 0%
 
-**→ Zuerst Tests mit Coverage über `dv-forge: dotnet-test` bzw. `dv-forge: angular-test` ausführen, dann Analyse wiederholen.**
+**→ Zuerst Tests mit Coverage über `dv-dotnet-test` bzw. `dv-angular-test` ausführen, dann Analyse wiederholen.**
 
 ### .NET
 
 ```
-dv-forge: dotnet-test --path <Testprojekt> -- --collect:"XPlat Code Coverage" --results-directory ./TestResults
+dv-dotnet-test --path <Testprojekt> -- --collect:"XPlat Code Coverage" --results-directory ./TestResults
 ```
 
 Nach erfolgreichem Run:
@@ -380,7 +380,7 @@ analyze_test_health(projectPath: "<Testprojekt-Pfad>", type: "dotnet")
 ### Angular
 
 ```
-dv-forge: angular-test --root <Angular-Ordner> -- --code-coverage
+dv-angular-test --root <Angular-Ordner> -- --code-coverage
 ```
 
 Nach erfolgreichem Run:
@@ -491,7 +491,7 @@ find_symbol_references(
 
 **Coverage-Zahl nur nach echtem Test-Run:**
 ```
-dv-forge: angular-test --root C:\... -- --code-coverage
+dv-angular-test --root C:\... -- --code-coverage
 analyze_coverage(projectPath: "C:\...", type: "angular")
 ```
 Hinweis: Stufe B kann in Coverage-Zahlen auftauchen, ohne Verhalten zu testen.

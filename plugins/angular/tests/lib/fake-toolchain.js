@@ -1,6 +1,6 @@
 'use strict';
 
-// Ersatz für dotnet und die Angular CLI: gibt eine vorgegebene Ausgabe aus und merkt sich die Argumente.
+// Ersatz für die Angular CLI: gibt eine vorgegebene Ausgabe aus und merkt sich die Argumente.
 
 const fs = require('node:fs');
 const os = require('node:os');
@@ -23,16 +23,6 @@ function fakeEnv(dir, output, exitCode) {
   return { FAKE_OUTPUT: outputFile, FAKE_EXIT: String(exitCode), FAKE_ARGS: path.join(dir, 'fake-args.json') };
 }
 
-// Legt eine ausführbare Datei "dotnet" in einen eigenen PATH-Ordner (nur POSIX).
-function fakeDotnet(output, exitCode = 0) {
-  const dir = tempDir('dv-forge-dotnet-');
-  const script = path.join(dir, 'dotnet');
-  fs.writeFileSync(script, `#!${process.execPath}\n${FAKE}\n`);
-  fs.chmodSync(script, 0o755);
-  const env = { ...process.env, ...fakeEnv(dir, output, exitCode), PATH: `${dir}${path.delimiter}${process.env.PATH}` };
-  return { dir, env, args: () => JSON.parse(fs.readFileSync(env.FAKE_ARGS, 'utf8')) };
-}
-
 // Legt ein Angular-Projekt mit angular.json und einer falschen CLI unter node_modules an.
 function fakeAngular(angularJson, output, exitCode = 0, { withBuilderPackages = true } = {}) {
   const dir = tempDir('dv-forge-ng-');
@@ -50,4 +40,4 @@ function fakeAngular(angularJson, output, exitCode = 0, { withBuilderPackages = 
   return { dir, env, args: () => JSON.parse(fs.readFileSync(env.FAKE_ARGS, 'utf8')) };
 }
 
-module.exports = { tempDir, fakeDotnet, fakeAngular };
+module.exports = { tempDir, fakeAngular };

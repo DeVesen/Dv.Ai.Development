@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { parseRework, parseScout, SCOUT_HEADING, GROUP_HEADING, PROPOSAL } = require('../followup');
+const { parseRework, parseScout, scoutBlocks, SCOUT_HEADING, GROUP_HEADING, PROPOSAL } = require('../followup');
 const { readLines } = require('./flow-files');
 const { plainProblem } = require('./plain-text');
 
@@ -85,23 +85,6 @@ function checkScout(dir, review) {
   if (wrong) return `SCOUT ungültig: ${wrong[0]}: ${wrong[1]}`;
   const extra = [...groups.keys()].filter((id) => !expected.includes(id));
   return extra.length > 0 ? `SCOUT ungültig: Gruppe nicht in der Eingabe: ${extra.join(', ')}` : 'SCOUT ok';
-}
-
-// Zeilen jeder Gruppe, von ihrer Überschrift bis vor die nächste; Grundlage der Sicherung offener Gruppen.
-function scoutBlocks(lines) {
-  const start = lines.findIndex((line) => SCOUT_HEADING.test(line));
-  const blocks = new Map();
-  let current = null;
-  for (const line of start === -1 ? [] : lines.slice(start + 1)) {
-    const heading = GROUP_HEADING.exec(line);
-    if (heading) {
-      current = [line];
-      blocks.set(`${heading[1]} ${heading[2]}`, current);
-    } else if (current) {
-      current.push(line);
-    }
-  }
-  return blocks;
 }
 
 module.exports = { checkScout, preferredProblem, scoutTexts, scoutBlocks, textsProblem };

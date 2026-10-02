@@ -497,7 +497,7 @@ test('reworkAgents_Body_OnlyRedStellenThreeOutcomesAndBundledQuestions', () => {
     assert.ok(!body.includes('Du bearbeitest jede 🔴- und jede 🟡-Gruppe'), `${name}: alte Regel`);
   }
   const { body } = readAgent('spec-rework');
-  for (const part of ['"questions"', '"places"', '"cases"', '"recommendation"', 'Jede Stelle mit Frage steht in genau einer gebündelten Frage', 'je Regel']) {
+  for (const part of ['"questions"', '"places"', '"options"', '"title"', '"why"', '"reviewers"', '"change"', '"recommendation"', 'Jede Stelle mit Frage steht in genau einer gebündelten Frage', 'je Regel']) {
     assert.ok(body.includes(part), `spec-rework: ${part}`);
   }
 });
@@ -588,7 +588,7 @@ test('specAndPlanReviewers_Body_LocationNamesFirstPlaceAndFieldsAreNeverEmpty', 
 test('spec-rework_Body_BundlesQuestionsAndEntersAnswers', () => {
   const { body } = readAgent('spec-rework');
   for (const part of ['- `Eintrag:`', 'Hinweise und 🟢-Findings bekommst du nicht.', '## Fragen bündeln', 'Jede Stelle mit Frage steht in genau einer gebündelten Frage.',
-    'die Unterfälle und eine empfohlene Antwort', '## Antworten eintragen', '„später“ gilt je Frage', 'Antwort auf „R<n> · <Stelle>“', '"questions"', '"status": "answered"']) {
+    'das Label der empfohlenen Option', '## Antworten eintragen', '„später“ gilt je Frage', 'Antwort auf „R<n> · <Stelle>“', '"questions"', '"status": "answered"']) {
     assert.ok(body.includes(part), `${part} fehlt`);
   }
 });
@@ -604,4 +604,14 @@ test('plan-rework_Body_SpecQuestionWrittenAsQuestionToTheHuman', () => {
   const { body } = readAgent('plan-rework');
   assert.ok(body.includes('Bei einer spec-rückfrage lautet er wie jede Frage an den Menschen `- **R<n> · <Stelle>** — frage an den menschen — <Rückfrage>`.'));
   assert.ok(body.includes('Bei `spec-rückfrage` schreibst du zusätzlich den R-Eintrag aus Regel 7.'));
+});
+
+test('spec-rework_Body_QuestionsAndChangesInPlainLanguageWithoutShorthand', () => {
+  const { body } = readAgent('spec-rework');
+  for (const part of ['höchstens 400 Zeichen', '`AC-<Zahl>`', '`Task <Zahl>`', '`R<Zahl>`', '`F · `', '`W · `', '`consequence` ist die Folge dieser Option',
+    '`places` (alle betroffenen Stellen wörtlich, nur intern zur Abdeckungsprüfung)', '`change`: Pflicht bei `changed`']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+  assert.equal(body.includes('"cases"'), false);
+  assert.equal(body.includes('"rule"'), false);
 });

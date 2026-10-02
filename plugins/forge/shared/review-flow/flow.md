@@ -52,7 +52,7 @@ Genau eine je Lauf.
    - `NACHARBEIT ok … anhalten=nein` → „Nachprüfung“.
 
 ## Anhalten
-1. Gib den Text nach `=== FRAGEN ===` unverändert aus, darunter `Antworte im Chat; „später“ lässt eine Frage offen.` Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
+1. Gib den Text nach `=== FRAGEN ===` unverändert aus. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
 2. `node "<PLUGIN>/scripts/guard-orchestrator.js" pause <SESSION> --show "<W>/runde-1/fragen.md"`. Dann endet deine Antwort.
 3. Nach der Antwort des Menschen: per `SendMessage` an den Nacharbeiter `Antworten des Menschen: <antwort wörtlich>` und `Ergebnis: <W>/runde-1/antworten.json`. Erreicht die Nachricht ihn nicht, gilt das als ungültiges Ergebnis.
 4. `node "<PLUGIN>/scripts/review-flow.js" answers-check <FLAGS>`. `ANTWORTEN ungültig: <grund>`: nachfordern mit Instanz `nacharbeit`; der Zähler gilt für die ganze Nacharbeit. Ein Neustart bekommt die Eingaben aus Schritt 2 der Nacharbeit ohne `Findings:`, dazu `Antworten des Menschen: <antwort wörtlich>` und `Ergebnis: <W>/runde-1/antworten.json`. Dann Schritt 4.

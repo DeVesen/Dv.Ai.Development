@@ -151,3 +151,9 @@ test('loop_Closing_KeepsPriorityForTheReport', () => {
   // Assert
   assert.ok(closing.includes(PRIO));
 });
+
+test('flow_Pause_DoesNotAddItsOwnAnswerLine', () => {
+  const pause = section(readText(FLOW), 'Anhalten');
+  assert.equal(pause.includes('Antworte im Chat'), false);
+  assert.ok(pause.includes('Gib den Text nach `=== FRAGEN ===` unverändert aus'));
+});

@@ -2,9 +2,12 @@
 
 const path = require('node:path');
 const { placeKey } = require('./places');
-const { openQuestions, bundleShapeProblem, bundleProblem, renderQuestions } = require('./questions');
+const { openQuestions, bundleShapeProblem, bundleProblem } = require('./questions');
+const { plainProblem } = require('./plain-text');
+const { renderHalt, topicOf } = require('./halt-text');
+const { scoutTexts } = require('./scout-check');
 const { parseRework } = require('../followup');
-const { ROUND_ONE, readText, readJson, readAgentJson, writeText, writeJson } = require('./flow-files');
+const { ROUND_ONE, readText, readLines, readJson, readAgentJson, writeText, writeJson } = require('./flow-files');
 
 const STATUSES = {
   'spec-review': ['changed', 'unchanged', 'human-question'],
@@ -52,6 +55,14 @@ function entryProblem(entry, review) {
   return evidenceProblem(entry);
 }
 
+// Klartextfelder, die der Mensch beim Anhalten liest: nur Spec-Review in Runde 1.
+function plainEntryProblem(entry, options) {
+  if (options.review !== 'spec-review' || options.source !== ROUND_ONE) return null;
+  const field = { changed: 'change', unchanged: 'reason' }[entry.status];
+  const problem = field ? plainProblem(entry[field]) : null;
+  return problem ? `${field}: ${problem} (${entry.location})` : null;
+}
+
 // Je erwarteter Stelle genau ein Ausgang.
 function coverageProblem(results, keys, noun) {
   const named = results.map((entry) => placeKey(entry.location));
@@ -61,9 +72,10 @@ function coverageProblem(results, keys, noun) {
   return doubled.length > 0 ? `${noun} doppelt: ${doubled.join(', ')}` : null;
 }
 
-function resultsProblem(value, keys, review) {
+function resultsProblem(value, keys, options) {
   if (value === null || typeof value !== 'object' || !Array.isArray(value.results)) return 'results fehlt';
-  return value.results.map((entry) => entryProblem(entry, review)).find(Boolean) ?? coverageProblem(value.results, keys, 'Ausgang');
+  const problem = value.results.map((entry) => entryProblem(entry, options.review) ?? plainEntryProblem(entry, options)).find(Boolean);
+  return problem ?? coverageProblem(value.results, keys, 'Ausgang');
 }
 
 // Fragen nach der Nacharbeit: in der Spec die offenen R-Einträge, im Plan die Spec-Rückfragen des Ergebnisses.
@@ -89,11 +101,22 @@ function bundlesProblem(value) {
   return value.questions.map(bundleShapeProblem).find(Boolean) ?? null;
 }
 
+function haltInput(options, value) {
+  const dir = path.join(options.workspace, options.source);
+  return {
+    topic: topicOf(readText(options.doc)),
+    groups: readJson(path.join(dir, 'einstufung.json')).groups,
+    texts: scoutTexts(readLines(path.join(dir, 'scout.md'))),
+    results: value.results,
+    bundles: value.questions,
+  };
+}
+
 // Ergebnis der Nacharbeit prüfen; in Runde 1 eines Spec-Reviews auch die Bündelung der Fragen.
 function checkRework(options) {
   const dir = path.join(options.workspace, options.source);
   const { value, problem } = readAgentJson(path.join(dir, 'rework.json'));
-  const invalid = problem ?? resultsProblem(value, expectedKeys(options.workspace, options.source), options.review);
+  const invalid = problem ?? resultsProblem(value, expectedKeys(options.workspace, options.source), options);
   if (invalid) return `NACHARBEIT ungültig: ${invalid}`;
   const questions = questionsAfter(options, value.results);
   const missing = missingEntryProblem(options, value.results, questions);
@@ -104,7 +127,7 @@ function checkRework(options) {
   if (shape) return `NACHARBEIT ungültig: ${shape}`;
   const bundling = bundleProblem(value.questions, questions.map((question) => question.key));
   if (bundling) return `BUENDELUNG fehlerhaft: ${bundling}`;
-  const shown = renderQuestions(value.questions);
+  const shown = renderHalt(haltInput(options, value));
   writeText(path.join(dir, 'fragen.md'), shown);
   return [`NACHARBEIT ok fragen=${questions.length} anhalten=ja`, '=== FRAGEN ===', shown].join('\n');
 }

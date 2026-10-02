@@ -53,3 +53,18 @@ test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => 
     assert.ok(text.includes(part), `${part} fehlt`);
   }
 });
+
+test('reviewFollowupSkill_Body_ShowsReportFileBeforeCleanupAndKeepsPriority', () => {
+  const { body } = readMarkdown(SKILL);
+  const show = body.indexOf('scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<W>/abschluss/bericht.md"');
+  assert.ok(show > -1, 'show fehlt');
+  assert.ok(show < body.indexOf('scripts/workspace.js" remove <rolle> <slug>'), 'show muss vor remove stehen');
+  assert.ok(body.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht.'));
+  assert.ok(wordCount(body) < 500);
+});
+
+test('reviewFollowupFlow_Report_KeepsPriority', () => {
+  const text = readText(FLOW);
+  const report = text.slice(text.indexOf('## Bericht'), text.indexOf('## Nächster Schritt'));
+  assert.ok(report.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht.'));
+});

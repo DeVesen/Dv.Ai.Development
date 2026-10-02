@@ -35,6 +35,7 @@ Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es sta
 ## Bericht
 - Spec und Plan: der Bericht aus `report`, dann `### Hinweise des Orchestrators`, falls vorhanden, dann `### Umgesetzt` mit je `WAHL`-Zeile einem Punkt `- <WAHL>`, dann der Scout-Abschnitt aus Schritt 6.
 - Implementierung: nach `<PLUGIN>/shared/review-loop/report-format.md` mit `**Reviews:** 1 · **Nacharbeiten:** 1`, ohne Nach-Review `**Reviews:** 0 · **Nacharbeiten:** 1`; `### Letztes Review` ist die Antwort des Re-Reviewers unverändert; dazu `### Umgesetzt` wie oben.
+Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht. Bei Spec und Plan liegt der Teil aus `report` in `<W>/abschluss/bericht.md` und wird vor dem Freigeben mit `guard-orchestrator.js show` vorgemerkt; bei der Implementierung gibt es keine Berichtsdatei, dort gilt nur der Satz.
 
 ## Nächster Schritt
 - `sauber nach Nachprüfung` oder `sauber nach Nach-Review`, `offen` leer: der Text des Original-Skills für `sauber`, bei Plan einschließlich der Commit-Prüfung.

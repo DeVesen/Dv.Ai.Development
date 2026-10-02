@@ -46,5 +46,5 @@ Jedes Ende, auch `Ende` nach einem Fehler, schließt mit denselben zwei Befehlen
 ## Abschluss
 1. **Abschluss-Scout:** Nennt der Skill einen Scout und zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, startest du ihn einmal mit `run_in_background: false`: Eingaben aus dem Skill, dazu `Findings: <D>/aggregate.md` der letzten Runde und `Ergebnis: <D>/scout.md`. Du bewertest die Vorschläge nicht.
 2. **Sichern:** `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<D>"`, immer, auch ohne Scout; ohne Scout räumt es die alte Sicherung weg. Lief der Scout und gibt `save` `KEIN SCOUT` aus, startest du den Scout einmal neu und rufst `save` erneut auf. Wieder `KEIN SCOUT`: `Scout ausgefallen`.
-3. Bericht im Chat nach `<PLUGIN>/shared/review-loop/report-format.md`; der Scout-Abschnitt ist die Ausgabe von `save`. Nichts committen.
+3. Bericht im Chat nach `<PLUGIN>/shared/review-loop/report-format.md`; der Scout-Abschnitt ist die Ausgabe von `save`. Nichts committen. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
 4. Die zwei Befehle aus „Jedes Ende“.

@@ -52,8 +52,8 @@ Genau eine je Lauf.
    - `NACHARBEIT ok … anhalten=nein` → „Nachprüfung“.
 
 ## Anhalten
-1. Gib den Text nach `=== FRAGEN ===` unverändert aus, darunter `Antworte im Chat; „später“ lässt eine Frage offen.`
-2. `node "<PLUGIN>/scripts/guard-orchestrator.js" pause <SESSION>`. Dann endet deine Antwort.
+1. Gib den Text nach `=== FRAGEN ===` unverändert aus, darunter `Antworte im Chat; „später“ lässt eine Frage offen.` Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
+2. `node "<PLUGIN>/scripts/guard-orchestrator.js" pause <SESSION> --show "<W>/runde-1/fragen.md"`. Dann endet deine Antwort.
 3. Nach der Antwort des Menschen: per `SendMessage` an den Nacharbeiter `Antworten des Menschen: <antwort wörtlich>` und `Ergebnis: <W>/runde-1/antworten.json`. Erreicht die Nachricht ihn nicht, gilt das als ungültiges Ergebnis.
 4. `node "<PLUGIN>/scripts/review-flow.js" answers-check <FLAGS>`. `ANTWORTEN ungültig: <grund>`: nachfordern mit Instanz `nacharbeit`; der Zähler gilt für die ganze Nacharbeit. Ein Neustart bekommt die Eingaben aus Schritt 2 der Nacharbeit ohne `Findings:`, dazu `Antworten des Menschen: <antwort wörtlich>` und `Ergebnis: <W>/runde-1/antworten.json`. Dann Schritt 4.
 5. Weiter mit „Nachprüfung“.
@@ -69,5 +69,5 @@ Genau eine je Lauf.
 Jedes Ende, auch nach einem Ausfall:
 1. `node "<PLUGIN>/scripts/review-flow.js" report <FLAGS> --titel "<Titel>" --artefakt "<Artefakt>"`. Die Zeile `ENDE <status>` wählt den nächsten Schritt.
 2. `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"`.
-3. Bericht im Chat: der Text nach `=== BERICHT ===` unverändert; dann `### Hinweise des Orchestrators` mit jeder `WARN`-Zeile und jeder nachgeforderten oder neu gestarteten Instanz, falls es sie gibt; dann die Zusatz-Abschnitte des Skills; dann die Ausgabe von `save`, außer sie lautet `KEIN SCOUT`; zuletzt `Nächster Schritt: <Text des Skills für den Status>`. Nichts committen.
-4. `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.
+3. Bericht im Chat: der Text nach `=== BERICHT ===` unverändert; dann `### Hinweise des Orchestrators` mit jeder `WARN`-Zeile und jeder nachgeforderten oder neu gestarteten Instanz, falls es sie gibt; dann die Zusatz-Abschnitte des Skills; dann die Ausgabe von `save`, außer sie lautet `KEIN SCOUT`; zuletzt `Nächster Schritt: <Text des Skills für den Status>`. Nichts committen. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
+4. Nur wenn `report` ohne Exit 1 lief: `node "<PLUGIN>/scripts/guard-orchestrator.js" show <SESSION> --file "<W>/abschluss/bericht.md"`. Dann `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.

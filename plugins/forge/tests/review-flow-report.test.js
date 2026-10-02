@@ -519,6 +519,26 @@ test('report_FollowupDoneButUnchosenHindranceSaved_NotReadyAndCountMatchesList',
   assert.match(output, /### Wie es weitergeht\n1\. Das Hindernis einarbeiten lassen \(oder das Dokument selbst anpassen\):\n   `\/dv-forge:review-followup docs\/x\/spec\.md alle`\n2\. Danach erneut prüfen:\n   `\/dv-forge:spec-review docs\/x\/spec\.md`/);
 });
 
+test('report_PlanFollowupDoneButUnchosenHindranceSaved_NotReadyAndNoCommitStep', () => {
+  // Arrange: Arbeitsbereich wie im Spec-Followup; der Bericht wird zusätzlich als Plan-Review-Followup erzeugt.
+  const env = setup();
+  const chosen = [{ nummer: 2, stufe: '🟡', stelle: 'AC-07', vorschlag: 1 }];
+  followupRun(env, {
+    chosen, open: [{ nummer: 1, stufe: '🔴', stelle: 'AC-04' }], results: [{ location: 'AC-07', status: 'changed', change: 'Der Satz hat jetzt eine Lesart.' }], verdicts: [VERDICT('AC-07', 'erledigt')],
+  });
+
+  // Act
+  const result = flow('report', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review-Followup (plan-review)', '--artefakt', 'docs/x/plan.md', '--quelle', 'nacharbeit');
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^ENDE sauber nach Nachprüfung\n/);
+  assert.match(result.stdout, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
+  assert.match(result.stdout, /### Noch offen · Hindernis\n/);
+  assert.doesNotMatch(result.stdout, /committen|Bereit zur Umsetzung|dv-forge:implementation /);
+  assert.match(result.stdout, /`\/dv-forge:plan-review docs\/x\/plan\.md`/);
+});
+
 // Runde 1 mit 🔴 AC-04, Nacharbeit, Nachprüfung mit Urteil zu AC-04 und einer neuen 🔴 an `Deckel` (ohne Scout).
 function newRedOfVerificationRun(env, verdict) {
   runUntilRework(env, [RED('AC-04')]);

@@ -77,6 +77,15 @@ test('reviewFollowupFlow_NextStep_PlanKeepsCommitCheck', () => {
   }
 });
 
+test('reviewFollowupFlow_NextStep_AsksForPlanCommitOnlyWhenReportIsReady', () => {
+  const next = section(readText(FOLLOWUP_FLOW), 'Nächster Schritt');
+  const check = next.split('\n').find((line) => line.startsWith('- `original=plan-review`'));
+  for (const part of ['`✅ Bereit zur Umsetzung`', 'keinen Abschnitt `### Noch offen · Hindernis`', 'Steht im Bericht `⛔ Noch nicht bereit` oder `### Noch offen · Hindernis`: keine Commit-Prüfung und keine Frage.']) {
+    assert.ok(check.includes(part), `${part} fehlt`);
+  }
+  assert.ok(check.indexOf('`✅ Bereit zur Umsetzung`') < check.indexOf('git status --porcelain'), 'Bedingung steht vor der Commit-Prüfung');
+});
+
 test('reviewFollowupFlow_NextStep_ListsOnlyStatusesTheImplementationEmits', () => {
   const next = section(readText(FOLLOWUP_FLOW), 'Nächster Schritt');
   for (const gone of ['- `Fragen offen`:', '- `nicht bereit, …`:', '`sauber nach Nachprüfung`']) assert.equal(next.includes(gone), false, gone);

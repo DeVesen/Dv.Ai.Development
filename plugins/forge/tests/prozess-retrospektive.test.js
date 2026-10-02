@@ -59,6 +59,13 @@ test('prozessRetrospektive_Body_StaysUnder500Words', () => {
   assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
 });
 
+test('prozessRetrospektive_Body_NoCodeFenceNoExpectedLine', () => {
+  const { body } = readMarkdown(SKILL);
+
+  assert.doesNotMatch(body, /^```/m);
+  assert.doesNotMatch(body, /Erwartet:/);
+});
+
 test('prozessRetrospektive_Body_TimelineInsteadOfTextSearch', () => {
   const { body } = readMarkdown(SKILL);
 

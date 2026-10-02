@@ -80,41 +80,25 @@ test('cli_Expect_AppendsMeasuredMcpUsage', () => {
   assert.match(result.stdout, /\| Bash \| 2 \| 1 \| 1 \| Hauptagent \(2\) \|/);
 });
 
-test('cli_ProjectListsExpectedMcp_UnusedMarkedWithoutFlag', () => {
-  const repo = makeRepo();
-  commitFile(repo, 'CLAUDE.md', '# Projekt\n\n## dv-forge\n\n- MCP-Erwartet: dev-mcp, codebase-analyzer\n', 'config');
+// Der Abschnittsname entsteht aus Teilen: Der Test beweist, dass auch ein Abschnitt dieses Namens nicht gelesen wird.
+  const PROJECT_SECTION = `## ${['dv', 'forge'].join('-')}`;
 
-  const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: repo });
+  test('cli_ProjectSettingsListExpectedMcp_IgnoredWithoutFlag', () => {
+    const repo = makeRepo();
+    commitFile(repo, 'CLAUDE.md', `# Projekt\n\n${PROJECT_SECTION}\n\n- MCP-Erwartet: dev-mcp, codebase-analyzer\n`, 'config');
 
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
-  assert.match(result.stdout, /\| codebase-analyzer \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
-});
+    const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: repo });
 
-test('cli_ProjectWithoutExpectedList_NoExpectedUnusedRow', () => {
-  const repo = makeRepo();
-  commitFile(repo, 'CLAUDE.md', '# Projekt\n\n## dv-forge\n\n- MCP-Erwartet:\n', 'config');
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(result.stdout, /erwartet, ungenutzt/);
+  });
 
-  const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: repo });
+  test('cli_NoExpectFlag_NoExpectedUnusedRow', () => {
+    const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: os.tmpdir() });
 
-  assert.equal(result.status, 0, result.stderr);
-  assert.doesNotMatch(result.stdout, /erwartet, ungenutzt/);
-});
-
-test('cli_ForeignProtocol_ExpectationFromProtocolProject', () => {
-  const repo = makeRepo();
-  commitFile(repo, 'CLAUDE.md', '# Projekt\n\n## dv-forge\n\n- MCP-Erwartet: dev-mcp\n', 'config');
-  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'retro-')), 's3.jsonl');
-  fs.writeFileSync(file, `${[
-    line({ type: 'user', cwd: repo, timestamp: '2026-09-27T10:00:00Z', message: { role: 'user', content: 'Los' } }),
-    line({ type: 'assistant', cwd: repo, requestId: 'r1', timestamp: '2026-09-27T10:01:00Z', message: { model: 'claude-x', usage: { input_tokens: 10, output_tokens: 1 }, content: [] } }),
-  ].join('\n')}\n`);
-
-  const result = spawnSync(process.execPath, [SCRIPT, '--file', file], { encoding: 'utf8', cwd: os.tmpdir() });
-
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /\| dev-mcp \| \*\*erwartet, ungenutzt\*\* \| 0 \|/);
-});
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(result.stdout, /erwartet, ungenutzt/);
+  });
 
 test('projectOf_OwnSession_UsesProcessCwd', () => {
   const first = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-erststart-'));

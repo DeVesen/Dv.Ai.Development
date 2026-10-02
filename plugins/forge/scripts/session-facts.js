@@ -10,7 +10,6 @@ const { rangeOf } = require('./lib/retro-range');
 const { projectDir, resolveSession, ownTranscriptOf, subagentFiles } = require('./lib/session-files');
 const { requestsOf } = require('./lib/retro-requests');
 const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns } = require('./lib/retro-measures');
-const { readConfig } = require('./forge-config.js');
 const { signalHints } = require('./lib/retro-signals');
 const { writeSnapshot, draftPath } = require('./lib/retro-files');
 const { buildSnapshot } = require('./lib/retro-snapshot');
@@ -313,19 +312,10 @@ function saveSnapshot(snapshot) {
   return `\nSnapshot: ${written}\nEntwurf: ${draftPath(snapshot.session)}\n`;
 }
 
-// Erwartete MCP-Server aus `MCP-Erwartet` der Projekt-Einstellungen.
-function configuredExpect(cwd) {
-  try {
-    return readConfig(cwd).config['MCP-Erwartet'].split(',').map((name) => name.trim()).filter(Boolean);
-  } catch {
-    // Ohne Git-Repo gibt es keine Projekt-Einstellungen und damit keine Erwartung.
-    return [];
-  }
-}
 
 // Projekt des ausgewerteten Protokolls. `--cwd` gilt immer. Ohne `--file` ist es die eigene Session, gesucht über den
 // aktuellen Ordner; der ist damit das Projekt, auch nach einem Wechsel in einen Worktree. Nur bei `--file` gilt das
-// `cwd` der Protokolleinträge, damit Erwartung, Branch und Projekt-Dateien aus dem Projekt des fremden Protokolls
+// `cwd` der Protokolleinträge, damit Branch und Projekt-Dateien aus dem Projekt des fremden Protokolls
 // kommen; fehlt dieser Ordner, gilt der aktuelle Ordner mit Warnung.
 function projectOf(options, session, warn = (text) => process.stderr.write(`Warnung: ${text}\n`)) {
   if (options.cwd) return path.resolve(options.cwd);
@@ -345,7 +335,7 @@ function run(options) {
   const session = mcpUsage.loadSession(file, { entries: range.entries, keepSubagent: range.keepSubagent });
   const cwd = projectOf(options, session);
   if (options.cwd) session.cwd = options.cwd;
-  const expect = [...new Set([...(options.expect ?? []), ...configuredExpect(cwd)])];
+  const expect = [...new Set(options.expect ?? [])];
   const facts = analyze(range.entries);
   const agents = subagentRows(file, range.keepSubagent);
   const mcp = mcpUsage.render(session, { expect, transcript: file });

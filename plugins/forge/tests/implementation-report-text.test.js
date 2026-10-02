@@ -8,9 +8,9 @@ const LINES = [['Abnahmekriterien', 0, 0], ['Treue zum Plan', 0, 0], ['Aufbau', 
   .map(([name, red, yellow]) => ({ name, red, yellow, failed: false }));
 const HINT = {
   color: 'yellow', title: 'Rundung der Summe', angles: 'Aufbau', description: 'Die Rundung steht an zwei Stellen und kann auseinanderlaufen.',
-  recommendation: 'die Rundung in einer Funktion bündeln, weil sonst jede Änderung zweimal nötig ist.',
+  recommendation: 'die Rundung in einer Funktion bündeln, weil sonst jede Änderung zweimal nötig ist.', hasProposal: true,
 };
-const HINDRANCE = { color: 'red', title: 'Fehler wird verschluckt', angles: 'Risiken', description: 'Ein Fehler bleibt unbemerkt.', recommendation: null };
+const HINDRANCE = { color: 'red', title: 'Fehler wird verschluckt', angles: 'Risiken', description: 'Ein Fehler bleibt unbemerkt.', recommendation: null, hasProposal: true };
 
 function base(overrides = {}) {
   return {
@@ -146,4 +146,121 @@ test('renderImplementationReport_HintsPartlyWithProposal_SplitsFollowupAndOwnFix
 
   // Assert
   assert.match(text, /1\. Den Hinweis mit Lösungsvorschlag einarbeiten lassen \(optional\):\n   `\/dv-forge:review-followup docs\/forge\/x\/plan\.md alle`\n2\. Der übrige Hinweis hat keinen Lösungsvorschlag\. Bei Bedarf selbst beheben \(optional\)\.\n3\. Arbeit abschließen:/);
+});
+
+test('renderImplementationReport_EntryWithoutProposalFlag_TreatsItAsWithoutProposal', () => {
+  // Arrange
+  const { hasProposal, ...hint } = HINT;
+
+  // Act
+  const text = renderImplementationReport(base({ open: [hint] }));
+
+  // Assert
+  assert.equal(text.includes('review-followup'), false);
+  assert.match(text, /1\. Der Hinweis hat keinen Lösungsvorschlag\. Bei Bedarf selbst beheben \(optional\)\./);
+});
+
+test('renderImplementationReport_RedEntryButOpenRedZero_ReportsNotReady', () => {
+  // Act
+  const text = renderImplementationReport(base({ openRed: 0, open: [HINDRANCE] }));
+
+  // Assert
+  assert.equal(text.includes('Bereit zum Abschließen'), false);
+  assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
+  assert.match(text, /1\. Das Hindernis einarbeiten lassen \(oder selbst beheben\):\n   `\/dv-forge:review-followup docs\/forge\/x\/plan\.md alle`\n2\. Danach erneut prüfen:/);
+});
+
+test('renderImplementationReport_OpenRedAboveListedEntries_StepsCoverOnlyListedHindrances', () => {
+  // Act
+  const text = renderImplementationReport(base({ openRed: 2, open: [HINDRANCE] }));
+
+  // Assert
+  assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 2 Hindernisse offen/);
+  assert.equal(text.includes('übrig'), false);
+  assert.match(text, /### Wie es weitergeht\n1\. Das Hindernis einarbeiten lassen \(oder selbst beheben\):\n   `\/dv-forge:review-followup docs\/forge\/x\/plan\.md alle`\n2\. Danach erneut prüfen:\n   `\/dv-forge:implementation-review docs\/forge\/x\/plan\.md`$/);
+});
+
+test('renderImplementationReport_BlockedWithHint_ShowsFullLayout', () => {
+  // Arrange
+  const lines = LINES.map((line) => (line.name === 'Risiken' ? { ...line, red: 1 } : line));
+  const hindrance = { ...HINDRANCE, recommendation: 'den Fehler an den Aufrufer weitergeben, weil er sonst unbemerkt bleibt.' };
+
+  // Act
+  const text = renderImplementationReport(base({ openRed: 1, open: [hindrance, HINT], reviewerLines: lines, reviewerCount: 5 }));
+
+  // Assert
+  assert.equal(text, [
+    '## Implementierungs-Review · Ergebnis · Bestellsumme berechnen',
+    '**Ergebnis:** ⛔ Noch nicht bereit · 1 Hindernis offen',
+    'Ablauf: Prüfung aus fünf Blickwinkeln, keine Überarbeitung.',
+    '',
+    '### Was geprüft wurde',
+    '- Bereich: `a1b2c3d..HEAD`',
+    '- 14 geänderte Dateien, davon 6 Tests',
+    '- Blickwinkel: Abnahmekriterien, Treue zum Plan, Aufbau, Tests, Risiken',
+    '',
+    '### Gefunden',
+    '- Abnahmekriterien: 0 Hindernisse, 0 Hinweise',
+    '- Treue zum Plan: 0 Hindernisse, 0 Hinweise',
+    '- Aufbau: 0 Hindernisse, 1 Hinweis',
+    '- Tests: 0 Hindernisse, 0 Hinweise',
+    '- Risiken: 1 Hindernis, 0 Hinweise',
+    '',
+    '### Noch offen · Hindernis',
+    '- 🔴 **Fehler wird verschluckt** · aus: Risiken',
+    '  Ein Fehler bleibt unbemerkt.',
+    '  Vorschlag (empfohlen): den Fehler an den Aufrufer weitergeben, weil er sonst unbemerkt bleibt.',
+    '',
+    '### Noch offen · kein Hindernis für das Abschließen',
+    '- 🟡 **Rundung der Summe** · aus: Aufbau',
+    '  Die Rundung steht an zwei Stellen und kann auseinanderlaufen.',
+    '  Vorschlag (empfohlen): die Rundung in einer Funktion bündeln, weil sonst jede Änderung zweimal nötig ist.',
+    '',
+    '### Wie es weitergeht',
+    '1. Das Hindernis einarbeiten lassen (oder selbst beheben):',
+    '   `/dv-forge:review-followup docs/forge/x/plan.md alle`',
+    '2. Danach erneut prüfen:',
+    '   `/dv-forge:implementation-review docs/forge/x/plan.md`',
+  ].join('\n'));
+});
+
+test('renderImplementationReport_Incomplete_ShowsFullLayout', () => {
+  // Arrange
+  const lines = [...LINES.slice(0, 4), { name: 'Risiken', red: 0, yellow: 0, failed: true }];
+
+  // Act
+  const text = renderImplementationReport(base({
+    failedLabels: ['Risiken'], reviewerLines: lines, open: [HINT], notes: ['Der Prüfer für Risiken ist ausgefallen. Dieser Blickwinkel fehlt in der Prüfung.'],
+  }));
+
+  // Assert
+  assert.equal(text, [
+    '## Implementierungs-Review · Ergebnis · Bestellsumme berechnen',
+    '**Ergebnis:** ⚠️ Unvollständig · Risiken ausgefallen',
+    'Ablauf: Prüfung aus fünf Blickwinkeln, keine Überarbeitung.',
+    '',
+    '### Was geprüft wurde',
+    '- Bereich: `a1b2c3d..HEAD`',
+    '- 14 geänderte Dateien, davon 6 Tests',
+    '- Blickwinkel: Abnahmekriterien, Treue zum Plan, Aufbau, Tests, Risiken',
+    '',
+    '### Gefunden',
+    '- Abnahmekriterien: 0 Hindernisse, 0 Hinweise',
+    '- Treue zum Plan: 0 Hindernisse, 0 Hinweise',
+    '- Aufbau: 0 Hindernisse, 1 Hinweis',
+    '- Tests: 0 Hindernisse, 0 Hinweise',
+    '- Risiken: ausgefallen',
+    '',
+    '### Noch offen · kein Hindernis für das Abschließen',
+    '- 🟡 **Rundung der Summe** · aus: Aufbau',
+    '  Die Rundung steht an zwei Stellen und kann auseinanderlaufen.',
+    '  Vorschlag (empfohlen): die Rundung in einer Funktion bündeln, weil sonst jede Änderung zweimal nötig ist.',
+    '',
+    '### Hinweise zum Ablauf',
+    '- Der Prüfer für Risiken ist ausgefallen. Dieser Blickwinkel fehlt in der Prüfung.',
+    '',
+    '### Wie es weitergeht',
+    '1. Den Lauf in einer frischen Session erneut starten:',
+    '   `/dv-forge:implementation-review docs/forge/x/plan.md`',
+  ].join('\n'));
 });

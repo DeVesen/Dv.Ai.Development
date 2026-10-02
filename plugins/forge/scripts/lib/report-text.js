@@ -83,46 +83,60 @@ function followupCommand(input) {
   return `/dv-forge:review-followup ${input.artifact} alle`;
 }
 
-// `alle` erreicht nur Hindernisse mit Vorschlag; die übrigen passt der Mensch selbst an.
-function blockedSteps(input, proposed) {
-  const rerun = `/dv-forge:${input.review} ${input.artifact}`;
-  const rest = Math.max(0, input.openRed - proposed);
+// Zahl der offenen Gruppen einer Farbe, die einen Scout-Vorschlag haben; fehlt `hasProposal`, gilt: kein Vorschlag.
+function proposedCount(open, color) {
+  return open.filter((entry) => entry.color === color && entry.hasProposal).length;
+}
+
+// Schritte für offene Hindernisse, geteilt von allen Abschlussberichten. `alle` (`followup`) erreicht nur die
+// `proposed` Hindernisse mit Vorschlag; die übrigen behebt der Mensch selbst. `orSelf` steht in Klammern
+// hinter dem Einarbeiten-Schritt, `selfFix` leitet den eigenen Schritt vor `rerun` ein.
+function blockedSteps({ openRed, proposed, followup, rerun, orSelf, selfFix }) {
+  const rest = Math.max(0, openRed - proposed);
   if (rest === 0) {
-    const count = input.openRed === 1 ? 'Das Hindernis' : `Die ${input.openRed} Hindernisse`;
-    return [[`${count} einarbeiten lassen (oder das Dokument selbst anpassen):`, followupCommand(input)], ['Danach erneut prüfen:', rerun]];
+    const count = openRed === 1 ? 'Das Hindernis' : `Die ${openRed} Hindernisse`;
+    return [[`${count} einarbeiten lassen (${orSelf}):`, followup], ['Danach erneut prüfen:', rerun]];
   }
-  const selfEdit = 'Das Dokument selbst anpassen, dann erneut prüfen:';
   if (proposed === 0) {
     const count = rest === 1 ? 'Das Hindernis hat' : `Die ${rest} Hindernisse haben`;
-    return [[`${count} keinen Lösungsvorschlag. ${selfEdit}`, rerun]];
+    return [[`${count} keinen Lösungsvorschlag. ${selfFix}`, rerun]];
   }
   const count = proposed === 1 ? 'Das Hindernis' : `Die ${proposed} Hindernisse`;
   const others = rest === 1 ? 'Das übrige Hindernis hat' : `Die ${rest} übrigen Hindernisse haben`;
-  return [[`${count} mit Lösungsvorschlag einarbeiten lassen:`, followupCommand(input)], [`${others} keinen Lösungsvorschlag. ${selfEdit}`, rerun]];
+  return [[`${count} mit Lösungsvorschlag einarbeiten lassen:`, followup], [`${others} keinen Lösungsvorschlag. ${selfFix}`, rerun]];
 }
 
-function hintSteps(input, hints, proposed) {
+// Schritte für offene Hinweise, geteilt von allen Abschlussberichten; `closing` sind die abschließenden Schritte.
+function hintSteps({ hints, proposed, followup, selfFix, closing }) {
   const rest = hints - proposed;
-  const selfEdit = 'Bei Bedarf das Dokument selbst anpassen (optional).';
   const list = [];
   if (proposed > 0) {
     const count = proposed === 1 ? 'Den Hinweis' : `Die ${proposed} Hinweise`;
-    list.push([`${count}${rest > 0 ? ' mit Lösungsvorschlag' : ''} einarbeiten lassen (optional):`, followupCommand(input)]);
+    list.push([`${count}${rest > 0 ? ' mit Lösungsvorschlag' : ''} einarbeiten lassen (optional):`, followup]);
   }
   if (rest > 0) {
     const others = proposed > 0 ? ['Der übrige Hinweis hat', `Die ${rest} übrigen Hinweise haben`] : ['Der Hinweis hat', `Die ${rest} Hinweise haben`];
-    list.push(`${rest === 1 ? others[0] : others[1]} keinen Lösungsvorschlag. ${selfEdit}`);
+    list.push(`${rest === 1 ? others[0] : others[1]} keinen Lösungsvorschlag. ${selfFix}`);
   }
-  return [...list, ...closingSteps(input)];
+  return [...list, ...closing];
 }
+
+const DOCUMENT_TEXTS = {
+  orSelf: 'oder das Dokument selbst anpassen',
+  selfFix: 'Das Dokument selbst anpassen, dann erneut prüfen:',
+  selfFixOptional: 'Bei Bedarf das Dokument selbst anpassen (optional).',
+};
 
 function steps(input, kind, open) {
   const rerun = `/dv-forge:${input.review} ${input.artifact}`;
-  const proposed = (color) => open.filter((entry) => entry.color === color && entry.hasProposal).length;
+  const followup = followupCommand(input);
   if (kind === 'incomplete') return [['Den Lauf in einer frischen Session erneut starten:', rerun]];
   if (kind === 'questions') return questionSteps(input);
-  if (kind === 'blocked') return blockedSteps(input, proposed('red'));
-  if (kind === 'hints') return hintSteps(input, open.filter((entry) => entry.color === 'yellow').length, proposed('yellow'));
+  if (kind === 'blocked') return blockedSteps({ openRed: input.openRed, proposed: proposedCount(open, 'red'), followup, rerun, orSelf: DOCUMENT_TEXTS.orSelf, selfFix: DOCUMENT_TEXTS.selfFix });
+  if (kind === 'hints') {
+    const hints = open.filter((entry) => entry.color === 'yellow').length;
+    return hintSteps({ hints, proposed: proposedCount(open, 'yellow'), followup, selfFix: DOCUMENT_TEXTS.selfFixOptional, closing: closingSteps(input) });
+  }
   return closingSteps(input);
 }
 
@@ -154,4 +168,4 @@ function renderReportText(input) {
   ].map((block) => block.join('\n')).join('\n\n');
 }
 
-module.exports = { renderReportText, openLines, section, stepLines, viewpointsPhrase };
+module.exports = { renderReportText, openLines, section, stepLines, viewpointsPhrase, proposedCount, blockedSteps, hintSteps };

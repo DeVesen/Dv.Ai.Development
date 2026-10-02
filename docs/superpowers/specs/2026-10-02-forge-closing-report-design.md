@@ -91,7 +91,7 @@ Abschnitte in dieser Reihenfolge; ein Abschnitt ohne Einträge entfällt, außer
 1. **Kopf:** `## <Titel> · Ergebnis · <Thema>` (`<Titel>` aus `--titel`, `<Thema>` erste `# `-Überschrift des Dokuments, sonst entfällt ` · <Thema>`).
 2. **Ergebnis-Zeile** nach Status:
    - `sauber …`: `**Ergebnis:** ✅ <Bereit>` mit `<Bereit>` = `Bereit zum Planen` (spec-review) bzw. `Bereit zur Umsetzung` (plan-review); bei offenen 🟡 dazu ` · <n> kleine Hinweise offen` (`1 kleiner Hinweis offen`).
-   - `nicht bereit, k × 🔴 offen`: `**Ergebnis:** ⛔ Noch nicht bereit · <k> Hindernisse offen` (`1 Hindernis offen`).
+   - `nicht bereit, k × 🔴 offen` oder offene 🔴 in der Liste offener Gruppen (4.4): `**Ergebnis:** ⛔ Noch nicht bereit · <k> Hindernisse offen` (`1 Hindernis offen`).
    - `Fragen offen`: `**Ergebnis:** ❓ <q> Fragen offen` (`1 Frage offen`).
    - `unvollständig, ausgefallen: …`: `**Ergebnis:** ⚠️ Unvollständig · <Namen> ausgefallen`.
 3. **Ablauf-Zeile:** `Ablauf: Prüfung aus <Zahlwort> Blickwinkeln, <keine|eine> Überarbeitung, <keine|eine> Nachprüfung.` (Zahl aus `reviewers` in `einstufung.json`, ohne das Feld die Zahl der verschiedenen Reviewer in den Gruppen; Zahlwörter für 1 bis 6, sonst Ziffern; bei 1 „aus einem Blickwinkel"). Im Followup: `Ablauf: <n> gewählte Vorschläge umgesetzt, <keine|eine> Nachprüfung.`
@@ -108,12 +108,14 @@ Abschnitte in dieser Reihenfolge; ein Abschnitt ohne Einträge entfällt, außer
 | Status | Schritte (Spec-Review) | Schritte (Plan-Review) |
 |---|---|---|
 | `sauber`, keine 🟡 | 1. Spec committen. 2. Plan schreiben: `/dv-forge:plan-writing <A>` | 1. Spec und Plan committen (der Orchestrator fragt danach). 2. Umsetzen in einer frischen Session: `/dv-forge:implementation <A>` |
-| `sauber`, <n> 🟡 | 1. Die <n> Hinweise einarbeiten lassen (optional): `/dv-forge:review-followup <A> alle`. Dann wie oben | wie links, mit Plan-Befehlen |
-| `nicht bereit` | 1. Die <k> Hindernisse einarbeiten lassen: `/dv-forge:review-followup <A> alle`, oder das Dokument selbst anpassen. 2. Danach erneut prüfen: `/dv-forge:spec-review <A>` | dasselbe mit `/dv-forge:plan-review <A>` |
+| `sauber`, <n> 🟡, davon <p> mit Scout-Vorschlag | <p> = <n>: 1. Den Hinweis / Die <n> Hinweise einarbeiten lassen (optional): `/dv-forge:review-followup <A> alle`. 0 < <p> < <n>: 1. Den Hinweis / Die <p> Hinweise mit Lösungsvorschlag einarbeiten lassen (optional): `/dv-forge:review-followup <A> alle` 2. `Der übrige Hinweis hat` / `Die <n−p> übrigen Hinweise haben` `keinen Lösungsvorschlag. Bei Bedarf das Dokument selbst anpassen (optional).` <p> = 0: 1. `Der Hinweis hat` / `Die <n> Hinweise haben` `keinen Lösungsvorschlag. Bei Bedarf das Dokument selbst anpassen (optional).` Dann jeweils wie oben | wie links, mit Plan-Befehlen |
+| `nicht bereit`, <k> 🔴, davon <p> mit Scout-Vorschlag | <p> = <k>: 1. Das Hindernis / Die <k> Hindernisse einarbeiten lassen (oder das Dokument selbst anpassen): `/dv-forge:review-followup <A> alle` 2. Danach erneut prüfen: `/dv-forge:spec-review <A>`. 0 < <p> < <k>: 1. Das Hindernis / Die <p> Hindernisse mit Lösungsvorschlag einarbeiten lassen: `/dv-forge:review-followup <A> alle` 2. `Das übrige Hindernis hat` / `Die <k−p> übrigen Hindernisse haben` `keinen Lösungsvorschlag. Das Dokument selbst anpassen, dann erneut prüfen:` `/dv-forge:spec-review <A>`. <p> = 0: 1. `Das Hindernis hat` / `Die <k> Hindernisse haben` `keinen Lösungsvorschlag. Das Dokument selbst anpassen, dann erneut prüfen:` `/dv-forge:spec-review <A>` | dasselbe mit `/dv-forge:plan-review <A>` |
 | `Fragen offen` | 1. Die Fragen beantworten, indem du die Prüfung erneut startest: `/dv-forge:spec-review <A>` | 1. Die Spec anpassen. 2. `/dv-forge:spec-review <Spec>`, dann `/dv-forge:plan-review <A>` erneut |
 | `unvollständig` | 1. Den Lauf in einer frischen Session erneut starten: `/dv-forge:spec-review <A>` | dasselbe mit `/dv-forge:plan-review <A>` |
 
-Im Followup gilt die Spalte des Original-Reviews; ist `offen` leer und der Status `sauber`, die Zeile `sauber`.
+`alle` erreicht nur offene Gruppen mit gesichertem Scout-Vorschlag; deshalb steht `/dv-forge:review-followup <A> alle` nur in den Schritten, wenn mindestens eine offene Gruppe der Stufe einen hat, und nennt deren Zahl.
+
+Im Followup gilt die Spalte des Original-Reviews. Art des Ergebnisses und Zahl der Hindernisse ergeben sich dort aus der Liste offener Gruppen (4.4), nicht allein aus dem Status: eine nicht gewählte offene 🔴 macht den Bericht `nicht bereit`, auch wenn der Followup-Status `sauber …` lautet. Ist nichts offen und der Status `sauber`, gilt die Zeile `sauber`. Die Commit-Frage des Plans (`Plan ist bereit. Soll ich Spec und Plan jetzt committen?`) stellt das Followup nur bei sauberem Bericht: Ergebnis-Zeile `✅ Bereit zur Umsetzung` und kein Abschnitt `### Noch offen · Hindernis`.
 
 ### 4.4 Nur offene Gruppen werden gesichert (`writeClosing`)
 

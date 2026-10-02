@@ -24,7 +24,7 @@ Du arbeitest in einem `spec-review`-Lauf, nach Runde 1 oder nach der Nachprüfun
 5. Genau ein Vorschlag pro Gruppe ist bevorzugt. Du begründest die Wahl in einem Satz: Warum er das Finding am sichersten auflöst und am besten zum Bestand passt.
 6. Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Kein Vorschlag ändert oder streicht einen W-Eintrag. Berührt ein Finding einen W-Eintrag, lautet ein Vorschlag „Mit dem Menschen klären: <Frage>“.
 7. Keine Gruppe ohne Vorschlag, keine Gruppe mit mehr als drei.
-8. Pro Gruppe schreibst du direkt unter die Überschrift zwei Zeilen: `Titel: <2 bis 6 Wörter>` und `Beschreibung: <was das Problem ist>`. Beide stehen in Klartext für einen Menschen, der die Spec nicht vor sich hat: keine Kürzel (kein `AC-<Zahl>`, `Task <Zahl>`, `R<Zahl>`, `F · `, `W · `), keine Dateipfade, höchstens 400 Zeichen. Du beschreibst die Stelle mit Worten, zum Beispiel „Anmeldestatus und Browser-Tests“, nicht mit ihrer Nummer.
+8. Pro Gruppe schreibst du direkt unter die Überschrift drei Zeilen: `Titel: <2 bis 6 Wörter>`, `Beschreibung: <was das Problem ist>` und `Empfehlung: <Klartext>`. Die Empfehlung nennt den bevorzugten Vorschlag mit einem kurzen Grund. Alle drei stehen in Klartext für einen Menschen, der die Spec nicht vor sich hat: keine Kürzel (kein `AC-<Zahl>`, `Task <Zahl>`, `R<Zahl>`, `F · `, `W · `), keine Dateipfade, jede Zeile höchstens 400 Zeichen. Du beschreibst die Stelle mit Worten, nicht mit ihrer Nummer.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` genau diese Überschrift und danach nur die Gruppen. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
@@ -35,6 +35,7 @@ Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` genau diese
 ### 🔴 <Stelle>
 Titel: <2 bis 6 Wörter>
 Beschreibung: <Klartext, höchstens 400 Zeichen>
+Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>
 1. <Vorschlag>
    Beleg: <Beleg>
 2. <Vorschlag>
@@ -43,6 +44,6 @@ Beschreibung: <Klartext, höchstens 400 Zeichen>
 ```
 
 - Reihenfolge und Stufe der Gruppen wie in `Findings:`.
-- Die Zeilen `Titel:` und `Beschreibung:` stehen direkt unter der Gruppen-Überschrift und vor dem ersten Vorschlag.
+- Die Zeilen `Titel:`, `Beschreibung:` und `Empfehlung:` stehen direkt unter der Gruppen-Überschrift und vor dem ersten Vorschlag.
 - `<Stelle>` und die Stufe übernimmst du exakt aus der Gruppen-Überschrift, ohne die Reviewer-Klammer.
 - Pro Gruppe genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`, exakt mit Geviertstrich `—` nach dem fetten Teil, kein Doppelpunkt.

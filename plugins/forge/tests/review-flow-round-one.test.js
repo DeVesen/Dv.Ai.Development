@@ -443,8 +443,8 @@ test('rate_ScriptFindingWithoutLocation_ExitsWithOneAndReason', () => {
 
 const PLAIN_SCOUT = [
   '## Scout-Vorschläge', '',
-  '### 🔴 AC-04', 'Titel: Eingabe bei leerem Feld', 'Beschreibung: Offen ist, was bei leerer Eingabe gilt.', '1. D festlegen.', '2. E streichen.', '**Bevorzugt: 1** — passt zum Bestand.', '',
-  '### 🟡 AC-07', 'Titel: Eindeutige Formulierung', 'Beschreibung: Der Satz hat zwei Lesarten.', '1. H schärfen.', '**Bevorzugt: 1** — eindeutig.', '',
+  '### 🔴 AC-04', 'Titel: Eingabe bei leerem Feld', 'Beschreibung: Offen ist, was bei leerer Eingabe gilt.', 'Empfehlung: Variante eins wählen, weil sie das Risiko senkt.', '1. D festlegen.', '2. E streichen.', '**Bevorzugt: 1** — passt zum Bestand.', '',
+  '### 🟡 AC-07', 'Titel: Eindeutige Formulierung', 'Beschreibung: Der Satz hat zwei Lesarten.', 'Empfehlung: Variante eins wählen, weil sie das Risiko senkt.', '1. H schärfen.', '**Bevorzugt: 1** — eindeutig.', '',
 ].join('\n');
 
 function scoutCheckSpec(scoutText, review = 'spec-review') {
@@ -485,8 +485,23 @@ test('scoutCheck_SpecReviewDescriptionOverFourHundred_Invalid', () => {
   assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Beschreibung: länger als 400 Zeichen (401)\n');
 });
 
-test('scoutCheck_PlanReviewOrNoReviewWithoutTexts_StaysOk', () => {
-  const plain = PLAIN_SCOUT.replace(/^(Titel|Beschreibung): .*\n/gm, '');
-  assert.equal(scoutCheckSpec(plain, 'plan-review'), 'SCOUT ok\n');
+test('scoutCheck_PlanReviewWithAllTexts_Ok', () => {
+  assert.equal(scoutCheckSpec(PLAIN_SCOUT, 'plan-review'), 'SCOUT ok\n');
+});
+
+test('scoutCheck_PlanReviewWithoutTitle_InvalidAndImplementationReviewAndNoReviewStayOk', () => {
+  const plain = PLAIN_SCOUT.replace(/^(Titel|Beschreibung|Empfehlung): .*\n/gm, '');
+  assert.equal(scoutCheckSpec(plain, 'plan-review'), 'SCOUT ungültig: 🔴 AC-04: Titel fehlt\n');
+  assert.equal(scoutCheckSpec(plain, 'implementation-review'), 'SCOUT ok\n');
   assert.equal(scoutCheckSpec(plain, null), 'SCOUT ok\n');
+});
+
+test('scoutCheck_SpecReviewWithoutRecommendation_Invalid', () => {
+  const text = PLAIN_SCOUT.replace('Empfehlung: Variante eins wählen, weil sie das Risiko senkt.\n', '');
+  assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Empfehlung fehlt\n');
+});
+
+test('scoutCheck_SpecReviewRecommendationWithShorthand_Invalid', () => {
+  const text = PLAIN_SCOUT.replace('Variante eins wählen, weil sie das Risiko senkt.', 'Task 3 ändern.');
+  assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Empfehlung: Kürzel Task 3\n');
 });

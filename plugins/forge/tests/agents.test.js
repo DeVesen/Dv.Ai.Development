@@ -624,3 +624,13 @@ test('spec-rework_Body_QuestionsAndChangesInPlainLanguageWithoutShorthand', () =
   assert.equal(body.includes('"cases"'), false);
   assert.equal(body.includes('"rule"'), false);
 });
+
+test('scouts_SpecAndPlan_DescribeTitleDescriptionRecommendationInPlainLanguage', () => {
+  for (const name of ['spec-review-scout', 'plan-review-scout']) {
+    const { body } = readAgent(name);
+    for (const part of ['`Titel: <2 bis 6 Wörter>`', '`Beschreibung: <was das Problem ist>`', '`Empfehlung: <Klartext>`', 'höchstens 400 Zeichen', '`AC-<Zahl>`', '`Task <Zahl>`']) {
+      assert.ok(body.includes(part), `${name}: ${part}`);
+    }
+    assert.ok(body.includes('Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>'), `${name}: Beispiel`);
+  }
+});

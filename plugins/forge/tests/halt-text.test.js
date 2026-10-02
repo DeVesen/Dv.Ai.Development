@@ -19,8 +19,8 @@ const bundle = (overrides) => ({
   recommendation: 'a', reason: 'ein Fehler träfe sonst alle Nutzer.', places: ['AC-01'], ...overrides,
 });
 const TEXTS = [
-  { severity: '🔴', location: 'AC-04', title: 'Anmeldestatus und Browser-Tests', description: 'Es war nirgends festgelegt, woran die App erkennt, dass jemand angemeldet ist.' },
-  { severity: '🟡', location: 'AC-07', title: 'Antwort bei fremdem Token', description: 'Offen war, ob 401 oder 403 kommt.' },
+  { severity: '🔴', location: 'AC-04', title: 'Anmeldestatus und Browser-Tests', description: 'Es war nirgends festgelegt, woran die App erkennt, dass jemand angemeldet ist.', recommendation: 'Eine Variante festlegen, weil das Risiko sinkt.' },
+  { severity: '🟡', location: 'AC-07', title: 'Antwort bei fremdem Token', description: 'Offen war, ob 401 oder 403 kommt.', recommendation: 'Eine Variante festlegen, weil das Risiko sinkt.' },
 ];
 
 function input(overrides = {}) {
@@ -117,7 +117,7 @@ test('renderHalt_EmptyReviewers_OmitsAngleInQuestion', () => {
 });
 
 test('renderHalt_ScoutTitleInvalid_UsesFallback', () => {
-  const texts = [{ severity: '🔴', location: 'AC-04', title: 'Zu viele Wörter im Titel hier drin', description: 'Eine gültige Beschreibung.' }];
+  const texts = [{ severity: '🔴', location: 'AC-04', title: 'Zu viele Wörter im Titel hier drin', description: 'Eine gültige Beschreibung.', recommendation: 'Eine Variante festlegen, weil das Risiko sinkt.' }];
   const text = renderHalt(input({ texts, groups: [group()], results: [{ location: 'AC-04', status: 'changed', change: 'Geändert.' }], bundles: [] }));
   assert.ok(text.includes('- 🔴 **AC-04** · Blickwinkel: Vollständigkeit, Klarheit\n  Folge des Findings (ohne Scout-Beschreibung)'));
 });

@@ -8,8 +8,9 @@ const { plainProblem } = require('./plain-text');
 
 const TITLE_LINE = /^Titel: (.*)$/;
 const DESCRIPTION_LINE = /^Beschreibung: (.*)$/;
+const RECOMMENDATION_LINE = /^Empfehlung: (.*)$/;
 const TITLE_WORDS = { min: 2, max: 6 };
-const TEXT_REVIEW = 'spec-review';
+const TEXT_REVIEWS = ['spec-review', 'plan-review'];
 
 function groupId(group) {
   return `${group.severity} ${group.location}`;
@@ -27,7 +28,7 @@ function groupProblem(group) {
   return preferredProblem(group);
 }
 
-// Titel und Beschreibung stehen direkt unter der Gruppen-Überschrift, vor dem ersten Vorschlag.
+// Titel, Beschreibung und Empfehlung stehen direkt unter der Gruppen-Überschrift, vor dem ersten Vorschlag.
 function scoutTexts(lines) {
   const start = lines.findIndex((line) => SCOUT_HEADING.test(line));
   const groups = [];
@@ -36,7 +37,7 @@ function scoutTexts(lines) {
   for (const line of start === -1 ? [] : lines.slice(start + 1)) {
     const heading = GROUP_HEADING.exec(line);
     if (heading) {
-      current = { severity: heading[1], location: heading[2], title: null, description: null };
+      current = { severity: heading[1], location: heading[2], title: null, description: null, recommendation: null };
       groups.push(current);
       proposalSeen = false;
     } else if (current) {
@@ -45,6 +46,8 @@ function scoutTexts(lines) {
       const description = proposalSeen ? null : DESCRIPTION_LINE.exec(line);
       if (title && current.title === null) current.title = title[1].trim();
       if (description && current.description === null) current.description = description[1].trim();
+      const recommendation = proposalSeen ? null : RECOMMENDATION_LINE.exec(line);
+      if (recommendation && current.recommendation === null) current.recommendation = recommendation[1].trim();
     }
   }
   return groups;
@@ -62,18 +65,21 @@ function textsProblem(texts) {
   const title = plainProblem(texts.title);
   if (title) return `Titel: ${title}`;
   const description = plainProblem(texts.description);
-  return description ? `Beschreibung: ${description}` : null;
+  if (description) return `Beschreibung: ${description}`;
+  if (!texts.recommendation) return 'Empfehlung fehlt';
+  const recommendation = plainProblem(texts.recommendation);
+  return recommendation ? `Empfehlung: ${recommendation}` : null;
 }
 
 // Jede Gruppe der Scout-Eingabe hat ein bis drei Vorschläge, genau einer bevorzugt; andere Gruppen gibt es nicht.
-// Beim Spec-Review tragen sie zusätzlich Titel und Beschreibung in Klartext.
+// Beim Spec- und Plan-Review tragen sie zusätzlich Titel, Beschreibung und Empfehlung in Klartext.
 function checkScout(dir, review) {
   const expected = parseRework(readLines(path.join(dir, 'scout-eingabe.md'))).map(groupId);
   const file = path.join(dir, 'scout.md');
   if (!fs.existsSync(file)) return 'SCOUT ungültig: Ergebnisdatei fehlt';
   const lines = readLines(file);
   const groups = new Map(parseScout(lines).map((group) => [groupId(group), group]));
-  const texts = review === TEXT_REVIEW ? new Map(scoutTexts(lines).map((group) => [groupId(group), group])) : null;
+  const texts = TEXT_REVIEWS.includes(review) ? new Map(scoutTexts(lines).map((group) => [groupId(group), group])) : null;
   const problemOf = (id) => groupProblem(groups.get(id)) ?? (texts ? textsProblem(texts.get(id)) : null);
   const wrong = expected.map((id) => [id, problemOf(id)]).find(([, problem]) => problem);
   if (wrong) return `SCOUT ungültig: ${wrong[0]}: ${wrong[1]}`;
@@ -81,4 +87,21 @@ function checkScout(dir, review) {
   return extra.length > 0 ? `SCOUT ungültig: Gruppe nicht in der Eingabe: ${extra.join(', ')}` : 'SCOUT ok';
 }
 
-module.exports = { checkScout, preferredProblem, scoutTexts, textsProblem };
+// Zeilen jeder Gruppe, von ihrer Überschrift bis vor die nächste; Grundlage der Sicherung offener Gruppen.
+function scoutBlocks(lines) {
+  const start = lines.findIndex((line) => SCOUT_HEADING.test(line));
+  const blocks = new Map();
+  let current = null;
+  for (const line of start === -1 ? [] : lines.slice(start + 1)) {
+    const heading = GROUP_HEADING.exec(line);
+    if (heading) {
+      current = [line];
+      blocks.set(`${heading[1]} ${heading[2]}`, current);
+    } else if (current) {
+      current.push(line);
+    }
+  }
+  return blocks;
+}
+
+module.exports = { checkScout, preferredProblem, scoutTexts, scoutBlocks, textsProblem };

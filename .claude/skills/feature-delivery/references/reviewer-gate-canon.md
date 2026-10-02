@@ -1,7 +1,7 @@
 # Reviewer-Gate — gemeinsamer Prüf- und Einstufungs-Kanon
 
 **Eine Quelle für alle feature-delivery-Reviewer.** Jeder Reviewer-Prompt (Impl-Review-Loop *und*
-Delivery-Inspection) bindet diesen Kanon ein; der Dispatcher (PL bzw. Terminal-PM) setzt beim Spawn
+Delivery-Inspection) bindet diesen Kanon ein; die **Session** (der einzige Dispatcher) setzt beim Spawn
 die Linse `{{LINSE}}` ein. **Nicht kopieren — referenzieren.** Amendments passieren hier einmal.
 
 **Geltungsbereich:** §1–§7 (Beleg-Pflicht, Konsequenz-Einstufung, Tripwire, Design-Cut, YAGNI,
@@ -15,8 +15,8 @@ Du bist Reviewer und prüfst den bereitgestellten Diff/Deliverable **ausschließ
 Du lieferst einen **Befund + eine linsen-lokale Lesart**. Du fixst nichts, setzt keinen Status,
 startest keine weitere Runde.
 
-> **Hoheit (verbindlich):** Deine `🔴/🟡` sind **Vorschläge**, deine `CLEAN/BLOCKED`-Zeile ist eine
-> **linsen-lokale Lesart** — **kein** Gate-Entscheid. Die **autoritative** Tier-Vergabe trifft der PL
+> **Hoheit (verbindlich):** Deine `🔴/🟡/🟢` sind **Vorschläge**, deine `CLEAN/BLOCKED`-Zeile ist eine
+> **linsen-lokale Lesart** — **kein** Gate-Entscheid. Die **autoritative** Tier-Vergabe trifft das Digest-Leaf
 > beim Digest-Bau, das Gate schließt die Session über den mechanischen Tier-Guard. Regeln dafür:
 > [secondbrain-schema.md → ## Tier-Klassifikation](secondbrain-schema.md). Der Kanon regelt nur *dein*
 > Blockier-/Meldeverhalten und die Qualität deines Vorschlags.
@@ -40,12 +40,13 @@ PL-Auto-🔴-Regel nichts.)*
 |------|-----------|---------|
 | 🔴 **Blocking** | Erzeugt JETZT einen Defekt oder macht Gefordertes unmöglich: echter Bug / kaputte Funktion · exploitierbare Security-Lücke · Datenverlust/-korruption · Regression an Bestehendem · struktureller Design-Verstoß, der einen geforderten Test/eine geforderte Änderung konkret verhindert | blockt Abnahme |
 | 🟡 **Important** | Erhöht *nachweisbar* Zukunftskosten/Risiko, ohne akuten Defekt | melden, blockt nicht |
+| 🟢 **Minor** | Reine Präferenz/Politur | notieren, blockt nie |
 
 ## 3 — Präferenz-Tripwire (bei JEDEM Finding anwenden)
 Enthält deine Formulierung „sauberer / eleganter / idiomatischer / best practice / ich würde eher /
 könnte man auch" (die Liste ist **illustrativ** — jedes Synonym in DE/EN wie „cleaner / more
-maintainable / would be nicer" fällt darunter) UND du kannst **keine** konkrete Folge anhängen
-→ **kein Finding** — nicht aufführen.
+maintainable / would be nicer" fällt darunter) UND du kannst **keine** konkrete Folge anhängen → das
+Finding ist **per Definition 🟢**. Nicht auf 🔴/🟡 heben, keinen Rewrite vorschlagen.
 
 ## 4 — Design-Prinzipien: strukturell BINÄR prüfen, ästhetisch über den Tripwire
 Trenne nach der Achse *strukturell/zählbar* vs. *urteilend/ästhetisch*:
@@ -61,7 +62,7 @@ Trenne nach der Achse *strukturell/zählbar* vs. *urteilend/ästhetisch*:
   - Einstufung: meist **🟡** (Zukunftskosten); **🔴** nur, wenn ein geforderter Test/eine Änderung
     konkret verhindert wird.
 - **Urteilend/ästhetisch** (SRP-„eine Verantwortung", Abstraktions-Geschmack, Naming) → **Tripwire
-  (§3)**: ohne benennbare Folge = **kein Finding** (nicht aufführen).
+  (§3)**: ohne benennbare Folge = 🟢.
 
 ## 5 — YAGNI-Kappe
 Fordere NIE mehr Struktur/Abstraktion, als die Anforderung braucht. Spekulative Generalität ist selbst
@@ -69,7 +70,7 @@ ein 🟡-Finding (gegen Over-Engineering), kein Verbesserungsauftrag. Erfinde **
 prüfe *Gefordertes gegen Gebautes*; nicht erbetener Scope ist nie 🔴.
 
 **Grenze vorbestehender Defekte:** Ein Defekt in Code, den der Diff **nicht** berührt, ist out-of-scope
-→ nie 🔴 — nicht melden. Berührt der Diff die Stelle und ist sie jetzt falsch → 🔴 (§2).
+→ nie 🔴 (höchstens 🟢-Notiz). Berührt der Diff die Stelle und ist sie jetzt falsch → 🔴 (§2).
 Grenzfrage: *hat der Diff es verursacht/berührt?*
 
 ## 6 — Integritäts-Verbote (beide Richtungen)
@@ -89,7 +90,7 @@ erledigt ist — du jagst **keine** neuen Kategorien.
 durch den Fix **neu eingeführter Defekt der §2-🔴-Klasse** (insbesondere eine Regression) ist davon
 ausgenommen — er wird gemeldet und geht in die Schleife. Das ist Regressionsschutz am selben
 Deliverable, kein Drehen; sonst wäre die `🔴==0`-Aussage des Tier-Guards gelogen. Nur neue **nicht-🔴**
-Beobachtungen werden nicht gemeldet — sie gehen nicht in die Schleife.
+Beobachtungen bleiben 🟢-only und gehen nie in die Schleife.
 
 ## 8 — Ausgabe-Format
 1. **Lesart (linsen-lokal):** `CLEAN` (0 🔴-Vorschlag) oder `BLOCKED` (≥1 🔴-Vorschlag) + ein Satz
@@ -101,7 +102,7 @@ Beobachtungen werden nicht gemeldet — sie gehen nicht in die Schleife.
    |------|------|:---:|--------|------------------|
    | src/... | 42 | 🔴 | <ein Satz: was ist falsch> | <konkrete Eingabe/Zustand → falsches Ergebnis/Crash> |
 
-   **Eine Tier-Achse.** Spalte `Tier-Vorschlag` trägt genau **🔴/🟡** — kein zweites
+   **Eine Tier-Achse.** Spalte `Tier-Vorschlag` trägt genau **🔴/🟡/🟢** — kein zweites
    Severity-Vokabular (`[KRITISCH]/[WESENTLICH]/[FORMAL]` u. ä. entfällt). Die Linse ist über den
    Dateinamen `finding-{{LINSE}}.md` fixiert — keine eigene Spalte.
 3. **Lens-mandatierte Positiv-Ausgaben** (PRESERVE-Liste · Ship-/Go-No-Go-Entscheid · AC-Bestätigung ·
@@ -119,4 +120,4 @@ Beobachtungen werden nicht gemeldet — sie gehen nicht in die Schleife.
 - **Woran gemessen wird** (Design-Nordstern): [../../software-design-principles/SKILL.md](../../software-design-principles/SKILL.md).
 - **Herkunft:** Superpowers-Stil (`obra/superpowers`), konsolidiert aus dem Reviewer-Gate-Kanon
   (Memory `reviewer-gate-canon`). Sechs Schärfungs-Entscheidungen: Verdikt beratend · Security-Carve-out
-  · Positiv-Output-Carve-out · §7-Regressions-Split · eine Referenzdatei · eine binäre 🔴/🟡-Achse.
+  · Positiv-Output-Carve-out · §7-Regressions-Split · eine Referenzdatei · eine 🔴/🟡/🟢-Achse.

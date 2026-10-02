@@ -1,36 +1,112 @@
 ---
 name: commit-message
 description: >
-  Generates an English commit title (max 50 characters) and commit description
-  (max 500 characters) from the current conversation context, optional task-*.md
-  or Story ID, and optionally read-only git diff/status when local changes are
-  the source. Triggers: commit message, commit description, commit beschreibung,
-  Commit-Titel, Commit-Beschreibung, erstelle commit, create commit message.
-  Buddy-agent applies this skill on those triggers. Not for formal ADO copy line
-  Commit-Vorschlag für Task … in Story … (see ado-requests-stories / ado-agent).
+  Use when creating a git commit message: /commit, "commit message schreiben",
+  "schreib den commit", "was soll ich committen", "commit text", "commit fuer die Aenderungen".
+  Conventional Commits with mandatory work-item scope (AB#123, JIRA-456, #78).
+  Outputs a code block only — never executes git commit.
 ---
 
-# Commit message
+## Ablauf
 
-Portable skill: generate a commit-ready English title and body from current context without executing `git commit` unless the user explicitly asks.
+### 1 — Git-Zustand lesen
 
-## Operationen
+```bash
+git status
+git diff
+git diff --staged
+```
 
-| Trigger | Operation | Detail |
-|---------|-----------|--------|
-| `commit message`, `commit description`, `Commit-Beschreibung`, `Commit-Titel`, `erstelle commit`, `create commit message` | Commit-Nachricht aus Kontext generieren | [references/op-generate.md](references/op-generate.md) |
+Alle drei ausführen — staged und unstaged zusammen ergeben das vollständige Bild.
 
-**Vor Ausführung:** relevante `op-*.md` vollständig lesen.
+### 1.5 — Auto-Review (entfällt bei `ohne review`)
 
-## Abgrenzung
+Wenn der Trigger `ohne review` oder `--no-review` enthält → Schritt 1.5 überspringen.
+Enthält `git diff --staged --name-only` keine Code-Dateien (nur `.md`, `.txt`, Bilder) → Schritt 1.5 überspringen; der Review-Server prüft nur .NET- und Angular-Code.
 
-| Trigger | Handler | Description limit |
-|---------|---------|-------------------|
-| `Commit-Beschreibung`, `commit message`, `erstelle commit` (Buddy / context) | **this skill** | 500 |
-| `Commit-Vorschlag für Task … in Story …` | ado-requests-stories / ado-agent | 400 + Story # |
+Tool: `codebase-analyzer` → `review_git_diff` mit `staged: true`.
 
-## Opt-out
+| Ergebnis | Verhalten |
+|----------|-----------|
+| **Blocker** vorhanden | Findings ausgeben — kein Commit-Text generieren. Skill endet hier. |
+| Nur **Warnings** | Mit Schritt 2–4 fortfahren; Warnings als `### ⚠️ Review-Hinweise`-Block *nach* dem Commit-Codeblock ausgeben. |
+| Keine Findings | Direkt weiter mit Schritt 2. |
 
-`Commit-Vorschlag für Task … in Story …` → Skill nicht laden, stattdessen [ado/SKILL.md](../ado/SKILL.md) verwenden.
+### 2 — Work-Item ermitteln
 
-Keine Code-Beispiele ohne explizite Nachfrage.
+Reihenfolge (erster Treffer gewinnt):
+
+1. **Explizit im Prompt** — User nennt Work-Item direkt (z. B. „für AB#1234")
+2. **Konversations-Kontext** — Im bisherigen Gespräch genanntes Work-Item
+3. **Branch-Name** — Regex-Extraktion:
+   - `AB#\d+` → Azure DevOps Work-Item
+   - `[A-Z]{2,}-\d+` → Jira-Issue (z. B. `PROJ-42`)
+   - `#\d+` → GitHub-Issue
+4. **Nachfragen** — Kein Treffer: einmalig fragen: *„Welches Work-Item betrifft dieser Commit? (z. B. AB#1234)"*
+
+### 3 — Nachricht generieren
+
+**Format (Conventional Commits):**
+
+```
+<type>(<work-item>): <imperative summary>
+
+[optionaler Body — nur wenn das "Warum" nicht offensichtlich ist]
+```
+
+**Typen:**
+
+| Typ | Wann |
+|-----|------|
+| `feat` | Neue Funktionalität, sichtbares Feature |
+| `fix` | Bugfix |
+| `refactor` | Umstrukturierung ohne Verhaltensänderung |
+| `perf` | Performance-Verbesserung |
+| `test` | Tests hinzufügen oder ändern |
+| `docs` | Nur Dokumentation |
+| `chore` | Tooling, Konfiguration, Dependencies |
+| `build` | Build-System, CI-Konfiguration |
+| `style` | Formatierung, kein Logik-Change |
+| `revert` | Rückgängig machen eines Commits |
+
+**Subject-Zeile:**
+- ≤72 Zeichen (harter Grenzwert)
+- ≤50 Zeichen anstreben
+- Imperativ: „Add", „Fix", „Remove" — nicht „Added", „Fixes", „Removes"
+- Kein Punkt am Ende
+- Work-Item immer im Scope: `feat(AB#1234): Add user profile page`
+
+**Body:**
+- Nur wenn das „Warum" ohne Kontext unklar ist
+- Breaking Changes, Migrations, Security-Fixes → immer Body
+- Leerzeile zwischen Subject und Body
+
+### 4 — Ausgabe
+
+Ausschließlich ein Code-Block:
+
+````
+```
+feat(AB#1234): Add user profile page with avatar upload
+
+Replaces the placeholder with a full edit form. Avatar is stored
+in Blob Storage; URL written to the user record on save.
+```
+````
+
+**Niemals:**
+- `git commit` ausführen
+- KI-Zuschreibung, „This commit", „Claude"
+- Emoji (außer das Projekt verwendet sie konventionell)
+- Mehrere Alternativen anbieten — eine Nachricht, die beste
+
+---
+
+## Qualitätscheck vor Ausgabe
+
+- [ ] Work-Item vorhanden?
+- [ ] Typ korrekt gewählt?
+- [ ] Subject ≤72 Zeichen?
+- [ ] Imperativ-Formulierung?
+- [ ] Body nur wenn nötig?
+- [ ] Review gelaufen oder Opt-out (`ohne review`) dokumentiert?

@@ -2,21 +2,21 @@
 
 Vorlagen zum Kopieren. Platzhalter in eckigen Klammern ersetzen.
 
-**Ausgabe-Stil aller Handoffs: MACHINE-DENSE** — Kein Fliesstext, keine Rollenwiederholung, Key:Value wo ausreichend. Deliverables zurück an den dispatchenden Agent (Plan-Orchestrator bzw. PL/Session-Treiber im Impl-Flow): MACHINE-DENSE. Review-Deliverables: BULLET-TERSE (User-sichtbar).
+**Ausgabe-Stil aller Handoffs: MACHINE-DENSE** — Kein Fliesstext, keine Rollenwiederholung, Key:Value wo ausreichend. Deliverables zurück an den dispatchenden Agent (Plan-Orchestrator bzw. **die Session** im Impl-Flow — nur die Session faechert Sub-Agents): MACHINE-DENSE. Review-Deliverables: BULLET-TERSE (User-sichtbar).
 
 **Agent-Typ (Pflicht):** Profil unter `.claude/agents/`. **Modell:** Agent-Profil lesen; Slugs nicht in Prompts duplizieren.
 
 **Compliance (Pflicht):** Vor jedem Subagent `subagent-delegation-boilerplate.md` in den Task-Prompt.
 
-**Datei-Handoff (Impl-Review-Loop — Pflicht):** Reviewer und Scribes schreiben ihr Deliverable in **eine eigene Datei** unter dem vom PL (`implement-round-executor`) übergebenen Runden-Pfad `requests/plans/<feature>/iteration-N/round-M/` und geben **nur Datei-Pointer + Verdikt-Kurzform** zurück — **kein Report-Body im Agent-Return**. Verzeichnis-Layout, Dateinamen, Tabellen-Schema und Verdikt-Kurzformen: [secondbrain-schema.md](secondbrain-schema.md). Ein Return, der den vollen Report inline enthält, gilt als Regelverstoß gegen das Pointer-only-Format.
+**Datei-Handoff (Impl-Review-Loop — Pflicht):** Reviewer und Scribes schreiben ihr Deliverable in **eine eigene Datei** unter dem von der **Session** übergebenen Runden-Pfad `requests/plans/<feature>/iteration-N/round-M/` und geben **nur Datei-Pointer + Verdikt-Kurzform** zurück — **kein Report-Body im Agent-Return**. Verzeichnis-Layout, Dateinamen, Tabellen-Schema und Verdikt-Kurzformen: [secondbrain-schema.md](secondbrain-schema.md). Ein Return, der den vollen Report inline enthält, gilt als Regelverstoß gegen das Pointer-only-Format.
 
 Vorlagen sind **Auftrags-Payloads** (Platzhalter) — kein Ersatz für Agent-Profile.
 
 **Einstufungs-Kanon (bindend für alle Reviewer-Templates unten — Impl-Review + Delivery-Inspection):**
 Jeder Reviewer liest und befolgt [reviewer-gate-canon.md](reviewer-gate-canon.md) (Linse = seine Rolle) —
-Beleg-Pflicht, 🔴/🟡-Einstufung nach Konsequenz, Präferenz-Tripwire, Ausgabe-Format. Die Templates unten
-spezifizieren nur die **linsen-spezifische** Prüfung + MCP-Pflichten; sie duplizieren den Kanon nicht. Der
-Dispatcher (PL bzw. Terminal-PM) hängt den Kanon-Pointer an jeden Reviewer-Prompt.
+Beleg-Pflicht, 🔴/🟡/🟢-Einstufung nach Konsequenz, Präferenz-Tripwire, Ausgabe-Format. Die Templates unten
+spezifizieren nur die **linsen-spezifische** Prüfung + MCP-Pflichten; sie duplizieren den Kanon nicht. Die
+**Session** (der einzige Dispatcher) hängt den Kanon-Pointer an jeden Reviewer-Prompt — Impl-Review wie Delivery-Inspection.
 
 ---
 
@@ -29,18 +29,56 @@ Plant alle Phasen solo (Opus). Kein Scout, kein Topic-Planer, kein Plan-Review-L
 ```text
 Profil:plan-agent|Planungs-Orchestrator (lean/solo)|kein-Impl
 
-Einstieg: Plan-only (Planung stoppt immer — kein Auto-Implement)
-Ablauf + Phasen + Plan-Coverage-Check + §UA + §8/F1: vollständig in `.claude/agents/plan-agent.md` (lädt `planning-flow.md`)
-
 Feature/Anforderung:
 [Nutzer-Prompt — vollständig]
+
+Einstieg: Plan-only (Planung stoppt immer — kein Auto-Implement)
+  Immer lean/solo: plan-agent plant + prüft + reviewed in sich selbst —
+  keine Scouts, kein Topic-Planer, kein Plan-Review-Loop, kein Plan-Fixer.
+  Test-First-Akzeptanzliste (§8/F1), §UA und Plan-Coverage-Check bleiben Pflicht.
 
 MCP-Pfade (Literale vor Versand eintragen):
   FE: [MCP_FRONTEND_PATH]
   BE-Projekte: [MCP_BE_PROJECTS]
   BE-Solution (optional): [MCP_BACKEND_SOLUTION]
 
-Slug/Persistenz-Pfad: [requests/plans/plan-<feature>.md]
+Phasen-Ablauf (alle solo):
+
+Phase 1+2 — Anforderung klären:
+  Anforderung strukturieren: Ziel, Scope, Nicht-Scope, offene Fragen.
+  Bei Unklarheiten: Nutzer fragen — warten — dann weiter.
+  Bounded-Context-Frage (§12): service-übergreifend? Falls ja: Grenzen,
+  Ubiquitous Language, geteilte vs. service-eigene Modelle explizit benennen.
+
+Phase 4a — Interface-Design / Topic-Map + Teilpläne:
+  Topic-Map + Schnittstellen-Vertrag + Sequence-Diagramm (bei >= 2 Topics).
+  Bounded-Context-Denken: jeden Service als eigene Domäne.
+  Je Topic den Teilplan selbst ausarbeiten inkl. Akzeptanz→Test-Liste (§8/F1):
+  konkrete Testfall-Skizzen mit Testname (<Method>_<Situation>_<Expected>),
+  Arrange/Act/Assert-Stichpunkten, Markierung neu / erweitern / unberührt.
+  Test-Kartierung (§8/F3): bestehende Test-Abdeckung mitkartieren. Vorsicht
+  codebase-analyzer: analyze_coverage (Stale-Reports), detect_untested_public_api
+  (False-Positives bei Integration-Tests) — als Hinweis, nicht alleinige Wahrheit.
+
+Phase 4c — Konsolidierung zur Arbeitsversion:
+  Teilpläne zusammenführen, Drift-Prüfung (Schnittstellen vs. Teilpläne),
+  IMP-Slices konsolidieren, Wellen/Blocking vorbereiten.
+
+Phase 6 — Synthese:
+  Komplexitäts-/Executor-Empfehlung + Umsetzungs-Topologie (Slices/Wellen)
+  + finale Akzeptanz→Test-Liste (§8/F1) + Uncertainty Audit (§UA — Pflicht).
+
+Plan-Coverage-Check (Pflicht, vor Persistenz):
+  Part A: delivery-inspection Sub-Agents auf den fertigen Plan →
+    alle expliziten + impliziten Anforderungen abgedeckt? Findings → Plan patchen → bis sauber.
+  Part B: Orchestrator-Tabelle solo → jeder Plan-Schritt AC + Testname + AAA.
+
+Persistenz (A3): Plan als Datei unter requests/plans/plan-<feature>.md speichern.
+  <feature>-Slug aus Nutzer-Prompt oder ADO-ID.
+
+Nach Persistenz → STOPP (kein Auto-Implement, SKILL.md Story-Gate Schritt 4).
+  Story → planned; §UA-Eintraege beim STOPP melden. Umsetzung erst auf expliziten Implement-Trigger
+  (implementiere <ID> = volle Loops, implementiere nur <ID> = Lean Single-Pass).
 ```
 
 ---
@@ -50,13 +88,16 @@ Slug/Persistenz-Pfad: [requests/plans/plan-<feature>.md]
 ### Session-Treiber (Impl-Flow) — kein Agent-Profil
 
 **Kein Subagent-Payload.** Dies ist der Ablauf, den die **aufrufende Session** selbst fährt (die
-einzige persistente Instanz, FEAT-001/STORY-033). Die Session hält **nur** Index-Pointer +
-PM-Verdikt-Kurzform; sie spawnt je Runde einen frischen PL und danach einen frischen PM via
-Agent-Tool — **kein SendMessage über Runden hinweg**. Kein Reviewer-Report und kein Digest-Body
-liegt je im Session-Fenster.
+einzige persistente Instanz **und der einzige Fan-out-/Collect-Knoten**, FEAT-001/STORY-033).
+Harness-Grundwahrheit: alle `Agent`-Calls sind asynchron, die Completion eines Kindes landet **immer bei
+der Session** — deshalb faechert **nur** die Session (Scribes, Reviewer, Fix-Planer, DI) und faehrt die
+Gates via MCP; die throwaway Leaves (Digest-Leaf, PM-Leaf) dispatchen nichts. Die Session hält **nur**
+Pointer + Verdikt-Kurzform + Tier-Zähler — **kein SendMessage über Runden hinweg**, kein Reviewer-Report
+und kein Digest-Body im Session-Fenster.
 
 ```text
-Rolle: Session-Treiber (thin, pointer-only). Kein Produkt-Code außer Trivial-Edit-Fastpath (s. flow).
+Rolle: Session-Treiber (thin, pointer-only, EINZIGER Fan-out-/Collect-Knoten).
+  Kein Produkt-Code außer Trivial-Edit-Fastpath (s. flow). Kein Leaf faechert — nur die Session.
 
 HARD GATE — Readiness (gilt für implementiere / implementiere nur / From-existing-plan):
   Plan vollständig? Akzeptanz→Test-Liste (§8/F1)? Umsetzungs-Topologie (IMP-Slices, Wellen, Blocking)?
@@ -65,44 +106,48 @@ HARD GATE — Readiness (gilt für implementiere / implementiere nur / From-exis
 SECONDBRAIN anlegen (s. secondbrain-schema.md):
   requests/plans/<feature>/secondbrain-index.md anlegen; Aktuell: Iteration 1 · Runde 1 (= current_round=1); Cap 1/5.
 
-INNER LOOP — je Runde M (frische Instanzen, datei-basierte Kontinuität):
+INNER LOOP — je Runde M (die Session treibt jeden Schritt; frische Leaves, datei-basierte Kontinuität):
   1. current_round M aus secondbrain-index.md LESEN.
-     M > 5 (Cap) und Vorrunden-PM-Verdikt = fix (oder zurückgewiesener Exit) → STOPP: kein PL#M. Final-Gate
+     M > 5 (Cap) und Vorrunden-PM-Verdikt = fix (oder zurückgewiesener Exit) → STOPP: keine neue Runde. Final-Gate
      (wenn Fix-Scribes in Runde 5 liefen): Build + Test via dev-mcp. Dann Aufteilung nach `Tier 🔴 offen`:
-       🔴 == 0 → cap-erzwungener erbsenzaehlerei-exit → weiter wie Schritt 5b (Terminal-PM, DI, Closure + Rest-Findings-Bericht);
-                 der Terminal-PM begründet die offenen 🟡 im pm-verdict-N.md mit „Cap erreicht — auf Folge-Story vertagt".
-       🔴 > 0  → HARD-STOP: KEINE Closure, KEIN Terminal-PM-DI-Span, Story NICHT `reviewed` (bleibt `planned`). Rest-Findings-Bericht
+       🔴 == 0 → cap-erzwungener erbsenzaehlerei-exit → weiter wie Schritt 6b (Outer-Verdikt-Sequenz, Closure + Rest-Findings-Bericht);
+                 das Outer-Verdikt-PM-Leaf begründet die offenen 🟡 im pm-verdict-N.md mit „Cap erreicht — auf Folge-Story vertagt".
+       🔴 > 0  → HARD-STOP: KEINE Closure, KEINE Outer-Verdikt-Sequenz, Story NICHT `reviewed` (bleibt `planned`). Rest-Findings-Bericht
                  (inkl. Liste der offenen 🔴) → gebündelte User-Eskalation (waiven / Cap ausnahmsweise erhöhen / abbrechen).
   2. Verzeichnis iteration-N/round-M/ anlegen.
-  3. FRISCHEN PL spawnen: Agent(implement-round-executor) — Payload s. "PL — Round-Executor".
-     Übergabe: Runden-Pfad, N/M, Planpaket-Pointer + Slice-IDs, (Fix-Runde:) PM-Was+Wie + Vorrunden-Digest-Pointer.
-     PL-Rückgabe: NUR Pointer (digest.md + index) + Verdikt-Kurzform (inkl. Tier-Zähler 🔴/🟡). PL wird verworfen.
-  4. FRISCHEN PM spawnen: Agent(implement-supervisor) — Payload s. "PM — Supervisor".
-     Übergabe: index-Pointer + digest-Pointer + Story-Pfad + Iteration N. PM-Rückgabe: Verdikt-Kurzform. PM wird verworfen.
-  5. Verdikt auswerten (Session hält nur Pointer + Verdikt):
-     fix      → current_round++ → zurück zu Schritt 1 (nächster PL erhält PM-Was+Wie).
+  3. FAN-OUT + COLLECT (die Session dispatcht und sammelt alle Pointer ein — hier landen die Completions):
+     a. (Fix-Runde M≥2) implement-fix-planner-agent dispatchen (PM-Was+Wie + Vorrunden-Digest-Pointer) → Fix-Teilplan.
+     b. Scribes dispatchen (Payload s. "Scribe Runden 1-3/4-5"), parallel/sequenziell je Wellen-Topologie → scribe-<slice>.md-Pointer sammeln.
+     c. Integration-Checkpoint: scribe-<slice>.md LESEN (Touched Paths), Slice-Coverage-Check (Pflicht — fehlender Slice = BLOCKER → Fix-Scribe → erneut), Stacks klassifizieren → Gate-Scope, Drift prüfen.
+     d. Quality Gates via MCP (Reihenfolge zwingend): Gate 1 Build → Gate 2 Statische Analyse (inkl. review_git_diff-Evidenz) → dann im SELBEN Block Gate 4 Tests + Reviewer. Security-`critical` merken (→ Digest-Leaf). Errors in Gate 1/2 → Fix zuerst, keine Reviewer.
+     e. Reviewer dispatchen (Set laut Change-Scope-Classifier, Payload s. "Impl-Review-*"), jeder mit Runden-Pfad + Slice-Coverage-Tabelle + review_git_diff-Evidenz + Kanon-Pointer → finding-<reviewer>.md-Pointer sammeln.
+  4. DIGEST-LEAF spawnen: Agent(implement-round-executor) — Payload s. "Digest-Leaf (implement-round-executor)".
+     Übergabe: Runden-Pfad, N/M, finding-Pointer, Gate-Status + Security-`critical`-Liste, (M≥2) Vorrunden-Digest-Pointer.
+     Rückgabe: NUR Pointer (digest.md + index) + Verdikt-Kurzform (inkl. Tier-Zähler 🔴/🟡/🟢). Leaf wird verworfen.
+  5. PM-LEAF spawnen: Agent(implement-supervisor) — Payload s. "PM — Supervisor".
+     Übergabe: index-Pointer + digest-Pointer + Story-Pfad + Iteration N. Rückgabe: Verdikt-Kurzform. Leaf wird verworfen.
+  6. Verdikt auswerten (Session hält nur Pointer + Verdikt):
+     fix      → current_round++ → zurück zu Schritt 1 (Fix-Planer in 3a erhält PM-Was+Wie).
      escalate → gebündelte Nutzerfrage; warten; dann erneut ab Schritt 3 (Cap läuft weiter).
-     clean / erbsenzaehlerei-exit → MECHANISCHER TIER-GUARD (Schritt 5a), dann ggf. Terminal-Span (Schritt 5b).
+     clean / erbsenzaehlerei-exit → MECHANISCHER TIER-GUARD (Schritt 6a), dann Outer-Verdikt-Sequenz (Schritt 6b).
 
-  5a. TIER-GUARD (reine Zähler-Arithmetik, kein Urteil): `Tier 🔴 offen` aus secondbrain-index.md LESEN.
+  6a. TIER-GUARD (reine Zähler-Arithmetik, kein Urteil): `Tier 🔴 offen` aus secondbrain-index.md LESEN.
       🔴 offen > 0  → Inner-Close ZURÜCKGEWIESEN → wie fix behandeln: current_round++ → Schritt 1
                       (bei current_round = 5: Cap greift → Schritt 1 stoppt via Cap-Regel).
       erbsenzaehlerei-exit zusätzlich: outer/pm-verdict-N.md prüfen — je offenes 🟡 eine Begründung?
                       fehlt eine  → nicht konform → wie fix behandeln.
-      🔴 offen == 0 (und 🟡-Begründungen vollständig) → Inner-Close AUTORISIERT → Schritt 5b.
+      🔴 offen == 0 (und 🟡-Begründungen vollständig) → Inner-Close AUTORISIERT → Schritt 6b.
 
-  5b. TERMINAL-PM-Span — zwei getrennte Mechanismus-Kanten (nicht verwechseln):
-      • Session ↔ PM = SendMessage: die Session reaktiviert die in Schritt 5 pausierte, NOCH NICHT verworfene
-        PM-Instanz per SendMessage (die EINZIGE Ausnahme zur Wegwerf-Kadenz — kein Runden-Übergang, sondern der
-        Abschluss-Span DIESER Outer-Iteration; so liegt der Guard aus 5a nachweislich VOR dem Span, eine Instanz bleibt).
-      • Terminal-PM → 5 DI-Reviewer = Vordergrund-Dispatch: der reaktivierte PM dispatcht die Reviewer SELBST als
-        Vordergrund-Sub-Agents (identisch zum PL→Impl-Reviewer-Muster), sie schreiben di-finding-*.md + geben nur Pointer
-        als direkte Rückgabe → di-digest bauen → Outer-Verdikt. NICHT die Session dispatcht die DI.
-      Payload + Ablauf: "DELIVERY-INSPECTION → CLOSURE" in dieser Datei.
+  6b. OUTER-VERDIKT-SEQUENZ (die Session faechert die DI, ein frisches Leaf urteilt — kein Same-Instance-Span, kein SendMessage):
+      • Session ↦ 6 DI-Reviewer: outer/di-N/ anlegen, die 6 DI-Reviewer dispatchen (Payload s. "DELIVERY-INSPECTION → CLOSURE"),
+        di-finding-<rolle>.md-Pointer sammeln.
+      • Session ↦ Outer-Verdikt-PM: frisches Agent(implement-supervisor) auf die di-finding-Pointer + pm-verdict-N.md →
+        es baut di-digest → Outer-Verdikt. Rückgabe: OUTER-VERDIKT-Kurzform + Pointer.
+      Dann auf den Outer-Verdikt handeln (s. "DELIVERY-INSPECTION → CLOSURE" Schritt 3).
 
-  ⚠️ Frischer PL UND frischer PM je Runde via Agent-Tool. Kein SendMessage-Fortsetzen einer
-     Vorrunden-Instanz. Kadenz-Verstoß = Regelbruch (STORY-033). EINZIGE Ausnahme: der Terminal-PM-Span (5b).
-  ⚠️ Der Tier-Guard (5a) ist NICHT verhandelbar: ein Erbsenzählerei-Exit bei offenem 🔴 wird
+  ⚠️ Frisches Digest-Leaf UND frisches PM-Leaf je Runde via Agent-Tool. Kein SendMessage-Fortsetzen einer
+     Vorrunden- oder Inner-Close-Instanz. Kein Leaf faechert selbst (es wuerde parken) — Fan-out ausschliesslich Session. Kadenz-Verstoß = Regelbruch (STORY-033).
+  ⚠️ Der Tier-Guard (6a) ist NICHT verhandelbar: ein Erbsenzählerei-Exit bei offenem 🔴 wird
      deterministisch zurückgewiesen — ein Security-`critical` ist immer 🔴 und kann so nie durchgewunken werden.
 
 Abschlussformat: "Abschlussformat (Session-Treiber)" aus dieser Datei.
@@ -110,77 +155,131 @@ Abschlussformat: "Abschlussformat (Session-Treiber)" aus dieser Datei.
 
 ---
 
-### PL — Round-Executor (implement-round-executor) [NEU]
+### Digest-Leaf (implement-round-executor) [KORRIGIERT]
 
-Frische, throwaway PL-Instanz für **genau eine** Runde. Mechanisch — dispatcht, sequenziert Gates,
-liest Findings, baut Digest, aktualisiert Index. **Implementiert keinen Code, urteilt nicht.**
+Frische, throwaway Leaf-Instanz je Runde. **Dispatcht nichts, faehrt keine Gates.** Liest die von der
+Session gesammelten Findings + Gate-/Security-Evidenz, baut den Digest, vergibt autoritative Tiers,
+aktualisiert den Index. (Fan-out — Scribes/Reviewer/Fix-Planer — und Gates macht die Session, s.
+"Session-Treiber".)
 
 ```text
-Profil:implement-round-executor  (frisch je Runde — kein Vorrunden-Kontext)
-Ablauf Schritt 0-6, Gate-Scope, Reviewer-Sets: `implement-round-executor.md` + `implementation-flow.md`
+Profil:implement-round-executor  (frisch je Runde — kein Vorrunden-Kontext; Leaf, dispatcht nichts)
 
 Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
 Runde:[N/M]
-Planpaket-Pointer:[requests/plans/plan-<feature>.md — Slice-IDs, Umsetzungs-Topologie]
-Nur Fix-Runde (M≥2): PM-Was+Wie:[Kurzform] · Vorrunden-Digest:[iteration-N/round-(M-1)/digest.md]
+Finding-Pointer:[Liste der finding-<reviewer>.md dieser Runde — von der Session gesammelt]
+Gate-/Security-Evidenz:[Gate-Status-Zeile Build·Statik·Design-Principles·Tests + Liste der Security-`critical`-Findings aus Gate 2]
+Nur M≥2: Vorrunden-Digest:[iteration-N/round-(M-1)/digest.md]
+
+Ablauf (genau diese Runde — nur LESEN + SCHREIBEN, KEIN Dispatch, KEINE Gates, KEIN Produkt-Code):
+
+SCHRITT 1 — LESEN: mcp__dev-mcp__read_files_batch([Finding-Pointer]) + die übergebene Gate-/Security-Evidenz.
+  Kein natives Grep über den Runden-Ordner nötig (die Session hat die Pointer geliefert).
+
+SCHRITT 2 — DIGEST BAUEN: iteration-N/round-M/digest.md (Format "Review-Digest (Implement)"): ein Abschnitt je
+  Reviewer + Roll-up. Kein voller Report als Return — Inhalt kommt aus den Dateien. Weil du throwaway bist,
+  transitieren die Bodies nur EINMAL durch dein Fenster, nie durch die Session.
+
+SCHRITT 3 — AUTORITATIVE TIER-VERGABE (STORY-034): stufe JEDES Finding als 🔴/🟡/🟢 ein (Reviewer-Tier-Vorschlag ist nur Input).
+  Regeln: secondbrain-schema.md → ## Tier-Klassifikation. NICHT ÜBERSTIMMBAR: Security-`critical` aus JEDEM Kanal
+  (review_git_diff security, run_inspectcode, LLM-Reviewer) ist IMMER 🔴 — nie 🟡/🟢; trage die von der Session
+  übergebenen Security-`critical`-Findings als 🔴-Zeilen ein, auch wenn kein LLM-Reviewer sie aufgriff.
+  Jede Digest-Finding-Zeile beginnt mit ihrem Tier-Symbol; Roll-up: "Autoritative Tiers: 🔴 <n> · 🟡 <n> · 🟢 <n>".
+
+SCHRITT 4 — INDEX: secondbrain-index.md aktualisieren: Aktuell N/M (current_round=M), Cap M/5, offene Zähler, TIER-ZÄHLER
+  (Tier 🔴/🟡/🟢 offen — identisch mit Digest-Roll-up; Grundlage des Session-Tier-Guards),
+  Runden-Historie-Zeile (inkl. 🔴/🟡/🟢-Spalten), letzter Digest-Pointer.
+
+VERBOTEN: irgendetwas dispatchen (Scribe/Reviewer/Fix-Planer/DI — es wuerde parken); Gates fahren; Produkt-Code
+  oder finding-*.md editieren; über den Inner-Exit urteilen oder den Tier-Guard ausführen (das sind PM bzw. Session).
+
+RÜCKGABE AN SESSION (NUR Pointer — kein Report-Body):
+  Runde M · digest: iteration-N/round-M/digest.md · index: secondbrain-index.md
+  Fixable:<n> · Klärungsbedürftig:<n> · Tiers 🔴:<n> 🟡:<n> 🟢:<n>
+  Gate: Build <ok|fail> · Statik <ok|warn|fail> · Design-Principles <ok|fail> · Tests <n/n>
 ```
 
 ---
 
 ### PM — Supervisor (implement-supervisor) [NEU]
 
-Frische, throwaway PM-Instanz je Runde. **Urteilsebene** — liest Index+Digest, fällt ein tier-gesteuertes
-Urteil. Schreibt **nur** `outer/pm-verdict-N.md` (+ bei Requirement-Gap `outer/delta-N.md`). Bei Inner-Close
-wird dieselbe Instanz zum **Terminal-PM** (s. DELIVERY-INSPECTION → CLOSURE).
+Frische, throwaway PM-Leaf-Instanz je Runde. **Urteilsebene** — liest Index+Digest, fällt ein tier-gesteuertes
+Urteil. Schreibt **nur** `outer/pm-verdict-N.md` (+ bei Requirement-Gap `outer/delta-N.md`), dispatcht nichts.
+Bei Inner-Close startet die Session einen **separaten frischen** Outer-Verdikt-PM-Lauf (s. DELIVERY-INSPECTION → CLOSURE).
 
 ```text
-Profil:implement-supervisor  (frisch je Runde — kein Vorrunden-Kontext; bei Inner-Close: Terminal-PM)
-Ablauf tier-gesteuertes Urteil (clean/erbsenzaehlerei-exit/fix/escalate), Terminal-PM-Span, Verboten-Liste: `implement-supervisor.md`
+Profil:implement-supervisor  (frisch je Runde — kein Vorrunden-Kontext; Leaf, dispatcht nichts. Outer-Verdikt = separater frischer Leaf-Lauf)
 
-Index-Pointer:[requests/plans/<feature>/secondbrain-index.md]  (inkl. Tier-Zähler Tier 🔴/🟡 offen)
+Index-Pointer:[requests/plans/<feature>/secondbrain-index.md]  (inkl. Tier-Zähler Tier 🔴/🟡/🟢 offen)
 Digest-Pointer:[requests/plans/<feature>/iteration-N/round-M/digest.md]  (jede Finding-Zeile mit autoritativem Tier)
 Story-Pfad:[requests/stories/STORY-XXX.md — für AC-Adressierung]
 Iteration:[N — für den Pfad outer/pm-verdict-N.md]
+
+Aufgabe: Index + Digest LESEN (selbst). ZUERST `Tier 🔴 offen` lesen — er steuert das Urteil. Genau EINS fällen:
+  fix                  → Tier 🔴 offen > 0 (Pflicht), oder du willst ein 🟡 fixen → kompaktes Was+Wie
+                         (VERWEIS auf Digest-Zeilen): Was: welche Findings · Wie: Fix-Richtung (1–3 Zeilen).
+                         Konkreten Slice-Plan macht der Fix-Planer der Folgerunde.
+  escalate             → Produkt-/Design-Ambiguität → eine gebündelte Nutzerfrage.
+  clean                → Tier 🔴/🟡/🟢 offen alle 0, Gates grün, ACs adressiert → Inner-Loop schließbar.
+  erbsenzaehlerei-exit → Tier 🔴 offen == 0, aber ≥1 🟡/🟢 offen; Restfindings keiner Runde wert → schließbar.
+                         PFLICHT vor der Meldung: outer/pm-verdict-N.md, Abschnitt Inner-final, mit JE offenem 🟡
+                         einer Begründungszeile (Digest-Verweis + warum wave statt fix). 🟢 ohne Begründung.
+                         Ohne vollständige Begründungen ist der Exit nicht konform (Session behandelt ihn wie fix).
+
+NICHT ÜBERSTIMMBAR: ein 🔴 bleibt 🔴; Security-`critical` aus jedem Kanal ist immer 🔴 — nie 🟡/🟢, nie per
+  Erbsenzählerei-Exit durchwinkbar. Bei Tier 🔴 offen > 0 ist clean/erbsenzaehlerei-exit unzulässig.
+
+Editiert NUR outer/pm-verdict-N.md (+ bei Requirement-Gap outer/delta-N.md). NIE Produkt-Code, finding-*.md,
+Digest oder Index. Führt den Tier-Guard NICHT selbst aus (das ist die Session). **Dispatcht nichts** —
+auch der Outer-Verdikt-PM faechert die DI nicht; das tut die Session (s. DELIVERY-INSPECTION → CLOSURE).
+
+RÜCKGABE AN SESSION (Verdikt-Kurzform — kein Report-Body):
+  VERDIKT: <clean | erbsenzaehlerei-exit | fix | escalate>   (Runde M) · Tiers 🔴:<n> 🟡:<n> 🟢:<n>
+  fix                  → Was: <Digest-Verweise>  Wie: <Fix-Richtung, 1–3 Zeilen>
+  escalate             → Frage: <eine gebündelte, entscheidungsreife Nutzerfrage>
+  clean                → Begründung: Gates grün, keine offenen Findings, ACs adressiert.
+  erbsenzaehlerei-exit → pm-verdict: outer/pm-verdict-N.md geschrieben (🟡-Begründungen vollständig).
+  (Bei clean/erbsenzaehlerei-exit: Session prüft Tier-Guard, dann Outer-Verdikt-Sequenz.)
 ```
 
 ---
 
-### DELIVERY-INSPECTION → CLOSURE (Terminal-PM → Session)
+### DELIVERY-INSPECTION → CLOSURE (Session faechert die DI · Outer-Verdikt-PM urteilt)
 
 Nach Inner-Loop-Abschluss mit `Tier 🔴 offen == 0` (PM `clean` / `erbsenzaehlerei-exit` nach bestandenem
-Tier-Guard, inkl. cap-erzwungenem erbsenzaehlerei-exit bei 🔴==0). **Bei Cap mit 🔴 > 0 wird dieser Span
+Tier-Guard, inkl. cap-erzwungenem erbsenzaehlerei-exit bei 🔴==0). **Bei Cap mit 🔴 > 0 wird diese Sequenz
 NICHT betreten** — dann Hard-Stop + User-Eskalation, keine Closure (s. INNER LOOP Schritt 1).
-**Träger: der Terminal-PM** — dieselbe PM-Instanz, die den Inner-Loop geschlossen hat, von der Session per
-SendMessage reaktiviert (die EINZIGE Ausnahme zur Wegwerf-Kadenz). Der **reaktivierte PM** (nicht die Session)
-dispatcht die DI im Vordergrund, liest den di-digest und fällt den Outer-Verdikt in EINER Instanz. Danach
-handelt die Session auf den Outer-Verdikt (Story-Status etc.).
+**Die Session faechert die 6 DI-Reviewer** (nur sie empfaengt Sub-Agent-Completions — Harness-Grundwahrheit)
+und startet danach ein **frisches Outer-Verdikt-PM-Leaf**, das den di-digest baut und den Outer-Verdikt fällt.
+**Kein Terminal-PM-Same-Instance-Span, kein SendMessage.** Der Tier-Guard liegt durch die Session-Sequenz
+nachweislich vor dem DI-Fan-out.
 
 ```text
-DELIVERY-INSPECTION → CLOSURE (Pflicht nach Inner-Loop — Pointer-Handoff, Notification-Trap strukturell gelöst):
-  ✅ Warum kein Wait-Loop mehr: die DI-Reviewer schreiben je outer/di-N/di-finding-<rolle>.md und geben
-     NUR Pointer + Kurzform zurück (kein Report-Body). Der Terminal-PM dispatcht sie im VORDERGRUND und
-     wartet auf DIREKTE Pointer-Rückgaben — kein Background-Task, keine Completion-Notification, kein Poll.
-     Der frühere Trap (STORY-031) war Background + Notification-Wait; entfällt hier per Konstruktion.
+DELIVERY-INSPECTION → CLOSURE (Pflicht nach Inner-Loop):
+  ✅ Warum kein Wait-Loop/Trap: es gibt KEINEN zwischengeschalteten Dispatcher mehr. Die SESSION faechert
+     die DI-Reviewer direkt und empfaengt die Completions dort, wo sie in diesem Harness ohnehin landen.
+     Der Pointer-Handoff (di-finding-*.md statt Payload) bleibt als Fenster-Disziplin — er ist NICHT der
+     Grund, warum die Trap (STORY-031) ausbleibt (der Grund ist: kein Sub-Agent faechert-und-wartet).
 
-  Terminal-PM Schritt 1 — outer/di-N/ anlegen, dann 5 DI-Reviewer im Vordergrund dispatchen:
-    Rollen: Revisor · Skeptiker · Abnahme · Dolmetscher · Querdenker (s. delivery-inspection/SKILL.md).
+  Session Schritt 1 — outer/di-N/ anlegen, dann die 6 DI-Reviewer FAECHERN + Pointer einsammeln:
+    Rollen: Revisor · Skeptiker · Normalo · Dolmetscher · Auftraggeber · Querdenker (s. delivery-inspection/SKILL.md).
     Kontext je Reviewer: originale Story-ACs + finaler Diff/Touched-Paths + Gate-Status + Inner-Loop-Summary
       + Pfad outer/di-N/ + Kanon-Pointer reviewer-gate-canon.md (Linse = DI-Rolle; §1/§3/§6-Disziplin — di-finding-Format bleibt Kategorie). Constraint (delivery-inspection): kein eigenständiger Tool-Call außer dem Schreiben
-      der eigenen di-finding-<rolle>.md. Rückgabe je Reviewer: Pointer + Kurzform (Kategorie-Vorschlag).
-  Terminal-PM Schritt 2 — di-digest.md bauen + Outer-Verdikt:
-    di-finding-*.md LESEN → outer/di-N/di-digest.md konsolidieren (Roll-up: Impl-Gaps/Req-Gaps/Unklar).
+      der eigenen di-finding-<rolle>.md. Rückgabe je Reviewer: Pointer + Kurzform (Kategorie-Vorschlag) → Session sammelt sie ein.
+  Session Schritt 2 — Outer-Verdikt-PM (frisches implement-supervisor-Leaf) spawnen auf die di-finding-Pointer + pm-verdict-N.md:
+    Das Leaf: di-finding-*.md LESEN → outer/di-N/di-digest.md konsolidieren (Roll-up: Impl-Gaps/Req-Gaps/Unklar).
     Outer-Verdikt (autoritative Klassifikation) in outer/pm-verdict-N.md, Abschnitt Outer-Verdikt, schreiben:
       OK                 → keine Gaps.
       Implementation-Gap → das Richtige nicht korrekt umgesetzt (AC nicht erfüllt).
       Requirement-Gap    → das Falsche / neuer Scope → outer/delta-N.md schreiben (Format s. secondbrain-schema.md).
       Unklar             → Ambiguität → eine gebündelte Nutzerfrage.
-    Rückgabe an die Session: OUTER-VERDIKT-Kurzform + Pointer (kein di-Body).
+    Rückgabe an die Session: OUTER-VERDIKT-Kurzform + Pointer (kein di-Body). Leaf wird verworfen.
 
   Session Schritt 3 — auf den Outer-Verdikt handeln (Story-Status setzt NUR die Session; volles `implementiere` → `reviewed`, s. SKILL.md Story-Gate Schritt 5 A):
     OK                 → Story-Datei [story-path] status: reviewed → Abschlussformat ausgeben.
-    Implementation-Gap → Fix-Scribe → Inner Loop zurück (frische PL/PM-Runden; Cap läuft weiter).
-    Requirement-Gap    → nächste Outer-Iteration ab Schritt 1 mit FRISCHEM PM (Input: outer/delta-N.md).
-    Unklar             → auf User-Antwort warten → Terminal-PM/Session klassifiziert neu.
+    Implementation-Gap → Session dispatcht Fix-Scribe → Inner Loop zurück (frische Leaves je Runde; Cap läuft weiter).
+    Requirement-Gap    → nächste Outer-Iteration ab Schritt 1 (Input: outer/delta-N.md; frische Leaves durchweg).
+    Unklar             → auf User-Antwort warten → Session/Outer-Verdikt-PM klassifiziert neu.
   Opt-out (skip-delivery-inspection): Session setzt Story-Status trotzdem auf reviewed,
     Opt-out-Grund im Abschlussformat unter "## Closure" vermerken.
 ```
@@ -193,19 +292,58 @@ Implementiert genau einen Plan-Slice (IMP-*). Sonnet, Runden 1–3.
 
 ```text
 Profil:implement-scribe-agent
-Ablauf RED→GREEN, MCP-Build/Test, OnPush-Regel, Datei-Handoff: `implement-scribe-agent.md`
-Test-Design-Referenz: .claude/skills/test-design/
 
 Slice-ID:[z.B. IMP-FE-Search-Rules]
 Welle:[z.B. W1 — parallel mit IMP-BE-GW-Logging]
 Working directory:[absoluter Windows-Pfad C:\...]
-SecondBrain-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/ — vom PL]
+SecondBrain-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/ — von der Session]
 
-Task-Pointer:[tasks/task-NNN.md]
-Read-Scope: nur diese Task-Datei lesen — kein Ganzplan-Inline, tasks/index.md NICHT lesen
+Planpaket (dieser Slice — vollständig):
+[Umsetzungsschritte + Akzeptanz→Test-Liste für diesen Slice]
+
+Test-Design-Referenz: .claude/skills/test-design/ (Namenskonvention, AAA, Magic Strings,
+  Framework-Router .NET/Angular — vor erstem Test lesen)
+
+Aufgabe (ZWEISTUFIG — Reihenfolge zwingend):
+
+Schritt 1 — Tests schreiben (RED):
+  Neue/erweiterte Tests gemäß Akzeptanz→Test-Liste aus dem Planpaket.
+  Testname-Konvention: <Method>_<Situation>_<Expected> (test-design-Skill).
+  Neue und erweiterte Tests müssen **zuerst fehlschlagen** (Red-Phase — §8/F2).
+  Verifikation: Build + Test ausführen, fehlschlagende Tests dokumentieren.
+  Unberührte Bestandstests: nicht anfassen, kein Re-Run-Zwang.
+
+Schritt 2 — Implementierung (GREEN):
+  Implementieren bis alle neuen/erweiterten Tests grün (Green-Phase).
+  Pre-Coding: read_class_summary / read_signatures_only via dev-mcp vor erstem Edit.
+  Nur dieser Slice — kein Scope-Expand, keine stillen Plan-Abweichungen.
+  Slice-scoped Build/Test nach jeder signifikanten Änderung (dev-mcp):
+    build_dotnet_solution / build_angular_project → test_dotnet_solution / test_angular_project
+  KEIN stack-weites Technik-Gate (das läuft am Integration-Checkpoint).
+
+  **Angular Hard Rules — OnPush + async-Listen (Pflicht):**
+  In Komponenten mit `changeDetection: ChangeDetectionStrategy.OnPush` müssen
+  async-geladene Listen-Properties als Signal deklariert werden:
+    ✅ `readonly options = signal<OptionType[]>([])`  → `this.options.set(data)` im Subscribe
+    ❌ `options: OptionType[] = []`                  → `this.options = data` triggert keine CD
+  Gilt für jede Property die nach ngOnInit/Subscribe befüllt wird.
+
+Pfade: Windows-Absolutpfade (C:\...) für alle dev-mcp-Calls.
+Schema vor jedem MCP-Aufruf lesen.
+
+Post-Scribe-Verifikation (Pflicht — MCP-First):
+  mcp__dev-mcp__read_files_batch([alle Touched Paths]) — kein natives Read/Grep.
+  Verifikations-Ergebnis im Summary festhalten.
+
+Datei-Handoff (Pflicht — s. secondbrain-schema.md):
+Schreibe [SecondBrain-Runden-Pfad]/scribe-<slice>.md mit: Summary (Red-Phase: welche Tests
+fehlgeschlagen; Green-Phase: welche Tests grün), Touched Paths, Build/Test-Matrix
+(eine Zeile pro Lauf — Pflicht), offene Risiken/Blocker.
+
+Rückgabe an die Session: NUR Pointer + Verdikt-Kurzform
+`scribe-<slice>.md · <RED|GREEN> · Dateien:<n> · build:<ok|fail> test:<ok|fail>` — kein Summary-Body inline.
+(Touched Paths liest die Session aus der Datei.)
 ```
-
-⚠️ **Handoff-Regression:** Ein Handoff, der den vollständigen Plan-Text oder Task-Body inline überträgt (statt Task-ID-Pointer), verletzt den Umsetzer-Input-Contract (STORY-009) und gilt als Regelverstoß.
 
 ---
 
@@ -219,15 +357,15 @@ Profil:implement-scribe-opus-agent
 Slice-ID:[z.B. IMP-FE-Search-Rules — Fix-Slice]
 Welle:[Fix-Welle — Runde [4|5]]
 Working directory:[absoluter Windows-Pfad C:\...]
-SecondBrain-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/ — vom PL]
-
-Task-Pointer:[tasks/task-NNN.md]
-Read-Scope: nur diese Task-Datei lesen — kein Ganzplan-Inline, tasks/index.md NICHT lesen
+SecondBrain-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/ — von der Session]
 
 Kontext (Eskalation):
   Dies ist Runde [4|5] — Eskalation nach erfolgloser Runde 3.
   Fix-Teilplan (vom Fix-Planer): [vollständig]
   Rest-Findings aus vorheriger Runde: [vollständig]
+
+Planpaket (Akzeptanz→Test-Liste — vollständig):
+[Alle Testfall-Skizzen für diesen Slice]
 
 Test-Design-Referenz: .claude/skills/test-design/
 
@@ -252,9 +390,9 @@ Datei-Handoff (Pflicht — s. secondbrain-schema.md):
 Schreibe [SecondBrain-Runden-Pfad]/scribe-<slice>.md mit: Summary (Red/Green-Phase-Ergebnis),
 Touched Paths, Build/Test-Matrix (Pflicht), offene Risiken/Blocker.
 
-Rückgabe an den PL (Round-Executor): NUR Pointer + Verdikt-Kurzform
+Rückgabe an die Session: NUR Pointer + Verdikt-Kurzform
 `scribe-<slice>.md · <RED|GREEN> · Dateien:<n> · build:<ok|fail> test:<ok|fail>` — kein Summary-Body inline.
-(Touched Paths liest der PL aus der Datei.)
+(Touched Paths liest die Session aus der Datei.)
 ```
 
 ---
@@ -320,12 +458,13 @@ Reply with: summary, touched paths, Build/Test-Matrix per run (Pflicht), blocker
 Profil: implement-fix-planner-agent.
 Du erstellst einen Fix-Teilplan, implementierst NICHT.
 
-Pflicht-Rules (0-4):
+Pflicht-Rules (0-5):
 0) agent-compliance.md
 1) feature-delivery/flows/implementation-flow.md
 2) codebase-analyzer/SKILL.md
-3) angular-developer/SKILL.md / backend-ef-migrations/SKILL.md (falls Scope passt)
-4) test-design/SKILL.md (Testfall-Reparaturen)
+3) codebase-analyzer/SKILL.md (Analyse-Abschnitt)
+4) angular-developer/SKILL.md / backend-ef-migrations/SKILL.md (falls Scope passt)
+5) test-design/SKILL.md (Testfall-Reparaturen)
 
 Input:
 - Finales Planpaket + Akzeptanz→Test-Liste
@@ -361,12 +500,47 @@ Liefern:
 
 ```text
 Profil:implement-review-design-principles-agent (schreibt nur die eigene finding-Datei)
-Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Design-Principles, bindend)
-Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-design-principles-agent.md`
 
-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
-Gate-2-Status (inkl. analyze_iosp_compliance-Befunde):[…]
+Input:
+- Finales Planpaket + IODA-Vorgaben aus Plan-Review-IODA
+- Aktueller Diff / betroffene Pfade
+- Gate-2-Status (inkl. analyze_iosp_compliance-Befunde wenn verfügbar, ArchUnit-IOSP-Ergebnis)
+
+Referenz: .claude/skills/feature-delivery/references/principles-cleancode.md (IODA/IOSP-Abschnitte)
+
+Prüfe den Code auf IODA-Architektur:
+
+Bausteinschnitt (IODA):
+- Klare Integration/Operation-Trennung je Klasse? (PoMO erkennbar?)
+- Dekomposition korrekt — keine Klassen, die Integration und Operation mischen?
+- Ist der Bausteinschnitt konsistent mit dem Plan-IODA-Review (Plan-Vorgabe eingehalten)?
+
+IOSP (Methodenebene):
+- Gibt es Methoden, die andere Methoden aufrufen UND selbst Logik/Ausdrücke enthalten?
+- Bis analyze_iosp_compliance (Strang 5 .NET / Strang 6 Angular) verfügbar: Angular IOSP selbst prüfen.
+- ArchUnit-IOSP-Backstop (archunit-baseline-template.cs Regel 5): angesprochen? Falls ja, als Evidenz nutzen.
+- analyze_iosp_compliance-Befunde (codebase-analyzer): falls Gate 2 liefert, als primäre Evidenz.
+
+Fehlerbehandlung (IOSP-Konformität):
+- Ist Fehlerbehandlung zentralisiert (Integration-Ebene — Middleware/HTTP-Interceptor)?
+- Leere/handlungslose catches (prüfbar) vorhanden?
+
+Entity-Durchstecherei (DDD-B):
+- Erscheinen Persistence-Entities in Controller-Signaturen? (ArchUnit Regel 7 angesprochen?)
+
+Tier-Vorschlag nach Konsequenz (s. reviewer-gate-canon.md §2/§4):
+- 🔴 — struktureller Verstoß, der einen geforderten Test/eine geforderte Änderung konkret verhindert;
+  Entity-Durchstecherei in Controller-Signatur nachgewiesen; materialisierter IODA/IOSP-Verstoß mit
+  benennbarer Folge (ArchUnit-Backstop angesprochen)
+- 🟡 — Mischung Integration/Operation erkennbar, Zukunftskosten ohne akuten Defekt
+- 🟢 — stilistische Unschärfe, kein struktureller Verstoß (Tripwire §3)
+
+Datei-Handoff (Pflicht — s. secondbrain-schema.md):
+Schreibe [Runden-Pfad]/finding-design-principles.md: Kopf + Struktur-Tabelle
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario).
+Rückgabe an die Session: NUR Pointer + Kurzform `finding-design-principles.md · 🔴:<n> 🟡:<n> 🟢:<n>` — kein Report-Body inline.
+
+Stil:BULLET-TERSE. Priorisierte Liste. Kein Fix; nur Prüfergebnis.
 ```
 
 ---
@@ -374,13 +548,27 @@ Gate-2-Status (inkl. analyze_iosp_compliance-Befunde):[…]
 ### Impl-Review-Risk
 
 ```text
-Profil: implement-review-risk-agent (schreibt nur die eigene finding-Datei)
-Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Risk, bindend)
-Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-risk-agent.md`
+Profil: implement-review-risk-agent (schreibt nur die eigene finding-Datei).
+Input:
+- Finales Planpaket + Akzeptanz→Test-Liste
+- Aktueller Diff / betroffene Pfade
+- Gate-Status (Build, Statische Analyse, Tests)
 
-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
-Gate-Status (Build, Statische Analyse, Tests):[…]
+Pflicht-MCP:
+- detect_untested_public_api
+- analyze_refactoring_safety
+- find_symbol_references
+
+Datei-Handoff (Pflicht — s. secondbrain-schema.md):
+Schreibe [Runden-Pfad]/finding-risk.md: Kopf (Reviewer/MCP/Verdikt) + Struktur-Tabelle
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario).
+
+In die Datei (Tabellen-Inhalt):
+- Nummerierte Risiko-/Blocker-Liste (priorisiert)
+- Tier-Vorschlag je Finding: 🔴 / 🟡 / 🟢 (nach Konsequenz — reviewer-gate-canon.md §2)
+- Explizit: Bounded-Context-Verstöße, ungewollter Shared-Kernel, Entity-Durchstecherei
+
+Rückgabe an die Session: NUR Pointer + Kurzform `finding-risk.md · 🔴:<n> 🟡:<n>` — kein Report-Body inline.
 ```
 
 ---
@@ -388,12 +576,27 @@ Gate-Status (Build, Statische Analyse, Tests):[…]
 ### Impl-Review-Verifier
 
 ```text
-Profil: implement-review-verifier-agent (schreibt nur die eigene finding-Datei)
-Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Verifier, bindend)
-Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-verifier-agent.md`
+Profil: implement-review-verifier-agent (schreibt nur die eigene finding-Datei).
+Input zusätzlich zum Diff:
+- Slice-Coverage-Tabelle (aus Integration-Checkpoint — Pflicht-Input von der Session)
+Pflicht-MCP:
+- review_git_diff
+- review_files_batch (oder review_file)
+- compare_validation_rules (wenn FE/BE-Validierung betroffen)
 
-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
+Datei-Handoff (Pflicht — s. secondbrain-schema.md):
+Schreibe [Runden-Pfad]/finding-verifier.md: Kopf + Struktur-Tabelle
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); AC-Map als Block unter die Tabelle.
+
+In die Datei:
+- Nummerierte fachliche Fehlerliste, priorisiert nach Schaden.
+- Slice-Präsenz-Check: Sind alle IMP-* Slices aus der Slice-Coverage-Tabelle mit Status OK?
+  Slice mit Status BLOCKER → 🔴 (zweites Netz nach Integration-Checkpoint).
+- Akzeptanz-Coverage (§8/F4): Deckt die finale Test-Suite **alle** Akzeptanzkriterien
+  aus der Planpaket-Akzeptanz→Test-Liste ab? Jedes Kriterium einzeln prüfen.
+  Fehlende Coverage → 🔴, fehlende Testfall-Skizze umgesetzt → 🟡.
+
+Rückgabe an die Session: NUR Pointer + Kurzform `finding-verifier.md · AC-Coverage:<vollständig|fehlend:Liste> · Fehler:<n>` — kein Report-Body inline.
 ```
 
 ---
@@ -401,13 +604,19 @@ Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 ### Impl-Review-Readiness
 
 ```text
-Profil: implement-review-readiness-agent (schreibt nur die eigene finding-Datei)
-Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Readiness, bindend)
-Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-readiness-agent.md`
+Profil: implement-review-readiness-agent (schreibt nur die eigene finding-Datei).
+Pflicht-MCP:
+- review_with_index
+- analyze_duplicates
 
-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
-Gate-Status:[…]
+Datei-Handoff (Pflicht — s. secondbrain-schema.md):
+Schreibe [Runden-Pfad]/finding-readiness.md: Kopf + Struktur-Tabelle
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); Ship-Entscheidung als Block unter die Tabelle.
+
+In die Datei:
+- Nummerierte Punkte zu Alltagstauglichkeit, Ship-Readiness, fehlenden Details.
+
+Rückgabe an die Session: NUR Pointer + Kurzform `finding-readiness.md · <SHIP|CONDITIONAL|NO-SHIP>` — kein Report-Body inline.
 ```
 
 ---
@@ -415,12 +624,43 @@ Gate-Status:[…]
 ### Impl-Review-Craft
 
 ```text
-Profil: implement-review-craft-agent (schreibt nur die eigene finding-Datei)
-Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Craft, bindend)
-Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-craft-agent.md`
+Profil: implement-review-craft-agent (schreibt nur die eigene finding-Datei).
+Pflicht-MCP:
+- review_file
+- analyze_maintainability_index
 
-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
+Datei-Handoff (Pflicht — s. secondbrain-schema.md):
+Schreibe [Runden-Pfad]/finding-craft.md: Kopf + Struktur-Tabelle
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); Note unter die Tabelle.
+
+In die Datei:
+- Mindestens 3 nummerierte Kritikpunkte + Note 1-6.
+
+Rückgabe an die Session: NUR Pointer + Kurzform `finding-craft.md · Note:<1-6> · Kritikpunkte:<n>` — kein Report-Body inline.
+```
+
+---
+
+### Impl-Review-Auditor
+
+```text
+Profil: implement-review-auditor-agent (schreibt nur die eigene finding-Datei).
+Pflicht-MCP:
+- analyze_advanced_all
+- analyze_test_quality
+- review_with_index
+- detect_untested_public_api
+
+Datei-Handoff (Pflicht — s. secondbrain-schema.md):
+Schreibe [Runden-Pfad]/finding-auditor.md: Kopf + Struktur-Tabelle
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); Note + Go/No-Go unter die Tabelle.
+
+In die Datei:
+- Priorisierte Liste mit Tier-Vorschlag 🔴/🟡/🟢 (nach Konsequenz — reviewer-gate-canon.md §2)
+- Gesamtnote 1-5 mit Begründung.
+- Akzeptanz→Test-Vollständigkeit: Sind alle Testfall-Skizzen aus dem Planpaket umgesetzt?
+
+Rückgabe an die Session: NUR Pointer + Kurzform `finding-auditor.md · Note:<1-5> · <GO|NO-GO> · 🔴:<n>` — kein Report-Body inline.
 ```
 
 ---
@@ -428,19 +668,26 @@ Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
 ### Impl-Review-Guard
 
 ```text
-Profil: implement-review-guard-agent (schreibt nur die eigene finding-Datei)
-Kanon-Pointer: `reviewer-gate-canon.md` (Linse = Guard, bindend)
-Ablauf + Prüfschritte + MCP + Datei-Handoff: `implement-review-guard-agent.md`
+Profil: implement-review-guard-agent (schreibt nur die eigene finding-Datei).
+Pflicht-MCP:
+- review_with_index
 
-Runden-Pfad:[requests/plans/<feature>/iteration-N/round-M/]
-Evidenz-Pointer:[requests/plans/<feature>/iteration-N/round-M/evidence.md]
+Datei-Handoff (Pflicht — s. secondbrain-schema.md):
+Schreibe [Runden-Pfad]/finding-guard.md: Kopf + Struktur-Tabelle
+(File | Line | Tier-Vorschlag 🔴/🟡/🟢 | Befund | Failure-Scenario); PRESERVE-Liste + erfüllte ACs als Block unter die Tabelle.
+
+In die Datei:
+- Nummerierte Stärken, bereits erfüllte ACs, tragfähige Vereinfachungen.
+- Akzeptanz-Coverage-Positiv: Welche Testfall-Skizzen sind vollständig und sauber umgesetzt?
+
+Rückgabe an die Session: NUR Pointer + Kurzform `finding-guard.md · PRESERVE:<n> · erfüllte-ACs:<n>` — kein Report-Body inline.
 ```
 
 ---
 
 ### Review-Digest (Implement)
 
-Vom PL (Round-Executor) durch **Lesen** der `finding-*.md` der Runde gebaut → als `iteration-N/round-M/digest.md`
+Vom Digest-Leaf (implement-round-executor) durch **Lesen** der `finding-*.md` der Runde gebaut → als `iteration-N/round-M/digest.md`
 persistiert. Nicht aus Agent-Returns zusammengesetzt. Der Fix-Planer der Folgerunde erhält den `digest.md`-Pointer.
 
 ```text

@@ -5,6 +5,7 @@
 ### C#
 # Build results
 [Bb]in/
+!plugins/*/bin/
 [Oo]bj/
 
 # Visual Studio cache/options directory

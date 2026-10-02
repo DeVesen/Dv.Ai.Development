@@ -2,8 +2,6 @@
 
 Verbindliche Prompt-Vorlagen: [../references/subagent-prompts.md](../references/subagent-prompts.md).
 
-Task-Contract (Schema, Topologie, Granularität, Kriterien): [../references/task-contract.md](../references/task-contract.md).
-
 ---
 
 ## Planung ist lean/solo
@@ -32,11 +30,9 @@ Phase 4a   Interface-Design / Topic-Map + Teilplaene     plan-agent (Opus, solo)
               + Service als eigene Bounded-Context-Domaene denken (§12)
               + je Topic Akzeptanz→Test-Liste (§8/F1)
 
-Phase 4c   Konsolidierung → Cut-Prozedur                 plan-agent (Opus, solo)
+Phase 4c   Konsolidierung zur Arbeitsversion             plan-agent (Opus, solo)
               Schnittstellen vs. Teilplaene: Drift/Luecken aufloesen
               IMP-Slices konsolidieren, Wellen/Blocking vorbereiten
-              → Cut-Prozedur (6 Schritte, s. plan-agent.md §Cut-Prozedur)
-                → tasks/task-NNN.md + tasks/index.md
 
 Phase 6    Synthese                                      plan-agent (Opus, solo)
               - Komplexitaets- und Executor-Empfehlung
@@ -195,16 +191,6 @@ Planner MUSS bei mat-*-Selektoren diese Liste vor dem Aufnehmen in den Plan kons
 
 ---
 
-## Cut-Prozedur — Verweis
-
-Die 6-Schritt-Cut-Prozedur (Topic-Map → Vertragsnaht-Schnitt → AC-Mapping → Hochfalten/Splitten →
-Annotieren → `tasks/index.md`) ist vollständig in `plan-agent.md` (§ Cut-Prozedur —
-Task-Normalisierung) definiert und dort nach Phase 4c einzuhalten.
-
-Task-Schema und Kriterien: [`../references/task-contract.md`](../references/task-contract.md).
-
----
-
 ## A3 — Plan-Persistenz
 
 Pfad: **`requests/plans/plan-<feature>.md`**.
@@ -270,7 +256,7 @@ Wenn der Outer Loop einen Requirement-Gap zurueckmeldet (Delta-Protokoll vorhand
 ### Eingabe
 
 - Originaler Request (unveraendert)
-- Delta-Protokoll (`requests/plans/<feature>/outer/delta-N.md` — vom Terminal-PM des Impl-Outer-Loops geschrieben, STORY-034)
+- Delta-Protokoll (`requests/plans/<feature>/outer/delta-N.md` — vom Outer-Verdikt-PM-Leaf des Impl-Outer-Loops geschrieben, STORY-034)
 - Bestehender Plan (`requests/plans/plan-<feature>.md`) — geerbt als Basis
 
 ### Planungs-Umfang

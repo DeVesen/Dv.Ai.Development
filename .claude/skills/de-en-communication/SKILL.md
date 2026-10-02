@@ -1,6 +1,9 @@
 ---
 name: de-en-communication
-description: Communication guidelines for German-English collaboration. Always apply this skill to all conversations and code work. Use this skill to determine: (1) When to respond in German vs. English vs. mixed German-English; (2) How to handle code, comments, documentation, and technical output; (3) Language rules for Voice input, text conversations, and software development tasks. Trigger this skill automatically for every interaction to ensure consistent communication patterns across all code work, documentation, and technical discussions.
+description: >
+  Use for every conversation and all code work to determine response language
+  (German/English/mixed), code/comments/documentation language, and voice-input rules.
+  Auto-trigger on every interaction — no explicit call needed.
 ---
 
 # Deutsch-Englisch Kommunikations-Skill

@@ -1,0 +1,28 @@
+{
+  "name": "dv-ai-development",
+  "owner": {
+    "name": "DeVesen"
+  },
+  "plugins": [
+    {
+      "name": "dv-angular",
+      "source": "./plugins/angular"
+    },
+    {
+      "name": "dv-craft",
+      "source": "./plugins/craft"
+    },
+    {
+      "name": "dv-dotnet",
+      "source": "./plugins/dotnet"
+    },
+    {
+      "name": "dv-forge",
+      "source": "./plugins/forge"
+    },
+    {
+      "name": "dv-working-capturing",
+      "source": "./plugins/working-capturing"
+    }
+  ]
+}

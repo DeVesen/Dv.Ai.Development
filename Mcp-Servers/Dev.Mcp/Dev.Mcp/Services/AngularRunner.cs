@@ -8,6 +8,7 @@ public sealed partial class AngularRunner
 {
     private const int MaxErrors = 50;
     private const int MaxWarnings = 20;
+    private const int FallbackLineCount = 10;
     private const int BuildTimeoutSeconds = 300;
     private const int TestTimeoutSeconds = 600;
 
@@ -21,6 +22,18 @@ public sealed partial class AngularRunner
 
     [GeneratedRegex(@"(?:WARNING in |warning\s+TS\d+:|⚠\s*\[WARNING\])", RegexOptions.IgnoreCase)]
     private static partial Regex BuildWarningLineRegex();
+
+    // Node and CLI notices that precede a failed start: "(node:1234) MaxListenersExceededWarning", deprecated builders.
+    [GeneratedRegex(@"^\(node:\d+\)|--trace-warnings|\w*Warning:|\bdeprecated\b", RegexOptions.IgnoreCase)]
+    private static partial Regex NodeWarningLineRegex();
+
+    // Lines that name why a test run could not start, e.g. "Error: Could not find the '...' builder's node package."
+    [GeneratedRegex(@"\berror\b|could not find|cannot find|not found", RegexOptions.IgnoreCase)]
+    private static partial Regex FailureCauseLineRegex();
+
+    // esbuild prints the file location on its own line below the "[ERROR]" header: "src/app/x.ts:10:9:"
+    [GeneratedRegex(@"^(.+:\d+:\d+):$")]
+    private static partial Regex EsbuildLocationLineRegex();
 
     [GeneratedRegex(@"Executed\s+\d+\s+of\s+\d+.*", RegexOptions.IgnoreCase)]
     private static partial Regex KarmaExecutedRegex();
@@ -41,6 +54,13 @@ public sealed partial class AngularRunner
     [GeneratedRegex(@"^(?:FAIL|PASS)\s+.+", RegexOptions.Multiline)]
     private static partial Regex JestSuiteLineRegex();
 
+    // Vitest output patterns (@angular/build:unit-test with runner: "vitest")
+    [GeneratedRegex(@"^\s*(?:×|✗)\s+(.+)", RegexOptions.Multiline)]
+    private static partial Regex VitestFailedTestRegex();
+
+    [GeneratedRegex(@"^\s*(?:Test Files|Tests)\s+.+", RegexOptions.Multiline)]
+    private static partial Regex VitestSummaryRegex();
+
     public async Task<AngularBuildResult> BuildAsync(string projectRoot, string? configuration = null, CancellationToken cancellationToken = default)
     {
         if (!ValidateRoot(projectRoot, out var error)) return MakeFailResult(error, "ng build");
@@ -59,51 +79,88 @@ public sealed partial class AngularRunner
         if (!ValidateRoot(projectRoot, out var error)) return MakeFailResult(error, "ng test");
 
         var preStep = await EnsureCompatibleEsbuildAsync(projectRoot, cancellationToken);
-        var isJest = IsJestBuilder(projectRoot);
+        var builderKind = DetectTestBuilder(projectRoot);
         var args = new List<string> { "test" };
-        if (!isJest) args.Add("--watch=false");
+        if (builderKind != TestBuilderKind.Jest) args.Add("--watch=false");
         if (!string.IsNullOrWhiteSpace(options)) args.AddRange(options.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries));
 
-        var result = await RunAsync("ng test", projectRoot, args, isJest ? ParseJestOutput : ParseTestOutput, TestTimeoutSeconds, cancellationToken);
+        var parser = builderKind switch
+        {
+            TestBuilderKind.Jest => ParseJestOutput,
+            TestBuilderKind.Vitest => ParseVitestOutput,
+            _ => (Func<string, string, int, AngularBuildResult>)ParseTestOutput,
+        };
+
+        var result = await RunAsync("ng test", projectRoot, args, parser, TestTimeoutSeconds, cancellationToken);
         if (preStep != null) result.ConsoleOutput = preStep + "\n\n" + result.ConsoleOutput;
         return result;
     }
 
-    private static bool IsJestBuilder(string projectRoot)
+    private enum TestBuilderKind { Karma, Jest, Vitest }
+
+    private static TestBuilderKind DetectTestBuilder(string projectRoot)
     {
         var angularJsonPath = Path.Combine(projectRoot, "angular.json");
-        if (!File.Exists(angularJsonPath)) return false;
+        if (!File.Exists(angularJsonPath)) return TestBuilderKind.Karma;
         try
         {
             var json = File.ReadAllText(angularJsonPath);
             using var doc = System.Text.Json.JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty("projects", out var projects)) return false;
+            if (!doc.RootElement.TryGetProperty("projects", out var projects)) return TestBuilderKind.Karma;
             foreach (var project in projects.EnumerateObject())
             {
-                if (project.Value.TryGetProperty("architect", out var arch) &&
-                    arch.TryGetProperty("test", out var test) &&
-                    test.TryGetProperty("builder", out var builder))
+                if (!project.Value.TryGetProperty("architect", out var arch) ||
+                    !arch.TryGetProperty("test", out var test) ||
+                    !test.TryGetProperty("builder", out var builder)) continue;
+
+                var builderValue = builder.GetString() ?? string.Empty;
+                if (builderValue.Contains("jest", StringComparison.OrdinalIgnoreCase)) return TestBuilderKind.Jest;
+
+                // @angular/build:unit-test (v20+) defaults to the vitest runner; the
+                // "runner" option makes it explicit when set.
+                if (builderValue.Contains("unit-test", StringComparison.OrdinalIgnoreCase))
                 {
-                    var builderValue = builder.GetString() ?? string.Empty;
-                    if (builderValue.Contains("jest", StringComparison.OrdinalIgnoreCase)) return true;
+                    if (test.TryGetProperty("options", out var testOptions) &&
+                        testOptions.TryGetProperty("runner", out var runner) &&
+                        (runner.GetString() ?? string.Empty).Contains("karma", StringComparison.OrdinalIgnoreCase))
+                        return TestBuilderKind.Karma;
+                    return TestBuilderKind.Vitest;
                 }
             }
         }
         catch { /* fall through */ }
-        return false;
+        return TestBuilderKind.Karma;
     }
 
     public static AngularBuildResult ParseBuildOutput(string stdout, string stderr, int exitCode)
     {
         var lines = StripAnsi(stdout + "\n" + stderr).Split('\n');
-        var errors = lines.Where(l => BuildErrorLineRegex().IsMatch(l)).Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray();
+        var recognizedErrors = ExtractBuildErrors(lines);
         var warnings = lines.Where(l => BuildWarningLineRegex().IsMatch(l)).Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(MaxWarnings).ToArray();
 
+        // The caller never sees the raw console: a failure without a recognized error line
+        // still has to carry something actionable, so hand back the tail of the output.
+        var useFallback = exitCode != 0 && recognizedErrors.Length == 0;
+        var errors = useFallback ? LastNonEmptyLines(lines) : recognizedErrors;
+
         var summary = exitCode == 0 ? $"Build successful. {warnings.Length} warning(s)."
-            : errors.Length > 0 ? $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s)."
-            : $"Build failed (exitCode {exitCode}) — see Console output for details.";
+            : useFallback ? $"Build failed (exitCode {exitCode}) with no recognized error line — errors holds the last {errors.Length} output line(s)."
+            : $"Build failed: {errors.Length} error(s), {warnings.Length} warning(s).";
 
         return new AngularBuildResult { Success = exitCode == 0, Command = "ng build", Errors = errors, Warnings = warnings, ExitCode = exitCode, Summary = summary };
+    }
+
+    private static string[] NodeWarnings(string[] lines) =>
+        lines.Select(l => l.Trim()).Where(l => l.Length > 0 && NodeWarningLineRegex().IsMatch(l)).Distinct().Take(MaxWarnings).ToArray();
+
+    // A run that fails without failed tests or compile errors: the lines naming the cause, Node warnings excluded;
+    // without such a line the last lines of the output.
+    private static string[] FailureLines(string[] lines, Func<string, bool>? ignore = null)
+    {
+        var candidates = lines.Select(l => l.Trim())
+            .Where(l => l.Length > 0 && !NodeWarningLineRegex().IsMatch(l) && !(ignore?.Invoke(l) ?? false)).ToArray();
+        var causes = candidates.Where(l => FailureCauseLineRegex().IsMatch(l)).Distinct().Take(MaxErrors).ToArray();
+        return causes.Length > 0 ? causes : candidates.TakeLast(FallbackLineCount).ToArray();
     }
 
     public static AngularBuildResult ParseTestOutput(string stdout, string stderr, int exitCode)
@@ -118,8 +175,7 @@ public sealed partial class AngularRunner
         string[] errors;
         if (failedTests.Length > 0) errors = failedTests;
         else if (tsErrors.Length > 0) errors = tsErrors;
-        else if (exitCode != 0 && !string.IsNullOrWhiteSpace(stderr))
-            errors = StripAnsi(stderr).Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).Take(MaxErrors).ToArray();
+        else if (exitCode != 0) errors = FailureLines(lines);
         else errors = [];
 
         var summary = executedLine is { Success: true } ? executedLine.Value.Trim()
@@ -128,7 +184,7 @@ public sealed partial class AngularRunner
             : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
             : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
 
-        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = [], ExitCode = exitCode, Summary = summary };
+        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = NodeWarnings(lines), ExitCode = exitCode, Summary = summary };
     }
 
     public static AngularBuildResult ParseJestOutput(string stdout, string stderr, int exitCode)
@@ -150,15 +206,7 @@ public sealed partial class AngularRunner
         string[] errors;
         if (failedTests.Length > 0) errors = failedTests;
         else if (tsErrors.Length > 0) errors = tsErrors;
-        else if (exitCode != 0)
-        {
-            var stderrLines = StripAnsi(stderr).Split('\n').Select(l => l.Trim())
-                .Where(l => l.Length > 0 && !JestExperimentalNoteRegex().IsMatch(l)).ToArray();
-            var fallbackLines = lines.Where(l => l.Contains("Error", StringComparison.OrdinalIgnoreCase) && !JestExperimentalNoteRegex().IsMatch(l))
-                .Select(l => l.Trim()).Where(l => l.Length > 0).ToArray();
-            errors = stderrLines.Length > 0 ? stderrLines.Take(MaxErrors).ToArray()
-                : fallbackLines.Take(MaxErrors).ToArray();
-        }
+        else if (exitCode != 0) errors = FailureLines(lines, l => JestExperimentalNoteRegex().IsMatch(l));
         else errors = [];
 
         var summary = jestSummaryLine is { Success: true } ? jestSummaryLine.Value.Trim()
@@ -167,7 +215,34 @@ public sealed partial class AngularRunner
             : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
             : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
 
-        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = [], ExitCode = exitCode, Summary = summary };
+        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = NodeWarnings(lines), ExitCode = exitCode, Summary = summary };
+    }
+
+    public static AngularBuildResult ParseVitestOutput(string stdout, string stderr, int exitCode)
+    {
+        var combined = StripAnsi(stdout + "\n" + stderr);
+        var lines = combined.Split('\n');
+
+        var failedTests = lines.Select(l => VitestFailedTestRegex().Match(l)).Where(m => m.Success)
+            .Select(m => m.Groups[1].Value.Trim()).Where(t => t.Length > 0).Distinct().Take(MaxErrors).ToArray();
+
+        var tsErrors = lines.Where(l => BuildErrorLineRegex().IsMatch(l)).Select(l => l.Trim()).Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray();
+
+        var summaryLines = lines.Where(l => VitestSummaryRegex().IsMatch(l)).Select(l => l.Trim()).ToArray();
+
+        string[] errors;
+        if (failedTests.Length > 0) errors = failedTests;
+        else if (tsErrors.Length > 0) errors = tsErrors;
+        else if (exitCode != 0) errors = FailureLines(lines);
+        else errors = [];
+
+        var summary = summaryLines.Length > 0 ? string.Join(" | ", summaryLines)
+            : exitCode == 0 ? "All tests passed."
+            : failedTests.Length > 0 ? $"Tests failed: {failedTests.Length} failing test(s)."
+            : tsErrors.Length > 0 ? $"Test run failed: {tsErrors.Length} TypeScript compilation error(s) — see Console output."
+            : $"Test run failed (exitCode {exitCode}) — see Console output for details.";
+
+        return new AngularBuildResult { Success = exitCode == 0, Command = "ng test", Errors = errors, Warnings = NodeWarnings(lines), ExitCode = exitCode, Summary = summary };
     }
 
     private async Task<AngularBuildResult> RunAsync(
@@ -237,4 +312,23 @@ public sealed partial class AngularRunner
     };
 
     private static string StripAnsi(string input) => AnsiRegex().Replace(input, string.Empty);
+
+    private static string[] ExtractBuildErrors(string[] lines) =>
+        lines.Select((line, index) => (line, index))
+            .Where(x => BuildErrorLineRegex().IsMatch(x.line))
+            .Select(x => WithEsbuildLocation(lines, x.index))
+            .Where(l => l.Length > 0).Distinct().Take(MaxErrors).ToArray();
+
+    private static string WithEsbuildLocation(string[] lines, int headerIndex)
+    {
+        var header = lines[headerIndex].Trim();
+        if (!header.Contains("[ERROR]", StringComparison.OrdinalIgnoreCase)) return header;
+
+        var nextLine = lines.Skip(headerIndex + 1).Select(l => l.Trim()).FirstOrDefault(l => l.Length > 0) ?? string.Empty;
+        var location = EsbuildLocationLineRegex().Match(nextLine);
+        return location.Success ? $"{location.Groups[1].Value}: {header}" : header;
+    }
+
+    private static string[] LastNonEmptyLines(IEnumerable<string> lines) =>
+        lines.Select(l => l.Trim()).Where(l => l.Length > 0).TakeLast(FallbackLineCount).ToArray();
 }

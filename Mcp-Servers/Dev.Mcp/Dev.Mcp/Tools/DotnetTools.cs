@@ -163,6 +163,23 @@ public sealed class DotnetTools
             return (JsonSerializer.Serialize(result, JsonOptions.Default), result.ConsoleOutput ?? string.Empty);
         });
 
+    [McpServerTool(Name = "run_ef_migration")]
+    [Description("Runs dotnet-ef CLI operations: add, list, remove, database-update, has-pending-model-changes. " +
+                 "Replaces PowerShell(dotnet ef ...) shell commands. connection is never written to tool-call history or returned console output.")]
+    public async Task<string> RunEfMigration(
+        [Description("add | list | remove | database-update | has-pending-model-changes")] string action,
+        [Description("Absolute path to backend directory (CLI working directory)")] string backend_path,
+        [Description("Database project name (--project)")] string database_project,
+        [Description("Startup project name (--startup-project)")] string startup_project,
+        [Description("Migration name in PascalCase, required for action=add")] string? name = null,
+        [Description("Target migration name for action=database-update, optional")] string? target_migration = null,
+        [Description("Connection string for database-update / list / has-pending-model-changes. Never logged or echoed back.")] string? connection = null) =>
+        await ExecuteAsync("run_ef_migration", new { action, backend_path, database_project, startup_project, name, target_migration }, async () =>
+        {
+            var result = await _runner.RunEfMigrationAsync(action, backend_path, database_project, startup_project, name, target_migration, connection);
+            return (JsonSerializer.Serialize(result, JsonOptions.Default), result.ConsoleOutput);
+        });
+
     [McpServerTool(Name = "list_processes")]
     [Description("Lists running processes filtered by name pattern. Replaces PowerShell(Get-Process ...) for tooling diagnostics. Returns {processes:[{id, name, path}]}.")]
     public string ListProcesses(

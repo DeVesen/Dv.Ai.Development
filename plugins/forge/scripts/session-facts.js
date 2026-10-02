@@ -1,0 +1,390 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+const mcpUsage = require('./mcp-usage.js');
+const { RetroError: FactsError, readEntries, textOf, tokensOf, clock, callLabel, isSummary, humanEvents, shorten } = require('./lib/transcript');
+const { thousands } = require('./lib/retro-format');
+const { rangeOf } = require('./lib/retro-range');
+const { projectDir, resolveSession, ownTranscriptOf, subagentFiles } = require('./lib/session-files');
+const { requestsOf } = require('./lib/retro-requests');
+const { timeProfile, harnessHints, requestContext, firstRequest, cacheRebuilds, contextLoads, longRuns, idleReruns } = require('./lib/retro-measures');
+const { readConfig } = require('./forge-config.js');
+const { signalHints } = require('./lib/retro-signals');
+const { writeSnapshot, draftPath } = require('./lib/retro-files');
+const { buildSnapshot } = require('./lib/retro-snapshot');
+const USAGE = 'Aufruf: node session-facts.js [--file <session.jsonl>] [--session <id>] [--cwd <projektordner>] [--expect <mcp-server,...>]'
+  + ' [--since-command <name>] [--before-retro] [--snapshot] [--lenient]\n';
+const DENIAL = /denied|blocked|Permission|hook/i;
+
+function shortError(text) {
+  return textOf(text).replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+
+// Die ersten zwei Wörter eines Shell-Befehls, z. B. "git status" oder "dotnet test".
+function commandHead(part) {
+  if (!['Bash', 'PowerShell'].includes(part.name) || typeof part.input?.command !== 'string') return null;
+  const segments = part.input.command.split(/&&|;|\|\||\n/).map((segment) => segment.trim());
+  const words = (segments.find((segment) => segment && !/^cd\s/.test(segment)) ?? '')
+    .split(/\s+/).filter((word) => !/^\w+=/.test(word));
+  if (words.length === 0) return null;
+  return words.slice(0, /^[a-z][\w:-]*$/i.test(words[1] ?? '') ? 2 : 1).join(' ');
+}
+
+function analyze(entries) {
+  const facts = {
+    turns: 0, requests: 0, input: 0, cached: 0, output: 0, models: new Set(), tools: new Map(), errors: new Map(),
+    denials: 0, repeats: 0, skills: new Map(), compactions: 0, first: null, last: null,
+    results: [], reads: new Map(), commands: new Map(),
+  };
+  const names = new Map();
+  const calls = new Map();
+  let previousCall = null;
+  const seenRequests = new Set();
+  const marked = entries.some((entry) => entry.origin);
+  for (const entry of entries) {
+    if (entry.timestamp) {
+      facts.first ??= entry.timestamp;
+      facts.last = entry.timestamp;
+    }
+    if (isSummary(entry, marked)) facts.compactions += 1;
+    const message = entry.message;
+    if (!message) continue;
+    if (entry.type === 'assistant') {
+      if (message.model) facts.models.add(message.model);
+      if (!seenRequests.has(entry.requestId ?? entry.uuid)) {
+        seenRequests.add(entry.requestId ?? entry.uuid);
+        facts.requests += 1;
+        const tokens = tokensOf(message.usage);
+        facts.input += tokens.input;
+        facts.cached += tokens.cached;
+        facts.output += tokens.output;
+      }
+      for (const part of Array.isArray(message.content) ? message.content : []) {
+        if (part.type !== 'tool_use') continue;
+        names.set(part.id, part.name);
+        calls.set(part.id, callLabel(part));
+        if (part.name === 'Read' && part.input?.file_path) facts.reads.set(part.input.file_path, (facts.reads.get(part.input.file_path) ?? 0) + 1);
+        const head = commandHead(part);
+        if (head) facts.commands.set(head, (facts.commands.get(head) ?? 0) + 1);
+        facts.tools.set(part.name, (facts.tools.get(part.name) ?? 0) + 1);
+        if (part.name === 'Skill' && part.input?.skill) facts.skills.set(part.input.skill, (facts.skills.get(part.input.skill) ?? 0) + 1);
+        const call = `${part.name}:${JSON.stringify(part.input)}`;
+        if (call === previousCall) facts.repeats += 1;
+        previousCall = call;
+      }
+    }
+    if (entry.type === 'user') {
+      const content = message.content;
+      for (const part of Array.isArray(content) ? content : []) {
+        if (part.type === 'tool_result') facts.results.push({ call: calls.get(part.tool_use_id) ?? 'unbekannt', chars: textOf(part.content).length });
+        if (part.type !== 'tool_result' || !part.is_error) continue;
+        const tool = names.get(part.tool_use_id) ?? 'unbekannt';
+        const text = shortError(part.content);
+        if (DENIAL.test(text)) facts.denials += 1;
+        const list = facts.errors.get(tool) ?? [];
+        list.push(text);
+        facts.errors.set(tool, list);
+      }
+    }
+  }
+  facts.humans = humanEvents(entries);
+  facts.turns = facts.humans.filter((event) => event.kind === 'Eingabe').length;
+  facts.time = timeProfile(entries);
+  facts.hints = harnessHints(entries);
+  const requests = requestsOf(entries);
+  facts.context = requestContext(requests);
+  facts.baseline = firstRequest(entries, requests);
+  facts.rebuilds = cacheRebuilds(requests);
+  facts.loads = contextLoads(entries, requests);
+  facts.longRuns = longRuns(entries);
+  facts.idleReruns = idleReruns(entries);
+  return facts;
+}
+
+function minutes(first, last) {
+  if (!first || !last) return '?';
+  return Math.round((Date.parse(last) - Date.parse(first)) / 60000);
+}
+
+// Die .meta.json eines Subagents fehlt, ist leer oder halb geschrieben, wenn die Session noch läuft oder abbrach;
+// die Zeile fällt dann auf Dateiname, `?` und das Modell aus den Fakten zurück, statt die Fakten abzubrechen.
+function readMeta(metaFile) {
+  try {
+    return JSON.parse(fs.readFileSync(metaFile, 'utf8')) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+function subagentRows(sessionFile, keep = () => true) {
+  return subagentFiles(sessionFile).flatMap((file) => {
+    const entries = readEntries(file);
+    return keep(entries) ? [{ file, entries }] : [];
+  }).map(({ file, entries }) => {
+    const meta = readMeta(file.replace(/\.jsonl$/, '.meta.json'));
+    const facts = analyze(entries);
+    const errors = [...facts.errors.values()].reduce((sum, list) => sum + list.length, 0);
+    return {
+      facts,
+      description: meta.description ?? path.basename(file), type: meta.agentType ?? '?', model: meta.model ?? [...facts.models].join(','),
+      tokens: facts.input + facts.cached + facts.output, fresh: facts.input + facts.output, tools: [...facts.tools.values()].reduce((a, b) => a + b, 0), errors,
+      duration: minutes(facts.first, facts.last),
+    };
+  }).sort((a, b) => b.tokens - a.tokens);
+}
+
+const TOP_RESULTS = 5;
+const MIN_COMMAND_REPEATS = 3;
+
+function merge(target, map) {
+  for (const [key, count] of map) target.set(key, (target.get(key) ?? 0) + count);
+  return target;
+}
+
+// Sparpotenzial über Hauptsession und Subagents: wo viel Kontext floss oder Arbeit sich wiederholte.
+function savings(all) {
+  return ['## Sparpotenzial (Hauptsession und Subagents)', '', savingsLists(all)].join('\n');
+}
+
+function savingsData(all) {
+  return {
+    results: all.flatMap((facts) => facts.results).sort((a, b) => b.chars - a.chars).slice(0, TOP_RESULTS),
+    reads: [...all.reduce((map, facts) => merge(map, facts.reads), new Map())].filter(([, count]) => count > 1).sort((a, b) => b[1] - a[1]),
+    commands: [...all.reduce((map, facts) => merge(map, facts.commands), new Map())].filter(([, count]) => count >= MIN_COMMAND_REPEATS).sort((a, b) => b[1] - a[1]),
+  };
+}
+
+function savingsLists(all) {
+  const { results, reads, commands } = savingsData(all);
+  return [
+    'Größte Tool-Ergebnisse (etwa 4 Zeichen je Token):',
+    ...(results.length > 0 ? results.map((r) => `- ${thousands(r.chars / 4)} Tokens · ${r.call}`) : ['- keine']),
+    '',
+    'Mehrfach gelesene Dateien:',
+    ...(reads.length > 0 ? reads.slice(0, 10).map(([file, count]) => `- ${count}× ${file}`) : ['- keine']),
+    '',
+    `Wiederkehrende Shell-Befehle (ab ${MIN_COMMAND_REPEATS}×):`,
+    ...(commands.length > 0 ? commands.slice(0, 10).map(([head, count]) => `- ${count}× ${head}`) : ['- keine']),
+    '',
+  ].join('\n');
+}
+
+function kindCount(humans, kind) {
+  return humans.filter((event) => event.kind === kind).length;
+}
+
+function measuredOf(facts, allFacts, mcp) {
+  const { reads, commands } = savingsData(allFacts);
+  return {
+    errors: errorLinesOf(facts).length, denials: facts.denials, rejections: kindCount(facts.humans, 'Ablehnung'),
+    interruptions: kindCount(facts.humans, 'Unterbrechung'), repeats: facts.repeats, compactions: facts.compactions,
+    expectedUnused: mcp.expectedUnused.length, toolchainShell: mcp.fallbacks.length, baselineTokens: facts.baseline?.context ?? 0,
+    cacheRebuilds: facts.rebuilds.length, contextLoads: facts.loads.length, longRuns: facts.longRuns.length,
+    idleReruns: facts.idleReruns.length, repeatedReads: reads.length, recurringCommands: commands.length, silenceMinutes: facts.time.silence,
+  };
+}
+
+function errorLinesOf(facts) {
+  return [...facts.errors.entries()].flatMap(([tool, list]) => list.map((text) => `- ${tool}: ${text}`));
+}
+
+function timeLine(time) {
+  const from = time.silenceFrom ? ` (ab Eintrag ${time.silenceFrom})` : '';
+  return `- Zeit: aktiv ${time.active} min · Warten auf den Menschen ${time.waiting} min · längste Strecke ohne Text an den Menschen ${time.silence} min${from}`;
+}
+
+function contextLine(context) {
+  return `- Kontext je Anfrage: ${context ? `Ø ${thousands(context.average)}, größte ${thousands(context.largest)}` : 'keine Anfrage'}`;
+}
+
+function baselineLine(baseline) {
+  if (!baseline) return '- Grundlast erste Anfrage: keine Anfrage';
+  const attachments = baseline.attachments.map((attachment) => `${attachment.name} ${thousands(attachment.tokens)}`).join(', ') || 'keine';
+  return `- Grundlast erste Anfrage: ${thousands(baseline.context)} Kontext · größte Anhänge davor: ${attachments}`;
+}
+
+function rebuildLine(rebuilds) {
+  const listed = rebuilds.map((rebuild) => `${clock(rebuild.time)} nach ${rebuild.pause} min Pause (${thousands(rebuild.created)} neu)`);
+  return `- Cache-Neuaufbauten: ${listed.join(', ') || 'keiner'}`;
+}
+
+function factLines(facts, agents) {
+  const tools = [...facts.tools.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => `${name} ${count}`).join(', ') || '-';
+  const skills = [...facts.skills.entries()].map(([name, count]) => `${name} ${count}`).join(', ') || '-';
+  const agentTokens = agents.reduce((sum, agent) => sum + agent.tokens, 0);
+  return [
+    `- Dauer: ${minutes(facts.first, facts.last)} min · Modelle: ${[...facts.models].join(', ') || '?'}`,
+    `- Eingaben des Menschen: ${facts.turns} · API-Anfragen: ${facts.requests} · Zusammenfassungen: ${facts.compactions}`,
+    `- Tokens Hauptsession: ${thousands(facts.input)} neu gelesen, ${thousands(facts.cached)} aus dem Cache, ${thousands(facts.output)} Ausgabe`,
+    `- Tokens Subagents: ${thousands(agentTokens)} in ${agents.length} Agents`,
+    `- Tool-Aufrufe: ${tools}`,
+    `- Skills: ${skills}`,
+    `- Tool-Fehler: ${errorLinesOf(facts).length}, davon blockiert oder verweigert: ${facts.denials} · direkt wiederholte gleiche Aufrufe: ${facts.repeats}`,
+    timeLine(facts.time),
+    `- Harness-Hinweise: ${facts.hints.map(([kind, count]) => `${kind} ${count}`).join(', ') || 'keine'}`,
+    contextLine(facts.context),
+    baselineLine(facts.baseline),
+    rebuildLine(facts.rebuilds),
+  ];
+}
+
+function humanLines(humans) {
+  if (humans.length === 0) return ['- keine'];
+  return humans.map((event) => `- #${event.entryNo} ${clock(event.time)} ${event.kind}: ${event.text}`);
+}
+
+function listOrNone(lines) {
+  return lines.length > 0 ? lines : ['- keine'];
+}
+
+function measureLines(facts) {
+  return [
+    'Größte Kontextlasten (Größe × folgende Anfragen, ab 1k Tokens):',
+    ...listOrNone(facts.loads.map((load) => `- ${thousands(load.tokens)} × ${load.following} Anfragen = ${thousands(load.load)} · ${load.label} (Eintrag ${load.entryNo})`)),
+    '',
+    'Lange Tool-Läufe (ab 60 s):',
+    ...listOrNone(facts.longRuns.map((run) => `- ${run.seconds} s · ${run.label} (Eintrag ${run.entryNo})`)),
+    '',
+    'Build-, Test- und Lint-Läufe ohne Änderung dazwischen:',
+    ...listOrNone(facts.idleReruns.map((rerun) => `- ${rerun.count}× erneut: ${shorten(rerun.command, 100)}`)),
+    '',
+  ];
+}
+
+function render(sessionFile, facts, agents, labels = []) {
+  const errorLines = errorLinesOf(facts);
+  return [
+    `# Session-Fakten: ${path.basename(sessionFile, '.jsonl')}`,
+    '',
+    ...labels.map((label) => `- ${label}`),
+    ...factLines(facts, agents),
+    '',
+    ...measureLines(facts),
+    '## Subagents (nach Tokens)',
+    '| Auftrag | Typ | Modell | Tokens gesamt | davon neu | Tools | Fehler | min |',
+    '|---|---|---|---|---|---|---|---|',
+    ...agents.map((agent) => `| ${agent.description} | ${agent.type} | ${agent.model} | ${thousands(agent.tokens)} | ${thousands(agent.fresh)} | ${agent.tools} | ${agent.errors} | ${agent.duration} |`),
+    '',
+    '## Eingaben des Menschen',
+    ...humanLines(facts.humans),
+    '',
+    '## Tool-Fehler der Hauptsession',
+    ...(errorLines.length > 0 ? errorLines : ['- keine']),
+    '',
+  ].join('\n');
+}
+
+const FLAGS = { '--file': 'file', '--session': 'session', '--cwd': 'cwd', '--expect': 'expect', '--since-command': 'sinceCommand' };
+const SWITCHES = { '--before-retro': 'beforeRetro', '--lenient': 'lenient', '--snapshot': 'snapshot' };
+
+// `--file` und `--session` dürfen zusammen stehen: ausgewertet wird die Datei, die Session benennt Snapshot und Entwurf.
+function parseArgs(args) {
+  const options = {};
+  for (let index = 0; index < args.length; index += 1) {
+    const flag = args[index];
+    if (SWITCHES[flag]) {
+      options[SWITCHES[flag]] = true;
+      continue;
+    }
+    const key = FLAGS[flag];
+    if (!key || args[index + 1] === undefined) return null;
+    options[key] = args[index + 1];
+    index += 1;
+  }
+  if (options.expect) options.expect = options.expect.split(',').map((name) => name.trim()).filter(Boolean);
+  return options;
+}
+
+function headlineOf(facts, agents) {
+  const agentInput = agents.reduce((sum, agent) => sum + agent.facts.input, 0);
+  return `Dauer ${minutes(facts.first, facts.last)} min, Eingaben des Menschen ${facts.turns}, Tokens neu ${thousands(facts.input)} Hauptsession und ${thousands(agentInput)} Subagents`;
+}
+
+function numbersOf(facts, agents, allFacts) {
+  return [...factLines(facts, agents), '', ...measureLines(facts), savingsLists(allFacts).trimEnd()].join('\n');
+}
+
+// Ein Entwurf eines abgebrochenen früheren Laufs gehört nicht zum neuen Snapshot; so legt das `Write` des Skills die Datei immer neu an.
+function saveSnapshot(snapshot) {
+  const written = writeSnapshot(snapshot);
+  fs.rmSync(draftPath(snapshot.session), { force: true });
+  return `\nSnapshot: ${written}\nEntwurf: ${draftPath(snapshot.session)}\n`;
+}
+
+// Erwartete MCP-Server aus `MCP-Erwartet` der Projekt-Einstellungen.
+function configuredExpect(cwd) {
+  try {
+    return readConfig(cwd).config['MCP-Erwartet'].split(',').map((name) => name.trim()).filter(Boolean);
+  } catch {
+    // Ohne Git-Repo gibt es keine Projekt-Einstellungen und damit keine Erwartung.
+    return [];
+  }
+}
+
+// Projekt des ausgewerteten Protokolls. `--cwd` gilt immer. Ohne `--file` ist es die eigene Session, gesucht über den
+// aktuellen Ordner; der ist damit das Projekt, auch nach einem Wechsel in einen Worktree. Nur bei `--file` gilt das
+// `cwd` der Protokolleinträge, damit Erwartung, Branch und Projekt-Dateien aus dem Projekt des fremden Protokolls
+// kommen; fehlt dieser Ordner, gilt der aktuelle Ordner mit Warnung.
+function projectOf(options, session, warn = (text) => process.stderr.write(`Warnung: ${text}\n`)) {
+  if (options.cwd) return path.resolve(options.cwd);
+  if (!options.file || !session.cwd) return path.resolve(process.cwd());
+  if (fs.existsSync(session.cwd)) return path.resolve(session.cwd);
+  warn(`Projektordner des Protokolls fehlt: ${session.cwd}; ausgewertet wird im aktuellen Ordner, sonst mit --cwd <projektordner> angeben`);
+  return path.resolve(process.cwd());
+}
+
+// `transcriptEntries` ist der Stand des Hauptprotokolls jetzt, vor der ersten Modell-Anfrage der Retrospektive:
+// Ihr späteres `Write` des Entwurfs gehört damit nie zum Korpus der Zitat-Prüfung.
+function run(options) {
+  const { file, warning } = resolveSession(options);
+  if (!fs.existsSync(file)) throw new FactsError(`Session-Datei nicht gefunden: ${file}`);
+  const entries = readEntries(file);
+  const range = rangeOf(entries, options);
+  const session = mcpUsage.loadSession(file, { entries: range.entries, keepSubagent: range.keepSubagent });
+  const cwd = projectOf(options, session);
+  if (options.cwd) session.cwd = options.cwd;
+  const expect = [...new Set([...(options.expect ?? []), ...configuredExpect(cwd)])];
+  const facts = analyze(range.entries);
+  const agents = subagentRows(file, range.keepSubagent);
+  const mcp = mcpUsage.render(session, { expect, transcript: file });
+  const allFacts = [facts, ...agents.map((agent) => agent.facts)];
+  const measured = measuredOf(facts, allFacts, mcpUsage.measure(session, { expect }));
+  const output = `${render(file, facts, agents, range.labels)}\n${savings(allFacts)}\n${mcp}\n## Hinweise zu den Signalen\n${signalHints(measured).join('\n')}\n`;
+  if (!options.snapshot) return { output, warning };
+  const snapshot = buildSnapshot({
+    id: options.session ?? path.basename(file, '.jsonl'), transcript: file, ownTranscript: ownTranscriptOf(options, file),
+    transcriptEntries: entries.at(-1)?.entryNo ?? 0, cwd, range, facts,
+    headline: headlineOf(facts, agents), numbers: numbersOf(facts, agents, allFacts), mcp, expect,
+  });
+  return { output: `${output}${saveSnapshot(snapshot)}`, warning };
+}
+
+// Im fehlerverzeihenden Modus endet jeder Fehler mit einer Meldung auf stdout und Exit-Code 0, damit der
+// Skill, der die Fakten beim Laden einbettet, trotzdem lädt.
+function main() {
+  const options = parseArgs(process.argv.slice(2));
+  if (!options) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  try {
+    const { output, warning } = run(options);
+    if (warning) process.stderr.write(`${warning}\n`);
+    process.stdout.write(output);
+  } catch (error) {
+    if (options.lenient) {
+      process.stdout.write(`Fakten nicht verfügbar: ${error.message}
+`);
+      return;
+    }
+    if (!(error instanceof FactsError)) throw error;
+    process.stderr.write(`${error.message}\n`);
+    process.exit(1);
+  }
+}
+
+if (require.main === module) main();
+
+module.exports = { projectDir, analyze, readEntries, render, savings, subagentRows, run, parseArgs, resolveSession, projectOf };

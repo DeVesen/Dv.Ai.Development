@@ -1,22 +1,11 @@
 ---
 name: codebase-analyzer
 description: >
-  Aktiviere diesen Skill sobald der User über Code spricht — egal ob er plant,
-  gerade schreibt oder fertig ist. Der MCP hat 43 Tools für Angular und .NET.
-  Bei Code-Symbolen (Klasse, Methode, Property, Service, Route): zuerst
-  index_project/index_solution/find_in_index, Grep nur ergänzend. UI-Labels ohne Symbol:
-  keine Landkarte. Trigger: Review, Analyse, Planung, Implementierung, Merge,
-  index_project, index_solution, find_in_index, Code-Landkarte, Validierung, API-Contract,
-  compare_validation_rules, api-validation, DTO, DataAnnotations,
-  find_api_callers, HTTP-Calls, format:compact, analyze_compiler_diagnostics,
-  Compiler-Fehler, Build-Fehler, detect_untested_public_api,
-  ungetestete API, Test-Coverage-Proxy, find_symbol_references, Aufrufstellen,
-  Call-Sites, analyze_method_extraction_candidates, Extract-Method, Refactoring-Hotspot,
-  detect_god_classes, God Class, SRP, Single-Responsibility.
-when_to_use: >
-  Aktiviere sobald User über Code spricht — Planung, Implementierung, Nach-Implementierung,
-  Review, Merge, Sprint-End. Bei Code-Symbolen (Klasse, Methode, Service, Route) immer
-  index_project/find_in_index zuerst statt Grep. Nicht bei reinem UI-Wortschatz.
+  Use whenever the user talks about code — planning, writing, reviewing, merging, sprint-end.
+  For code symbols (class, method, service, route): use index_project/find_in_index first, not Grep.
+  Triggers: Review, Analyse, Refactoring, Compiler-Fehler, detect_untested_public_api,
+  God Class, SRP, API-Contract, DTO, compare_validation_rules, find_symbol_references,
+  analyze_method_extraction_candidates. Not for pure UI text without code symbols.
 ---
 
 ## Phase erkennen und MCP-First
@@ -56,7 +45,6 @@ Schlüsselwörter: "Tests laufen", "Feature fertig", "vor dem Merge", "Sprint-En
 
 **VERBOTEN als MCP-Argument:** `/workspace/`-Pfade, relative Pfade, `{frontend-path}`, `{backend-path}`.
 
-*Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
 
 ---
 
@@ -349,10 +337,7 @@ Bei `review_files_batch` mit `format: "compact"` wird zusätzlich eine **Endpoin
 
 ```
 // 1. Nur das Testprojekt laufen lassen (kein solution-weiter Run)
-test_dotnet_solution(
-  path: "C:\Develop\MyProject\tests\MyLib.Tests.Unit\MyLib.Tests.Unit.csproj",
-  options: "--collect:\"XPlat Code Coverage\" --results-directory ./TestResults"
-)
+dv-dotnet-test --path C:\Develop\MyProject\tests\MyLib.Tests.Unit\MyLib.Tests.Unit.csproj -- --collect:"XPlat Code Coverage" --results-directory ./TestResults
 
 // 2. Cobertura-XML direkt lesen — Pfad aus TestResults/<guid>/coverage.cobertura.xml
 // Glob nach der frischen XML-Datei:
@@ -377,16 +362,12 @@ Wenn `analyze_coverage` oder `analyze_test_health` meldet:
 - `"No coverage report found"`, oder
 - `lineCoverage: 0` / Coverage-Grade `[F]` mit 0%
 
-**→ Zuerst Tests mit Coverage über dev-mcp ausführen, dann Analyse wiederholen.**
+**→ Zuerst Tests mit Coverage über `dv-dotnet-test` bzw. `dv-angular-test` ausführen, dann Analyse wiederholen.**
 
 ### .NET
 
 ```
-// dev-mcp: test_dotnet_solution mit Coverage-Flags
-test_dotnet_solution(
-  path: "<Windows-Absolutpfad zur .sln oder zum Testprojekt>",
-  options: "--collect:\"XPlat Code Coverage\" --results-directory ./TestResults"
-)
+dv-dotnet-test --path <Testprojekt> -- --collect:"XPlat Code Coverage" --results-directory ./TestResults
 ```
 
 Nach erfolgreichem Run:
@@ -399,11 +380,7 @@ analyze_test_health(projectPath: "<Testprojekt-Pfad>", type: "dotnet")
 ### Angular
 
 ```
-// dev-mcp: test_angular_project mit Coverage-Flag
-test_angular_project(
-  project_root: "<Windows-Absolutpfad>",
-  options: "--code-coverage"
-)
+dv-angular-test --root <Angular-Ordner> -- --code-coverage
 ```
 
 Nach erfolgreichem Run:
@@ -514,7 +491,7 @@ find_symbol_references(
 
 **Coverage-Zahl nur nach echtem Test-Run:**
 ```
-test_angular_project(project_root: "C:\...", options: "--code-coverage")
+dv-angular-test --root C:\... -- --code-coverage
 analyze_coverage(projectPath: "C:\...", type: "angular")
 ```
 Hinweis: Stufe B kann in Coverage-Zahlen auftauchen, ohne Verhalten zu testen.
@@ -727,7 +704,7 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 | Interface-Implementierungen finden | dev-mcp |
 | Komplexität, Refactoring-Safety | codebase-analyzer |
 | Symbol-Index über ganzen Stack | codebase-analyzer |
-| Build-Output analysieren | codebase-analyzer / build-log-filter |
+| Build-Output analysieren | codebase-analyzer (`analyze_compiler_diagnostics`) |
 | Nullability, Duplikate, Coverage | codebase-analyzer |
 
 **Faustregel: Lesen → dev-mcp (`C:\...`). Analysieren → codebase-analyzer (`C:\...`).**
@@ -741,7 +718,33 @@ MCP-Nutzbarkeit: X/5 | Tool-Qualität: X/5 | Pfad-/Konfig-Aufwand: X/5
 - Kein Build nötig erwähnen wenn der User fragt ob er erst bauen muss
 - Coverage-Tools immer mit dem Hinweis versehen dass zuerst ein Test-Run nötig ist
 
-Weiterführende Dokumentation: `docs/mcp/codebase-analyzer.md`
+
+## Init — `.mcp.json` einrichten
+
+**Trigger:** `codebase-analyzer init`
+
+1. Frage den User: *„Wo liegt `index.js`? (z. B. `C:\Develop\.apps\codebase-analyzer\index.js`)"*
+2. Lies die lokale `.mcp.json` im aktuellen Arbeitsverzeichnis (falls vorhanden).
+3. Füge den `codebase-analyzer`-Eintrag hinzu (oder ersetze ihn wenn er bereits existiert):
+
+```json
+"codebase-analyzer": {
+  "command": "node",
+  "args": [
+    "<Pfad zu index.js>"
+  ],
+  "env": {
+    "LOG_VIEWER_PORT": "51012"
+  }
+}
+```
+
+4. Schreibe die aktualisierte `.mcp.json` zurück.
+5. Bestätige: *„`codebase-analyzer` wurde in `.mcp.json` eingetragen. Claude Code neu starten damit der Server geladen wird."*
+
+**Hinweis:** Die `.mcp.json` liegt im Projekt-Root (neben `CLAUDE.md`). Falls sie nicht existiert, anlegen mit `{ "mcpServers": { ... } }`.
+
+---
 
 ## Opt-out
 

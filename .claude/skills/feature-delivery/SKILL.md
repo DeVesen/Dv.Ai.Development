@@ -36,10 +36,12 @@ when_to_use: >
   Planung: immer Lean/solo — Orchestrator plant solo, schnell. Lean-Synonyme (schlank planen/lean planen/kompakt planen/Solo-Planung) sind bedeutungsgleich.
   Lean-Impl-Mode: implementiere lean impl → Impl-Review auf 3 Reviewer (risk · craft · readiness) oder 1 impl-quality-review-agent (collapsed, alle Lenses intern, 1 Approval). Scribes, Gates, Test-First bleiben voll.
   Nicht bei: reiner Erklaerung ohne Umsetzungsintent, ohne feature-delivery.
-  Branch-Guard: erste Aktion aller schreibenden Einstiege (plane/implementiere/implementiere nur/from-existing-plan)
-  ist git rev-parse --abbrev-ref HEAD — auf Default-Branch (master/main) STOPP + Feature-Branch-Vorschlag
-  feat-<nnn>-<slug>, nach Bestaetigung anlegen+wechseln, erst dann Flow; Ablehnung → gestoppt, keine Arbeit auf master.
-  Review-Trigger (code-inspection/delivery-inspection) sind NICHT geblockt.
+  Worktree-Routing (ersetzt den frueheren Branch-Guard, FEAT-001): schreibende Implement-Einstiege
+  (implementiere/implementiere nur/from-existing-plan) routen NACH dem Story-Gate anhand parent+slug in
+  einen eigenen git-Worktree je Feature (feat-<nnn>-<slug>, <nnn>=stabile Parent-FEAT-Nummer) unter
+  <project-root>/worktrees/ — Reuse falls feat-<nnn>-* existiert, sonst git -C <repo-dir> worktree add …;
+  alle Produkt-Code-Ops via Absolutpfade (CODE_ROOT), Session-cwd bleibt, kein master-STOPP.
+  plane und Review-Trigger (code-inspection/delivery-inspection) routen NICHT. Story ohne parent → STOPP.
   Story-Entscheidungen noch unklar vor dem Plan? → /grill-me <story.md> vorschalten.
   Parallele Stories: NIEMALS isolation: worktree verwenden — alle Agents arbeiten direkt auf dem
   aktuellen Branch. Voraussetzung: requirement-definition hat touches-Annotation und Parallelgruppen
@@ -72,18 +74,20 @@ Deckt den gesamten Bogen: Anforderung → Plan → Umsetzung → Qualitaetssiche
 │  Schritt 4: Umsetzen                                                   │
 │                                                                        │
 │  ┌─ INNER LOOP (Code-Qualitaets-Schleife, max. 5 Runden) ───────┐    │
-│  │  Session-Treiber spawnt je Runde frisch: PL → PM              │    │
-│  │  PL: Fix-Scribes → Gates → 6 Reviewer → digest.md (Pointer)   │    │
-│  │      + autoritative Tiers 🔴/🟡 → Tier-Zaehler in Index        │    │
-│  │  PM: liest Index+Digest → clean / erbsenzaehlerei-exit /      │    │
+│  │  SESSION faechert je Runde: (Fix-Planer →) Scribes,           │    │
+│  │      dann Gates (MCP), dann Reviewer — sammelt alle Pointer    │    │
+│  │  Digest-Leaf: liest finding-*.md → digest.md (Pointer)         │    │
+│  │      + autoritative Tiers 🔴/🟡/🟢 → Tier-Zaehler in Index     │    │
+│  │  PM-Leaf: liest Index+Digest → clean / erbsenzaehlerei-exit / │    │
 │  │      fix(Was+Wie) / escalate                                  │    │
 │  │  Session-Tier-Guard: 🔴 offen > 0 → Exit zurueckgewiesen      │    │
-│  │  → fix?        → naechste Runde (PL dispatcht Fix-Planer)      │    │
-│  │  → Inner-Close?→ PM wird TERMINAL-PM, raus aus Inner Loop      │    │
+│  │  → fix?        → naechste Runde (Session dispatcht Fix-Planer) │    │
+│  │  → Inner-Close?→ raus aus Inner Loop, Session leitet 5c ein    │    │
 │  └────────────────────────────────────────────────────────────────┘    │
 │                                                                        │
-│  5c: TERMINAL-PM (eine Instanz) — dispatcht Delivery-Inspection        │
-│      (Pointer-Handoff) → liest di-digest → Outer-Verdikt               │
+│  5c: SESSION faechert die 6 Delivery-Inspection-Reviewer,             │
+│      sammelt di-finding-Pointer → Outer-Verdikt-PM (frisches Leaf)     │
+│      liest di-finding-*.md → di-digest → Outer-Verdikt                 │
 │  → OK?       → Schritt 7 Closure                                      │
 │  → Req-Gap?  → outer/delta-N.md → zurueck zu Schritt 1 (frischer PM)  │
 │                                                                        │
@@ -98,37 +102,47 @@ Deckt den gesamten Bogen: Anforderung → Plan → Umsetzung → Qualitaetssiche
 - Inner Loop (Maengel in *Wie* umgesetzt) → Fix-Planer → Fix-Scribes → Inner Loop erneut
 - Outer Loop (Maengel in *Was* geliefert, neuer Scope) → Delta-Protokoll → Schritt 1
 
-### Inner-Exit-Urteilslogik: 3-Tier + Terminal-PM + Tier-Guard (STORY-034)
+### Inner-Exit-Urteilslogik: 3-Tier + Outer-Verdikt + Tier-Guard (STORY-034, korrigiert)
 
 Der Uebergang Inner→Outer ist die kritischste Entscheidung des Flows — sie faellt nachvollziehbar, gegen Silent-Shortcut abgesichert und mit Audit-Trail:
 
-- **3-Tier-Erbsenzählerei** (autoritativ vom PL vergeben): 🔴 blockt den Inner-Exit (ein offenes 🔴 → naechste Runde Pflicht) · 🟡 nur mit **schriftlicher Begruendung je Finding** im `outer/pm-verdict-N.md` durchwinkbar · 🟢 frei. **Security-`critical` ist aus jedem Kanal immer 🔴 — nie als Erbsenzählerei einstufbar.**
+- **3-Tier-Erbsenzählerei** (autoritativ vom Digest-Leaf vergeben): 🔴 blockt den Inner-Exit (ein offenes 🔴 → naechste Runde Pflicht) · 🟡 nur mit **schriftlicher Begruendung je Finding** im `outer/pm-verdict-N.md` durchwinkbar · 🟢 frei. **Security-`critical` ist aus jedem Kanal immer 🔴 — nie als Erbsenzählerei einstufbar.**
 - **PM-Urteil**: `clean` (nichts offen) · `erbsenzaehlerei-exit` (nur 🟡/🟢 offen, 🟡 begruendet) · `fix` · `escalate`.
 - **Mechanischer Tier-Guard** (Session): liest `Tier 🔴 offen` aus dem Index; ein Inner-Close bei offenem 🔴 wird **deterministisch zurueckgewiesen** — reine Zaehler-Arithmetik, nicht durch ein PM-Fehlurteil aushebelbar.
-- **Terminal-PM**: der PM, der den Inner-Loop schliesst, ist die **einzige** Instanz, die Inner-Close → Delivery-Inspection-Dispatch → Outer-Verdikt in **einer** Instanz ueberspannt (DI-Reviewer geben Pointer statt Payload → Notification-Trap geloest). Danach **harte Grenze**: die Folge-Outer-Iteration bekommt einen frischen PM.
+- **Outer-Verdikt** (nach dem Inner-Close): Die **Session** faechert die 6 Delivery-Inspection-Reviewer und sammelt deren Pointer ein (nur die Session empfaengt Sub-Agent-Completions — Harness-Grundwahrheit); danach faellt ein **frisches Outer-Verdikt-PM-Leaf** aus den `di-finding-*.md` den Outer-Verdikt. Der Tier-Guard laeuft dabei **vor** dem DI-Fan-out (Session-Sequenz). **Harte Grenze**: die Folge-Outer-Iteration bekommt frische Leaves durchweg.
 
-### Rollenbild Impl-Fix-Loop — Wegwerf-Instanzen (STORY-033)
+### Rollenbild Impl-Fix-Loop — Session faechert, Leaves lesen (STORY-033, korrigiert)
+
+> **Harness-Grundwahrheit (die dieses Rollenbild traegt):** In diesem Harness laufen **alle
+> `Agent`-Calls asynchron**; die Completion eines gespawnten Kindes laeuft **immer zur Session**, nie
+> zum spawnenden Sub-Agent. Ein Sub-Agent, der selbst faechert und auf seine Kinder wartet, **parkt**
+> und bekommt nie deren Ergebnis. **Folge: nur die Session darf fan-out + einsammeln.** Der urspruengliche
+> STORY-033/034-Split liess einen „PL"-Sub-Agent Scribes/Reviewer dispatchen und einen „Terminal-PM" die
+> DI-Reviewer — beides auf der falschen Annahme „synchrones Vordergrund-Dispatch, Trap strukturell
+> geloest" gebaut. Diese Annahme existiert in diesem Harness nicht; der Split ist entsprechend korrigiert.
 
 Der Inner Loop laeuft **nicht** in einer durchgehend lebenden Orchestrator-Instanz (das erzeugte
-Kontext-Compact durch unbegrenztes Fenster-Wachstum, FEAT-001). Stattdessen drei Elemente,
-Kontinuitaet rein **datei-basiert** ueber das SecondBrain
-([references/secondbrain-schema.md](references/secondbrain-schema.md)):
+Kontext-Compact durch unbegrenztes Fenster-Wachstum, FEAT-001). Die Session bleibt duenn (nur Pointer +
+Verdikte), das schwere Lesen/Verdichten laeuft in **throwaway Leaf-Agents**. Kontinuitaet rein
+**datei-basiert** ueber das SecondBrain ([references/secondbrain-schema.md](references/secondbrain-schema.md)):
 
 | Element | Lebensdauer | Aufgabe |
 |---------|-------------|---------|
-| **Session-Treiber** (die aufrufende Session) | persistent — einzige lebende Instanz | Haelt **nur** Index-Pointer + PM-Verdikt-Kurzform. Liest `current_round` + `Tier 🔴 offen` aus `secondbrain-index.md`, erzwingt den Max-5-Cap **und den mechanischen Tier-Guard**, spawnt je Runde frische Rollen. |
-| **PL** `implement-round-executor` | throwaway — frisch je Runde | Mechanisch: dispatcht (Fix-Planer →) Scribes → Integration-Checkpoint → Gates → Reviewer, liest die `finding-*.md`, baut `digest.md` **+ vergibt autoritative Tiers 🔴/🟡/🟢** und schreibt die Tier-Zaehler in den Index. Gibt **nur Pointer** zurueck. Implementiert keinen Code, urteilt nicht. |
-| **PM** `implement-supervisor` | throwaway — frisch je Runde; **Ausnahme: Terminal-PM** ueberspannt den Inner-Close→Outer-Span | Urteilsebene: liest Index+Digest → **ein** Inner-Urteil `clean` / `erbsenzaehlerei-exit` / `fix` (Was+Wie) / `escalate`. Schreibt **nur** `outer/pm-verdict-N.md` (+ bei Requirement-Gap `outer/delta-N.md`). Als Terminal-PM: DI-Dispatch + Outer-Verdikt in einer Instanz. |
+| **Session-Treiber** (die aufrufende Session) | persistent — einzige lebende Instanz | **Der einzige Fan-out-/Collect-Knoten.** Faechert je Runde (Fix-Planer →) Scribes, faehrt die Quality Gates via MCP, faechert die Reviewer — und sammelt alle Pointer ein (nur hier landen Sub-Agent-Completions). Haelt **nur** Pointer + Verdikt-Kurzform + Tier-Zaehler. Liest `current_round` + `Tier 🔴 offen` aus `secondbrain-index.md`, erzwingt den Max-5-Cap **und den mechanischen Tier-Guard**. Spawnt je Runde frische Leaves. |
+| **Digest-Leaf** `implement-round-executor` | throwaway — frisch je Runde; **dispatcht nichts** | Liest die von der Session gesammelten `finding-*.md` (+ Gate-/Security-Evidenz), baut `digest.md` **+ vergibt autoritative Tiers 🔴/🟡/🟢** und schreibt die Tier-Zaehler in den Index. Gibt **nur Pointer** zurueck. Kein Code, kein Dispatch, kein Urteil. Haelt die finding-Bodies aus dem Session-Fenster. |
+| **PM-Leaf** `implement-supervisor` | throwaway — frisch je Runde; **dispatcht nichts** | Urteilsebene: liest Index+Digest → **ein** Inner-Urteil `clean` / `erbsenzaehlerei-exit` / `fix` (Was+Wie) / `escalate`. Schreibt **nur** `outer/pm-verdict-N.md` (+ bei Requirement-Gap `outer/delta-N.md`). Der **Outer-Verdikt-PM** ist ein **frisches** Leaf, das die Session nach dem DI-Fan-out startet — es liest die `di-finding-*.md`, baut den di-digest und faellt den Outer-Verdikt. |
 
-**Kadenz:** frischer PL **und** frischer PM je Runde via Agent-Tool — **kein SendMessage ueber
-Runden hinweg**. Kein Fenster waechst mehr unbegrenzt; kein Reviewer-Report und kein Digest-Body
-liegt je im Session-Fenster (nur Pointer + Verdikt). Der Fix-Planer bleibt erhalten, unter dem
-PM-Urteil — die naechste Runde dispatcht ihn, bevor Fix-Scribes laufen.
+**Kadenz:** frisches Digest-Leaf **und** frisches PM-Leaf je Runde via Agent-Tool — **kein SendMessage
+ueber Runden hinweg**, keine ueber den Inner-Close hinweg fortgesetzte Instanz. Kein Fenster waechst mehr
+unbegrenzt; kein Reviewer-Report und kein Digest-Body liegt je im Session-Fenster (nur Pointer +
+Verdikt). Der Fix-Planer bleibt erhalten, unter dem PM-Urteil — die **Session** dispatcht ihn zu Beginn
+der naechsten Runde, bevor Fix-Scribes laufen.
 
-**Einzige Ausnahme zur Wegwerf-Kadenz:** der **Terminal-PM** (der PM, der den Inner-Loop schliesst)
-setzt **dieselbe** Instanz ueber Inner-Close → Delivery-Inspection → Outer-Verdikt fort — kein
-Runden-Uebergang, sondern der Abschluss-Span einer Outer-Iteration. Danach harte Grenze. Details +
-3-Tier + Tier-Guard: s. Abschnitt oben und [flows/implementation-flow.md](flows/implementation-flow.md).
+**Outer-Verdikt-Sequenz (Session-gesteuert):** Tier-Guard (Session) → DI-Fan-out (Session faechert die 6
+DI-Reviewer, sammelt Pointer) → Outer-Verdikt-PM (frisches Leaf liest `di-finding-*.md` → di-digest →
+Outer-Verdikt). Weil die Session strikt sequenziert, liegt der Guard nachweislich **vor** dem
+DI-Fan-out — ganz ohne Same-Instance-Span. Danach harte Grenze. Details + 3-Tier + Tier-Guard: s.
+Abschnitt oben und [flows/implementation-flow.md](flows/implementation-flow.md).
 
 Details: [flows/implementation-flow.md](flows/implementation-flow.md), [flows/planning-flow.md](flows/planning-flow.md)
 
@@ -138,9 +152,9 @@ Details: [flows/implementation-flow.md](flows/implementation-flow.md), [flows/pl
 
 **Kein Orchestrator überspringt Subagent-Phasen im Implementations-Flow.** Gilt ohne Ausnahme — Plan Mode, Agent Mode. *(Planung läuft lean/solo — der `plan-agent` plant ohne Subagent-Phasen; das ist regelkonform, kein Shortcut.)*
 
-- Impl-Flow: Scribes (implement-scribe-agent / implement-scribe-opus-agent) — der PL (implement-round-executor) schreibt keinen Produkt-Code selbst, der PM (implement-supervisor) urteilt nur
-- Impl-Review: 6 Reviewer parallel — keine Rollensimulation im PL-Thread
-- Impl-Fix-Loop: frischer PL UND frischer PM je Runde via Agent-Tool — kein SendMessage ueber Runden hinweg, keine lang lebende Orchestrator-Instanz
+- Impl-Flow: die **Session** faechert die Scribes (implement-scribe-agent / implement-scribe-opus-agent) — kein Produkt-Code durch Session, Digest-Leaf oder PM-Leaf
+- Impl-Review: Reviewer parallel von der **Session** dispatcht — keine Rollensimulation im Session-Thread, kein Fan-out durch ein Leaf
+- Impl-Fix-Loop: frisches Digest-Leaf UND frisches PM-Leaf je Runde via Agent-Tool — **kein SendMessage ueber Runden hinweg**, keine lang lebende Orchestrator-Instanz, kein Leaf, das selbst faechert
 
 **Ausnahme: Micro-Change-Modus** (s.u.) — Session-Treiber editiert direkt, kein Scribe, kein Plan-File, 1 Reviewer (risk). Nur wenn Fastpath explizit aktiviert und angekuendigt.
 
@@ -155,47 +169,6 @@ Wenn Ankuendigung nicht moeglich, weil Phase selbst ausgefuehrt wird → **STOPP
 `"⚠️ feature-delivery nicht konform: [Phase] ohne Subagent-Delegation. Neu starten."`
 
 *Enforcement-Prinzipien: siehe `docs/silent-shortcut-prevention.md`*
-
----
-
-## Branch-Guard (erste Aktion der schreibenden Einstiege — vor dem Story-Gate)
-
-Die **schreibenden Einstiege** duerfen nie versehentlich direkt auf dem Default-Branch arbeiten —
-sonst wird das Feature-Scoping (Merge-Base / uncommitted-Diff) unbrauchbar. **Erste Aktion** dieser
-Einstiege, noch **vor** dem Story-Gate:
-
-```
-git rev-parse --abbrev-ref HEAD
-```
-
-**Betroffene (schreibende) Einstiege:** `plane`/`plan`/`plane nur`/`plane only`/`nur planen`/`erstelle einen Plan`,
-`implementiere`/`implement`/`setze um`/`liefere`/`umsetzen`/`feature-delivery`/`fix`, `implementiere nur`
-sowie From-existing-plan (`setze plan X um`/`implementiere plan X`/`fuehre plan X aus`) — jeder Einstieg,
-der Plan-Dateien oder Code schreibt.
-
-**Nicht betroffen — Review-Trigger** (`code-inspection`, `delivery-inspection`, STORY-004): **kein
-Guard-Stopp.** Sie arbeiten uncommitted-scoped und branch-unabhaengig; auf dem Default-Branch nur ein
-Hinweis *„kein Feature-Delta"*.
-
-| Befund `HEAD` | Reaktion |
-|---|---|
-| Default-Branch (`master` oder `main`) | **STOPP — Flow startet nicht.** Kein Planungs-/Implementierungs-Start; Feature-Branch-Namen nach Konvention `feat-<nnn>-<slug>` vorschlagen und auf Bestaetigung warten. |
-| beliebiger anderer Branch | **Kein Guard-Stopp** — direkt weiter mit Story-Gate + Flow. |
-
-**Namensvorschlag `feat-<nnn>-<slug>`:**
-- `<nnn>` = naechste freie laufende Nummer nach den vorhandenen `feat-*`-Branches
-  (`git branch --list "feat-*"`), dreistellig.
-- `<slug>` = Slug der Story bzw. des Parent-Features (aus dem `slug`-Frontmatter der uebergebenen
-  Story-/Feature-Datei).
-
-**Nach Bestaetigung** — nicht-destruktiv, nur ein neuer Branch, kein Commit, kein Reset, kein Force:
-```
-git checkout -b feat-<nnn>-<slug>
-```
-Danach — und **erst** danach — laeuft der urspruengliche Flow (Story-Gate → Planung/Umsetzung) weiter.
-
-**Bei Ablehnung:** **keine** Planung/Umsetzung auf dem Default-Branch — der Flow bleibt gestoppt. Der
-Nutzer legt selbst einen Branch an oder bricht ab.
 
 ---
 
@@ -259,18 +232,138 @@ Nach erfolgreichem Abschluss des Planungs-Flows (Plan-Datei persistiert unter
 
 **Den Story-Status setzt ausschließlich der Session-Treiber.** Welcher Endstatus gesetzt wird, haengt vom Einstieg ab:
 
-**A) Volles `implementiere` / From-existing-plan (volle Loops):** nach Abschluss von Schritt 7 (Closure) des Outer Loops. Der Terminal-PM faellt den Outer-Verdikt (OK/Gap), beruehrt aber das Story-Frontmatter nie.
-1. Nur bei Outer-Verdikt `OK`: Story-Frontmatter `status: planned` → `status: reviewed`.
+**A) Volles `implementiere` / From-existing-plan (volle Loops):** nach Abschluss von Schritt 7 (Closure) des Outer Loops. Das Outer-Verdikt-PM-Leaf faellt den Outer-Verdikt (OK/Gap), beruehrt aber das Story-Frontmatter nie.
+1. Nur bei Outer-Verdikt `OK`: Story-Frontmatter `status: planned` → `status: reviewed` **und** Auto-Commit im Worktree — genau **ein** Code-Commit (s. `## Auto-Commit pro Story`).
 2. Meldung: *„Implementierung inkl. Inner-Loop + Delivery-Inspection abgeschlossen. Story-Status auf `reviewed` gesetzt."*
-3. Kein `OK` (Hard-Stop bei offenem 🔴 nach Cap): **kein** Statuswechsel — Story bleibt `planned` (nicht `reviewed`); Rest-Findings-Bericht + User-Eskalation (s. Implementations-Flow).
+3. Kein `OK` (Hard-Stop bei offenem 🔴 nach Cap): **kein** Statuswechsel — Story bleibt `planned` (nicht `reviewed`); **kein Auto-Commit** (Arbeit bleibt uncommitted im Worktree); Rest-Findings-Bericht + User-Eskalation (s. Implementations-Flow).
 
 **B) `implementiere nur` (Lean Single-Pass):** kein Inner-Loop, keine Reviewer, keine Delivery-Inspection — der Session-Treiber setzt direkt nach dem Build/Test-Ergebnis.
-1. Build/Test slice-scoped gruen (innerhalb von max. 5 Fix-Versuchen): `status: planned` → `status: implemented`.
+1. Build/Test slice-scoped gruen (innerhalb von max. 5 Fix-Versuchen): `status: planned` → `status: implemented` **und** Auto-Commit im Worktree — genau **ein** Code-Commit (s. `## Auto-Commit pro Story`).
    Meldung: *„Schlanke Umsetzung abgeschlossen, Build/Test gruen. Story-Status auf `implemented` gesetzt (roh umgesetzt, nicht reviewed)."*
-2. Build/Test nach 5 Fix-Versuchen weiterhin rot: `status: planned` → `status: blocked` (**kein** `implemented`).
+2. Build/Test nach 5 Fix-Versuchen weiterhin rot: `status: planned` → `status: blocked` (**kein** `implemented`, **kein Auto-Commit** — Aenderungen bleiben uncommitted).
    Meldung: *„⚠️ Build/Test bleibt nach 5 Fix-Versuchen rot. Story-Status auf `blocked` gesetzt — nicht `implemented`. [Letzter Fehler + Kurz-Diagnose]."*
 
 **Status-Maschine (Story):** `offen` → `ready` → `planned` (durch `plane`) → `implemented` (durch `implementiere nur`, gruen) / `reviewed` (durch volles `implementiere`) / `blocked` (durch `implementiere nur`, rot nach 5 Fix-Versuchen) → `done`/`accepted` (setzt der Nutzer als PM manuell). `implemented` und `reviewed` sind garantiert gruene Zustaende.
+
+---
+
+## Worktree-Routing (schreibende Implement-Einstiege — nach dem Story-Gate)
+
+Ersetzt den frueheren Branch-Guard (FEAT-001, D1–D4). Statt auf dem Default-Branch zu **stoppen**,
+**routet** feature-delivery jeden Implement-Lauf in einen **eigenen git-Worktree je Feature** — so
+laufen mehrere Features echt parallel und kollisionsfrei, waehrend die Session auf `master` als
+ruhigem Heimathafen bleibt. **Kein master-STOPP mehr.**
+
+**Reihenfolge:** Das **Story-Gate laeuft zuerst** (Schritt 1–3: Frontmatter gelesen, `type`/`status`/
+`depends_on` validiert). **Erst danach** — und nur fuer die schreibenden Implement-Einstiege — routet
+diese Phase anhand von `parent` + `slug` aus dem bereits gelesenen Frontmatter. Danach startet der
+Implementations-Flow (Hard Gate → Scribes …) auf dem Worktree-Pfad.
+
+**Betroffene Einstiege (routen):** `implementiere`/`implement`/`setze um`/`liefere`/`umsetzen`/
+`feature-delivery`/`fix`, `implementiere nur` sowie From-existing-plan (`setze plan X um`/
+`implementiere plan X`/`fuehre plan X aus`) — jeder Einstieg, der **Produkt-Code** schreibt.
+
+**NICHT betroffen (routen nicht — bleiben, wo sie sind):**
+- **`plane`/`plan`/`plane nur`/…** — schreibt nur die Plan-Datei nach `requests/` (ausserhalb des Repos,
+  auf der Session-cwd). Kein Worktree, kein Branch-Wechsel, kein Commit (FEAT-001 D5). Auch auf dem
+  Default-Branch kein STOPP.
+- **Review-Trigger** (`code-inspection`, `delivery-inspection`) — arbeiten uncommitted-scoped bzw. gegen
+  den Merge-Base und branch-unabhaengig; sie routen nicht.
+
+### Namensableitung `feat-<nnn>-<slug>`
+- `<nnn>` = **stabile Parent-`FEAT-NNN`** aus dem `parent`-Frontmatter der Story (dreistellig) — **nicht**
+  die naechste freie Branch-Nummer (anders als der alte Branch-Guard). Beispiel: `parent: FEAT-042` → `042`.
+- `<slug>` = **Feature-Slug** (`slug`-Frontmatter des Parent-Features; ersatzweise der Story-Slug).
+
+### Pfade (verbindlich, absolut)
+- `<project-root>` = Session-cwd — bleibt **unveraendert** (**kein** `EnterWorktree`).
+- `<repo-dir>` = das git-Repo (`.git`) — **aus der CLAUDE.md-Projektmap lesen, nicht hardcoden**; liegt
+  das Repo direkt auf Top-Level, ist `<repo-dir>` == `<project-root>`.
+- Worktree-Ort = `<project-root>/worktrees/feat-<nnn>-<slug>/` (Geschwister zum Repo, ausserhalb des Repos).
+
+### Reuse-Erkennung → wiederverwenden ODER anlegen
+1. **Vorhandenen Worktree/Branch suchen:**
+   ```
+   git -C <repo-dir> worktree list
+   git -C <repo-dir> branch --list "feat-<nnn>-*"
+   ```
+2. **`feat-<nnn>-*` existiert** (Branch und/oder Worktree) → **wiederverwenden**: der zugehoerige
+   Worktree-Pfad wird CODE_ROOT. **Kein** neues `worktree add`. So landet eine zweite Story desselben
+   Features im selben Worktree.
+3. **Existiert nicht** → **anlegen** (nicht-destruktiv: nur ein neuer Worktree + Branch, kein Commit,
+   kein Reset, kein Force):
+   ```
+   git -C <repo-dir> worktree add <project-root>/worktrees/feat-<nnn>-<slug> -b feat-<nnn>-<slug> HEAD
+   ```
+
+Routing laeuft **automatisch** (kein Bestaetigungs-Stopp — das Entfernen des master-STOPP ist der Zweck).
+
+### CODE_ROOT weiterreichen
+Der aufgeloeste Worktree-Pfad ist ab hier **CODE_ROOT**. **Alle** Produkt-Code-Operationen — Scribes,
+Build, Test, Reviewer, Fix-Planer, jeder Sub-Agent, jeder dev-mcp-/codebase-analyzer-Call — laufen ueber
+**Absolutpfade** auf CODE_ROOT (Threading-Regel im Detail:
+[flows/implementation-flow.md → Worktree / CODE_ROOT](flows/implementation-flow.md)). `requests/` (Plan +
+SecondBrain + Stories) bleibt auf `<project-root>` — **nur der Produkt-Code** liegt im Worktree.
+
+**Transparenz:** Vor dem ersten Code-Write ankuendigen, welcher Worktree genutzt/angelegt wird:
+`"Worktree-Routing: [nutze|lege an] worktrees/feat-<nnn>-<slug> (CODE_ROOT)."`
+
+### Defensive: Story ohne `parent`
+Laesst sich `feat-<nnn>-…` mangels `parent`-Frontmatter **nicht** ableiten:
+**STOPP — Flow startet nicht, kein `worktree add`.** Meldung: *„⛔ Worktree-Routing nicht moeglich:
+Story `[ID]` hat kein `parent`-Feld — der Feature-Branch `feat-<nnn>-<slug>` ist nicht ableitbar.
+Bitte `parent: FEAT-NNN` in der Story ergaenzen (garantiert durch STORY-004 Feature-Zwang) und erneut
+starten."* Kein Fallback-Branch, kein Raten der Nummer.
+
+---
+
+## Auto-Commit pro Story (schreibende Implement-Einstiege — nur bei Gruen)
+
+Ergaenzt das Worktree-Routing (FEAT-001, D5). Nach **erfolgreicher** Implementierung einer Story erstellt
+der **Session-Treiber** **genau einen** Code-Commit im Feature-Worktree (CODE_ROOT) — so entsteht pro
+Story eine saubere, sofort review-/merge-bare Historie. **Kein Auto-Push, kein Auto-PR** — das
+Zusammenfuehren bleibt manuell (FEAT-001 D8).
+
+### Wann committet wird
+- **Nur schreibende Implement-Einstiege** — volles `implementiere`/Synonyme, `implementiere nur`,
+  From-existing-plan. **Nicht `plane`** (schreibt nur die Plan-Datei nach `requests/`, kein Code, kein
+  Worktree → nichts zu committen).
+- **Nur bei Gruen, ein Commit pro Story:**
+
+  | Einstieg | Commit-Zeitpunkt | Story-Status beim Commit |
+  |----------|------------------|--------------------------|
+  | Volles `implementiere` / From-existing-plan | in der Closure, **nur** bei Outer-Verdikt `OK` | → `reviewed` |
+  | `implementiere nur` | nach slice-scoped Build/Test gruen (≤ 5 Fix-Versuche) | → `implemented` |
+
+### Wann NICHT committet wird (Negativfaelle)
+- **`blocked` / rot:** `implementiere nur` rot nach 5 Fix-Versuchen → `blocked`; volles `implementiere`
+  mit offenem 🔴 nach dem Max-5-Cap (Story bleibt `planned`) → **kein Commit.** Die Arbeit bleibt
+  **uncommitted** im Worktree, damit der Nutzer den Zwischenstand roh sieht.
+- **`plane`:** kein Worktree, kein Code → **kein Auto-Commit** (Abgrenzung, FEAT-001 D5).
+
+### Was committet wird — nur Code, kein selektives Staging
+`requests/` (Stories, Plaene, SecondBrain) liegt **ausserhalb** des Repos (auf `<project-root>`, nicht in
+CODE_ROOT) → git im Worktree sieht Stories/Plaene **gar nicht**. Deshalb **kein selektives Staging noetig**
+und **kein Risiko**, eine Story oder einen Plan mitzucommitten. Der Story-Status-Flip (→
+`implemented`/`reviewed`) passiert in `requests/` (extern) und ist **nicht** Teil des Commits.
+
+### Commit-Message — ohne interne IDs
+Message ueber den [`commit-message`](../commit-message/SKILL.md)-Skill, gespeist aus **Story-Titel/-Name**:
+- Der Titel **darf** eine DevOps-ID enthalten (z. B. `AB#12345`) — die bleibt erhalten.
+- Die Message enthaelt **weder** die interne `STORY-NNN`- **noch** die `FEAT-NNN`-Nummer (harness-interne
+  IDs gehoeren nicht in die Code-Historie). Der `commit-message`-Aufruf wird entsprechend parametrisiert
+  (Titel nutzen, interne IDs ausschliessen) — **ohne** Aenderung am `commit-message`-Skill selbst.
+
+### Ausfuehrung (nicht-destruktiv, auf CODE_ROOT)
+```
+git -C <CODE_ROOT> add -A
+git -C <CODE_ROOT> commit -m "<commit-message aus Titel, ohne STORY-/FEAT-Nummer>"
+```
+`add -A` ist ungefaehrlich: der Worktree enthaelt nur Produkt-Code (`requests/` liegt ausserhalb). Kein
+`push`, kein `--force`, kein Reset.
+
+**Transparenz:** Nach dem Commit im Chat melden:
+`"Auto-Commit auf feat-<nnn>-<slug>: <kurztitel> (nur Code, kein Push)."`
 
 ---
 
@@ -333,7 +426,7 @@ Planung und Umsetzung sind getrennte, explizite Schritte.
 ### Implementieren — volle Loops (`implementiere X`, `implement X`, `setze X um`, `liefere X`, `umsetzen`, `feature-delivery`, `fix`)
 
 Setzt einen **existierenden** Plan um — **mit allen Schleifen**: Scribes → Build/Test → Inner-Loop
-(max. 5 Runden, 6 Reviewer, PL/PM, SecondBrain) → Outer-Delivery-Inspection. Story-Status → `reviewed`
+(max. 5 Runden, 7 Reviewer, PL/PM, SecondBrain) → Outer-Delivery-Inspection. Story-Status → `reviewed`
 (bei Outer-Verdikt `OK`, s. Story-Gate Schritt 5 A).
 
 **Plant nicht mehr selbst.** Voraussetzung ist ein vorhandener Plan → Story `status: planned` mit
@@ -380,18 +473,18 @@ Zwei **beratende** Review-Trigger auf den aktuellen Arbeitsstand — **kein Auto
 kein Auto-Implement, kein SecondBrain, keine PL/PM-Runden.** Reiner Befund; der Nutzer bleibt PM und
 entscheidet nach dem Report selbst ueber Nachschaerfen oder Abnahme.
 
-- **`code-inspection`** — Code-Qualitaet/Korrektheit ueber den Diff. **Kein Feature noetig.** 5
-  `implement-review-*`-Agents (risk · design-principles · craft · guard · readiness) laufen
+- **`code-inspection`** — Code-Qualitaet/Korrektheit ueber den Diff. **Kein Feature noetig.** 6
+  `implement-review-*`-Agents (risk · design-principles · craft · auditor · guard · readiness) laufen
   parallel im Vordergrund **ohne Fix-Anwendung**.
 - **`delivery-inspection FEATURE-X`** — Anforderungserfuellung. **Feature-Bezug PFLICHT und explizit**;
   ohne Feature-Argument → **STOPP** + Aufforderung, das Feature anzugeben (keine Pruefung). Laedt das
   Feature, folgt den referenzierten Stories, aggregiert deren ACs und prueft den Diff dagegen (Reuse des
-  `delivery-inspection`-Skills, advisory single-pass — nur die 5 DI-Reviewer, ohne Fix-Loop).
+  `delivery-inspection`-Skills, advisory single-pass — nur die 6 Reviewer, ohne Fix-Loop).
 - **Default-Scope beider** = alle uncommitteten Aenderungen inkl. untracked (`git diff HEAD` +
   untracked-Liste), branch-unabhaengig. **Merge-Base-Alternative** (`git diff <merge-base>..HEAD`) bei
   bereits committetem Feature (uncommitted-Scope leer) oder auf explizite Anforderung.
-- **Kein Branch-Guard-Stopp** (s. Branch-Guard); auf dem Default-Branch ohne Delta nur Hinweis *„kein
-  Feature-Delta"*.
+- **Kein Worktree-Routing** (s. Worktree-Routing) — Review-Trigger routen nicht und stoppen nicht auf dem
+  Default-Branch; ohne Delta nur Hinweis *„kein Feature-Delta"*.
 - **Ausgabe:** Befund-Datei `Requests/reviews/<feature>-<inspection>-<n>.md` (nach Story bzw. Bereich
   gruppiert, `<n>` = laufender Zaehler je Feature+Inspection-Typ) **+ Chat-Kurzfassung**. **Kein**
   Story-Status geaendert, **kein** Auto-Fix. Nachschaerfen bleibt manuell: `implementiere STORY-X`.
@@ -408,8 +501,8 @@ Ablauf-Detail: [flows/review-flow.md](flows/review-flow.md).
 |--------|-------|
 | Wer entscheidet | **Default.** Aktiv ohne Zusatz. `schlank planen`/`lean planen` etc. bleiben als explizite Synonyme gueltig. |
 | Was schrumpft | Nur Planung: Orchestrator (Opus) plant + prueft + reviewed in sich selbst — keine Scouts, keine Review-Subagent-Armee, kein 5er-Loop. |
-| Was bleibt voll | Voller Scribe, alle Gates, Test-First (§8/F1) — immer. Impl-Review: Standard 6 Reviewer. |
-| `lean impl` (opt-in) | Reduziert Impl-Review auf 3 Reviewer (risk · craft · readiness) statt 6 — oder collapsed via `impl-quality-review-agent` (1 Agent, alle Lenses intern, 1 Approval statt 6 parallele). Scribes, Gates, Test-First bleiben voll. Aktivierung: `implementiere lean impl …` — explizit anfordern, kein Standard. Collapsed: `implementiere lean impl collapsed`. |
+| Was bleibt voll | Voller Scribe, alle Gates, Test-First (§8/F1) — immer. Impl-Review: Standard 7 Reviewer. |
+| `lean impl` (opt-in) | Reduziert Impl-Review auf 3 Reviewer (risk · craft · readiness) statt 7 — oder collapsed via `impl-quality-review-agent` (1 Agent, alle Lenses intern, 1 Approval statt 7 parallele). Scribes, Gates, Test-First bleiben voll. Aktivierung: `implementiere lean impl …` — explizit anfordern, kein Standard. Collapsed: `implementiere lean impl collapsed`. |
 | Kombinierbar mit | Plan-Trigger (`plane`/`plan`/…). **NICHT** mit From-existing-plan (Plan liegt schon vor). |
 
 *Framing:* Planung ist immer lean/solo — schnell und fokussiert. Für Tiefe sorgen der Plan-Coverage-Check (delivery-inspection auf den Plan) und das Uncertainty Audit, nicht ein separater Strong-Modus.

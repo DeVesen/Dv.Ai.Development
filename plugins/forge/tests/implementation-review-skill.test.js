@@ -1,0 +1,71 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { readMarkdown, wordCount } = require('./lib/markdown');
+
+const SKILL = path.join(__dirname, '..', 'skills', 'implementation-review', 'SKILL.md');
+const REVIEWERS = ['acceptance', 'plan-fidelity', 'design', 'tests', 'risks'];
+
+test('implementationReviewSkill_Frontmatter_ManualOnlyWithArgumentHint', () => {
+  const { fields } = readMarkdown(SKILL);
+  assert.equal(fields.name, 'implementation-review');
+  assert.match(fields.description, /^Use when/);
+  assert.equal(fields['disable-model-invocation'], 'true');
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]');
+});
+
+test('implementationReviewSkill_Body_ReadsSharedLoopWithPlaceholders', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('`<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`'));
+  assert.ok(body.includes('`<SESSION>` = `${CLAUDE_SESSION_ID}`'));
+  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md'));
+});
+
+test('implementationReviewSkill_Body_StartScriptsInOrder', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" implementation-review $ARGUMENTS'));
+  for (const name of ['`P`', '`S`', '`R`', '`slug`', '`B`', '`W`', '`K`', '`C`']) assert.ok(body.includes(name), `${name} fehlt`);
+});
+
+test('implementationReviewSkill_Body_NoRoundsFiveReviewersRepoFlag', () => {
+  const { body } = readMarkdown(SKILL);
+  for (const reviewer of REVIEWERS) assert.ok(body.includes(`dv-forge:implementation-review-${reviewer}`), `${reviewer} fehlt`);
+  assert.ok(body.includes('`N = 0`'));
+  assert.match(body, /## Nacharbeiter\nKeiner\./);
+  assert.ok(body.includes('--repo "<R>"'));
+});
+
+test('implementationReviewSkill_Body_ScoutGetsContextOnly', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /## Abschluss-Scout\n`dv-forge:implementation-review-scout`/);
+  const scoutSection = body.slice(body.indexOf('## Abschluss-Scout'), body.indexOf('## Bericht'));
+  const reviewerSection = body.slice(body.indexOf('## Reviewer'), body.indexOf('## Nacharbeiter'));
+  assert.ok(scoutSection.includes('`Context: <pfad>`'));
+  assert.ok(!reviewerSection.includes('Context'));
+});
+
+test('implementationReviewSkill_Body_ReportStatusRangeAndCleanup', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('`geprüft, k × 🔴 offen`'));
+  assert.ok(body.includes('`<B>..HEAD`'));
+  assert.ok(body.includes('/dv-forge:finish-work'));
+  assert.ok(body.includes('Rolle des Arbeitsbereichs: `review`'));
+});
+
+test('implementationReviewSkill_Body_StaysUnder500Words', () => {
+  assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
+});
+
+test('implementationReviewSkill_Body_WarnLinesGoToOrchestratorNotes', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.match(body, /Jede `WARN`-Zeile kommt in die Hinweise des Orchestrators/);
+});
+
+test('implementationReviewSkill_Body_NextStepOffersReviewFollowup', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('/dv-forge:review-followup <P> <auswahl>'));
+  assert.ok(body.includes('`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`'));
+  assert.ok(!body.includes('gewählte Änderungen selbst beauftragen'));
+});

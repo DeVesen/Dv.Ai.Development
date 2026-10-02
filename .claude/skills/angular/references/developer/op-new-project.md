@@ -1,0 +1,28 @@
+# Operation: Neues Projekt
+
+**Trigger-Keywords:** `ng new`, `new project`, `neues Projekt`, `create project`, `Projekt erstellen`
+
+## Verhalten bei fehlenden Vorgaben
+
+1. Neueste stabile Angular-Version verwenden.
+2. Signal Forms für neue Formulare (Angular v21+) → [signal-forms-basics.md](signal-forms-basics.md).
+
+## `ng new`-Ausführungsregel
+
+| Situation | Befehl |
+|-----------|--------|
+| Nutzer nennt Version | `npx @angular/cli@<version> new <project-name>` |
+| Keine Version, CLI vorhanden (`ng version` OK) | `ng new <project-name>` |
+| Keine Version, CLI fehlt | `npx @angular/cli@latest new <project-name>` |
+
+## Nach Projekterstellung
+
+- Build über `dv-angular-build` ausführen — Fehler analysieren und beheben — Pflicht.
+- **VERBOTEN:** `ng build` direkt als Shell-Kommando; nur über `dv-angular-build`.
+
+
+
+## Relevante Referenzen
+
+- CLI-Optionen → [cli.md](cli.md)
+- Signal Forms (v21+) → [signal-forms-basics.md](signal-forms-basics.md)

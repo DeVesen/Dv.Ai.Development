@@ -16,7 +16,7 @@ Der Prozess bleibt offen und spricht MCP über **stdin/stdout**; Logs gehen nach
 
 ## Cursor einbinden
 
-Beispielkonfiguration: [.cursor/mcp.json](.cursor/mcp.json) (Pfade sind relativ zum **Workspace-Root**).
+Beispielkonfiguration für `.cursor/mcp.json` (Pfade sind relativ zum **Workspace-Root**):
 
 ```json
 {
@@ -51,7 +51,7 @@ docker build -t Build.Log.Filter.Mcp-mcp .
 docker run -i --rm Build.Log.Filter.Mcp-mcp
 ```
 
-Mit Compose ist `stdin_open: true` gesetzt (siehe [docker-compose.yml](docker-compose.yml)).
+Mit Compose ist `stdin_open: true` gesetzt (siehe [docker-compose.yml](docker/docker-compose.yml)).
 
 **Abhängigkeiten:** Das Projekt targetet `net9.0`, nutzt aber `Microsoft.Extensions.Hosting` in Version **10.x**. Das passt zu **ModelContextProtocol**, das `Microsoft.Extensions.*` und `System.Text.Json` **10.x** transitiv mitbringt — ein Downgrade der Hosting-Pakete auf 9.x würde gegen diese Kette arbeiten und ist nicht empfehlenswert.
 

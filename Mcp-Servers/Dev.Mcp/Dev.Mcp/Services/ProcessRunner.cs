@@ -31,12 +31,20 @@ public static class ProcessRunner
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            RedirectStandardInput = true,
             UseShellExecute = false,
             CreateNoWindow = true,
         };
 
         using var process = new Process { StartInfo = psi };
         process.Start();
+
+        // Without this, the child inherits our own stdin — a live pipe to the MCP
+        // host that never sends EOF. Node-based CLIs (e.g. Vitest) that probe stdin
+        // for an interactive keypress listener then block forever instead of exiting,
+        // even after all work is done — the process itself never terminates, so the
+        // job-object/pipe-drain handling below never gets a chance to run.
+        try { process.StandardInput.Close(); } catch { /* best-effort */ }
 
         // Bind the child (and everything it spawns) to a Job Object so a detached
         // grandchild can't survive as an orphan. Best-effort: null on non-Windows or

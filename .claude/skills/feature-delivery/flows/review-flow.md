@@ -17,7 +17,7 @@ Verbindliche Prompt-Vorlagen der Reviewer: [../references/subagent-prompts.md](.
 | **Branch-unabhängig** | **Kein** Branch-Guard-Stopp (STORY-003). Uncommitted-scoped, funktioniert auf jedem Branch. Auf dem Default-Branch (`master`/`main`) ohne uncommittete Änderungen und ohne Merge-Base-Delta: nur Hinweis *„kein Feature-Delta — nichts zu prüfen"*, kein Abbruch mit Fehler. |
 | **MCP-First** | Diff/Changed-Files über `dev-mcp` (`git_diff_summary`, `git_changed_files`) bzw. `git`; Symbol-/Code-Lookup der Reviewer über die MCPs (Reviewer folgen ihren eigenen Profilen). |
 | **Ausgabe** | Befund-**Datei** unter `Requests/reviews/<feature>-<inspection>-<n>.md` (nach Story bzw. Bereich gruppiert) **+ Chat-Kurzfassung**. Details: Schritt C. |
-| **Dispatch** | Reviewer laufen im **Vordergrund**, direkte Rückgabe (kein Background-Task, kein Notification-Wait) — dasselbe Muster wie der PL→Impl-Reviewer-Dispatch. |
+| **Dispatch** | **Die Session faechert die Reviewer selbst** und sammelt deren Rückgaben ein — nur die Session empfaengt Sub-Agent-Completions (Harness-Grundwahrheit). Kein zwischengeschalteter Dispatcher — dasselbe Session-Fan-out-Muster wie im Impl-Review-Loop. |
 
 ---
 
@@ -72,6 +72,7 @@ Prüft den Diff auf handwerkliche Qualität und Korrektheit — unabhängig von 
   | `implement-review-risk-agent` | BLOCKING/RISK — Regressionen, ungetestete Public-API, Security, Contract-Drift |
   | `implement-review-design-principles-agent` | IODA/IOSP, SOLID, persönliche Design-Regeln, DDD-Grenzen |
   | `implement-review-craft-agent` | Naming, Verschachtelung/Guard Clauses, toter Code, Fehler-Verschlucken |
+  | `implement-review-auditor-agent` | Unabhängige Tiefenanalyse — Vollständigkeitslücken, Konsistenzbrüche |
   | `implement-review-guard-agent` | PRESERVE-Liste — was ist tragfähig und schützenswert |
   | `implement-review-readiness-agent` | Ship-Readiness — SHIP/CONDITIONAL/NO-SHIP + Top-3 |
 
@@ -80,9 +81,9 @@ Prüft den Diff auf handwerkliche Qualität und Korrektheit — unabhängig von 
   **Auftrag:** reiner Befund — **kein** Fix, **keine** Fix-Anwendung, **kein** Digest-Bau,
   **keine** Tier-Autorität (das ist Inner-Loop-Sache).
 
-> **Konventionsentscheidung (User-sichtbar):** `code-inspection` nutzt die **5** registrierten
-> `implement-review-*`-Agents (risk · design-principles · craft · guard · readiness). Der
-> 6. Inner-Loop-Reviewer **`verifier`** entfällt bewusst — sein Kern-Deliverable ist die AC-Map
+> **Konventionsentscheidung (User-sichtbar):** `code-inspection` nutzt die **6** registrierten
+> `implement-review-*`-Agents (risk · design-principles · craft · auditor · guard · readiness). Der
+> 7. Inner-Loop-Reviewer **`verifier`** entfällt bewusst — sein Kern-Deliverable ist die AC-Map
 > (jedes Akzeptanzkriterium auf einen Test gemappt), und `code-inspection` hat **keinen** AC-Kontext.
 > AC-/Anforderungsprüfung ist Aufgabe von `delivery-inspection`. Falls `verifier` doch mitlaufen soll:
 > ein Wort genügt.

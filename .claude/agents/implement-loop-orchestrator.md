@@ -24,13 +24,19 @@ Reviewer-Reports in **einem** wachsenden Kontextfenster → Kontext-Compact bere
 
 | Frühere Orchestrator-Verantwortung | Jetzt bei |
 |-----------------------------------|-----------|
-| Hard Gate (Readiness), Rundenzähler, Max-5-Cap (aus `current_round` im Index), DI-Dispatch, Closure, Story-Status | **Session-Treiber** — die aufrufende Session; hält nur Index-Pointer + PM-Verdikt (kein Agent-Profil, dokumentiert in SKILL.md + implementation-flow.md) |
-| Fix-Planer → Scribes → Integration-Checkpoint → Quality Gates → Reviewer, `finding-*.md` lesen, `digest.md` bauen, Index aktualisieren | **PL** — [`implement-round-executor.md`](implement-round-executor.md), frisch je Runde, gibt nur Pointer zurück |
-| Urteil clean / fix (Was+Wie) / escalate | **PM** — [`implement-supervisor.md`](implement-supervisor.md), frisch je Runde, editiert nichts |
+| Hard Gate (Readiness), Rundenzähler, Max-5-Cap, **Fan-out (Scribes/Reviewer/Fix-Planer/DI) + Collect, Quality Gates via MCP**, DI-Fan-out, Closure, Story-Status | **Session-Treiber** — die aufrufende Session; **der einzige Fan-out-/Collect-Knoten** (nur sie empfaengt Sub-Agent-Completions); hält nur Pointer + Verdikt (kein Agent-Profil, dokumentiert in SKILL.md + implementation-flow.md) |
+| `finding-*.md` lesen, `digest.md` bauen, autoritative Tiers, Index aktualisieren | **Digest-Leaf** — [`implement-round-executor.md`](implement-round-executor.md), frisch je Runde, **dispatcht nichts**, gibt nur Pointer zurück |
+| Urteil clean / fix (Was+Wie) / escalate; Outer-Verdikt aus di-findings | **PM-Leaf** — [`implement-supervisor.md`](implement-supervisor.md), frisch je Runde, **dispatcht nichts**, editiert nur den Urteils-Audit-Trail |
 
-**Kadenz:** frischer PL **und** frischer PM je Runde via Agent-Tool (kein SendMessage über Runden
-hinweg). Kontinuität ausschließlich datei-basiert über das SecondBrain-Verzeichnis
+**Korrektur (Harness-Grundwahrheit):** Der ursprüngliche STORY-033-Split ließ einen „PL"-Sub-Agent
+selbst Scribes/Reviewer dispatchen — das ist entfernt. In diesem Harness landet die Completion eines
+gespawnten Kindes **immer bei der Session**, nie beim spawnenden Sub-Agent; deshalb faechert **nur** die
+Session, und die Leaves lesen/verdichten/urteilen bloß.
+
+**Kadenz:** frisches Digest-Leaf **und** frisches PM-Leaf je Runde via Agent-Tool (kein SendMessage über
+Runden hinweg). Kontinuität ausschließlich datei-basiert über das SecondBrain-Verzeichnis
 (`../skills/feature-delivery/references/secondbrain-schema.md`).
 
-**Ausblick STORY-034:** Terminal-PM (überspannt Inner-Close → Delivery-Inspection → Outer-Verdikt),
-3-Tier-Erbsenzählerei und der mechanische Tier-Guard kommen als nächste Ausbaustufe hinzu.
+**STORY-034 (korrigiert):** 3-Tier-Erbsenzählerei + mechanischer Tier-Guard bleiben; der Outer-Verdikt
+läuft in einem **frischen** Outer-Verdikt-PM-Leaf, das die Session nach ihrem DI-Fan-out startet — kein
+über den Inner-Close hinweg fortgesetzter „Terminal-PM".

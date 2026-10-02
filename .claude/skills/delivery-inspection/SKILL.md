@@ -2,9 +2,9 @@
 name: delivery-inspection
 description: >
   Pruefung vor der Auslieferung — prueft ob alle Anforderungen/Wuensche/Requests des Users
-  angegangen, umgesetzt und nichts vergessen wurde. 5 parallele Reviewer: Revisor (Requirements-Map),
-  Skeptiker (Luecken), Abnahme (pragmatisch+streng — ein Spawn, zwei Urteile), Dolmetscher (Fehlinterpretationen),
-  Querdenker (YAGNI/Scope-Creep). Iterativer Loop bis sauber.
+  angegangen, umgesetzt und nichts vergessen wurde. 6 parallele Reviewer: Revisor (Requirements-Map),
+  Skeptiker (Luecken), Normalo (Abnahme-Pragmatik), Dolmetscher (Fehlinterpretationen),
+  Auftraggeber (finale Abnahme), Querdenker (YAGNI/Scope-Creep). Iterativer Loop bis sauber.
   Universell: Code-Features, Skill-Dateien, Dokumentation, Analysen, jede Art von Deliverable.
   Wird von feature-delivery als letzter Schritt vor Closure aufgerufen.
   Opt-out: kein-delivery-inspection, no-delivery-inspection, skip-delivery-inspection.
@@ -27,7 +27,7 @@ Universell einsetzbar: Code-Features, Skill-Dateien, Dokumentation, Analysen, je
 
 ## ⚠️ Reviewer-Constraint: Kein eigenständiger Tool-Call
 
-**Gilt für alle 5 Reviewer-Agents ohne Ausnahme.**
+**Gilt für alle 6 Reviewer-Agents ohne Ausnahme.**
 
 Der Orchestrator liefert den vollständigen Kontext im Prompt (Code, ACs, Testergebnisse, Diff).
 Du darfst KEINE eigenständigen Datei-Reads, Searches oder MCP-Calls ausführen.
@@ -46,7 +46,7 @@ kein Befund, kein Urteil. Reviewer ist Analyse-Agent, nicht Recherche-Agent.
 
 ---
 
-## Reviewer-Rollen (5 parallele, unabhaengige Perspektiven)
+## Reviewer-Rollen (6 parallele, unabhaengige Perspektiven)
 
 **Revisor** — Anforderungs-Buchhalter
 Mappt jeden Request 1:1 auf ein Deliverable. Zaehlt durch: wurde jede Anforderung adressiert?
@@ -73,24 +73,10 @@ noch getan werden muessen?" bezieht sich auf fehlende AC-Abdeckung, nicht auf
 denkbare-aber-nicht-geforderte Szenarien. Fuer AC-widrige Szenarien: kein
 NICHT-BESTANDEN, hoechstens informativer Hinweis-Kommentar.
 
-**Abnahme** — Doppellinse: pragmatisch + streng
-
-Ein Spawn, ein Kontext, eine `di-finding-abnahme.md` — mit zwei getrennt ausgewiesenen Urteilen:
-
-**Urteil 1 — pragmatisch:**
-Nutzerperspektive: Kann ich das Deliverable direkt produktiv einsetzen? Ist es alltagstauglich?
-Wuerde ich als normaler Nutzer zufrieden sein? Gesamtbewertung + Top-3 konkrete Handlungsempfehlungen.
-
-**Urteil 2 — streng:**
-Strengste Perspektive: Wuerde ich das als Besteller so unterschreiben? Entspricht das meiner
-Erwartungshaltung? Hat der Auftragnehmer das Richtige gebaut — nicht nur etwas Richtiges?
-Gesamturteil: abnahmefaehig / nicht abnahmefaehig + Begruendung.
-
-**Kollisionsregel:** Kommen pragmatisch und streng zu gegensaetzlichem Ergebnis, wird die
-Kollision explizit gemeldet — nie geglaettet. Der Terminal-PM sieht beide Urteile.
-
-**Ungueltigkeitsregel (Negativ-AC):** Ein einzelnes, zusammengeglattetes Urteil ist ungueltig —
-genau zwei getrennte Urteile sind Pflicht (Linse nicht fusioniert).
+**Normalo** — Pragmatische Abnahme
+Nimmt die Nutzerperspektive ein: Kann ich das Deliverable direkt produktiv einsetzen?
+Ist es alltagstauglich? Wuerde ich als normaler Nutzer zufrieden sein? Gesamtbewertung +
+Top-3 konkrete Handlungsempfehlungen.
 
 **Dolmetscher** — Verstaendnis-Pruefung
 Prueft ob Anforderungen korrekt *verstanden* wurden. Sucht nach Fehlinterpretationen,
@@ -99,6 +85,11 @@ Unklarheiten mit dem User abgestimmt — oder still entschieden? Jede still getr
 Entscheidung ohne Rueckfrage ist ein potenzieller Befund.
 Konsistenz-Linse (sprachlich/semantisch): Naming-Konventionen eingehalten? Code-Patterns und Codebase-Konventionen korrekt angewandt?
 Abgrenzung: Strukturelle Contract-Brüche und Signatur-Änderungen → Revisor; Security-Gaps → Skeptiker.
+
+**Auftraggeber** — Finale Abnahme
+Strengste Perspektive: Wuerde ich das als Besteller so unterschreiben? Entspricht das meiner
+Erwartungshaltung? Hat der Auftragnehmer das Richtige gebaut — nicht nur etwas Richtiges?
+Gesamturteil: abnahmefaehig / nicht abnahmefaehig + Begruendung.
 
 **Querdenker** — YAGNI-Waechter
 Prueft die Gegenperspektive: Wurde zu viel gemacht? YAGNI verletzt? Nicht beauftragter
@@ -112,27 +103,27 @@ Abgrenzung: Security-Checks → Skeptiker; Regressions-Prüfung → Revisor; Nam
 
 Zwei Aufruf-Modi:
 
-**A — Aufruf aus `feature-delivery` (STORY-034, Pointer-Handoff):** Der **Terminal-PM** dispatcht die 5 Reviewer-Rollen **direkt** als Vordergrund-Sub-Agents (kein zwischengeschalteter DI-Orchestrator). Jeder Reviewer **schreibt seine Befunde in `outer/di-N/di-finding-<rolle>.md` und gibt nur einen Pointer + Kurzform als direkte Rückgabe** zurück — **kein Report-Body**. Der Terminal-PM wartet auf die **5 direkten Pointer-Rückgaben** (Vordergrund, synchron), **nicht** auf Completion-Notifications, und baut daraus `outer/di-N/di-digest.md`. Weil kein Background-Task und kein Notification-Wait im Spiel ist, entsteht die frühere Notification-Trap (STORY-031) strukturell nicht. Die **Iteration** liefert in diesem Modus der **Outer Loop von feature-delivery** (eine Inspektions-Runde je Outer-Iteration); der iterative Loop unten (Schritt 1–6) ist der **Standalone-Modus**.
+**A — Aufruf aus `feature-delivery` (STORY-034 korrigiert, Session faechert):** Die **Session** dispatcht die 6 Reviewer-Rollen **direkt** und sammelt deren Pointer ein — nur sie empfaengt Sub-Agent-Completions (Harness-Grundwahrheit); **kein zwischengeschalteter DI-Orchestrator, kein „Terminal-PM"-Dispatch**. Jeder Reviewer **schreibt seine Befunde in `outer/di-N/di-finding-<rolle>.md` und gibt nur einen Pointer + Kurzform** zurück — **kein Report-Body**. Danach baut ein frisches **Outer-Verdikt-PM-Leaf** (von der Session mit den Pointern gestartet) `outer/di-N/di-digest.md`. Weil es keinen zwischengeschalteten Sub-Agent-Dispatcher gibt, der faechert-und-wartet, entsteht die frühere Notification-Trap (STORY-031) nicht; der Pointer-Handoff bleibt Fenster-Disziplin. Die **Iteration** liefert in diesem Modus der **Outer Loop von feature-delivery** (eine Inspektions-Runde je Outer-Iteration); der iterative Loop unten (Schritt 1–6) ist der **Standalone-Modus**.
 
-**B — Standalone-Aufruf:** Wird der Skill als ein foreground Sub-Agent mit eigenem Orchestrator aufgerufen, spawnt dieser die 5 Reviewer und muss nach dem parallelen Spawn **aktiv auf alle 5 direkten Antworten warten und zählen**, bevor er mit Schritt 2 fortfährt. **Count-Guard: erst bei N=5 weiter** (auf direkte Rückgaben, kein Background/Notification-Wait).
+**B — Standalone-Aufruf:** Wird der Skill als ein foreground Sub-Agent mit eigenem Orchestrator aufgerufen, spawnt dieser die 6 Reviewer und muss nach dem parallelen Spawn **aktiv auf alle 6 direkten Antworten warten und zählen**, bevor er mit Schritt 2 fortfährt. **Count-Guard: erst bei N=6 weiter** (auf direkte Rückgaben, kein Background/Notification-Wait).
 
 ---
 
 ## Ablauf (iterativer Loop)
 
-Loop laeuft solange bis alle 5 Reviewer keine behebbaren Findings mehr melden.
+Loop laeuft solange bis alle 6 Reviewer keine behebbaren Findings mehr melden.
 
 ### Jede Iteration
 
-**Schritt 1 — 5 Reviewer parallel**
-Alle 5 Reviewer-Sub-Agents gleichzeitig beauftragen, unabhaengig voneinander.
+**Schritt 1 — 6 Reviewer parallel**
+Alle 6 Reviewer-Sub-Agents gleichzeitig beauftragen, unabhaengig voneinander.
 Jeder erhaelt: die originale Anforderung/Request-Liste + das Deliverable (Diff, Dateien, Beschreibung).
 Pflicht-Constraint fuer jeden Reviewer: Kein eigenstaendiger Tool-Call — nur Kontext-Analyse (Details: ## ⚠️ Reviewer-Constraint).
-Alle 5 Reports abwarten.
-**Count-Guard:** erhalten: N/5 — nicht weiter bevor N=5. Erst wenn alle 5 Reports vorliegen, konsolidierten Gesamt-Report zurückgeben.
+Alle 6 Reports abwarten.
+**Count-Guard:** erhalten: N/6 — nicht weiter bevor N=6. Erst wenn alle 6 Reports vorliegen, konsolidierten Gesamt-Report zurückgeben.
 
 **Schritt 2 — Findings klassifizieren**
-Alle Findings aus 5 Reports zusammenfuehren:
+Alle Findings aus 6 Reports zusammenfuehren:
 - **Eindeutig nachlieferbar** — fehlende Punkte, Fehlinterpretationen, vergessene Teile, die
   klar aus Kontext und Anforderung ableitbar sind
 - **Klaerungsbeduerftig** — Findings bei denen die richtige Loesung eine inhaltliche Entscheidung
@@ -177,7 +168,7 @@ Pflichten:
 - Startet naechste Iteration oder beendet Loop
 
 **Schritt 6 — Abbruchbedingung**
-Lieferten alle 5 Reviewer keine behebbaren Findings mehr → Loop endet.
+Lieferten alle 6 Reviewer keine behebbaren Findings mehr → Loop endet.
 
 **Hard Cap: 10 Runden.** Nach Runde 10 — unabhängig von offenen Findings — Loop stoppen und ausgeben:
 
@@ -197,20 +188,20 @@ Lieferten alle 5 Reviewer keine behebbaren Findings mehr → Loop endet.
 
 Abschlussmeldung bei sauberem Abschluss:
 > **Delivery-Inspection abgeschlossen** nach [N] Iteration(en).
-> Alle 5 Perspektiven (Revisor · Skeptiker · Abnahme · Dolmetscher · Querdenker)
+> Alle 6 Perspektiven (Revisor · Skeptiker · Normalo · Dolmetscher · Auftraggeber · Querdenker)
 > ohne offene Findings.
 
 ---
 
 ## Integration mit feature-delivery
 
-Wenn von `feature-delivery` als letzter Schritt vor Closure aufgerufen (STORY-034):
-- **Träger ist der Terminal-PM** (`implement-supervisor`) — nicht mehr der abgelöste `implement-loop-orchestrator`. Er dispatcht die 5 Reviewer-Rollen direkt (Modus A oben).
-- Jeder Reviewer schreibt `outer/di-N/di-finding-<rolle>.md` und gibt **nur einen Pointer** zurück (kein Report-Body). Der Terminal-PM baut daraus `outer/di-N/di-digest.md` und fällt den **Outer-Verdikt**.
-- Findings gehen **nicht direkt an den User** — der Terminal-PM klassifiziert (Implementation-Gap / Requirement-Gap / Unklar / OK); die **Session** setzt daraufhin den Story-Status bzw. leitet zurück in den Inner/Outer Loop.
+Wenn von `feature-delivery` als letzter Schritt vor Closure aufgerufen (STORY-034, korrigiert):
+- **Die Session faechert die 6 Reviewer-Rollen** (nur sie empfaengt Sub-Agent-Completions — Harness-Grundwahrheit) — nicht der abgelöste `implement-loop-orchestrator` und kein zwischengeschalteter „Terminal-PM".
+- Jeder Reviewer schreibt `outer/di-N/di-finding-<rolle>.md` und gibt **nur einen Pointer** zurück (kein Report-Body). Ein frisches **Outer-Verdikt-PM-Leaf** (`implement-supervisor`, von der Session mit den Pointern gestartet) baut daraus `outer/di-N/di-digest.md` und fällt den **Outer-Verdikt**.
+- Findings gehen **nicht direkt an den User** — das Outer-Verdikt-PM-Leaf klassifiziert (Implementation-Gap / Requirement-Gap / Unklar / OK); die **Session** setzt daraufhin den Story-Status bzw. leitet zurück in den Inner/Outer Loop.
 - Erst nach sauberem Durchlauf (keine Gaps): Closure.
 
-**Routing-Constraint (STORY-031 → STORY-034 aufgelöst):** Der Notification-Trap entstand durch Background-Task + Notification-Wait. In der feature-delivery-Integration läuft der DI-Dispatch im **Vordergrund mit Pointer-Handoff** (Reviewer schreiben Dateien, geben direkte Pointer-Rückgaben) — der Terminal-PM wartet auf direkte Rückgaben, nicht auf Notifications. Kein eigenständiger Background-Spawn innerhalb von DI. (Ref: STORY-031, aufgelöst in STORY-034)
+**Routing-Constraint (STORY-031 → STORY-034 korrigiert):** Der Notification-Trap entstand, weil ein zwischengeschalteter Sub-Agent selbst faecherte und auf Completions wartete, die an die Session misrouteten. Die Korrektur ist **kein** „synchrones Vordergrund-Dispatch" (das existiert in diesem Harness nicht), sondern: **die Session faechert die DI-Reviewer direkt** und empfaengt die Completions dort, wo sie ohnehin landen — kein zwischengeschalteter Dispatcher. Der Pointer-Handoff (di-finding-Dateien statt Payload) bleibt als Fenster-Disziplin. (Ref: STORY-031, korrigiert in STORY-034)
 
 ---
 

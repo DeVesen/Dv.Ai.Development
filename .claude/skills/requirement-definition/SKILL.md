@@ -35,27 +35,81 @@ tieferer Audit-Lauf am fertigen Text.)
 - **Skill-Dateien, `description`, Dateinamen, Frontmatter-Keys** → Englisch/ASCII.
 - **Artefakt-Inhalt** (`Epic_*`, `Feature_*`, `Story_*`) → **Deutsch** (Business-Doku fuer
   deutschsprachige Stakeholder).
-- **Dateiname** = ASCII-Slug (siehe Naming-Regel), **Status-Werte** `offen | ready | planned | implemented | reviewed | blocked_<status>` (Frontmatter-Keys Englisch).
+- **Dateiname** = ASCII-Slug (siehe Naming-Regel), **Status-Werte** `offen | ready` (Frontmatter-Keys Englisch).
 
 ## Trigger & Einstiegspunkte
 
 Primaerer Ausloeser ist die `description` (Auto-Trigger). Die explizite Form
-`/requirement-definition <LEVEL>? "<Text>" | <Pfad.md>` bleibt als bequemes Sugar.
+`/requirement-definition <LEVEL>? "<Text>" [prompt] | <Pfad.md>` bleibt als bequemes Sugar. Bei Level
+`feature` wird `"<Text>"` als **eigener Name** interpretiert (→ Titel + Slug), der Rest als Inhalt —
+siehe [Name-Grammatik (RD2)](#name-grammatik-rd2-eigener-feature-name); bei `epic`/`story` bleibt
+`"<Text>"` reiner Text.
 
 | Einstieg | Wann | Was passiert |
 |----------|------|--------------|
 | **Epic** | Grober Wunsch, ein Satz | Epic-Datei sofort anlegen → Dialog → bei Reife in Features schneiden |
 | **Feature** | Abgegrenzter Funktionsbereich | Feature-Datei aufgreifen/anlegen → Dialog → bei Reife Story-Schnitt |
-| **Story** | Kleinstes Arbeitspaket | Story-Datei anlegen → auf DoR-Niveau bringen → AC (F1) definieren & schaerfen |
+| **Story** | Kleinstes Arbeitspaket | **Feature-Bindung sicherstellen** ([Feature-Zwang](#feature-zwang-rd1-keine-waisen-story)) → Story-Datei anlegen → auf DoR-Niveau bringen → AC (F1) definieren & schaerfen |
 | **kein Level** | Unklar | Startet als Epic, prueft sofort, ob Feature/Story passender |
-
-**Name-Grammatik (RD2):** `feature "<name>" [prompt]` — der gequotete `<name>` wird direkt als Titel
-und Slug-Quelle uebernommen; `[prompt]` ist optionaler Ersteingabe-Kontext fuer den Feature-Phase-Dialog.
-Gilt ausschliesslich auf Feature-Level. Story und Epic haben keine analoge Kurzform.
 
 **Level-Erkennung** (Rubrik: [`references/level-detection.md`](references/level-detection.md)):
 Klingt ein Epic eher nach Feature (oder Feature nach Story), schlaegt der Skill den Wechsel vor —
 **kein Downgrade ohne Nutzerbestaetigung.**
+
+## Feature-Zwang (RD1): keine Waisen-Story
+
+Jede Story haengt garantiert an **genau einem Feature**. `requirement-definition` schreibt **nie** eine
+Story-Datei ohne gesetztes `parent` — so bleibt jede Story deterministisch einem Feature (und damit
+einem Worktree) zuordenbar.
+
+**Wann der Zwang greift:** immer wenn eine Story **nicht** aus einem laufenden Feature-Schnitt entsteht
+— also beim **Story-Direkteinstieg** und auf dem **Micro-Change-Pfad**. Beim regulaeren Feature-Schnitt
+ist `parent` bereits ueber die Elternkette gesetzt → kein zusaetzlicher Dialog noetig.
+
+**Feature-Bindungs-Frage (blockierend, vor der ersten Story-Datei):**
+> „Zu welchem Feature gehoert diese Story?
+> [1] Bestehendes Feature waehlen — ich zeige die vorhandenen `FEAT-*` zur Auswahl.
+> [2] Neues Minimal-Feature anlegen — ich erzeuge einen `FEAT-NNN`-Stub (`status: offen`), den wir
+>     spaeter fuellen koennen."
+
+- **[1] Bestehendes Feature:** `Glob: requests/features/FEAT-*.md` → Liste zur Auswahl; das gewaehlte
+  `FEAT-NNN` wird `parent` der Story, und die `children`-Liste des Features wird um die neue Story-ID
+  ergaenzt.
+- **[2] Neues Minimal-Feature (eager-write-Stub):** **vor** der Story-Datei einen `FEAT-NNN`-Stub
+  anlegen (`status: offen`; der Pre-Write-Gate fuer die FEAT-Nummer gilt, s. Dateistruktur & IDs). Der
+  Stub darf minimal bleiben — Titel + Ein-Zeilen-Motivation genuegen; die volle Feature-Zeremonie ist
+  **nicht** sofort Pflicht (Overhead bewusst akzeptiert). Die Story erhaelt anschliessend
+  `parent: FEAT-NNN`.
+
+**Harte Regel (Pre-Write):** Steht zum Zeitpunkt des Story-`Write` kein `parent` fest — weder gewaehlt
+noch neu angelegt — wird **keine** Story-Datei geschrieben. Der Skill kehrt zur Feature-Bindungs-Frage
+zurueck. **Kein parentloser Story-Write, in keinem Pfad.**
+
+## Name-Grammatik (RD2): eigener Feature-Name
+
+Beim Anlegen eines **Features** darf der Nutzer einen eigenen Namen in Anfuehrungszeichen mitgeben —
+Titel **und** Slug entsprechen dann seiner Wahl (inkl. evtl. DevOps-ID) statt automatisch abgeleitet zu
+werden. Die Grammatik gilt **ausschliesslich fuer Level `feature`**.
+
+**Grammatik (nur `feature`):**
+
+| Eingabe | `"…"` = Name? | Verhalten |
+|---|---|---|
+| `feature "<name>" [prompt]` | ja | `<name>` → dt. Titel **und** ASCII-Slug; `[prompt]` = Inhalt |
+| `feature "<name>"` | ja | `<name>` → Titel + Slug; Inhalt aus Kontext (Stub angelegt) |
+| `feature [prompt]` | nein | wie bisher — Titel/Slug aus `[prompt]`/Kontext abgeleitet |
+
+**Regeln:**
+- **Name → Titel (verbatim, Deutsch)** und **Name → ASCII-Slug** ueber die bestehende
+  [Slug-Regel](#dateistruktur--ids) (`ä→ae, ö→oe, ü→ue, ß→ss`; Sonderzeichen entfernt; auf ~50 Zeichen
+  gekuerzt). Beispiel: `feature "Benutzeruebersicht & Rollen" <prompt>` → Titel
+  „Benutzeruebersicht & Rollen", Datei `FEAT-NNN_benutzeruebersicht-rollen.md`, Inhalt aus `<prompt>`.
+- **`epic` und `story` unveraendert:** dort bleibt der Anfuehrungszeichen-Slot **Text** (Inhalt) und ist
+  **kein** Name — Titel/Slug werden wie bisher aus Text/Kontext abgeleitet. Die Name-Grammatik greift
+  nie bei `epic`/`story`.
+- **`FEAT-NNN` bleibt automatisch:** die laufende Nummer vergibt weiterhin der verpflichtende
+  [Glob-Pre-Write-Gate](#dateistruktur--ids) — sie ist **nicht** ueber die Eingabe steuerbar. Der Nutzer
+  waehlt ausschliesslich den Slug-Teil, nie die `NNN`-Nummer.
 
 ## Micro-Change-Pfad (Opt-in)
 
@@ -74,6 +128,9 @@ Treffen alle vier zu: Skill bietet vereinfachten 2-AC-Story-Draft an.
 > Vereinfachter Pfad? [Ja / Nein — volle Zeremonie]"
 
 **Nach Bestätigung (Ja):**
+- **Feature-Zwang gilt auch hier** ([Feature-Zwang](#feature-zwang-rd1-keine-waisen-story)): zuerst die
+  Feature-Bindungs-Frage; auch der Micro-Change-Draft bekommt `parent` gesetzt — **kein parentloses
+  Ergebnis**.
 - Story mit genau 2 ACs im F1-Format (1 Positiv + 1 Negativ)
 - Kein INVEST-Prosa-Block (INVEST gilt als trivial erfüllt, wird nicht dokumentiert)
 - Direkt auf `status: ready` setzbar ohne weiteren Dialog
@@ -81,31 +138,6 @@ Treffen alle vier zu: Skill bietet vereinfachten 2-AC-Story-Draft an.
 
 **Negativ-Pfad:**
 Fehlt auch nur ein Signal (z. B. zwei Dateien betroffen, oder neue Interaktion) → kein Micro-Change-Pfad angeboten; volle Story-Zeremonie läuft wie gewohnt.
-
-## Feature-Zwang — Keine Waisen-Story (RD1)
-
-Jede Story-Datei bekommt einen `parent` (Feature-ID) gesetzt, **bevor** sie geschrieben wird. Gilt
-auch bei Story-Direkteinstieg und Micro-Change-Pfad.
-
-**Pruef-Gate (Pre-Write):** Liegt kein Feature-Kontext vor → Dialog:
-
-> *„Diese Story braucht ein uebergeordnetes Feature. Bestehendes auswaehlen oder neues anlegen?"*
-> 1. Bestehendes Feature auswaehlen (Auswahl aus `offen`- und `ready`-Features)
-> 2. Neues Minimal-Feature-Stub anlegen
-
-**Bestehende Feature-Auswahl:**
-- `offen`-Features → direkt waehlbar.
-- `ready`-Features (gesperrt) → nach Auswahl kurze Bestaetigung: *„FEAT-003 ist ready (gesperrt).
-  Entsperren und Story anhaengen? [Ja / Nein]"* → bei Ja: Feature → `offen`, dann Story anhaengen.
-
-**Minimal-Feature-Stub (Option 2):**
-- Inhalt: Frontmatter (`id`, `type: feature`, `status: offen`, `slug`, `title`) + leere `children`-Liste.
-- Feature-Phase-Dialog wird **nicht** ausgeloest — Stub bleibt minimal.
-- Story-Erstellung laeuft sofort weiter; Stub kann spaeter per Feature-Phase ausgebaut werden.
-- ID-Vergabe: Glob `requests/features/FEAT-*.md` → Max+1 (verpflichtender Pre-Write-Gate).
-
-**Ausnahme:** Feature-Phase ist aktiv (Skill befuellt gerade ein Feature) → parent-Kontext ist bereits
-bekannt, Guard feiert nicht redundant.
 
 ## Zustandsmodell — die Dateien sind der Status
 
@@ -122,11 +154,6 @@ Kontext-Kompaktierung und Session-Grenzen.
   und wartet auf OK. Erst dann `ready` + Anlegen der Kind-Files (`offen`). `offen` = aenderbar,
   `ready` = gesperrt (bereit fuer naechste Stufe).
 - **Entsperr-Notausgang:** „Epic xyz wieder oeffnen" → `status: offen`, Inhalt wieder aenderbar.
-- **Blocked-Zustand:** Nutzer setzt explizit *„Story xyz ist blockiert"* → `status: blocked_<aktueller-status>`
-  (z. B. `blocked_ready`, `blocked_planned`). Der Skill setzt diesen Zustand **nie automatisch**. Recovery:
-  *„Story xyz entsperren"* → Praefix entfernen, Status zurueck auf Ausgangswert (z. B. `blocked_ready` → `ready`).
-- **Reviewed:** Terminaler Zustand nach Delivery-Inspection-Abnahme. Wird von `feature-delivery` nach
-  bestandener DI gesetzt — oder auf explizite Nutzeranfrage. Kein automatischer Uebergang durch diesen Skill.
 - **Wiedereinstieg (stateless):** „weiter mit Epic xyz" → Skill liest die Datei, traversiert ueber
   die ID-Referenzen die Kinder und meldet den Status-Baum (z. B. *„Epic ready. FEAT-001 offen,
   FEAT-002 ready aber dessen STORY-007 offen. Womit weiter?"*). „offene Punkte von Epic xyz" →
@@ -149,6 +176,8 @@ Kontext-Kompaktierung und Session-Grenzen.
 
 ### Feature-Phase
 1. Feature-Datei aufgreifen (vorhandene `Feature_*.md` **non-destruktiv**, siehe Idempotenz) oder neu.
+   Bei Neuanlage via `feature "<name>" [prompt]`: `<name>` liefert Titel + Slug, `[prompt]` den Inhalt
+   (siehe [Name-Grammatik RD2](#name-grammatik-rd2-eigener-feature-name)).
 2. Dialog: offene Punkte klaeren, Scope schaerfen, **NFRs** erfassen (Performance/Security/
    Accessibility/i18n, soweit relevant). Jeder Input erweitert die Datei.
 3. Genug Kontext fuer Story-Schnitt → Skill schlaegt `final` + Story-Schnitt vor (INVEST-Pruefung +
@@ -156,7 +185,10 @@ Kontext-Kompaktierung und Session-Grenzen.
 4. Nach OK: Feature → `ready`, Story-Files (`offen`) angelegt und referenziert.
 
 ### Story-Phase
-1. Story-Datei anlegen/aufgreifen (`offen`).
+1. **Feature-Bindung sicherstellen** (Feature-Zwang RD1): entsteht die Story **nicht** aus einem
+   Feature-Schnitt, zuerst die [Feature-Bindungs-Frage](#feature-zwang-rd1-keine-waisen-story) —
+   `parent` muss vor dem ersten Story-`Write` feststehen. Dann Story-Datei anlegen/aufgreifen
+   (`offen`) mit gesetztem `parent`.
 2. Dialog: Story auf **DoR-Niveau** bringen — **blockierende** Unklarheiten klaeren.
    **Nicht-blockierende** → als *Annahme* oder *Offener Punkt* festhalten, **nicht** endlos nachfragen.
 3. **INVEST-Check inline** ([`references/invest-check.md`](references/invest-check.md)) — bei
@@ -253,6 +285,12 @@ Ohne frischen Glob-Aufruf darf keine neue Datei geschrieben werden. Zwischengesp
 aus dem Gesprächsverlauf (z. B. „STORY-010 war die höchste") gelten nicht — nur der aktuelle
 Verzeichnisstand zählt.
 
+**Parent-Pflicht fuer Stories (Feature-Zwang RD1):** Zusaetzlich zur ID-Vergabe gilt fuer jede neue
+`STORY-*`-Datei ein zweiter blockierender Pre-Write-Check: `parent` MUSS gesetzt sein (ein gewaehltes
+oder neu angelegtes `FEAT-NNN`). Ein Story-`Write` ohne `parent` ist verboten — s.
+[Feature-Zwang](#feature-zwang-rd1-keine-waisen-story). Dies betrifft **alle** Pfade, die eine Story
+ausserhalb des Feature-Schnitts erzeugen (Story-Direkteinstieg, Micro-Change).
+
 **Cross-References laufen ueber IDs, nie ueber Namen** → Umbenennen bricht nichts; Kollisionen
 fuehren zur naechsten freien ID, nie zum stillen Ueberschreiben eines fremden Items.
 
@@ -265,9 +303,10 @@ gekuerzt. Beispiel: Feature „Benutzeruebersicht & Rollen" → `FEAT-003_benutz
 ```yaml
 ---
 id: STORY-014
-parent: FEAT-003          # bei Epics weglassen
+parent: FEAT-003          # PFLICHT bei Story (Feature-Zwang RD1); nur bei Epics weglassen
 type: story               # epic | feature | story
-status: offen             # offen | ready | planned | implemented | reviewed | blocked_<status>
+status: offen             # offen | ready | planned | implemented | reviewed | blocked | done | accepted
+                          # requirement-definition schreibt nur offen/ready; ab planned setzt feature-delivery
 slug: select-statt-checkboxen
 children: [STORY-014, STORY-015]   # nur Epic/Feature; Verweis per ID
 depends_on: [STORY-012, STORY-013] # nur wenn Abhaengigkeiten zu anderen Stories bestehen; sonst weglassen
@@ -348,16 +387,23 @@ nicht fuer die Implementierung direkt. Der Handoff ist ein **Copy-Command/Prompt
 Intake von feature-delivery), **kein automatisches Datei-Einlesen**. Weil die AC bereits im F1-Format
 vorliegen, greift `feature-deliverys` §8/F1-Akzeptanzliste sie nahtlos auf.
 
-**Status-Lifecycle einer Story:**
-`offen` (in Diskussion) → `ready` (DoR erfuellt, freigegeben fuer feature-delivery) → `planned`
-(Plan erstellt, von feature-delivery gesetzt) → `implemented` (Umsetzung abgeschlossen, von
-feature-delivery gesetzt) → `reviewed` (DI-Reviewer-Abnahme bestanden, terminaler Zustand).
+**Status-Lifecycle einer Story** — `offen`/`ready` setzt requirement-definition; **alle Werte ab
+`planned` setzt ausschliesslich `feature-delivery`** (bzw. der Nutzer bei der Abnahme):
 
-**Blocked-Zustand:** Von jedem Status per expliziter Nutzeranfrage erreichbar:
-`blocked_<status>` (z. B. `blocked_ready`, `blocked_planned`). Recovery entfernt das Praefix.
+```
+offen → ready (DoR erfuellt, freigegeben fuer feature-delivery)
+      → planned (Plan erstellt — durch `plane`)
+      → EINE der drei Umsetzungs-Endstufen:
+            implemented  (roh umgesetzt, Build/Test gruen, OHNE Review — durch `implementiere nur`)
+            reviewed     (umgesetzt INKL. Inner-Loop + Delivery-Inspection — durch volles `implementiere`)
+            blocked      (Build/Test nach 5 Fix-Versuchen rot — durch `implementiere nur`)
+      → done / accepted (Abnahme — setzt der Nutzer als PM manuell)
+```
 
-**Single Source of Truth:** Alle Status-Werte — inkl. `reviewed` und `blocked_*` — liegen
-ausschliesslich im Frontmatter der jeweiligen Datei. Kein Status in Eltern-Dateien oder Chat.
+`implemented` und `reviewed` sind garantiert gruene Zustaende. requirement-definition schreibt selbst
+nur `offen`/`ready`; die spaeteren Werte stehen hier nur, damit das Frontmatter-Schema vollstaendig ist
+(Single Source of Truth = die Datei). Die maszgebliche Status-Maschine fuehrt `feature-delivery`
+([feature-delivery/SKILL.md → Story-Gate Schritt 4+5](../feature-delivery/SKILL.md)).
 
 ## Referenzdateien
 
@@ -385,12 +431,18 @@ ausschliesslich im Frontmatter der jeweiligen Datei. Kein Status in Eltern-Datei
 12. Story-AC liegen im F1-Format vor, ≥ 1 Negativszenario.
 13. Anforderung: 2 CSS-Properties, eine Datei, kein neues Verhalten → Micro-Change erkannt,
     vereinfachter 2-AC-Draft angeboten mit Opt-in-Hinweis.
-14. Story-Direkteinstieg ohne Feature-Kontext → parent-Guard fires → Dialog → bestehendes
-    `offen`-Feature gewaehlt → Story mit `parent: FEAT-NNN` geschrieben.
-15. Micro-Change-Pfad ohne Feature-Kontext → parent-Guard fires → Minimal-Feature-Stub angelegt
-    (Frontmatter + Titel, `status: offen`) → Story sofort mit `parent: FEAT-NNN` geschrieben.
-16. `ready`-Feature gewaehlt → Bestaetigung: „Entsperren?" → Ja → Feature `offen` → Story angehaengt.
-17. `feature "Benutzersuche"` → Titel: „Benutzersuche", Slug: `benutzersuche`, Feature-Phase laeuft.
-18. „Story xyz ist blockiert" (bei `status: ready`) → `status: blocked_ready`.
-19. „Story xyz entsperren" (bei `status: blocked_ready`) → `status: ready`.
-20. Story nach DI-Abnahme → `status: reviewed` (terminaler Zustand, kein weiterer Uebergang).
+14. Story-Direkteinstieg ohne Feature-Kontext → Skill fragt „zu welchem Feature?" (Optionen
+    existierend/neu); keine Story-Datei ohne `parent` (Feature-Zwang RD1).
+15. „Neues Minimal-Feature" gewaehlt → `FEAT-NNN`-Stub (`status: offen`) entsteht **vor** der Story;
+    Story-Frontmatter erhaelt `parent: FEAT-NNN`.
+16. Micro-Change-Pfad ohne Feature → auch hier Feature-Bindungs-Frage; kein parentloses Ergebnis.
+17. Interner Zustand ohne gewaehltes/angelegtes Feature → Story-`Write` unterbleibt (kein Write ohne
+    `parent`).
+18. `feature "Benutzeruebersicht & Rollen" <prompt>` → Titel „Benutzeruebersicht & Rollen", Datei
+    `FEAT-NNN_benutzeruebersicht-rollen.md`, Inhalt aus `<prompt>` (Name-Grammatik RD2).
+19. `feature "X"` ohne Prompt → Name gesetzt (Titel + Slug), Inhalt aus Kontext, Stub angelegt.
+20. `feature <prompt>` ohne Anfuehrungszeichen → Titel/Slug aus `<prompt>`/Kontext abgeleitet
+    (heutiges Verhalten, Abgrenzung).
+21. `epic "…"` bzw. `story "…"` → Anfuehrungszeichen bleiben Text, **nicht** Name (Negativ/Abgrenzung).
+22. Name mitgegeben → `FEAT-NNN` weiterhin ueber Glob-Gate vergeben, nicht durch die Eingabe steuerbar
+    (Negativ).

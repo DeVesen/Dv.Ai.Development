@@ -20,7 +20,6 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 | `start-work`, `implementation`, `finish-work` | Arbeit vorbereiten, umsetzen, abschließen |
 | `domain-modeling` | Unscharfe oder widersprüchliche Fachbegriffe klären, ADRs anstoßen |
 | `merge-conflict-resolution` | Gestoppten Merge oder Rebase auflösen |
-| `prozess-retrospektive` | Erfahrungsbericht über den Ablauf einer Session |
 
 ## Agents
 

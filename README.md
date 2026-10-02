@@ -1,5 +1,9 @@
 # Dv.Ai.Development
 
+<p align="center">
+  <img src="docs/images/harness-overview.webp" alt="Mein AI-Coding-Harness: 7 Plugins + 1 MCP-Server" width="600">
+</p>
+
 Werkzeugkasten für KI-gestützte Softwareentwicklung mit [Claude Code](https://claude.com/claude-code): **Plugins** (Skills, Agents, Hooks) und **MCP-Server**, die zusammen einen durchgängigen Workflow von der Idee bis zur geprüften Umsetzung abdecken, für .NET und Angular.
 
 ## Inhalt

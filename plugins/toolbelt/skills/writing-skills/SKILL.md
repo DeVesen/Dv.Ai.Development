@@ -10,7 +10,7 @@ Ein Skill ist eine Anleitung für einen Agenten. Du schreibst ihn so, wie du Cod
 
 ## Erst der Test
 
-Ob eine Anleitung wirkt, weißt du erst, wenn du einen Agenten ohne sie hast scheitern sehen. Der Test eines Skills ist deshalb ein Szenario, das ein Subagent bearbeitet. „Fehlschlag" heißt: Er macht genau den Fehler, den der Skill verhindern soll. Ein Skill ohne beobachteten Fehlschlag ist eine Vermutung, und Vermutungen sind Ballast im Kontext.
+Ob eine Anleitung wirkt, weißt du erst, wenn du einen Agenten ohne sie hast scheitern sehen. Der Test eines Skills ist deshalb ein Szenario, das ein Subagent bearbeitet. „Fehlschlag“ heißt: Er macht genau den Fehler, den der Skill verhindern soll. Ein Skill ohne beobachteten Fehlschlag ist eine Vermutung, und Vermutungen sind Ballast im Kontext.
 
 ## Wann ein Skill sich lohnt
 
@@ -35,12 +35,12 @@ Der Kopf braucht `name` (Kleinbuchstaben, Ziffern, Bindestriche, höchstens 64 Z
 
 ### Die Beschreibung nennt nur den Auslöser
 
-Sie beginnt mit „Use when" und beschreibt Situationen und Symptome. Sie fasst den Ablauf nicht zusammen. Der Grund: Steht der Ablauf in der Beschreibung, folgt der Agent der Kurzfassung und liest den Skill nicht.
+Sie beginnt mit „Use when“ und beschreibt Situationen und Symptome. Sie fasst den Ablauf nicht zusammen. Der Grund: Steht der Ablauf in der Beschreibung, folgt der Agent der Kurzfassung und liest den Skill nicht.
 
-- Schlecht: „Use when executing plans, dispatches a subagent per task with a review in between"
-- Gut: „Use when executing implementation plans with independent tasks in the current session"
+- Schlecht: „Use when executing plans, dispatches a subagent per task with a review in between“
+- Gut: „Use when executing implementation plans with independent tasks in the current session“
 
-Schreibe in der dritten Person, nutze Stichwörter, die ein Agent wirklich sucht (Fehlermeldungen, Symptome, Synonyme), und nenne Auslöser auf Deutsch und Englisch. In einer einzeiligen Beschreibung bricht ein Doppelpunkt mit folgendem Leerzeichen das YAML; schreibe stattdessen „sind" oder „sowie".
+Schreibe in der dritten Person, nutze Stichwörter, die ein Agent wirklich sucht (Fehlermeldungen, Symptome, Synonyme), und nenne Auslöser auf Deutsch und Englisch. In einer einzeiligen Beschreibung bricht ein Doppelpunkt mit folgendem Leerzeichen das YAML; schreibe stattdessen „sind“ oder „sowie“.
 
 ## Auffindbar und schlank
 
@@ -59,7 +59,7 @@ Schreibe in der dritten Person, nutze Stichwörter, die ein Agent wirklich sucht
 | Agent lässt einen Pflichtteil weg | Pflichtfeld in der Vorlage |
 | Verhalten hängt von einer Bedingung ab | Bedingung an einem beobachtbaren Merkmal |
 
-Hänge keinen Einschränkungs-Nebensatz an („außer wenn es wichtig ist"); er öffnet die Verhandlung. Eine echte Ausnahme bekommt eine eigene Bedingung.
+Hänge keinen Einschränkungs-Nebensatz an („außer wenn es wichtig ist“); er öffnet die Verhandlung. Eine echte Ausnahme bekommt eine eigene Bedingung.
 
 ## Prüfen vor dem Ausrollen
 
@@ -75,4 +75,4 @@ Hänge keinen Einschränkungs-Nebensatz an („außer wenn es wichtig ist"); er 
 | Beschreibung erzählt den Ablauf | Nur den Auslöser nennen |
 | Mehrere Skills am Stück ohne Test | Jeden Skill einzeln bis grün |
 | Beispiele in fünf Sprachen | Ein vollständiges, echtes Beispiel |
-| Erzählung „so haben wir es einmal gelöst" | Wiederverwendbare Technik |
+| Erzählung „so haben wir es einmal gelöst“ | Wiederverwendbare Technik |

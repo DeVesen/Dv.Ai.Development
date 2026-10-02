@@ -4,6 +4,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { parseRework, parseScout } = require('../followup');
 const { readLines } = require('./flow-files');
+const { plainProblem } = require('./plain-text');
+
+const SCOUT_HEADING = /^## Scout-Vorschläge\s*$/;
+const GROUP_HEADING = /^### (🔴|🟡|🟢) (.+?)\s*$/u;
+const PROPOSAL = /^\d+\.\s/;
+const TITLE_LINE = /^Titel: (.*)$/;
+const DESCRIPTION_LINE = /^Beschreibung: (.*)$/;
+const TITLE_WORDS = { min: 2, max: 6 };
+const TEXT_REVIEW = 'spec-review';
 
 function groupId(group) {
   return `${group.severity} ${group.location}`;
@@ -21,16 +30,58 @@ function groupProblem(group) {
   return preferredProblem(group);
 }
 
+// Titel und Beschreibung stehen direkt unter der Gruppen-Überschrift, vor dem ersten Vorschlag.
+function scoutTexts(lines) {
+  const start = lines.findIndex((line) => SCOUT_HEADING.test(line));
+  const groups = [];
+  let current = null;
+  let proposalSeen = false;
+  for (const line of start === -1 ? [] : lines.slice(start + 1)) {
+    const heading = GROUP_HEADING.exec(line);
+    if (heading) {
+      current = { severity: heading[1], location: heading[2], title: null, description: null };
+      groups.push(current);
+      proposalSeen = false;
+    } else if (current) {
+      proposalSeen = proposalSeen || PROPOSAL.test(line);
+      const title = proposalSeen ? null : TITLE_LINE.exec(line);
+      const description = proposalSeen ? null : DESCRIPTION_LINE.exec(line);
+      if (title && current.title === null) current.title = title[1].trim();
+      if (description && current.description === null) current.description = description[1].trim();
+    }
+  }
+  return groups;
+}
+
+function wordCount(text) {
+  return text.split(/\s+/).filter(Boolean).length;
+}
+
+function textsProblem(texts) {
+  if (!texts?.title) return 'Titel fehlt';
+  if (!texts.description) return 'Beschreibung fehlt';
+  const words = wordCount(texts.title);
+  if (words < TITLE_WORDS.min || words > TITLE_WORDS.max) return `Titel hat ${words} Wörter statt ${TITLE_WORDS.min} bis ${TITLE_WORDS.max}`;
+  const title = plainProblem(texts.title);
+  if (title) return `Titel: ${title}`;
+  const description = plainProblem(texts.description);
+  return description ? `Beschreibung: ${description}` : null;
+}
+
 // Jede Gruppe der Scout-Eingabe hat ein bis drei Vorschläge, genau einer bevorzugt; andere Gruppen gibt es nicht.
-function checkScout(dir) {
+// Beim Spec-Review tragen sie zusätzlich Titel und Beschreibung in Klartext.
+function checkScout(dir, review) {
   const expected = parseRework(readLines(path.join(dir, 'scout-eingabe.md'))).map(groupId);
   const file = path.join(dir, 'scout.md');
   if (!fs.existsSync(file)) return 'SCOUT ungültig: Ergebnisdatei fehlt';
-  const groups = new Map(parseScout(readLines(file)).map((group) => [groupId(group), group]));
-  const wrong = expected.map((id) => [id, groupProblem(groups.get(id))]).find(([, problem]) => problem);
+  const lines = readLines(file);
+  const groups = new Map(parseScout(lines).map((group) => [groupId(group), group]));
+  const texts = review === TEXT_REVIEW ? new Map(scoutTexts(lines).map((group) => [groupId(group), group])) : null;
+  const problemOf = (id) => groupProblem(groups.get(id)) ?? (texts ? textsProblem(texts.get(id)) : null);
+  const wrong = expected.map((id) => [id, problemOf(id)]).find(([, problem]) => problem);
   if (wrong) return `SCOUT ungültig: ${wrong[0]}: ${wrong[1]}`;
   const extra = [...groups.keys()].filter((id) => !expected.includes(id));
   return extra.length > 0 ? `SCOUT ungültig: Gruppe nicht in der Eingabe: ${extra.join(', ')}` : 'SCOUT ok';
 }
 
-module.exports = { checkScout, preferredProblem };
+module.exports = { checkScout, preferredProblem, scoutTexts };

@@ -440,3 +440,53 @@ test('rate_ScriptFindingWithoutLocation_ExitsWithOneAndReason', () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /^dv-forge review-flow: skript-pruefung\.json verletzt das Format/);
 });
+
+const PLAIN_SCOUT = [
+  '## Scout-Vorschläge', '',
+  '### 🔴 AC-04', 'Titel: Eingabe bei leerem Feld', 'Beschreibung: Offen ist, was bei leerer Eingabe gilt.', '1. D festlegen.', '2. E streichen.', '**Bevorzugt: 1** — passt zum Bestand.', '',
+  '### 🟡 AC-07', 'Titel: Eindeutige Formulierung', 'Beschreibung: Der Satz hat zwei Lesarten.', '1. H schärfen.', '**Bevorzugt: 1** — eindeutig.', '',
+].join('\n');
+
+function scoutCheckSpec(scoutText, review = 'spec-review') {
+  const env = setup();
+  writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' }), finding({ location: 'AC-07' })]);
+  rate(env, 'consistency');
+  fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'), scoutText);
+  const args = review ? ['--review', review] : [];
+  return flow('scout-check', ...args, '--dir', path.join(env.workspace, 'runde-1')).stdout;
+}
+
+test('scoutCheck_SpecReviewWithTitleAndDescription_Ok', () => {
+  assert.equal(scoutCheckSpec(PLAIN_SCOUT), 'SCOUT ok\n');
+});
+
+test('scoutCheck_SpecReviewWithoutTitle_Invalid', () => {
+  const text = PLAIN_SCOUT.replace('Titel: Eingabe bei leerem Feld\n', '');
+  assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Titel fehlt\n');
+});
+
+test('scoutCheck_SpecReviewWithoutDescription_Invalid', () => {
+  const text = PLAIN_SCOUT.replace('Beschreibung: Offen ist, was bei leerer Eingabe gilt.\n', '');
+  assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Beschreibung fehlt\n');
+});
+
+test('scoutCheck_SpecReviewTitleWithOneOrSevenWords_Invalid', () => {
+  assert.equal(scoutCheckSpec(PLAIN_SCOUT.replace('Eingabe bei leerem Feld', 'Eingabe')), 'SCOUT ungültig: 🔴 AC-04: Titel hat 1 Wörter statt 2 bis 6\n');
+  assert.equal(scoutCheckSpec(PLAIN_SCOUT.replace('Eingabe bei leerem Feld', 'a b c d e f g')), 'SCOUT ungültig: 🔴 AC-04: Titel hat 7 Wörter statt 2 bis 6\n');
+});
+
+test('scoutCheck_SpecReviewShorthandInDescription_Invalid', () => {
+  const text = PLAIN_SCOUT.replace('Offen ist, was bei leerer Eingabe gilt.', 'Siehe AC-07 für den Fall.');
+  assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Beschreibung: Kürzel AC-07\n');
+});
+
+test('scoutCheck_SpecReviewDescriptionOverFourHundred_Invalid', () => {
+  const text = PLAIN_SCOUT.replace('Offen ist, was bei leerer Eingabe gilt.', 'x'.repeat(401));
+  assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Beschreibung: länger als 400 Zeichen (401)\n');
+});
+
+test('scoutCheck_PlanReviewOrNoReviewWithoutTexts_StaysOk', () => {
+  const plain = PLAIN_SCOUT.replace(/^(Titel|Beschreibung): .*\n/gm, '');
+  assert.equal(scoutCheckSpec(plain, 'plan-review'), 'SCOUT ok\n');
+  assert.equal(scoutCheckSpec(plain, null), 'SCOUT ok\n');
+});

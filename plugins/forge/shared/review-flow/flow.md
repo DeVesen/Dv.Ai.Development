@@ -39,7 +39,7 @@ Danach wiederholst du den Prüfschritt, der das Ergebnis abgelehnt hat.
 
 ## Scout
 1. Scout: Eingaben aus dem Skill, dazu `Findings: <D>/scout-eingabe.md` und `Ergebnis: <D>/scout.md`. Du bewertest die Vorschläge nicht.
-2. `node "<PLUGIN>/scripts/review-flow.js" scout-check --dir "<D>"`. `SCOUT ungültig: <grund>`: nachfordern, dann Schritt 2.
+2. `node "<PLUGIN>/scripts/review-flow.js" scout-check --review <rolle> --dir "<D>"`. `SCOUT ungültig: <grund>`: nachfordern, dann Schritt 2.
 
 ## Nacharbeit
 Genau eine je Lauf.

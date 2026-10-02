@@ -30,7 +30,7 @@ test('flow_Steps_CallEveryReviewFlowCommand', () => {
   const text = readText(FLOW);
 
   // Assert
-  for (const command of ['rate <FLAGS> --expect <aktiv>', 'scout-check --dir "<D>"', 'rework-input <FLAGS>', 'rework-check <FLAGS>', 'answers-check <FLAGS>',
+  for (const command of ['rate <FLAGS> --expect <aktiv>', 'scout-check --review <rolle> --dir "<D>"', 'rework-input <FLAGS>', 'rework-check <FLAGS>', 'answers-check <FLAGS>',
     'checklist <FLAGS>', 'verify <FLAGS>', 'report <FLAGS> --titel', 'attempt --dir "<W>" --instanz <name>', 'attempt --dir "<W>" --instanz nacharbeit --art buendelung']) {
     assert.ok(text.includes(`node "<PLUGIN>/scripts/review-flow.js" ${command}`), `${command} fehlt`);
   }

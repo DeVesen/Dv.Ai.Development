@@ -6,7 +6,7 @@ const { renderHalt, topicOf } = require('../scripts/lib/halt-text');
 
 const LATER = 'später';
 const FOOT = [
-  `**Antwort:** \`1a\` · „${LATER}“ lässt eine Frage offen.`,
+  `**Antwort:** \`1a\` · \u201E${LATER}\u201C lässt eine Frage offen.`,
   '**Danach:** Ich trage deine Antworten ein, prüfe die Änderungen nach und zeige dir den Abschlussbericht.',
 ];
 
@@ -70,7 +70,7 @@ test('renderHalt_TwoQuestions_NumbersThemAndListsRecommendationsInFooter', () =>
   assert.match(text, /\*\*Ergebnis:\*\* 2 × 🔴 · 1 × 🟡 · 2 Fragen brauchen dich/);
   assert.match(text, /### Frage 1 von 2 · Token-Format/);
   assert.match(text, /### Frage 2 von 2 · Zweite Frage/);
-  assert.ok(text.includes(`**Antwort:** \`1a, 2b\` · „${LATER}“ lässt eine Frage offen.`));
+  assert.ok(text.includes(`**Antwort:** \`1a, 2b\` · \u201E${LATER}\u201C lässt eine Frage offen.`));
 });
 
 test('renderHalt_RedUnchanged_ShownInNoticeWithReason', () => {

@@ -8,8 +8,8 @@ const { reviewerLabel } = require('./reviewer-names');
 
 const FALLBACK_MAX = 400;
 const FALLBACK_NOTE = ' (ohne Scout-Beschreibung)';
-const OPEN_QUOTE = '„';
-const CLOSE_QUOTE = '“';
+const OPEN_QUOTE = '\u201E';
+const CLOSE_QUOTE = '\u201C';
 
 function topicOf(specText) {
   const match = /^# (.+?)\s*$/m.exec(String(specText).replace(/\r\n/g, '\n'));

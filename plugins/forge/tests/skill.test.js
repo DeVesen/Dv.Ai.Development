@@ -68,7 +68,7 @@ test('skill_Body_ReworkGetsRepoOnlyWhenAnchored', () => {
   assert.ok(body.includes('`dv-forge:spec-rework` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`'));
 });
 
-test('skill_Body_NextStepPerStatus', () => {
+test('skill_Report_DelegatedToScript', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
@@ -77,7 +77,7 @@ test('skill_Body_NextStepPerStatus', () => {
   for (const gone of ['- `Fragen offen`:', '- `nicht bereit, …`:', '/dv-forge:plan-writing <S>', 'Offene 🟡', 'Auswahl: b =', 'Spec nicht bereit']) assert.equal(body.includes(gone), false, gone);
 });
 
-test('skill_Body_NextStepCommandsPerStatus', () => {
+test('skill_Warnings_LeftToReport', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 

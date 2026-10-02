@@ -14,6 +14,7 @@ const FOLLOWUP_FLOW = path.join(PLUGIN, 'skills', 'review-followup', 'references
 
 function section(text, title) {
   const start = text.indexOf(`## ${title}\n`);
+  assert.ok(start > -1, `Abschnitt ${title} fehlt`);
   const end = text.indexOf('\n## ', start + 1);
   return text.slice(start, end === -1 ? undefined : end);
 }
@@ -61,4 +62,27 @@ test('reviewFollowupFlow_SpecAndPlan_ReportFromScriptAndSaveAlways', () => {
   const specPlanLine = report.split('\n').find((line) => line.startsWith('- Spec und Plan:'));
   assert.equal(specPlanLine.includes('Umgesetzt'), false);
   assert.ok(section(text, 'Nächster Schritt').includes('Bei Spec und Plan steht der nächste Schritt im Bericht'));
+});
+
+test('flow_End_StepOne_NamesStatusLineForSkillStepsInsteadOfNextStep', () => {
+  const end = section(readText(FLOW), 'Ende');
+  assert.ok(end.includes('Die Zeile `ENDE <status>` braucht der Skill für eigene Schritte (Plan: Commit-Prüfung).'));
+  assert.equal(end.includes('wählt den nächsten Schritt'), false);
+});
+
+test('reviewFollowupFlow_NextStep_PlanKeepsCommitCheck', () => {
+  const next = section(readText(FOLLOWUP_FLOW), 'Nächster Schritt');
+  for (const part of ['original=plan-review', 'git status --porcelain -- "<S>" "<P>"', 'Soll ich Spec und Plan jetzt committen?', 'forge-config.js" get Commit-Konvention', 'Bei Nein oder ohne Antwort: kein Commit.']) {
+    assert.ok(next.includes(part), `${part} fehlt`);
+  }
+});
+
+test('reviewFollowupSkill_Body_NamesAlleAndLeavesHintsAndNextStepToReport', () => {
+  const { body } = readMarkdown(FOLLOWUP_SKILL);
+  assert.ok(body.includes('Auswahl: `alle`'), 'alle fehlt');
+  for (const gone of ['Auswahl: `b` = bevorzugter Vorschlag je Gruppe', 'Scout-Abschnitt des letzten Berichts', 'Jede `WARN`-Zeile kommt in die Hinweise.', 'sowie die Texte für `Nächster Schritt`.']) assert.equal(body.includes(gone), false, gone);
+  assert.ok(body.includes('Die Nummern stehen im letzten Bericht.'));
+  assert.ok(body.includes('der Bericht enthält die Hinweise'));
+  assert.ok(body.includes('bei `plan-review` die Commit-Prüfung'));
+  assert.ok(wordCount(body) < 500);
 });

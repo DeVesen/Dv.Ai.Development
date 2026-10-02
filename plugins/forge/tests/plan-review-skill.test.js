@@ -73,7 +73,7 @@ test('planReviewSkill_Body_NoAnchorRefreshAfterRework', () => {
   assert.ok(!body.includes('## Nach der Nacharbeit'));
 });
 
-test('planReviewSkill_Body_SpecQuestionDoesNotPause', () => {
+test('planReviewSkill_Report_SpecQuestionStaysInReport', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
@@ -83,7 +83,7 @@ test('planReviewSkill_Body_SpecQuestionDoesNotPause', () => {
   assert.ok(body.includes('den Rest liefert `report`'));
 });
 
-test('planReviewSkill_Body_CleanReportHandsOverToImplementation', () => {
+test('planReviewSkill_Report_KeepsCommitQuestionForCleanPlan', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
@@ -94,7 +94,7 @@ test('planReviewSkill_Body_CleanReportHandsOverToImplementation', () => {
   assert.match(body, /Leere Ausgabe: beide sind committet, keine Frage/);
 });
 
-test('planReviewSkill_Body_CommitOutcomesAndOnlyHintInNextStep', () => {
+test('planReviewSkill_Report_CommitOutcomesStayInSkill', () => {
   // Act
   const { body } = readMarkdown(SKILL);
   const next = body.slice(body.indexOf('## Bericht'));
@@ -109,7 +109,7 @@ test('planReviewSkill_Body_CommitOutcomesAndOnlyHintInNextStep', () => {
   }
 });
 
-test('planReviewSkill_Body_NextStepOffersReviewFollowup', () => {
+test('planReviewSkill_Report_DelegatedToScript', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 

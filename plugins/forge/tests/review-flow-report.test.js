@@ -223,7 +223,7 @@ test('report_AllDone_CleanAfterVerificationWithoutOpenSections', () => {
   // Assert
   assert.match(output, /^ENDE sauber nach Nachprüfung\n/);
   assert.match(output, /\*\*Ergebnis:\*\* ✅ Bereit zum Planen\nAblauf: Prüfung aus einem Blickwinkel, eine Überarbeitung, eine Nachprüfung\./);
-  assert.doesNotMatch(output, /### Noch offen/);
+  assert.doesNotMatch(output, /### Noch offen|### Was sich/);
   assert.equal(fs.readFileSync(checkedFile(env, 'abschluss', 'aggregate.md'), 'utf8'), '=== REWORK ===\n');
 });
 
@@ -514,18 +514,61 @@ test('report_CorrectedGroupWithScoutText_AppearsNeitherInReportNorInClosingScout
   assert.equal(fs.readFileSync(checkedFile(env, 'abschluss', 'aggregate.md'), 'utf8'), '=== REWORK ===\n');
 });
 
-test('report_AnswerDecidedGroupWithScoutText_NotInClosingScoutNorOpenList', () => {
-  // Arrange
+const YELLOW_AC04_SCOUT = AC04_SCOUT.replace('### 🔴 AC-04', '### 🟡 AC-04');
+
+function yellowAc04Run() {
   const env = setup();
-  answeredRun(env);
-  fs.writeFileSync(checkedFile(env, 'runde-1', 'scout.md'), AC04_SCOUT);
+  writeReviewer(env, 'clarity', [finding({ location: 'AC-04' })]);
+  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'clarity');
+  fs.writeFileSync(checkedFile(env, 'runde-1', 'scout.md'), YELLOW_AC04_SCOUT);
+  return env;
+}
+
+test('report_UnansweredYellowGroupWithScoutText_IsOpenAndInClosingScout', () => {
+  // Arrange
+  const env = yellowAc04Run();
 
   // Act
   const output = report(env);
 
   // Assert
-  assert.doesNotMatch(output, /### Noch offen/);
+  assert.match(output, /### Noch offen · kein Hindernis für den Plan\n- 🟡 \*\*Grenzwert festlegen\*\*/);
+  assert.match(fs.readFileSync(checkedFile(env, 'abschluss', 'scout.md'), 'utf8'), /### 🟡 AC-04/);
+});
+
+test('report_AnswerDecidedYellowGroupWithScoutText_NotInClosingScoutNorOpenList', () => {
+  // Arrange
+  const env = yellowAc04Run();
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'antworten.json'), { results: [{ location: 'AC-04', status: 'answered', decision: 'F gilt immer.', change: 'Die Spec legt jetzt fest, dass F immer gilt.' }] });
+
+  // Act
+  const output = report(env);
+
+  // Assert
+  assert.doesNotMatch(output, /### Noch offen|Grenzwert festlegen/);
   assert.equal(fs.existsSync(checkedFile(env, 'abschluss', 'scout.md')), false);
+  assert.equal(fs.readFileSync(checkedFile(env, 'abschluss', 'aggregate.md'), 'utf8'), '=== REWORK ===\n');
+});
+
+test('report_ReworkWithBrokenEntries_ListsOnlyValidChangedEntries', () => {
+  // Arrange
+  const env = setup();
+  const valid = { location: ' AC-04 ', status: 'changed', change: CHANGE, evidence: 'src/export.js' };
+  runWithVerification(env, [RED('AC-04'), RED('AC-07')], [valid, { location: 'AC-07', status: 'changed', change: CHANGE }], {
+    verdicts: [VERDICT('AC-04', 'erledigt'), VERDICT('AC-07', 'erledigt')], findings: [],
+  });
+  const broken = [null, { status: 'changed', change: CHANGE }, { location: 42, status: 'changed', change: CHANGE }, { location: 'AC-07', status: 'unchanged', reason: 'x', evidence: 'src/other.js' }, valid];
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: broken, questions: [] });
+
+  // Act
+  const result = runReport(env);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /### Was sich in der Spec geändert hat\n- ✅ \*\*AC-04\*\*/);
+  assert.equal(result.stdout.match(/Änderung:/g).length, 1);
+  assert.equal(result.stdout.match(/Beleg: src\/export\.js/g).length, 1);
+  assert.doesNotMatch(result.stdout, /src\/other\.js|AC-07/);
 });
 
 test('report_OldWorkspaceWithoutHinweiseAndReviewers_ReportsWithoutCrash', () => {

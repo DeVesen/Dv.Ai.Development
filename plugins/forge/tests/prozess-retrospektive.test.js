@@ -66,6 +66,33 @@ test('prozessRetrospektive_Body_NoCodeFenceNoExpectedLine', () => {
   assert.doesNotMatch(body, /Erwartet:/);
 });
 
+test('prozessRetrospektive_Body_GermanQuotesCorrectCodePoints', () => {
+  const { body } = readMarkdown(SKILL);
+
+  // German quotation marks: opening U+201E („), closing U+201C (")
+  const OPEN_QUOTE = '„';   // „
+  const CLOSE_QUOTE = '“';  // "
+
+  const phrases = [
+    'Fakten nicht verfügbar',
+    'Hinweise zu den Signalen',
+    'Zahlen',
+    'MCP-Nutzung'
+  ];
+
+  for (const phrase of phrases) {
+    const quoted = `${OPEN_QUOTE}${phrase}${CLOSE_QUOTE}`;
+    assert.ok(body.includes(quoted), `German quotes for: ${phrase}`);
+
+    const idx = body.indexOf(quoted);
+    const openChar = body.charCodeAt(idx);
+    const closeChar = body.charCodeAt(idx + quoted.length - 1);
+
+    assert.equal(openChar, 0x201E, `Opening quote for ${phrase} should be U+201E`);
+    assert.equal(closeChar, 0x201C, `Closing quote for ${phrase} should be U+201C`);
+  }
+});
+
 test('prozessRetrospektive_Body_TimelineInsteadOfTextSearch', () => {
   const { body } = readMarkdown(SKILL);
 

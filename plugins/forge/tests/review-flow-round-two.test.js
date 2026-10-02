@@ -10,9 +10,20 @@ const RED = (location) => finding({ location, quote: 'x', category: 'widerspruch
 // Antwort auf „R1 · AC-04“ (U+201E, U+201C)
 const ANSWER_ENTRY = '- **W · AC-04** · Aussage — Antwort auf „R1 · AC-04“: ja.';
 
+function bundle(places) {
+  return {
+    title: 'Leere Eingabe', affects: 'Eingabe prüfen', why: 'Es ist offen, was bei leerer Eingabe gilt.', reviewers: ['consistency'],
+    options: [{ label: 'a', text: 'Fehler melden.', consequence: 'streng' }, { label: 'b', text: 'Standardwert nehmen.', consequence: 'bequem' }],
+    recommendation: 'a', reason: 'Fehler fallen früh auf.', places,
+  };
+}
+
+// Die Nacharbeit muss gültig sein, sonst prüfen die Folgeschritte einen Zustand, den der echte Ablauf nie erreicht.
 function finishRework(env, results, questions = []) {
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results, questions });
-  return flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc).stdout;
+  const output = flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc).stdout;
+  assert.match(output, /^NACHARBEIT ok/);
+  return output;
 }
 
 function checklist(env) {
@@ -33,7 +44,7 @@ test('checklist_ThreeRedPlacesWithoutQuestion_ExactlyTheseThree', () => {
   const env = setup();
   runUntilRework(env, [RED('AC-01'), RED('AC-04'), RED('AC-07')]);
   editDoc(env, 'dann C.', 'dann C2.');
-  finishRework(env, ['AC-01', 'AC-04', 'AC-07'].map((location) => ({ location, status: 'changed' })));
+  finishRework(env, ['AC-01', 'AC-04', 'AC-07'].map((location) => ({ location, status: 'changed', change: 'Wortlaut geschärft.' })));
 
   // Act
   const output = checklist(env);
@@ -48,7 +59,7 @@ test('checklist_AnsweredQuestion_PlaceOnChecklist', () => {
   const env = setup();
   addEntries(env, '- **R1 · AC-04** — frage an den menschen — F?');
   runUntilRework(env, []);
-  finishRework(env, [], [{ rule: 'R', question: 'F?', places: ['AC-04'], cases: ['a) ja'], recommendation: 'a' }]);
+  finishRework(env, [], [bundle(['AC-04'])]);
   addEntries(env, ANSWER_ENTRY);
 
   // Act
@@ -63,7 +74,7 @@ test('checklist_RedWithAnsweredQuestion_PlaceOnceOnChecklist', () => {
   const env = setup();
   runUntilRework(env, [RED('AC-04')]);
   addEntries(env, '- **R1 · AC-04** — frage an den menschen — F?');
-  finishRework(env, [{ location: 'AC-04', status: 'human-question', reason: 'neu' }], [{ rule: 'R', question: 'F?', places: ['AC-04'], cases: ['a) ja'], recommendation: 'a' }]);
+  finishRework(env, [{ location: 'AC-04', status: 'human-question', reason: 'neu' }], [bundle(['AC-04'])]);
   addEntries(env, ANSWER_ENTRY);
 
   // Act
@@ -79,7 +90,7 @@ test('checklist_QuestionAnsweredLater_NotOnChecklistAndNoVerifierWithoutChanges'
   const env = setup();
   runUntilRework(env, [RED('AC-04')]);
   addEntries(env, '- **R1 · AC-04** — frage an den menschen — F?');
-  finishRework(env, [{ location: 'AC-04', status: 'human-question', reason: 'neu' }], [{ rule: 'R', question: 'F?', places: ['AC-04'], cases: ['a) ja'], recommendation: 'a' }]);
+  finishRework(env, [{ location: 'AC-04', status: 'human-question', reason: 'neu' }], [bundle(['AC-04'])]);
 
   // Act
   const output = checklist(env);
@@ -122,7 +133,7 @@ test('checklist_ChangedWithoutReason_PointShowsOutcomeOnly', () => {
   const env = setup();
   runUntilRework(env, [RED('AC-04')]);
   editDoc(env, 'dann C.', 'dann C2.');
-  finishRework(env, [{ location: 'AC-04', status: 'changed' }]);
+  finishRework(env, [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }]);
 
   // Act
   checklist(env);
@@ -139,7 +150,7 @@ test('checklist_ScriptFindingOfRoundOne_JudgedByScript', () => {
   writeJsonFile(path.join(env.workspace, 'runde-1', 'skript-pruefung.json'), { findings: [{ location: 'AC-07', quote: 'x', consequence: 'doppelt', rationale: 'Skript' }] });
   flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency');
   flow('rework-input', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
-  finishRework(env, [{ location: 'AC-07', status: 'changed' }]);
+  finishRework(env, [{ location: 'AC-07', status: 'changed', change: 'Wortlaut geschärft.' }]);
 
   // Act
   const output = checklist(env);
@@ -153,7 +164,7 @@ test('verify_ContradictionInSideChangedArea_StaysRed', () => {
   const env = setup();
   runUntilRework(env, [RED('AC-04')]);
   editDoc(env, 'Höchstens zwei Runden.', 'Höchstens drei Runden.');
-  finishRework(env, [{ location: 'AC-04', status: 'changed' }]);
+  finishRework(env, [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }]);
   checklist(env);
 
   // Act
@@ -185,7 +196,7 @@ test('verify_ScriptReportsAgain_PointNotDoneAndRed', () => {
   writeJsonFile(path.join(env.workspace, 'runde-1', 'skript-pruefung.json'), { findings: [{ location: 'AC-07', quote: 'x', consequence: 'doppelt', rationale: 'Skript' }] });
   flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency');
   flow('rework-input', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
-  finishRework(env, [{ location: 'AC-07', status: 'changed' }]);
+  finishRework(env, [{ location: 'AC-07', status: 'changed', change: 'Wortlaut geschärft.' }]);
   checklist(env);
   writeJsonFile(path.join(env.workspace, 'runde-2', 'skript-pruefung.json'), { findings: [{ location: 'AC-07', quote: 'x', consequence: 'doppelt', rationale: 'Skript' }] });
 
@@ -201,7 +212,7 @@ test('verify_MissingVerdict_Invalid', () => {
   // Arrange
   const env = setup();
   runUntilRework(env, [RED('AC-04'), RED('AC-07')]);
-  finishRework(env, [{ location: 'AC-04', status: 'changed' }, { location: 'AC-07', status: 'changed' }]);
+  finishRework(env, [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }, { location: 'AC-07', status: 'changed', change: 'Wortlaut geschärft.' }]);
   checklist(env);
 
   // Act
@@ -215,7 +226,7 @@ test('verify_VerdictForPlaceNotOnChecklist_Invalid', () => {
   // Arrange
   const env = setup();
   runUntilRework(env, [RED('AC-04')]);
-  finishRework(env, [{ location: 'AC-04', status: 'changed' }]);
+  finishRework(env, [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }]);
   checklist(env);
 
   // Act
@@ -229,7 +240,7 @@ test('verify_FindingWithColor_Invalid', () => {
   // Arrange
   const env = setup();
   runUntilRework(env, [RED('AC-04')]);
-  finishRework(env, [{ location: 'AC-04', status: 'changed' }]);
+  finishRework(env, [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }]);
   checklist(env);
 
   // Act

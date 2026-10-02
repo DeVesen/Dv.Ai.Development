@@ -27,7 +27,8 @@ function report(env, review = 'spec-review') {
 function runWithVerification(env, findings, results, verification) {
   runUntilRework(env, findings);
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results, questions: [] });
-  flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
+  const checked = flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc).stdout;
+  assert.match(checked, /^NACHARBEIT ok/);
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
   if (verification) writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), verification);
   flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
@@ -110,7 +111,7 @@ test('report_ReworkWithoutRoundTwo_ExitsWithOneAndReason', () => {
   // Arrange
   const env = setup();
   runUntilRework(env, [RED('AC-04')]);
-  writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed' }], questions: [] });
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }], questions: [] });
 
   // Act
   const result = runReport(env);
@@ -176,9 +177,9 @@ test('report_ReworkWroteNewBehaviourAtTwoPlaces_ListsBothWithEvidence', () => {
   // Arrange
   const env = setup();
   const results = [
-    { location: 'AC-04', status: 'changed', evidence: 'src/export.js' },
-    { location: 'AC-07', status: 'changed', evidence: 'docs/glossary/terms.md · Export' },
-    { location: 'AC-01', status: 'changed' },
+    { location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.', evidence: 'src/export.js' },
+    { location: 'AC-07', status: 'changed', change: 'Wortlaut geschärft.', evidence: 'docs/glossary/terms.md · Export' },
+    { location: 'AC-01', status: 'changed', change: 'Wortlaut geschärft.' },
   ];
   const verdicts = ['AC-01', 'AC-04', 'AC-07'].map((location) => VERDICT(location, 'erledigt'));
   runWithVerification(env, [RED('AC-01'), RED('AC-04'), RED('AC-07')], results, { verdicts, findings: [] });
@@ -194,7 +195,7 @@ test('report_ReworkWroteNewBehaviourAtTwoPlaces_ListsBothWithEvidence', () => {
 test('report_ReworkWithoutEvidence_NoEvidenceSection', () => {
   // Arrange
   const env = setup();
-  runWithVerification(env, [RED('AC-04')], [{ location: 'AC-04', status: 'changed' }], { verdicts: [VERDICT('AC-04', 'erledigt')], findings: [] });
+  runWithVerification(env, [RED('AC-04')], [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }], { verdicts: [VERDICT('AC-04', 'erledigt')], findings: [] });
 
   // Act
   const output = report(env);
@@ -206,7 +207,7 @@ test('report_ReworkWithoutEvidence_NoEvidenceSection', () => {
 test('report_TwoNotDone_NichtBereitTwo', () => {
   // Arrange
   const env = setup();
-  const results = [{ location: 'AC-04', status: 'changed' }, { location: 'AC-07', status: 'changed' }];
+  const results = [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }, { location: 'AC-07', status: 'changed', change: 'Wortlaut geschärft.' }];
   runWithVerification(env, [RED('AC-04'), RED('AC-07')], results, { verdicts: [VERDICT('AC-04', 'nicht erledigt'), VERDICT('AC-07', 'nicht erledigt')], findings: [] });
 
   // Act
@@ -224,7 +225,7 @@ test('report_NotDoneContradictionAndScript_NichtBereitThree', () => {
   const verification = { verdicts: [VERDICT('AC-04', 'nicht erledigt')], findings: [finding({ location: 'Deckel', quote: 'Höchstens drei Runden.', category: 'widerspruch' })] };
   runUntilRework(env, [RED('AC-04')]);
   editDoc(env, 'Höchstens zwei Runden.', 'Höchstens drei Runden.');
-  writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed' }], questions: [] });
+  writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }], questions: [] });
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
   writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), verification);
   flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
@@ -241,7 +242,7 @@ test('report_NotDoneContradictionAndScript_NichtBereitThree', () => {
 test('report_QuestionOpenAndPointNotDone_FragenOffenShowsPoint', () => {
   // Arrange
   const env = setup();
-  runWithVerification(env, [RED('AC-04')], [{ location: 'AC-04', status: 'changed' }], { verdicts: [VERDICT('AC-04', 'nicht erledigt')], findings: [] });
+  runWithVerification(env, [RED('AC-04')], [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }], { verdicts: [VERDICT('AC-04', 'nicht erledigt')], findings: [] });
   addEntries(env, '- **R1 · AC-07** — frage an den menschen — Gilt I?');
 
   // Act

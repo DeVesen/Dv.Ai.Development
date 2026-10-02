@@ -6,6 +6,7 @@ Werkzeug-Skills für jedes Projekt. Sie laufen allein, ohne dass ein weiteres Pl
 
 | Skill | Wofür |
 |---|---|
+| `claude-md-audit` | CLAUDE.md prüfen, kürzen und erweitern, mit Backup und Hash-Prüfung geschützter Blöcke |
 | `prozess-retrospektive` | Erfahrungsbericht über den Ablauf einer Session |
 
 ## Voraussetzungen

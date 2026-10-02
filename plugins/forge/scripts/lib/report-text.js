@@ -27,6 +27,10 @@ function resultLine(input, kind, hints) {
   return `**Ergebnis:** ✅ ${READY[input.review]}${open}`;
 }
 
+function viewpointsPhrase(count) {
+  return count === 1 ? 'einem Blickwinkel' : `${VIEWPOINTS[count] ?? count} Blickwinkeln`;
+}
+
 function flowLine(input) {
   const rework = input.reworked ? 'eine Überarbeitung' : 'keine Überarbeitung';
   const verify = input.verified ? 'eine Nachprüfung' : 'keine Nachprüfung';
@@ -34,9 +38,7 @@ function flowLine(input) {
     const chosen = input.chosenCount === 1 ? '1 gewählter Vorschlag' : `${input.chosenCount} gewählte Vorschläge`;
     return `Ablauf: ${chosen} umgesetzt, ${verify}.`;
   }
-  const count = input.reviewerCount;
-  const viewpoints = count === 1 ? 'einem Blickwinkel' : `${VIEWPOINTS[count] ?? count} Blickwinkeln`;
-  return `Ablauf: Prüfung aus ${viewpoints}, ${rework}, ${verify}.`;
+  return `Ablauf: Prüfung aus ${viewpointsPhrase(input.reviewerCount)}, ${rework}, ${verify}.`;
 }
 
 function changeLines(change) {
@@ -152,4 +154,4 @@ function renderReportText(input) {
   ].map((block) => block.join('\n')).join('\n\n');
 }
 
-module.exports = { renderReportText };
+module.exports = { renderReportText, openLines, section, stepLines, viewpointsPhrase };

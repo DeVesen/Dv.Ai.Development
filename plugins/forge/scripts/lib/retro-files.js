@@ -8,7 +8,7 @@ const path = require('node:path');
 const { RetroError } = require('./transcript');
 
 function retroDir() {
-  return path.join(os.homedir(), '.dv-forge', 'retro');
+  return path.join(os.homedir(), '.dv-toolbelt', 'retro');
 }
 
 function safeId(session) {

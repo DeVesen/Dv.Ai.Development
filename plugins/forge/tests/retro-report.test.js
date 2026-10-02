@@ -17,7 +17,7 @@ function setup({ draft = VALID, snapshot = {} } = {}) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-home-'));
   const project = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-project-'));
   const transcript = writeSession([human('Suche einmal freigeben', '10:00')]);
-  const dir = path.join(home, '.dv-forge', 'retro');
+  const dir = path.join(home, '.dv-toolbelt', 'retro');
   fs.mkdirSync(dir, { recursive: true });
   if (snapshot !== null) fs.writeFileSync(path.join(dir, 's1.snapshot.json'), JSON.stringify({ ...SNAPSHOT, transcript, ownTranscript: transcript, cwd: project, ...snapshot }));
   if (draft !== null) fs.writeFileSync(path.join(dir, 's1.entwurf.md'), draft);

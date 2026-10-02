@@ -269,7 +269,7 @@ function withHome(home, args) {
 }
 
 function readSnapshotOf(home, id) {
-  return JSON.parse(fs.readFileSync(path.join(home, '.dv-forge', 'retro', `${id}.snapshot.json`), 'utf8'));
+  return JSON.parse(fs.readFileSync(path.join(home, '.dv-toolbelt', 'retro', `${id}.snapshot.json`), 'utf8'));
 }
 
 test('cli_Snapshot_WritesSnapshotOutsideProjectAndNamesDraft', () => {
@@ -279,8 +279,8 @@ test('cli_Snapshot_WritesSnapshotOutsideProjectAndNamesDraft', () => {
   const result = withHome(home, ['--file', file, '--snapshot']);
 
   assert.equal(result.status, 0, result.stderr);
-  assert.ok(result.stdout.includes(`Snapshot: ${path.join(home, '.dv-forge', 'retro', 's1.snapshot.json')}`));
-  assert.ok(result.stdout.includes(`Entwurf: ${path.join(home, '.dv-forge', 'retro', 's1.entwurf.md')}`));
+  assert.ok(result.stdout.includes(`Snapshot: ${path.join(home, '.dv-toolbelt', 'retro', 's1.snapshot.json')}`));
+  assert.ok(result.stdout.includes(`Entwurf: ${path.join(home, '.dv-toolbelt', 'retro', 's1.entwurf.md')}`));
 });
 
 test('cli_Snapshot_HoldsNumbersMcpAndSessionFacts', () => {
@@ -323,7 +323,7 @@ test('cli_SnapshotOfTwoSessions_BothKept', () => {
   withHome(home, ['--file', session(), '--snapshot']);
   withHome(home, ['--file', commandSession(), '--snapshot']);
 
-  assert.deepEqual(fs.readdirSync(path.join(home, '.dv-forge', 'retro')).sort(), ['s1.snapshot.json', 's2.snapshot.json']);
+  assert.deepEqual(fs.readdirSync(path.join(home, '.dv-toolbelt', 'retro')).sort(), ['s1.snapshot.json', 's2.snapshot.json']);
 });
 
 test('cli_SnapshotWithFileAndSession_NamedAfterOwnSession', () => {
@@ -340,7 +340,7 @@ test('cli_SnapshotWithFileAndSession_NamedAfterOwnSession', () => {
 
 test('cli_Snapshot_RemovesStaleDraftOfSameSession', () => {
   const home = snapshotHome();
-  const stale = path.join(home, '.dv-forge', 'retro', 's1.entwurf.md');
+  const stale = path.join(home, '.dv-toolbelt', 'retro', 's1.entwurf.md');
   fs.mkdirSync(path.dirname(stale), { recursive: true });
   fs.writeFileSync(stale, '# alter Entwurf\n');
 

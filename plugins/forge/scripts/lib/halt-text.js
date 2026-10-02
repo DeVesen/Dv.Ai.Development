@@ -5,6 +5,7 @@
 const { ICON } = require('./groups');
 const { collapse, placeKey } = require('./places');
 const { reviewerLabel } = require('./reviewer-names');
+const { textsProblem } = require('./scout-check');
 
 const FALLBACK_MAX = 400;
 const FALLBACK_NOTE = ' (ohne Scout-Beschreibung)';
@@ -25,10 +26,10 @@ function shorten(text, max) {
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
 }
 
-// Ohne Scout-Text (Scout ausgefallen) zeigt der Text die Stelle und die gekürzte Konsequenz des ersten Findings.
+// Ohne gültigen Scout-Text (Scout ausgefallen oder Text unbrauchbar) zeigt der Text die Stelle und die gekürzte Konsequenz des ersten Findings.
 function describe(group, scouted) {
   const texts = scouted.get(`${ICON[group.color]} ${collapse(group.label)}`);
-  if (texts?.title && texts.description) return texts;
+  if (texts && textsProblem(texts) === null) return texts;
   return { title: group.label, description: `${shorten(group.items[0].finding.consequence, FALLBACK_MAX)}${FALLBACK_NOTE}` };
 }
 
@@ -57,7 +58,7 @@ function optionLine(option) {
 function questionLines(bundle, number, total) {
   return [
     `### Frage ${number} von ${total} · ${collapse(bundle.title)}  (betrifft: ${collapse(bundle.affects)})`,
-    `**Warum gefragt** (Blickwinkel: ${angles(bundle.reviewers)}): ${collapse(bundle.why)}`,
+    `**Warum gefragt**${bundle.reviewers.length > 0 ? ` (Blickwinkel: ${angles(bundle.reviewers)})` : ''}: ${collapse(bundle.why)}`,
     ...bundle.options.map(optionLine),
     `**Empfehlung: ${bundle.recommendation}**, ${collapse(bundle.reason)}`,
   ];

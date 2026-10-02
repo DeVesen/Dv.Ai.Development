@@ -81,8 +81,9 @@ function optionsProblem(options, at) {
   return options.map((option, index) => optionProblem(option, index, at)).find(Boolean) ?? null;
 }
 
+// Leer ist erlaubt: offene Fragen früherer Läufe haben keinen Reviewer.
 function reviewersProblem(reviewers, at) {
-  if (!isFilledList(reviewers)) return `${at}: reviewers fehlt`;
+  if (!Array.isArray(reviewers) || !reviewers.every(isFilledText)) return `${at}: reviewers fehlt`;
   const unknown = reviewers.find((name) => !isKnownReviewer('spec-review', name));
   return unknown ? `${at}: Reviewer unbekannt: ${unknown}` : null;
 }

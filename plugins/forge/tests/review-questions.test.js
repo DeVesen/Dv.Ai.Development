@@ -135,7 +135,13 @@ test('bundleShapeProblem_OldCasesField_AsksForNewRun', () => {
 });
 
 test('bundleShapeProblem_UnknownOrMissingReviewers_Invalid', () => {
-  assert.equal(bundleShapeProblem(bundle({ reviewers: [] }), 0), 'Frage 1: reviewers fehlt');
+  assert.equal(bundleShapeProblem(bundle({ reviewers: undefined }), 0), 'Frage 1: reviewers fehlt');
+  assert.equal(bundleShapeProblem(bundle({ reviewers: 'clarity' }), 0), 'Frage 1: reviewers fehlt');
+  assert.equal(bundleShapeProblem(bundle({ reviewers: ['coverage'] }), 0), 'Frage 1: Reviewer unbekannt: coverage');
+});
+
+test('bundleShapeProblem_EmptyReviewers_ValidForQuestionsOfEarlierRuns', () => {
+  assert.equal(bundleShapeProblem(bundle({ reviewers: [] }), 0), null);
   assert.equal(bundleShapeProblem(bundle({ reviewers: ['coverage'] }), 0), 'Frage 1: Reviewer unbekannt: coverage');
 });
 

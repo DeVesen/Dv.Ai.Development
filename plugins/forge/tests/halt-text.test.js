@@ -110,6 +110,18 @@ test('renderHalt_ScoutMissing_UsesLabelAndShortenedConsequenceWithNote', () => {
   assert.ok(text.includes(`- 🔴 **AC-04** · Blickwinkel: Vollständigkeit, Klarheit\n  ${'x'.repeat(399)}… (ohne Scout-Beschreibung)\n  Änderung: Geändert.`));
 });
 
+test('renderHalt_EmptyReviewers_OmitsAngleInQuestion', () => {
+  const text = renderHalt(input({ bundles: [bundle({ reviewers: [] })] }));
+  assert.ok(text.includes('**Warum gefragt**: Alle Messungen stammen vom Testsystem.'));
+  assert.equal(text.includes('(Blickwinkel: )'), false);
+});
+
+test('renderHalt_ScoutTitleInvalid_UsesFallback', () => {
+  const texts = [{ severity: '🔴', location: 'AC-04', title: 'Zu viele Wörter im Titel hier drin', description: 'Eine gültige Beschreibung.' }];
+  const text = renderHalt(input({ texts, groups: [group()], results: [{ location: 'AC-04', status: 'changed', change: 'Geändert.' }], bundles: [] }));
+  assert.ok(text.includes('- 🔴 **AC-04** · Blickwinkel: Vollständigkeit, Klarheit\n  Folge des Findings (ohne Scout-Beschreibung)'));
+});
+
 test('renderHalt_NoTopic_OmitsTopicInHeading', () => {
   assert.ok(renderHalt(input({ topic: null })).startsWith('## Spec-Review · Runde 1\n'));
 });

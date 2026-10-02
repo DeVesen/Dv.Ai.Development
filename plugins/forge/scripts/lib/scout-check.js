@@ -2,13 +2,10 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { parseRework, parseScout } = require('../followup');
+const { parseRework, parseScout, SCOUT_HEADING, GROUP_HEADING, PROPOSAL } = require('../followup');
 const { readLines } = require('./flow-files');
 const { plainProblem } = require('./plain-text');
 
-const SCOUT_HEADING = /^## Scout-Vorschläge\s*$/;
-const GROUP_HEADING = /^### (🔴|🟡|🟢) (.+?)\s*$/u;
-const PROPOSAL = /^\d+\.\s/;
 const TITLE_LINE = /^Titel: (.*)$/;
 const DESCRIPTION_LINE = /^Beschreibung: (.*)$/;
 const TITLE_WORDS = { min: 2, max: 6 };
@@ -84,4 +81,4 @@ function checkScout(dir, review) {
   return extra.length > 0 ? `SCOUT ungültig: Gruppe nicht in der Eingabe: ${extra.join(', ')}` : 'SCOUT ok';
 }
 
-module.exports = { checkScout, preferredProblem, scoutTexts };
+module.exports = { checkScout, preferredProblem, scoutTexts, textsProblem };

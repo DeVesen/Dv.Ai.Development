@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { bundleShapeProblem } = require('../scripts/lib/questions');
 
 const AGENTS = path.join(__dirname, '..', 'agents');
 const REVIEWERS = ['completeness', 'consistency', 'feasibility', 'clarity', 'profiles'];
@@ -500,6 +501,14 @@ test('reworkAgents_Body_OnlyRedStellenThreeOutcomesAndBundledQuestions', () => {
   for (const part of ['"questions"', '"places"', '"options"', '"title"', '"why"', '"reviewers"', '"change"', '"recommendation"', 'Jede Stelle mit Frage steht in genau einer gebündelten Frage', 'je Regel']) {
     assert.ok(body.includes(part), `spec-rework: ${part}`);
   }
+});
+
+test('spec-rework_Body_JsonExampleQuestionPassesShapeCheck', () => {
+  const { body } = readAgent('spec-rework');
+  const fence = body.split('```json').find((part) => part.includes('"questions"'));
+  const example = JSON.parse(fence.slice(0, fence.indexOf('```')));
+  assert.ok(example.questions.length > 0);
+  example.questions.forEach((question, index) => assert.equal(bundleShapeProblem(question, index), null));
 });
 
 test('spec-rework_Body_AnswerModeWritesWEntriesAfterREntries', () => {

@@ -198,7 +198,7 @@ function main() {
 }
 
 module.exports = {
-  FollowupError, ROLES, ART_OF_ROLE, followupDir, save, drop, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework,
+  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, FollowupError, ROLES, ART_OF_ROLE, followupDir, save, drop, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework,
 };
 
 if (require.main === module) main();

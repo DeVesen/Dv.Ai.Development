@@ -29,6 +29,7 @@ Punkte aus `Zurückgestellt:` hat die Umsetzung bewusst entschieden. Du schlägs
 5. Hältst du ein Finding nach dem Blick in den Code für unbegründet, darf ein Vorschlag lauten: `Nicht ändern: <Begründung>`.
 6. Genau einen Vorschlag pro Gruppe markierst du als bevorzugt und begründest ihn: Welcher Vorschlag löst das Finding mit dem geringsten Risiko und passt am besten zu Code, Plan und Spec?
 7. W-Einträge in Spec und Plan sind bindende Entscheidungen des Menschen. Ein Vorschlag, der einem W-Eintrag widerspricht, nennt diesen W-Eintrag ausdrücklich.
+8. Pro Gruppe schreibst du direkt unter die Überschrift drei Zeilen: `Titel: <2 bis 6 Wörter>`, `Beschreibung: <was das Problem ist>` und `Empfehlung: <Klartext>`. Die Empfehlung nennt den bevorzugten Vorschlag mit einem kurzen Grund. Alle drei stehen in Klartext für einen Menschen, der den Code nicht vor sich hat: keine Kürzel (kein `AC-<Zahl>`, `Task <Zahl>`, `R<Zahl>`, `F · `, `W · `), keine Dateipfade, jede Zeile höchstens 400 Zeichen. Du beschreibst die Stelle mit Worten, nicht mit ihrem Dateinamen.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib mit `Write` nur diesen Abschnitt an den Pfad aus `Ergebnis:`, in dieser Form, Gruppen in der Reihenfolge der Eingabe. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
@@ -37,11 +38,15 @@ Deine letzte Aktion: Schreib mit `Write` nur diesen Abschnitt an den Pfad aus `E
 ## Scout-Vorschläge
 
 ### 🔴 <Stelle>
+Titel: <2 bis 6 Wörter>
+Beschreibung: <Klartext, höchstens 400 Zeichen>
+Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>
 1. <Vorschlag>
 2. <Vorschlag>
 **Bevorzugt: <Nr>** — <Begründung>
 ```
 
+- Die Zeilen `Titel:`, `Beschreibung:` und `Empfehlung:` stehen direkt unter der Gruppen-Überschrift und vor dem ersten Vorschlag. Die Stelle in der Überschrift bleibt der Dateiname aus der Eingabe.
 - `<Stelle>` und die Stufe übernimmst du exakt aus der Gruppen-Überschrift, ohne die Reviewer-Klammer.
 - Pro Gruppe genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`.
 - Nach `**Bevorzugt: <Nr>**` folgen ein Leerzeichen, der Gedankenstrich `—` und ein Leerzeichen, dann die Begründung. Kein Doppelpunkt.

@@ -10,7 +10,7 @@ const TITLE_LINE = /^Titel: (.*)$/;
 const DESCRIPTION_LINE = /^Beschreibung: (.*)$/;
 const RECOMMENDATION_LINE = /^Empfehlung: (.*)$/;
 const TITLE_WORDS = { min: 2, max: 6 };
-const TEXT_REVIEWS = ['spec-review', 'plan-review'];
+const TEXT_REVIEWS = ['spec-review', 'plan-review', 'implementation-review'];
 
 function groupId(group) {
   return `${group.severity} ${group.location}`;
@@ -71,10 +71,19 @@ function textsProblem(texts) {
   return recommendation ? `Empfehlung: ${recommendation}` : null;
 }
 
+// Spec und Plan: die Gruppen der Scout-Eingabe. Implementierung: keine Eingabe-Datei, erwartet sind die 🔴/🟡-Gruppen des Aggregats.
+function expectedIds(dir, review) {
+  const input = path.join(dir, 'scout-eingabe.md');
+  if (review === 'implementation-review' && !fs.existsSync(input)) {
+    return parseRework(readLines(path.join(dir, 'aggregate.md'))).filter((group) => group.severity !== '🟢').map(groupId);
+  }
+  return parseRework(readLines(input)).map(groupId);
+}
+
 // Jede Gruppe der Scout-Eingabe hat ein bis drei Vorschläge, genau einer bevorzugt; andere Gruppen gibt es nicht.
-// Beim Spec- und Plan-Review tragen sie zusätzlich Titel, Beschreibung und Empfehlung in Klartext.
+// Beim Spec-, Plan- und Implementierungs-Review tragen sie zusätzlich Titel, Beschreibung und Empfehlung in Klartext.
 function checkScout(dir, review) {
-  const expected = parseRework(readLines(path.join(dir, 'scout-eingabe.md'))).map(groupId);
+  const expected = expectedIds(dir, review);
   const file = path.join(dir, 'scout.md');
   if (!fs.existsSync(file)) return 'SCOUT ungültig: Ergebnisdatei fehlt';
   const lines = readLines(file);

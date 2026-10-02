@@ -642,3 +642,11 @@ test('reworkAgents_Body_ChangeFieldAlsoInFollowupModeAndAnswersCarryDecision', (
   for (const part of ['`change`: Pflicht bei `changed` (auch im Folge-Modus', '"change"', 'höchstens 400 Zeichen', '`AC-<Zahl>`']) assert.ok(plan.includes(part), `plan-rework: ${part}`);
   assert.equal(spec.includes('(nicht im Folge-Modus'), false);
 });
+
+test('implementationReviewScout_Body_DescribesTitleDescriptionRecommendationInPlainLanguage', () => {
+  const { body } = readAgent('implementation-review-scout');
+  for (const part of ['`Titel: <2 bis 6 Wörter>`', '`Beschreibung: <was das Problem ist>`', '`Empfehlung: <Klartext>`', 'höchstens 400 Zeichen', '`AC-<Zahl>`', 'keine Dateipfade']) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(body.includes('Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>'));
+});

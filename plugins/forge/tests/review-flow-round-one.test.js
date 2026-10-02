@@ -489,10 +489,10 @@ test('scoutCheck_PlanReviewWithAllTexts_Ok', () => {
   assert.equal(scoutCheckSpec(PLAIN_SCOUT, 'plan-review'), 'SCOUT ok\n');
 });
 
-test('scoutCheck_PlanReviewWithoutTitle_InvalidAndImplementationReviewAndNoReviewStayOk', () => {
+test('scoutCheck_PlanAndImplementationReviewWithoutTitle_InvalidAndNoReviewStaysOk', () => {
   const plain = PLAIN_SCOUT.replace(/^(Titel|Beschreibung|Empfehlung): .*\n/gm, '');
   assert.equal(scoutCheckSpec(plain, 'plan-review'), 'SCOUT ungültig: 🔴 AC-04: Titel fehlt\n');
-  assert.equal(scoutCheckSpec(plain, 'implementation-review'), 'SCOUT ok\n');
+  assert.equal(scoutCheckSpec(plain, 'implementation-review'), 'SCOUT ungültig: 🔴 AC-04: Titel fehlt\n');
   assert.equal(scoutCheckSpec(plain, null), 'SCOUT ok\n');
 });
 

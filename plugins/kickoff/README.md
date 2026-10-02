@@ -10,4 +10,3 @@ Project kickoff for a project manager and a software architect.
 | `project-brief` | PM | Capture goal, scope, load, budget, deployment, pipeline style |
 | `architecture-design` | architect | Grill through the architecture; deliver checklist, concept, overview graphic. Works with or without a brief |
 | `codebase-orientation` | developer | Scan an existing repo plus the architecture documents; write a short CLAUDE.md summary for agents |
-| `document-export` | any | Turn markdown and SVG into a formatted PDF |

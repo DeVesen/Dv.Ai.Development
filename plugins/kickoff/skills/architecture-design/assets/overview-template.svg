@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="gApp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f8fd6"/><stop offset="1" stop-color="#2b5e9e"/></linearGradient>
+    <linearGradient id="gData" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fb38a"/><stop offset="1" stop-color="#2f7d57"/></linearGradient>
+    <linearGradient id="gExt" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0a24f"/><stop offset="1" stop-color="#b97a22"/></linearGradient>
+    <marker id="arr" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#333"/></marker>
+  </defs>
+  <rect width="1000" height="640" fill="#fff"/>
+  <text x="500" y="32" text-anchor="middle" font-size="20" font-weight="600" fill="#222">PROJECT NAME – Architecture overview</text>
+
+  <!-- Frontend -->
+  <rect x="40" y="70" width="260" height="360" rx="12" fill="url(#gApp)"/>
+  <text x="170" y="98" text-anchor="middle" font-size="16" font-weight="600" fill="#fff">Frontend</text>
+  <rect x="60" y="120" width="220" height="46" rx="6" fill="#fff"/><text x="170" y="148" text-anchor="middle" font-size="13" fill="#222">feature-a</text>
+  <rect x="60" y="180" width="220" height="46" rx="6" fill="#fff"/><text x="170" y="208" text-anchor="middle" font-size="13" fill="#222">feature-b</text>
+  <rect x="60" y="240" width="220" height="46" rx="6" fill="#fff" stroke="#fff" stroke-dasharray="6 4" opacity="0.85"/><text x="170" y="268" text-anchor="middle" font-size="13" fill="#555">feature-c (later)</text>
+  <rect x="60" y="330" width="220" height="80" rx="6" fill="#fff"/><text x="170" y="355" text-anchor="middle" font-size="13" fill="#222">shared</text><text x="170" y="377" text-anchor="middle" font-size="11" fill="#555">base and extended building blocks</text>
+
+  <!-- Backend -->
+  <rect x="400" y="70" width="320" height="360" rx="12" fill="url(#gApp)"/>
+  <text x="560" y="98" text-anchor="middle" font-size="16" font-weight="600" fill="#fff">Backend</text>
+  <rect x="420" y="120" width="280" height="46" rx="6" fill="#fff"/><text x="560" y="148" text-anchor="middle" font-size="13" fill="#222">Module A</text>
+  <rect x="420" y="180" width="280" height="46" rx="6" fill="#fff"/><text x="560" y="208" text-anchor="middle" font-size="13" fill="#222">Module B</text>
+  <rect x="420" y="240" width="280" height="46" rx="6" fill="#fff" stroke="#fff" stroke-dasharray="6 4" opacity="0.85"/><text x="560" y="268" text-anchor="middle" font-size="13" fill="#555">Module C (later)</text>
+  <rect x="420" y="330" width="130" height="80" rx="6" fill="#fff"/><text x="485" y="375" text-anchor="middle" font-size="13" fill="#222">SharedKernel</text>
+  <rect x="570" y="330" width="130" height="80" rx="6" fill="#fff"/><text x="635" y="375" text-anchor="middle" font-size="13" fill="#222">Auth adapter</text>
+
+  <!-- Database, Storage, IdP -->
+  <rect x="800" y="70" width="160" height="90" rx="12" fill="url(#gData)"/><text x="880" y="122" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">Database</text>
+  <rect x="800" y="210" width="160" height="90" rx="12" fill="url(#gData)"/><text x="880" y="262" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">File storage</text>
+  <rect x="800" y="350" width="160" height="90" rx="12" fill="url(#gExt)"/><text x="880" y="395" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">Identity</text><text x="880" y="414" text-anchor="middle" font-size="15" font-weight="600" fill="#fff">provider</text>
+
+  <!-- Pfeile -->
+  <line x1="300" y1="200" x2="398" y2="200" stroke="#333" stroke-width="2" marker-end="url(#arr)"/><text x="349" y="190" text-anchor="middle" font-size="12" fill="#222">REST</text>
+  <line x1="720" y1="115" x2="798" y2="115" stroke="#333" stroke-width="2" marker-end="url(#arr)"/><text x="759" y="105" text-anchor="middle" font-size="12" fill="#222">SQL</text>
+  <line x1="720" y1="255" x2="798" y2="255" stroke="#333" stroke-width="2" marker-end="url(#arr)"/><text x="759" y="245" text-anchor="middle" font-size="12" fill="#222">files</text>
+  <line x1="700" y1="390" x2="798" y2="390" stroke="#333" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arr)"/><text x="749" y="380" text-anchor="middle" font-size="12" fill="#222">OIDC</text>
+
+  <!-- Legende -->
+  <rect x="40" y="480" width="920" height="130" rx="8" fill="#f6f7f9" stroke="#d0d4da"/>
+  <text x="60" y="508" font-size="14" font-weight="600" fill="#222">Legend</text>
+  <rect x="60" y="522" width="40" height="22" rx="4" fill="url(#gApp)"/><text x="110" y="538" font-size="12" fill="#222">Application / process</text>
+  <rect x="300" y="522" width="40" height="22" rx="4" fill="url(#gData)"/><text x="350" y="538" font-size="12" fill="#222">Data store</text>
+  <rect x="500" y="522" width="40" height="22" rx="4" fill="url(#gExt)"/><text x="550" y="538" font-size="12" fill="#222">External provider</text>
+  <rect x="60" y="562" width="40" height="22" rx="4" fill="#fff" stroke="#888"/><text x="110" y="578" font-size="12" fill="#222">Module (project or folder)</text>
+  <rect x="300" y="562" width="40" height="22" rx="4" fill="#fff" stroke="#888" stroke-dasharray="5 3"/><text x="350" y="578" font-size="12" fill="#222">Planned for later</text>
+  <line x1="500" y1="573" x2="540" y2="573" stroke="#333" stroke-width="2" marker-end="url(#arr)"/><text x="550" y="578" font-size="12" fill="#222">Call, labelled with purpose</text>
+</svg>

@@ -29,8 +29,8 @@ function wishesDir() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-wishes-'));
   const write = (name, text) => fs.writeFileSync(path.join(dir, name), text);
   write('2026-09-28-a.md', reportText({
-    friction: [['Loop weckt Hauptsession', 'Skill · `dv-forge:plan-review` (Orchestrator)'], ['Warten ohne Skript', 'Skript · neu: wait-results']],
-    savings: [['Review zu breit', 'Skill · `dv-forge:plan-review`']],
+    friction: [['Loop weckt Hauptsession', 'Skill · `acme:plan-review` (Orchestrator)'], ['Warten ohne Skript', 'Skript · neu: wait-results']],
+    savings: [['Review zu breit', 'Skill · `acme:plan-review`']],
     relevance: [['dev-mcp', 'verzichtbar in dieser Session.'], ['codebase-analyzer', 'hätte genützt, weil 29 Grep-Aufrufe.']],
   }));
   write('2026-09-28-b.md', reportText({
@@ -51,7 +51,7 @@ test('cli_Reports_GroupedByTargetLargestFirst', () => {
   const output = sortOf('--dir', wishesDir());
 
   assert.equal(output.status, 0, output.stderr);
-  assert.match(output.stdout, /^# Vorsortierung: 3 Berichte, 5 Befunde\n\n## Skill · dv-forge:plan-review \(2\)\n- Loop weckt Hauptsession · Reibung · 2026-09-28-a\.md\n- Review zu breit · Sparpotenzial · 2026-09-28-a\.md\n\n## Skript · neu: wait-results \(2\)\n[\s\S]*\n## Ziel offen \(1\)\n/);
+  assert.match(output.stdout, /^# Vorsortierung: 3 Berichte, 5 Befunde\n\n## Skill · acme:plan-review \(2\)\n- Loop weckt Hauptsession · Reibung · 2026-09-28-a\.md\n- Review zu breit · Sparpotenzial · 2026-09-28-a\.md\n\n## Skript · neu: wait-results \(2\)\n[\s\S]*\n## Ziel offen \(1\)\n/);
 });
 
 test('cli_Reports_RelevanceTableCountsPerMcp', () => {
@@ -85,7 +85,7 @@ test('cli_DirWithoutReports_ReportsAndExitsWithZero', () => {
 
 test('targetKey_OldAndNewForms_SameGroup', () => {
   assert.deepEqual(
-    [targetKey('Skript · neu: wait-results'), targetKey('Skript · `neu:` Skript · wait-results'), targetKey('Skill · `dv-forge:plan-review` (x)'), targetKey(undefined)],
-    ['Skript · neu: wait-results', 'Skript · neu: wait-results', 'Skill · dv-forge:plan-review', 'Ziel offen'],
+    [targetKey('Skript · neu: wait-results'), targetKey('Skript · `neu:` Skript · wait-results'), targetKey('Skill · `acme:plan-review` (x)'), targetKey(undefined)],
+    ['Skript · neu: wait-results', 'Skript · neu: wait-results', 'Skill · acme:plan-review', 'Ziel offen'],
   );
 });

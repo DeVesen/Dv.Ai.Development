@@ -11,14 +11,14 @@ const { human, slash, request, say, call, result, hint, stamp, writeSession } = 
 // Der Aufruf der Retrospektive in Eintrag 7 ist der laufende: Ihm folgt noch keine Modell-Anfrage.
 function session({ withRetro = true } = {}) {
   return readEntries(writeSession([
-    hint('skill_listing', '10:00', { content: '- dv-forge:domain-modeling: Use when terms are fuzzy' }),
+    hint('skill_listing', '10:00', { content: '- acme:domain-modeling: Use when terms are fuzzy' }),
     human('Plane X', '10:00'),
-    slash('dv-forge:plan-review', 'plan.md', '10:10'),
+    slash('acme:plan-review', 'plan.md', '10:10'),
     request('r1', '10:11', [call('t1', 'Read', { file_path: 'plan.md' })]),
-    slash('dv-forge:plan-review', 'plan.md', '10:20'),
+    slash('acme:plan-review', 'plan.md', '10:20'),
     request('r2', '10:21', [call('t2', 'Grep', { pattern: 'x' })]),
-    ...(withRetro ? [slash('dv-forge:prozess-retrospektive', '', '10:30')] : []),
-    slash('dv-forge:spec-review', 'spec.md', '10:40'),
+    ...(withRetro ? [slash('acme:prozess-retrospektive', '', '10:30')] : []),
+    slash('acme:spec-review', 'spec.md', '10:40'),
   ]));
 }
 
@@ -47,7 +47,7 @@ test('rangeOf_BeforeRetroWithoutRetroCall_KeepsWholeSession', () => {
 test('rangeOf_LastRetroAlreadyWroteReport_KeepsWholeSessionAndNamesIt', () => {
   const entries = readEntries(writeSession([
     human('Plane X', '10:00'),
-    slash('dv-forge:prozess-retrospektive', '', '10:30'),
+    slash('acme:prozess-retrospektive', '', '10:30'),
     request('r1', '10:35', [call('t1', 'Bash', { command: 'node "/p/scripts/retro-report.js" --session s1 --topic planung' })]),
     result('t1', '10:36', 'Bericht: docs/wishes/2026-09-27-planung.md\nPrüfung: 0 Verstöße'),
     human('Weiter', '10:40'),
@@ -63,7 +63,7 @@ test('rangeOf_LastRetroAlreadyWroteReport_KeepsWholeSessionAndNamesIt', () => {
 test('rangeOf_LastRetroReportFailed_StillCutsBeforeIt', () => {
   const entries = readEntries(writeSession([
     human('Plane X', '10:00'),
-    slash('dv-forge:prozess-retrospektive', '', '10:30'),
+    slash('acme:prozess-retrospektive', '', '10:30'),
     request('r1', '10:35', [call('t1', 'Bash', { command: 'node "/p/scripts/retro-report.js" --session s1 --topic planung' })]),
     result('t1', '10:36', 'Exit code 1\n- Reibung 1: *Kosten:* fehlt', true),
     human('Weiter', '10:40'),
@@ -81,7 +81,7 @@ test('rangeOf_LastRetroReportFailed_StillCutsBeforeIt', () => {
 test('rangeOf_OnlyFactsRerunAfterRetroCall_CutsWithoutWarning', () => {
   const entries = readEntries(writeSession([
     human('Plane X', '10:00'),
-    slash('dv-forge:prozess-retrospektive', '--since-command plan-review', '10:30'),
+    slash('acme:prozess-retrospektive', '--since-command plan-review', '10:30'),
     request('r1', '10:31', [say('Ich hole die Fakten neu')]),
     request('r1', '10:31', [call('t1', 'Bash', { command: 'node "/p/scripts/session-facts.js" --session s1 --before-retro --snapshot' })]),
   ]));

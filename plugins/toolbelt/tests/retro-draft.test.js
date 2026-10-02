@@ -28,14 +28,14 @@ test('violations_MissingFindingField_NamesSectionNumberAndTitle', () => {
 });
 
 test('violations_TargetInNoForm_Reported', () => {
-  const found = check(VALID.replace('*Ziel:* Skill · `dv-forge:plan-writing` (schreibt Pläne)', '*Ziel:* ein Skill für Pläne'));
+  const found = check(VALID.replace('*Ziel:* Skill · `acme:plan-writing` (schreibt Pläne)', '*Ziel:* ein Skill für Pläne'));
 
   assert.deepEqual(found, ['Reibung 1 „Suche im Protokoll blockiert“: Ziel-Zeile folgt keiner der Formen „<Art> · `<Name>`“, „<Art> · neu: <Arbeitsname>“, „Ziel offen“']);
 });
 
 test('violations_TargetOpenOrNewHook_Accepted', () => {
-  const open = VALID.replace('*Ziel:* Skill · `dv-forge:plan-writing` (schreibt Pläne)', '*Ziel:* Ziel offen');
-  const hook = VALID.replace('*Ziel:* Skill · `dv-forge:plan-writing` (schreibt Pläne)', '*Ziel:* Hook · neu: test-weg-guard');
+  const open = VALID.replace('*Ziel:* Skill · `acme:plan-writing` (schreibt Pläne)', '*Ziel:* Ziel offen');
+  const hook = VALID.replace('*Ziel:* Skill · `acme:plan-writing` (schreibt Pläne)', '*Ziel:* Hook · neu: test-weg-guard');
 
   assert.deepEqual([check(open), check(hook)], [[], []]);
 });
@@ -85,10 +85,10 @@ test('newTargets_NewTarget_CollectedWithArtAndFinding', () => {
 });
 
 test('parseTarget_ThreeForms_ArtNameAndKind', () => {
-  const parsed = ['Skill · `dv-forge:plan-writing` (schreibt Pläne)', 'Skript · neu: protokoll-ausschnitt (klein)', 'Ziel offen'].map(parseTarget);
+  const parsed = ['Skill · `acme:plan-writing` (schreibt Pläne)', 'Skript · neu: protokoll-ausschnitt (klein)', 'Ziel offen'].map(parseTarget);
 
   assert.deepEqual(parsed, [
-    { art: 'Skill', name: 'dv-forge:plan-writing', isNew: false, open: false },
+    { art: 'Skill', name: 'acme:plan-writing', isNew: false, open: false },
     { art: 'Skript', name: 'protokoll-ausschnitt', isNew: true, open: false },
     { art: '', name: '', isNew: false, open: true },
   ]);

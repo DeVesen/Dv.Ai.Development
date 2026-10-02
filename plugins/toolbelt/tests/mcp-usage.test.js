@@ -37,7 +37,7 @@ function fixture() {
     toolResult('t1'),
     toolUse('t2', 'mcp__dev-mcp__find_file', { name: 'A.cs' }),
     toolResult('t2', true),
-    toolUse('t3', 'Agent', { subagent_type: 'dv-forge:implementation-implementer' }),
+    toolUse('t3', 'Agent', { subagent_type: 'acme:implementation-implementer' }),
     toolResult('t3', false, { toolUseResult: { agentId: 'abc' } }),
     toolUse('t4', 'Agent', { subagent_type: 'Explore' }),
     toolResult('t4', false, { toolUseResult: { agentId: 'def' } }),
@@ -58,7 +58,7 @@ test('loadSession_MainAndSubagents_CollectsAllCallsWithAgentLabels', () => {
   const session = loadSession(transcript);
   const byName = (name) => session.calls.filter((call) => call.name === name);
   assert.equal(session.subagentCount, 2);
-  assert.equal(byName('Bash')[0].agent, 'dv-forge:implementation-implementer');
+  assert.equal(byName('Bash')[0].agent, 'acme:implementation-implementer');
   assert.equal(byName('Read')[0].agent, 'Explore-Meta');
   assert.equal(byName('Grep')[0].agent, 'SubAgent zzz');
   assert.equal(byName('mcp__dev-mcp__find_file').filter((call) => call.error).length, 1);

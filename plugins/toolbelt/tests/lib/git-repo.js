@@ -21,10 +21,10 @@ function commitFile(dir, file, content, message) {
 }
 
 function makeRepo() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-git-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'toolbelt-git-'));
   git(dir, 'init', '--quiet', '--initial-branch=main');
   git(dir, 'config', 'user.email', 'test@example.invalid');
-  git(dir, 'config', 'user.name', 'dv-forge test');
+  git(dir, 'config', 'user.name', 'toolbelt test');
   git(dir, 'config', 'commit.gpgsign', 'false');
   commitFile(dir, 'README.md', '# repo\n', 'init');
   return dir;

@@ -119,7 +119,7 @@ function loadSession() {
     human('Los', '10:00'),
     request('r1', '10:01', [call('t1', 'Read', { file_path: 'src/big.ts' })]),
     result('t1', '10:02', 'x'.repeat(8000)),
-    request('r2', '10:03', [call('t2', 'Skill', { skill: 'dv-forge:plan-writing' })]),
+    request('r2', '10:03', [call('t2', 'Skill', { skill: 'acme:plan-writing' })]),
     result('t2', '10:03', 'Launching skill'),
     skillText('y'.repeat(6000), '10:03'),
     request('r3', '10:04', [call('t3', 'Bash', { command: 'ls' })]),
@@ -135,7 +135,7 @@ test('contextLoads_ResultsAndSkillText_SizeTimesFollowingRequests', () => {
 
   assert.deepEqual(loads.map((load) => [load.label, load.tokens, load.following, load.load]), [
     ['Read src/big.ts', 2000, 3, 6000],
-    ['Skill-Text nach Skill dv-forge:plan-writing', 1500, 2, 3000],
+    ['Skill-Text nach Skill acme:plan-writing', 1500, 2, 3000],
   ]);
 });
 
@@ -153,7 +153,7 @@ test('cli_LoadSession_ListsContextLoadsWithTrigger', () => {
   const output = facts(loadSession());
 
   assert.equal(output.status, 0, output.stderr);
-  assert.match(output.stdout, /Größte Kontextlasten \(Größe × folgende Anfragen, ab 1k Tokens\):\n- 2k × 3 Anfragen = 6k · Read src\/big\.ts \(Eintrag 3\)\n- 2k × 2 Anfragen = 3k · Skill-Text nach Skill dv-forge:plan-writing \(Eintrag 6\)\n/);
+  assert.match(output.stdout, /Größte Kontextlasten \(Größe × folgende Anfragen, ab 1k Tokens\):\n- 2k × 3 Anfragen = 6k · Read src\/big\.ts \(Eintrag 3\)\n- 2k × 2 Anfragen = 3k · Skill-Text nach Skill acme:plan-writing \(Eintrag 6\)\n/);
 });
 
 function runSession() {

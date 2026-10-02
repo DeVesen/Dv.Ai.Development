@@ -17,7 +17,7 @@ test('compose_Header_ModelSkillsDateAndScriptNumbersBeforeSections', () => {
   assert.ok(text.startsWith([
     '# Erfahrungsbericht Planung eines Skripts',
     '',
-    '**Session:** Modell claude-x · Skills dv-forge:plan-writing · 2026-09-29',
+    '**Session:** Modell claude-x · Skills acme:plan-writing · 2026-09-29',
     '**Lauf:** Der Mensch ließ einen Plan schreiben.',
     '**Ergebnis:** Plan fertig.',
     '**Kennzahlen:** Dauer 10 min, Eingaben des Menschen 2, Tokens neu 2k Hauptsession und 1k Subagents.',

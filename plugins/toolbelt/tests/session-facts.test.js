@@ -24,7 +24,7 @@ function session() {
     line({ type: 'user', timestamp: '2026-09-27T10:00:00Z', message: { role: 'user', content: 'Mach X' } }),
     line({ type: 'assistant', requestId: 'r1', timestamp: '2026-09-27T10:01:00Z', message: { model: 'claude-x', usage, content: [bash] } }),
     line({ type: 'user', message: { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't1', is_error: true, content: 'Permission denied by hook' }] } }),
-    line({ type: 'assistant', requestId: 'r2', message: { model: 'claude-x', usage, content: [{ ...bash, id: 't2' }, { type: 'tool_use', id: 't3', name: 'Skill', input: { skill: 'dv-forge:init' } }] } }),
+    line({ type: 'assistant', requestId: 'r2', message: { model: 'claude-x', usage, content: [{ ...bash, id: 't2' }, { type: 'tool_use', id: 't3', name: 'Skill', input: { skill: 'acme:init' } }] } }),
     line({ type: 'user', message: { role: 'user', content: '<task-notification>fertig</task-notification>' } }),
     line({ type: 'system', subtype: 'compact_boundary' }),
     line({ type: 'user', timestamp: '2026-09-27T10:10:00Z', message: { role: 'user', content: [{ type: 'text', text: 'Danke' }] } }),
@@ -33,7 +33,7 @@ function session() {
   const agents = path.join(dir, 's1', 'subagents');
   fs.mkdirSync(agents, { recursive: true });
   fs.writeFileSync(path.join(agents, 'agent-a.jsonl'), line({ type: 'assistant', requestId: 'x', message: { model: 'sonnet', usage, content: [] } }));
-  fs.writeFileSync(path.join(agents, 'agent-a.meta.json'), JSON.stringify({ description: 'Review Plan', agentType: 'dv-forge:plan-review-risks', model: 'sonnet' }));
+  fs.writeFileSync(path.join(agents, 'agent-a.meta.json'), JSON.stringify({ description: 'Review Plan', agentType: 'acme:plan-review-risks', model: 'sonnet' }));
   return file;
 }
 
@@ -47,7 +47,7 @@ test('analyze_CountsTurnsTokensToolsErrorsRepeatsSkillsCompactions', () => {
   assert.equal(result.tools.get('Bash'), 2);
   assert.equal(result.repeats, 1);
   assert.equal(result.denials, 1);
-  assert.equal(result.skills.get('dv-forge:init'), 1);
+  assert.equal(result.skills.get('acme:init'), 1);
   assert.equal(result.compactions, 1);
 });
 
@@ -56,7 +56,7 @@ test('cli_File_RendersFactsAndSubagents', () => {
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /- Dauer: 10 min · Modelle: claude-x/);
   assert.match(result.stdout, /Tokens Hauptsession: 2k neu gelesen, 10k aus dem Cache, 0k Ausgabe/);
-  assert.match(result.stdout, /\| Review Plan \| dv-forge:plan-review-risks \| sonnet \| 6k \| 1k \|/);
+  assert.match(result.stdout, /\| Review Plan \| acme:plan-review-risks \| sonnet \| 6k \| 1k \|/);
   assert.match(result.stdout, /- Bash: Permission denied by hook/);
 });
 
@@ -194,10 +194,10 @@ function commandSession() {
   fs.writeFileSync(file, [
     say('Plane X', '2026-09-27T10:00:00Z'),
     tool('p1', 'Bash', { command: 'git status' }, '2026-09-27T10:01:00Z'),
-    slash('dv-forge:prozess-retrospektive', '2026-09-27T11:00:00Z'),
+    slash('acme:prozess-retrospektive', '2026-09-27T11:00:00Z'),
     tool('r1', 'Write', { file_path: 'bericht.md' }, '2026-09-27T11:02:00Z'),
     say('commit den Bericht', '2026-09-27T11:05:00Z'),
-    tool('s1', 'Skill', { skill: 'dv-forge:prozess-retrospektive' }, '2026-09-27T11:10:00Z'),
+    tool('s1', 'Skill', { skill: 'acme:prozess-retrospektive' }, '2026-09-27T11:10:00Z'),
     tool('r2', 'Read', { file_path: 'x.md' }, '2026-09-27T11:11:00Z'),
   ].join('\n'));
   const agents = path.join(dir, 's2', 'subagents');
@@ -292,7 +292,7 @@ test('cli_Snapshot_HoldsNumbersMcpAndSessionFacts', () => {
 
   assert.equal(snapshot.transcript, file);
   assert.equal(snapshot.model, 'claude-x');
-  assert.deepEqual(snapshot.skills, ['dv-forge:init']);
+  assert.deepEqual(snapshot.skills, ['acme:init']);
   assert.equal(snapshot.cut, null);
   assert.match(snapshot.numbers, /^- Dauer: 10 min · Modelle: claude-x\n/);
   assert.match(snapshot.mcp, /^Quelle: /);

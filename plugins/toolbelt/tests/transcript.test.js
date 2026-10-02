@@ -14,7 +14,7 @@ const FACTS = path.join(__dirname, '..', 'scripts', 'session-facts.js');
 function sessionWithSkillAndSummary() {
   return writeSession([
     human('Mach X', '10:00'),
-    slash('dv-forge:plan-writing', 'docs/forge/x/spec.md', '10:01'),
+    slash('acme:plan-writing', 'docs/forge/x/spec.md', '10:01'),
     skillText('Base directory for this skill: /plugins/forge/skills/plan-writing', '10:01'),
     request('r1', '10:02', [call('t1', 'Write', { file_path: 'a.md' })]),
     rejection('t1', '10:03'),
@@ -57,7 +57,7 @@ test('humanEvents_SkillTextAndSummary_AreNoInput', () => {
 
   const inputs = humanEvents(entries).filter((event) => event.kind === 'Eingabe');
 
-  assert.deepEqual(inputs.map((event) => event.text), ['Mach X', '/dv-forge:plan-writing docs/forge/x/spec.md', 'Danke']);
+  assert.deepEqual(inputs.map((event) => event.text), ['Mach X', '/acme:plan-writing docs/forge/x/spec.md', 'Danke']);
 });
 
 test('humanEvents_InterruptAndRejection_ListedWithEntryNumber', () => {
@@ -89,5 +89,5 @@ test('cli_HumanEvents_ListedWithEntryTimeAndText', () => {
   const result = facts(sessionWithSkillAndSummary());
 
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /## Eingaben des Menschen\n- #1 10:00 Eingabe: Mach X\n- #2 10:01 Eingabe: \/dv-forge:plan-writing docs\/forge\/x\/spec\.md\n- #5 10:03 Ablehnung: Tool-Aufruf abgelehnt\n- #6 10:04 Unterbrechung: \[Request interrupted by user\]\n- #8 10:40 Eingabe: Danke\n/);
+  assert.match(result.stdout, /## Eingaben des Menschen\n- #1 10:00 Eingabe: Mach X\n- #2 10:01 Eingabe: \/acme:plan-writing docs\/forge\/x\/spec\.md\n- #5 10:03 Ablehnung: Tool-Aufruf abgelehnt\n- #6 10:04 Unterbrechung: \[Request interrupted by user\]\n- #8 10:40 Eingabe: Danke\n/);
 });

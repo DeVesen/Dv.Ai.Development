@@ -23,7 +23,7 @@ const VALID = [
   '   *Ursache:* Regel fehlt.',
   '   *Besser gewesen:* Vorher fragen.',
   '   *Vorschlag:* Regel ergänzen.',
-  '   *Ziel:* Skill · `dv-forge:plan-writing` (schreibt Pläne)',
+  '   *Ziel:* Skill · `acme:plan-writing` (schreibt Pläne)',
   '   *Im Projekt:* Datei `Shift.ts`. Zitat: „Suche einmal freigeben“',
   '',
   '## Sparpotenzial',
@@ -48,7 +48,7 @@ const VALID = [
 
 const SNAPSHOT = {
   session: 's1', transcript: '', ownTranscript: null, transcriptEntries: 1, cwd: '', cut: null, labels: [], branch: 'feature/lean-retro', specs: [],
-  expected: ['dev-mcp'], model: 'claude-x', skills: ['dv-forge:plan-writing'],
+  expected: ['dev-mcp'], model: 'claude-x', skills: ['acme:plan-writing'],
   headline: 'Dauer 10 min, Eingaben des Menschen 2, Tokens neu 2k Hauptsession und 1k Subagents',
   numbers: '- Dauer: 10 min · Modelle: claude-x', mcp: 'Quelle: `s1.jsonl`', projectFiles: ['Shift.ts'],
 };

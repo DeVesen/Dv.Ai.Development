@@ -35,7 +35,7 @@ test('findingSummary_FourFindings_ShowsFirstThree', () => {
 test('retroCost_AfterSnapshotEntry_RequestsAndTokensSplit', () => {
   const transcript = writeSession([
     request('r0', '09:00', [], usage(9000, 9000, 9000, 9000)),
-    slash('dv-forge:prozess-retrospektive', '', '10:00'),
+    slash('acme:prozess-retrospektive', '', '10:00'),
     request('r1', '10:01', [], usage(1000, 2000, 50000, 300)),
     request('r2', '10:02', [], usage(500, 0, 52000, 200)),
     request('r2', '10:02', [], usage(500, 0, 52000, 200)),
@@ -47,7 +47,7 @@ test('retroCost_AfterSnapshotEntry_RequestsAndTokensSplit', () => {
 
 test('retroCost_NoRetroCallButEarlierRetro_CountsOnlyAfterSnapshot', () => {
   const transcript = writeSession([
-    slash('dv-forge:prozess-retrospektive', '', '08:00'),
+    slash('acme:prozess-retrospektive', '', '08:00'),
     request('r0', '08:01', [], usage(9000, 9000, 9000, 9000)),
     human('Weiter', '09:00'),
     request('r1', '10:01', [], usage(1000, 0, 0, 100)),
@@ -70,7 +70,7 @@ test('summaryLines_OwnTranscriptNotEvaluated_CostNotMeasurable', () => {
 test('summaryLines_OwnTranscriptUnknown_CostNotTakenFromForeignProtocol', () => {
   const repo = makeRepo();
   const foreign = writeSession([
-    slash('dv-forge:prozess-retrospektive', '', '10:00'),
+    slash('acme:prozess-retrospektive', '', '10:00'),
     request('r1', '10:01', [], usage(1000, 0, 0, 100)),
   ]);
   const snapshot = { ...SNAPSHOT, transcript: foreign, ownTranscript: null };

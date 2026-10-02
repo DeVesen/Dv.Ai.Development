@@ -111,7 +111,7 @@ test('cli_QuoteOnlyInDraftWriteAfterSnapshot_ReportedAsNotInProtocol', () => {
 });
 
 test('cli_DraftWithViolations_ListsEachAndWritesNothing', () => {
-  const draft = VALID.replace('## Kleinigkeiten\n', '').replace('*Ziel:* Skill · `dv-forge:plan-writing` (schreibt Pläne)', '*Ziel:* ein Skill');
+  const draft = VALID.replace('## Kleinigkeiten\n', '').replace('*Ziel:* Skill · `acme:plan-writing` (schreibt Pläne)', '*Ziel:* ein Skill');
   const env = setup({ draft });
 
   const result = report(env, '--session', 's1', '--topic', 'planung');

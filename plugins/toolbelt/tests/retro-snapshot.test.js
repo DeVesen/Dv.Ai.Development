@@ -11,7 +11,7 @@ const { human, slash, request, call, writeSession } = require('./lib/retro-sessi
 
 test('specPaths_ToolPathsAndHumanArguments_NewestFirst', () => {
   const entries = readEntries(writeSession([
-    slash('dv-forge:plan-writing', 'docs/forge/a/spec.md', '10:00'),
+    slash('acme:plan-writing', 'docs/forge/a/spec.md', '10:00'),
     request('r1', '10:01', [call('a', 'Read', { file_path: 'docs/specs/b.md' })]),
     request('r2', '10:02', [call('b', 'Read', { file_path: 'src/x.ts' })]),
   ]));
@@ -41,7 +41,7 @@ test('buildSnapshot_FactsAndSessionData_AssembledIntoFields', () => {
   const entries = readEntries(writeSession([
     { ...request('r1', '10:00', [call('a', 'Read', { file_path: 'docs/specs/b.md' })]), gitBranch: 'feature/x' },
   ]));
-  const facts = { models: new Set(['claude-x']), humans: [], skills: new Map([['dv-forge:init', 1]]) };
+  const facts = { models: new Set(['claude-x']), humans: [], skills: new Map([['acme:init', 1]]) };
   const range = { entries, cutTime: null, labels: ['Schnitt: keiner'] };
 
   const snapshot = buildSnapshot({
@@ -51,7 +51,7 @@ test('buildSnapshot_FactsAndSessionData_AssembledIntoFields', () => {
 
   assert.deepEqual(snapshot, {
     session: 's1', transcript: 't.jsonl', ownTranscript: null, transcriptEntries: 1, cwd, cut: null, labels: ['Schnitt: keiner'],
-    branch: 'feature/x', specs: ['docs/specs/b.md'], expected: ['dev-mcp'], model: 'claude-x', skills: ['dv-forge:init'],
+    branch: 'feature/x', specs: ['docs/specs/b.md'], expected: ['dev-mcp'], model: 'claude-x', skills: ['acme:init'],
     headline: 'Kopf', numbers: '- Dauer: 1 min', mcp: 'Quelle: `t.jsonl`', projectFiles: ['b.md'],
   });
 });

@@ -1,6 +1,9 @@
 'use strict';
 
 // Abschlussbericht eines Spec-, Plan-Reviews oder Followups in Klartext. Reine Funktion: Die Eingabe baut report-data.js.
+// `openRed`: Zahl der offenen Hindernisse; ist sie größer 0, gilt der Bericht auch bei Status `sauber …` als nicht bereit
+// (Followup: der Status zählt nur die gewählten Gruppen). `open[].hasProposal`: die Gruppe hat einen gesicherten
+// Scout-Vorschlag; nur solche Gruppen erreicht `/dv-forge:review-followup <A> alle`.
 
 const READY = { 'spec-review': 'Bereit zum Planen', 'plan-review': 'Bereit zur Umsetzung' };
 const DOCUMENT_IN = { 'spec-review': 'in der Spec', 'plan-review': 'im Plan' };
@@ -11,7 +14,7 @@ const ICON = { red: '🔴', yellow: '🟡' };
 function kindOf(input, hints) {
   if (input.status.startsWith('unvollständig')) return 'incomplete';
   if (input.status === 'Fragen offen') return 'questions';
-  if (input.status.startsWith('nicht bereit')) return 'blocked';
+  if (input.status.startsWith('nicht bereit') || input.openRed > 0) return 'blocked';
   return hints > 0 ? 'hints' : 'ready';
 }
 
@@ -74,19 +77,50 @@ function questionSteps(input) {
   ];
 }
 
-function steps(input, kind, hints) {
+function followupCommand(input) {
+  return `/dv-forge:review-followup ${input.artifact} alle`;
+}
+
+// `alle` erreicht nur Hindernisse mit Vorschlag; die übrigen passt der Mensch selbst an.
+function blockedSteps(input, proposed) {
   const rerun = `/dv-forge:${input.review} ${input.artifact}`;
-  const followup = `/dv-forge:review-followup ${input.artifact} alle`;
+  const rest = Math.max(0, input.openRed - proposed);
+  if (rest === 0) {
+    const count = input.openRed === 1 ? 'Das Hindernis' : `Die ${input.openRed} Hindernisse`;
+    return [[`${count} einarbeiten lassen (oder das Dokument selbst anpassen):`, followupCommand(input)], ['Danach erneut prüfen:', rerun]];
+  }
+  const selfEdit = 'Das Dokument selbst anpassen, dann erneut prüfen:';
+  if (proposed === 0) {
+    const count = rest === 1 ? 'Das Hindernis hat' : `Die ${rest} Hindernisse haben`;
+    return [[`${count} keinen Lösungsvorschlag. ${selfEdit}`, rerun]];
+  }
+  const count = proposed === 1 ? 'Das Hindernis' : `Die ${proposed} Hindernisse`;
+  const others = rest === 1 ? 'Das übrige Hindernis hat' : `Die ${rest} übrigen Hindernisse haben`;
+  return [[`${count} mit Lösungsvorschlag einarbeiten lassen:`, followupCommand(input)], [`${others} keinen Lösungsvorschlag. ${selfEdit}`, rerun]];
+}
+
+function hintSteps(input, hints, proposed) {
+  const rest = hints - proposed;
+  const selfEdit = 'Bei Bedarf das Dokument selbst anpassen (optional).';
+  const list = [];
+  if (proposed > 0) {
+    const count = proposed === 1 ? 'Den Hinweis' : `Die ${proposed} Hinweise`;
+    list.push([`${count}${rest > 0 ? ' mit Lösungsvorschlag' : ''} einarbeiten lassen (optional):`, followupCommand(input)]);
+  }
+  if (rest > 0) {
+    const others = proposed > 0 ? ['Der übrige Hinweis hat', `Die ${rest} übrigen Hinweise haben`] : ['Der Hinweis hat', `Die ${rest} Hinweise haben`];
+    list.push(`${rest === 1 ? others[0] : others[1]} keinen Lösungsvorschlag. ${selfEdit}`);
+  }
+  return [...list, ...closingSteps(input)];
+}
+
+function steps(input, kind, open) {
+  const rerun = `/dv-forge:${input.review} ${input.artifact}`;
+  const proposed = (color) => open.filter((entry) => entry.color === color && entry.hasProposal).length;
   if (kind === 'incomplete') return [['Den Lauf in einer frischen Session erneut starten:', rerun]];
   if (kind === 'questions') return questionSteps(input);
-  if (kind === 'blocked') {
-    const count = input.openRed === 1 ? 'Das Hindernis' : `Die ${input.openRed} Hindernisse`;
-    return [[`${count} einarbeiten lassen (oder das Dokument selbst anpassen):`, followup], ['Danach erneut prüfen:', rerun]];
-  }
-  if (kind === 'hints') {
-    const count = hints === 1 ? 'Den Hinweis' : `Die ${hints} Hinweise`;
-    return [[`${count} einarbeiten lassen (optional):`, followup], ...closingSteps(input)];
-  }
+  if (kind === 'blocked') return blockedSteps(input, proposed('red'));
+  if (kind === 'hints') return hintSteps(input, open.filter((entry) => entry.color === 'yellow').length, proposed('yellow'));
   return closingSteps(input);
 }
 
@@ -114,7 +148,7 @@ function renderReportText(input) {
     ...section('Noch offen · Hindernis', hindrances.flatMap(openLines)),
     ...section(`Noch offen · kein Hindernis für ${NEXT_FOR[input.review]}`, hintEntries.flatMap(openLines)),
     ...section('Hinweise zum Ablauf', input.notes.map((note) => `- ${note}`)),
-    ['### Wie es weitergeht', ...stepLines(steps(input, kind, hintEntries.length))],
+    ['### Wie es weitergeht', ...stepLines(steps(input, kind, input.open))],
   ].map((block) => block.join('\n')).join('\n\n');
 }
 

@@ -79,7 +79,7 @@ function reworkChanges(options, data, ctx) {
   if (data.failed.includes('nacharbeit')) return [];
   return ctx.rework.results.filter((entry) => entry?.status === 'changed' && typeof entry.location === 'string').flatMap((entry) => {
     const key = placeKey(entry.location);
-    const group = (data.one?.groups ?? []).find((candidate) => candidate.key === key);
+    const group = (data.one?.groups ?? []).find((candidate) => candidate.key === key && candidate.color === 'red');
     if (!group) return [];
     const texts = described(group, ctx.index);
     return [{
@@ -157,17 +157,28 @@ function assertKnownStatus(status) {
   if (!VALID_STATUS.test(status)) throw new FlowError(`Unbekannter Berichtsstatus: ${status}`);
 }
 
+// Der Followup-Status zählt nur die Gruppen dieses Followups; nicht gewählte gesicherte 🔴 bleiben trotzdem Hindernisse.
+function openRedOf(data, ctx, open) {
+  const listed = open.filter((group) => group.color === 'red').length;
+  return ctx.followup ? Math.max(data.openRed, listed) : data.openRed;
+}
+
+// Gleiche Dateien und Schlüssel wie writeClosing: Nur Gruppen mit Scout-Block landen in abschluss/scout.md und damit bei `alle`.
+function openEntry(options, ctx, group) {
+  return { color: group.color, ...described(group, ctx.index), angles: angles(options.review, group.reviewers), hasProposal: ctx.index.has(group.scoutKey) };
+}
+
 function buildInput(options, data, status, open) {
   assertKnownStatus(status);
   const ctx = context(options, data);
   return {
     review: options.review, followup: ctx.followup !== null, title: options.title, artifact: options.artifact, spec: options.spec,
-    topic: topicOf(readText(options.doc)), status, openRed: data.openRed, reviewerCount: reviewerCount(data.one),
+    topic: topicOf(readText(options.doc)), status, openRed: openRedOf(data, ctx, open), reviewerCount: reviewerCount(data.one),
     reworked: data.reworked, verified: data.checked, chosenCount: ctx.followup?.gewaehlt.length ?? 0,
     failedLabels: data.failed.map((name) => failedLabel(options, name)),
     changes: ctx.followup ? followupChanges(options, ctx) : [...reworkChanges(options, data, ctx), ...answeredChanges(options, ctx)],
     decisions: ctx.followup ? [] : decisionsOf(ctx), questions: questionLines(options, data, ctx),
-    open: open.map((group) => ({ color: group.color, ...described(group, ctx.index), angles: angles(options.review, group.reviewers) })),
+    open: open.map((group) => openEntry(options, ctx, group)),
     notes: notesOf(options),
   };
 }

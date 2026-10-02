@@ -42,8 +42,10 @@ function blockReason(mustShow, check) {
 function decideTurnEnd(mustShow, shown) {
   const check = checkShown(mustShow, shown);
   const complete = check.missing.length === 0 && !check.tooShort;
-  if (complete || mustShow.attempts >= MAX_ATTEMPTS) return { reason: null, mustShow: null };
-  return { reason: blockReason(mustShow, check), mustShow: { ...mustShow, attempts: mustShow.attempts + 1 } };
+  // Fehlende Zähler (beschädigter Marker) zählen ab 0, damit die Sperre sicher endet.
+  const attempts = mustShow.attempts ?? 0;
+  if (complete || attempts >= MAX_ATTEMPTS) return { reason: null, mustShow: null };
+  return { reason: blockReason(mustShow, check), mustShow: { ...mustShow, attempts: attempts + 1 } };
 }
 
 module.exports = { anchorsOf, mustShowOf, decideTurnEnd };

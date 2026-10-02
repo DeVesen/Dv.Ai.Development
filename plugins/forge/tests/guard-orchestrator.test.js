@@ -530,3 +530,21 @@ test('cli_ShowAndPauseShow_StoreMustShow', () => {
   assert.equal(paused.status, 0);
   assert.equal(markerOf(env).paused, true);
 });
+
+test('onPrompt_PausedWithLeftoverMustShow_DropsMustShowKeepsProtection', () => {
+  // Arrange
+  const env = setup();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  guard.pause(SESSION, env.tmpRoot);
+
+  // Act
+  guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: 'F1: b, F2: später' }, env.tmpRoot);
+
+  // Assert
+  const marker = markerOf(env);
+  assert.equal(marker.mustShow, undefined);
+  assert.ok(marker.protected);
+  assert.equal(marker.paused, false);
+  guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: 'danke' }, env.tmpRoot);
+  assert.equal(fs.existsSync(guard.markerPath(SESSION, env.tmpRoot)), false);
+});

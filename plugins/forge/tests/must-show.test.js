@@ -106,3 +106,18 @@ test('decideTurnEnd_SecondAttemptStillMissing_BlocksAgainThenFrees', () => {
   assert.ok(second.reason);
   assert.deepEqual(third, { reason: null, mustShow: null });
 });
+
+test('decideTurnEnd_MissingAttempts_CountsFromZeroAndStillTerminates', () => {
+  // Arrange
+  const { attempts: _entfernt, ...ohneZaehler } = mustShowOf(TEXT, 'f.md');
+
+  // Act
+  const first = decideTurnEnd(ohneZaehler, 'nichts');
+  const second = decideTurnEnd(first.mustShow, 'nichts');
+  const third = decideTurnEnd(second.mustShow, 'nichts');
+
+  // Assert
+  assert.equal(first.mustShow.attempts, 1);
+  assert.equal(second.mustShow.attempts, 2);
+  assert.deepEqual(third, { reason: null, mustShow: null });
+});

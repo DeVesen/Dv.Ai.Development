@@ -183,7 +183,9 @@ function onPrompt(input, tmpRoot) {
   // Beim Anhalten für Fragen an den Menschen bleibt der Guard für genau eine Antwort bestehen.
   const marker = readMarker(input.session_id, tmpRoot);
   if (marker?.paused) {
-    writeMarker(input.session_id, { ...marker, paused: false }, tmpRoot);
+    // Ein offener Pflichttext gehört zum Turn, der ihn registriert hat; jede Menschen-Eingabe macht ihn hinfällig.
+    const { mustShow: _verfallen, ...geschuetzt } = marker;
+    writeMarker(input.session_id, { ...geschuetzt, paused: false }, tmpRoot);
     return;
   }
   clearMarker(input.session_id, tmpRoot);

@@ -19,7 +19,7 @@ const USAGE = [
   '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>]',
   '       node prepare.js implementation <plan> [spec]',
   '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]',
-  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>]   (auswahl: b | <n> | <g>:<n|b>,...)',
+  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
@@ -180,6 +180,11 @@ function writeProfileIndex(root, workspace) {
   return { index, count: files.length, warnings: duplicateWarnings(files) };
 }
 
+// Hinweise zum Ablauf in Klartext mit Auswirkung; der Bericht (report) zeigt sie dem Menschen.
+function writeHints(workspace, notes) {
+  fs.writeFileSync(path.join(workspace, 'hinweise.json'), `${JSON.stringify(notes, null, 2)}\n`);
+}
+
 function prepareSpecReview({ positional, flags }) {
   const spec = existingFile(path.resolve(positional[0]), 'Spec');
   const root = gitRoot(path.dirname(spec));
@@ -191,6 +196,7 @@ function prepareSpecReview({ positional, flags }) {
   values.W = createWorkspace('spec-review', slug, root);
   values.art = /^Art:\s*frei\s*$/m.test(fs.readFileSync(spec, 'utf8')) ? 'frei' : 'verankert';
   const warnings = [];
+  const hints = [];
   if (values.art === 'frei') {
     values.profile = 'nein';
   } else {
@@ -202,11 +208,16 @@ function prepareSpecReview({ positional, flags }) {
       values.PA = path.join(values.W, 'profil-auszug.md');
     }
     warnings.push(...profiles.warnings);
+    hints.push(...profiles.warnings.map((warning) => `Mehrere Profile heißen gleich: ${warning}. Der Prüfer für Fachbegriffe kann dadurch ein falsches Profil lesen.`));
   }
   const active = chosen.filter((name) => name !== 'profiles' || values.profile === 'ja');
-  if (flags['--only'] && active.length < chosen.length) warnings.push('profiles nicht aktiv: keine Profile oder freie Spec');
+  if (flags['--only'] && active.length < chosen.length) {
+    warnings.push('profiles nicht aktiv: keine Profile oder freie Spec');
+    hints.push('Der Prüfer für Fachbegriffe wurde nicht gestartet, weil keine Profile vorliegen oder die Spec als frei gekennzeichnet ist. Diese Prüfung fehlt.');
+  }
   if (active.length === 0) throw new UsageError('--only lässt keinen aktiven Reviewer übrig');
   values.aktiv = active.join(',');
+  writeHints(values.W, hints);
   if (warnings.length > 0) values.WARN = warnings;
   return values;
 }
@@ -223,11 +234,14 @@ function preparePlanReview({ positional, flags }) {
   // Spec und Repo für die Skript-Prüfungen von review-flow.js, auch im Folge-Modus.
   writeContext(values.W, { spec: toPosix(values.S), repo: toPosix(root) });
   // Anker einmal deterministisch prüfen; ein Fehler darf das Review nicht verhindern.
+  const hints = [];
   try {
     values.A = writeAnchors(plan, root, values.W);
   } catch (error) {
     values.WARN = [`Anker-Prüfung fehlgeschlagen: ${error.message}`];
+    hints.push(`Die automatische Prüfung der Stellen im Plan ist fehlgeschlagen (${error.message}). Der Plan wurde ohne diese Prüfung bewertet.`);
   }
+  writeHints(values.W, hints);
   // Erlaubte Befehle wörtlich aus der Konfiguration, damit buildability sie nicht aus Plugin-Quellen herleitet.
   for (const key of ['Build', 'Test', 'Lint']) values[key] = config[key];
   return values;
@@ -253,6 +267,18 @@ function commitsAfterReport(report, root) {
   return commits.length === 0 ? null : `Commits nach dem Umsetzungsbericht (Stand ${state[1]}): ${commits.join(' · ')}`;
 }
 
+const LATE_COMMITS = /^Commits nach dem Umsetzungsbericht \(Stand (\S+)\): ([\s\S]*)$/;
+const LATE_UNKNOWN = /^Stand (\S+) des Umsetzungsberichts nicht prüfbar: ([\s\S]*)$/;
+
+// Die Warnung zu Commits nach dem Umsetzungsbericht als Klartext mit Auswirkung (hinweise.json); die WARN-Zeile bleibt.
+function plainLateHint(late) {
+  const commits = LATE_COMMITS.exec(late);
+  if (commits) return `Nach dem Umsetzungsbericht (Stand ${commits[1]}) gibt es weitere Commits: ${commits[2]}. Sie fehlen in den Urteilen der Umsetzung.`;
+  const unknown = LATE_UNKNOWN.exec(late);
+  if (unknown) return `Der Stand ${unknown[1]} des Umsetzungsberichts ließ sich nicht prüfen (${unknown[2]}). Ob Commits nach dem Bericht fehlen, ist unbekannt.`;
+  return `Hinweis der Vorbereitung: ${late}`;
+}
+
 function prepareImplementationReview({ positional, flags }) {
   const plan = existingFile(path.resolve(positional[0]), 'Plan');
   const root = gitRoot(process.cwd());
@@ -268,18 +294,23 @@ function prepareImplementationReview({ positional, flags }) {
     P: plan, S: spec, R: root, slug, B: base, W: workspace, K: pack, C: contexts,
     N: '0', aktiv, Test: readConfig(root).config.Test,
   };
+  const hints = [];
   if (fs.existsSync(archivePath(plan))) {
     values.Z = archivePath(plan);
     const late = commitsAfterReport(values.Z, root);
-    if (late) values.WARN = late;
+    if (late) {
+      values.WARN = late;
+      hints.push(plainLateHint(late));
+    }
   }
+  writeHints(workspace, hints);
   return values;
 }
 
-const SELECTION = /^(?:b|\d+|\d+:(?:\d+|b)(?:,\d+:(?:\d+|b))*)$/;
+const SELECTION = /^(?:alle|b|\d+|\d+:(?:\d+|b)(?:,\d+:(?:\d+|b))*)$/;
 
 function selectionPairs(text, groups) {
-  if (!text.includes(':')) return groups.map((group) => [String(group.number), text]);
+  if (!text.includes(':')) return groups.map((group) => [String(group.number), text === 'alle' ? 'b' : text]);
   return text.split(',').map((part) => part.split(':'));
 }
 
@@ -296,7 +327,7 @@ function chooseProposal(group, wanted) {
 }
 
 function parseSelection(text, groups) {
-  if (!SELECTION.test(text)) throw new UsageError(`Auswahl ungültig: ${text} (erlaubt: b, <n>, <g>:<n|b>,...)`);
+  if (!SELECTION.test(text)) throw new UsageError(`Auswahl ungültig: ${text} (erlaubt: alle, b, <n>, <g>:<n|b>,...)`);
   if (groups.length === 0) throw new PrepareError('Die Sicherung enthält keine Scout-Gruppen.');
   const seen = new Set();
   return selectionPairs(text, groups).map(([number, wanted]) => {
@@ -362,6 +393,7 @@ function prepareReviewFollowup({ positional, flags }) {
   fs.writeFileSync(selection, selectionText(chosen));
   fs.mkdirSync(path.join(values.W, 'nacharbeit'), { recursive: true });
   fs.writeFileSync(path.join(values.W, 'nacharbeit', 'aggregate.md'), reworkText(chosen));
+  writeFollowupContext(values.W, saved.dir, groups, chosen);
   // Vorher-Stand für die geänderten Bereiche der Nachprüfung (review-flow.js followup-checklist).
   if (art !== 'implementation-review') fs.copyFileSync(artifact, path.join(values.W, 'dokument-vorher.md'));
   const chosenNumbers = chosen.map(({ group }) => group.number);
@@ -372,6 +404,20 @@ function prepareReviewFollowup({ positional, flags }) {
   values.WAHL = chosen.map(({ group, choice }) => `${group.number} · ${group.severity} ${group.location} · Vorschlag ${choice}`);
   if (art === 'implementation-review') values.FIX_BASE = headCommit(values.R);
   return values;
+}
+
+// Stand der Sicherung und Auswahl für den Bericht des Followups: Kopie der Sicherung, gewählte und offene Gruppen.
+function writeFollowupContext(workspace, savedDir, groups, chosen) {
+  const before = path.join(workspace, 'sicherung-vorher');
+  fs.mkdirSync(before, { recursive: true });
+  for (const name of ['aggregate.md', 'scout.md']) fs.copyFileSync(path.join(savedDir, name), path.join(before, name));
+  const numbers = chosen.map(({ group }) => group.number);
+  const context = {
+    gewaehlt: chosen.map(({ group, choice }) => ({ nummer: group.number, stufe: group.severity, stelle: group.location, vorschlag: choice })),
+    offen: groups.filter((group) => !numbers.includes(group.number)).map((group) => ({ nummer: group.number, stufe: group.severity, stelle: group.location })),
+  };
+  fs.writeFileSync(path.join(workspace, 'followup.json'), `${JSON.stringify(context, null, 2)}
+`);
 }
 
 const PREPARERS = {

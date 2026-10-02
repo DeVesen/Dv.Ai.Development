@@ -190,3 +190,10 @@ test('onPrompt_PlanInWorkingDirectoryRepo_ProtectsOneToplevel', () => {
   assert.equal(entries.length, 1);
   assert.ok(samePath(entries[0].path, repo));
 });
+
+test('decidePreTool_ImplementationReportScript_IsAllowedInsideProtectedRepo', () => {
+  const env = setup();
+  const script = path.join(__dirname, '..', 'scripts', 'implementation-report.js');
+  const command = `node "${script}" --dir "${env.cwd}/.forge/review/x/runde-1" --workspace "${env.cwd}/.forge/review/x" --plan docs/forge/x/plan.md --bereich main --paket "${env.cwd}/.forge/review/x/review.diff"`;
+  assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
+});

@@ -6,7 +6,7 @@ Werkzeugkasten für KI-gestützte Softwareentwicklung mit [Claude Code](https://
 
 | Verzeichnis | Was drin ist |
 |---|---|
-| [`plugins/`](plugins/README.md) | Claude-Code-Plugins: Workflow (`dv-forge`), Stack-Wissen (`dv-dotnet`, `dv-angular`), Design-Prinzipien (`dv-craft`), Projektwissen (`dv-working-capturing`) |
+| [`plugins/`](plugins/README.md) | Claude-Code-Plugins: Workflow (`dv-forge`), Stack-Wissen (`dv-dotnet`, `dv-angular`), Design-Prinzipien (`dv-craft`), Projektwissen (`dv-working-capturing`), Projektstart (`dv-kickoff`), Werkzeuge (`dv-toolbelt`) |
 | [`Mcp-Servers/`](Mcp-Servers/README.md) | Lokale MCP-Server: Build-/Test-Log-Filter, Code-Analyse, Dateisystem- und Toolchain-Zugriff |
 
 ## Plugins im Überblick
@@ -18,7 +18,8 @@ Werkzeugkasten für KI-gestützte Softwareentwicklung mit [Claude Code](https://
 | [`dv-angular`](plugins/angular/README.md) | Angular-Skills: Komponenten, Signals, Routing, Forms, Testing, Toolchain |
 | [`dv-craft`](plugins/craft/README.md) | Software-Design-Skills: Clean Code, Architekturstile, Modulith, Testing |
 | [`dv-working-capturing`](plugins/working-capturing/README.md) | Projektwissen festhalten: Glossar, Modul- und Feature-Profile |
-| [`dv-kickoff`](plugins/kickoff/README.md) | Projekt-Kickoff für neue Projekte (*Under Construction*) |
+| [`dv-kickoff`](plugins/kickoff/README.md) | Projekt-Kickoff: Brief, Architekturentwurf, Orientierung für Agenten |
+| [`dv-toolbelt`](plugins/toolbelt/README.md) | Werkzeug-Skills: CLAUDE.md prüfen, Skills schreiben und validieren, Prozess-Retrospektive |
 
 ## MCP-Server im Überblick
 

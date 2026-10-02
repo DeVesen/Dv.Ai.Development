@@ -15,7 +15,7 @@ test('reviewFollowupSkill_Frontmatter_ManualOnlyWithArgumentHint', () => {
   assert.equal(fields.name, 'review-followup');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], 'true');
-  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <auswahl>');
+  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <alle|auswahl>');
 });
 
 test('reviewFollowupSkill_Body_StaysUnder500Words', () => {
@@ -47,9 +47,47 @@ test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => 
   for (const part of ['Vorschläge: <F>', 'Eintrag: R<n>', 'Ergebnis: <W>/nacharbeit/rework.json', '--quelle nacharbeit', 'review-flow.js" snapshot --dir "<W>" --doc "<DOC>"',
     'review-flow.js" rework-check <FLAGS>', 'review-flow.js" checklist <FLAGS>', 'review-flow.js" verify <FLAGS>', 'review-flow.js" report <FLAGS> --titel "Review-Followup (<original>)"',
     'review-flow.js" script-checks <FLAGS> --runde runde-2',
-    'Prüfliste: <W>/runde-2/pruefliste.md', 'Kein Reviewer läuft.', 'followup.js" save <rolle> <slug> "<W>/abschluss"', 'followup.js" drop <rolle> <slug>',
+    'Prüfliste: <W>/runde-2/pruefliste.md', 'Kein Reviewer läuft.', 'followup.js" save <rolle> <slug> "<W>/abschluss"',
     'plan-tasks.js" header "<P>" "<W>"', 'review-package.js" <FIX_BASE> HEAD "<W>"', 'followup.js" drop review <slug>', 'Kein Scout', 'nicht gewählt',
-    'bleibt die alte Sicherung', '### Umgesetzt', 'WAHL', 'keine Änderung', 'blockiert', '- `Fragen offen`:', '- `nicht bereit, …`:', '- `unvollständig, …`:']) {
+    'bleibt die alte Sicherung', '### Umgesetzt', 'WAHL', 'keine Änderung', 'blockiert', '- `unvollständig, …`:']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
+});
+
+test('reviewFollowupFlow_ImplementationStatus_NamesNoGroupNumbersOfTheOldSave', () => {
+  // keep nummeriert die verbliebenen Gruppen ab 1 neu; alte Nummern im Status wären danach falsch.
+  const text = readText(FLOW);
+  assert.ok(text.includes('dasselbe Urteil mit `offen` nicht leer → `sauber nach Nach-Review, nicht gewählte Gruppen bleiben offen`'));
+  assert.equal(text.includes('Gruppen <offen>'), false);
+});
+
+test('reviewFollowupSkill_Body_ShowsReportFileBeforeCleanupAndKeepsPriority', () => {
+  const { body } = readMarkdown(SKILL);
+  const show = body.indexOf('scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<W>/abschluss/bericht.md"');
+  assert.ok(show > -1, 'show fehlt');
+  assert.ok(show < body.indexOf('scripts/workspace.js" remove <rolle> <slug>'), 'show muss vor remove stehen');
+  assert.ok(body.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht.'));
+  assert.ok(wordCount(body) < 500);
+});
+
+test('reviewFollowupFlow_Report_KeepsPriority', () => {
+  const text = readText(FLOW);
+  const report = text.slice(text.indexOf('## Bericht'), text.indexOf('## Nächster Schritt'));
+  assert.ok(report.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht.'));
+});
+
+test('reviewFollowupFlow_NextStep_CleanImplementationNamesFinishWorkItself', () => {
+  const text = readText(FLOW);
+  const next = text.slice(text.indexOf('## Nächster Schritt'));
+  const clean = next.split('\n').find((line) => line.startsWith('- `sauber nach Nach-Review`, `offen` leer:'));
+  assert.ok(clean, 'Zeile fehlt');
+  assert.ok(clean.includes('/dv-forge:finish-work'));
+  assert.equal(clean.includes('Original-Skills'), false, 'der Skill des Implementierungs-Reviews nennt keinen nächsten Schritt mehr');
+});
+
+test('reviewFollowupSkill_Body_TakesNoNextStepTextsFromImplementationReview', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.equal(body.includes('die Texte für `Nächster Schritt`'), false);
+  assert.ok(body.includes('Bei `implementation-review` entfällt der Schritt: Implementer und Re-Reviewer bekommen ihre Eingaben aus `flow.md`, und es läuft kein Scout.'));
+  assert.equal(body.includes('des Abschnitts Abschluss-Scout'), false, 'das Followup der Implementierung startet keinen Scout');
 });

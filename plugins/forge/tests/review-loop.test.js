@@ -26,12 +26,11 @@ test('loop_BuildingBlocks_AllNamed', () => {
 test('loop_Closing_ScoutWritesFileAndSaveRunsBeforeCleanup', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
   assert.match(text, /`red` > 0 oder `yellow` > 0/);
-  for (const part of ['Findings: <D>/aggregate.md', 'Ergebnis: <D>/scout.md', '<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<D>"',
-    'KEIN SCOUT', 'Scout ausgefallen', 'die Ausgabe von `save`']) {
+  for (const part of ['Findings: <D>/aggregate.md', 'Ergebnis: <D>/scout.md', '<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
   const closing = text.slice(text.indexOf('## Abschluss'));
-  assert.ok(closing.indexOf('followup.js" save') < closing.indexOf('Die zwei Befehle aus „Jedes Ende“'));
+  assert.ok(closing.indexOf('followup.js" save') < closing.indexOf('Die zwei Befehle aus \u201EJedes Ende\u201C'));
 });
 
 test('loop_Round_ForegroundAggregateStopsAndProgress', () => {

@@ -6,11 +6,13 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 const { scanPlan, slugOf } = require('./plan-tasks');
+const { REWORK_MARK, reworkHeading } = require('./aggregate-findings');
+const { writeSavedClosing } = require('./lib/saved-closing');
 
 const ROLES = ['spec-review', 'plan-review', 'review'];
 const ART_OF_ROLE = { 'spec-review': 'spec-review', 'plan-review': 'plan-review', review: 'implementation-review' };
 const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const USAGE = 'Aufruf: node followup.js save <spec-review|plan-review|review> <slug> <dir> | drop <spec-review|plan-review|review> <slug>\n';
+const USAGE = 'Aufruf: node followup.js save <spec-review|plan-review|review> <slug> <dir> | drop <spec-review|plan-review|review> <slug> | keep <spec-review|plan-review|review> <slug> <nummern>\n';
 const SCOUT_HEADING = /^## Scout-Vorschläge\s*$/;
 const GROUP_HEADING = /^### (🔴|🟡|🟢) (.+?)\s*$/u;
 const REWORK_HEADING = /^### (🔴|🟡|🟢) (.+) \(([^()]*)\)\s*$/u;
@@ -18,7 +20,6 @@ const PROPOSAL = /^\d+\.\s+(.*)$/;
 const PREFERRED_LINE = /^\*\*Bevorzugt:/;
 const PREFERRED = /^\*\*Bevorzugt: (\d+)\*\*/;
 const FENCE = /^\s*(```|~~~)/;
-const REWORK_MARK = '=== REWORK ===';
 
 class FollowupError extends Error {}
 
@@ -39,6 +40,22 @@ function readLines(file) {
 function scoutSection(lines) {
   const start = lines.findIndex((line) => SCOUT_HEADING.test(line));
   return start === -1 ? [] : lines.slice(start);
+}
+
+// Zeilen jeder Scout-Gruppe, von ihrer Überschrift bis vor die nächste; Schlüssel `<icon> <stelle>`.
+function scoutBlocks(lines) {
+  const blocks = new Map();
+  let current = null;
+  for (const line of scoutSection(lines).slice(1)) {
+    const heading = GROUP_HEADING.exec(line);
+    if (heading) {
+      current = [line];
+      blocks.set(`${heading[1]} ${heading[2]}`, current);
+    } else if (current) {
+      current.push(line);
+    }
+  }
+  return blocks;
 }
 
 function numberedScout(lines) {
@@ -72,6 +89,23 @@ function save(role, slug, dir) {
 
 function drop(role, slug, cwd = process.cwd()) {
   fs.rmSync(followupDir(repoRoot(cwd), role, slug), { recursive: true, force: true });
+}
+
+// Behält in der Sicherung nur die Gruppen mit den genannten Nummern (Nummern der aktuellen Sicherung); keine passende Gruppe: Sicherung weg.
+function keep(role, slug, numbers, cwd = process.cwd()) {
+  const dir = followupDir(repoRoot(cwd), role, slug);
+  if (!fs.existsSync(path.join(dir, 'meta.json'))) throw new FollowupError(`Keine Sicherung für ${slug}`);
+  const wanted = String(numbers).split(',').map((part) => part.trim()).filter(Boolean).map(Number);
+  if (wanted.length === 0 || wanted.some((number) => !Number.isInteger(number) || number < 1)) throw new FollowupError(`Ungültige Gruppennummern: ${numbers}`);
+  const kept = loadGroups(dir).filter((group) => wanted.includes(group.number));
+  if (kept.length === 0) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    return;
+  }
+  const blocks = scoutBlocks(readLines(path.join(dir, 'scout.md')));
+  const aggregate = kept.map((group) => [reworkHeading(group.severity, group.location, group.reviewers), ...group.findings].join('\n'));
+  const scout = kept.map((group) => blocks.get(`${group.severity} ${group.location}`));
+  writeSavedClosing(dir, aggregate, scout);
 }
 
 function latest(repo, slug, roles) {
@@ -178,7 +212,7 @@ function resolveFollowup(artifactPath, repo) {
 function isValidCall(action, args) {
   const [role, slug] = args;
   if (!ROLES.includes(role) || !SLUG.test(slug ?? '')) return false;
-  return (action === 'save' && args.length === 3) || (action === 'drop' && args.length === 2);
+  return (action === 'save' && args.length === 3) || (action === 'drop' && args.length === 2) || (action === 'keep' && args.length === 3);
 }
 
 function main() {
@@ -189,6 +223,7 @@ function main() {
   }
   try {
     if (action === 'save') process.stdout.write(`${save(...args)}\n`);
+    else if (action === 'keep') keep(...args);
     else drop(...args);
   } catch (error) {
     if (!(error instanceof FollowupError)) throw error;
@@ -198,7 +233,7 @@ function main() {
 }
 
 module.exports = {
-  FollowupError, ROLES, ART_OF_ROLE, followupDir, save, drop, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework,
+  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, FollowupError, ROLES, ART_OF_ROLE, followupDir, save, drop, keep, scoutBlocks, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework,
 };
 
 if (require.main === module) main();

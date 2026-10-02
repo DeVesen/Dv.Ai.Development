@@ -69,7 +69,7 @@ function round(workspace, r, reds, changed, consequence = 'c') {
   writeReview(dir, 'coverage', reds.map((location) => finding(location, 'red', consequence)));
   const output = spawnSync(process.execPath, [path.join(SCRIPTS, 'aggregate-findings.js'), '--dir', dir, '--expect', 'coverage'], { encoding: 'utf8' });
   assert.equal(output.status, 0);
-  if (changed) fs.writeFileSync(path.join(dir, 'rework.json'), JSON.stringify({ results: changed.map((location) => ({ location, status: 'changed' })) }));
+  if (changed) fs.writeFileSync(path.join(dir, 'rework.json'), JSON.stringify({ results: changed.map((location) => ({ location, status: 'changed', change: 'Wortlaut geschärft.' })) }));
 }
 
 test('progress_RedChangedAndGone_IsProgress', () => {

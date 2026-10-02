@@ -2,12 +2,15 @@
 
 const { placeKey, decisionLines } = require('./places');
 const { readText } = require('./flow-files');
+const { plainProblem } = require('./plain-text');
+const { isKnownReviewer } = require('./reviewer-names');
 
 const R_QUESTION = /^- \*\*(R\d+) · (.+?)\*\* — frage an den menschen — (.*)$/;
 const W_ENTRY = /^- \*\*W · (.+?)\*\*(.*)$/;
 const R_NUMBER = /^- \*\*R(\d+) · /;
 const PLACE_EDGE = '[\\p{L}\\p{N}_-]';
-const TEXT_FIELDS = ['rule', 'question', 'recommendation'];
+const PLAIN_FIELDS = ['title', 'affects', 'why', 'reason'];
+const OPTION_LABELS = ['a', 'b', 'c', 'd'];
 
 function escapeRegex(text) {
   return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -66,13 +69,37 @@ function isFilledList(value) {
   return Array.isArray(value) && value.length > 0 && value.every(isFilledText);
 }
 
+function optionProblem(option, index, at) {
+  if (option === null || typeof option !== 'object') return `${at}: options[${index}] ist kein Objekt`;
+  if (option.label !== OPTION_LABELS[index]) return `${at}: Labels der options müssen a, b, … lückenlos sein`;
+  const field = ['text', 'consequence'].find((name) => plainProblem(option[name]));
+  return field ? `${at}: options[${index}].${field}: ${plainProblem(option[field])}` : null;
+}
+
+function optionsProblem(options, at) {
+  if (!Array.isArray(options) || options.length < 2 || options.length > OPTION_LABELS.length) return `${at}: options braucht 2 bis 4 Einträge`;
+  return options.map((option, index) => optionProblem(option, index, at)).find(Boolean) ?? null;
+}
+
+// Leer ist erlaubt: offene Fragen früherer Läufe haben keinen Reviewer.
+function reviewersProblem(reviewers, at) {
+  if (!Array.isArray(reviewers) || !reviewers.every(isFilledText)) return `${at}: reviewers fehlt`;
+  const unknown = reviewers.find((name) => !isKnownReviewer('spec-review', name));
+  return unknown ? `${at}: Reviewer unbekannt: ${unknown}` : null;
+}
+
 function bundleShapeProblem(bundle, index) {
-  if (bundle === null || typeof bundle !== 'object') return `Frage ${index + 1} ist kein Objekt`;
-  const missing = TEXT_FIELDS.find((field) => !isFilledText(bundle[field]));
-  if (missing) return `Frage ${index + 1}: ${missing} fehlt`;
-  if (!isFilledList(bundle.places)) return `Frage ${index + 1}: places fehlt`;
-  if (!isFilledList(bundle.cases)) return `Frage ${index + 1}: cases fehlt`;
-  return null;
+  const at = `Frage ${index + 1}`;
+  if (bundle === null || typeof bundle !== 'object') return `${at} ist kein Objekt`;
+  if (Object.hasOwn(bundle, 'cases')) return 'rework.json im alten Format (cases); Lauf neu starten';
+  const missing = PLAIN_FIELDS.find((field) => !isFilledText(bundle[field]));
+  if (missing) return `${at}: ${missing} fehlt`;
+  if (!isFilledList(bundle.places)) return `${at}: places fehlt`;
+  const plain = PLAIN_FIELDS.find((field) => plainProblem(bundle[field]));
+  if (plain) return `${at}: ${plain}: ${plainProblem(bundle[plain])}`;
+  const problem = reviewersProblem(bundle.reviewers, at) ?? optionsProblem(bundle.options, at);
+  if (problem) return problem;
+  return bundle.options.some((option) => option.label === bundle.recommendation) ? null : `${at}: recommendation passt zu keiner Option`;
 }
 
 // Jede Stelle mit Frage steht in genau einer gebündelten Frage.
@@ -85,20 +112,6 @@ function bundleProblem(bundles, questionKeys) {
   return doubled.length > 0 ? `Stelle doppelt in den Fragen: ${doubled.join(', ')}` : null;
 }
 
-function renderBundle(bundle, index) {
-  return [
-    `**Frage ${index + 1} — ${bundle.rule}**`,
-    bundle.question,
-    `Stellen: ${bundle.places.join(', ')}`,
-    `Unterfälle: ${bundle.cases.join(' ')}`,
-    `Empfehlung: ${bundle.recommendation}`,
-  ].join('\n');
-}
-
-function renderQuestions(bundles) {
-  return ['### Fragen an den Menschen', ...bundles.map(renderBundle)].join('\n\n');
-}
-
 module.exports = {
-  titleNamesPlace, openQuestions, documentQuestions, wEntryLines, wEntriesOf, nextEntryNumber, bundleShapeProblem, bundleProblem, renderQuestions,
+  titleNamesPlace, openQuestions, documentQuestions, wEntryLines, wEntriesOf, nextEntryNumber, bundleShapeProblem, bundleProblem,
 };

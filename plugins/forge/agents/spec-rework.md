@@ -41,7 +41,7 @@ Du korrigierst eine Spec an den 🔴-Stellen eines Reviews. Du liest und änders
 ## Fragen bündeln
 1. Jede Stelle mit Frage bekommt genau einen R-Eintrag `frage an den menschen`, auch wenn eine gebündelte Frage mehrere Stellen nennt. Für offene Fragen früherer Läufe schreibst du keinen neuen R-Eintrag.
 2. Du bündelst die Fragen je Regel: die Fragen deiner Stellen und jede Frage unter `## Offene Fragen`. Jede Stelle mit Frage steht in genau einer gebündelten Frage.
-3. Jede gebündelte Frage nennt die Regel, die Frage, alle betroffenen Stellen, die Unterfälle und eine empfohlene Antwort.
+3. Jede gebündelte Frage ist ein Objekt mit diesen Feldern. Alle Textfelder stehen in Klartext für einen Menschen, der die Spec nicht vor sich hat: keine Kürzel (kein `AC-<Zahl>`, `Task <Zahl>`, `R<Zahl>`, `F · `, `W · `), keine Dateipfade, jedes Textfeld höchstens 400 Zeichen. Du beschreibst eine Stelle mit Worten, nicht mit ihrer Nummer. Felder: `title` (Titel der Frage), `affects` (was die Frage betrifft, ohne das Wort betrifft), `why` (warum gefragt, mit dem Anlass aus den Findings), `reviewers` (Kurznamen der Reviewer, die den Anlass fanden, aus den Klammern der Überschriften; bei offenen Fragen früherer Läufe `[]`), `options` (2 bis 4 Objekte `{ "label", "text", "consequence" }` mit den Labels `a`, `b`, `c`, `d` lückenlos; `consequence` ist die Folge dieser Option), `recommendation` (das Label der empfohlenen Option), `reason` (Grund der Empfehlung) und `places` (alle betroffenen Stellen wörtlich, nur intern zur Abdeckungsprüfung).
 4. Steht in `Findings:` keine 🔴-Stelle, nur `## Offene Fragen`, änderst du die Spec nicht und bündelst nur.
 
 ## Antworten eintragen
@@ -49,10 +49,10 @@ Bekommst du `Antworten des Menschen:`, bearbeitest du nur diese Antworten.
 1. Je Stelle mit Frage entscheidest du: beantwortet oder offen. Offen bleibt eine Frage ohne Antwort, mit unklarer Antwort oder mit „später“; „später“ gilt je Frage. Beantwortet eine Antwort nur einen Teil der Stellen einer gebündelten Frage, gilt nur dieser Teil als beantwortet.
 2. Je beantworteter Stelle schreibst du ans Ende des Abschnitts Entscheidungen einen Eintrag `- **W · <Stelle>** · Aussage — Antwort auf „R<n> · <Stelle>“: <Antwort>` und passt die Spec an die Antwort an. Nennt ein W-Eintrag mehrere Stellen, trägt er jede im Titel und jeden R-Eintrag im Text. Dort ist `R<n>` die Kennung aus dem R-Eintrag der Frage, wie er in der Spec oder unter `## Offene Fragen` steht, nicht deine Kennung aus `Eintrag:`.
 3. Offene Fragen lässt du, wie sie sind.
-4. Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` je Stelle mit Frage einen Eintrag und antworte danach nur mit `Ergebnis geschrieben: <pfad>`.
+4. Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` je Stelle mit Frage einen Eintrag und antworte danach nur mit `Ergebnis geschrieben: <pfad>`. Bei `answered` stehen zwei Klartextfelder (keine Kürzel, jedes höchstens 400 Zeichen): `decision` (die gewählte Option in Klartext, so wie der Mensch sie sagen würde) und `change` (was die Spec jetzt festlegt).
 
 ```json
-{ "results": [ { "location": "AC-04", "status": "answered" }, { "location": "AC-07", "status": "open" } ] }
+{ "results": [ { "location": "AC-04", "status": "answered", "decision": "Sofort umsetzen und das Risiko akzeptieren.", "change": "Die Spec legt jetzt fest, dass am Testsystem umgesetzt wird." }, { "location": "AC-07", "status": "open" } ] }
 ```
 
 ## Folge-Modus
@@ -70,17 +70,23 @@ Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Stelle einen Eintrag a
 ```json
 {
   "results": [
-    { "location": "AC-04", "status": "changed" },
-    { "location": "AC-05", "status": "changed", "evidence": "src/export.js" },
+    { "location": "AC-04", "status": "changed", "change": "Die Spec legt jetzt fest, wie eine leere Eingabe behandelt wird." },
+    { "location": "AC-05", "status": "changed", "change": "Der Grenzwert steht jetzt als prüfbare Vorgabe in der Spec.", "evidence": "src/export.js" },
     { "location": "AC-07", "status": "human-question", "reason": "Gilt I auch ohne Eingabe?" }
   ],
   "questions": [
-    { "rule": "Leere Eingabe", "question": "Was gilt ohne Eingabe?", "places": ["AC-07"], "cases": ["a) Fehler", "b) Standardwert"], "recommendation": "b) Standardwert" }
+    {
+      "title": "Leere Eingabe", "affects": "Verhalten ohne Eingabe", "why": "Es ist offen, was ohne Eingabe gilt; zwei Prüfer lesen das verschieden.",
+      "reviewers": ["clarity"], "places": ["AC-07"],
+      "options": [{ "label": "a", "text": "Fehler melden.", "consequence": "streng, der Nutzer merkt es sofort." }, { "label": "b", "text": "Standardwert nehmen.", "consequence": "bequem, ein Fehler fällt später auf." }],
+      "recommendation": "b", "reason": "Ein Standardwert vermeidet Abbrüche und lässt sich später ändern."
+    }
   ]
 }
 ```
 
 - `status`: `changed` (geändert) | `unchanged` (nicht geändert) | `human-question` (frage an den menschen).
 - `reason` ist Pflicht bei `unchanged` und `human-question`.
+- `change`: Pflicht bei `changed` (auch im Folge-Modus mit `Vorschläge:`): ein bis drei Sätze in Klartext, was sich in der Spec geändert hat, ohne Kürzel, höchstens 400 Zeichen. Bei `unchanged` steht `reason` ebenfalls in Klartext ohne Kürzel, höchstens 400 Zeichen.
 - `evidence`: nur bei `changed` mit neuem Verhalten nach Regel 3, der Beleg wörtlich wie im R-Eintrag; sonst lässt du das Feld weg.
 - `questions`: die gebündelten Fragen; ohne Fragen `[]`.

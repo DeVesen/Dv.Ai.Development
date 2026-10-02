@@ -51,7 +51,8 @@ Bekommst du `Vorschläge:` statt `Findings:`, gelten die Regeln oben mit diesen 
 Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Stelle einen Eintrag als JSON an den Pfad aus `Ergebnis:`, `location` exakt wie in der Überschrift. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
 
 ```json
-{ "results": [ { "location": "Task 3", "status": "changed" }, { "location": "Task 5", "status": "spec-question", "reason": "Die Spec legt die Reihenfolge nicht fest." } ] }
+{ "results": [ { "location": "Task 3", "status": "changed", "change": "Der Schritt nennt jetzt den vollständigen Befehl." }, { "location": "Task 5", "status": "spec-question", "reason": "Die Spec legt die Reihenfolge nicht fest." } ] }
 ```
 
 `status`: `changed` (geändert) | `unchanged` (nicht geändert) | `spec-question` (spec-rückfrage). `reason` ist Pflicht bei `unchanged` und `spec-question`; bei `spec-question` ist er die Rückfrage an den Menschen.
+- `change`: Pflicht bei `changed` (auch im Folge-Modus): ein bis drei Sätze in Klartext, was sich im Plan geändert hat. `reason` bei `unchanged` und `spec-question` ebenfalls in Klartext. Alle drei Textfelder ohne Kürzel (kein `AC-<Zahl>`, `Task <Zahl>`, `R<Zahl>`, `F · `, `W · `) und höchstens 400 Zeichen.

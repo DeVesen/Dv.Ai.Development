@@ -32,7 +32,6 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 | `Build`, `Test`, `Lint` | Befehl, z. B. `npm test`; mehrere mit ` ; ` | leer |
 | `Suche` | Such- und Index-Werkzeuge | leer |
 | `Commit-Konvention` | Regel oder Skill, z. B. `commit-message` | leer |
-| `MCP-Erwartet` | MCP-Server je Session, mit Komma getrennt; ungenutzte meldet die Retrospektive als „erwartet, ungenutzt“ | leer |
 
 ## Format
 ```markdown
@@ -41,7 +40,6 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 - Spec-Ablage: `docs/forge/<datum>-<slug>/spec.md`
 - Worktree: ja
 - Planungs-Skills: unit-integration-testing, software-design-principles
-- MCP-Erwartet: dev-mcp, codebase-analyzer
 ```
 
 Alle Schlüssel der Tabelle, je eine Zeile, genau `- <Schlüssel>: <Wert>`. Ein bewusst leerer Wert bleibt als `- <Schlüssel>:` stehen. Muster schreibst du mit Platzhaltern, nie aufgelöst: `../<repo>-worktrees`, nicht der Ordnername aus `show`. Werte mit `<` oder `\` in Backticks.

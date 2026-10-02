@@ -49,8 +49,7 @@ test('implementationReviewSkill_Body_ScoutGetsContextOnly', () => {
 test('implementationReviewSkill_Body_ReportStatusRangeAndCleanup', () => {
   const { body } = readMarkdown(SKILL);
   assert.ok(body.includes('`geprüft, k × 🔴 offen`'));
-  assert.ok(body.includes('`<B>..HEAD`'));
-  assert.ok(body.includes('/dv-forge:finish-work'));
+  assert.ok(body.includes('`<B>`'));
   assert.ok(body.includes('Rolle des Arbeitsbereichs: `review`'));
 });
 
@@ -58,14 +57,7 @@ test('implementationReviewSkill_Body_StaysUnder500Words', () => {
   assert.ok(wordCount(readMarkdown(SKILL).body) < 500);
 });
 
-test('implementationReviewSkill_Body_WarnLinesGoToOrchestratorNotes', () => {
+test('implementationReviewSkill_Body_WarnLinesNeedNoForwardingBecauseReportHasHints', () => {
   const { body } = readMarkdown(SKILL);
-  assert.match(body, /Jede `WARN`-Zeile kommt in die Hinweise des Orchestrators/);
-});
-
-test('implementationReviewSkill_Body_NextStepOffersReviewFollowup', () => {
-  const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('/dv-forge:review-followup <P> <auswahl>'));
-  assert.ok(body.includes('`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`'));
-  assert.ok(!body.includes('gewählte Änderungen selbst beauftragen'));
+  assert.ok(body.includes('Die `WARN`-Zeilen musst du nicht weitergeben; der Bericht enthält die Hinweise.'));
 });

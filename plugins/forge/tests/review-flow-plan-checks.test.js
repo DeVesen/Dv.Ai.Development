@@ -120,7 +120,7 @@ test('checklist_ReviewerAndScriptAtSameAc_OneRedPlaceWithReviewerAndScriptPoint'
   const out = roundOne(env, { coverage: [finding({ location: 'AC-05', category: 'ac-fehlt-im-plan', quote: 'Gegeben E, dann F.' })] });
 
   // Act
-  const list = reworkAndChecklist(env, [{ location: 'AC-05', status: 'changed' }], (text) => text.replace('**ACs:** AC-01, AC-03', '**ACs:** AC-01, AC-03, AC-05'));
+  const list = reworkAndChecklist(env, [{ location: 'AC-05', status: 'changed', change: 'Wortlaut geschärft.' }], (text) => text.replace('**ACs:** AC-01, AC-03', '**ACs:** AC-01, AC-03, AC-05'));
 
   // Assert
   assert.match(out.rated, /^STATUS red=1 /);
@@ -132,7 +132,7 @@ test('verify_ReworkRemovesOnlyMentionOfAc_ScriptRedAtAcOutsideChecklist', () => 
   // Arrange
   const env = planEnv(plan(task(1, 'AC-01, AC-03'), task(2, 'AC-05')));
   roundOne(env, { feasibility: [planFinding('Task 1', 'umsetzer-steckt-fest')] });
-  reworkAndChecklist(env, [{ location: 'Task 1', status: 'changed' }], (text) => text.replace('**ACs:** AC-05', '**ACs:** -'));
+  reworkAndChecklist(env, [{ location: 'Task 1', status: 'changed', change: 'Wortlaut geschärft.' }], (text) => text.replace('**ACs:** AC-05', '**ACs:** -'));
 
   // Act
   const out = verify(env, { verdicts: [{ location: 'Task 1', verdict: 'erledigt', rationale: 'passt' }], findings: [] });
@@ -147,7 +147,7 @@ test('verify_RedAnchorLineFixedByRework_ScriptPointDone', () => {
   // Arrange
   const env = planEnv(plan(task(1, ALL_ACS, ['- Modify: `src/a.js` · `Klasse.fehlt`'])), { 'src/a.js': SOURCE });
   roundOne(env);
-  const list = reworkAndChecklist(env, [{ location: 'Task 1', status: 'changed' }], (text) => text.replace('`Klasse.fehlt`', '`Klasse.methode`'));
+  const list = reworkAndChecklist(env, [{ location: 'Task 1', status: 'changed', change: 'Wortlaut geschärft.' }], (text) => text.replace('`Klasse.fehlt`', '`Klasse.methode`'));
 
   // Act
   const out = verify(env, { verdicts: [], findings: [] });

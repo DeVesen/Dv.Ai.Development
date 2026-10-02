@@ -21,6 +21,14 @@
       "source": "./plugins/forge"
     },
     {
+      "name": "dv-kickoff",
+      "source": "./plugins/kickoff"
+    },
+    {
+      "name": "dv-toolbelt",
+      "source": "./plugins/toolbelt"
+    },
+    {
       "name": "dv-working-capturing",
       "source": "./plugins/working-capturing"
     }

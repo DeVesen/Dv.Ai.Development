@@ -55,7 +55,7 @@ function rateRoundOne(options) {
   ];
   const groups = groupRated(items.filter((item) => !item.dropped));
   const counts = countColors(groups);
-  writeJson(path.join(dir, 'einstufung.json'), { groups, dropped: droppedList(items), failed, questions });
+  writeJson(path.join(dir, 'einstufung.json'), { groups, dropped: droppedList(items), failed, questions, reviewers: options.expected });
   writeText(path.join(dir, 'aggregate.md'), `${renderTable(groups)}\n\n${renderGroups(groups)}`);
   writeText(path.join(dir, 'scout-eingabe.md'), renderGroups(scoutGroups(groups, scoutScope(counts))));
   const lines = statusLines(counts, questions.length, failed);

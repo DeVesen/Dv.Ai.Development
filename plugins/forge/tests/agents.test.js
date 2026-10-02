@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { bundleShapeProblem } = require('../scripts/lib/questions');
 
 const AGENTS = path.join(__dirname, '..', 'agents');
 const REVIEWERS = ['completeness', 'consistency', 'feasibility', 'clarity', 'profiles'];
@@ -497,9 +498,17 @@ test('reworkAgents_Body_OnlyRedStellenThreeOutcomesAndBundledQuestions', () => {
     assert.ok(!body.includes('Du bearbeitest jede 🔴- und jede 🟡-Gruppe'), `${name}: alte Regel`);
   }
   const { body } = readAgent('spec-rework');
-  for (const part of ['"questions"', '"places"', '"cases"', '"recommendation"', 'Jede Stelle mit Frage steht in genau einer gebündelten Frage', 'je Regel']) {
+  for (const part of ['"questions"', '"places"', '"options"', '"title"', '"why"', '"reviewers"', '"change"', '"recommendation"', 'Jede Stelle mit Frage steht in genau einer gebündelten Frage', 'je Regel']) {
     assert.ok(body.includes(part), `spec-rework: ${part}`);
   }
+});
+
+test('spec-rework_Body_JsonExampleQuestionPassesShapeCheck', () => {
+  const { body } = readAgent('spec-rework');
+  const fence = body.split('```json').find((part) => part.includes('"questions"'));
+  const example = JSON.parse(fence.slice(0, fence.indexOf('```')));
+  assert.ok(example.questions.length > 0);
+  example.questions.forEach((question, index) => assert.equal(bundleShapeProblem(question, index), null));
 });
 
 test('spec-rework_Body_AnswerModeWritesWEntriesAfterREntries', () => {
@@ -588,7 +597,7 @@ test('specAndPlanReviewers_Body_LocationNamesFirstPlaceAndFieldsAreNeverEmpty', 
 test('spec-rework_Body_BundlesQuestionsAndEntersAnswers', () => {
   const { body } = readAgent('spec-rework');
   for (const part of ['- `Eintrag:`', 'Hinweise und 🟢-Findings bekommst du nicht.', '## Fragen bündeln', 'Jede Stelle mit Frage steht in genau einer gebündelten Frage.',
-    'die Unterfälle und eine empfohlene Antwort', '## Antworten eintragen', '„später“ gilt je Frage', 'Antwort auf „R<n> · <Stelle>“', '"questions"', '"status": "answered"']) {
+    'das Label der empfohlenen Option', '## Antworten eintragen', '„später“ gilt je Frage', 'Antwort auf „R<n> · <Stelle>“', '"questions"', '"status": "answered"']) {
     assert.ok(body.includes(part), `${part} fehlt`);
   }
 });
@@ -604,4 +613,40 @@ test('plan-rework_Body_SpecQuestionWrittenAsQuestionToTheHuman', () => {
   const { body } = readAgent('plan-rework');
   assert.ok(body.includes('Bei einer spec-rückfrage lautet er wie jede Frage an den Menschen `- **R<n> · <Stelle>** — frage an den menschen — <Rückfrage>`.'));
   assert.ok(body.includes('Bei `spec-rückfrage` schreibst du zusätzlich den R-Eintrag aus Regel 7.'));
+});
+
+test('spec-rework_Body_QuestionsAndChangesInPlainLanguageWithoutShorthand', () => {
+  const { body } = readAgent('spec-rework');
+  for (const part of ['höchstens 400 Zeichen', '`AC-<Zahl>`', '`Task <Zahl>`', '`R<Zahl>`', '`F · `', '`W · `', '`consequence` ist die Folge dieser Option',
+    '`places` (alle betroffenen Stellen wörtlich, nur intern zur Abdeckungsprüfung)', '`change`: Pflicht bei `changed`']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+  assert.equal(body.includes('"cases"'), false);
+  assert.equal(body.includes('"rule"'), false);
+});
+
+test('scouts_SpecAndPlan_DescribeTitleDescriptionRecommendationInPlainLanguage', () => {
+  for (const name of ['spec-review-scout', 'plan-review-scout']) {
+    const { body } = readAgent(name);
+    for (const part of ['`Titel: <2 bis 6 Wörter>`', '`Beschreibung: <was das Problem ist>`', '`Empfehlung: <Klartext>`', 'höchstens 400 Zeichen', '`AC-<Zahl>`', '`Task <Zahl>`']) {
+      assert.ok(body.includes(part), `${name}: ${part}`);
+    }
+    assert.ok(body.includes('Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>'), `${name}: Beispiel`);
+  }
+});
+
+test('reworkAgents_Body_ChangeFieldAlsoInFollowupModeAndAnswersCarryDecision', () => {
+  const spec = readAgent('spec-rework').body;
+  const plan = readAgent('plan-rework').body;
+  for (const part of ['`change`: Pflicht bei `changed` (auch im Folge-Modus', '"decision"', '"change"', 'höchstens 400 Zeichen']) assert.ok(spec.includes(part), `spec-rework: ${part}`);
+  for (const part of ['`change`: Pflicht bei `changed` (auch im Folge-Modus', '"change"', 'höchstens 400 Zeichen', '`AC-<Zahl>`']) assert.ok(plan.includes(part), `plan-rework: ${part}`);
+  assert.equal(spec.includes('(nicht im Folge-Modus'), false);
+});
+
+test('implementationReviewScout_Body_DescribesTitleDescriptionRecommendationInPlainLanguage', () => {
+  const { body } = readAgent('implementation-review-scout');
+  for (const part of ['`Titel: <2 bis 6 Wörter>`', '`Beschreibung: <was das Problem ist>`', '`Empfehlung: <Klartext>`', 'höchstens 400 Zeichen', '`AC-<Zahl>`', 'keine Dateipfade']) {
+    assert.ok(body.includes(part), part);
+  }
+  assert.ok(body.includes('Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>'));
 });

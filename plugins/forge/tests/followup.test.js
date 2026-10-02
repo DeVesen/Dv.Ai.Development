@@ -7,6 +7,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { makeRepo, commitFile } = require('./lib/git-repo');
 const followup = require('../scripts/followup.js');
+const { writeClosingFiles } = require('../scripts/lib/closing.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'followup.js');
 const AGGREGATE = [
@@ -194,4 +195,96 @@ test('save_ScoutGroupNotInAggregate_TreatedAsNoScout', () => {
   const env = roundDir({ 'aggregate.md': AGGREGATE, 'scout.md': SCOUT.replace('### 🟡 AC-03', '### 🟡 AC-03 (coverage)') });
   assert.equal(followup.save('plan-review', 'demo', env.dir), 'KEIN SCOUT');
   assert.equal(fs.existsSync(env.saved), false);
+});
+
+test('keep_OneOfTwoGroups_KeepsOnlyThatGroupWithScoutBlockAndRenumbers', () => {
+  const repo = makeRepo();
+  const dir = writeSave(repo, 'plan-review', 'demo', '2026-09-28T10:00:00.000Z');
+  followup.keep('plan-review', 'demo', '2', repo);
+  const aggregate = fs.readFileSync(path.join(dir, 'aggregate.md'), 'utf8');
+  const scout = fs.readFileSync(path.join(dir, 'scout.md'), 'utf8');
+  assert.ok(aggregate.includes('### 🟡 AC-03 (coverage)'));
+  assert.equal(aggregate.includes('Task 2'), false);
+  assert.ok(scout.includes('### 🟡 AC-03\n1. Schritt ergänzen\n**Bevorzugt: 1** — einziger Weg'));
+  assert.equal(scout.includes('Task 2'), false);
+  assert.deepEqual(followup.loadGroups(dir).map((group) => [group.number, group.location, group.preferred]), [[1, 'AC-03', 1]]);
+  assert.ok(fs.existsSync(path.join(dir, 'meta.json')));
+});
+
+test('keep_BothGroups_KeepsCodeFenceInsideScoutBlock', () => {
+  const repo = makeRepo();
+  const dir = writeSave(repo, 'plan-review', 'demo', '2026-09-28T10:00:00.000Z');
+  followup.keep('plan-review', 'demo', '1,2', repo);
+  assert.equal(followup.loadGroups(dir).length, 2);
+  assert.ok(fs.readFileSync(path.join(dir, 'scout.md'), 'utf8').includes('```js\n1. kein Vorschlag, nur Code\n```'));
+});
+
+test('keep_BothGroups_WritesTheSameFilesAsWriteClosingFiles', () => {
+  // Arrange: dieselben zwei Gruppen einmal per keep, einmal per writeClosingFiles geschrieben.
+  const repo = makeRepo();
+  const dir = writeSave(repo, 'plan-review', 'demo', '2026-09-28T10:00:00.000Z');
+  const workspace = fs.mkdtempSync(path.join(repo, 'w-'));
+  const aggregateLines = AGGREGATE.split('\n');
+  const aggregateBlocks = [
+    ['### \u{1F534} Task 2 (buildability, feasibility)', ...aggregateLines.slice(5, 7)].join('\n'),
+    aggregateLines.slice(8, 10).join('\n'),
+  ];
+  const scoutLines = SCOUT.split('\n');
+  const scoutBlocks = [scoutLines.slice(2, 10), scoutLines.slice(10, 14)];
+  // Act
+  followup.keep('plan-review', 'demo', '1,2', repo);
+  const closingDir = writeClosingFiles(workspace, aggregateBlocks, scoutBlocks);
+  // Assert: Byte für Byte gleich, samt Leerzeilen und abschließendem Zeilenumbruch.
+  for (const name of ['aggregate.md', 'scout.md']) {
+    assert.equal(fs.readFileSync(path.join(dir, name), 'utf8'), fs.readFileSync(path.join(closingDir, name), 'utf8'), name);
+  }
+  assert.ok(fs.readFileSync(path.join(dir, 'aggregate.md'), 'utf8').startsWith('=== REWORK ===\n\n### '));
+  assert.deepEqual(followup.loadGroups(dir).map((group) => [group.number, group.location, group.preferred]), [[1, 'Task 2', 2], [2, 'AC-03', 1]]);
+});
+
+test('keep_NoMatchingNumber_RemovesTheSave', () => {
+  const repo = makeRepo();
+  const dir = writeSave(repo, 'plan-review', 'demo', '2026-09-28T10:00:00.000Z');
+  followup.keep('plan-review', 'demo', '9', repo);
+  assert.equal(fs.existsSync(dir), false);
+});
+
+test('keep_InvalidNumbersOrNoSave_Throws', () => {
+  const repo = makeRepo();
+  assert.throws(() => followup.keep('plan-review', 'demo', '1', repo), /Keine Sicherung für demo/);
+  const dir = writeSave(repo, 'plan-review', 'demo', '2026-09-28T10:00:00.000Z');
+  const before = fs.readFileSync(path.join(dir, 'scout.md'), 'utf8');
+  assert.throws(() => followup.keep('plan-review', 'demo', 'a,2', repo), /Ungültige Gruppennummern: a,2/);
+  assert.equal(fs.readFileSync(path.join(dir, 'scout.md'), 'utf8'), before);
+});
+
+test('keep_InvalidNumbersOrNoSave_LeavesSavedClosingUntouched', () => {
+  const repo = makeRepo();
+  const dir = writeSave(repo, 'plan-review', 'demo', '2026-09-28T10:00:00.000Z');
+  const before = ['aggregate.md', 'scout.md', 'meta.json'].map((name) => fs.readFileSync(path.join(dir, name), 'utf8'));
+  for (const numbers of ['', ',', '0', '-1', '1.5', 'a,2']) {
+    assert.throws(() => followup.keep('plan-review', 'demo', numbers, repo), /Ungültige Gruppennummern/);
+  }
+  assert.throws(() => followup.keep('review', 'demo', '1', repo), /Keine Sicherung für demo/);
+  assert.deepEqual(['aggregate.md', 'scout.md', 'meta.json'].map((name) => fs.readFileSync(path.join(dir, name), 'utf8')), before);
+});
+
+test('cli_Keep_ExitsZeroWithSaveAndOneWithout', () => {
+  const repo = makeRepo();
+  assert.equal(run(repo, 'keep', 'plan-review', 'demo', '1').status, 1);
+  writeSave(repo, 'plan-review', 'demo', '2026-09-28T10:00:00.000Z');
+  assert.equal(run(repo, 'keep', 'plan-review', 'demo', '1').status, 0);
+  assert.equal(run(repo, 'keep', 'plan-review', 'demo').status, 2);
+});
+
+test('cli_Keep_UnknownGroupNumber_ExitsZeroRemovesSaveButInvalidNumberExitsOneAndKeepsIt', () => {
+  const repo = makeRepo();
+  const dir = writeSave(repo, 'plan-review', 'demo', '2026-09-28T10:00:00.000Z');
+  const before = fs.readFileSync(path.join(dir, 'scout.md'), 'utf8');
+  const invalid = run(repo, 'keep', 'plan-review', 'demo', 'x');
+  assert.equal(invalid.status, 1);
+  assert.match(invalid.stderr, /Ungültige Gruppennummern: x/);
+  assert.equal(fs.readFileSync(path.join(dir, 'scout.md'), 'utf8'), before);
+  assert.equal(run(repo, 'keep', 'plan-review', 'demo', '9').status, 0);
+  assert.equal(fs.existsSync(dir), false);
 });

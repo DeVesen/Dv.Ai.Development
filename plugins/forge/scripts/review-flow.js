@@ -17,7 +17,7 @@ const { ROUND_ONE, ROUND_TWO, FOLLOWUP, FlowError } = require('./lib/flow-files'
 const USAGE = [
   'Aufruf: node review-flow.js rate --review <spec-review|plan-review> --dir <W> --doc <datei> [--spec <datei>] --expect <a,b> [--beratend <a,b>]',
   '       node review-flow.js attempt --dir <W> --instanz <name> [--art instanz|buendelung]',
-  '       node review-flow.js scout-check --dir <runden-ordner>',
+  '       node review-flow.js scout-check [--review <rolle>] --dir <runden-ordner>',
   '       node review-flow.js snapshot --dir <W> --doc <datei>',
   '       node review-flow.js rework-input --review <..> --dir <W> --doc <datei>',
   '       node review-flow.js rework-check --review <..> --dir <W> --doc <datei> [--quelle runde-1|nacharbeit]',
@@ -95,7 +95,7 @@ function checkedRound(round = ROUND_ONE) {
 const COMMANDS = {
   rate: (values) => rateRoundOne({ ...flowOptions(values), expected: names(required(values, 'expect'), 'expect'), advisory: names(values.beratend, 'beratend') }),
   attempt,
-  'scout-check': (values) => checkScout(path.resolve(required(values, 'dir'))),
+  'scout-check': (values) => checkScout(path.resolve(required(values, 'dir')), values.review),
   snapshot: (values) => snapshot(path.resolve(required(values, 'dir')), existing(required(values, 'doc'), 'Dokument')),
   'rework-input': (values) => writeReworkInput(flowOptions(values)),
   'rework-check': (values) => checkRework(flowOptions(values)),

@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { titleNamesPlace, openQuestions, documentQuestions, nextEntryNumber, bundleShapeProblem, bundleProblem, renderQuestions } = require('../scripts/lib/questions');
+const { titleNamesPlace, openQuestions, documentQuestions, nextEntryNumber, bundleShapeProblem, bundleProblem } = require('../scripts/lib/questions');
 const { SPEC } = require('./lib/review-flow-fixture');
 
 const QUESTION = '- **R2 · AC-04** — frage an den menschen — Gilt F auch bei leerem D?';
@@ -12,7 +12,11 @@ function specWith(...entries) {
 }
 
 function bundle(overrides = {}) {
-  return { rule: 'Leere Eingabe', question: 'Was gilt?', places: ['AC-04'], cases: ['a) leer', 'b) Leerzeichen'], recommendation: 'a', ...overrides };
+  return {
+    title: 'Leere Eingabe', affects: 'Eingabe prüfen', why: 'Es ist offen, was bei leerer Eingabe gilt.', reviewers: ['clarity'],
+    options: [{ label: 'a', text: 'Fehler melden.', consequence: 'streng.' }, { label: 'b', text: 'Standardwert nehmen.', consequence: 'bequem.' }],
+    recommendation: 'a', reason: 'Fehler fallen früh auf.', places: ['AC-04'], ...overrides,
+  };
 }
 
 test('openQuestions_REntryWithoutWEntry_IsOpen', () => {
@@ -106,27 +110,53 @@ test('bundleProblem_OneOfThreePlacesMissing_NamesIt', () => {
 
 test('bundleProblem_PlaceInTwoQuestions_NamesIt', () => {
   // Act
-  const problem = bundleProblem([bundle(), bundle({ rule: 'Andere' })], ['ac-4']);
+  const problem = bundleProblem([bundle(), bundle({ title: 'Andere' })], ['ac-4']);
 
   // Assert
   assert.equal(problem, 'Stelle doppelt in den Fragen: ac-4');
 });
 
-test('bundleShapeProblem_NoCases_IsInvalid', () => {
-  // Act
-  const problem = bundleShapeProblem(bundle({ cases: [] }), 0);
-
-  // Assert
-  assert.equal(problem, 'Frage 1: cases fehlt');
+test('bundleShapeProblem_ValidBundle_ReturnsNull', () => {
+  assert.equal(bundleShapeProblem(bundle(), 0), null);
 });
 
-test('renderQuestions_Bundle_ShowsPlacesCasesAndRecommendation', () => {
-  // Act
-  const text = renderQuestions([bundle({ places: ['AC-04', 'AC-07'] })]);
+test('bundleShapeProblem_MissingTextField_NamesIt', () => {
+  assert.equal(bundleShapeProblem(bundle({ why: '' }), 0), 'Frage 1: why fehlt');
+  assert.equal(bundleShapeProblem(bundle({ title: undefined }), 1), 'Frage 2: title fehlt');
+});
 
-  // Assert
-  assert.equal(text, [
-    '### Fragen an den Menschen', '',
-    '**Frage 1 — Leere Eingabe**', 'Was gilt?', 'Stellen: AC-04, AC-07', 'Unterfälle: a) leer b) Leerzeichen', 'Empfehlung: a',
-  ].join('\n'));
+test('bundleShapeProblem_ShorthandOrLengthInTextField_NamesFieldAndReason', () => {
+  assert.equal(bundleShapeProblem(bundle({ affects: 'Siehe AC-07' }), 0), 'Frage 1: affects: Kürzel AC-07');
+  assert.equal(bundleShapeProblem(bundle({ why: 'x'.repeat(401) }), 0), 'Frage 1: why: länger als 400 Zeichen (401)');
+});
+
+test('bundleShapeProblem_OldCasesField_AsksForNewRun', () => {
+  assert.equal(bundleShapeProblem({ rule: 'R', question: 'F?', places: ['AC-04'], cases: ['a) x'], recommendation: 'a' }, 0), 'rework.json im alten Format (cases); Lauf neu starten');
+});
+
+test('bundleShapeProblem_UnknownOrMissingReviewers_Invalid', () => {
+  assert.equal(bundleShapeProblem(bundle({ reviewers: undefined }), 0), 'Frage 1: reviewers fehlt');
+  assert.equal(bundleShapeProblem(bundle({ reviewers: 'clarity' }), 0), 'Frage 1: reviewers fehlt');
+  assert.equal(bundleShapeProblem(bundle({ reviewers: ['coverage'] }), 0), 'Frage 1: Reviewer unbekannt: coverage');
+});
+
+test('bundleShapeProblem_EmptyReviewers_ValidForQuestionsOfEarlierRuns', () => {
+  assert.equal(bundleShapeProblem(bundle({ reviewers: [] }), 0), null);
+  assert.equal(bundleShapeProblem(bundle({ reviewers: ['coverage'] }), 0), 'Frage 1: Reviewer unbekannt: coverage');
+});
+
+test('bundleShapeProblem_OptionCountOrLabels_Invalid', () => {
+  const one = [{ label: 'a', text: 'x.', consequence: 'y.' }];
+  const gap = [{ label: 'a', text: 'x.', consequence: 'y.' }, { label: 'c', text: 'x.', consequence: 'y.' }];
+  assert.equal(bundleShapeProblem(bundle({ options: one }), 0), 'Frage 1: options braucht 2 bis 4 Einträge');
+  assert.equal(bundleShapeProblem(bundle({ options: gap }), 0), 'Frage 1: Labels der options müssen a, b, … lückenlos sein');
+});
+
+test('bundleShapeProblem_OptionTextWithShorthand_NamesOption', () => {
+  const options = [{ label: 'a', text: 'Task 3 ändern.', consequence: 'y.' }, { label: 'b', text: 'x.', consequence: 'y.' }];
+  assert.equal(bundleShapeProblem(bundle({ options }), 0), 'Frage 1: options[0].text: Kürzel Task 3');
+});
+
+test('bundleShapeProblem_RecommendationWithoutMatchingOption_Invalid', () => {
+  assert.equal(bundleShapeProblem(bundle({ recommendation: 'c' }), 0), 'Frage 1: recommendation passt zu keiner Option');
 });

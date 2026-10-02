@@ -114,6 +114,48 @@ test('implementationReview_CommitsAfterReportState_WarnsExceptReportItself', () 
   assert.match([].concat(late.WARN).join('\n'), /nach dem Umsetzungsbericht \(Stand .+\): .*refactor: share helper/);
 });
 
+function lateCommitRepo() {
+  const repo = planRepo();
+  const stand = git(repo, 'rev-parse', '--short', commitFile(repo, 'src/a.ts', 'a\n', 'feat: a'));
+  commitFile(repo, 'docs/forge/demo/umsetzung.md', `# Umsetzung\n\n## Stand\n- Stand: ${stand}\n- Gesamtlauf: keiner\n`, 'docs: report');
+  return repo;
+}
+
+test('implementationReview_NoLateCommits_WritesEmptyHintList', () => {
+  const repo = lateCommitRepo();
+  const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~2'));
+  assert.deepEqual(hints(out), []);
+});
+
+test('implementationReview_CommitsAfterReport_WritesPlainHint', () => {
+  const repo = lateCommitRepo();
+  commitFile(repo, 'src/b.ts', 'b\n', 'refactor: share helper');
+  const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~3'));
+  const notes = hints(out);
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /^Nach dem Umsetzungsbericht \(Stand \S+\) gibt es weitere Commits: .*refactor: share helper\. Sie fehlen in den Urteilen der Umsetzung\.$/);
+  assert.match([].concat(out.WARN).join('\n'), /nach dem Umsetzungsbericht/i);
+});
+
+test('implementationReview_UnknownReportState_WritesPlainUnknownHint', () => {
+  // Arrange: Umsetzungsbericht mit einem Stand, den es im Repo nicht gibt.
+  const repo = planRepo();
+  commitFile(repo, 'docs/forge/demo/umsetzung.md', '# Umsetzung\n\n## Stand\n- Stand: deadbeef\n- Gesamtlauf: keiner\n', 'docs: report');
+  // Act
+  const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~1'));
+  // Assert: der Klartext aus Spec 4.3, die WARN-Zeile bleibt.
+  const notes = hints(out);
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /^Der Stand deadbeef des Umsetzungsberichts ließ sich nicht prüfen \(.+\)\. Ob Commits nach dem Bericht fehlen, ist unbekannt\.$/);
+  assert.match([].concat(out.WARN).join('\n'), /Stand deadbeef des Umsetzungsberichts nicht prüfbar: /);
+});
+
+test('implementationReview_NoReportAtAll_WritesEmptyHintList', () => {
+  const repo = planRepo();
+  const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~1'));
+  assert.deepEqual(hints(out), []);
+});
+
 test('implementationReview_ConfiguredTestCommand_IsListedRaw', () => {
   const repo = planRepo();
   commitFile(repo, 'CLAUDE.md', '## dv-forge\n- Test: dv-forge: angular-test --root src/frontend\n', 'config');
@@ -442,4 +484,101 @@ test('reviewFollowup_ExplicitSpecAndBase_PassedToOriginalPreparer', () => {
   const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', '1', '--spec', 'other/spec.md', '--base', 'HEAD~1');
   assert.equal(result.status, 0, result.stderr);
   assert.equal(values(result).B, 'HEAD~1');
+});
+
+function hints(out) {
+  return JSON.parse(fs.readFileSync(path.join(out.W, 'hinweise.json'), 'utf8'));
+}
+
+test('specReview_NoWarnings_WritesEmptyHintList', () => {
+  const repo = planRepo();
+  assert.deepEqual(hints(values(run(repo, 'spec-review', 'docs/forge/demo/spec.md'))), []);
+});
+
+test('specReview_OnlyProfilesWithoutProfiles_WritesPlainHint', () => {
+  const repo = planRepo();
+  const out = values(run(repo, 'spec-review', 'docs/forge/demo/spec.md', '--only', 'clarity,profiles'));
+  assert.deepEqual(hints(out), ['Der Prüfer für Fachbegriffe wurde nicht gestartet, weil keine Profile vorliegen oder die Spec als frei gekennzeichnet ist. Diese Prüfung fehlt.']);
+});
+
+test('specReview_DuplicateProfiles_WritesPlainHintWithOriginalWarning', () => {
+  const repo = planRepo();
+  commitFile(repo, 'docs/glossary/domain-terms.md', '# Fachbegriffe\n\nKunde heißt Auftraggeber.\n', 'glossary');
+  commitFile(repo, 'docs/application/orders/domain-terms.md', '# Begriffe Bestellung\n\nAnders.\n', 'profile');
+  const notes = hints(values(run(repo, 'spec-review', 'docs/forge/demo/spec.md')));
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /^Mehrere Profile heißen gleich: gleichnamige Profile an mehreren Orten: .*\. Der Prüfer für Fachbegriffe kann dadurch ein falsches Profil lesen\.$/);
+});
+
+test('planReview_NoWarnings_WritesEmptyHintList', () => {
+  assert.deepEqual(hints(values(run(planRepo(), 'plan-review', 'docs/forge/demo/plan.md'))), []);
+});
+
+test('planReview_AnchorCheckFails_WritesPlainHint', () => {
+  const repo = planRepo(PLAN.replace('### Task 1: Eins', '### Task 2: Zwei'));
+  const notes = hints(values(run(repo, 'plan-review', 'docs/forge/demo/plan.md')));
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /^Die automatische Prüfung der Stellen im Plan ist fehlgeschlagen \(Task-Nummerierung.*\)\. Der Plan wurde ohne diese Prüfung bewertet\.$/);
+});
+
+test('reviewFollowup_Alle_ChoosesAllGroupsWithPreferredProposal', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle'));
+  assert.equal(out.gruppen, '1,2');
+  assert.equal(out.offen, '');
+  assert.deepEqual([].concat(out.WAHL), ['1 · 🔴 Task 2 · Vorschlag 2', '2 · 🟡 AC-03 · Vorschlag 1']);
+});
+
+test('reviewFollowup_B_BehavesLikeAlle', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const alle = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle'));
+  const preferred = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'b'));
+  assert.deepEqual(preferred.WAHL, alle.WAHL);
+  assert.equal(preferred.gruppen, alle.gruppen);
+});
+
+test('reviewFollowup_AlleWithGroupLackingPreferred_ExitsOneNamingGroup', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', FOLLOWUP_AGGREGATE, FOLLOWUP_SCOUT.replace('**Bevorzugt: 1** — einziger Weg\n', ''));
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Gruppe 2 hat keinen bevorzugten Vorschlag/);
+});
+
+test('reviewFollowup_ExpertSelection_StaysValid', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  assert.equal(run(repo, 'review-followup', 'docs/forge/demo/plan.md', '1:2,2:1').status, 0);
+});
+
+test('reviewFollowup_AllChosen_WritesPriorSaveAndFollowupJson', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle'));
+  assert.equal(fs.readFileSync(path.join(out.W, 'sicherung-vorher', 'aggregate.md'), 'utf8'), FOLLOWUP_AGGREGATE);
+  assert.equal(fs.readFileSync(path.join(out.W, 'sicherung-vorher', 'scout.md'), 'utf8'), FOLLOWUP_SCOUT);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(out.W, 'followup.json'), 'utf8')), {
+    gewaehlt: [{ nummer: 1, stufe: '🔴', stelle: 'Task 2', vorschlag: 2 }, { nummer: 2, stufe: '🟡', stelle: 'AC-03', vorschlag: 1 }],
+    offen: [],
+  });
+});
+
+test('reviewFollowup_OneChosen_ListsTheOtherAsOpenInFollowupJson', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', '2:1'));
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(out.W, 'followup.json'), 'utf8')), {
+    gewaehlt: [{ nummer: 2, stufe: '🟡', stelle: 'AC-03', vorschlag: 1 }],
+    offen: [{ nummer: 1, stufe: '🔴', stelle: 'Task 2' }],
+  });
+});
+
+test('reviewFollowup_BadSelectionText_MentionsAlleInMessage', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'x');
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /erlaubt: alle, b, <n>/);
 });

@@ -68,32 +68,22 @@ test('skill_Body_ReworkGetsRepoOnlyWhenAnchored', () => {
   assert.ok(body.includes('`dv-forge:spec-rework` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`'));
 });
 
-test('skill_Body_NextStepPerStatus', () => {
+test('skill_Report_DelegatedToScript', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  for (const status of ['- `Fragen offen`:', '- `sauber nach Runde 1` und `sauber nach Nachprüfung`:', '- `nicht bereit, …`:', '- `unvollständig, …`:']) assert.ok(body.includes(status), `${status} fehlt`);
-  assert.ok(body.includes('/dv-forge:plan-writing <S>'));
-  assert.ok(body.includes('Offene 🟡: optional /dv-forge:review-followup <S> <auswahl>.'));
-  assert.ok(body.includes('`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`'));
-  assert.match(body, /Spec nicht bereit/);
+  assert.ok(body.includes('Titel `Spec-Review`, Artefakt `<S>`; den Rest liefert `report` (Ergebnis, Entscheidungen, Offenes, Hinweise, nächste Schritte).'));
+  for (const gone of ['- `Fragen offen`:', '- `nicht bereit, …`:', '/dv-forge:plan-writing <S>', 'Offene 🟡', 'Auswahl: b =', 'Spec nicht bereit']) assert.equal(body.includes(gone), false, gone);
 });
 
-test('skill_Body_NextStepCommandsPerStatus', () => {
+test('skill_Warnings_LeftToReport', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  for (const part of [
-    'Spec ist bereit. Spec committen, dann in einer frischen Session:',
-    'Offene 🟡: optional /dv-forge:review-followup <S> <auswahl>.',
-    '/dv-forge:spec-review <S> erneut; der Lauf stellt sie wieder.',
-    'dann /dv-forge:review-followup <S> <auswahl> oder Spec selbst anpassen und /dv-forge:spec-review <S> erneut.',
-  ]) {
-    assert.ok(body.includes(part), part);
-  }
-  assert.ok(body.indexOf('Offene 🟡: optional') < body.indexOf('Spec ist bereit.'), 'Folge-Schritt steht nicht zuerst');
+  for (const part of ['2. Die `WARN`-Zeilen musst du nicht weitergeben; der Bericht enthält die Hinweise.']) assert.ok(body.includes(part), part);
+  for (const gone of ['Spec ist bereit. Spec committen', '/dv-forge:review-followup <S> <auswahl>', 'Hinweise des Orchestrators', 'der Lauf stellt sie wieder']) assert.equal(body.includes(gone), false, gone);
 });
 
 test('skill_Body_NoRoundCapOrOldStops', () => {

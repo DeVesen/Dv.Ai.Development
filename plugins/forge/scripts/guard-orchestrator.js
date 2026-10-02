@@ -5,6 +5,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { mustShowOf, decideTurnEnd } = require('./lib/must-show');
+const { turnText } = require('./lib/turn-text');
 
 const FILE_TOOLS = {
   Read: 'file_path', Edit: 'file_path', Write: 'file_path', MultiEdit: 'file_path',
@@ -12,7 +14,7 @@ const FILE_TOOLS = {
 };
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
 const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcome.js', 'review-flow.js',
-  'plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js', 'prepare.js', 'forge-config.js', 'work.js', 'ledger.js', 'followup.js'];
+  'plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js', 'prepare.js', 'forge-config.js', 'work.js', 'ledger.js', 'followup.js', 'implementation-report.js'];
 const VALUE_FLAGS = new Set(['--rounds', '--spec', '--context', '--base']);
 const TOKEN = /"([^"]*)"|'([^']*)'|(\S+)/g;
 const DIR_ALLOWED_SCRIPTS = [...ALLOWED_SCRIPTS, 'guard-orchestrator.js'];
@@ -181,10 +183,12 @@ function onPrompt(input, tmpRoot) {
   // Beim Anhalten für Fragen an den Menschen bleibt der Guard für genau eine Antwort bestehen.
   const marker = readMarker(input.session_id, tmpRoot);
   if (marker?.paused) {
-    writeMarker(input.session_id, { ...marker, paused: false }, tmpRoot);
+    // Ein offener Pflichttext gehört zum Turn, der ihn registriert hat; jede Menschen-Eingabe macht ihn hinfällig.
+    const { mustShow: _verfallen, ...geschuetzt } = marker;
+    writeMarker(input.session_id, { ...geschuetzt, paused: false }, tmpRoot);
     return;
   }
-  release(input.session_id, tmpRoot);
+  clearMarker(input.session_id, tmpRoot);
 }
 
 function hitsEntry(target, entry) {
@@ -307,13 +311,60 @@ function blockedAction(input) {
   return `${input.tool_name} ${text.length > 120 ? `${text.slice(0, 117)}...` : text}`.trim();
 }
 
-function release(sessionId, tmpRoot) {
+function clearMarker(sessionId, tmpRoot) {
   fs.rmSync(markerPath(sessionId, tmpRoot), { force: true });
+}
+
+// Gibt den Schutz frei; ein vorgemerkter Pflichttext bleibt für den Stop-Check am Zugende.
+function release(sessionId, tmpRoot) {
+  const marker = readMarker(sessionId, tmpRoot);
+  if (marker?.mustShow) writeMarker(sessionId, { mustShow: marker.mustShow }, tmpRoot);
+  else clearMarker(sessionId, tmpRoot);
 }
 
 function pause(sessionId, tmpRoot) {
   const marker = readMarker(sessionId, tmpRoot);
   if (marker) writeMarker(sessionId, { ...marker, paused: true }, tmpRoot);
+}
+
+function show(sessionId, file, tmpRoot) {
+  if (!file) throw new Error('show braucht --file <datei>');
+  const mustShow = mustShowOf(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'), file);
+  if (mustShow.anchors.length === 0) throw new Error(`keine Anker in ${file}`);
+  writeMarker(sessionId, { ...(readMarker(sessionId, tmpRoot) ?? {}), mustShow }, tmpRoot);
+}
+
+// Das Anhalten gilt auch dann, wenn der Pflichttext nicht vorgemerkt werden kann.
+function pauseWithShow(sessionId, file, tmpRoot) {
+  pause(sessionId, tmpRoot);
+  if (file) show(sessionId, file, tmpRoot);
+}
+
+function storeAfterTurn(sessionId, marker, mustShow, tmpRoot) {
+  const next = { ...marker };
+  delete next.mustShow;
+  if (mustShow) next.mustShow = mustShow;
+  if (Object.keys(next).length === 0) clearMarker(sessionId, tmpRoot);
+  else writeMarker(sessionId, next, tmpRoot);
+}
+
+// Block-Grund, wenn der vorgemerkte Pflichttext im Zugtext fehlt; sonst `null`.
+function onTurnEnd(input, tmpRoot) {
+  const marker = readMarker(input.session_id, tmpRoot);
+  if (!marker?.mustShow) return null;
+  const shown = turnText(input.transcript_path, input.last_assistant_message);
+  const { reason, mustShow } = decideTurnEnd(marker.mustShow, shown);
+  storeAfterTurn(input.session_id, marker, mustShow, tmpRoot);
+  return reason;
+}
+
+function writeBlock(reason) {
+  if (reason) process.stdout.write(JSON.stringify({ decision: 'block', reason }));
+}
+
+function flagValue(args, flag) {
+  const index = args.indexOf(flag);
+  return index === -1 ? undefined : args[index + 1];
 }
 
 function writeDeny(reason) {
@@ -329,13 +380,15 @@ function readStdinJson() {
 }
 
 function main() {
-  const [event, argument] = process.argv.slice(2);
+  const [event, argument, ...rest] = process.argv.slice(2);
   if (event === 'release') return release(argument);
-  if (event === 'pause') return pause(argument);
+  if (event === 'pause') return pauseWithShow(argument, flagValue(rest, '--show'));
+  if (event === 'show') return show(argument, flagValue(rest, '--file'));
   const input = readStdinJson();
   if (event === 'prompt') return onPrompt(input);
   if (event === 'pretool') return writeDeny(decidePreTool(input));
-  if (event === 'stop') return release(input.session_id);
+  if (event === 'turn-end') return writeBlock(onTurnEnd(input));
+  if (event === 'stop') return clearMarker(input.session_id);
 }
 
 if (require.main === module) {
@@ -346,4 +399,6 @@ if (require.main === module) {
   }
 }
 
-module.exports = { COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, decidePreTool, release, pause };
+module.exports = {
+  COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, decidePreTool, release, clearMarker, pause, pauseWithShow, show, onTurnEnd,
+};

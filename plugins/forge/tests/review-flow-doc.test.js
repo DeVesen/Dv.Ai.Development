@@ -6,6 +6,8 @@ const path = require('node:path');
 const { readText, wordCount } = require('./lib/markdown');
 
 const FLOW = path.join(__dirname, '..', 'shared', 'review-flow', 'flow.md');
+const LOOP = path.join(__dirname, '..', 'shared', 'review-loop', 'loop.md');
+const PRIO = 'Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.';
 
 function section(text, title) {
   const start = text.indexOf(`## ${title}\n`);
@@ -28,7 +30,7 @@ test('flow_Steps_CallEveryReviewFlowCommand', () => {
   const text = readText(FLOW);
 
   // Assert
-  for (const command of ['rate <FLAGS> --expect <aktiv>', 'scout-check --dir "<D>"', 'rework-input <FLAGS>', 'rework-check <FLAGS>', 'answers-check <FLAGS>',
+  for (const command of ['rate <FLAGS> --expect <aktiv>', 'scout-check --review <rolle> --dir "<D>"', 'rework-input <FLAGS>', 'rework-check <FLAGS>', 'answers-check <FLAGS>',
     'checklist <FLAGS>', 'verify <FLAGS>', 'report <FLAGS> --titel', 'attempt --dir "<W>" --instanz <name>', 'attempt --dir "<W>" --instanz nacharbeit --art buendelung']) {
     assert.ok(text.includes(`node "<PLUGIN>/scripts/review-flow.js" ${command}`), `${command} fehlt`);
   }
@@ -75,20 +77,6 @@ test('flow_End_ReportSaveCleanupRelease', () => {
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
 });
 
-test('flow_End_ReportEndsWithNextStepOfSkillForStatus', () => {
-  // Arrange
-  const end = section(readText(FLOW), 'Ende');
-  const selection = 'Die Zeile `ENDE <status>` wählt den nächsten Schritt.';
-
-  // Act
-  const report = end.split('\n').find((line) => line.includes('Bericht im Chat:'));
-
-  // Assert
-  assert.ok(end.includes(selection), `${selection} fehlt`);
-  assert.ok(report, 'Schritt Bericht im Chat fehlt');
-  assert.ok(report.split('; ').at(-1).startsWith('zuletzt `Nächster Schritt: <Text des Skills für den Status>`'), report);
-});
-
 test('flow_Role_ReferencesLoopRulesInsteadOfCopyingThem', () => {
   // Act
   const text = readText(FLOW);
@@ -119,4 +107,39 @@ test('flow_ScriptChecks_RunInRoundOneAndVerification', () => {
   assert.ok(text.includes('review-flow.js" script-checks <FLAGS> --runde <runde>'), 'script-checks fehlt');
   assert.ok(section(text, 'Runde 1').includes('Danach die Skript-Prüfungen des Skills.'), 'Skript-Prüfungen in Runde 1 fehlen');
   assert.ok(section(text, 'Nachprüfung').includes('Danach die Skript-Prüfungen des Skills mit `D = <W>/runde-2`.'), 'Skript-Prüfungen in der Nachprüfung fehlen');
+});
+
+test('flow_Pause_ShowsQuestionsFileAndPutsPriorityFirst', () => {
+  // Act
+  const pause = section(readText(FLOW), 'Anhalten');
+
+  // Assert
+  assert.ok(pause.includes('guard-orchestrator.js" pause <SESSION> --show "<W>/runde-1/fragen.md"'));
+  assert.ok(pause.includes(PRIO));
+});
+
+test('flow_End_ShowsReportFileBeforeCleanupAndKeepsPriority', () => {
+  // Act
+  const end = section(readText(FLOW), 'Ende');
+
+  // Assert
+  const order = ['review-flow.js" report', 'guard-orchestrator.js" show <SESSION> --file "<W>/abschluss/bericht.md"', 'workspace.js" remove <rolle> <slug>', 'guard-orchestrator.js" release <SESSION>'];
+  const positions = order.map((part) => end.indexOf(part));
+  assert.ok(positions.every((position) => position > -1), JSON.stringify(positions));
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+  assert.ok(end.includes(PRIO));
+});
+
+test('loop_Closing_KeepsPriorityForTheReport', () => {
+  // Act
+  const closing = section(readText(LOOP), 'Abschluss');
+
+  // Assert
+  assert.ok(closing.includes(PRIO));
+});
+
+test('flow_Pause_DoesNotAddItsOwnAnswerLine', () => {
+  const pause = section(readText(FLOW), 'Anhalten');
+  assert.equal(pause.includes('Antworte im Chat'), false);
+  assert.ok(pause.includes('Gib den Text nach `=== FRAGEN ===` unverändert aus'));
 });

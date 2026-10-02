@@ -130,7 +130,7 @@ test('cli_PretoolOnSpec_PrintsDenyJson', () => {
 test('hooksJson_EveryCommand_PointsToExistingPluginScript', () => {
   const { hooks } = JSON.parse(fs.readFileSync(HOOKS, 'utf8'));
   assert.ok(hooks.UserPromptSubmit && hooks.PreToolUse && hooks.SessionEnd && hooks.SubagentStop);
-  assert.equal(hooks.Stop, undefined, 'Stop feuert an jedem Turn-Ende und darf den Guard nicht freigeben');
+  assert.match(hooks.Stop[0].hooks[0].command, / turn-end$/, 'Stop prüft nur den Pflichttext und gibt den Guard nie frei');
   const commands = Object.values(hooks).flat().flatMap((entry) => entry.hooks.map((hook) => hook.command));
   for (const command of commands) {
     const match = /\$\{CLAUDE_PLUGIN_ROOT\}\/scripts\/([a-z-]+\.js)/.exec(command);
@@ -336,4 +336,215 @@ test('onPrompt_ReviewFollowup_ProtectsLikeTheSavedReview', () => {
   const spec = marker('/dv-forge:review-followup docs/forge/demo/spec.md b');
   assert.equal(spec.protected.length, 1);
   assert.ok(samePath(spec.protected[0].path, path.join(repo, 'docs/forge/demo/spec.md')));
+});
+
+const SHOWN = ['## Bericht', '', '### Runde 1', 'a', '### Offene Fragen', 'b'].join('\n');
+
+function shownFile(dir, text = SHOWN) {
+  const file = path.join(dir, 'bericht.md');
+  fs.writeFileSync(file, text);
+  return file;
+}
+
+function markerOf(env) {
+  return JSON.parse(fs.readFileSync(guard.markerPath(SESSION, env.tmpRoot), 'utf8'));
+}
+
+function bareEnv() {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-guard-'));
+  return { tmpRoot, cwd: tmpRoot };
+}
+
+const human = (text) => ({ type: 'user', message: { content: text } });
+const said = (text) => ({ type: 'assistant', message: { content: [{ type: 'text', text }] } });
+
+function transcriptFile(env, entries) {
+  const file = path.join(env.cwd, 't.jsonl');
+  fs.writeFileSync(file, `${entries.map((entry) => JSON.stringify(entry)).join('\n')}\n`);
+  return file;
+}
+
+function turnEnd(env, file, last = '') {
+  return guard.onTurnEnd({ session_id: SESSION, transcript_path: file, last_assistant_message: last }, env.tmpRoot);
+}
+
+test('show_FileWithAnchors_StoresMustShowBesideProtection', () => {
+  const env = setup();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  const marker = markerOf(env);
+  assert.deepEqual(marker.mustShow.anchors, ['## Bericht', '### Runde 1', '### Offene Fragen']);
+  assert.equal(marker.mustShow.attempts, 0);
+  assert.equal(marker.mustShow.text, SHOWN);
+  assert.ok(marker.protected);
+});
+
+test('show_CrlfFile_StoresTextWithLf', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd, SHOWN.replace(/\n/g, '\r\n')), env.tmpRoot);
+  assert.equal(markerOf(env).mustShow.text, SHOWN);
+});
+
+test('show_NoMarker_CreatesMarkerWithMustShowOnly', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  assert.deepEqual(Object.keys(markerOf(env)), ['mustShow']);
+});
+
+test('show_FileWithoutAnchors_ThrowsAndLeavesMarker', () => {
+  const env = setup();
+  const before = fs.readFileSync(guard.markerPath(SESSION, env.tmpRoot), 'utf8');
+  assert.throws(() => guard.show(SESSION, shownFile(env.cwd, 'nur Fließtext'), env.tmpRoot), /keine Anker/);
+  assert.equal(fs.readFileSync(guard.markerPath(SESSION, env.tmpRoot), 'utf8'), before);
+});
+
+test('show_MissingFileOrPath_Throws', () => {
+  const env = setup();
+  assert.throws(() => guard.show(SESSION, path.join(env.cwd, 'gibt-es-nicht.md'), env.tmpRoot));
+  assert.throws(() => guard.show(SESSION, undefined, env.tmpRoot), /--file/);
+});
+
+test('pauseWithShow_FileWithAnchors_PausesAndStoresMustShow', () => {
+  const env = setup();
+  guard.pauseWithShow(SESSION, shownFile(env.cwd), env.tmpRoot);
+  assert.equal(markerOf(env).paused, true);
+  assert.ok(markerOf(env).mustShow);
+});
+
+test('pauseWithShow_FileWithoutAnchors_StillPauses', () => {
+  const env = setup();
+  assert.throws(() => guard.pauseWithShow(SESSION, shownFile(env.cwd, 'text'), env.tmpRoot));
+  assert.equal(markerOf(env).paused, true);
+  assert.equal(markerOf(env).mustShow, undefined);
+});
+
+test('release_WithMustShow_KeepsOnlyMustShowAndAllowsAgain', () => {
+  const env = setup();
+  guard.pause(SESSION, env.tmpRoot);
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  guard.release(SESSION, env.tmpRoot);
+  assert.deepEqual(Object.keys(markerOf(env)), ['mustShow']);
+  assert.equal(preTool(env, { tool_name: 'Read', tool_input: { file_path: env.specPath } }), null);
+});
+
+test('onPrompt_HumanPromptWithLeftoverMustShow_ClearsMarkerCompletely', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: 'weiter' }, env.tmpRoot);
+  assert.equal(fs.existsSync(guard.markerPath(SESSION, env.tmpRoot)), false);
+});
+
+test('decidePreTool_ShowCallOfOrchestrator_IsAllowedWhileSpecIsProtected', () => {
+  const env = setup();
+  const command = `node "${path.join(path.dirname(SCRIPT), 'guard-orchestrator.js')}" show ${SESSION} --file "${path.join(env.cwd, '.forge', 'spec-review', 'x', 'abschluss', 'bericht.md')}"`;
+  assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
+});
+
+test('onTurnEnd_NoMarkerOrNoMustShow_ReturnsNullAndKeepsMarker', () => {
+  const env = setup();
+  const file = transcriptFile(env, [human('los'), said('x')]);
+  assert.equal(turnEnd(env, file), null);
+  assert.ok(markerOf(env).protected);
+  assert.equal(turnEnd(bareEnv(), file), null);
+});
+
+test('onTurnEnd_AllAnchorsShown_FreesAndRemovesEmptyMarker', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  assert.equal(turnEnd(env, transcriptFile(env, [human('los'), said(SHOWN)]), 'fertig'), null);
+  assert.equal(fs.existsSync(guard.markerPath(SESSION, env.tmpRoot)), false);
+});
+
+test('onTurnEnd_AllAnchorsShownButProtectionStays_KeepsProtection', () => {
+  const env = setup();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  assert.equal(turnEnd(env, transcriptFile(env, [human('los'), said(SHOWN)])), null);
+  assert.equal(markerOf(env).mustShow, undefined);
+  assert.ok(markerOf(env).protected);
+});
+
+test('onTurnEnd_AnchorMissing_BlocksTwiceThenFrees', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  const file = transcriptFile(env, [human('los'), said('Kurz: alles gut.')]);
+  const first = turnEnd(env, file);
+  const second = turnEnd(env, file);
+  assert.match(first, /Es fehlt: ## Bericht \| ### Runde 1 \| ### Offene Fragen\./);
+  assert.ok(first.endsWith(SHOWN));
+  assert.equal(markerOf(env).mustShow.attempts, 2);
+  assert.ok(second);
+  assert.equal(turnEnd(env, file), null);
+  assert.equal(fs.existsSync(guard.markerPath(SESSION, env.tmpRoot)), false);
+});
+
+test('onTurnEnd_TextBeforeLaterToolCalls_Allows', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  const call = { type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Bash', input: {} }] } };
+  const result = { type: 'user', message: { content: [{ type: 'tool_result', content: 'ok' }] } };
+  assert.equal(turnEnd(env, transcriptFile(env, [human('los'), said(SHOWN), call, result]), 'Erledigt.'), null);
+});
+
+test('onTurnEnd_TextOnlyInLastMessage_Allows', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  assert.equal(turnEnd(env, transcriptFile(env, [human('los'), said('x')]), SHOWN), null);
+});
+
+test('onTurnEnd_ShownTextWithCrlf_Allows', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  assert.equal(turnEnd(env, transcriptFile(env, [human('los'), said(SHOWN.replace(/\n/g, '\r\n'))])), null);
+});
+
+test('cli_TurnEndWithMissingAnchor_PrintsBlockJson', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  const input = JSON.stringify({ session_id: SESSION, transcript_path: transcriptFile(env, [human('los'), said('x')]), last_assistant_message: 'x' });
+  const tmpEnv = { ...process.env, TEMP: env.tmpRoot, TMP: env.tmpRoot, TMPDIR: env.tmpRoot };
+  const result = spawnSync(process.execPath, [SCRIPT, 'turn-end'], { input, encoding: 'utf8', env: tmpEnv });
+  assert.equal(result.status, 0);
+  const output = JSON.parse(result.stdout);
+  assert.equal(output.decision, 'block');
+  assert.ok(output.reason.endsWith(SHOWN));
+});
+
+test('cli_TurnEndWithMissingTranscript_FailsOpen', () => {
+  const env = bareEnv();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  const input = JSON.stringify({ session_id: SESSION, transcript_path: path.join(env.cwd, 'fehlt.jsonl'), last_assistant_message: 'x' });
+  const tmpEnv = { ...process.env, TEMP: env.tmpRoot, TMP: env.tmpRoot, TMPDIR: env.tmpRoot };
+  const result = spawnSync(process.execPath, [SCRIPT, 'turn-end'], { input, encoding: 'utf8', env: tmpEnv });
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout, '');
+  assert.match(result.stderr, /dv-forge guard:/);
+});
+
+test('cli_ShowAndPauseShow_StoreMustShow', () => {
+  const env = setup();
+  const file = shownFile(env.cwd);
+  const tmpEnv = { ...process.env, TEMP: env.tmpRoot, TMP: env.tmpRoot, TMPDIR: env.tmpRoot };
+  const shown = spawnSync(process.execPath, [SCRIPT, 'show', SESSION, '--file', file], { encoding: 'utf8', env: tmpEnv });
+  assert.equal(shown.status, 0);
+  assert.ok(markerOf(env).mustShow);
+  const paused = spawnSync(process.execPath, [SCRIPT, 'pause', SESSION, '--show', file], { encoding: 'utf8', env: tmpEnv });
+  assert.equal(paused.status, 0);
+  assert.equal(markerOf(env).paused, true);
+});
+
+test('onPrompt_PausedWithLeftoverMustShow_DropsMustShowKeepsProtection', () => {
+  // Arrange
+  const env = setup();
+  guard.show(SESSION, shownFile(env.cwd), env.tmpRoot);
+  guard.pause(SESSION, env.tmpRoot);
+
+  // Act
+  guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: 'F1: b, F2: später' }, env.tmpRoot);
+
+  // Assert
+  const marker = markerOf(env);
+  assert.equal(marker.mustShow, undefined);
+  assert.ok(marker.protected);
+  assert.equal(marker.paused, false);
+  guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: 'danke' }, env.tmpRoot);
+  assert.equal(fs.existsSync(guard.markerPath(SESSION, env.tmpRoot)), false);
 });

@@ -87,4 +87,4 @@ function renderHalt({ topic, groups, texts, results, bundles }) {
   ].map((block) => block.join('\n')).join('\n\n');
 }
 
-module.exports = { renderHalt, topicOf };
+module.exports = { renderHalt, topicOf, shorten };

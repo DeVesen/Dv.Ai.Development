@@ -3,11 +3,12 @@
 
 // Mechanische Hilfen für claude-md-audit: Zeichenzahl, Backup, Diff und Hash-Vergleich geschützter Blöcke.
 
-const { GuardError, readText, charCount, makeBackup } = require('./lib/claude-md-guard');
+const { GuardError, readText, charCount, makeBackup, unifiedDiff } = require('./lib/claude-md-guard');
 
 const USAGE = [
   'Aufruf: node claude-md-guard.js size <datei>',
   '        node claude-md-guard.js backup <datei> [--to <pfad>]',
+  '        node claude-md-guard.js diff <alt> <neu>',
 ].join('\n') + '\n';
 
 function parse(args) {
@@ -29,6 +30,7 @@ function parse(args) {
 const COMMANDS = {
   size: ([file]) => (file ? `${file}: ${charCount(readText(file))} Zeichen` : null),
   backup: ([file], flags) => (file ? `Backup: ${makeBackup(file, flags.to)}` : null),
+  diff: ([before, after]) => (before && after ? unifiedDiff(readText(before), readText(after), before, after) || 'Keine Änderung' : null),
 };
 
 function main(argv) {

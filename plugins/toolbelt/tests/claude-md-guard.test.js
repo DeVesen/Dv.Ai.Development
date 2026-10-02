@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { charCount, stampOf, backupPathOf, makeBackup } = require('../scripts/lib/claude-md-guard');
+const { charCount, stampOf, backupPathOf, makeBackup, unifiedDiff } = require('../scripts/lib/claude-md-guard');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'claude-md-guard.js');
 const NOW = new Date(2026, 9, 2, 10, 30, 5);
@@ -119,4 +119,51 @@ test('cli_UnknownCommand_UsageAndExitTwo', () => {
 
   assert.equal(result.status, 2);
   assert.match(result.stderr, /Aufruf: node claude-md-guard\.js size <datei>/);
+});
+
+test('unifiedDiff_Identical_EmptyString', () => {
+  assert.equal(unifiedDiff('a\nb\n', 'a\nb\n', 'alt', 'neu'), '');
+});
+
+test('unifiedDiff_OneLineChanged_HunkWithContext', () => {
+  const diff = unifiedDiff('a\nb\nc\n', 'a\nB\nc\n', 'alt', 'neu');
+
+  assert.equal(diff, '--- alt\n+++ neu\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n');
+});
+
+test('unifiedDiff_DistantChanges_TwoHunksWithThreeLinesOfContext', () => {
+  const oldText = '1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n';
+  const newText = 'X\n2\n3\n4\n5\n6\n7\n8\n9\nY\n';
+
+  const diff = unifiedDiff(oldText, newText, 'alt', 'neu');
+
+  assert.equal(diff, '--- alt\n+++ neu\n@@ -1,4 +1,4 @@\n-1\n+X\n 2\n 3\n 4\n@@ -7,4 +7,4 @@\n 7\n 8\n 9\n-10\n+Y\n');
+});
+
+test('unifiedDiff_WindowsLineEndings_TreatedAsPlainLines', () => {
+  assert.equal(unifiedDiff('a\r\nb\r\n', 'a\nb\n', 'alt', 'neu'), '');
+});
+
+test('cli_DiffOfTwoFiles_PrintsChangedLines', () => {
+  const before = fileWith('a\nb\nc\n', 'alt.md');
+  const after = fileWith('a\nB\nc\n', 'neu.md');
+
+  const result = cli('diff', before, after);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, `--- ${before}\n+++ ${after}\n@@ -1,3 +1,3 @@\n a\n-b\n+B\n c\n`);
+});
+
+test('cli_DiffOfEqualFiles_ReportsNoChange', () => {
+  const before = fileWith('a\n', 'alt.md');
+  const after = fileWith('a\n', 'neu.md');
+
+  const result = cli('diff', before, after);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, 'Keine Änderung\n');
+});
+
+test('cli_DiffWithOneFile_UsageAndExitTwo', () => {
+  assert.equal(cli('diff', fileWith('a')).status, 2);
 });

@@ -443,3 +443,38 @@ test('reviewFollowup_ExplicitSpecAndBase_PassedToOriginalPreparer', () => {
   assert.equal(result.status, 0, result.stderr);
   assert.equal(values(result).B, 'HEAD~1');
 });
+
+function hints(out) {
+  return JSON.parse(fs.readFileSync(path.join(out.W, 'hinweise.json'), 'utf8'));
+}
+
+test('specReview_NoWarnings_WritesEmptyHintList', () => {
+  const repo = planRepo();
+  assert.deepEqual(hints(values(run(repo, 'spec-review', 'docs/forge/demo/spec.md'))), []);
+});
+
+test('specReview_OnlyProfilesWithoutProfiles_WritesPlainHint', () => {
+  const repo = planRepo();
+  const out = values(run(repo, 'spec-review', 'docs/forge/demo/spec.md', '--only', 'clarity,profiles'));
+  assert.deepEqual(hints(out), ['Der Prüfer für Fachbegriffe wurde nicht gestartet, weil keine Profile vorliegen oder die Spec als frei gekennzeichnet ist. Diese Prüfung fehlt.']);
+});
+
+test('specReview_DuplicateProfiles_WritesPlainHintWithOriginalWarning', () => {
+  const repo = planRepo();
+  commitFile(repo, 'docs/glossary/domain-terms.md', '# Fachbegriffe\n\nKunde heißt Auftraggeber.\n', 'glossary');
+  commitFile(repo, 'docs/application/orders/domain-terms.md', '# Begriffe Bestellung\n\nAnders.\n', 'profile');
+  const notes = hints(values(run(repo, 'spec-review', 'docs/forge/demo/spec.md')));
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /^Mehrere Profile heißen gleich: gleichnamige Profile an mehreren Orten: .*\. Der Prüfer für Fachbegriffe kann dadurch ein falsches Profil lesen\.$/);
+});
+
+test('planReview_NoWarnings_WritesEmptyHintList', () => {
+  assert.deepEqual(hints(values(run(planRepo(), 'plan-review', 'docs/forge/demo/plan.md'))), []);
+});
+
+test('planReview_AnchorCheckFails_WritesPlainHint', () => {
+  const repo = planRepo(PLAN.replace('### Task 1: Eins', '### Task 2: Zwei'));
+  const notes = hints(values(run(repo, 'plan-review', 'docs/forge/demo/plan.md')));
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /^Die automatische Prüfung der Stellen im Plan ist fehlgeschlagen \(Task-Nummerierung.*\)\. Der Plan wurde ohne diese Prüfung bewertet\.$/);
+});

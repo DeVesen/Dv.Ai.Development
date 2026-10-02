@@ -505,3 +505,11 @@ test('scoutCheck_SpecReviewRecommendationWithShorthand_Invalid', () => {
   const text = PLAIN_SCOUT.replace('Variante eins wählen, weil sie das Risiko senkt.', 'Task 3 ändern.');
   assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Empfehlung: Kürzel Task 3\n');
 });
+
+test('rate_AnyRun_WritesExpectedReviewersIntoEinstufung', () => {
+  const env = setup();
+  writeReviewer(env, 'consistency', []);
+  writeReviewer(env, 'clarity', []);
+  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency,clarity');
+  assert.deepEqual(readJsonFile(path.join(env.workspace, 'runde-1', 'einstufung.json')).reviewers, ['consistency', 'clarity']);
+});

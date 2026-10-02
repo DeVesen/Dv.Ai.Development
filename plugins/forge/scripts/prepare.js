@@ -180,6 +180,11 @@ function writeProfileIndex(root, workspace) {
   return { index, count: files.length, warnings: duplicateWarnings(files) };
 }
 
+// Hinweise zum Ablauf in Klartext mit Auswirkung; der Bericht (report) zeigt sie dem Menschen.
+function writeHints(workspace, notes) {
+  fs.writeFileSync(path.join(workspace, 'hinweise.json'), `${JSON.stringify(notes, null, 2)}\n`);
+}
+
 function prepareSpecReview({ positional, flags }) {
   const spec = existingFile(path.resolve(positional[0]), 'Spec');
   const root = gitRoot(path.dirname(spec));
@@ -191,6 +196,7 @@ function prepareSpecReview({ positional, flags }) {
   values.W = createWorkspace('spec-review', slug, root);
   values.art = /^Art:\s*frei\s*$/m.test(fs.readFileSync(spec, 'utf8')) ? 'frei' : 'verankert';
   const warnings = [];
+  const hints = [];
   if (values.art === 'frei') {
     values.profile = 'nein';
   } else {
@@ -202,11 +208,16 @@ function prepareSpecReview({ positional, flags }) {
       values.PA = path.join(values.W, 'profil-auszug.md');
     }
     warnings.push(...profiles.warnings);
+    hints.push(...profiles.warnings.map((warning) => `Mehrere Profile heißen gleich: ${warning}. Der Prüfer für Fachbegriffe kann dadurch ein falsches Profil lesen.`));
   }
   const active = chosen.filter((name) => name !== 'profiles' || values.profile === 'ja');
-  if (flags['--only'] && active.length < chosen.length) warnings.push('profiles nicht aktiv: keine Profile oder freie Spec');
+  if (flags['--only'] && active.length < chosen.length) {
+    warnings.push('profiles nicht aktiv: keine Profile oder freie Spec');
+    hints.push('Der Prüfer für Fachbegriffe wurde nicht gestartet, weil keine Profile vorliegen oder die Spec als frei gekennzeichnet ist. Diese Prüfung fehlt.');
+  }
   if (active.length === 0) throw new UsageError('--only lässt keinen aktiven Reviewer übrig');
   values.aktiv = active.join(',');
+  writeHints(values.W, hints);
   if (warnings.length > 0) values.WARN = warnings;
   return values;
 }
@@ -223,11 +234,14 @@ function preparePlanReview({ positional, flags }) {
   // Spec und Repo für die Skript-Prüfungen von review-flow.js, auch im Folge-Modus.
   writeContext(values.W, { spec: toPosix(values.S), repo: toPosix(root) });
   // Anker einmal deterministisch prüfen; ein Fehler darf das Review nicht verhindern.
+  const hints = [];
   try {
     values.A = writeAnchors(plan, root, values.W);
   } catch (error) {
     values.WARN = [`Anker-Prüfung fehlgeschlagen: ${error.message}`];
+    hints.push(`Die automatische Prüfung der Stellen im Plan ist fehlgeschlagen (${error.message}). Der Plan wurde ohne diese Prüfung bewertet.`);
   }
+  writeHints(values.W, hints);
   // Erlaubte Befehle wörtlich aus der Konfiguration, damit buildability sie nicht aus Plugin-Quellen herleitet.
   for (const key of ['Build', 'Test', 'Lint']) values[key] = config[key];
   return values;

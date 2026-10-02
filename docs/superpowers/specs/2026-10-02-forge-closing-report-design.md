@@ -94,13 +94,13 @@ Abschnitte in dieser Reihenfolge; ein Abschnitt ohne Einträge entfällt, außer
    - `nicht bereit, k × 🔴 offen`: `**Ergebnis:** ⛔ Noch nicht bereit · <k> Hindernisse offen` (`1 Hindernis offen`).
    - `Fragen offen`: `**Ergebnis:** ❓ <q> Fragen offen` (`1 Frage offen`).
    - `unvollständig, ausgefallen: …`: `**Ergebnis:** ⚠️ Unvollständig · <Namen> ausgefallen`.
-3. **Ablauf-Zeile:** `Ablauf: Prüfung aus <Zahlwort> Blickwinkeln, <keine|eine> Überarbeitung, <keine|eine> Nachprüfung.` (Zahl aus `reviewers` in `einstufung.json`; Zahlwörter für 1 bis 6, sonst Ziffern). Im Followup: `Ablauf: <n> gewählte Vorschläge umgesetzt, <keine|eine> Nachprüfung.`
+3. **Ablauf-Zeile:** `Ablauf: Prüfung aus <Zahlwort> Blickwinkeln, <keine|eine> Überarbeitung, <keine|eine> Nachprüfung.` (Zahl aus `reviewers` in `einstufung.json`, ohne das Feld die Zahl der verschiedenen Reviewer in den Gruppen; Zahlwörter für 1 bis 6, sonst Ziffern; bei 1 „aus einem Blickwinkel"). Im Followup: `Ablauf: <n> gewählte Vorschläge umgesetzt, <keine|eine> Nachprüfung.`
 4. **`### Was sich in <der Spec|dem Plan> geändert hat`:**
    - je 🔴-Gruppe der Runde 1 mit Ausgang `changed`: `- <✅|⚠️> **<Titel>** · gefunden aus: <Blickwinkel>`, darunter die Scout-Beschreibung (Rückfall wie TP-B), `Änderung: <change>`, ggf. `Beleg: <evidence>`, `Nachprüfung: bestätigt.` (Urteil `erledigt`), `Nachprüfung: nicht erledigt.` (⚠️) oder `Nachprüfung: nicht erfolgt.` (kein Urteil);
    - je beantworteter Frage (Spec-Review): `- <✅|⚠️> **<Titel der Frage>** · gefunden aus: <Blickwinkel der Frage>`, darunter `change` aus `antworten.json`, `Nachprüfung: …` wie oben;
    - im Followup: je gewählter Gruppe `change` und `Gewählt: Vorschlag <n>`.
 5. **`### Deine Entscheidungen`** (nicht im Followup): je beantworteter Frage `- **<Titel der Frage>:** <decision>`; mehrere beantwortete Stellen derselben gebündelten Frage mit gleicher Entscheidung erscheinen einmal.
-6. **`### Offene Fragen`:** je unbeantworteter Frage `- **<Titel>** (betrifft: <affects>)` im Spec-Review (aus den gebündelten Fragen von `rework.json`, zugeordnet über `places`), im Plan-Review je Spec-Rückfrage `- **<place-Beschreibung>**: <reason>`. Eine Frage ohne Titel (Rückfall) zeigt den gekürzten Fragetext aus dem Dokument.
+6. **`### Offene Fragen`:** je unbeantworteter Frage `- **<Titel>** (betrifft: <affects>)` im Spec-Review (aus den gebündelten Fragen von `rework.json`, zugeordnet über `places`), im Plan-Review je Spec-Rückfrage `- <reason>` (die Stelle selbst steht nur als Kürzel zur Verfügung und bleibt weg). Eine Frage ohne Titel (Rückfall) zeigt den gekürzten Fragetext aus dem Dokument.
 7. **`### Noch offen · Hindernis`** und **`### Noch offen · kein Hindernis für <den Plan|die Umsetzung>`:** je offene Gruppe (4.4) `- <🔴|🟡> **<Titel>** · aus: <Blickwinkel>`, darunter die Beschreibung und `Vorschlag (empfohlen): <Empfehlung>`. Fehlt der Scout-Text, gilt der Rückfall (Stelle, gekürzte Konsequenz, ohne Vorschlagszeile). 🔴 stehen unter „Hindernis", 🟡 unter „kein Hindernis".
 8. **`### Hinweise zum Ablauf`:** die Texte aus 4.2.
 9. **`### Wie es weitergeht`:** nummerierte Liste mit Befehlen in Code-Blöcken. Mit `<A>` = `--artefakt`, `<n>` = Zahl der offenen 🟡, `<k>` = offene 🔴:
@@ -175,6 +175,6 @@ Der Followup-`report` (Titel `Review-Followup (<original>)`) nutzt `followup.jso
 ## 7. Risiken
 
 - **Mehr Pflichtfelder** für Scout (`Empfehlung`), Plan-Scout, Plan-Nacharbeit, Antworten: längere Prompts, mehr Nachforderungen. Die Klartext-Prüfung ist wie in TP-B eine Muster-Prüfung.
-- **Alte Arbeitsbereiche** (`.forge/…`) mit altem `rework.json` oder ohne `hinweise.json`/`reviewers`: `report` scheitert mit klarer Meldung, nie mit falschem Text.
+- **Alte Arbeitsbereiche** (`.forge/…`): Ohne `hinweise.json` gibt es keine Hinweise aus der Vorbereitung, ohne `reviewers` zählt `report` die Reviewer aus den Gruppen. Fehlt eine Datei, die der Lauf braucht (etwa `einstufung.json`), scheitert `report` wie bisher mit klarer Meldung, nie mit falschem Text.
 - **Commit-Frage des Plan-Reviews** bleibt im Skill, weil sie einen Dialog mit Git-Status braucht; der Bericht nennt nur den Schritt.
 - **TP-C2** nutzt `report-text.js`, `hinweise.json` und die Klartext-Felder; die Bezeichnungen hier gelten dort weiter.

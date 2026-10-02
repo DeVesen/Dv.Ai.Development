@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { charCount, stampOf, backupPathOf, makeBackup, unifiedDiff } = require('../scripts/lib/claude-md-guard');
+const { GuardError, charCount, stampOf, backupPathOf, makeBackup, unifiedDiff, protectedBlocks, blockHashes, verifyBlocks } = require('../scripts/lib/claude-md-guard');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'claude-md-guard.js');
 const NOW = new Date(2026, 9, 2, 10, 30, 5);
@@ -166,4 +166,101 @@ test('cli_DiffOfEqualFiles_ReportsNoChange', () => {
 
 test('cli_DiffWithOneFile_UsageAndExitTwo', () => {
   assert.equal(cli('diff', fileWith('a')).status, 2);
+});
+
+const START = '<!-- X START';
+const END = '<!-- X END';
+const TWO_BLOCKS = 'a\n<!-- X START -->\ninhalt\n<!-- X END -->\nb\n<!-- X START -->\nzwei\n<!-- X END -->\n';
+
+test('protectedBlocks_TwoBlocks_LinesIncludeTheMarkers', () => {
+  const blocks = protectedBlocks(TWO_BLOCKS, START, END);
+
+  assert.deepEqual(blocks.map(({ from, to }) => [from, to]), [[2, 4], [6, 8]]);
+  assert.equal(blocks[0].text, '<!-- X START -->\ninhalt\n<!-- X END -->\n');
+});
+
+test('protectedBlocks_StartAndEndInOneLine_SingleLineBlock', () => {
+  const blocks = protectedBlocks('a\n<!-- N:start --> x <!-- N:end -->\nb\n', '<!-- N:start', 'N:end -->');
+
+  assert.deepEqual(blocks.map(({ from, to }) => [from, to]), [[2, 2]]);
+});
+
+test('protectedBlocks_StartWithoutEnd_ThrowsWithLine', () => {
+  assert.throws(() => protectedBlocks('a\n<!-- X START -->\nb\n', START, END), (error) => error instanceof GuardError && /Block ab Zeile 2 hat kein Ende/.test(error.message));
+});
+
+test('protectedBlocks_NoMarkerInText_Empty', () => {
+  assert.deepEqual(protectedBlocks('nur Text\n', START, END), []);
+});
+
+test('blockHashes_TwoBlocks_PositionAndSha256PerBlock', () => {
+  const hashes = blockHashes(TWO_BLOCKS, START, END);
+
+  assert.equal(hashes.length, 2);
+  assert.match(hashes[0], /^2-4:[0-9a-f]{64}$/);
+  assert.match(hashes[1], /^6-8:[0-9a-f]{64}$/);
+});
+
+test('verifyBlocks_SameBlocksShiftedByAnInsertedLine_NoProblem', () => {
+  const hashes = blockHashes(TWO_BLOCKS, START, END);
+
+  assert.deepEqual(verifyBlocks(`neu\n${TWO_BLOCKS}`, START, END, hashes), []);
+});
+
+test('verifyBlocks_ChangedContent_ReportsTheBlock', () => {
+  const hashes = blockHashes(TWO_BLOCKS, START, END);
+
+  const problems = verifyBlocks(TWO_BLOCKS.replace('inhalt', 'anders'), START, END, hashes);
+
+  assert.deepEqual(problems, ['Block 1 (Zeilen 2-4) ist geändert']);
+});
+
+test('verifyBlocks_OnlyLineEndingChanged_ReportsTheBlock', () => {
+  const hashes = blockHashes(TWO_BLOCKS, START, END);
+
+  const problems = verifyBlocks(TWO_BLOCKS.replace('zwei\n', 'zwei\r\n'), START, END, hashes);
+
+  assert.deepEqual(problems, ['Block 2 (Zeilen 6-8) ist geändert']);
+});
+
+test('verifyBlocks_RemovedAndAddedBlock_ReportsMissingAndNew', () => {
+  const hashes = blockHashes(TWO_BLOCKS, START, END);
+  const onlyFirst = 'a\n<!-- X START -->\ninhalt\n<!-- X END -->\n';
+  const three = `${TWO_BLOCKS}<!-- X START -->\ndrei\n<!-- X END -->\n`;
+
+  assert.deepEqual(verifyBlocks(onlyFirst, START, END, hashes), ['Block 2 fehlt']);
+  assert.deepEqual(verifyBlocks(three, START, END, hashes), ['Block 3 (Zeilen 9-11) ist neu']);
+});
+
+test('cli_BlocksHash_PrintsCountAndHashes', () => {
+  const file = fileWith(TWO_BLOCKS);
+
+  const result = cli('blocks', 'hash', file, '--start', START, '--end', END);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^Blöcke: 2\nHashes: 2-4:[0-9a-f]{64},6-8:[0-9a-f]{64}\n$/);
+});
+
+test('cli_BlocksVerify_UnchangedFile_ExitZero', () => {
+  const file = fileWith(TWO_BLOCKS);
+  const hashes = blockHashes(TWO_BLOCKS, START, END).join(',');
+
+  const result = cli('blocks', 'verify', file, '--start', START, '--end', END, '--hashes', hashes);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, 'Blöcke unverändert: 2\n');
+});
+
+test('cli_BlocksVerify_ChangedBlock_ExitOneWithProblem', () => {
+  const file = fileWith(TWO_BLOCKS.replace('inhalt', 'anders'));
+  const hashes = blockHashes(TWO_BLOCKS, START, END).join(',');
+
+  const result = cli('blocks', 'verify', file, '--start', START, '--end', END, '--hashes', hashes);
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Block 1 \(Zeilen 2-4\) ist geändert/);
+});
+
+test('cli_BlocksWithoutEndMarker_UsageAndExitTwo', () => {
+  assert.equal(cli('blocks', 'hash', fileWith(TWO_BLOCKS), '--start', START).status, 2);
 });

@@ -3,12 +3,14 @@
 
 // Mechanische Hilfen für claude-md-audit: Zeichenzahl, Backup, Diff und Hash-Vergleich geschützter Blöcke.
 
-const { GuardError, readText, charCount, makeBackup, unifiedDiff } = require('./lib/claude-md-guard');
+const { GuardError, readText, charCount, makeBackup, unifiedDiff, blockHashes, verifyBlocks } = require('./lib/claude-md-guard');
 
 const USAGE = [
   'Aufruf: node claude-md-guard.js size <datei>',
   '        node claude-md-guard.js backup <datei> [--to <pfad>]',
   '        node claude-md-guard.js diff <alt> <neu>',
+  '        node claude-md-guard.js blocks hash <datei> --start <text> --end <text>',
+  '        node claude-md-guard.js blocks verify <datei> --start <text> --end <text> --hashes <einträge>',
 ].join('\n') + '\n';
 
 function parse(args) {
@@ -26,11 +28,26 @@ function parse(args) {
   return { positional, flags };
 }
 
+function blocksCommand([action, file], flags) {
+  if (!['hash', 'verify'].includes(action) || !file || !flags.start || !flags.end) return null;
+  const text = readText(file);
+  if (action === 'hash') {
+    const hashes = blockHashes(text, flags.start, flags.end);
+    return `Blöcke: ${hashes.length}\nHashes: ${hashes.join(',')}`;
+  }
+  if (flags.hashes === undefined) return null;
+  const expected = flags.hashes.split(',').filter(Boolean);
+  const problems = verifyBlocks(text, flags.start, flags.end, expected);
+  if (problems.length > 0) throw new GuardError(problems.join('\n'));
+  return `Blöcke unverändert: ${expected.length}`;
+}
+
 // Jeder Befehl liefert den Text für stdout; `null` heißt falscher Aufruf.
 const COMMANDS = {
   size: ([file]) => (file ? `${file}: ${charCount(readText(file))} Zeichen` : null),
   backup: ([file], flags) => (file ? `Backup: ${makeBackup(file, flags.to)}` : null),
   diff: ([before, after]) => (before && after ? unifiedDiff(readText(before), readText(after), before, after) || 'Keine Änderung' : null),
+  blocks: blocksCommand,
 };
 
 function main(argv) {

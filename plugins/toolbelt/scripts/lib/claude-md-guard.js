@@ -5,6 +5,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const crypto = require('node:crypto');
 
 class GuardError extends Error {}
 
@@ -111,4 +112,51 @@ function unifiedDiff(oldText, newText, oldName, newName, context = 3) {
   return `${[`--- ${oldName}`, `+++ ${newName}`, ...ranges.flatMap((range) => hunkLines(ops, range))].join('\n')}\n`;
 }
 
-module.exports = { GuardError, readText, charCount, stampOf, backupPathOf, makeBackup, unifiedDiff };
+// Zeilen samt ihrer Zeilenenden, damit ein Hash auch Änderungen am Zeilenende sieht.
+function linesWithEndings(text) {
+  return text.match(/[^\n]*\n|[^\n]+$/g) ?? [];
+}
+
+function protectedBlocks(text, start, end) {
+  const lines = linesWithEndings(text);
+  const blocks = [];
+  let open = null;
+  lines.forEach((line, index) => {
+    if (open === null) {
+      const at = line.indexOf(start);
+      if (at === -1) return;
+      open = index;
+      if (line.indexOf(end, at + start.length) === -1) return;
+    } else if (!line.includes(end)) {
+      return;
+    }
+    blocks.push({ from: open + 1, to: index + 1, text: lines.slice(open, index + 1).join('') });
+    open = null;
+  });
+  if (open !== null) throw new GuardError(`Block ab Zeile ${open + 1} hat kein Ende (${end})`);
+  return blocks;
+}
+
+function sha256(text) {
+  return crypto.createHash('sha256').update(text).digest('hex');
+}
+
+function blockHashes(text, start, end) {
+  return protectedBlocks(text, start, end).map((block) => `${block.from}-${block.to}:${sha256(block.text)}`);
+}
+
+// Verglichen wird der Inhalt je Block in der Reihenfolge des Auftretens, nicht die Zeilennummer.
+function verifyBlocks(text, start, end, expected) {
+  const blocks = protectedBlocks(text, start, end);
+  const before = expected.map((entry) => entry.split(':')[1]);
+  const problems = [];
+  blocks.forEach((block, index) => {
+    const place = `Block ${index + 1} (Zeilen ${block.from}-${block.to})`;
+    if (index >= before.length) problems.push(`${place} ist neu`);
+    else if (sha256(block.text) !== before[index]) problems.push(`${place} ist geändert`);
+  });
+  for (let index = blocks.length; index < before.length; index += 1) problems.push(`Block ${index + 1} fehlt`);
+  return problems;
+}
+
+module.exports = { GuardError, readText, charCount, stampOf, backupPathOf, makeBackup, unifiedDiff, protectedBlocks, blockHashes, verifyBlocks };

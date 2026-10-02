@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-02-forge-closing-report-design.md`
 
-**Voraussetzung:** TP-A und TP-B sind zusammengeführt (`plan-text`: `plain-text.js`, `reviewer-names.js`, `halt-text.js`, `scoutTexts`, `bericht.md`, `show`). Dieser Plan ändert deren Dateien an benannten Stellen.
+**Voraussetzung:** TP-A und TP-B sind zusammengeführt (`plain-text.js`, `reviewer-names.js`, `halt-text.js`, `scoutTexts`, `bericht.md`, `show`). Dieser Plan ändert deren Dateien an benannten Stellen.
 
 **Arbeitsverzeichnis:** Alle Pfade relativ zum Repo-Root `C:\Develop\Dv.Ai.Development`. Tests laufen im Plugin-Ordner: `cd plugins/forge && node --test tests/<datei>`.
 
@@ -224,10 +224,10 @@ Im Ausgabe-Beispiel nach `Beschreibung: <Klartext, höchstens 400 Zeichen>` die 
 `plugins/forge/agents/plan-review-scout.md`: im Abschnitt „Auftrag" nach Punkt 6 einfügen:
 
 ```
-7. Pro Gruppe schreibst du direkt unter die Überschrift drei Zeilen: `Titel: <2 bis 6 Wörter>`, `Beschreibung: <was das Problem ist>` und `Empfehlung: <Klartext>`. Die Empfehlung nennt den bevorzugten Vorschlag mit einem kurzem Grund. Alle drei stehen in Klartext für einen Menschen, der den Plan nicht vor sich hat: keine Kürzel (kein `AC-<Zahl>`, `Task <Zahl>`, `R<Zahl>`, `F · `, `W · `), keine Dateipfade, jede Zeile höchstens 400 Zeichen. Du beschreibst die Stelle mit Worten, nicht mit ihrer Nummer.
+7. Pro Gruppe schreibst du direkt unter die Überschrift drei Zeilen: `Titel: <2 bis 6 Wörter>`, `Beschreibung: <was das Problem ist>` und `Empfehlung: <Klartext>`. Die Empfehlung nennt den bevorzugten Vorschlag mit einem kurzen Grund. Alle drei stehen in Klartext für einen Menschen, der den Plan nicht vor sich hat: keine Kürzel (kein `AC-<Zahl>`, `Task <Zahl>`, `R<Zahl>`, `F · `, `W · `), keine Dateipfade, jede Zeile höchstens 400 Zeichen. Du beschreibst die Stelle mit Worten, nicht mit ihrer Nummer.
 ```
 
-(Wortlaut „einem kurzem Grund" nicht übernehmen: es heißt `mit einem kurzen Grund`.) Im Ausgabe-Beispiel des Plan-Scouts die Gruppe ergänzen zu:
+Im Ausgabe-Beispiel des Plan-Scouts die Gruppe ergänzen zu:
 
 ```markdown
 ### 🔴 <Stelle>
@@ -868,7 +868,7 @@ test('renderReportText_PlanReviewReadyWithTwoHints_UsesPlanWording', () => {
   assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zur Umsetzung · 2 kleine Hinweise offen/);
   assert.match(text, /### Noch offen · kein Hindernis für die Umsetzung/);
   assert.match(text, /1\. Die 2 Hinweise einarbeiten lassen \(optional\):\n   `\/dv-forge:review-followup docs\/p\/plan\.md alle`\n2\. Spec und Plan committen \(ich frage dich danach\)\.\n3\. In einer frischen Session umsetzen:\n   `\/dv-forge:implementation docs\/p\/plan\.md`/);
-  assert.match(text, /### Was sich im Plan geändert hat|^(?!.*Was sich)/s);
+  assert.equal(text.includes('Was sich'), false);
 });
 
 test('renderReportText_Blocked_ShowsHindrancesAndRerunStep', () => {
@@ -949,7 +949,6 @@ test('renderReportText_Blocks_AreSeparatedByOneBlankLine', () => {
 });
 ```
 
-Hinweis: Der Assert mit `^(?!.*Was sich)` im Test `renderReportText_PlanReviewReadyWithTwoHints_UsesPlanWording` prüft nur, dass kein Abschnitt „Was sich" entsteht; ersetze ihn durch `assert.equal(text.includes('Was sich'), false);` (einfacher und eindeutig).
 
 - [ ] **Step 2: Test laufen lassen, Fehlschlag prüfen**
 
@@ -1444,6 +1443,7 @@ test('report_QuestionLaterAnswered_ListsBundleTitleUnderOpenQuestions', () => {
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'AC-04', status: 'human-question', reason: 'neue Regel' }], questions: [QUESTION_BUNDLE] });
   flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
+  writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), { verdicts: [], findings: [] });
   flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
 
   // Act
@@ -1454,15 +1454,9 @@ test('report_QuestionLaterAnswered_ListsBundleTitleUnderOpenQuestions', () => {
   assert.match(output, /### Offene Fragen\n- \*\*Leere Eingabe\*\* \(betrifft: Eingabe prüfen\)/);
 });
 
-const SAVED_AGGREGATE = [
-  '=== REWORK ===',
-  '### 🔴 AC-04 (consistency)',
-  '- [consistency · widerspruch] Zitat: \u201Ex\u201C · Konsequenz: Folge A · Begründung: b',
-  '',
-  '### 🟡 AC-07 (clarity)',
-  '- [clarity · detail] Zitat: \u201Ex\u201C · Konsequenz: Folge B · Begründung: b',
-  '',
-].join('\n');
+const BLOCK_AC04 = '### 🔴 AC-04 (consistency)\n- [consistency · widerspruch] Zitat: \u201Ex\u201C · Konsequenz: Folge A · Begründung: b';
+const BLOCK_AC07 = '### 🟡 AC-07 (clarity)\n- [clarity · detail] Zitat: \u201Ex\u201C · Konsequenz: Folge B · Begründung: b';
+const SAVED_AGGREGATE = `=== REWORK ===\n${BLOCK_AC04}\n\n${BLOCK_AC07}\n`;
 const SAVED_SCOUT = [
   '## Scout-Vorschläge', '',
   '### 🔴 AC-04', 'Titel: Grenzwert festlegen', 'Beschreibung: Der Grenzwert ist nicht bestimmt.', 'Empfehlung: Den Wert festlegen, weil Tests ihn brauchen.', '1. D festlegen.', '**Bevorzugt: 1** — klar.', '',
@@ -1474,8 +1468,8 @@ function followupRun(env, { chosen, open, results, verdicts }) {
   writeJsonFile(path.join(env.workspace, 'sicherung-vorher', 'aggregate.md'), SAVED_AGGREGATE);
   writeJsonFile(path.join(env.workspace, 'sicherung-vorher', 'scout.md'), SAVED_SCOUT);
   writeJsonFile(path.join(env.workspace, 'followup.json'), { gewaehlt: chosen, offen: open });
-  const lines = SAVED_AGGREGATE.split('\n').filter((line, index, all) => chosen.some((entry) => line.startsWith(`### ${entry.stufe} ${entry.stelle} `)) || (line.startsWith('- [') && chosen.some((entry) => all[index - 1]?.startsWith(`### ${entry.stufe} ${entry.stelle} `))));
-  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'aggregate.md'), `=== REWORK ===\n${lines.join('\n')}\n`);
+  const blocks = chosen.map((entry) => (entry.stelle === 'AC-04' ? BLOCK_AC04 : BLOCK_AC07));
+  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'aggregate.md'), `=== REWORK ===\n${blocks.join('\n\n')}\n`);
   writeJsonFile(path.join(env.workspace, 'nacharbeit', 'rework.json'), { results });
   const source = ['--quelle', 'nacharbeit'];
   flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
@@ -2056,17 +2050,12 @@ test('reviewFollowupFlow_SpecAndPlan_ReportFromScriptAndSaveAlways', () => {
   assert.equal(verification.includes('entfällt `save`'), false);
   const report = section(text, 'Bericht');
   assert.ok(report.includes('- Spec und Plan: der Text nach `=== BERICHT ===` unverändert.'));
-  assert.equal(report.includes('### Umgesetzt'), false.valueOf() || report.includes('### Umgesetzt') && false);
+  const specPlanLine = report.split('\n').find((line) => line.startsWith('- Spec und Plan:'));
+  assert.equal(specPlanLine.includes('Umgesetzt'), false);
   assert.ok(section(text, 'Nächster Schritt').includes('Bei Spec und Plan steht der nächste Schritt im Bericht'));
 });
 ```
 
-Hinweis: Die vorletzte Assertion im letzten Test ist vereinfacht zu schreiben als `assert.equal(report.includes('### Umgesetzt'), true)`, weil der Abschnitt „Umgesetzt" für die **Implementierung** erhalten bleibt (zweiter Aufzählungspunkt von „Bericht"); der Spec-/Plan-Punkt nennt ihn nicht mehr. Ersetze die Zeile mit der Konstruktion `false.valueOf() || …` durch diese klare Zeile und prüfe stattdessen, dass der Spec-/Plan-Punkt kein `### Umgesetzt` nennt:
-
-```js
-  const specPlanLine = report.split('\n').find((line) => line.startsWith('- Spec und Plan:'));
-  assert.equal(specPlanLine.includes('Umgesetzt'), false);
-```
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag prüfen**
 

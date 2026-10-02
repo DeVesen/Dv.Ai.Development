@@ -81,5 +81,6 @@ test('reviewFollowupFlow_NextStep_CleanImplementationNamesFinishWorkItself', () 
 test('reviewFollowupSkill_Body_TakesNoNextStepTextsFromImplementationReview', () => {
   const { body } = readMarkdown(SKILL);
   assert.equal(body.includes('die Texte für `Nächster Schritt`'), false);
-  assert.ok(body.includes('bei `implementation-review` des Abschnitts Abschluss-Scout'));
+  assert.ok(body.includes('Bei `implementation-review` entfällt der Schritt: Implementer und Re-Reviewer bekommen ihre Eingaben aus `flow.md`, und es läuft kein Scout.'));
+  assert.equal(body.includes('des Abschnitts Abschluss-Scout'), false, 'das Followup der Implementierung startet keinen Scout');
 });

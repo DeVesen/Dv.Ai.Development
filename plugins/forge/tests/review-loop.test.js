@@ -30,7 +30,7 @@ test('loop_Closing_ScoutWritesFileAndSaveRunsBeforeCleanup', () => {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
   const closing = text.slice(text.indexOf('## Abschluss'));
-  assert.ok(closing.indexOf('followup.js" save') < closing.indexOf('Die zwei Befehle aus „Jedes Ende“'));
+  assert.ok(closing.indexOf('followup.js" save') < closing.indexOf('Die zwei Befehle aus \u201EJedes Ende\u201C'));
 });
 
 test('loop_Round_ForegroundAggregateStopsAndProgress', () => {

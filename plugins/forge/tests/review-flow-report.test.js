@@ -6,6 +6,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { flowStatus } = require('../scripts/lib/flow-report');
 const { nextAttempt } = require('../scripts/lib/attempts');
+const { spawnSync } = require('node:child_process');
+const { commitFile, makeRepo } = require('./lib/git-repo');
+const PREPARE = path.join(__dirname, '..', 'scripts', 'prepare.js');
 const { SPEC, finding, setup, writeJsonFile, writeReviewer, flow, editDoc, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
 
 const RED = (location) => finding({ location, quote: 'x', category: 'widerspruch' });
@@ -599,4 +602,34 @@ test('buildInput_UnknownStatus_ThrowsInsteadOfReportingReady', () => {
 
   // Assert
   assert.throws(build, /Unbekannter Berichtsstatus: Bereit/);
+});
+
+test('report_PrepareFollowupWithOneGroupChosen_ChosenShownAsChangeAndUnchosenStaysOpen', () => {
+  // Arrange: gesicherte Gruppen aus einem echten Review, Auswahl per prepare.js
+  const repo = makeRepo();
+  commitFile(repo, 'docs/forge/demo/spec.md', SPEC, 'spec');
+  const saveDir = path.join(repo, '.forge', 'followup', 'spec-review', 'demo');
+  writeJsonFile(path.join(saveDir, 'aggregate.md'), SAVED_AGGREGATE);
+  writeJsonFile(path.join(saveDir, 'scout.md'), SAVED_SCOUT);
+  writeJsonFile(path.join(saveDir, 'meta.json'), { rolle: 'spec-review', savedAt: '2026-09-28T10:00:00.000Z' });
+  const prepared = spawnSync(process.execPath, [PREPARE, 'review-followup', 'docs/forge/demo/spec.md', '1:1'], { cwd: repo, encoding: 'utf8' });
+  assert.equal(prepared.status, 0, prepared.stderr);
+  const workspace = prepared.stdout.match(/^W=(.*)$/m)[1].trim();
+  const env = { workspace, doc: path.join(repo, 'docs/forge/demo/spec.md') };
+  flow('snapshot', '--dir', workspace, '--doc', env.doc);
+  const source = ['--quelle', 'nacharbeit'];
+  writeJsonFile(path.join(workspace, 'nacharbeit', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', change: 'Der Grenzwert steht jetzt in der Spec.' }] });
+  flow('rework-check', '--review', 'spec-review', '--dir', workspace, '--doc', env.doc, ...source);
+  flow('checklist', '--review', 'spec-review', '--dir', workspace, '--doc', env.doc, ...source);
+  writeJsonFile(path.join(workspace, 'runde-2', 'nachpruefung.json'), { verdicts: [VERDICT('AC-04', 'erledigt')], findings: [] });
+  flow('verify', '--review', 'spec-review', '--dir', workspace, '--doc', env.doc, ...source);
+
+  // Act
+  const result = flow('report', '--review', 'spec-review', '--dir', workspace, '--doc', env.doc, '--titel', 'Review-Followup (spec-review)', '--artefakt', 'docs/forge/demo/spec.md', ...source);
+  const output = result.stdout;
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(output, /- ✅ \*\*Grenzwert festlegen\*\*[^\n]*\n[\s\S]*Gewählt: Vorschlag 1/);
+  assert.match(output, /### Noch offen[^\n]*\n- 🟡 \*\*Eindeutige Formulierung\*\*/);
 });

@@ -478,3 +478,65 @@ test('planReview_AnchorCheckFails_WritesPlainHint', () => {
   assert.equal(notes.length, 1);
   assert.match(notes[0], /^Die automatische Prüfung der Stellen im Plan ist fehlgeschlagen \(Task-Nummerierung.*\)\. Der Plan wurde ohne diese Prüfung bewertet\.$/);
 });
+
+test('reviewFollowup_Alle_ChoosesAllGroupsWithPreferredProposal', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle'));
+  assert.equal(out.gruppen, '1,2');
+  assert.equal(out.offen, '');
+  assert.deepEqual([].concat(out.WAHL), ['1 · 🔴 Task 2 · Vorschlag 2', '2 · 🟡 AC-03 · Vorschlag 1']);
+});
+
+test('reviewFollowup_B_BehavesLikeAlle', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const alle = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle'));
+  const preferred = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'b'));
+  assert.deepEqual(preferred.WAHL, alle.WAHL);
+  assert.equal(preferred.gruppen, alle.gruppen);
+});
+
+test('reviewFollowup_AlleWithGroupLackingPreferred_ExitsOneNamingGroup', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', FOLLOWUP_AGGREGATE, FOLLOWUP_SCOUT.replace('**Bevorzugt: 1** — einziger Weg\n', ''));
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Gruppe 2 hat keinen bevorzugten Vorschlag/);
+});
+
+test('reviewFollowup_ExpertSelection_StaysValid', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  assert.equal(run(repo, 'review-followup', 'docs/forge/demo/plan.md', '1:2,2:1').status, 0);
+});
+
+test('reviewFollowup_AllChosen_WritesPriorSaveAndFollowupJson', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle'));
+  assert.equal(fs.readFileSync(path.join(out.W, 'sicherung-vorher', 'aggregate.md'), 'utf8'), FOLLOWUP_AGGREGATE);
+  assert.equal(fs.readFileSync(path.join(out.W, 'sicherung-vorher', 'scout.md'), 'utf8'), FOLLOWUP_SCOUT);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(out.W, 'followup.json'), 'utf8')), {
+    gewaehlt: [{ nummer: 1, stufe: '🔴', stelle: 'Task 2', vorschlag: 2 }, { nummer: 2, stufe: '🟡', stelle: 'AC-03', vorschlag: 1 }],
+    offen: [],
+  });
+});
+
+test('reviewFollowup_OneChosen_ListsTheOtherAsOpenInFollowupJson', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', '2:1'));
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(out.W, 'followup.json'), 'utf8')), {
+    gewaehlt: [{ nummer: 2, stufe: '🟡', stelle: 'AC-03', vorschlag: 1 }],
+    offen: [{ nummer: 1, stufe: '🔴', stelle: 'Task 2' }],
+  });
+});
+
+test('reviewFollowup_BadSelectionText_MentionsAlleInMessage', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'x');
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /erlaubt: alle, b, <n>/);
+});

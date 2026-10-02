@@ -19,7 +19,7 @@ const USAGE = [
   '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>]',
   '       node prepare.js implementation <plan> [spec]',
   '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]',
-  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>]   (auswahl: b | <n> | <g>:<n|b>,...)',
+  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
@@ -290,10 +290,10 @@ function prepareImplementationReview({ positional, flags }) {
   return values;
 }
 
-const SELECTION = /^(?:b|\d+|\d+:(?:\d+|b)(?:,\d+:(?:\d+|b))*)$/;
+const SELECTION = /^(?:alle|b|\d+|\d+:(?:\d+|b)(?:,\d+:(?:\d+|b))*)$/;
 
 function selectionPairs(text, groups) {
-  if (!text.includes(':')) return groups.map((group) => [String(group.number), text]);
+  if (!text.includes(':')) return groups.map((group) => [String(group.number), text === 'alle' ? 'b' : text]);
   return text.split(',').map((part) => part.split(':'));
 }
 
@@ -310,7 +310,7 @@ function chooseProposal(group, wanted) {
 }
 
 function parseSelection(text, groups) {
-  if (!SELECTION.test(text)) throw new UsageError(`Auswahl ungültig: ${text} (erlaubt: b, <n>, <g>:<n|b>,...)`);
+  if (!SELECTION.test(text)) throw new UsageError(`Auswahl ungültig: ${text} (erlaubt: alle, b, <n>, <g>:<n|b>,...)`);
   if (groups.length === 0) throw new PrepareError('Die Sicherung enthält keine Scout-Gruppen.');
   const seen = new Set();
   return selectionPairs(text, groups).map(([number, wanted]) => {
@@ -376,6 +376,7 @@ function prepareReviewFollowup({ positional, flags }) {
   fs.writeFileSync(selection, selectionText(chosen));
   fs.mkdirSync(path.join(values.W, 'nacharbeit'), { recursive: true });
   fs.writeFileSync(path.join(values.W, 'nacharbeit', 'aggregate.md'), reworkText(chosen));
+  writeFollowupContext(values.W, saved.dir, groups, chosen);
   // Vorher-Stand für die geänderten Bereiche der Nachprüfung (review-flow.js followup-checklist).
   if (art !== 'implementation-review') fs.copyFileSync(artifact, path.join(values.W, 'dokument-vorher.md'));
   const chosenNumbers = chosen.map(({ group }) => group.number);
@@ -386,6 +387,20 @@ function prepareReviewFollowup({ positional, flags }) {
   values.WAHL = chosen.map(({ group, choice }) => `${group.number} · ${group.severity} ${group.location} · Vorschlag ${choice}`);
   if (art === 'implementation-review') values.FIX_BASE = headCommit(values.R);
   return values;
+}
+
+// Stand der Sicherung und Auswahl für den Bericht des Followups: Kopie der Sicherung, gewählte und offene Gruppen.
+function writeFollowupContext(workspace, savedDir, groups, chosen) {
+  const before = path.join(workspace, 'sicherung-vorher');
+  fs.mkdirSync(before, { recursive: true });
+  for (const name of ['aggregate.md', 'scout.md']) fs.copyFileSync(path.join(savedDir, name), path.join(before, name));
+  const numbers = chosen.map(({ group }) => group.number);
+  const context = {
+    gewaehlt: chosen.map(({ group, choice }) => ({ nummer: group.number, stufe: group.severity, stelle: group.location, vorschlag: choice })),
+    offen: groups.filter((group) => !numbers.includes(group.number)).map((group) => ({ nummer: group.number, stufe: group.severity, stelle: group.location })),
+  };
+  fs.writeFileSync(path.join(workspace, 'followup.json'), `${JSON.stringify(context, null, 2)}
+`);
 }
 
 const PREPARERS = {

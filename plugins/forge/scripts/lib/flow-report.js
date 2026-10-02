@@ -141,8 +141,11 @@ function writeClosing(options, data) {
 function report(options) {
   const data = collect(options);
   const status = flowStatus({ failed: data.failed, openQuestions: data.questions.length, openRed: data.openRed, reworked: data.reworked });
+  const text = renderReport(data, options, status);
   writeClosing(options, data);
-  return [`ENDE ${status}`, '=== BERICHT ===', renderReport(data, options, status)].join('\n');
+  // writeClosing leert das Verzeichnis, daher entsteht der Bericht erst danach.
+  writeText(path.join(options.workspace, CLOSING, 'bericht.md'), text);
+  return [`ENDE ${status}`, '=== BERICHT ===', text].join('\n');
 }
 
 module.exports = { flowStatus, report };

@@ -365,3 +365,18 @@ test('report_FollowupReworkWithEvidence_ListsIt', () => {
   assert.match(output, /### Neues Verhalten mit Beleg\n- AC-04 — src\/export\.js\n/);
   assert.doesNotMatch(output, /- AC-07 — /);
 });
+
+test('report_AnyRun_WritesReportTextToClosingFile', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'clarity', []);
+  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'clarity');
+
+  // Act
+  const output = report(env);
+
+  // Assert
+  const written = fs.readFileSync(path.join(env.workspace, 'abschluss', 'bericht.md'), 'utf8');
+  assert.equal(output.split('=== BERICHT ===\n')[1].trimEnd(), written.trimEnd());
+  assert.match(written, /^## Spec-Review: docs\/x\/spec\.md\n/);
+});

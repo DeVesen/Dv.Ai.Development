@@ -312,7 +312,6 @@ function saveSnapshot(snapshot) {
   return `\nSnapshot: ${written}\nEntwurf: ${draftPath(snapshot.session)}\n`;
 }
 
-
 // Projekt des ausgewerteten Protokolls. `--cwd` gilt immer. Ohne `--file` ist es die eigene Session, gesucht über den
 // aktuellen Ordner; der ist damit das Projekt, auch nach einem Wechsel in einen Worktree. Nur bei `--file` gilt das
 // `cwd` der Protokolleinträge, damit Branch und Projekt-Dateien aus dem Projekt des fremden Protokolls

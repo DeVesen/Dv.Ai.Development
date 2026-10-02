@@ -81,24 +81,24 @@ test('cli_Expect_AppendsMeasuredMcpUsage', () => {
 });
 
 // Der Abschnittsname entsteht aus Teilen: Der Test beweist, dass auch ein Abschnitt dieses Namens nicht gelesen wird.
-  const PROJECT_SECTION = `## ${['dv', 'forge'].join('-')}`;
+const PROJECT_SECTION = `## ${['dv', 'forge'].join('-')}`;
 
-  test('cli_ProjectSettingsListExpectedMcp_IgnoredWithoutFlag', () => {
-    const repo = makeRepo();
-    commitFile(repo, 'CLAUDE.md', `# Projekt\n\n${PROJECT_SECTION}\n\n- MCP-Erwartet: dev-mcp, codebase-analyzer\n`, 'config');
+test('cli_ProjectSettingsListExpectedMcp_IgnoredWithoutFlag', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'CLAUDE.md', `# Projekt\n\n${PROJECT_SECTION}\n\n- MCP-Erwartet: dev-mcp, codebase-analyzer\n`, 'config');
 
-    const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: repo });
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: repo });
 
-    assert.equal(result.status, 0, result.stderr);
-    assert.doesNotMatch(result.stdout, /erwartet, ungenutzt/);
-  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /erwartet, ungenutzt/);
+});
 
-  test('cli_NoExpectFlag_NoExpectedUnusedRow', () => {
-    const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: os.tmpdir() });
+test('cli_NoExpectFlag_NoExpectedUnusedRow', () => {
+  const result = spawnSync(process.execPath, [SCRIPT, '--file', session()], { encoding: 'utf8', cwd: os.tmpdir() });
 
-    assert.equal(result.status, 0, result.stderr);
-    assert.doesNotMatch(result.stdout, /erwartet, ungenutzt/);
-  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /erwartet, ungenutzt/);
+});
 
 test('projectOf_OwnSession_UsesProcessCwd', () => {
   const first = fs.mkdtempSync(path.join(os.tmpdir(), 'retro-erststart-'));

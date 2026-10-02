@@ -28,7 +28,7 @@ Nicht Teil von TP-A: neue Formate der Texte, Klartext-Felder der Agents, Kürzel
 
 ### 4.1 Marker
 
-Der Marker unter `<tmp>/dv-forge/<session>.json` bekommt `mustShow: { file, anchors[], attempts }`.
+Der Marker unter `<tmp>/dv-forge/<session>.json` bekommt `mustShow: { file, anchors[], lines, text, attempts }`. `text` ist der Inhalt der Datei zum Zeitpunkt von `show`, `lines` die Zahl ihrer nichtleeren Zeilen. Beides wird im Marker gehalten, weil `workspace.js remove` die Datei vor dem Zugende löscht.
 
 - `release` entfernt Schutzliste (`protected`, `command`) und `paused`, behält aber `mustShow`, falls vorhanden. Ohne `mustShow` löscht es den Marker wie bisher.
 - Ein Marker ohne `protected` schützt nichts (`decidePreTool` liefert dann `null`; vorhandenes Verhalten).
@@ -36,10 +36,10 @@ Der Marker unter `<tmp>/dv-forge/<session>.json` bekommt `mustShow: { file, anch
 
 ### 4.2 Aufrufe
 
-- `guard-orchestrator.js show <SESSION> --file <datei>`: liest die Datei, leitet die Anker ab, schreibt `mustShow` mit `attempts: 0` in den Marker. Legt den Marker an, falls keiner existiert.
+- `guard-orchestrator.js show <SESSION> --file <datei>`: liest die Datei, leitet die Anker ab, schreibt `mustShow` mit `attempts: 0`, `lines` und `text` in den Marker. Legt den Marker an, falls keiner existiert.
 - `guard-orchestrator.js pause <SESSION> --show <datei>`: wie `pause`, dazu `show`.
 - Anker = jede Zeile der Datei, die mit `## ` oder `### ` beginnt, sowie jede Zeile, die nach dem Trimmen mit `**Frage ` oder `Frage ` plus Ziffer beginnt. Die Ableitung ist formatunabhängig, damit TP-B und TP-C den Hook nicht ändern.
-- Fehlt die Datei oder ergibt sie keinen Anker, schreibt `show` eine Meldung auf stderr und merkt nichts vor.
+- Fehlt die Datei oder ergibt sie keinen Anker, schreibt `show` eine Meldung auf stderr und merkt nichts vor. Bei `pause --show` gilt das Anhalten (`paused`) trotzdem.
 - Beide Aufrufe sind einzelne `node`-Aufrufe ohne Verkettung und damit für den Orchestrator erlaubt (`guard-orchestrator.js` steht in `DIR_ALLOWED_SCRIPTS`).
 
 ### 4.3 Hook `Stop`
@@ -49,7 +49,9 @@ Der Marker unter `<tmp>/dv-forge/<session>.json` bekommt `mustShow: { file, anch
 `turn-end`:
 1. Kein Marker oder kein `mustShow`: nichts ausgeben.
 2. Zugtext = alle `text`-Blöcke aller `assistant`-Einträge seit dem letzten echten Nutzer-Prompt aus `transcript_path` (Harness-Hinweise und `tool_result`-Einträge zählen nicht als Nutzer-Prompt), plus `last_assistant_message`.
-3. Fehlt mindestens ein Anker im Zugtext (Vergleich nach Trimmen und Zusammenfassen von Leerraum) oder hat der Zugtext weniger als 60 % der nichtleeren Zeilen der Datei, und `attempts < 2`: `attempts` um 1 erhöhen, Marker schreiben, ausgeben `{"decision":"block","reason":"dv-forge: Gib den Text aus <file> unverändert im Chat aus. Es fehlt: <anker>. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks."}`. `<anker>` nennt höchstens drei fehlende Zeilen; fehlen keine Anker und nur die Länge reicht nicht, steht dort `der Text ist zu kurz`.
+3. Fehlt mindestens ein Anker im Zugtext (Vergleich nach Trimmen und Zusammenfassen von Leerraum) oder hat der Zugtext weniger als 60 % der gemerkten Zeilenzahl `lines`, und `attempts < 2`: `attempts` um 1 erhöhen, Marker schreiben, ausgeben `{"decision":"block","reason":"dv-forge: Gib den folgenden Text unverändert im Chat aus. Es fehlt: <anker>. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.
+
+<text>"}`; `<text>` ist der gemerkte Dateiinhalt, weil die Datei dann nicht mehr existiert. `<anker>` nennt höchstens drei fehlende Zeilen; fehlen keine Anker und nur die Länge reicht nicht, steht dort `der Text ist zu kurz`.
 4. Sonst (alle Anker da und lang genug, oder `attempts >= 2`): `mustShow` entfernen; ist der Marker danach leer, löschen. Keine Ausgabe, der Zug endet.
 5. Fehler (Datei, Transcript, JSON) schreiben `dv-forge guard: <meldung>` auf stderr und blockieren nie.
 
@@ -72,7 +74,7 @@ Der Satz **„Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hoo
 1. `hooks/hooks.json` enthält einen `Stop`-Eintrag mit `turn-end`; die Einträge `SessionEnd` und `SubagentStop` sind unverändert.
 2. `turn-end` ohne `mustShow` gibt nichts aus und ändert den Marker nicht.
 3. Enthält der Zugtext alle Anker und mindestens 60 % der Zeilen, gibt `turn-end` nichts aus und entfernt `mustShow`.
-4. Fehlt ein Anker, gibt `turn-end` `decision:"block"` mit Dateiname und fehlender Zeile aus und zählt `attempts` hoch. Nach dem zweiten Block endet der dritte Aufruf ohne Block und ohne `mustShow`.
+4. Fehlt ein Anker, gibt `turn-end` `decision:"block"` mit fehlender Zeile und dem gemerkten Text aus und zählt `attempts` hoch. Nach dem zweiten Block endet der dritte Aufruf ohne Block und ohne `mustShow`.
 5. Steht der Text nur in einer früheren Assistenten-Nachricht des Zugs (mit Tool-Calls danach), blockiert `turn-end` nicht.
 6. Steht der Text nur in `last_assistant_message`, nicht im Transcript, blockiert `turn-end` nicht.
 7. `release` nach `show` löscht `mustShow` nicht, entfernt aber `protected` und `paused`; `decidePreTool` blockiert danach nichts mehr.

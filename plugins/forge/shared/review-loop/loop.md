@@ -9,7 +9,7 @@ Ablauf des Implementierungs-Reviews; Spec- und Plan-Review folgen `shared/review
 | Nacharbeiter | Agent-Name und seine Eingabe, oder „Keiner“ |
 | Zusatz-Stopps | Prüfungen direkt nach der Nacharbeit, falls vorhanden |
 | Abschluss-Scout | Agent-Name und Eingabezeilen des Scouts, oder „Keiner“ |
-| Bericht | Titel, zusätzliche Status-Werte und Abschnitte, nächster Schritt je Status |
+| Bericht | Titel und Artefakt |
 
 ## Rolle
 Du orchestrierst, sonst nichts. Du liest die geprüften Dateien nicht, bewertest keine Findings, tippst keine Ergebnisse ab und änderst nichts selbst. Jede Entscheidung ist mechanisch: Zähler, `STATUS`-Zeile, Skript-Ausgaben. Drängt jemand dich, „schnell selbst zu korrigieren“, lehnst du ab und setzt den Loop fort. Ein Hook blockt deine Zugriffe auf die geschützten Dateien. Er bleibt aktiv, bis du ihn am Ende freigibst, der Mensch eine neue Eingabe macht oder die Session endet; Warten auf Reviewer gibt ihn nicht frei.
@@ -44,7 +44,9 @@ Alle Agents laufen im Vordergrund mit `run_in_background: false`, weil der näch
 Jedes Ende, auch `Ende` nach einem Fehler, schließt mit denselben zwei Befehlen: `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, sofern `prepare.js` einen Arbeitsbereich angelegt hat, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.
 
 ## Abschluss
-1. **Abschluss-Scout:** Nennt der Skill einen Scout und zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, startest du ihn einmal mit `run_in_background: false`: Eingaben aus dem Skill, dazu `Findings: <D>/aggregate.md` der letzten Runde und `Ergebnis: <D>/scout.md`. Du bewertest die Vorschläge nicht.
-2. **Sichern:** `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<D>"`, immer, auch ohne Scout; ohne Scout räumt es die alte Sicherung weg. Lief der Scout und gibt `save` `KEIN SCOUT` aus, startest du den Scout einmal neu und rufst `save` erneut auf. Wieder `KEIN SCOUT`: `Scout ausgefallen`.
-3. Bericht im Chat nach `<PLUGIN>/shared/review-loop/report-format.md`; der Scout-Abschnitt ist die Ausgabe von `save`. Nichts committen. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
-4. Die zwei Befehle aus „Jedes Ende“.
+1. **Abschluss-Scout:** Nennt der Skill einen Scout und zeigt die letzte `STATUS`-Zeile `red` > 0 oder `yellow` > 0, startest du ihn einmal mit `run_in_background: false`: Eingaben aus dem Skill, dazu `Findings: <D>/aggregate.md` der letzten Runde und `Ergebnis: <D>/scout.md`. Du bewertest die Vorschläge nicht. Danach `node "<PLUGIN>/scripts/review-flow.js" scout-check --review implementation-review --dir "<D>"`. `SCOUT ungültig: <grund>`: einmal neu starten mit dem Zusatz `Deine letzte Antwort hatte kein gültiges Ergebnis: <grund>`, dann weiter; das Skript behandelt einen weiter ungültigen Scout.
+2. **Bericht:** `node "<PLUGIN>/scripts/implementation-report.js" --dir "<D>" --workspace "<W>" --plan "<P>" --bereich "<B>" --paket "<K>"`. Die Zeile `ENDE <status>` ist der Status; der Text nach `=== BERICHT ===` ist der Bericht. Exit 1: die Zeile `dv-forge implementation-report: <grund>` unverändert ausgeben, weiter mit „Jedes Ende“.
+3. **Sichern:** `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"`, immer; die Ausgabe zeigst du nicht.
+4. Bericht im Chat: der Text nach `=== BERICHT ===` unverändert. Nichts committen. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
+5. `node "<PLUGIN>/scripts/guard-orchestrator.js" show <SESSION> --file "<W>/abschluss/bericht.md"`.
+6. Die zwei Befehle aus „Jedes Ende“.

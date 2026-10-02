@@ -29,7 +29,7 @@ Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es sta
 ### Implementierung
 1. Paket = Ausgabe von `node "<PLUGIN>/scripts/review-package.js" <FIX_BASE> HEAD "<W>"`. Exit 1 (Bereich leer): Status `keine Änderung`, weiter mit dem Bericht.
 2. `dv-forge:implementation-re-reviewer` mit `Brief: <brief>`, `Findings: <F>`, `Bericht: <W>/followup-report.md`, `Paket: <paket>`.
-3. Ist `offen` leer: `node "<PLUGIN>/scripts/followup.js" drop review <slug>`. Sonst bleibt die alte Sicherung. Kein Scout.
+3. Ist `offen` leer: `node "<PLUGIN>/scripts/followup.js" drop review <slug>`. Sonst, wenn das Urteil `alle behoben, keine neuen 🔴` lautet: `node "<PLUGIN>/scripts/followup.js" keep review <slug> <offen>`. Sonst bleibt die alte Sicherung. Kein Scout.
 4. Status: Urteil `alle behoben, keine neuen 🔴` und `offen` leer → `sauber nach Nach-Review`; dasselbe Urteil mit `offen` nicht leer → `sauber nach Nach-Review, Gruppen <offen> nicht gewählt`; sonst `offen nach Nach-Review`.
 
 ## Bericht
@@ -40,7 +40,7 @@ Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug en
 ## Nächster Schritt
 Bei Spec und Plan steht der nächste Schritt im Bericht; nur beim Plan kommt die Commit-Prüfung dazu, und nur unter der Bedingung der nächsten Zeile. Die übrigen Zeilen gelten für die Implementierung.
 - `original=plan-review`, Status `sauber …` und der Berichtstext nach `=== BERICHT ===` hat die Ergebnis-Zeile `✅ Bereit zur Umsetzung` und keinen Abschnitt `### Noch offen · Hindernis`: nach dem Freigeben des Guards `git status --porcelain -- "<S>" "<P>"`. Leere Ausgabe: beide sind committet, keine Frage. Sonst: `Plan ist bereit. Soll ich Spec und Plan jetzt committen?` Nach dem Ja committest du beide Dateien, Nachricht nach `Commit-Konvention` aus `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`, mit der Workitem-Nummer der Spec, falls sie eine nennt. Bei Nein oder ohne Antwort: kein Commit. Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben. Steht im Bericht `⛔ Noch nicht bereit` oder `### Noch offen · Hindernis`: keine Commit-Prüfung und keine Frage.
-- `sauber nach Nach-Review`, `offen` leer: der Text des Original-Skills für `sauber`.
-- `sauber …` mit `offen` nicht leer: `Gruppen <offen> noch nicht umgesetzt: /dv-forge:review-followup <artefakt> <g>:<n|b>,… mit den bisherigen Nummern.`
+- `sauber nach Nach-Review`, `offen` leer: `Alles sauber. Arbeit abschließen mit:` und darunter in einem Code-Block `/dv-forge:finish-work`.
+- `sauber …` mit `offen` nicht leer: `Noch nicht umgesetzt: /dv-forge:review-followup <artefakt> alle.`
 - Implementierung offen, `keine Änderung` oder `blockiert`: `/dv-forge:implementation-review <P> erneut.`
 - `unvollständig, …`: `Ausgefallen: <liste>. Den Skill in einer frischen Session erneut starten.`

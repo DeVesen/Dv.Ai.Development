@@ -68,3 +68,18 @@ test('reviewFollowupFlow_Report_KeepsPriority', () => {
   const report = text.slice(text.indexOf('## Bericht'), text.indexOf('## Nächster Schritt'));
   assert.ok(report.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht.'));
 });
+
+test('reviewFollowupFlow_NextStep_CleanImplementationNamesFinishWorkItself', () => {
+  const text = readText(FLOW);
+  const next = text.slice(text.indexOf('## Nächster Schritt'));
+  const clean = next.split('\n').find((line) => line.startsWith('- `sauber nach Nach-Review`, `offen` leer:'));
+  assert.ok(clean, 'Zeile fehlt');
+  assert.ok(clean.includes('/dv-forge:finish-work'));
+  assert.equal(clean.includes('Original-Skills'), false, 'der Skill des Implementierungs-Reviews nennt keinen nächsten Schritt mehr');
+});
+
+test('reviewFollowupSkill_Body_TakesNoNextStepTextsFromImplementationReview', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.equal(body.includes('die Texte für `Nächster Schritt`'), false);
+  assert.ok(body.includes('bei `implementation-review` des Abschnitts Abschluss-Scout'));
+});

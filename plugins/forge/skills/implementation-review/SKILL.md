@@ -12,7 +12,7 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steht nur, was für die Umsetzung gilt. Du liest weder Plan, Spec, Kontext-Dateien noch Code; ein Hook blockt das für das ganze Repo.
 
 ## Eingaben
-1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" implementation-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: `P`, `S`, `R`, `slug`, `B`, `W`, `K`, `N`, `aktiv`, `Test`, je Kontext-Datei eine Zeile `C`, falls die Umsetzung sie abgelegt hat, `Z` und je Warnung eine Zeile `WARN`. Das zweite Argument ohne `--` ist die Spec. Jede `WARN`-Zeile kommt in die Hinweise des Orchestrators.
+1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" implementation-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: `P`, `S`, `R`, `slug`, `B`, `W`, `K`, `N`, `aktiv`, `Test`, je Kontext-Datei eine Zeile `C`, falls die Umsetzung sie abgelegt hat, `Z` und je Warnung eine Zeile `WARN`. Das zweite Argument ohne `--` ist die Spec. Die `WARN`-Zeilen musst du nicht weitergeben; der Bericht enthält die Hinweise.
 2. `N = 0`: Es gibt keine Nacharbeit, der Loop endet nach Review 1. Rolle des Arbeitsbereichs: `review`.
 3. An jeden Aggregations-Aufruf aus `loop.md` hängst du `--repo "<R>"` an.
 
@@ -35,17 +35,4 @@ Keine.
 `dv-forge:implementation-review-scout` — `Plan: <P>`, `Spec: <S>`, `Repo: <R>` und je `C` eine Zeile `Context: <pfad>`
 
 ## Bericht
-Titel `Implementierungs-Review`, Artefakt `<P>`. Status `sauber nach Review 1`; sonst statt `Cap erreicht` der Zusatz-Status `geprüft, k × 🔴 offen`. Zusatz-Abschnitt:
-
-```markdown
-### Bereich
-`<B>..HEAD`
-```
-
-Auswahl-Hinweis: `Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`
-
-Nächster Schritt:
-- `sauber`, `yellow=0`: `Alles sauber. Arbeit abschließen mit:` und darunter in einem Code-Block `/dv-forge:finish-work`.
-- `sauber`, `yellow` > 0: `Keine roten Findings. Gelbe Findings und Scout-Vorschläge lesen, gewählte mit /dv-forge:review-followup <P> <auswahl> umsetzen, dann abschließen mit:`, der Code-Block `/dv-forge:finish-work` und der Auswahl-Hinweis.
-- `geprüft, k × 🔴 offen`: `k rote Findings offen. Findings und Scout-Vorschläge lesen, dann /dv-forge:review-followup <P> <auswahl>.` und der Auswahl-Hinweis.
-
+Titel `Implementierungs-Review`, Artefakt `<P>`; den Rest liefert `implementation-report.js` (Ergebnis, Prüfumfang, Offenes, Hinweise, nächste Schritte). `<P>`, `<B>` und `<K>` sind die Werte aus `prepare.js`. Status: `sauber nach Review 1`, `geprüft, k × 🔴 offen` oder `unvollständig nach Review 1, ausgefallen: <liste>`.

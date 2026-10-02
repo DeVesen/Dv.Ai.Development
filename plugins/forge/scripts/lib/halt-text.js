@@ -26,11 +26,16 @@ function shorten(text, max) {
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
 }
 
+// Rückfall-Beschreibung ohne Scout-Text, geteilt von allen Berichten: gekürzte Konsequenz plus Vermerk.
+function fallbackDescription(consequence) {
+  return `${shorten(consequence, FALLBACK_MAX)}${FALLBACK_NOTE}`;
+}
+
 // Ohne gültigen Scout-Text (Scout ausgefallen oder Text unbrauchbar) zeigt der Text die Stelle und die gekürzte Konsequenz des ersten Findings.
 function describe(group, scouted) {
   const texts = scouted.get(`${ICON[group.color]} ${collapse(group.label)}`);
   if (texts && textsProblem(texts) === null) return texts;
-  return { title: group.label, description: `${shorten(group.items[0].finding.consequence, FALLBACK_MAX)}${FALLBACK_NOTE}` };
+  return { title: group.label, description: fallbackDescription(group.items[0].finding.consequence) };
 }
 
 function entryLines(group, scouted, extra) {
@@ -87,4 +92,4 @@ function renderHalt({ topic, groups, texts, results, bundles }) {
   ].map((block) => block.join('\n')).join('\n\n');
 }
 
-module.exports = { renderHalt, topicOf, shorten };
+module.exports = { renderHalt, topicOf, shorten, fallbackDescription };

@@ -2,20 +2,20 @@
 
 // Baut den Abschlussbericht des Implementierungs-Reviews und die gefilterte Sicherung (abschluss/) aus dem Arbeitsbereich.
 
-const fs = require('node:fs');
 const path = require('node:path');
-const { reworkHeading, reworkLine, REWORK_MARK, SEVERITY_ICON } = require('../aggregate-findings');
+const { reworkHeading, reworkLine, SEVERITY_ICON } = require('../aggregate-findings');
 const { reviewerLabel } = require('./reviewer-names');
-const { topicOf, shorten } = require('./halt-text');
+const { topicOf, fallbackDescription } = require('./halt-text');
 const { scoutTexts, scoutBlocks, checkScout } = require('./scout-check');
 const { renderImplementationReport } = require('./implementation-report-text');
-const { CLOSING, FlowError, readText, readLines, readJson, writeText } = require('./flow-files');
+const { writeClosingFiles } = require('./closing');
+const { FlowError, readText, readLines, readJson, writeText } = require('./flow-files');
 
 const REVIEW = 'implementation-review';
-const SHORT = 400;
 const CANONICAL = ['acceptance', 'plan-fidelity', 'design', 'tests', 'risks'];
 const TEST_PATHS = [/(^|[\\/])(tests?|__tests__)[\\/]/i, /[._-](test|spec)s?\./i, /[a-z0-9]Tests?\.[a-z0-9]+$/];
-const SCOUT_HEADING = '## Scout-Vorschläge';
+const DOCUMENT_FILE = /\.(md|markdown|txt|rst|adoc)$/i;
+const ITEM_TEXTS = ['reviewer', 'severity', 'location', 'quote', 'consequence', 'rationale'];
 const SCOUT_NOTE = 'Der Scout hat keine gültigen Vorschläge geliefert; Beschreibungen stammen aus den Prüfergebnissen.';
 
 function orderOf(name) {
@@ -23,16 +23,24 @@ function orderOf(name) {
   return index === -1 ? CANONICAL.length : index;
 }
 
+function isTextList(list) {
+  return Array.isArray(list) && list.every((entry) => typeof entry === 'string');
+}
+
+function isItem(item) {
+  return ITEM_TEXTS.every((key) => typeof item?.[key] === 'string');
+}
+
 function isGroup(group) {
-  return typeof group?.location === 'string' && Object.hasOwn(SEVERITY_ICON, group.severity) && Array.isArray(group.reviewers)
-    && Array.isArray(group.items) && group.items.length > 0;
+  return typeof group?.location === 'string' && Object.hasOwn(SEVERITY_ICON, group.severity) && isTextList(group.reviewers)
+    && Array.isArray(group.items) && group.items.length > 0 && group.items.every(isItem);
 }
 
 // ergebnis.json schreibt aggregate-findings.js; eine andere Form bricht wie eine fehlende Datei mit Exit 1 ab.
 function readResult(dir) {
   const file = path.join(dir, 'ergebnis.json');
   const result = readJson(file);
-  const lists = ['reviewers', 'failed', 'groups'].every((key) => Array.isArray(result?.[key]));
+  const lists = isTextList(result?.reviewers) && isTextList(result.failed) && Array.isArray(result.groups);
   if (!lists || !result.groups.every(isGroup)) throw new FlowError(`ungültiges Ergebnis: ${file}`);
   return result;
 }
@@ -51,9 +59,9 @@ function changedFiles(packageText) {
   return lines.slice(start + 1, end === -1 ? undefined : end).filter((line) => line.includes(' | ')).map((line) => line.split(' | ')[0].trim());
 }
 
-// Näherung nach Pfad-Muster; `latest.js` endet zwar auf "test", ist aber kein Test.
+// Näherung nach Pfad-Muster; `latest.js` endet zwar auf "test", ist aber kein Test; Dokumente zählen nie.
 function isTestFile(file) {
-  return TEST_PATHS.some((pattern) => pattern.test(file));
+  return !DOCUMENT_FILE.test(file) && TEST_PATHS.some((pattern) => pattern.test(file));
 }
 
 function reviewerLines(result) {
@@ -77,7 +85,7 @@ function scoutState(options, open) {
   return { valid: true, texts: new Map(scoutTexts(lines).map((entry) => [`${entry.severity} ${entry.location}`, entry])), blocks: scoutBlocks(lines) };
 }
 
-// Ein Scout-Eintrag zählt nur mit Text und Block: dieselbe Bedingung entscheidet über Beschreibung, `hasProposal` und abschluss/scout.md.
+// Ein Scout-Eintrag zählt nur mit Text und Block: dieselbe Bedingung entscheidet über Beschreibung, `hasProposal`, abschluss/scout.md und den Scout-Hinweis.
 function scoutedOf(group, scout) {
   const key = scoutKey(group);
   return scout.texts.has(key) && scout.blocks.has(key) ? { texts: scout.texts.get(key), block: scout.blocks.get(key) } : null;
@@ -90,8 +98,7 @@ function openEntry(group, scout) {
     const { title, description, recommendation } = scouted.texts;
     return { color: group.severity, title, description, recommendation, angles, hasProposal: true };
   }
-  const description = `${shorten(group.items[0].consequence, SHORT)} (ohne Scout-Beschreibung)`;
-  return { color: group.severity, title: group.location, description, recommendation: null, angles, hasProposal: false };
+  return { color: group.severity, title: group.location, description: fallbackDescription(group.items[0].consequence), recommendation: null, angles, hasProposal: false };
 }
 
 function aggregateBlock(group) {
@@ -99,21 +106,18 @@ function aggregateBlock(group) {
 }
 
 function writeClosing(options, open, scout, text) {
-  const dir = path.join(options.workspace, CLOSING);
-  fs.rmSync(dir, { recursive: true, force: true });
-  writeText(path.join(dir, 'aggregate.md'), [REWORK_MARK, ...open.map(aggregateBlock)].join('\n\n'));
-  const scouted = open.map((group) => scoutedOf(group, scout)).filter(Boolean);
-  if (scouted.length > 0) {
-    writeText(path.join(dir, 'scout.md'), [SCOUT_HEADING, '', scouted.map(({ block }) => block.join('\n').trimEnd()).join('\n\n')].join('\n'));
-  }
+  const scouted = open.map((group) => scoutedOf(group, scout)).filter(Boolean).map(({ block }) => block);
+  const dir = writeClosingFiles(options.workspace, open.map(aggregateBlock), scouted);
   writeText(path.join(dir, 'bericht.md'), text);
 }
 
 function notesOf(options, result, open, scout) {
-  const prepared = readJson(path.join(options.workspace, 'hinweise.json'), []);
-  if (!Array.isArray(prepared)) throw new FlowError(`keine JSON-Liste: ${path.join(options.workspace, 'hinweise.json')}`);
+  const file = path.join(options.workspace, 'hinweise.json');
+  const prepared = readJson(file, []);
+  if (!isTextList(prepared)) throw new FlowError(`keine Liste von Texten: ${file}`);
   const failed = result.failed.map((name) => `Der Prüfer für ${reviewerLabel(REVIEW, name)} ist ausgefallen. Dieser Blickwinkel fehlt in der Prüfung.`);
-  return [...prepared, ...failed, ...(open.length > 0 && !scout.valid ? [SCOUT_NOTE] : [])];
+  const fallback = open.some((group) => !scoutedOf(group, scout));
+  return [...prepared, ...failed, ...(fallback ? [SCOUT_NOTE] : [])];
 }
 
 // `options`: dir (Rundenordner), workspace (W), plan (lesbare Plan-Datei), planArg (Pfad für die Befehle), range (Basis), packageFile.

@@ -159,6 +159,21 @@ test('implementationReport_ScoutValidForSomeGroupsOnly_AllFallbackWithoutFollowu
   assert.equal(fs.existsSync(path.join(env.workspace, 'abschluss', 'scout.md')), false);
 });
 
+test('implementationReport_ScoutOkButGroupsMissingFromAggregate_FallbackWithScoutNote', () => {
+  // Arrange
+  const env = setup({ groups: [YELLOW], scout: [] });
+  fs.writeFileSync(path.join(env.dir, 'aggregate.md'), aggregateOf([]));
+
+  // Act
+  const result = report(env);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /- 🟡 \*\*src\/round\.js\*\* · aus: Aufbau\n  Die Rundung steht doppelt \(ohne Scout-Beschreibung\)\n/);
+  assert.match(result.stdout, SCOUT_NOTE);
+  assert.equal(fs.existsSync(path.join(env.workspace, 'abschluss', 'scout.md')), false);
+});
+
 test('implementationReport_StaleClosingFiles_AreRemovedBeforeWriting', () => {
   // Arrange
   const env = setup({ groups: [YELLOW] });
@@ -230,6 +245,46 @@ test('implementationReport_BrokenErgebnis_ExitsOneWithoutStackTrace', () => {
   for (const result of results) assert.equal(/\n\s+at /.test(result.stderr), false, result.stderr);
 });
 
+test('implementationReport_InvalidGroupInErgebnis_ExitsOneWithReason', () => {
+  // Arrange
+  const variants = [
+    { ...YELLOW, severity: 'blue' },
+    { ...YELLOW, items: [] },
+    { ...YELLOW, items: [{ ...YELLOW.items[0], consequence: { text: 'x' } }] },
+    { ...YELLOW, reviewers: [1] },
+  ];
+  const envs = variants.map((group) => setup({ groups: [YELLOW] }));
+  envs.forEach((env, index) => {
+    const result = JSON.parse(fs.readFileSync(path.join(env.dir, 'ergebnis.json'), 'utf8'));
+    fs.writeFileSync(path.join(env.dir, 'ergebnis.json'), JSON.stringify({ ...result, groups: [variants[index]] }));
+  });
+
+  // Act
+  const results = envs.map(report);
+
+  // Assert
+  for (const result of results) {
+    assert.equal(result.status, 1, result.stdout);
+    assert.match(result.stderr, /^dv-forge implementation-report: ungültiges Ergebnis: .*ergebnis\.json/);
+    assert.equal(/\n\s+at /.test(result.stderr), false, result.stderr);
+  }
+});
+
+test('implementationReport_HintsNotAListOfTexts_ExitsOneWithReason', () => {
+  // Arrange
+  const envs = [setup({ hints: { text: 'x' } }), setup({ hints: [{ text: 'x' }] })];
+
+  // Act
+  const results = envs.map(report);
+
+  // Assert
+  for (const result of results) {
+    assert.equal(result.status, 1, result.stdout);
+    assert.match(result.stderr, /^dv-forge implementation-report: keine Liste von Texten: .*hinweise\.json/);
+    assert.equal(/\n\s+at /.test(result.stderr), false, result.stderr);
+  }
+});
+
 test('implementationReport_MissingArgument_ExitsTwoWithUsage', () => {
   const result = spawnSync(process.execPath, [SCRIPT, '--dir', 'x'], { encoding: 'utf8' });
   assert.equal(result.status, 2);
@@ -241,4 +296,9 @@ test('isTestFile_PathPatterns_CountTestFilesOnly', () => {
   const others = ['src/latest.js', 'src/contest.ts', 'src/round.js', 'docs/testing.md'];
   for (const file of tests) assert.equal(isTestFile(file), true, file);
   for (const file of others) assert.equal(isTestFile(file), false, file);
+});
+
+test('isTestFile_DocumentationFiles_NeverCountAsTests', () => {
+  const docs = ['docs/api-spec.md', 'docs/smoke-test.md', 'tests/README.md', 'notes/a.test.txt', 'doc/x.spec.rst', 'test/guide.adoc'];
+  for (const file of docs) assert.equal(isTestFile(file), false, file);
 });

@@ -6,7 +6,7 @@ const path = require('node:path');
 const { ICON } = require('./groups');
 const { collapse, placeKey } = require('./places');
 const { reviewerLabel } = require('./reviewer-names');
-const { topicOf, shorten } = require('./halt-text');
+const { topicOf, shorten, fallbackDescription } = require('./halt-text');
 const { scoutTexts } = require('./scout-check');
 const { readAttempts } = require('./attempts');
 const { loadGroups } = require('../followup');
@@ -66,7 +66,7 @@ function described(group, index) {
   const found = index.get(group.scoutKey ?? `${ICON[group.color]} ${collapse(group.label)}`);
   if (found?.title && found.description) return { title: found.title, description: found.description, recommendation: found.recommendation ?? null };
   const consequence = group.consequence ?? group.items?.[0]?.finding?.consequence ?? '';
-  return { title: group.label, description: `${shorten(consequence, SHORT)} (ohne Scout-Beschreibung)`, recommendation: null };
+  return { title: group.label, description: fallbackDescription(consequence), recommendation: null };
 }
 
 // null: kein Urteil vorhanden.

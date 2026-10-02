@@ -38,15 +38,22 @@ function scoutBlocksOf(options) {
   return blocks;
 }
 
-function writeClosing(options, open) {
-  const dir = path.join(options.workspace, CLOSING);
+// Einziger Schreiber des Formats, das followup.js save/loadGroups liest: <W>/abschluss/ wird geleert, dann
+// aggregate.md mit den Gruppen-Blöcken (Text) und, falls vorhanden, scout.md mit den Scout-Blöcken (Zeilenlisten).
+function writeClosingFiles(workspace, aggregateBlocks, scouted) {
+  const dir = path.join(workspace, CLOSING);
   fs.rmSync(dir, { recursive: true, force: true });
-  const blocks = scoutBlocksOf(options);
-  const scouted = open.map((group) => blocks.get(group.scoutKey)).filter(Boolean);
-  writeText(path.join(dir, 'aggregate.md'), [REWORK_MARK, ...open.map((group) => group.block)].join('\n\n'));
+  writeText(path.join(dir, 'aggregate.md'), [REWORK_MARK, ...aggregateBlocks].join('\n\n'));
   if (scouted.length > 0) {
     writeText(path.join(dir, 'scout.md'), [SCOUT_HEADING, '', scouted.map((block) => block.join('\n').trimEnd()).join('\n\n')].join('\n'));
   }
+  return dir;
 }
 
-module.exports = { openGroupsOf, writeClosing };
+function writeClosing(options, open) {
+  const blocks = scoutBlocksOf(options);
+  const scouted = open.map((group) => blocks.get(group.scoutKey)).filter(Boolean);
+  writeClosingFiles(options.workspace, open.map((group) => group.block), scouted);
+}
+
+module.exports = { openGroupsOf, writeClosing, writeClosingFiles };

@@ -2,7 +2,7 @@
 name: review-followup
 description: Use when chosen scout proposals from a finished dv-forge spec-review, plan-review or implementation-review should be applied by the rework agent or the implementer and then verified once, without a fresh search by the reviewers.
 disable-model-invocation: true
-argument-hint: <spec.md|plan.md> <auswahl>
+argument-hint: <spec.md|plan.md> <alle|auswahl>
 ---
 
 # Review-Followup (Orchestrator)

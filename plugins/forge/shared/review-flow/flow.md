@@ -11,7 +11,7 @@ Gemeinsamer Ablauf von Spec- und Plan-Review: Runde 1 sucht, danach gibt es höc
 | Nacharbeiter | Agent-Name und seine Eingaben |
 | Nachprüfer | Agent-Name und seine Eingaben |
 | Scout | Agent-Name und seine Eingaben |
-| Bericht | Titel, Artefakt, Zusatz-Abschnitte, nächster Schritt je Status |
+| Bericht | Titel und Artefakt |
 
 `<FLAGS>` steht für `--review <rolle> --dir "<W>" --doc "<DOC>"`, im Plan-Review dazu `--spec "<S>"`.
 
@@ -69,5 +69,5 @@ Genau eine je Lauf.
 Jedes Ende, auch nach einem Ausfall:
 1. `node "<PLUGIN>/scripts/review-flow.js" report <FLAGS> --titel "<Titel>" --artefakt "<Artefakt>"`. Die Zeile `ENDE <status>` wählt den nächsten Schritt.
 2. `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"`.
-3. Bericht im Chat: der Text nach `=== BERICHT ===` unverändert; dann `### Hinweise des Orchestrators` mit jeder `WARN`-Zeile und jeder nachgeforderten oder neu gestarteten Instanz, falls es sie gibt; dann die Zusatz-Abschnitte des Skills; dann die Ausgabe von `save`, außer sie lautet `KEIN SCOUT`; zuletzt `Nächster Schritt: <Text des Skills für den Status>`. Nichts committen. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
+3. Bericht im Chat: der Text nach `=== BERICHT ===` unverändert. Nichts committen. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
 4. Nur wenn `report` ohne Exit 1 lief: `node "<PLUGIN>/scripts/guard-orchestrator.js" show <SESSION> --file "<W>/abschluss/bericht.md"`. Dann `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.

@@ -77,20 +77,6 @@ test('flow_End_ReportSaveCleanupRelease', () => {
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
 });
 
-test('flow_End_ReportEndsWithNextStepOfSkillForStatus', () => {
-  // Arrange
-  const end = section(readText(FLOW), 'Ende');
-  const selection = 'Die Zeile `ENDE <status>` wählt den nächsten Schritt.';
-
-  // Act
-  const report = end.split('\n').find((line) => line.includes('Bericht im Chat:'));
-
-  // Assert
-  assert.ok(end.includes(selection), `${selection} fehlt`);
-  assert.ok(report, 'Schritt Bericht im Chat fehlt');
-  assert.ok(report.split('; ').at(-1).startsWith('zuletzt `Nächster Schritt: <Text des Skills für den Status>`'), report);
-});
-
 test('flow_Role_ReferencesLoopRulesInsteadOfCopyingThem', () => {
   // Act
   const text = readText(FLOW);

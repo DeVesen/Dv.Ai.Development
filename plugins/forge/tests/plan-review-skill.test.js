@@ -58,7 +58,8 @@ test('planReviewSkill_Body_AnchorFileAndCommandsGoToReviewers', () => {
 
   // Assert
   assert.ok(body.includes('die Anker-Datei `A`'));
-  assert.ok(body.includes('jede `WARN`-Zeile kommt in die Hinweise des Orchestrators'));
+  assert.ok(body.includes('und je Warnung eine Zeile `WARN` (der Bericht enthält die Hinweise).'));
+  assert.equal(body.includes('Hinweise des Orchestrators'), false);
   assert.ok(body.includes('Jeder Reviewer bekommt zusätzlich `Anker: <A>`, wenn es `A` gibt.'));
   assert.ok(body.includes('`Build: <Build>`, `Test: <Test>`, `Lint: <Lint>`'));
 });
@@ -78,7 +79,8 @@ test('planReviewSkill_Body_SpecQuestionDoesNotPause', () => {
 
   // Assert
   assert.ok(body.includes('Eine Spec-Rückfrage hält den Lauf nicht an'));
-  assert.ok(body.includes('- `Fragen offen`: `Spec anpassen, dann /dv-forge:spec-review <S>, danach /dv-forge:plan-review <P> erneut.`'));
+  assert.ok(body.includes('sie steht im Bericht unter den offenen Fragen'));
+  assert.ok(body.includes('den Rest liefert `report`'));
 });
 
 test('planReviewSkill_Body_CleanReportHandsOverToImplementation', () => {
@@ -86,26 +88,22 @@ test('planReviewSkill_Body_CleanReportHandsOverToImplementation', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('/dv-forge:implementation <P>'));
-  assert.match(body, /frischen Session/);
   assert.match(body, /Soll ich Spec und Plan jetzt committen\?/);
   assert.ok(body.includes('forge-config.js" get Commit-Konvention'));
   assert.ok(body.includes('git status --porcelain -- "<S>" "<P>"'));
-  assert.match(body, /Leere Ausgabe: keine Frage/);
+  assert.match(body, /Leere Ausgabe: beide sind committet, keine Frage/);
 });
 
 test('planReviewSkill_Body_CommitOutcomesAndOnlyHintInNextStep', () => {
   // Act
   const { body } = readMarkdown(SKILL);
-  const next = body.slice(body.indexOf('Nächster Schritt:'));
+  const next = body.slice(body.indexOf('## Bericht'));
 
   // Assert
   for (const part of [
     'Nach dem Ja committest du beide Dateien',
-    'Dann in einer frischen Session ein Code-Block `/dv-forge:implementation <P>`.',
-    'Bei Nein oder ohne Antwort: kein Commit und kein weiterer Schritt.',
-    'Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben, kein `/dv-forge:implementation <P>`.',
-    'oder Plan selbst anpassen und /dv-forge:plan-review <P> erneut; betreffen die Änderungen nur einzelne Reviewer, mit --only <reviewer,...>.',
+    'Bei Nein oder ohne Antwort: kein Commit.',
+    'Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben.',
   ]) {
     assert.ok(next.includes(part), `${part} fehlt`);
   }
@@ -116,9 +114,8 @@ test('planReviewSkill_Body_NextStepOffersReviewFollowup', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('/dv-forge:review-followup <P> <auswahl>'));
-  assert.ok(body.includes('Offene 🟡: optional /dv-forge:review-followup <P> <auswahl>.'));
-  assert.ok(body.includes('`Auswahl: b = bevorzugte Vorschläge, 1 = Vorschlag 1 überall, 1:2,3:1 = je Gruppe.`'));
+  assert.ok(body.includes('den Rest liefert `report`'));
+  for (const gone of ['/dv-forge:review-followup', 'Offene 🟡', 'Auswahl: b =']) assert.equal(body.includes(gone), false, gone);
 });
 
 test('planReviewSkill_Body_NoRoundCapOrOldStops', () => {

@@ -15,7 +15,7 @@ test('reviewFollowupSkill_Frontmatter_ManualOnlyWithArgumentHint', () => {
   assert.equal(fields.name, 'review-followup');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], 'true');
-  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <auswahl>');
+  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <alle|auswahl>');
 });
 
 test('reviewFollowupSkill_Body_StaysUnder500Words', () => {
@@ -47,7 +47,7 @@ test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => 
   for (const part of ['Vorschläge: <F>', 'Eintrag: R<n>', 'Ergebnis: <W>/nacharbeit/rework.json', '--quelle nacharbeit', 'review-flow.js" snapshot --dir "<W>" --doc "<DOC>"',
     'review-flow.js" rework-check <FLAGS>', 'review-flow.js" checklist <FLAGS>', 'review-flow.js" verify <FLAGS>', 'review-flow.js" report <FLAGS> --titel "Review-Followup (<original>)"',
     'review-flow.js" script-checks <FLAGS> --runde runde-2',
-    'Prüfliste: <W>/runde-2/pruefliste.md', 'Kein Reviewer läuft.', 'followup.js" save <rolle> <slug> "<W>/abschluss"', 'followup.js" drop <rolle> <slug>',
+    'Prüfliste: <W>/runde-2/pruefliste.md', 'Kein Reviewer läuft.', 'followup.js" save <rolle> <slug> "<W>/abschluss"',
     'plan-tasks.js" header "<P>" "<W>"', 'review-package.js" <FIX_BASE> HEAD "<W>"', 'followup.js" drop review <slug>', 'Kein Scout', 'nicht gewählt',
     'bleibt die alte Sicherung', '### Umgesetzt', 'WAHL', 'keine Änderung', 'blockiert', '- `Fragen offen`:', '- `nicht bereit, …`:', '- `unvollständig, …`:']) {
     assert.ok(text.includes(part), `${part} fehlt`);

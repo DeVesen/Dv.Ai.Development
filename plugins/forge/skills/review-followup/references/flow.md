@@ -24,7 +24,7 @@ Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es sta
 3. `node "<PLUGIN>/scripts/review-flow.js" verify <FLAGS>`. `NACHPRUEFUNG ungültig: <grund>`: nachfordern mit Instanz `nachprüfer`, dann Schritt 3.
 4. `WEITER scout=hinweise`: Scout des Original-Skills mit `D = <W>/runde-2` und Instanz `scout-nachpruefung`.
 5. `node "<PLUGIN>/scripts/review-flow.js" report <FLAGS> --titel "Review-Followup (<original>)" --artefakt "<artefakt>"`. Die Zeile `ENDE <status>` ist der Status; der Text nach `=== BERICHT ===` ist der Bericht.
-6. Sicherung: Lief ein Scout, `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"`; die Ausgabe ist der Scout-Abschnitt des Berichts. Lief keiner und ist `offen` nicht leer, entfällt `save`: Dann bleibt die alte Sicherung, und die Gruppen aus `offen` bleiben mit ihren Nummern wählbar. Lief keiner und ist `offen` leer: `node "<PLUGIN>/scripts/followup.js" drop <rolle> <slug>`.
+6. Sicherung: `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"`; die Ausgabe zeigst du nicht.
 
 ### Implementierung
 1. Paket = Ausgabe von `node "<PLUGIN>/scripts/review-package.js" <FIX_BASE> HEAD "<W>"`. Exit 1 (Bereich leer): Status `keine Änderung`, weiter mit dem Bericht.
@@ -33,11 +33,12 @@ Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es sta
 4. Status: Urteil `alle behoben, keine neuen 🔴` und `offen` leer → `sauber nach Nach-Review`; dasselbe Urteil mit `offen` nicht leer → `sauber nach Nach-Review, Gruppen <offen> nicht gewählt`; sonst `offen nach Nach-Review`.
 
 ## Bericht
-- Spec und Plan: der Bericht aus `report`, dann `### Hinweise des Orchestrators`, falls vorhanden, dann `### Umgesetzt` mit je `WAHL`-Zeile einem Punkt `- <WAHL>`, dann der Scout-Abschnitt aus Schritt 6.
-- Implementierung: nach `<PLUGIN>/shared/review-loop/report-format.md` mit `**Reviews:** 1 · **Nacharbeiten:** 1`, ohne Nach-Review `**Reviews:** 0 · **Nacharbeiten:** 1`; `### Letztes Review` ist die Antwort des Re-Reviewers unverändert; dazu `### Umgesetzt` wie oben.
+- Spec und Plan: der Text nach `=== BERICHT ===` unverändert.
+- Implementierung: nach `<PLUGIN>/shared/review-loop/report-format.md` mit `**Reviews:** 1 · **Nacharbeiten:** 1`, ohne Nach-Review `**Reviews:** 0 · **Nacharbeiten:** 1`; `### Letztes Review` ist die Antwort des Re-Reviewers unverändert; dazu `### Umgesetzt` mit je `WAHL`-Zeile einem Punkt `- <WAHL>`.
 Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht. Bei Spec und Plan liegt der Teil aus `report` in `<W>/abschluss/bericht.md` und wird vor dem Freigeben mit `guard-orchestrator.js show` vorgemerkt; bei der Implementierung gibt es keine Berichtsdatei, dort gilt nur der Satz.
 
 ## Nächster Schritt
+Bei Spec und Plan steht der nächste Schritt im Bericht; die folgenden Zeilen gelten für die Implementierung.
 - `sauber nach Nachprüfung` oder `sauber nach Nach-Review`, `offen` leer: der Text des Original-Skills für `sauber`, bei Plan einschließlich der Commit-Prüfung.
 - `sauber …` mit `offen` nicht leer: `Gruppen <offen> noch nicht umgesetzt: /dv-forge:review-followup <artefakt> <g>:<n|b>,… mit den bisherigen Nummern.`
 - `Fragen offen`: der Text des Original-Skills für `Fragen offen`.

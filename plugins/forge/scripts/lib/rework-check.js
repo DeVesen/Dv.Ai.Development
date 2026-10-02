@@ -55,10 +55,11 @@ function entryProblem(entry, review) {
   return evidenceProblem(entry);
 }
 
-// Klartextfelder, die der Mensch beim Anhalten liest: nur Spec-Review in Runde 1.
-function plainEntryProblem(entry, options) {
-  if (options.review !== 'spec-review' || options.source !== ROUND_ONE) return null;
-  const field = { changed: 'change', unchanged: 'reason' }[entry.status];
+// Klartextfelder, die der Mensch im Bericht liest: für beide Reviews und alle Quellen.
+const PLAIN_FIELD_OF_STATUS = { changed: 'change', unchanged: 'reason', 'spec-question': 'reason' };
+
+function plainEntryProblem(entry) {
+  const field = PLAIN_FIELD_OF_STATUS[entry.status];
   const problem = field ? plainProblem(entry[field]) : null;
   return problem ? `${field}: ${problem} (${entry.location})` : null;
 }
@@ -74,7 +75,7 @@ function coverageProblem(results, keys, noun) {
 
 function resultsProblem(value, keys, options) {
   if (value === null || typeof value !== 'object' || !Array.isArray(value.results)) return 'results fehlt';
-  const problem = value.results.map((entry) => entryProblem(entry, options.review) ?? plainEntryProblem(entry, options)).find(Boolean);
+  const problem = value.results.map((entry) => entryProblem(entry, options.review) ?? plainEntryProblem(entry)).find(Boolean);
   return problem ?? coverageProblem(value.results, keys, 'Ausgang');
 }
 
@@ -132,10 +133,18 @@ function checkRework(options) {
   return [`NACHARBEIT ok fragen=${questions.length} anhalten=ja`, '=== FRAGEN ===', shown].join('\n');
 }
 
+function plainAnswerProblem(entry) {
+  if (entry.status !== 'answered') return null;
+  const field = ['decision', 'change'].find((name) => plainProblem(entry[name]));
+  return field ? `${field}: ${plainProblem(entry[field])} (${entry.location})` : null;
+}
+
 function answersProblem(value, asked) {
   if (value === null || typeof value !== 'object' || !Array.isArray(value.results)) return 'results fehlt';
   const wrong = value.results.find((entry) => typeof entry?.location !== 'string' || !ANSWER_STATUSES.includes(entry.status));
   if (wrong) return `Eintrag ungültig: ${JSON.stringify(wrong)}`;
+  const plain = value.results.map(plainAnswerProblem).find(Boolean);
+  if (plain) return plain;
   return coverageProblem(value.results, asked.map((question) => question.key), 'Antwort');
 }
 

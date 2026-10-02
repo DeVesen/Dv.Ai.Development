@@ -49,10 +49,10 @@ Bekommst du `Antworten des Menschen:`, bearbeitest du nur diese Antworten.
 1. Je Stelle mit Frage entscheidest du: beantwortet oder offen. Offen bleibt eine Frage ohne Antwort, mit unklarer Antwort oder mit „später“; „später“ gilt je Frage. Beantwortet eine Antwort nur einen Teil der Stellen einer gebündelten Frage, gilt nur dieser Teil als beantwortet.
 2. Je beantworteter Stelle schreibst du ans Ende des Abschnitts Entscheidungen einen Eintrag `- **W · <Stelle>** · Aussage — Antwort auf „R<n> · <Stelle>“: <Antwort>` und passt die Spec an die Antwort an. Nennt ein W-Eintrag mehrere Stellen, trägt er jede im Titel und jeden R-Eintrag im Text. Dort ist `R<n>` die Kennung aus dem R-Eintrag der Frage, wie er in der Spec oder unter `## Offene Fragen` steht, nicht deine Kennung aus `Eintrag:`.
 3. Offene Fragen lässt du, wie sie sind.
-4. Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` je Stelle mit Frage einen Eintrag und antworte danach nur mit `Ergebnis geschrieben: <pfad>`.
+4. Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` je Stelle mit Frage einen Eintrag und antworte danach nur mit `Ergebnis geschrieben: <pfad>`. Bei `answered` stehen zwei Klartextfelder (keine Kürzel, jedes höchstens 400 Zeichen): `decision` (die gewählte Option in Klartext, so wie der Mensch sie sagen würde) und `change` (was die Spec jetzt festlegt).
 
 ```json
-{ "results": [ { "location": "AC-04", "status": "answered" }, { "location": "AC-07", "status": "open" } ] }
+{ "results": [ { "location": "AC-04", "status": "answered", "decision": "Sofort umsetzen und das Risiko akzeptieren.", "change": "Die Spec legt jetzt fest, dass am Testsystem umgesetzt wird." }, { "location": "AC-07", "status": "open" } ] }
 ```
 
 ## Folge-Modus
@@ -87,6 +87,6 @@ Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Stelle einen Eintrag a
 
 - `status`: `changed` (geändert) | `unchanged` (nicht geändert) | `human-question` (frage an den menschen).
 - `reason` ist Pflicht bei `unchanged` und `human-question`.
-- `change`: Pflicht bei `changed`, wenn du `Findings:` bekommst (nicht im Folge-Modus mit `Vorschläge:`): ein bis drei Sätze in Klartext, was sich in der Spec geändert hat, ohne Kürzel, höchstens 400 Zeichen. Bei `unchanged` steht `reason` ebenfalls in Klartext ohne Kürzel, höchstens 400 Zeichen.
+- `change`: Pflicht bei `changed`, (auch im Folge-Modus mit `Vorschläge:`): ein bis drei Sätze in Klartext, was sich in der Spec geändert hat, ohne Kürzel, höchstens 400 Zeichen. Bei `unchanged` steht `reason` ebenfalls in Klartext ohne Kürzel, höchstens 400 Zeichen.
 - `evidence`: nur bei `changed` mit neuem Verhalten nach Regel 3, der Beleg wörtlich wie im R-Eintrag; sonst lässt du das Feld weg.
 - `questions`: die gebündelten Fragen; ohne Fragen `[]`.

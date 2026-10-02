@@ -634,3 +634,11 @@ test('scouts_SpecAndPlan_DescribeTitleDescriptionRecommendationInPlainLanguage',
     assert.ok(body.includes('Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>'), `${name}: Beispiel`);
   }
 });
+
+test('reworkAgents_Body_ChangeFieldAlsoInFollowupModeAndAnswersCarryDecision', () => {
+  const spec = readAgent('spec-rework').body;
+  const plan = readAgent('plan-rework').body;
+  for (const part of ['`change`: Pflicht bei `changed`', '"decision"', '"change"', 'höchstens 400 Zeichen']) assert.ok(spec.includes(part), `spec-rework: ${part}`);
+  for (const part of ['`change`: Pflicht bei `changed`', '"change"', 'höchstens 400 Zeichen', '`AC-<Zahl>`']) assert.ok(plan.includes(part), `plan-rework: ${part}`);
+  assert.equal(spec.includes('(nicht im Folge-Modus'), false);
+});

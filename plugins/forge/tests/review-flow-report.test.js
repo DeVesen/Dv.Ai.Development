@@ -128,10 +128,10 @@ test('report_ReworkFailedWithInvalidEntries_ListsValidEvidenceWithoutCrash', () 
   // Verwertbar ist nur der letzte Eintrag (Leerraum um die Werte); davor: kein Objekt, ohne location, location kein Text, nicht changed.
   const results = [
     null,
-    { status: 'changed', evidence: 'src/export.js' },
-    { location: 42, status: 'changed', evidence: 'src/export.js' },
+    { status: 'changed', change: 'Wortlaut geschärft.', evidence: 'src/export.js' },
+    { location: 42, status: 'changed', change: 'Wortlaut geschärft.', evidence: 'src/export.js' },
     { location: 'AC-07', status: 'unchanged', reason: 'Fehllesung', evidence: 'src/export.js' },
-    { location: ' AC-04 ', status: 'changed', evidence: ' src/export.js ' },
+    { location: ' AC-04 ', status: 'changed', change: 'Wortlaut geschärft.', evidence: ' src/export.js ' },
   ];
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results, questions: [] });
   ['NACHFORDERN', 'NEUSTART', 'AUSGEFALLEN'].forEach(() => nextAttempt(env.workspace, 'nacharbeit'));
@@ -352,7 +352,7 @@ test('report_FollowupReworkWithEvidence_ListsIt', () => {
   const env = setup();
   flow('snapshot', '--dir', env.workspace, '--doc', env.doc);
   writeJsonFile(path.join(env.workspace, 'nacharbeit', 'aggregate.md'), '=== REWORK ===\n### 🔴 AC-04 (consistency)\n- [consistency · widerspruch] Zitat: „x“\n\n### 🟡 AC-07 (clarity)\n- [clarity · detail] Zitat: „x“\n');
-  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', evidence: 'src/export.js', change: 'Wortlaut geschärft.' }, { location: 'AC-07', status: 'changed', change: 'Wortlaut geschärft.' }] });
+  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.', evidence: 'src/export.js', change: 'Wortlaut geschärft.' }, { location: 'AC-07', status: 'changed', change: 'Wortlaut geschärft.' }] });
   const source = ['--quelle', 'nacharbeit'];
   assert.match(flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source).stdout, /^NACHARBEIT ok/);
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);

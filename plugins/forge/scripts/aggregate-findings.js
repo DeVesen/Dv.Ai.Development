@@ -65,7 +65,7 @@ function parseReview(body, errors) {
   return null;
 }
 
-const RESERVED_FILES = new Set(['rework.json']);
+const RESERVED_FILES = new Set(['rework.json', 'ergebnis.json']);
 
 function readReviewFile(file, errors, reasons) {
   const name = path.basename(file, '.json');
@@ -245,6 +245,21 @@ function render(result) {
   ].join('\n');
 }
 
+// Strukturierte Fassung des Ergebnisses für den Bericht (implementation-report.js).
+function resultFile(result) {
+  return {
+    reviewers: result.reviews.map((review) => review.reviewer),
+    failed: result.status.failed,
+    counts: result.status.counts,
+    groups: result.groups.map((group) => ({
+      location: group.location,
+      severity: group.severity,
+      reviewers: group.reviewers,
+      items: group.items.map(({ reviewer, severity, location, quote, consequence, rationale }) => ({ reviewer, severity, location, quote, consequence, rationale })),
+    })),
+  };
+}
+
 function parseExpected(args) {
   const index = args.indexOf('--expect');
   return index === -1 ? [] : String(args[index + 1] ?? '').split(',').filter(Boolean);
@@ -271,9 +286,11 @@ function main() {
     process.stdout.write(`${render(run(fs.readFileSync(0, 'utf8'), parseExpected(args), types))}\n`);
     return;
   }
-  const output = `${render(runDir(dir, parseExpected(args), types, optionValue(args, '--round')))}\n`;
+  const result = runDir(dir, parseExpected(args), types, optionValue(args, '--round'));
+  const output = `${render(result)}\n`;
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'aggregate.md'), output);
+  fs.writeFileSync(path.join(dir, 'ergebnis.json'), `${JSON.stringify(resultFile(result), null, 2)}\n`);
   process.stdout.write(output);
 }
 

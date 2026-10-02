@@ -77,11 +77,18 @@ test('reviewFollowupFlow_NextStep_PlanKeepsCommitCheck', () => {
   }
 });
 
+test('reviewFollowupFlow_NextStep_ListsOnlyStatusesTheImplementationEmits', () => {
+  const next = section(readText(FOLLOWUP_FLOW), 'Nächster Schritt');
+  for (const gone of ['- `Fragen offen`:', '- `nicht bereit, …`:', '`sauber nach Nachprüfung`']) assert.equal(next.includes(gone), false, gone);
+  for (const kept of ['`sauber nach Nach-Review`, `offen` leer', 'Implementierung offen, `keine Änderung` oder `blockiert`', '`unvollständig, …`']) assert.ok(next.includes(kept), `${kept} fehlt`);
+});
+
 test('reviewFollowupSkill_Body_NamesAlleAndLeavesHintsAndNextStepToReport', () => {
   const { body } = readMarkdown(FOLLOWUP_SKILL);
   assert.ok(body.includes('Auswahl: `alle`'), 'alle fehlt');
   for (const gone of ['Auswahl: `b` = bevorzugter Vorschlag je Gruppe', 'Scout-Abschnitt des letzten Berichts', 'Jede `WARN`-Zeile kommt in die Hinweise.', 'sowie die Texte für `Nächster Schritt`.']) assert.equal(body.includes(gone), false, gone);
-  assert.ok(body.includes('Die Nummern stehen im letzten Bericht.'));
+  assert.equal(body.includes('Die Nummern stehen im letzten Bericht.'), false, 'der Bericht zeigt keine Gruppennummern');
+  assert.ok(body.includes('`<n>` und `<g>:<n|b>,…` zählen die Gruppen in der Reihenfolge der gesicherten Abschlussdaten; der Bericht zeigt diese Nummern nicht, darum ist `alle` der Normalfall.'));
   assert.ok(body.includes('der Bericht enthält die Hinweise'));
   assert.ok(body.includes('bei `plan-review` die Commit-Prüfung'));
   assert.ok(wordCount(body) < 500);

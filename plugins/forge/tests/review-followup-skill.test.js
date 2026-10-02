@@ -49,7 +49,7 @@ test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => 
     'review-flow.js" script-checks <FLAGS> --runde runde-2',
     'Prüfliste: <W>/runde-2/pruefliste.md', 'Kein Reviewer läuft.', 'followup.js" save <rolle> <slug> "<W>/abschluss"',
     'plan-tasks.js" header "<P>" "<W>"', 'review-package.js" <FIX_BASE> HEAD "<W>"', 'followup.js" drop review <slug>', 'Kein Scout', 'nicht gewählt',
-    'bleibt die alte Sicherung', '### Umgesetzt', 'WAHL', 'keine Änderung', 'blockiert', '- `Fragen offen`:', '- `nicht bereit, …`:', '- `unvollständig, …`:']) {
+    'bleibt die alte Sicherung', '### Umgesetzt', 'WAHL', 'keine Änderung', 'blockiert', '- `unvollständig, …`:']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
 });

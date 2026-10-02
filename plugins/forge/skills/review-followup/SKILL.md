@@ -11,7 +11,7 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 
 Du orchestrierst wie in `${CLAUDE_PLUGIN_ROOT}/shared/review-flow/flow.md`, Abschnitt Rolle: Du liest weder Artefakt, Spec noch Code, bewertest nichts und änderst nichts selbst; ein Hook blockt das. Plugin-Dateien liest du mit `Read`, jedes Skript startest du als einzelnen `node`-Aufruf ohne Verkettung. Die Einzelheiten jedes Schritts stehen in `${CLAUDE_PLUGIN_ROOT}/skills/review-followup/references/flow.md`; lies die Datei vor Schritt 1.
 
-Auswahl: `alle` wählt den bevorzugten Vorschlag jeder offenen Gruppe; als Expertenformen gibt es `b`, `<n>` und `<g>:<n|b>,…`. Die Nummern stehen im letzten Bericht. Optional `--spec <pfad>` und `--base <ref>` wie beim Original-Review.
+Auswahl: `alle` wählt den bevorzugten Vorschlag jeder offenen Gruppe; als Expertenformen gibt es `b`, `<n>` und `<g>:<n|b>,…`. `<n>` und `<g>:<n|b>,…` zählen die Gruppen in der Reihenfolge der gesicherten Abschlussdaten; der Bericht zeigt diese Nummern nicht, darum ist `alle` der Normalfall. Optional `--spec <pfad>` und `--base <ref>` wie beim Original-Review.
 
 ## Ablauf
 1. **Eingaben:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" review-followup $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst Zeilen `<Name>=<Wert>` wie beim Original-Review, dazu `original` (die Art des Original-Reviews), `F`, `gruppen`, `offen` (nicht gewählte Gruppen), je Gruppe `WAHL` und bei `original=implementation-review` `FIX_BASE`. Bei Spec und Plan musst du die `WARN`-Zeilen nicht weitergeben (der Bericht enthält die Hinweise); bei `implementation-review` kommt jede `WARN`-Zeile in die Hinweise.

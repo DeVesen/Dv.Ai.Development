@@ -40,9 +40,7 @@ Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug en
 ## Nächster Schritt
 Bei Spec und Plan steht der nächste Schritt im Bericht; nur beim Plan kommt bei `sauber …` die Commit-Prüfung dazu. Die übrigen Zeilen gelten für die Implementierung.
 - `original=plan-review`, `sauber …`: nach dem Freigeben des Guards `git status --porcelain -- "<S>" "<P>"`. Leere Ausgabe: beide sind committet, keine Frage. Sonst: `Plan ist bereit. Soll ich Spec und Plan jetzt committen?` Nach dem Ja committest du beide Dateien, Nachricht nach `Commit-Konvention` aus `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`, mit der Workitem-Nummer der Spec, falls sie eine nennt. Bei Nein oder ohne Antwort: kein Commit. Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben.
-- `sauber nach Nachprüfung` oder `sauber nach Nach-Review`, `offen` leer: der Text des Original-Skills für `sauber`.
+- `sauber nach Nach-Review`, `offen` leer: der Text des Original-Skills für `sauber`.
 - `sauber …` mit `offen` nicht leer: `Gruppen <offen> noch nicht umgesetzt: /dv-forge:review-followup <artefakt> <g>:<n|b>,… mit den bisherigen Nummern.`
-- `Fragen offen`: der Text des Original-Skills für `Fragen offen`.
-- `nicht bereit, …`: `Noch offen. Scout-Vorschläge oben lesen, dann /dv-forge:review-followup <artefakt> <auswahl> oder das volle Review erneut.` War `offen` nicht leer und lief ein Scout, zusätzlich `Nicht gewählte Gruppen findet nur das volle Review erneut.`
 - Implementierung offen, `keine Änderung` oder `blockiert`: `/dv-forge:implementation-review <P> erneut.`
 - `unvollständig, …`: `Ausgefallen: <liste>. Den Skill in einer frischen Session erneut starten.`

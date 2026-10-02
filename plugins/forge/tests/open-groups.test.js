@@ -56,7 +56,7 @@ test('openFromRounds_Group_CarriesBlockScoutKeyAndConsequence', () => {
 
 const saved = (number, severity, location, extra = {}) => ({
   number, severity, location, reviewers: ['clarity'], proposals: ['x'], preferred: 1,
-  findings: [`- [clarity · detail] Zitat: „x“ · Konsequenz: Folge ${location} · Begründung: b`], ...extra,
+  findings: [`- [clarity · detail] Zitat: \u201Ex\u201C · Konsequenz: Folge ${location} · Begründung: b`], ...extra,
 });
 
 test('fromSaved_SavedGroup_BuildsOpenGroupWithConsequenceFromFindingLine', () => {

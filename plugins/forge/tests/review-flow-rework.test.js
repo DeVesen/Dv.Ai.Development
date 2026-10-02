@@ -287,7 +287,7 @@ test('reworkCheck_PlanSpecQuestionReasonWithShorthand_Invalid', () => {
 
 test('reworkCheck_FollowupSourceChangedWithoutChange_Invalid', () => {
   const env = setup();
-  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'aggregate.md'), '=== REWORK ===\n### 🟡 AC-07 (clarity)\n- [clarity · detail] Zitat: „x“\n');
+  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'aggregate.md'), '=== REWORK ===\n### 🟡 AC-07 (clarity)\n- [clarity · detail] Zitat: \u201Ex\u201C\n');
   writeRework(env, { results: [{ location: 'AC-07', status: 'changed' }] }, 'nacharbeit');
   assert.equal(checkRework(env, 'spec-review', 'nacharbeit'), 'NACHARBEIT ungültig: change: leer (AC-07)\n');
 });
@@ -344,7 +344,7 @@ test('reworkCheck_InputFileMissing_FailsWithFileMissing', () => {
 
 test('answersCheck_AnsweredWithoutDecisionOrChangeOrWithShorthand_Invalid', () => {
   const env = answersSetup();
-  addEntries(env, '- **W · AC-04** · Aussage — Antwort auf „R1 · AC-04“: F gilt immer.');
+  addEntries(env, '- **W · AC-04** · Aussage — Antwort auf \u201ER1 · AC-04\u201C: F gilt immer.');
   const file = path.join(env.workspace, 'runde-1', 'antworten.json');
   const check = () => flow('answers-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc).stdout;
   const rest = [{ location: 'AC-01', status: 'open' }, { location: 'AC-07', status: 'open' }];

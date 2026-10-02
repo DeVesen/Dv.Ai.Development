@@ -316,7 +316,7 @@ test('report_PlanSpecQuestion_FragenOffenWithQuestion', () => {
   flow('rate', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'coverage');
   flow('rework-input', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc);
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'Task 1', status: 'spec-question', reason: 'Spec lässt X offen' }] });
-  flow('rework-check', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc);
+  assert.match(flow('rework-check', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc).stdout, /^NACHARBEIT ok/);
   flow('checklist', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc);
   flow('verify', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc);
 
@@ -333,9 +333,9 @@ test('report_FollowupWithNotDonePoint_NichtBereitOne', () => {
   const env = setup();
   flow('snapshot', '--dir', env.workspace, '--doc', env.doc);
   writeJsonFile(path.join(env.workspace, 'nacharbeit', 'aggregate.md'), '=== REWORK ===\n### 🟡 AC-07 (clarity)\n- [clarity · detail] Zitat: „x“\n');
-  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'rework.json'), { results: [{ location: 'AC-07', status: 'changed' }] });
+  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'rework.json'), { results: [{ location: 'AC-07', status: 'changed', change: 'Wortlaut geschärft.' }] });
   const source = ['--quelle', 'nacharbeit'];
-  flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
+  assert.match(flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source).stdout, /^NACHARBEIT ok/);
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
   writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), { verdicts: [VERDICT('AC-07', 'nicht erledigt')], findings: [] });
   flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
@@ -352,9 +352,9 @@ test('report_FollowupReworkWithEvidence_ListsIt', () => {
   const env = setup();
   flow('snapshot', '--dir', env.workspace, '--doc', env.doc);
   writeJsonFile(path.join(env.workspace, 'nacharbeit', 'aggregate.md'), '=== REWORK ===\n### 🔴 AC-04 (consistency)\n- [consistency · widerspruch] Zitat: „x“\n\n### 🟡 AC-07 (clarity)\n- [clarity · detail] Zitat: „x“\n');
-  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', evidence: 'src/export.js' }, { location: 'AC-07', status: 'changed' }] });
+  writeJsonFile(path.join(env.workspace, 'nacharbeit', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', evidence: 'src/export.js', change: 'Wortlaut geschärft.' }, { location: 'AC-07', status: 'changed', change: 'Wortlaut geschärft.' }] });
   const source = ['--quelle', 'nacharbeit'];
-  flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
+  assert.match(flow('rework-check', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source).stdout, /^NACHARBEIT ok/);
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
   writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), { verdicts: [VERDICT('AC-04', 'erledigt'), VERDICT('AC-07', 'erledigt')], findings: [] });
   flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);

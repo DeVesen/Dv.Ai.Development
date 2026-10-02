@@ -114,6 +114,35 @@ test('implementationReview_CommitsAfterReportState_WarnsExceptReportItself', () 
   assert.match([].concat(late.WARN).join('\n'), /nach dem Umsetzungsbericht \(Stand .+\): .*refactor: share helper/);
 });
 
+function lateCommitRepo() {
+  const repo = planRepo();
+  const stand = git(repo, 'rev-parse', '--short', commitFile(repo, 'src/a.ts', 'a\n', 'feat: a'));
+  commitFile(repo, 'docs/forge/demo/umsetzung.md', `# Umsetzung\n\n## Stand\n- Stand: ${stand}\n- Gesamtlauf: keiner\n`, 'docs: report');
+  return repo;
+}
+
+test('implementationReview_NoLateCommits_WritesEmptyHintList', () => {
+  const repo = lateCommitRepo();
+  const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~2'));
+  assert.deepEqual(hints(out), []);
+});
+
+test('implementationReview_CommitsAfterReport_WritesPlainHint', () => {
+  const repo = lateCommitRepo();
+  commitFile(repo, 'src/b.ts', 'b\n', 'refactor: share helper');
+  const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~3'));
+  const notes = hints(out);
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /^Nach dem Umsetzungsbericht \(Stand \S+\) gibt es weitere Commits: .*refactor: share helper\. Sie fehlen in den Urteilen der Umsetzung\.$/);
+  assert.match([].concat(out.WARN).join('\n'), /nach dem Umsetzungsbericht/i);
+});
+
+test('implementationReview_NoReportAtAll_WritesEmptyHintList', () => {
+  const repo = planRepo();
+  const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~1'));
+  assert.deepEqual(hints(out), []);
+});
+
 test('implementationReview_ConfiguredTestCommand_IsListedRaw', () => {
   const repo = planRepo();
   commitFile(repo, 'CLAUDE.md', '## dv-forge\n- Test: dv-forge: angular-test --root src/frontend\n', 'config');

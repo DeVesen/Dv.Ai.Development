@@ -267,6 +267,18 @@ function commitsAfterReport(report, root) {
   return commits.length === 0 ? null : `Commits nach dem Umsetzungsbericht (Stand ${state[1]}): ${commits.join(' · ')}`;
 }
 
+const LATE_COMMITS = /^Commits nach dem Umsetzungsbericht \(Stand (\S+)\): ([\s\S]*)$/;
+const LATE_UNKNOWN = /^Stand (\S+) des Umsetzungsberichts nicht prüfbar: ([\s\S]*)$/;
+
+// Die Warnung zu Commits nach dem Umsetzungsbericht als Klartext mit Auswirkung (hinweise.json); die WARN-Zeile bleibt.
+function plainLateHint(late) {
+  const commits = LATE_COMMITS.exec(late);
+  if (commits) return `Nach dem Umsetzungsbericht (Stand ${commits[1]}) gibt es weitere Commits: ${commits[2]}. Sie fehlen in den Urteilen der Umsetzung.`;
+  const unknown = LATE_UNKNOWN.exec(late);
+  if (unknown) return `Der Stand ${unknown[1]} des Umsetzungsberichts ließ sich nicht prüfen (${unknown[2]}). Ob Commits nach dem Bericht fehlen, ist unbekannt.`;
+  return `Hinweis der Vorbereitung: ${late}`;
+}
+
 function prepareImplementationReview({ positional, flags }) {
   const plan = existingFile(path.resolve(positional[0]), 'Plan');
   const root = gitRoot(process.cwd());
@@ -282,11 +294,16 @@ function prepareImplementationReview({ positional, flags }) {
     P: plan, S: spec, R: root, slug, B: base, W: workspace, K: pack, C: contexts,
     N: '0', aktiv, Test: readConfig(root).config.Test,
   };
+  const hints = [];
   if (fs.existsSync(archivePath(plan))) {
     values.Z = archivePath(plan);
     const late = commitsAfterReport(values.Z, root);
-    if (late) values.WARN = late;
+    if (late) {
+      values.WARN = late;
+      hints.push(plainLateHint(late));
+    }
   }
+  writeHints(workspace, hints);
   return values;
 }
 

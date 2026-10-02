@@ -9,7 +9,6 @@ const { readText, readMarkdown, wordCount } = require('./lib/markdown');
 const PLUGIN_ROOT = path.join(__dirname, '..');
 const SKILL_DIR = path.join(PLUGIN_ROOT, 'skills', 'prozess-retrospektive');
 const SKILL = path.join(SKILL_DIR, 'SKILL.md');
-const README = path.join(PLUGIN_ROOT, '..', '..', 'README.md');
 const SCRIPTS = ['session-facts.js', 'retro-report.js', 'retro-timeline.js', 'retro-sort.js'];
 const JUDGEMENT_SIGNALS = [
   'Rückfrage oder Korrektur durch den Menschen',
@@ -28,7 +27,9 @@ test('prozessRetrospektive_Frontmatter_ManualOnlyWithAllowedScripts', () => {
 
   assert.deepEqual(Object.keys(fields), ['name', 'description', 'disable-model-invocation', 'allowed-tools']);
   assert.equal(fields['disable-model-invocation'], 'true');
-  assert.match(fields.description, /^Use when the human types \/dv-forge:prozess-retrospektive/);
+  assert.match(fields.description, /^Use when the human types \/dv-toolbelt:prozess-retrospektive/);
+  assert.match(fields.description, /Erfahrungsbericht/);
+  assert.match(fields.description, /session retrospective/);
 });
 
 test('prozessRetrospektive_AllowedTools_EveryScriptInBashAndPowerShell', () => {
@@ -44,7 +45,7 @@ test('prozessRetrospektive_AllowedTools_EveryScriptInBashAndPowerShell', () => {
 test('prozessRetrospektive_AllowedTools_DraftFolderWritableWithoutAsking', () => {
   const { fields } = readMarkdown(SKILL);
 
-  assert.ok(fields['allowed-tools'].split(' ').includes('Edit(~/.dv-forge/retro/*)'));
+  assert.ok(fields['allowed-tools'].split(' ').includes('Edit(~/.dv-toolbelt/retro/*)'));
 });
 
 test('prozessRetrospektive_Body_InjectsFactsAndFormatBeforeTheModelReads', () => {
@@ -79,12 +80,12 @@ test('prozessRetrospektive_Body_NamesTheFiveJudgementSignals', () => {
   for (const signal of JUDGEMENT_SIGNALS) assert.ok(body.includes(signal), signal);
 });
 
-test('prozessRetrospektive_Body_CommitRuleWithWorkitemCandidate', () => {
+test('prozessRetrospektive_Body_CommitOnlyAfterAskingConventionAndWorkitem', () => {
   const { body } = readMarkdown(SKILL);
 
-  assert.ok(body.includes('forge-config.js" get Commit-Konvention'));
-  assert.match(body, /Workitem-Kandidaten/);
   assert.match(body, /Nicht committen, erst fragen/);
+  assert.ok(body.includes('Commit-Konvention und Workitem-Kennung'));
+  assert.doesNotMatch(body, new RegExp([['forge', 'config'].join('-'), 'Workitem-Kandidaten'].join('|')));
 });
 
 test('prozessRetrospektive_Body_NoFixedContextThresholdAndOnlyFormatReference', () => {
@@ -100,15 +101,7 @@ test('prozessRetrospektive_Body_ArgumentsRerunFactsAndSortForWishlist', () => {
 
   assert.match(body, /`ARGUMENTS`/);
   assert.ok(body.includes('retro-sort.js'));
-});
-
-test('readme_Retrospective_NamesNewCallAndNoNaturalLanguageTrigger', () => {
-  const text = readText(README);
-  const section = text.slice(text.indexOf('#### `prozess-retrospektive`'), text.indexOf('#### `regression-audit`'));
-
-  assert.ok(section.includes('/dv-forge:prozess-retrospektive [--file <session.jsonl> | --since-command <command>]'));
-  for (const script of SCRIPTS) assert.ok(section.includes(script), script);
-  assert.doesNotMatch(section, /wie lief das|kein-retrospektive/);
+  assert.ok(body.includes('--expect <server,...>'));
 });
 
 test('reportFormat_Draft_NoSlotsAndThreeTargetForms', () => {

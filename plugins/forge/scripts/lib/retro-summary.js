@@ -1,6 +1,6 @@
 'use strict';
 
-// Kurzfassung nach dem Bericht: Befunde, Kosten der Retrospektive, Workitem-Kandidat und Befehl zum Vormerken.
+// Kurzfassung nach dem Bericht: Befunde, Kosten der Retrospektive und Befehl zum Vormerken.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -8,7 +8,6 @@ const { readEntries, tokensOf } = require('./transcript');
 const { requestsOf } = require('./retro-requests');
 const { thousands } = require('./retro-format');
 const { parseDraft, findingsOf } = require('./retro-draft');
-const { readConfig, workitemOf, branchWorkitem } = require('../forge-config');
 
 const FINDING_SECTIONS = ['Positiv', 'Reibung', 'Sparpotenzial'];
 const SHOWN_FINDINGS = 3;
@@ -40,23 +39,6 @@ function retroCost(transcript, fromEntryNo) {
   return `Kosten der Retrospektive: ${requests.length} Anfragen · Tokens ${thousands(sum.input)} neu verarbeitet, ${thousands(sum.cached)} aus dem Cache, ${thousands(sum.output)} Ausgabe`;
 }
 
-function configOf(cwd) {
-  try {
-    return readConfig(cwd).config;
-  } catch {
-    // Ohne Projekt-Einstellungen (kein Git-Repo) gibt es keinen Kandidaten aus dem Branch.
-    return {};
-  }
-}
-
-// Zuerst die Workitem-Zeile einer Spec der Session, dann das Workitem-Muster im Branch, sonst „keiner“.
-function workitemCandidate(snapshot, cwd) {
-  const fromSpec = (snapshot.specs ?? []).map((spec) => [spec, workitemOf(path.resolve(cwd, spec))]).find(([, workitem]) => workitem);
-  if (fromSpec) return `${fromSpec[1]} (aus Spec ${fromSpec[0]})`;
-  const found = branchWorkitem(configOf(cwd), snapshot.branch);
-  return found ? `${found} (aus Branch ${snapshot.branch})` : 'keiner';
-}
-
 // `transcriptEntries` zählt im ausgewerteten Protokoll; nur wenn das das eigene ist, markiert es den Start der Retrospektive.
 function costOf(snapshot) {
   if (snapshot.ownTranscript !== null && snapshot.transcript !== snapshot.ownTranscript) {
@@ -71,9 +53,8 @@ function summaryLines({ file, cwd, text, snapshot }) {
     'Prüfung: 0 Verstöße',
     ...findingSummary(text),
     costOf(snapshot),
-    `Workitem-Kandidat: ${workitemCandidate(snapshot, cwd)}`,
     `Vormerken: git add "${path.relative(cwd, file).split(path.sep).join('/')}"`,
   ];
 }
 
-module.exports = { findingSummary, retroCost, workitemCandidate, summaryLines };
+module.exports = { findingSummary, retroCost, summaryLines };

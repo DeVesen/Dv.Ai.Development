@@ -3,11 +3,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { findingSummary, retroCost, workitemCandidate, summaryLines } = require('../scripts/lib/retro-summary');
+const { findingSummary, retroCost, summaryLines } = require('../scripts/lib/retro-summary');
 const { human, slash, request, usage, writeSession } = require('./lib/retro-session');
 const { readEntries } = require('../scripts/lib/transcript');
 const { VALID, SNAPSHOT } = require('./lib/retro-draft-fixture');
-const { makeRepo, commitFile } = require('./lib/git-repo');
+const { makeRepo } = require('./lib/git-repo');
 
 function friction(number) {
   return [`${number}. **Reibung ${number}.**`, '   *Situation:* s', '   *Kosten:* 1 min', '   *Ursache:* u', '   *Besser gewesen:* b', '   *Vorschlag:* v', '   *Ziel:* Ziel offen', '   *Im Projekt:* nichts', ''].join('\n');
@@ -80,26 +80,12 @@ test('summaryLines_OwnTranscriptUnknown_CostNotTakenFromForeignProtocol', () => 
   assert.ok(lines.includes('Kosten der Retrospektive: nicht messbar (eigenes Protokoll nicht gefunden)'));
 });
 
-test('workitemCandidate_SpecWithWorkitem_TakesSpecFirst', () => {
+test('summaryLines_SessionWithSpecAndBranch_NamesNoWorkitemCandidate', () => {
   const repo = makeRepo();
-  commitFile(repo, 'docs/spec.md', '# Spec\n\nWorkitem: AB#123\n', 'spec');
+  const own = writeSession([request('r1', '10:01', [], usage(1000, 0, 0, 100))]);
+  const snapshot = { ...SNAPSHOT, transcript: own, ownTranscript: own, transcriptEntries: 0, specs: ['docs/spec.md'], branch: 'feature/AB#77-x' };
 
-  const candidate = workitemCandidate({ ...SNAPSHOT, specs: ['docs/spec.md'], branch: 'feature/AB#77-x' }, repo);
+  const lines = summaryLines({ file: path.join(repo, 'docs', 'wishes', 'x.md'), cwd: repo, text: VALID, snapshot });
 
-  assert.equal(candidate, 'AB#123 (aus Spec docs/spec.md)');
-});
-
-test('workitemCandidate_NoSpecButBranchMatchesPattern_TakesBranch', () => {
-  const repo = makeRepo();
-  commitFile(repo, 'CLAUDE.md', '## dv-forge\n\n- Workitem: `\\d{6}`\n', 'config');
-
-  const candidate = workitemCandidate({ ...SNAPSHOT, specs: [], branch: 'feature/307326-result' }, repo);
-
-  assert.equal(candidate, '307326 (aus Branch feature/307326-result)');
-});
-
-test('workitemCandidate_NeitherSpecNorPattern_None', () => {
-  const repo = makeRepo();
-
-  assert.equal(workitemCandidate({ ...SNAPSHOT, specs: [], branch: 'feature/x' }, repo), 'keiner');
+  assert.equal(lines.some((line) => /Workitem/.test(line)), false);
 });

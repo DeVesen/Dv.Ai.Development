@@ -135,7 +135,7 @@ test('cli_ValidDraft_WritesDatedReportAndDeletesDraft', () => {
   assert.equal(fs.existsSync(path.join(env.dir, 's1.entwurf.md')), false);
   assert.match(result.stdout, /Befunde: 3 \(Positiv 1, Reibung 1, Sparpotenzial 1\)\n/);
   assert.match(result.stdout, /Kosten der Retrospektive: /);
-  assert.match(result.stdout, /Workitem-Kandidat: keiner\n/);
+  assert.doesNotMatch(result.stdout, /Workitem/);
   assert.ok(result.stdout.includes(`Vormerken: git add "docs/wishes/${localDate()}-planung.md"`));
 });
 

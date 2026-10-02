@@ -87,6 +87,6 @@ Deine letzte Aktion: Schreib mit `Write` pro bearbeiteter Stelle einen Eintrag a
 
 - `status`: `changed` (geändert) | `unchanged` (nicht geändert) | `human-question` (frage an den menschen).
 - `reason` ist Pflicht bei `unchanged` und `human-question`.
-- `change`: Pflicht bei `changed`, (auch im Folge-Modus mit `Vorschläge:`): ein bis drei Sätze in Klartext, was sich in der Spec geändert hat, ohne Kürzel, höchstens 400 Zeichen. Bei `unchanged` steht `reason` ebenfalls in Klartext ohne Kürzel, höchstens 400 Zeichen.
+- `change`: Pflicht bei `changed` (auch im Folge-Modus mit `Vorschläge:`): ein bis drei Sätze in Klartext, was sich in der Spec geändert hat, ohne Kürzel, höchstens 400 Zeichen. Bei `unchanged` steht `reason` ebenfalls in Klartext ohne Kürzel, höchstens 400 Zeichen.
 - `evidence`: nur bei `changed` mit neuem Verhalten nach Regel 3, der Beleg wörtlich wie im R-Eintrag; sonst lässt du das Feld weg.
 - `questions`: die gebündelten Fragen; ohne Fragen `[]`.

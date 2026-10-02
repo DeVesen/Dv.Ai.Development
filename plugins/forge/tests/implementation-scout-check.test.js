@@ -8,7 +8,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'review-flow.js');
-const FINDING = '- [risks · red] Zitat: „x“ · Konsequenz: k · Begründung: b';
+const FINDING = '- [risks · red] Zitat: \u201Ex\u201C · Konsequenz: k · Begründung: b';
 const AGGREGATE = [
   'STATUS clean=false red=1 yellow=1 green=1 failed=-', '=== REPORT ===', 'Tabelle', '=== REWORK ===',
   '### 🔴 src/a.js (risks)', FINDING, '', '### 🟡 src/b.js (design)', FINDING, '', '### 🟢 src/c.js (tests)', FINDING, '',

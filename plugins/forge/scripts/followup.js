@@ -6,6 +6,8 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 const { scanPlan, slugOf } = require('./plan-tasks');
+const { REWORK_MARK, reworkHeading } = require('./aggregate-findings');
+const { writeSavedClosing } = require('./lib/saved-closing');
 
 const ROLES = ['spec-review', 'plan-review', 'review'];
 const ART_OF_ROLE = { 'spec-review': 'spec-review', 'plan-review': 'plan-review', review: 'implementation-review' };
@@ -18,7 +20,6 @@ const PROPOSAL = /^\d+\.\s+(.*)$/;
 const PREFERRED_LINE = /^\*\*Bevorzugt:/;
 const PREFERRED = /^\*\*Bevorzugt: (\d+)\*\*/;
 const FENCE = /^\s*(```|~~~)/;
-const REWORK_MARK = '=== REWORK ===';
 
 class FollowupError extends Error {}
 
@@ -102,10 +103,9 @@ function keep(role, slug, numbers, cwd = process.cwd()) {
     return;
   }
   const blocks = scoutBlocks(readLines(path.join(dir, 'scout.md')));
-  const aggregate = kept.map((group) => [`### ${group.severity} ${group.location} (${group.reviewers.join(', ')})`, ...group.findings].join('\n'));
-  const scout = kept.map((group) => blocks.get(`${group.severity} ${group.location}`).join('\n').trimEnd());
-  fs.writeFileSync(path.join(dir, 'aggregate.md'), `${REWORK_MARK}\n${aggregate.join('\n\n')}\n`);
-  fs.writeFileSync(path.join(dir, 'scout.md'), `## Scout-Vorschläge\n\n${scout.join('\n\n')}\n`);
+  const aggregate = kept.map((group) => [reworkHeading(group.severity, group.location, group.reviewers), ...group.findings].join('\n'));
+  const scout = kept.map((group) => blocks.get(`${group.severity} ${group.location}`));
+  writeSavedClosing(dir, aggregate, scout);
 }
 
 function latest(repo, slug, roles) {

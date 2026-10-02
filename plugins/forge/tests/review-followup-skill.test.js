@@ -54,6 +54,13 @@ test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => 
   }
 });
 
+test('reviewFollowupFlow_ImplementationStatus_NamesNoGroupNumbersOfTheOldSave', () => {
+  // keep nummeriert die verbliebenen Gruppen ab 1 neu; alte Nummern im Status wären danach falsch.
+  const text = readText(FLOW);
+  assert.ok(text.includes('dasselbe Urteil mit `offen` nicht leer → `sauber nach Nach-Review, nicht gewählte Gruppen bleiben offen`'));
+  assert.equal(text.includes('Gruppen <offen>'), false);
+});
+
 test('reviewFollowupSkill_Body_ShowsReportFileBeforeCleanupAndKeepsPriority', () => {
   const { body } = readMarkdown(SKILL);
   const show = body.indexOf('scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<W>/abschluss/bericht.md"');

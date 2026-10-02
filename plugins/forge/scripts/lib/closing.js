@@ -4,13 +4,12 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { REWORK_MARK } = require('./groups');
 const { loadGroups } = require('../followup');
 const { scoutBlocks } = require('./scout-check');
 const { openFromRounds, openFromFollowup, answeredKeys } = require('./open-groups');
-const { ROUND_ONE, ROUND_TWO, CLOSING, readJson, readLines, readAgentJson, writeText } = require('./flow-files');
+const { ROUND_ONE, ROUND_TWO, CLOSING, readJson, readLines, readAgentJson } = require('./flow-files');
+const { writeSavedClosing } = require('./saved-closing');
 
-const SCOUT_HEADING = '## Scout-Vorschläge';
 const BEFORE = 'sicherung-vorher';
 
 function isFollowup(options) {
@@ -38,15 +37,11 @@ function scoutBlocksOf(options) {
   return blocks;
 }
 
-// Einziger Schreiber des Formats, das followup.js save/loadGroups liest: <W>/abschluss/ wird geleert, dann
-// aggregate.md mit den Gruppen-Blöcken (Text) und, falls vorhanden, scout.md mit den Scout-Blöcken (Zeilenlisten).
+// <W>/abschluss/ wird geleert und über saved-closing.js neu geschrieben, denselben Schreiber wie followup.js keep.
 function writeClosingFiles(workspace, aggregateBlocks, scouted) {
   const dir = path.join(workspace, CLOSING);
   fs.rmSync(dir, { recursive: true, force: true });
-  writeText(path.join(dir, 'aggregate.md'), [REWORK_MARK, ...aggregateBlocks].join('\n\n'));
-  if (scouted.length > 0) {
-    writeText(path.join(dir, 'scout.md'), [SCOUT_HEADING, '', scouted.map((block) => block.join('\n').trimEnd()).join('\n\n')].join('\n'));
-  }
+  writeSavedClosing(dir, aggregateBlocks, scouted);
   return dir;
 }
 

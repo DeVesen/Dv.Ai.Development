@@ -137,6 +137,19 @@ test('implementationReview_CommitsAfterReport_WritesPlainHint', () => {
   assert.match([].concat(out.WARN).join('\n'), /nach dem Umsetzungsbericht/i);
 });
 
+test('implementationReview_UnknownReportState_WritesPlainUnknownHint', () => {
+  // Arrange: Umsetzungsbericht mit einem Stand, den es im Repo nicht gibt.
+  const repo = planRepo();
+  commitFile(repo, 'docs/forge/demo/umsetzung.md', '# Umsetzung\n\n## Stand\n- Stand: deadbeef\n- Gesamtlauf: keiner\n', 'docs: report');
+  // Act
+  const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~1'));
+  // Assert: der Klartext aus Spec 4.3, die WARN-Zeile bleibt.
+  const notes = hints(out);
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /^Der Stand deadbeef des Umsetzungsberichts ließ sich nicht prüfen \(.+\)\. Ob Commits nach dem Bericht fehlen, ist unbekannt\.$/);
+  assert.match([].concat(out.WARN).join('\n'), /Stand deadbeef des Umsetzungsberichts nicht prüfbar: /);
+});
+
 test('implementationReview_NoReportAtAll_WritesEmptyHintList', () => {
   const repo = planRepo();
   const out = values(run(repo, 'implementation-review', 'docs/forge/demo/plan.md', '--base', 'HEAD~1'));

@@ -7,6 +7,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { makeRepo, commitFile } = require('./lib/git-repo');
 const followup = require('../scripts/followup.js');
+const { writeClosingFiles } = require('../scripts/lib/closing.js');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'followup.js');
 const AGGREGATE = [
@@ -216,6 +217,29 @@ test('keep_BothGroups_KeepsCodeFenceInsideScoutBlock', () => {
   followup.keep('plan-review', 'demo', '1,2', repo);
   assert.equal(followup.loadGroups(dir).length, 2);
   assert.ok(fs.readFileSync(path.join(dir, 'scout.md'), 'utf8').includes('```js\n1. kein Vorschlag, nur Code\n```'));
+});
+
+test('keep_BothGroups_WritesTheSameFilesAsWriteClosingFiles', () => {
+  // Arrange: dieselben zwei Gruppen einmal per keep, einmal per writeClosingFiles geschrieben.
+  const repo = makeRepo();
+  const dir = writeSave(repo, 'plan-review', 'demo', '2026-09-28T10:00:00.000Z');
+  const workspace = fs.mkdtempSync(path.join(repo, 'w-'));
+  const aggregateLines = AGGREGATE.split('\n');
+  const aggregateBlocks = [
+    ['### \u{1F534} Task 2 (buildability, feasibility)', ...aggregateLines.slice(5, 7)].join('\n'),
+    aggregateLines.slice(8, 10).join('\n'),
+  ];
+  const scoutLines = SCOUT.split('\n');
+  const scoutBlocks = [scoutLines.slice(2, 10), scoutLines.slice(10, 14)];
+  // Act
+  followup.keep('plan-review', 'demo', '1,2', repo);
+  const closingDir = writeClosingFiles(workspace, aggregateBlocks, scoutBlocks);
+  // Assert: Byte für Byte gleich, samt Leerzeilen und abschließendem Zeilenumbruch.
+  for (const name of ['aggregate.md', 'scout.md']) {
+    assert.equal(fs.readFileSync(path.join(dir, name), 'utf8'), fs.readFileSync(path.join(closingDir, name), 'utf8'), name);
+  }
+  assert.ok(fs.readFileSync(path.join(dir, 'aggregate.md'), 'utf8').startsWith('=== REWORK ===\n\n### '));
+  assert.deepEqual(followup.loadGroups(dir).map((group) => [group.number, group.location, group.preferred]), [[1, 'Task 2', 2], [2, 'AC-03', 1]]);
 });
 
 test('keep_NoMatchingNumber_RemovesTheSave', () => {

@@ -18,7 +18,6 @@ Prüfe auf die Marker:
 ```markdown
 <!-- test-conventions:dotnet-xunit START — managed by `dotnet-xunit-conventions bootstrap`, do not hand-edit inside markers -->
 ## Test-Konventionen: .NET/xUnit — gilt für JEDEN Agenten (auch dispatchte Subagenten)
-Subagenten laden Skills nur, wenn der Dispatch-Prompt sie nennt (`/name` bzw. „nutze Skill X“), sehen aber immer CLAUDE.md — darum steht der handlungsfähige Kern hier inline.
 1. AAA je Test (`// Arrange` / `// Act` / `// Assert`).
 2. Naming: `<Method>_<AusgangssituationUndEingabe>_<ErwartetesErgebnis>`. Kein `WhenCalled`/`WithInput`/`ReturnsResult`.
 3. Neue Tests: xUnit v3 + FluentAssertions + Moq. Interfaces via `Mock<T>` (Setup in Arrange, Verify in Assert).
@@ -27,7 +26,7 @@ Subagenten laden Skills nur, wenn der Dispatch-Prompt sie nennt (`/name` bzw. �
 6. Mehrstufige Testdaten (über Fremdschlüssel verkettete Entities, feste Anlege-Reihenfolge): über eine wiederverwendbare, testprojekt-lokale Bau-Hilfe erzeugen, gegliedert nach fachlicher Gruppe — nicht Entity für Entity in einer langen Arrange-Methode. Konvention als XML-Doc auf der Builder-Klasse. Wächst bei Bedarf mit (YAGNI).
 7. Bestand respektieren: bestehende MSTest/NUnit-Klassen erweitern erlaubt, Framework behalten; KEINE Mitläufer-Migration ohne ausdrücklichen Wunsch.
 8. superpowers: Der Controller injiziert diese Konventionen in jeden Implementer-/Fix-Dispatch (Global-Constraints) und in die Reviewer-Lens.
-9. Verifikation: Tests grün über den Testbefehl des Projekts (dv-forge `Test:` bzw. die dort genannten Skripte), genau so, kein anderes Werkzeug mit gleichem Zweck; ein direkter Aufruf nur angekündigt zur Fehlerdiagnose, er zählt nie als grün.
+9. Verifikation: grün nur über den Testbefehl des Projekts (dv-forge `Test:`); direkter Aufruf nur angekündigt zur Diagnose.
 Details: Skill `dotnet-xunit-conventions`.
 <!-- test-conventions:dotnet-xunit END -->
 ```

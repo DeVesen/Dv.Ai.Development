@@ -18,7 +18,6 @@ Prüfe auf die Marker:
 ```markdown
 <!-- test-conventions:angular-jest START — managed by `angular-testing-jest-conventions bootstrap`, do not hand-edit inside markers -->
 ## Test-Konventionen: Angular/Jest — gilt für JEDEN Agenten (auch dispatchte Subagenten)
-Subagenten laden Skills nur, wenn der Dispatch-Prompt sie nennt (`/name` bzw. „nutze Skill X“), sehen aber immer CLAUDE.md — darum steht der handlungsfähige Kern hier inline.
 1. AAA je Test (`// Arrange` / `// Act` / `// Assert`).
 2. Naming: `<method>_<AusgangssituationUndEingabe>_<ErwartetesErgebnis>` im `it(...)`. Kein `should work`.
 3. Runner Jest + TestBed. Spies: `jest.fn()`/`jest.spyOn()`/`jest.mocked()` — NICHT `jasmine.createSpyObj`. `mockReturnValue`/`mockResolvedValue`, `expect.objectContaining`.
@@ -26,7 +25,7 @@ Subagenten laden Skills nur, wenn der Dispatch-Prompt sie nennt (`/name` bzw. �
 5. Magic-Strings: mehrfach genutzte API-Verträge (Routen, Feldnamen) → benannte Konstante.
 6. Bestand respektieren: bestehende `it('should …')` nicht umbenennen; neue `it` nach Schema. Keine Mock-Lib-/Runner-Migration ohne ausdrücklichen Wunsch.
 7. superpowers: Der Controller injiziert diese Konventionen in jeden Implementer-/Fix-Dispatch (Global-Constraints) und in die Reviewer-Lens.
-8. Verifikation: Tests grün über den Testbefehl des Projekts (dv-forge `Test:` bzw. die dort genannten Skripte), genau so, kein anderes Werkzeug mit gleichem Zweck; ein direkter Aufruf nur angekündigt zur Fehlerdiagnose, er zählt nie als grün.
+8. Verifikation: grün nur über den Testbefehl des Projekts (dv-forge `Test:`); direkter Aufruf nur angekündigt zur Diagnose.
 Details: Skill `angular-testing-jest-conventions`.
 <!-- test-conventions:angular-jest END -->
 ```

@@ -49,6 +49,12 @@ test('scoutCheck_ImplementationReviewShorthandOrOverlength_Invalid', () => {
   assert.equal(check(SCOUT.replace('Fehler wird verschluckt', 'Fehler')), 'SCOUT ungültig: 🔴 src/a.js: Titel hat 1 Wörter statt 2 bis 6\n');
 });
 
+test('scoutCheck_DescriptionAndRecommendationNameOtherTask_Ok', () => {
+  const scout = SCOUT.replace('Ein Fehler beim Speichern bleibt unbemerkt.', 'Task 1 legt die Datei schon an.')
+    .replace('Den Fehler melden, weil', 'Wie in Task 1 den Fehler melden, weil');
+  assert.equal(check(scout), 'SCOUT ok\n');
+});
+
 test('scoutCheck_OtherRoleWithoutScoutInput_FailsLikeBefore', () => {
   assert.match(check(SCOUT, null), /Datei fehlt|SCOUT/);
 });

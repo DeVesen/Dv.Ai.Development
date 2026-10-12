@@ -530,6 +530,40 @@ test('reviewFollowup_Alle_ChoosesAllGroupsWithPreferredProposal', () => {
   assert.deepEqual([].concat(out.WAHL), ['1 · 🔴 Task 2 · Vorschlag 2', '2 · 🟡 AC-03 · Vorschlag 1']);
 });
 
+const SCRIPT_AGGREGATE = [
+  '=== REWORK ===',
+  '### 🔴 Task 3 (skript:anker)',
+  '- [skript:anker · red] Zitat: „a“ · Konsequenz: k1 · Begründung: b1',
+  '',
+  '### 🟡 Task 4 (risks, skript:anker)',
+  '- [risks · yellow] Zitat: „b“ · Konsequenz: k2 · Begründung: b2',
+  '- [skript:anker · red] Zitat: „c“ · Konsequenz: k3 · Begründung: b3',
+  '',
+].join('\n');
+const SCRIPT_SCOUT = [
+  '## Scout-Vorschläge', '',
+  '### 🔴 Task 3', '1. Datei anlegen', '**Bevorzugt: 1** — einfach', '',
+  '### 🟡 Task 4', '1. Absichern', '**Bevorzugt: 1** — einfach', '',
+].join('\n');
+
+test('reviewFollowup_GroupOnlyFromScriptCheck_ExitsZeroWithoutReviewers', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', SCRIPT_AGGREGATE, SCRIPT_SCOUT);
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', '1:1');
+  assert.equal(result.status, 0, result.stderr);
+  const out = values(result);
+  assert.equal(out.aktiv, '');
+  assert.equal(out.gruppen, '1');
+});
+
+test('reviewFollowup_GroupWithMixedReviewers_KeepsOnlyRealReviewers', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', SCRIPT_AGGREGATE, SCRIPT_SCOUT);
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle');
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(values(result).aktiv, 'risks');
+});
+
 test('reviewFollowup_B_BehavesLikeAlle', () => {
   const repo = planRepo();
   saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');

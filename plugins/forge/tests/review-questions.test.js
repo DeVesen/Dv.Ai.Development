@@ -153,8 +153,8 @@ test('bundleShapeProblem_OptionCountOrLabels_Invalid', () => {
 });
 
 test('bundleShapeProblem_OptionTextWithShorthand_NamesOption', () => {
-  const options = [{ label: 'a', text: 'Task 3 ändern.', consequence: 'y.' }, { label: 'b', text: 'x.', consequence: 'y.' }];
-  assert.equal(bundleShapeProblem(bundle({ options }), 0), 'Frage 1: options[0].text: Kürzel Task 3');
+  const options = [{ label: 'a', text: 'AC-03 ändern.', consequence: 'y.' }, { label: 'b', text: 'x.', consequence: 'y.' }];
+  assert.equal(bundleShapeProblem(bundle({ options }), 0), 'Frage 1: options[0].text: Kürzel AC-03');
 });
 
 test('bundleShapeProblem_RecommendationWithoutMatchingOption_Invalid', () => {

@@ -59,6 +59,18 @@ test('anchors_ModifyFileMissing_RedUnlessCreatedEarlier', () => {
   assert.ok(text.includes('- ❌ Modify `src/weg.js` · `x` — Datei fehlt'), text);
 });
 
+test('anchors_NewTestFileWithoutAnchorEarlier_CountsAsCreatedForLaterModify', () => {
+  const text = anchorsOf({}, ['- Test: `tests/neu.test.js`'], ['- Modify: `tests/neu.test.js` · `eins`']);
+  assert.ok(text.includes('- ✅ Test `tests/neu.test.js` — existiert noch nicht'), text);
+  assert.ok(text.includes('- ✅ Modify `tests/neu.test.js` · `eins` — angelegt in Task 1 (Anker nicht geprüft)'), text);
+});
+
+test('anchors_ExistingTestFileEarlier_DoesNotCountAsCreated', () => {
+  const text = anchorsOf({ 'tests/a.test.js': "test('eins', () => {});\n" },
+    ['- Test: `tests/a.test.js` · `eins`'], ['- Modify: `tests/weg.test.js` · `x`']);
+  assert.ok(text.includes('- ❌ Modify `tests/weg.test.js` · `x` — Datei fehlt'), text);
+});
+
 test('anchors_ModifyWithoutAnchor_MarksRed', () => {
   const text = anchorsOf({ 'src/a.js': SOURCE }, ['- Modify: `src/a.js`']);
   assert.ok(text.includes('- ❌ Modify `src/a.js` — Anker fehlt'), text);

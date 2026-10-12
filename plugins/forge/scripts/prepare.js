@@ -12,6 +12,7 @@ const { writePackage, PackageError } = require('./review-package');
 const { ConfigError, readConfig, branchFor } = require('./forge-config');
 const { archivePath } = require('./ledger');
 const { writeAnchors } = require('./plan-anchors');
+const { isScriptReviewer } = require('./lib/reviewer-names');
 const { ART_OF_ROLE, FollowupError, latest, loadGroups, rolesFor, slugFor } = require('./followup');
 
 const USAGE = [
@@ -360,7 +361,7 @@ function reworkText(chosen) {
 
 // Reicht --spec und --base in der Form weiter, die der Original-Preparer erwartet.
 function originalCall(art, artifact, flags, affected) {
-  const only = { '--only': [affected.join(',')] };
+  const only = affected.length > 0 ? { '--only': [affected.join(',')] } : {};
   const spec = flags['--spec']?.[0];
   if (art === 'plan-review') return { positional: spec ? [artifact, spec] : [artifact], flags: only };
   if (art === 'implementation-review') {
@@ -386,7 +387,8 @@ function prepareReviewFollowup({ positional, flags }) {
   if (!saved) throw new PrepareError(`Keine Scout-Vorschläge gesichert für ${slug}. Zuerst das Review laufen lassen.`);
   const groups = loadGroups(saved.dir);
   const chosen = parseSelection(positional[1], groups);
-  const affected = [...new Set(chosen.flatMap(({ group }) => group.reviewers))];
+  // Skript-Prüfungen stehen als Pseudo-Reviewer in den Gruppen, sind aber kein Wert für --only.
+  const affected = [...new Set(chosen.flatMap(({ group }) => group.reviewers))].filter((name) => !isScriptReviewer(name));
   const art = ART_OF_ROLE[saved.role];
   const values = PREPARERS[art](originalCall(art, artifact, flags, affected));
   const selection = path.join(values.W, 'auswahl.md');
@@ -398,6 +400,7 @@ function prepareReviewFollowup({ positional, flags }) {
   if (art !== 'implementation-review') fs.copyFileSync(artifact, path.join(values.W, 'dokument-vorher.md'));
   const chosenNumbers = chosen.map(({ group }) => group.number);
   values.original = art;
+  if (affected.length === 0) values.aktiv = '';
   values.F = selection;
   values.gruppen = chosenNumbers.join(',');
   values.offen = groups.filter((group) => !chosenNumbers.includes(group.number)).map((group) => group.number).join(',');

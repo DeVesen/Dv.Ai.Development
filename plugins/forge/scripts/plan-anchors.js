@@ -7,6 +7,7 @@ const { toPosix } = require('./lib/posix');
 const { PlanError, checkedPlan, markFences, parseFileLine, taskTitle } = require('./plan-tasks');
 
 const MAX_HITS = 5;
+const NEW_FILE = 'existiert noch nicht';
 const MEMBER_SEPARATOR = /\.|::|#/;
 
 function isInside(root, relative) {
@@ -53,9 +54,9 @@ function formatHits(hits) {
 }
 
 function checkUnanchored(entry, lines) {
-  if (entry.kind === 'Create') return lines ? { mark: '❌', text: 'existiert schon' } : { mark: '✅', text: 'existiert noch nicht' };
+  if (entry.kind === 'Create') return lines ? { mark: '❌', text: 'existiert schon' } : { mark: '✅', text: NEW_FILE };
   if (entry.kind === 'Test') {
-    return lines ? { mark: '❌', text: 'bestehende Testdatei ohne Anker' } : { mark: '✅', text: 'existiert noch nicht' };
+    return lines ? { mark: '❌', text: 'bestehende Testdatei ohne Anker' } : { mark: '✅', text: NEW_FILE };
   }
   return { mark: '❌', text: 'Anker fehlt' };
 }
@@ -93,9 +94,14 @@ function excerpt(root, entry, number) {
   return [heading, ...body].join('\n');
 }
 
-function remember(seen, entry, number) {
+// Angelegt hat eine Datei jede Create-Zeile und jede Test-Zeile ohne Anker auf eine Datei, die es noch nicht gibt.
+function createsFile(entry, result) {
+  return entry.kind === 'Create' || (entry.kind === 'Test' && result.text === NEW_FILE);
+}
+
+function remember(seen, entry, number, result) {
   const state = seen.get(entry.path) ?? { created: null, last: null };
-  if (entry.kind === 'Create' && state.created === null) state.created = number;
+  if (createsFile(entry, result) && state.created === null) state.created = number;
   state.last = number;
   seen.set(entry.path, state);
 }
@@ -122,7 +128,7 @@ function checkTasks(root, lines, tasks) {
   return tasks.map((task) => {
     const entries = taskEntries(lines, fenced, task);
     const rows = entries.map((entry) => ({ entry, result: checkLine(root, entry, seen.get(entry.path)) }));
-    for (const entry of entries) remember(seen, entry, task.number);
+    for (const { entry, result } of rows) remember(seen, entry, task.number, result);
     return { task, entries, rows };
   });
 }

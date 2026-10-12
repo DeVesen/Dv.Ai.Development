@@ -16,6 +16,10 @@ const LABELS = {
 const SCRIPT_REVIEWER = /^skript(?::|$)/;
 const SCRIPT_LABEL = 'Skript-Prüfung';
 
+function isScriptReviewer(name) {
+  return SCRIPT_REVIEWER.test(name);
+}
+
 function isKnownReviewer(review, name) {
   return SCRIPT_REVIEWER.test(name) || Object.hasOwn(LABELS[review] ?? {}, name);
 }
@@ -25,4 +29,4 @@ function reviewerLabel(review, name) {
   return Object.hasOwn(LABELS[review] ?? {}, name) ? LABELS[review][name] : name;
 }
 
-module.exports = { reviewerLabel, isKnownReviewer };
+module.exports = { reviewerLabel, isKnownReviewer, isScriptReviewer };

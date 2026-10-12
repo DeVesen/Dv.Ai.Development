@@ -502,8 +502,8 @@ test('scoutCheck_SpecReviewWithoutRecommendation_Invalid', () => {
 });
 
 test('scoutCheck_SpecReviewRecommendationWithShorthand_Invalid', () => {
-  const text = PLAIN_SCOUT.replace('Variante eins wählen, weil sie das Risiko senkt.', 'Task 3 ändern.');
-  assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Empfehlung: Kürzel Task 3\n');
+  const text = PLAIN_SCOUT.replace('Variante eins wählen, weil sie das Risiko senkt.', 'AC-03 ändern.');
+  assert.equal(scoutCheckSpec(text), 'SCOUT ungültig: 🔴 AC-04: Empfehlung: Kürzel AC-03\n');
 });
 
 test('rate_AnyRun_WritesExpectedReviewersIntoEinstufung', () => {

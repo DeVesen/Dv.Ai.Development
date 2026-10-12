@@ -27,6 +27,8 @@ Der Plan liegt am Zielpfad aus Plan-Writing, Default `plan.md` im Ordner der Spe
 - Modify: `exakter/pfad.ext:123-145` · `Klasse.methode`
 - Test: `tests/exakter/pfad.ext`
 
+Neue Testdateien listest du als `Create:`, nicht als `Test:`; `Test:` steht für eine bestehende Testdatei und trägt einen Anker.
+
 **Interfaces:**
 - Consumes: <exakte Signaturen aus früheren Tasks>
 - Produces: <exakte Namen, Parameter- und Rückgabetypen für spätere Tasks>

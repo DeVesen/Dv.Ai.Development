@@ -3,7 +3,7 @@
 // Klartext für den Menschen: keine Kürzel der Dokumente, nicht leer, höchstens 400 Zeichen.
 
 const MAX_LENGTH = 400;
-const SHORTHAND = /\bAC-\d+|\bTask \d+|\bR\d+\b|\bF · |\bW · /;
+const SHORTHAND = /\bAC-\d+|\bR\d+\b|\bF · |\bW · /;
 
 function plainProblem(text) {
   const value = typeof text === 'string' ? text.trim() : '';

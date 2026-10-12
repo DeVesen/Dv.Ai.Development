@@ -6,7 +6,7 @@ Claude-Code-Plugins dieses Repositories. Ein Plugin bündelt **Skills** (Wissen 
 
 | Plugin | Version | Zweck |
 |---|---|---|
-| [`dv-forge`](forge/README.md) | 0.18.1 | Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops |
+| [`dv-forge`](forge/README.md) | 0.19.0 | Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops |
 | [`dv-dotnet`](dotnet/README.md) | 1.2.0 | .NET-Skills: Toolchain, EF-Migrations, xUnit-Konventionen |
 | [`dv-angular`](angular/README.md) | 1.2.0 | Angular-Skills: Komponenten, Signals, Routing, Forms, Testing, Toolchain |
 | [`dv-craft`](craft/README.md) | 1.0.1 | Software-Design-Skills: Clean Code, Architekturstile, Modulith, Testing |

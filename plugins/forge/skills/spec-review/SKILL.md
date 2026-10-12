@@ -1,7 +1,6 @@
 ---
 name: spec-review
 description: Use when a finished spec.md should run through the dv-forge review of parallel reviewers, one rework and one verification round, with a script deciding colors, stops and status.
-disable-model-invocation: true
 argument-hint: <spec.md> [quelle.md] [--only <reviewer,...>]
 ---
 

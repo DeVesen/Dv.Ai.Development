@@ -1,7 +1,6 @@
 ---
 name: implementation
 description: Use when a reviewed dv-forge plan.md should be implemented task by task with a fresh subagent per task, a task review with fix loop after each task and one final review, strictly sequential.
-disable-model-invocation: true
 argument-hint: <plan.md>
 ---
 

@@ -95,11 +95,11 @@ test('selfCheck_Checklist_CoveragePlaceholdersConsistencyFormat', () => {
 const SKILL = path.join(SKILL_DIR, 'SKILL.md');
 const REFERENCES = ['plan-format.md', 'task-rules.md', 'self-check.md', 'context-reading.md'];
 
-test('skill_Frontmatter_ManualOnlyWithArgumentHint', () => {
+test('skill_Frontmatter_ModelInvocableWithArgumentHint', () => {
   const { fields } = readMarkdown(SKILL);
   assert.equal(fields.name, 'plan-writing');
   assert.match(fields.description, /^Use when/);
-  assert.equal(fields['disable-model-invocation'], 'true');
+  assert.equal(fields['disable-model-invocation'], undefined);
   assert.equal(fields['argument-hint'], '<spec.md> [ziel.md]');
 });
 

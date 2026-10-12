@@ -1,7 +1,6 @@
 ---
 name: plan-writing
 description: Use when an approved dv-forge spec.md has to become an implementation plan with exact files, interfaces and test-first steps before any code is written.
-disable-model-invocation: true
 argument-hint: <spec.md> [ziel.md]
 ---
 

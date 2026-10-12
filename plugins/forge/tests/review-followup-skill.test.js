@@ -10,11 +10,11 @@ const DIR = path.join(__dirname, '..', 'skills', 'review-followup');
 const SKILL = path.join(DIR, 'SKILL.md');
 const FLOW = path.join(DIR, 'references', 'flow.md');
 
-test('reviewFollowupSkill_Frontmatter_ManualOnlyWithArgumentHint', () => {
+test('reviewFollowupSkill_Frontmatter_ModelInvocableWithArgumentHint', () => {
   const { fields } = readMarkdown(SKILL);
   assert.equal(fields.name, 'review-followup');
   assert.match(fields.description, /^Use when/);
-  assert.equal(fields['disable-model-invocation'], 'true');
+  assert.equal(fields['disable-model-invocation'], undefined);
   assert.equal(fields['argument-hint'], '<spec.md|plan.md> <alle|auswahl>');
 });
 

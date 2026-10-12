@@ -8,14 +8,14 @@ const { readMarkdown, wordCount } = require('./lib/markdown');
 const SKILL = path.join(__dirname, '..', 'skills', 'spec-review', 'SKILL.md');
 const AGENTS = ['completeness', 'consistency', 'feasibility', 'clarity', 'profiles'].map((name) => `dv-forge:spec-review-${name}`);
 
-test('skill_Frontmatter_ManualOnlyWithoutRoundsArgument', () => {
+test('skill_Frontmatter_ModelInvocableWithoutRoundsArgument', () => {
   // Act
   const { fields } = readMarkdown(SKILL);
 
   // Assert
   assert.equal(fields.name, 'spec-review');
   assert.match(fields.description, /^Use when/);
-  assert.equal(fields['disable-model-invocation'], 'true');
+  assert.equal(fields['disable-model-invocation'], undefined);
   assert.equal(fields['argument-hint'], '<spec.md> [quelle.md] [--only <reviewer,...>]');
 });
 

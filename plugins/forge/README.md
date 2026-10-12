@@ -21,6 +21,8 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 | `domain-modeling` | Unscharfe oder widersprüchliche Fachbegriffe klären, ADRs anstoßen |
 | `merge-conflict-resolution` | Gestoppten Merge oder Rebase auflösen |
 
+Das Modell darf alle Skills außer `init`, `start-work`, `finish-work` und `spec-whiteboarding-with-docs` selbst aufrufen, auch aus Sub-Agenten, damit ein Orchestrator Review-, Plan- und Umsetzungsabläufe verketten kann. Die vier gesperrten Skills tragen `disable-model-invocation: true`: Sie berühren Branches, Worktrees und Push bzw. führen einen Dialog mit dem Nutzer. Per `/dv-forge:<skill>` startet der Nutzer jeden Skill weiterhin selbst.
+
 ## Agents
 
 Unter [`agents/`](agents) liegen die Spezialisten der Review-Loops, gruppiert nach Stufe:

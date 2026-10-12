@@ -8,11 +8,11 @@ const { readMarkdown, wordCount } = require('./lib/markdown');
 const SKILL = path.join(__dirname, '..', 'skills', 'implementation-review', 'SKILL.md');
 const REVIEWERS = ['acceptance', 'plan-fidelity', 'design', 'tests', 'risks'];
 
-test('implementationReviewSkill_Frontmatter_ManualOnlyWithArgumentHint', () => {
+test('implementationReviewSkill_Frontmatter_ModelInvocableWithArgumentHint', () => {
   const { fields } = readMarkdown(SKILL);
   assert.equal(fields.name, 'implementation-review');
   assert.match(fields.description, /^Use when/);
-  assert.equal(fields['disable-model-invocation'], 'true');
+  assert.equal(fields['disable-model-invocation'], undefined);
   assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]');
 });
 

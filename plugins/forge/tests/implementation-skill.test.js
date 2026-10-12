@@ -53,11 +53,11 @@ test('finalReview_Wave_OneFixerOneReReview', () => {
   assert.match(text, /Eine zweite Welle gibt es nicht/);
 });
 
-test('skill_Frontmatter_ManualOnlyWithArgumentHint', () => {
+test('skill_Frontmatter_ModelInvocableWithArgumentHint', () => {
   const { fields } = readMarkdown(SKILL);
   assert.equal(fields.name, 'implementation');
   assert.match(fields.description, /^Use when/);
-  assert.equal(fields['disable-model-invocation'], 'true');
+  assert.equal(fields['disable-model-invocation'], undefined);
   assert.equal(fields['argument-hint'], '<plan.md>');
 });
 

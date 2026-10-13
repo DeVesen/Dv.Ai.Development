@@ -12,7 +12,7 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`
 Du richtest nur den Ort der Umsetzung ein. Ob ein Worktree entsteht und wie der Branch heißt, entscheidet die Projekt-Einstellung, nie du. Du setzt nichts um.
 
 ## Ablauf
-1. `node "<PLUGIN>/scripts/prepare.js" implementation $ARGUMENTS`. Exit ungleich 0: Meldung wörtlich ausgeben, Ende. Die Zeilen `<Name>=<Wert>` liefern `P`, `S` und `slug`.
+1. Erstes Wort von `$ARGUMENTS` = Plan-Pfad, optional zweites = Spec-Pfad. Weiterer Text ist Zusatz: nie in eine Kommandozeile, nur an Agents. `node "<PLUGIN>/scripts/prepare.js" implementation $ARGUMENTS` mit nur den Pfaden. Exit ungleich 0: Meldung wörtlich ausgeben, Ende. Die Zeilen `<Name>=<Wert>` liefern `P`, `S` und `slug`.
 2. `node "<PLUGIN>/scripts/work.js" start <slug> --spec "<S>" --plan "<P>"`. Exit ungleich 0: Meldung wörtlich ausgeben. Nennt sie nicht committete Dateien, bietest du den Commit an und committest erst nach Ja; dann Schritt 2 wiederholen. Sonst Ende.
 3. Nach der Ausgabe handeln:
 

@@ -59,13 +59,20 @@ function parseArgs(skill, args) {
     index += 1;
     (flags[arg] ??= []).push(args[index].replace(/^@/, ''));
   }
-  if (positional.length === 0 || positional.length > MAX_POSITIONAL[skill]) throw new UsageError('Falsche Zahl an Pfad-Argumenten');
+  if (positional.length === 0 || positional.length > MAX_POSITIONAL[skill]) throw new UsageError(`Falsche Zahl an Pfad-Argumenten: erwartet 1 bis ${MAX_POSITIONAL[skill]} Pfade, übergeben ${positional.length}: ${positional.join(' ')}. Freitext gehört nicht in die Argumente.`);
   return { positional, flags };
 }
 
 function existingFile(file, label = 'Datei') {
   if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw new PrepareError(`${label} nicht gefunden: ${toPosix(file)}`);
   return path.resolve(file);
+}
+
+// Das erste Argument ist der Plan; eine falsche Reihenfolge (z. B. ein Branch-Name zuerst) zeigt die Meldung.
+function planFile(positional) {
+  const plan = path.resolve(positional[0]);
+  if (fs.existsSync(plan) && fs.statSync(plan).isFile()) return plan;
+  throw new PrepareError(`Plan nicht gefunden: ${toPosix(plan)}. Erwartet: erstes Argument ist der Pfad zur plan.md, optional folgt die spec.md. Übergeben: ${positional.join(' ')}`);
 }
 
 function gitRoot(dir) {
@@ -224,7 +231,7 @@ function prepareSpecReview({ positional, flags }) {
 }
 
 function preparePlanReview({ positional, flags }) {
-  const plan = existingFile(path.resolve(positional[0]), 'Plan');
+  const plan = planFile(positional);
   const root = gitRoot(path.dirname(plan));
   const values = { P: plan, S: resolveSpec(plan, positional[1], root), R: root };
   const aktiv = chosenReviewers('plan-review', flags).join(',');
@@ -249,7 +256,7 @@ function preparePlanReview({ positional, flags }) {
 }
 
 function prepareImplementation({ positional }) {
-  const plan = existingFile(path.resolve(positional[0]), 'Plan');
+  const plan = planFile(positional);
   const root = gitRoot(path.dirname(plan));
   return { P: plan, S: resolveSpec(plan, positional[1], root), R: gitRoot(process.cwd()), slug: slugOf(plan) };
 }
@@ -281,7 +288,7 @@ function plainLateHint(late) {
 }
 
 function prepareImplementationReview({ positional, flags }) {
-  const plan = existingFile(path.resolve(positional[0]), 'Plan');
+  const plan = planFile(positional);
   const root = gitRoot(process.cwd());
   const spec = resolveSpec(plan, explicitSpec(positional, flags), gitRoot(path.dirname(plan)));
   const slug = slugOf(plan);

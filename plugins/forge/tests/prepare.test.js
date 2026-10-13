@@ -616,3 +616,15 @@ test('reviewFollowup_BadSelectionText_MentionsAlleInMessage', () => {
   assert.equal(result.status, 2);
   assert.match(result.stderr, /erlaubt: alle, b, <n>/);
 });
+
+test('implementation_FirstArgumentNotAFile_NamesExpectedAndGivenArguments', () => {
+  const result = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'prepare.js'), 'implementation', 'master'], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Plan nicht gefunden: .*master\. Erwartet: erstes Argument ist der Pfad zur plan\.md.*Übergeben: master/);
+});
+
+test('implementation_FreeTextArguments_AreRejectedWithCountAndText', () => {
+  const result = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'prepare.js'), 'implementation', 'a.md', 'b.md', 'Zusatz:', 'TDD'], { encoding: 'utf8' });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /erwartet 1 bis 2 Pfade, übergeben 4: a\.md b\.md Zusatz: TDD\. Freitext gehört nicht in die Argumente/);
+});

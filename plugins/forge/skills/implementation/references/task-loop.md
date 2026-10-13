@@ -17,7 +17,7 @@ Einmal vor Task 1, nur wenn das Ledger noch keine `Basis rot:`-Zeile hat.
 
 ## 1. Umsetzer starten
 1. `BASE` = Ausgabe von `git rev-parse HEAD`.
-2. `node "<PLUGIN>/scripts/plan-tasks.js" brief "<P>" <n> "<W>"`: erste Zeile Brief-Pfad, zweite Zeile `modell=<empfehlung>`. Den Brief änderst du nie.
+2. `node "<PLUGIN>/scripts/plan-tasks.js" brief "<P>" <n> "<W>"`: erste Zeile Brief-Pfad, zweite Zeile `modell=<empfehlung>`. Den Brief änderst du nie, und du gibst dem Umsetzer keine Anweisungen außerhalb des Briefs; eine Abweichung vom Plan ist eine `Urteil:`-Zeile im Ledger.
 3. Weichst du von der Empfehlung ab, schreibst du vorher eine `Urteil:`-Zeile ins Ledger.
 4. Löst du eine Mehrdeutigkeit im Brief auf, schreibst du sie nach `<W>/task-<n>-klarstellung.md`.
 5. Statuszeile `Task <n> von <m> an Umsetzer, Modell <modell>.` Dann ein `Agent`-Aufruf `dv-forge:implementation-implementer` mit diesem `model` und genau diesen Zeilen:

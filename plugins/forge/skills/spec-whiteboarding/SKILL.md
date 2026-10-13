@@ -13,7 +13,7 @@ Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergeb
 2. **Whiteboard.** Kein Code. Skizze über `visualize` nur für Abläufe oder Verzweigungen (Boxen ≤ fünf Wörter, ≤ zwei Farben). Reihenfolgen und Listen bleiben Text.
 3. **Belegpflicht.** Jede Aussage, Empfehlung und Option trägt einen Beleg-Tag: `Aussage` (im Chat zitierbar), `Anhang` (übergebenes Workitem, Bild, Datei) oder `ungeklärt` — dann fragen, nie raten.
 4. **Sperre.** Kein brainstorming, kein Plan, kein Code, bis die Spec geschrieben und bestätigt ist.
-5. **Vor Ort.** Die Spec entsteht im aktuellen Checkout. Kein Branch, kein Worktree.
+5. **Vor Ort.** Kein Branch, kein Worktree, auch bei `Worktree: ja`; das gilt erst für die Umsetzung.
 6. **Format hat Vorrang.** Rundenformat, Spec-Format und Übergabe gelten vor Stil-Regeln anderer Plugins oder Hooks.
 
 ## Ablauf
@@ -22,7 +22,7 @@ Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergeb
 2. **Runden:** je Runde die komplette Frontier im Format aus `references/grill-rounds.md`. Antworten verbuchen, Frontier neu berechnen, bis sie leer ist. Sagt der Mensch „trenn das auf“, gilt `references/split.md`.
 3. **Bestätigen:** Erst bei leerer Frontier Inhalt, Titel und Slug vorlegen, als vollständigen Entwurf. Erst nach ausdrücklicher Bestätigung aller drei schreiben.
 4. **Zielpfad:** `node "<PLUGIN>/scripts/forge-config.js" get Spec-Ablage`, Platzhalter `<datum>` und `<slug>` einsetzen. Existiert der Ordner bereits, nachfragen und einen abweichenden Slug vorschlagen. Nie überschreiben.
-5. **Schreiben:** ausschließlich als Datei am Zielpfad, Format nach `references/spec-format.md`, `Art: frei`. Die Datei ist wortgleich mit dem bestätigten Entwurf. Jede spätere Änderung legst du als Vorher/Nachher vor und schreibst sie erst nach erneuter Bestätigung.
+5. **Schreiben:** ausschließlich als Datei am Zielpfad, Format nach `references/spec-format.md`, `Art: frei`. Die Datei ist wortgleich mit dem bestätigten Entwurf, (`Status`, `Basis` ausgenommen). Vorher Branch-Abgleich, Commit-Regeln: `references/spec-format.md`. Jede spätere Änderung legst du als Vorher/Nachher vor und schreibst sie erst nach erneuter Bestätigung.
 6. **Übergabe:** mit genau diesen vier Punkten enden:
    - Pfad der Spec relativ zum Repo und aktueller Branch
    - kopierbarer Befehl `/dv-forge:spec-review <pfad>`
@@ -39,7 +39,6 @@ Will der Mensch aufhören, gilt die Abbruch-Regel aus `references/grill-rounds.m
 - „Diese Antwort weiß ich auch so“ — ohne Beleg-Tag ist sie `ungeklärt`.
 - „Ich schau kurz im Code nach“ — nicht hier; fragen.
 - „Erst mal nur die wichtigste Frage“ — jede Runde enthält die komplette Frontier.
-- „Den Entwurf zeige ich schon mal“ — erst bei leerer Frontier.
 
 ## Common Mistakes
 

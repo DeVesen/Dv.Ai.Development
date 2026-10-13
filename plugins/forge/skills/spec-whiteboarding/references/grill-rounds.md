@@ -12,6 +12,8 @@ Eine Runde ist eine Nachricht mit der kompletten Frontier. Danach antwortet der 
 
 - Die Nummern laufen über alle Runden fort: Runde 2 beginnt nach der letzten Nummer aus Runde 1.
 - Optionen, falls sinnvoll, stehen knapp in der Frage.
+- Eine unverändert offene Frage aus früherer Runde wiederholst du verkürzt: `Q<n> <Titel> — <Empfehlung>`. Ausgeschrieben wird sie nur, wenn sich die Lage geändert hat.
+- Ändert der Mensch den Umfang, stellst du die Frontier komplett neu auf. Jede ersetzte Frage führst du als `Q<n> entfällt, ersetzt durch Q<m>`, nie als „weiterhin offen“.
 - Genau eine Empfehlung pro Frage. Der Grund ist ausgeschrieben, nicht nur der Tag.
 - Bei `ungeklärt` ist der Grund eine ausgewiesene Vermutung, etwa „Vermutung: gängigster Fall“ oder „Vermutung: kleinster Scope“.
 

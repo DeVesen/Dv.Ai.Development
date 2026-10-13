@@ -155,3 +155,15 @@ test('split_Reference_DetachedSpecsAndResume', () => {
 test('specFormat_Rules_FollowupEntries', () => {
   assert.ok(reference('spec-format.md').includes('schreibt dort F-Einträge `- **F · <Stelle>** — … — Vorschlag <n>: <Begründung>`'));
 });
+
+test('whiteboarding_BranchStatusBasisAndRepeatedQuestions_AreRuled', () => {
+  const read = (...parts) => require('node:fs').readFileSync(path.join(__dirname, '..', 'skills', 'spec-whiteboarding', ...parts), 'utf8');
+  const format = read('references', 'spec-format.md');
+  assert.match(format, /git branch --show-current/);
+  assert.match(format, /git commit -m <Nachricht> -- <Spec-Pfad>/);
+  assert.match(format, /`Status` und `Basis` sind von der Regel/);
+  const rounds = read('references', 'grill-rounds.md');
+  assert.match(rounds, /entfällt, ersetzt durch Q<m>/);
+  assert.match(rounds, /wiederholst du verkürzt/);
+  assert.match(read('SKILL.md'), /auch bei `Worktree: ja`/);
+});

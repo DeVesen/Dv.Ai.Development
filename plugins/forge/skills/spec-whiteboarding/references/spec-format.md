@@ -41,6 +41,11 @@ Die Zeilen unter dem Titel sind Metadaten, kein fachlicher Inhalt, und tragen ke
 - `Art`: `frei` aus `spec-whiteboarding`, `verankert` aus `spec-whiteboarding-with-docs`. Die Art steuert den Spec-Review.
 - `Workitem`: nur, wenn das Projekt Workitem-Nummern nutzt (`Workitem` in den Projekt-Einstellungen ist nicht `keine`). Sonst entfällt die Zeile.
 - `Basis`: Ausgabe von `git rev-parse --short HEAD` beim Schreiben.
+- `Status` und `Basis` sind von der Regel „Datei wortgleich mit dem bestätigten Entwurf“ ausgenommen: Der Entwurf nennt sie `wird beim Schreiben gesetzt`, die Datei trägt die echten Werte.
+
+## Branch und Commit
+- Zu Beginn der Session `git branch --show-current` merken. Vor dem Schreiben und vor jedem Commit erneut; weicht er ab, meldest du es und fragst, bevor du schreibst oder committest. Eine Parallelsession im selben Checkout kann den Branch wechseln oder deine Dateien mitcommitten.
+- Commit nur auf Wunsch, in einem Schritt mit Pfad: `git commit -m <Nachricht> -- <Spec-Pfad>`. Nie stagen und committen getrennt.
 
 ## Nur nach echtem Abbruch
 

@@ -103,3 +103,17 @@ test('implementationTexts_NoTypographicQuotes', () => {
   assert.doesNotMatch(readText(SKILL), TYPOGRAPHIC_QUOTES);
   for (const name of REFERENCES) assert.doesNotMatch(reference(name), TYPOGRAPHIC_QUOTES, name);
 });
+
+test('baseline_BasisRotFlowsFromLedgerToEveryImplementationAgent', () => {
+  const fs = require('node:fs');
+  const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', ...parts), 'utf8');
+  const loop = read('skills', 'implementation', 'references', 'task-loop.md');
+  assert.match(loop, /## 0\. Basis-Lauf/);
+  assert.ok(loop.includes('Basis rot: <W>/basis-rot.md'));
+  assert.match(read('skills', 'implementation', 'references', 'ledger.md'), /^Basis rot: keine \| <Suite> :: <Name>/m);
+  assert.ok(read('skills', 'implementation', 'references', 'final-review.md').includes('`Basis rot: <W>/basis-rot.md`'));
+  assert.ok(readMarkdown(SKILL).body.includes('**Basis-Lauf** nach `task-loop.md`'));
+  for (const agent of ['implementer', 'task-reviewer', 're-reviewer', 'final-reviewer']) {
+    assert.match(read('agents', `implementation-${agent}.md`), /`Basis rot:`/, agent);
+  }
+});

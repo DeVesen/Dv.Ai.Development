@@ -8,6 +8,13 @@ Alles, was du in einen Auftrag schreibst und was ein SubAgent zurückgibt, bleib
 ## Bündeln
 Nennt der Plan mehrere kleine, gleichartige Tasks, etwa dieselbe Einzeilen-Änderung, Konstante oder Feld-Ergänzung in mehreren Dateien, gehen sie gebündelt an einen Umsetzer: ein Brief mit allen Dateien und Änderungen, ein Review über das gemeinsame Diff. Einen eigenen Umsetzer bekommt jeder Task, der eigenes Urteil, eigene Tests oder ein eigenes Review braucht.
 
+## 0. Basis-Lauf
+Einmal vor Task 1, nur wenn das Ledger noch keine `Basis rot:`-Zeile hat.
+1. `node "<PLUGIN>/scripts/forge-config.js" get Test`. Leer: Ledger `Basis rot: nicht ermittelt (Test leer)`, weiter mit Abschnitt 1.
+2. Ein `Agent`-Aufruf `general-purpose` mit `model: sonnet` und den Zeilen `Befehl: <Test-Wert>`, `Repo: <R>`, `Bericht: <W>/basis-rot.md`. Auftrag: den Befehl im Repo auf dem unveränderten Stand ausführen, rote Suiten ein zweites Mal; in den Bericht nur Tests, die in beiden Läufen rot waren, je Zeile `<Suite> :: <vollständiger Testname>`, sonst `keine`. Nichts ändern, nichts committen. Antwort: Anzahl und Pfad.
+3. Ledger: `Basis rot: keine` oder je Test eine Zeile `Basis rot: <Suite> :: <Name>`. Nur dort genannte Tests sind bekannte Ausnahmen, alle anderen roten Tests bleiben Fehler.
+4. Jeder weitere Auftrag an Umsetzer, Fixer, Task-Reviewer, Re-Reviewer und Final-Reviewer bekommt die Zeile `Basis rot: <W>/basis-rot.md`.
+
 ## 1. Umsetzer starten
 1. `BASE` = Ausgabe von `git rev-parse HEAD`.
 2. `node "<PLUGIN>/scripts/plan-tasks.js" brief "<P>" <n> "<W>"`: erste Zeile Brief-Pfad, zweite Zeile `modell=<empfehlung>`. Den Brief änderst du nie.
@@ -18,6 +25,7 @@ Nennt der Plan mehrere kleine, gleichartige Tasks, etwa dieselbe Einzeilen-Ände
    - `Bericht: <W>/task-<n>-report.md`
    - `Repo: <R>`
    - `Klarstellung: <W>/task-<n>-klarstellung.md`, nur wenn es sie gibt
+   - `Basis rot: <W>/basis-rot.md`
    - `Kontext:` ein Satz zur Einordnung; Schnittstellen früherer Tasks, die der Brief nicht kennen kann; Verweise auf geparkte Findings im Bereich dieses Tasks
 6. Merk dir die Agent-ID für die Fix-Runden 1 bis 3.
 7. Es arbeitet nie mehr als ein Umsetzer gleichzeitig, immer im Vordergrund.
@@ -36,7 +44,7 @@ Denselben Auftrag wiederholst du nie unverändert. Fragt der Umsetzer etwas, ant
 
 ## 3. Task-Review
 1. Paket-Pfad = Ausgabe von `node "<PLUGIN>/scripts/review-package.js" <BASE> HEAD "<W>"`. Nie `HEAD~1` als Basis; das schneidet Tasks mit mehreren Commits ab.
-2. `dv-forge:implementation-task-reviewer` mit `Brief:`, `Bericht:`, `Paket:` und `Global Constraints: <Pfad>`; den Pfad liefert einmal pro Umsetzung `node "<PLUGIN>/scripts/plan-tasks.js" header "<P>" "<W>"`.
+2. `dv-forge:implementation-task-reviewer` mit `Brief:`, `Bericht:`, `Paket:`, `Basis rot:` und `Global Constraints: <Pfad>`; den Pfad liefert einmal pro Umsetzung `node "<PLUGIN>/scripts/plan-tasks.js" header "<P>" "<W>"`.
 3. Statuszeile `Task <n>: Review <k> × 🔴, <j> × 🟡.`
 4. Keine offenen Prüfaufträge wie "prüf alle Verwendungen" ohne konkreten Grund, keine Wiederholung der Tests.
 5. Du urteilst nicht vorab. Steht in deinem Auftrag "nicht melden", "höchstens 🟡" oder "der Plan hat das entschieden", streichst du es.
@@ -55,7 +63,7 @@ Eine Runde ist ein Fix-Auftrag plus ein Re-Review; es gibt höchstens 5 Runden:
 - **Runde 1 bis 3:** denselben Umsetzer per `SendMessage` fortsetzen, mit den offenen Findings wörtlich. Geht das nicht, startest du einen frischen Umsetzer mit `Brief:`, `Bericht:` und `Findings:`; die Berichtsdatei ist das Gedächtnis.
 - **Runde 4 und 5:** frischer Umsetzer eine Modellstufe höher, mit `Brief:`, `Bericht:`, `Findings:` und unter `Kontext:` dem Satz: Ein früherer Umsetzer hat diesen Task <k>-mal versucht; er gehört jetzt dir, in der Berichtsdatei steht, was versucht wurde.
 - **In jeder Runde:** Du nennst im Fix-Auftrag die abdeckenden Testdateien. Vor dem Re-Review prüfst du, dass der Fix-Bericht Tests, Befehl und Ausgabe nennt.
-- **Re-Review:** Paket-Pfad = Ausgabe von `review-package.js <FIX_BASE> HEAD "<W>"`, wobei `FIX_BASE` der Stand ist, den die vorige Prüfung sah. Dann `dv-forge:implementation-re-reviewer` mit `Brief:`, `Findings:`, `Bericht:`, `Paket:`. Neue 🔴 im Fix-Diff kommen zu den offenen Findings; Beobachtungen außerhalb werden zurückgestellt.
+- **Re-Review:** Paket-Pfad = Ausgabe von `review-package.js <FIX_BASE> HEAD "<W>"`, wobei `FIX_BASE` der Stand ist, den die vorige Prüfung sah. Dann `dv-forge:implementation-re-reviewer` mit `Brief:`, `Findings:`, `Bericht:`, `Paket:`, `Basis rot:`. Neue 🔴 im Fix-Diff kommen zu den offenen Findings; Beobachtungen außerhalb werden zurückgestellt.
 - **Nach jeder Runde:** `Task <n>: Fix-Runde <r>/5 (…)` ins Ledger und die Statuszeile `Task <n>: Fix-Runde <r> von 5, <k> offen.`
 
 Du behebst nie selbst etwas. Dein Kontext bleibt für die Koordination frei, und ein eigener Fix ginge ungeprüft durch.

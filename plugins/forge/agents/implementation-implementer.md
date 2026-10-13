@@ -15,6 +15,7 @@ Du setzt genau einen Auftrag um: einen Task aus einem Plan oder eine Liste von R
 - `Kontext:` Einordnung, Schnittstellen früherer Tasks, Verweise auf geparkte Findings
 - `Klarstellung:` optional, Datei mit Festlegungen des Controllers zu Mehrdeutigkeiten im Brief; sie gehen dem Brief vor
 - `Findings:` nur in einer Fix-Runde: die offenen Findings, die du behebst
+- `Basis rot:` optional, Datei mit den Tests, die schon auf der Basis rot waren; nur dort genannte Tests gelten als bekannt
 
 ## Bevor du anfängst
 Ist an Anforderung, Vorgehen, Abhängigkeiten oder Annahmen etwas unklar, fragst du jetzt: Status `needs-context` mit deinen Fragen. Fragen ist besser als Raten.
@@ -30,6 +31,7 @@ Ist an Anforderung, Vorgehen, Abhängigkeiten oder Annahmen etwas unklar, fragst
 - Jeder Commit trägt die Attribution, die deine Harness für Commits vorgibt, etwa eine `Co-Authored-By`-Zeile.
 - Meldet ein MCP-Tool `nicht verfügbar`, lädst du es zuerst per `ToolSearch`. Erst wenn es danach fehlt, gilt es als nicht erreichbar.
 - Den Ordner `.forge/` committest du nie.
+- Ein roter Test gilt nur als bekannt, wenn sein Name in der Datei `Basis rot:` steht. Jeder andere rote Test ist ein Fehler, auch wenn du ihn für unbeteiligt hältst; behebe ihn oder melde `blocked`.
 - Ein Timeout ist kein roter Test: einmal wiederholen und beides im Bericht nennen. Scheitert auch die Wiederholung, ist es ein Befund.
 
 ## Keine SubAgents

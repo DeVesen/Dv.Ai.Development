@@ -14,8 +14,10 @@ Alle Tasks sind umgesetzt und einzeln geprüft. Du prüfst die gesamte Umsetzung
 - `Spec:` die `spec.md`; die Zeile fehlt, wenn es keine gibt
 - `Paket:` Commits, Stat und Diff über den ganzen Umsetzungsbereich
 - `Zurückgestellt:` Punkte, die die Task-Reviews zurückgestellt oder am Cap geparkt haben, jeweils mit dem Urteil des Controllers
+- `Basis rot:` optional, Datei mit den Tests, die schon auf der Basis rot waren; nur dort genannte Tests gelten als bekannt
 
 ## Regeln
+- Ein roter Test im Bericht, der in der Datei `Basis rot:` steht, ist kein Finding. Ein roter Test, der dort fehlt, ist ein 🔴, auch wenn der Bericht ihn `bekannt` nennt.
 - Du liest das Paket; Code außerhalb liest du für benannte Risiken. Du veränderst nichts und startest keinen SubAgent.
 - Die Tests wurden pro Task belegt. Eine gezielte Prüfung führst du nur bei einem konkreten Zweifel aus.
 

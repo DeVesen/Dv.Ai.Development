@@ -8,10 +8,10 @@ argument-hint: <plan.md>
 
 Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`
 
-Du setzt den Plan um, indem du SubAgents beauftragst, prüfen lässt und Buch führst. Code schreibst du nie selbst. Lies vor dem Start im Ordner `${CLAUDE_PLUGIN_ROOT}/skills/implementation/references/` die Dateien `ledger.md`, `task-loop.md`, `final-review.md` und `model-selection.md`.
+Du setzt den Plan um: SubAgents beauftragen, prüfen lassen, Buch führen. Code schreibst du nie selbst. Lies vor dem Start im Ordner `${CLAUDE_PLUGIN_ROOT}/skills/implementation/references/` die Dateien `ledger.md`, `task-loop.md`, `final-review.md` und `model-selection.md`.
 
 ## Durchlaufen
-Zwischen den Tasks fragst du nicht nach. Konflikte, Mehrdeutigkeiten und Plan-Fehler entscheidest du selbst: Die Spec ist bindend, der Plan ihre Begründung, dein Urteil entscheidet den Rest, als `Urteil: <was> — <warum> — <was es kostet, falls falsch>` ins Ledger.
+Zwischen den Tasks fragst du nicht nach. Konflikte, Mehrdeutigkeiten, Plan-Fehler entscheidest du selbst: Die Spec ist bindend, der Plan ihre Begründung, dein Urteil entscheidet den Rest, als `Urteil: <was> — <warum> — <was es kostet, falls falsch>` ins Ledger.
 
 ## Stopp-Gründe
 Du hältst nur an und fragst, wenn
@@ -30,6 +30,7 @@ Du hältst nur an und fragst, wenn
 5. `W` = Ausgabe von `node "<PLUGIN>/scripts/workspace.js" create implementation <slug>`; Ledger nach `ledger.md` anlegen oder fortsetzen.
 6. `node "<PLUGIN>/scripts/plan-tasks.js" scan "<P>" "<W>"`; Exit ungleich 0: Meldung ausgeben, Ende. Ausgabe: Task-Zeilen, `Offen:` mit Zeilen für dein Urteil.
 7. **Vorab-Scan:** Je offener Zeile ein Urteil (`ok — warum` oder `Lücke — Folge`), ins Ledger als `Vorab-Scan: <Scan-Datei>; <k> offen — <Urteile>`. Ohne `Offen: nichts` oder Urteil je Zeile ist der Scan nicht erledigt.
+8. **Basis-Lauf** nach `task-loop.md` Abschnitt 0.
 
 ## Tasks
 Jeder Task bekommt einen frischen Umsetzer nach `task-loop.md`, streng nacheinander. Danach `final-review.md`. Hat der Plan genau einen Task, entfällt das Task-Review; es läuft nur das Final-Review.
@@ -37,7 +38,7 @@ Jeder Task bekommt einen frischen Umsetzer nach `task-loop.md`, streng nacheinan
 ## Abschluss
 1. Vollständiger Bericht nach `<W>/abschluss.md`: Bereich `forge-base/<slug>..HEAD`, Anzahl Tasks, jede `Urteil:`-Zeile mit Kosten, offene Punkte.
 2. `node "<PLUGIN>/scripts/ledger.js" archive "<P>" "<W>"` legt Bericht und Ledger-Auszug neben den Plan. Diese Datei committest du; kein Merge, kein Push.
-3. Im Chat nur: Ergebnis in einem Satz, Zahl der Urteile, offene Punkte, Pfad der Datei, bei `modus=worktree` Worktree und Branch, und als Code-Block für eine frische Session dort `/dv-forge:implementation-review <P>`.
+3. Im Chat nur: Ergebnis, Zahl der Urteile, offene Punkte, Pfad der Datei, bei `modus=worktree` Worktree und Branch, und als Code-Block für eine frische Session dort `/dv-forge:implementation-review <P>`.
 4. `node "<PLUGIN>/scripts/workspace.js" remove implementation <slug>`. Tag und Branch bleiben.
 
 Dieses Berichtsformat hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.

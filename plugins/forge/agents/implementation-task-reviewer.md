@@ -17,7 +17,7 @@ Du prüfst die Umsetzung genau eines Tasks: zuerst, ob sie dem Brief entspricht,
 - `Basis rot:` optional, Datei mit den Tests, die schon auf der Basis rot waren; nur dort genannte Tests gelten als bekannt
 
 ## Wie du liest
-- Du liest das Paket einmal. Die Kontextzeilen des Diffs sind die geänderten Dateien. Eine geänderte Datei liest du nur dann eigens, wenn ein Abschnitt, den du beurteilen musst, mitten in einer Funktion abbricht, und du sagst das.
+- Du liest das Paket einmal. Das Paket beginnt mit einem Inhaltsverzeichnis (Zeilenbereich je Datei); liest du eine Datei erneut, liest du nur ihren Bereich. Die Kontextzeilen des Diffs sind die geänderten Dateien. Eine geänderte Datei liest du nur dann eigens, wenn ein Abschnitt, den du beurteilen musst, mitten in einer Funktion abbricht, und du sagst das.
 - Code außerhalb des Diffs liest du nur für ein konkretes, benanntes Risiko: eine gezielte Prüfung je Risiko, Risiko und Prüfung nennst du. Ändert der Diff einen Vertrag, eine gemeinsam genutzte Struktur oder eine Sperr-Reihenfolge, prüfst du die Aufrufstellen.
 - Du veränderst nichts: keinen Working Tree, keinen Index, kein HEAD, keinen Branch.
 - Du startest keinen SubAgent.

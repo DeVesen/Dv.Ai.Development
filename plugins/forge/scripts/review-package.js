@@ -33,10 +33,34 @@ function checkedRange(base, head, cwd) {
   return { from, to };
 }
 
+const FILE_HEADER = /^diff --git .* b\/(.*)$/;
+
+function splitByFile(diffLines) {
+  const sections = [];
+  for (const line of diffLines) {
+    const header = FILE_HEADER.exec(line);
+    if (header) sections.push({ path: header[1], lines: [] });
+    sections.at(-1)?.lines.push(line);
+  }
+  return sections;
+}
+
+// Ein Eintrag je Datei mit den Zeilen dieser Paketdatei, damit Reviewer nur ihren Bereich lesen.
+function tableOfContents(sections, firstLine) {
+  let line = firstLine;
+  return sections.map((section) => {
+    const entry = `- ${section.path}: ${line}-${line + section.lines.length - 1}`;
+    line += section.lines.length;
+    return entry;
+  });
+}
+
 function buildPackage(base, head, cwd = process.cwd()) {
   const { from, to } = checkedRange(base, head, cwd);
   const range = `${from}..${to}`;
-  return [
+  const diffLines = git(cwd, ['diff', '-U10', range]).out.trimEnd().split('\n');
+  const sections = splitByFile(diffLines);
+  const top = [
     `# Review-Paket: ${base}..${head}`,
     '',
     '## Commits',
@@ -45,10 +69,10 @@ function buildPackage(base, head, cwd = process.cwd()) {
     '## Dateien',
     git(cwd, ['diff', '--stat', range]).out.trimEnd(),
     '',
-    '## Diff',
-    git(cwd, ['diff', '-U10', range]).out.trimEnd(),
-    '',
-  ].join('\n');
+    '## Inhaltsverzeichnis (Zeilen dieser Datei, lies nur den Bereich deiner Datei)',
+  ];
+  const before = [...top, ...sections.map(() => ''), '', '## Diff'].join('\n').split('\n').length;
+  return [...top, ...tableOfContents(sections, before + 1), '', '## Diff', ...diffLines, ''].join('\n');
 }
 
 function writePackage(base, head, dir, cwd = process.cwd()) {

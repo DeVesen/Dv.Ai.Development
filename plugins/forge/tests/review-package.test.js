@@ -68,3 +68,16 @@ test('cli_UnknownRef_ExitsWithTwo', () => {
 test('cli_WrongArgumentCount_ExitsWithTwo', () => {
   assert.equal(run(os.tmpdir(), 'HEAD').status, 2);
 });
+
+test('buildPackage_Range_TableOfContentsPointsAtEachFileDiff', () => {
+  const { repo, base } = repoWithTwoCommits();
+  const lines = reviewPackage.buildPackage(base, 'HEAD', repo).split('\n');
+  const entries = lines.filter((line) => /^- \S+: \d+-\d+$/.test(line));
+  assert.deepEqual(entries.map((entry) => entry.split(':')[0]), ['- src/a.js', '- src/b.js']);
+  for (const entry of entries) {
+    const [, file, from, to] = /^- (\S+): (\d+)-(\d+)$/.exec(entry).map((part, index) => (index > 1 ? Number(part) : part));
+    assert.match(lines[from - 1], new RegExp(`^diff --git a/${file} b/${file}$`));
+    assert.ok(to >= from);
+    assert.ok(to === lines.length - 1 || lines[to].startsWith('diff --git '), `${file}: Bereich endet nicht vor der nächsten Datei`);
+  }
+});

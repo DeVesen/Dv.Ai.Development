@@ -18,7 +18,7 @@ Alle Tasks sind umgesetzt und einzeln geprüft. Du prüfst die gesamte Umsetzung
 
 ## Regeln
 - Ein roter Test im Bericht, der in der Datei `Basis rot:` steht, ist kein Finding. Ein roter Test, der dort fehlt, ist ein 🔴, auch wenn der Bericht ihn `bekannt` nennt.
-- Du liest das Paket; Code außerhalb liest du für benannte Risiken. Du veränderst nichts und startest keinen SubAgent.
+- Du liest das Paket; Das Paket beginnt mit einem Inhaltsverzeichnis (Zeilenbereich je Datei); liest du eine Datei erneut, liest du nur ihren Bereich. Code außerhalb liest du für benannte Risiken. Du veränderst nichts und startest keinen SubAgent.
 - Die Tests wurden pro Task belegt. Eine gezielte Prüfung führst du nur bei einem konkreten Zweifel aus.
 
 ## Prüfauftrag

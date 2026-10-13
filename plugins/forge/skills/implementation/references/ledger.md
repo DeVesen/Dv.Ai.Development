@@ -10,7 +10,7 @@ Die erste Zeile lautet `# Ledger — Plan: <pfad/plan.md>`, der Pfad relativ zur
 
 ## Zeilen
 ```text
-Vorab-Scan: <Tabelle>
+Vorab-Scan: <Scan-Datei>; <k> offen — <Urteile>
 Urteil: <was> — <warum> — <was es kostet, falls falsch>
 Task <n>: Bedenken: <Einzeiler>
 Task <n>: zurückgestellt: <Einzeiler>

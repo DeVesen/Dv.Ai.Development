@@ -11,7 +11,7 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`
 Du setzt den Plan um, indem du SubAgents beauftragst, prüfen lässt und Buch führst. Code schreibst du nie selbst. Lies vor dem Start im Ordner `${CLAUDE_PLUGIN_ROOT}/skills/implementation/references/` die Dateien `ledger.md`, `task-loop.md`, `final-review.md` und `model-selection.md`.
 
 ## Durchlaufen
-Zwischen den Tasks fragst du nicht nach. Konflikte, Mehrdeutigkeiten und Plan-Fehler entscheidest du selbst: Die Spec ist bindend, der Plan ihre Begründung, dein Urteil entscheidet den Rest, als `Urteil: <was> — <warum> — <was es kostet, falls falsch>` ins Ledger. Ein falsches Urteil kostet Nacharbeit, eine wartende Session den ganzen Tag.
+Zwischen den Tasks fragst du nicht nach. Konflikte, Mehrdeutigkeiten und Plan-Fehler entscheidest du selbst: Die Spec ist bindend, der Plan ihre Begründung, dein Urteil entscheidet den Rest, als `Urteil: <was> — <warum> — <was es kostet, falls falsch>` ins Ledger.
 
 ## Stopp-Gründe
 Du hältst nur an und fragst, wenn
@@ -25,11 +25,11 @@ Du hältst nur an und fragst, wenn
 ## Start
 1. `node "<PLUGIN>/scripts/prepare.js" implementation $ARGUMENTS`; Exit ungleich 0: Meldung ausgeben, Ende. Die Zeilen `<Name>=<Wert>` liefern `P`, `S` und `slug`.
 2. `node "<PLUGIN>/scripts/work.js" start <slug> --spec "<S>" --plan "<P>"`; Exit ungleich 0: Meldung ausgeben, Ende. Ab jetzt gelten die ausgegebenen `R`, `P` und `S`; lies Plan und Spec. Bei `modus=worktree`: `cd "<R>"`. Bei `modus=vor-ort` und `standard=true` fragst du einmal, ob auf dem Standard-Branch gearbeitet wird; bei Nein `git switch -c <vorschlag>`.
-3. Bei `drift=` (Plan-Dateien seit der Plan-Basis geändert) oder `workitem-konflikt=` (Branch trägt anderes Workitem) fragst du einmal, ob trotzdem umgesetzt wird.
+3. Bei `drift=` (Plan-Dateien seit der Basis geändert) oder `workitem-konflikt=` fragst du einmal, ob trotzdem umgesetzt wird.
 4. `node "<PLUGIN>/scripts/base-tag.js" ensure <slug>`; Exit ungleich 0: Meldung ausgeben, Ende.
 5. `W` = Ausgabe von `node "<PLUGIN>/scripts/workspace.js" create implementation <slug>`; Ledger nach `ledger.md` anlegen oder fortsetzen.
-6. `node "<PLUGIN>/scripts/plan-tasks.js" list "<P>"`; Exit ungleich 0: Meldung ausgeben, Ende.
-7. **Vorab-Scan:** je `MEHRFACH`-Zeile und je Paar aus `Produces` und `Consumes` eine Befundzeile, dazu eine Zeile je Task. Ins Ledger. "Scan sauber" ohne diese Zeilen zählt nicht.
+6. `node "<PLUGIN>/scripts/plan-tasks.js" scan "<P>" "<W>"`; Exit ungleich 0: Meldung ausgeben, Ende. Ausgabe: Task-Zeilen, `Offen:` mit Zeilen für dein Urteil.
+7. **Vorab-Scan:** Je offener Zeile ein Urteil (`ok — warum` oder `Lücke — Folge`), ins Ledger als `Vorab-Scan: <Scan-Datei>; <k> offen — <Urteile>`. Ohne `Offen: nichts` oder Urteil je Zeile ist der Scan nicht erledigt.
 
 ## Tasks
 Jeder Task bekommt einen frischen Umsetzer nach `task-loop.md`, streng nacheinander. Danach `final-review.md`. Hat der Plan genau einen Task, entfällt das Task-Review; es läuft nur das Final-Review.

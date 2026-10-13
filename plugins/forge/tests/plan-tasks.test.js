@@ -181,3 +181,37 @@ test('buildBrief_OldToolchainReference_StaysUnresolved', () => {
   const plan = writePlan(PLAN.replace('Text eins.', 'Befehl: `dv-forge: dotnet-test --path <R>/src/App.sln` — erwartet: PASS'));
   assert.ok(planTasks.buildBrief(plan, 1).includes('Befehl: `dv-forge: dotnet-test --path <R>/src/App.sln`'));
 });
+
+const SCANNED = [
+  '# P', '', '---', '',
+  '### Task 1: Modell', '', '**Dateien:**', '- Create: `src/order.js`', '',
+  '**Interfaces:**', '- Produces: `total(items): number`', '',
+  '### Task 2: Service', '', '**Dateien:**', '- Modify: `src/order.js:10-20` · `total`', '',
+  '**Interfaces:**', '- Consumes: `total(items): number`', '- Consumes: `Repo.save(order)`', '- Consumes: `later(x)`', '',
+  '### Task 3: Spät', '', '**Dateien:**', '- Create: `src/late.js`', '',
+  '**Interfaces:**', '- Produces: `later(x): void`', '',
+].join('\n');
+
+test('cli_Scan_WritesFullFileAndPrintsOnlyOpenLines', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-scan-'));
+  const result = run('scan', writePlan(SCANNED), dir);
+  assert.equal(result.status, 0, result.stderr);
+  const lines = result.stdout.trim().split('\n');
+  assert.equal(lines[0], 'Tasks: 3');
+  assert.ok(lines[1].endsWith('vorab-scan.md'));
+  assert.ok(lines.includes('Task 2: Service'));
+  assert.ok(lines.includes('Offen: 3'));
+  assert.ok(lines.includes('OFFEN Task 2 Consumes `Repo.save(order)`: Repo.save ohne Produces in früherem Task'));
+  assert.ok(lines.includes('OFFEN Task 2 Consumes `later(x)`: later erst in Task 3'));
+  assert.ok(lines.includes('MEHRFACH src/order.js: Task 1, Task 2'));
+  assert.ok(!result.stdout.includes('ok Task 2 Consumes'));
+  const file = fs.readFileSync(path.join(dir, 'vorab-scan.md'), 'utf8');
+  assert.match(file, /^ok Task 2 Consumes `total\(items\): number` <- Task 1 Produces total$/m);
+});
+
+test('cli_Scan_NoOpenLines_PrintsOffenNichts', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-scan-'));
+  const result = run('scan', writePlan(PLAN), dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^Offen: nichts$/m);
+});

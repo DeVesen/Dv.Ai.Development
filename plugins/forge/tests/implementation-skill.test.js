@@ -70,7 +70,7 @@ test('skill_Body_ReadsReferencesViaPluginRoot', () => {
 
 test('skill_Body_StartScriptsInOrder', () => {
   const { body } = readMarkdown(SKILL);
-  const order = ['prepare.js" implementation $ARGUMENTS', 'work.js" start <slug>', 'base-tag.js" ensure', 'workspace.js" create implementation', 'plan-tasks.js" list'];
+  const order = ['prepare.js" implementation $ARGUMENTS', 'work.js" start <slug>', 'base-tag.js" ensure', 'workspace.js" create implementation', 'plan-tasks.js" scan'];
   const positions = order.map((part) => body.indexOf(part));
   assert.ok(positions.every((position) => position !== -1), `fehlt: ${order[positions.indexOf(-1)]}`);
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);

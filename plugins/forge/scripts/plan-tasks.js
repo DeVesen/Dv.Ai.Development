@@ -9,7 +9,7 @@ const TASK_HEADING = /^###\s+Task\s+(\d+):/;
 const SECTION_HEADING = /^##\s/;
 const FENCE = /^\s*(`{3,}|~{3,})(.*)$/;
 const RULE = /^---\s*$/;
-const USAGE = 'Aufruf: node plan-tasks.js list <plan> | brief <plan> <n> <dir> | header <plan> <dir> | slug <plan> | anchors <plan> <repo> <out>\n';
+const USAGE = 'Aufruf: node plan-tasks.js list <plan> | scan <plan> <dir> | brief <plan> <n> <dir> | header <plan> <dir> | slug <plan> | anchors <plan> <repo> <out>\n';
 
 class PlanError extends Error {}
 
@@ -198,6 +198,10 @@ function writeHeader(planPath, dir) {
   return writeFile(dir, 'header-brief.md', buildHeader(planPath));
 }
 
+function writeScan(planPath, dir) {
+  return require('./lib/plan-scan').writeScan(describeTasks(planPath), dir, writeFile);
+}
+
 function slugOf(planPath) {
   const absolute = path.resolve(planPath);
   const name = path.basename(absolute);
@@ -207,6 +211,7 @@ function slugOf(planPath) {
 
 const COMMANDS = {
   list: { arity: 1, run: ([plan]) => formatOverview(describeTasks(plan)) },
+  scan: { arity: 2, run: ([plan, dir]) => writeScan(plan, dir) },
   brief: { arity: 3, run: ([plan, number, dir]) => briefWithModel(plan, Number(number), dir) },
   header: { arity: 2, run: ([plan, dir]) => writeHeader(plan, dir) },
   slug: { arity: 1, run: ([plan]) => slugOf(plan) },

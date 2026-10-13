@@ -18,3 +18,5 @@ Die Befehle laufen im **Bash-Tool**, nicht im PowerShell-Tool. Sie liefern Statu
 **Ohne genannten Pfad:** Gibt es im Repo genau eine Solution, nimm sie. Gibt es mehrere, frag, welche gemeint ist, und starte nichts.
 
 Nicht `build_dotnet_solution` oder `test_dotnet_solution` von dev-mcp und nicht `dotnet build|test` in der Shell.
+
+Steht in der Ausgabe eine Zeile `Hinweis:` zu einer gesperrten Datei (MSB3027), nenne dem Menschen den Prozess und die Workarounds. Beende den Prozess nicht selbst.

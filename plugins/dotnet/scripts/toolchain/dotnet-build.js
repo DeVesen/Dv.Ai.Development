@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { lockHint } = require('./dotnet-lock-hint.js');
 
 const NAME = 'dotnet-build';
 const USAGE = `Aufruf: node ${NAME}.js [--path <sln|csproj|ordner>] [--show errors|warnings|all] [--log <datei>] [--timeout <sekunden>] [-- <weitere dotnet-build-Argumente>]\n`;
@@ -47,7 +48,7 @@ function tail(lines) {
   return lines.map((line) => line.trim()).filter(Boolean).slice(-TAIL_LINES);
 }
 
-function parse(output, exitCode) {
+function parseOutput(output, exitCode) {
   const lines = output.replace(ANSI, '').split(/\r?\n/);
   const errors = unique(lines.filter((line) => ERROR_LINE.test(line)), MAX_ERRORS);
   const warnings = unique(lines.filter((line) => WARNING_LINE.test(line)), Infinity);
@@ -62,6 +63,12 @@ function logFile(requested) {
   if (requested) return path.resolve(requested);
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
   return path.join(os.tmpdir(), 'dv-forge-logs', `${NAME}-${stamp}.log`);
+}
+
+function parse(output, exitCode) {
+  const result = parseOutput(output, exitCode);
+  const hint = exitCode === 0 ? null : lockHint(output);
+  return hint ? { ...result, hint } : result;
 }
 
 function run(args) {
@@ -105,6 +112,7 @@ function render(report, show = 'errors') {
   if (show !== 'errors') lines.push(...listed('Warnungen', report.warnings, MAX_WARNINGS));
   if (show === 'errors' && report.warnings.length > 0) lines.push(`Warnungen: ${report.warnings.length}, anzeigen mit --show warnings`);
   if (show === 'warnings' && report.errors.length > 0) lines.push(`Fehler: ${report.errors.length}, anzeigen mit --show errors`);
+  if (report.hint) lines.push(`Hinweis: ${report.hint}`);
   lines.push(`Log: ${report.log}`);
   return `${lines.join('\n')}\n`;
 }

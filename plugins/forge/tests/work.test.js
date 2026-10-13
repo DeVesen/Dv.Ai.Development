@@ -186,3 +186,79 @@ test('start_BranchCarriesOtherWorkitem_ReportsConflict', () => {
   git(repo, 'switch', '-q', '-c', 'feature/AB#12-neu');
   assert.equal(values(run(repo, 'start', 'demo', '--spec', 'spec.md'))['workitem-konflikt'], undefined);
 });
+
+test('start_BranchAlreadyActiveInMainCheckout_ReportsInPlaceNotWorktree', () => {
+  const repo = worktreeRepo();
+  git(repo, 'switch', '-q', '-c', 'feature/demo');
+  const out = values(run(repo, 'start', 'demo'));
+  assert.equal(out.modus, 'vor-ort');
+  assert.equal(out.branch, 'feature/demo');
+  assert.equal(out.standard, 'false');
+  assert.equal(out.aktion, undefined);
+  assert.ok(samePath(out.R, repo));
+});
+
+test('check_PreexistingDirtAtStart_IsListedSeparatelyAndDoesNotAbort', () => {
+  const repo = makeRepo();
+  fs.writeFileSync(path.join(repo, 'alt.txt'), 'alt\n');
+  fs.mkdirSync(path.join(repo, 'ordner'));
+  fs.writeFileSync(path.join(repo, 'ordner', 'a.txt'), 'a\n');
+  assert.equal(run(repo, 'start', 'demo').status, 0);
+  const result = run(repo, 'check');
+  assert.equal(result.status, 0, result.stderr);
+  const lines = result.stdout.trim().split('\n');
+  assert.ok(lines.includes('vorbestand=alt.txt'));
+  assert.ok(lines.includes('vorbestand=ordner/a.txt'));
+});
+
+test('check_ChangeAfterStart_AbortsAndNamesPreexistingSeparately', () => {
+  const repo = makeRepo();
+  fs.writeFileSync(path.join(repo, 'alt.txt'), 'alt\n');
+  run(repo, 'start', 'demo');
+  fs.writeFileSync(path.join(repo, 'neu.txt'), 'neu\n');
+  const result = run(repo, 'check');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Nicht committet: neu\.txt\. Vorbestand seit dem Start, nicht gemeint: alt\.txt/);
+  fs.unlinkSync(path.join(repo, 'neu.txt'));
+  fs.writeFileSync(path.join(repo, 'alt.txt'), 'geaendert\n');
+  assert.match(run(repo, 'check').stderr, /Nicht committet: alt\.txt/);
+});
+
+test('start_SecondStart_KeepsFirstBaseline', () => {
+  const repo = makeRepo();
+  run(repo, 'start', 'demo');
+  fs.writeFileSync(path.join(repo, 'spaeter.txt'), 'x\n');
+  run(repo, 'start', 'demo');
+  assert.equal(run(repo, 'check').status, 1);
+});
+
+test('remove_VeryLongPathInsideWorktree_RemovesDirectoryAndRegistration', () => {
+  const repo = worktreeRepo();
+  commitFile(repo, '.gitignore', '.wt/\ndeep/\n', 'ignore deep');
+  const dir = values(run(repo, 'start', 'demo')).R;
+  const deep = path.join(dir, 'deep', ...Array.from({ length: 8 }, () => 'x'.repeat(40)));
+  fs.mkdirSync(process.platform === 'win32' ? `\\\\?\\${deep}` : deep, { recursive: true });
+  const result = run(repo, 'remove', dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(dir), false);
+  assert.doesNotMatch(git(repo, 'worktree', 'list'), /demo/);
+});
+
+test('removeDirectory_VeryLongPath_DeletesTree', () => {
+  const { removeDirectory } = require('../scripts/work');
+  const root = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'dv-forge-long-'));
+  const deep = path.join(root, ...Array.from({ length: 9 }, () => 'y'.repeat(40)));
+  fs.mkdirSync(process.platform === 'win32' ? `\\\\?\\${deep}` : deep, { recursive: true });
+  removeDirectory(root);
+  assert.equal(fs.existsSync(root), false);
+});
+
+test('remove_LockedWorktree_KeepsItInsteadOfForcingDeletion', () => {
+  const repo = worktreeRepo();
+  const dir = values(run(repo, 'start', 'demo')).R;
+  git(repo, 'worktree', 'lock', dir);
+  const result = run(repo, 'remove', dir);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /gesperrt/);
+  assert.ok(fs.existsSync(dir));
+});

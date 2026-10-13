@@ -5,6 +5,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 const fs = require('node:fs');
+const crypto = require('node:crypto');
 const { ConfigError, readConfig, branchFor, branchCandidates, workitemOf, branchWorkitem } = require('./forge-config');
 const { describeTasks, PlanError } = require('./plan-tasks');
 
@@ -45,6 +46,7 @@ function worktrees(root) {
   for (const line of git(root, ['worktree', 'list', '--porcelain']).out.split('\n')) {
     if (line.startsWith('worktree ')) entries.push({ dir: path.resolve(line.slice(9)) });
     else if (line.startsWith('branch refs/heads/')) entries[entries.length - 1].branch = line.slice(18);
+    else if (line.startsWith('locked')) entries[entries.length - 1].locked = true;
   }
   return entries;
 }
@@ -57,6 +59,60 @@ function uncommitted(root, files = []) {
 function ensureCommitted(root, files) {
   const open = uncommitted(root, files.map((file) => path.resolve(file)));
   if (open.length > 0) throw new WorkError(`Nicht committet: ${open.join(', ')}. Erst committen, sonst fehlen die Dateien im Worktree.`);
+}
+
+const BASELINE_FILE = 'forge-baseline.json';
+
+function fingerprint(root, file, code) {
+  const target = path.join(root, file);
+  const hash = fs.existsSync(target) && fs.statSync(target).isFile()
+    ? crypto.createHash('sha1').update(fs.readFileSync(target)).digest('hex')
+    : 'gone';
+  return code + ':' + hash;
+}
+
+// Jede offene Datei einzeln (-uall), damit auch untracked Ordner pro Datei vergleichbar sind.
+function snapshot(root) {
+  const result = spawnSync('git', ['-C', root, 'status', '--porcelain', '-uall', '-z'], { encoding: 'utf8' });
+  const entries = String(result.stdout ?? '').split(String.fromCharCode(0)).filter(Boolean);
+  const files = {};
+  for (let index = 0; index < entries.length; index += 1) {
+    const code = entries[index].slice(0, 2);
+    const name = entries[index].slice(3);
+    files[name] = fingerprint(root, name, code);
+    if (code[0] === 'R' || code[0] === 'C') index += 1;
+  }
+  return files;
+}
+
+function baselinePath(root) {
+  return path.join(path.resolve(root, git(root, ['rev-parse', '--absolute-git-dir']).out), BASELINE_FILE);
+}
+
+// Der erste Start hält den Vorbestand fest; ein erneuter Start überschreibt ihn nicht.
+function saveBaseline(root, branch) {
+  const file = baselinePath(root);
+  if (fs.existsSync(file)) return;
+  fs.writeFileSync(file, JSON.stringify({ branch, files: snapshot(root) }));
+}
+
+function readBaseline(root, branch) {
+  try {
+    const stored = JSON.parse(fs.readFileSync(baselinePath(root), 'utf8'));
+    return stored.branch === branch ? stored.files : {};
+  } catch {
+    return {};
+  }
+}
+
+function splitByBaseline(root, branch) {
+  const baseline = readBaseline(root, branch);
+  const now = snapshot(root);
+  const names = Object.keys(now);
+  return {
+    open: names.filter((name) => baseline[name] !== now[name]),
+    before: names.filter((name) => baseline[name] === now[name]),
+  };
 }
 
 function render(values) {
@@ -111,10 +167,19 @@ function hasBranchRef(root, branch) {
   return git(root, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`]).ok;
 }
 
+// Ist der Branch schon im Haupt-Checkout aktiv, gibt es keinen eigenen Worktree: Modus nach tatsächlichem Zustand.
+function startInMain(config, slug, spec, entry) {
+  const values = { modus: 'vor-ort', branch: entry.branch, standard: 'false', vorschlag: suggestedBranch(config, slug, spec), R: entry.dir };
+  const conflict = workitemConflict(config, entry.branch, spec);
+  if (conflict) values['workitem-konflikt'] = conflict;
+  return values;
+}
+
 function startWorktree(root, main, config, slug, spec) {
   const candidates = branchCandidates(config, slug, spec);
   const open = worktrees(root);
   const resumed = candidates.map((name) => open.find((entry) => entry.branch === name)).find(Boolean);
+  if (resumed && resumed.dir === open[0].dir) return startInMain(config, slug, spec, resumed);
   if (resumed) return { modus: 'worktree', aktion: 'fortgesetzt', branch: resumed.branch, R: resumed.dir };
   const branch = candidates.find((name) => hasBranchRef(root, name)) ?? candidates[0];
   const dir = path.resolve(main, config['Worktree-Ordner'], branch);
@@ -123,6 +188,11 @@ function startWorktree(root, main, config, slug, spec) {
   const created = git(root, args);
   if (!created.ok) throw new WorkError(`Worktree konnte nicht angelegt werden: ${created.err}`);
   return { modus: 'worktree', aktion: hasBranch ? 'angehaengt' : 'angelegt', branch, R: dir };
+}
+
+function inPlace(values, dir) {
+  if (values.branch !== '') saveBaseline(dir, values.branch);
+  return values;
 }
 
 function start(slug, options = {}, cwd = process.cwd()) {
@@ -136,27 +206,52 @@ function start(slug, options = {}, cwd = process.cwd()) {
     }
     return drift.length > 0 ? { ...mapped, drift } : mapped;
   };
-  if (config.Worktree !== 'ja') return finish(startInPlace(root, config, slug, options.spec));
+  if (config.Worktree !== 'ja') return finish(inPlace(startInPlace(root, config, slug, options.spec), root));
   ensureCommitted(root, [options.spec, options.plan].filter(Boolean));
-  return finish(startWorktree(root, main, config, slug, options.spec));
+  const values = startWorktree(root, main, config, slug, options.spec);
+  return finish(values.modus === 'vor-ort' ? inPlace(values, values.R) : values);
 }
 
 function check(cwd = process.cwd()) {
   const root = toplevel(cwd);
   const branch = currentBranch(root);
   if (branch === '') throw new WorkError('Kein Branch ausgecheckt (detached HEAD). Erst auf den Feature-Branch wechseln.');
-  const open = uncommitted(root);
-  if (open.length > 0) throw new WorkError(`Nicht committet: ${open.join(', ')}`);
+  const { open, before } = splitByBaseline(root, branch);
+  if (open.length > 0) throw new WorkError(`Nicht committet: ${open.join(', ')}${before.length > 0 ? `. Vorbestand seit dem Start, nicht gemeint: ${before.join(', ')}` : ''}`);
   const linked = isLinkedWorktree(root);
-  return { modus: linked ? 'worktree' : 'vor-ort', branch, R: root, haupt: worktrees(root)[0].dir };
+  const state = { modus: linked ? 'worktree' : 'vor-ort', branch, R: root, haupt: worktrees(root)[0].dir };
+  return before.length > 0 ? { ...state, vorbestand: before } : state;
+}
+
+// Windows: das Präfix \?\ hebt die 260-Zeichen-Grenze auf. Links (Junctions) löscht rmSync als Link, nie ihr Ziel.
+function removeDirectory(dir) {
+  const long = `\\\\?\\${path.resolve(dir)}`;
+  fs.rmSync(process.platform === 'win32' ? long : dir, { recursive: true, force: true });
+}
+
+// Erst git; scheitert es an der Umgebung (zu lange Pfade, gesperrte Datei), räumt ein zweiter Weg das Verzeichnis weg.
+// Der Eintrag wird erst gelöst, wenn das Verzeichnis weg ist: nie abgemeldet mit Restdateien.
+function removeWorktree(state) {
+  const removed = git(state.haupt, ['worktree', 'remove', state.R]);
+  if (removed.ok) return;
+  if (worktrees(state.haupt).some((entry) => entry.dir === state.R && entry.locked)) {
+    throw new WorkError(`Worktree ist gesperrt: ${removed.err}`);
+  }
+  try {
+    removeDirectory(state.R);
+  } catch (error) {
+    throw new WorkError(`Worktree konnte nicht entfernt werden: ${removed.err} / ${error.message}. Er bleibt registriert.`);
+  }
+  if (fs.existsSync(state.R)) throw new WorkError(`Worktree konnte nicht vollständig entfernt werden: ${toPosix(state.R)} (${removed.err}). Er bleibt registriert.`);
+  git(state.haupt, ['worktree', 'prune']);
 }
 
 function remove(cwd = process.cwd()) {
   const state = check(cwd);
   if (state.modus !== 'worktree') throw new WorkError('Kein Worktree: nichts zu entfernen, der Branch bleibt ausgecheckt.');
   const commit = git(state.R, ['rev-parse', 'HEAD']).out;
-  const removed = git(state.haupt, ['worktree', 'remove', state.R]);
-  if (!removed.ok) throw new WorkError(`Worktree konnte nicht entfernt werden: ${removed.err}`);
+  process.chdir(state.haupt);
+  removeWorktree(state);
   const tip = git(state.haupt, ['rev-parse', '--verify', '--quiet', `refs/heads/${state.branch}`]).out;
   if (tip !== commit) throw new WorkError(`Branch ${state.branch} zeigt nicht auf ${commit}. Bitte prüfen.`);
   return { entfernt: state.R, branch: state.branch, commit, haupt: state.haupt };
@@ -202,4 +297,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { WorkError, start, check, remove, isLinkedWorktree };
+module.exports = { WorkError, start, check, remove, removeDirectory, isLinkedWorktree };

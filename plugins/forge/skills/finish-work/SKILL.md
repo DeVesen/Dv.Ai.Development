@@ -11,7 +11,7 @@ disable-model-invocation: true
 Du stellst sicher, dass alles committet ist und alle Prüfungen grün sind. Erst dann räumst du einen Worktree weg. Der Branch bleibt immer. Kein Merge, kein Push, kein Branch löschen.
 
 ## Ablauf
-1. `node "<PLUGIN>/scripts/work.js" check`. Exit ungleich 0: Meldung wörtlich ausgeben, Ende. Du committest, verwirfst und stashst nichts; das entscheidet der Mensch.
+1. `node "<PLUGIN>/scripts/work.js" check`. Exit ungleich 0: Meldung wörtlich ausgeben, Ende. Du committest, verwirfst und stashst nichts; das entscheidet der Mensch. Zeilen `vorbestand=<Datei>` sind Dateien, die schon beim Start offen waren; nenne sie getrennt in der Meldung, sie brechen nichts ab.
 2. Prüfungen: `node "<PLUGIN>/scripts/forge-config.js" get <Schlüssel>` für `Build`, `Test` und `Lint`. Jeden nicht leeren Wert im Ordner `<R>` ausführen, als Befehl oder als genanntes Tool; mehrere, mit ` ; ` getrennt, nacheinander; leere überspringst du. Sind alle drei leer, fragst du einmal, was laufen soll. `Test` entfällt, wenn der Umsetzungsbericht neben dem Plan eine Zeile `Gesamtlauf:` mit `grün` nennt und `git diff --name-only <commit> HEAD` seitdem nur Doku zeigt (`.md`); das meldest du mit dem Commit.
 3. Ein Lauf rot: Befund melden, Ende. Nichts aufräumen.
 4. Nach der Ausgabe von Schritt 1 handeln:

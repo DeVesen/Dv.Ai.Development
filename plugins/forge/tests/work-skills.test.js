@@ -76,3 +76,13 @@ test('finishWork_Body_SkipsTestRunWhenReportShowsGreenRunOnSameCode', () => {
   assert.ok(body.includes('git diff --name-only <commit> HEAD'));
   assert.match(body, /nur Doku/);
 });
+
+test('commitMessage_Skill_IsShippedAndInitSuggestsItAsCommitKonvention', () => {
+  const { fields, body } = skill('commit-message');
+  assert.equal(fields.name, 'commit-message');
+  assert.match(body, /Conventional Commits/);
+  assert.match(body, /Does not run `git commit`/);
+  const init = skill('init').body;
+  assert.ok(init.includes('`Commit-Messages mit dem Skill dv-forge:commit-message schreiben.`'));
+  assert.ok(init.includes('- Commit-Konvention: Commit-Messages mit dem Skill dv-forge:commit-message schreiben.'));
+});

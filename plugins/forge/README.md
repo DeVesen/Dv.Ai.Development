@@ -20,6 +20,7 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 | `start-work`, `implementation`, `finish-work` | Arbeit vorbereiten, umsetzen, abschließen |
 | `domain-modeling` | Unscharfe oder widersprüchliche Fachbegriffe klären, ADRs anstoßen |
 | `merge-conflict-resolution` | Gestoppten Merge oder Rebase auflösen |
+| `commit-message` | Commit-Message im Conventional-Commits-Stil schreiben (Text ausgeben, nicht committen); `init` trägt ihn als `Commit-Konvention` ein |
 
 Das Modell darf alle Skills außer `init`, `start-work`, `finish-work` und `spec-whiteboarding-with-docs` selbst aufrufen, auch aus Sub-Agenten, damit ein Orchestrator Review-, Plan- und Umsetzungsabläufe verketten kann. Die vier gesperrten Skills tragen `disable-model-invocation: true`: Sie berühren Branches, Worktrees und Push bzw. führen einen Dialog mit dem Nutzer. Per `/dv-forge:<skill>` startet der Nutzer jeden Skill weiterhin selbst.
 

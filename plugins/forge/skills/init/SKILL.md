@@ -13,7 +13,7 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 ## Ablauf
 1. **Stolperfallen:** `node "<PLUGIN>/scripts/setup-check.js"`. Es listet je Datei, was dv-forge ausbremst, etwa Tools, die es nicht mehr gibt, oder die alte Schreibweise `dv-forge: <stack>-<kommando>`. Je Datei eine Nachricht: Fundstellen, Grund, Vorschlag. Der Mensch wählt: **alle nach Vorschlag**, **einzeln** oder **behalten**. Erst nach der Antwort änderst du, nur die genannten Zeilen. Globale Funde unter `~/.claude` änderst du nicht, du nennst nur die Quelle. Danach `setup-check.js` erneut, Rest melden.
 2. `node "<PLUGIN>/scripts/forge-config.js" show`. Jede Zeile ist `<Schlüssel>=<Wert>`; `(Default)` heißt: noch nicht gesetzt.
-3. Je Schlüssel der Tabelle, in dieser Reihenfolge, eine Frage pro Nachricht: aktueller Wert, dein Vorschlag mit einem Satz Grund. Den Vorschlag leitest du aus dem Projekt ab: vorhandene Ordner, Build-Dateien, installierte Skills. „Passt“ übernimmt den Vorschlag. Bei `Worktree: nein` entfällt `Worktree-Ordner`.
+3. Je Schlüssel der Tabelle, in dieser Reihenfolge, eine Frage pro Nachricht: aktueller Wert, dein Vorschlag mit einem Satz Grund. Den Vorschlag leitest du aus dem Projekt ab: vorhandene Ordner, Build-Dateien, installierte Skills. „Passt“ übernimmt den Vorschlag. Bei `Worktree: nein` entfällt `Worktree-Ordner`. Für `Commit-Konvention` schlägst du den mitgelieferten Skill vor: `Commit-Messages mit dem Skill dv-forge:commit-message schreiben.`
 4. Den Abschnitt im Format unten schreiben. Einen vorhandenen `## dv-forge`-Abschnitt ersetzt du vollständig, sonst hängst du ihn ans Ende der Datei.
 5. `forge-config.js show` erneut ausführen und das Ergebnis melden. Commit anbieten, erst nach Ja committen.
 
@@ -31,7 +31,7 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 | `Planungs-Skills` | Skill-Namen, mit Komma getrennt; `<skill> @<pfad>` nur, wenn der Plan `<pfad>` berührt | leer: Plan-Writing fragt |
 | `Build`, `Test`, `Lint` | Befehl, z. B. `npm test`; mehrere mit ` ; ` | leer |
 | `Suche` | Such- und Index-Werkzeuge | leer |
-| `Commit-Konvention` | Regel oder Skill, z. B. `commit-message` | leer |
+| `Commit-Konvention` | ein Satz: Regel oder Skill, z. B. `dv-forge:commit-message` | leer |
 
 ## Format
 ```markdown
@@ -40,6 +40,7 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 - Spec-Ablage: `docs/forge/<datum>-<slug>/spec.md`
 - Worktree: ja
 - Planungs-Skills: unit-integration-testing, software-design-principles
+- Commit-Konvention: Commit-Messages mit dem Skill dv-forge:commit-message schreiben.
 ```
 
 Alle Schlüssel der Tabelle, je eine Zeile, genau `- <Schlüssel>: <Wert>`. Ein bewusst leerer Wert bleibt als `- <Schlüssel>:` stehen. Muster schreibst du mit Platzhaltern, nie aufgelöst: `../<repo>-worktrees`, nicht der Ordnername aus `show`. Werte mit `<` oder `\` in Backticks.

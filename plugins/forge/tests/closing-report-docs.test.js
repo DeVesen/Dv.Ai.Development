@@ -21,8 +21,8 @@ function section(text, title) {
 
 test('flow_End_PrintsReportTextOnlyAndDropsOrchestratorAppendices', () => {
   const end = section(readText(FLOW), 'Ende');
-  const report = end.split('\n').find((line) => line.startsWith('3. Bericht im Chat:'));
-  assert.ok(report, 'Schritt 3 fehlt');
+  const report = end.split('\n').find((line) => line.startsWith('4. Bericht im Chat:'));
+  assert.ok(report, 'Schritt 4 fehlt');
   assert.ok(report.includes('der Text nach `=== BERICHT ===` unverändert'));
   for (const gone of ['Hinweise des Orchestrators', 'Zusatz-Abschnitte', 'Nächster Schritt:', 'Ausgabe von `save`']) assert.equal(report.includes(gone), false, gone);
   assert.ok(report.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.'));

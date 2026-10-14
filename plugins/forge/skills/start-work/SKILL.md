@@ -1,7 +1,6 @@
 ---
 name: start-work
 description: Use when work on a reviewed dv-forge plan should begin and the place for it is not prepared yet — before creating a branch, a worktree or touching code for that plan.
-disable-model-invocation: true
 argument-hint: <plan.md> [spec.md]
 ---
 

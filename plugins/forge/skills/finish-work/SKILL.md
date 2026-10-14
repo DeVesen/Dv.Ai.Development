@@ -1,7 +1,6 @@
 ---
 name: finish-work
 description: Use when a dv-forge implementation is done and reviewed and the work should be closed — before leaving or removing a worktree or calling a feature branch finished.
-disable-model-invocation: true
 ---
 
 # Arbeit abschließen

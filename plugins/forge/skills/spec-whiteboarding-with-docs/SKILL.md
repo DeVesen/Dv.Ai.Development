@@ -1,7 +1,6 @@
 ---
 name: spec-whiteboarding-with-docs
 description: Use when a request should be grilled into a dv-forge spec.md that is anchored in the existing system — code, git history, glossary, module and feature profiles — while the project glossary is actively challenged and updated alongside.
-disable-model-invocation: true
 ---
 
 # Spec Whiteboarding mit Bestand

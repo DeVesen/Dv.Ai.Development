@@ -1,0 +1,16 @@
+{
+  "hinweis": "Schaetzwerte, nach Praxis anpassen. Gelten als Leitplanken: Ueberschreitung = splitten oder Ausnahme begruenden, kein Hard-Fail.",
+  "requirement": {
+    "zielSaetze": 1,
+    "stepsMax": 7,
+    "acMin": 2,
+    "acMax": 5,
+    "negativeAcMin": 1
+  },
+  "step": {
+    "zielSaetze": 1,
+    "acMin": 2,
+    "acMax": 4,
+    "negativeAcMin": 1
+  }
+}

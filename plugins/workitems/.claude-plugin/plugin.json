@@ -1,0 +1,5 @@
+{
+  "name": "dv-workitems",
+  "version": "0.1.0",
+  "description": "Workitems spezifizieren und anlegen: Anforderung zu Epic/Feature/Story schneiden, Story-Text schreiben, Azure DevOps lesen und pflegen"
+}

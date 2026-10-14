@@ -31,6 +31,10 @@
     {
       "name": "dv-working-capturing",
       "source": "./plugins/working-capturing"
+    },
+    {
+      "name": "dv-workitems",
+      "source": "./plugins/workitems"
     }
   ]
 }

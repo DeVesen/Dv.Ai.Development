@@ -13,6 +13,7 @@ Claude-Code-Plugins dieses Repositories. Ein Plugin bündelt **Skills** (Wissen 
 | [`dv-working-capturing`](working-capturing/README.md) | 1.0.0 | Projektwissen festhalten: Glossar, Modul- und Feature-Profile |
 | [`dv-kickoff`](kickoff/README.md) | 0.2.0 | Projekt-Kickoff: Brief, Architekturentwurf, Orientierung für Agenten |
 | [`dv-toolbelt`](toolbelt/README.md) | 0.1.0 | Werkzeug-Skills: CLAUDE.md prüfen, Skills schreiben und validieren, Prozess-Retrospektive |
+| [`dv-workitems`](workitems/README.md) | 0.1.0 | Workitems spezifizieren und anlegen: Anforderung schneiden, Story schreiben, Azure DevOps pflegen |
 
 ## Aufbau eines Plugins
 

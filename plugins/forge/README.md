@@ -5,7 +5,7 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 ## Ablauf
 
 1. **Spec:** `spec-whiteboarding` (oder `spec-whiteboarding-with-docs`, verankert im bestehenden System) macht aus einer Anfrage eine `spec.md`. `spec-review` prüft sie.
-2. **Plan:** `plan-writing` macht aus der Spec einen Umsetzungsplan mit exakten Dateien und Test-first-Schritten. `plan-review` prüft ihn.
+2. **Plan:** `plan-writing` macht aus der Spec einen Umsetzungsplan mit exakten Dateien und Test-first-Schritten. `plan-review` prüft ihn. `plan-orchestrator` verkettet beides samt höchstens einem `review-followup` in einem Lauf und committet Spec und Plan am Ende.
 3. **Umsetzung:** `start-work` bereitet Branch oder Worktree vor, `implementation` setzt den Plan Task für Task um, `implementation-review` prüft das Ergebnis, `finish-work` schließt die Arbeit ab.
 
 ## Skills
@@ -17,6 +17,7 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 | `spec-review`, `plan-review`, `implementation-review` | Review durch parallele Reviewer, ein Rework, eine Verifikation |
 | `review-followup` | Gewählte Scout-Vorschläge aus einem Review umsetzen |
 | `plan-writing` | Spec in Plan überführen |
+| `plan-orchestrator` | Plan schreiben, prüfen, einmal nacharbeiten und committen in einem Lauf; die Spec bleibt unverändert |
 | `start-work`, `implementation`, `finish-work` | Arbeit vorbereiten, umsetzen, abschließen |
 | `domain-modeling` | Unscharfe oder widersprüchliche Fachbegriffe klären, ADRs anstoßen |
 | `merge-conflict-resolution` | Gestoppten Merge oder Rebase auflösen |

@@ -66,11 +66,11 @@ test('planOrchestrator_Body_CommitsSpecAndPlanOnceWithSubjectOnly', () => {
   assert.ok(body.includes('Kein Branch, kein Worktree, kein Wechsel, kein Merge, kein Push.'));
 });
 
-test('planOrchestrator_Body_StaysUnder700WordsWithPairedQuotes', () => {
+test('planOrchestrator_Body_StaysUnder500WordsWithPairedQuotes', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(wordCount(body) < 700, `${wordCount(body)} Wörter`);
+  assert.ok(wordCount(body) < 500, `${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });

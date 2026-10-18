@@ -66,12 +66,23 @@ test('planOrchestrator_Body_CommitsSpecAndPlanOnceWithSubjectOnly', () => {
   assert.ok(body.includes('Kein Branch, kein Worktree, kein Wechsel, kein Merge, kein Push.'));
 });
 
-test('planOrchestrator_Body_EndsReadyReportWithCopyablePathBlock', () => {
+test('planOrchestrator_Body_EndsReadyReportWithPathsAndBothImplementationCommands', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Bei `✅ Bereit zur Umsetzung` endet er mit einem Code-Block, der nur die zwei Pfade enthält, je Zeile einer:\n   ```\n   <S>\n   <P>\n   ```'));
+  const blocks = ['```\n   <S>\n   <P>\n   ```', '```\n   /dv-forge:implementation <P>\n   ```', '```\n   /dv-forge:implementation-orchestrator <P> <S> <WI>\n   ```'];
+  assert.ok(body.includes(`Bei \`✅ Bereit zur Umsetzung\` endet er mit genau diesen drei Code-Blöcken, \`<WI>\` nur wenn gegeben,`));
+  assert.ok(body.includes(blocks.join('\n   ')));
+});
+
+test('planOrchestrator_Body_SuggestsArgumentsTheImplementationSkillsAccept', () => {
+  // Arrange
+  const hint = (name) => readMarkdown(path.join(__dirname, '..', 'skills', name, 'SKILL.md')).fields['argument-hint'];
+
+  // Act & Assert
+  assert.match(hint('implementation'), /^<plan\.md>/);
+  assert.match(hint('implementation-orchestrator'), /^<plan\.md> <spec\.md> \[workitem-nr\]/);
 });
 
 test('planOrchestrator_Body_StaysUnder500WordsWithPairedQuotes', () => {

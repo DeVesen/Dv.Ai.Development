@@ -26,10 +26,16 @@ Du rufst nur Skills (Skill-Tool) auf. Plan/Spec nie selbst schreiben, prüfen, �
 5. Commit nur bei `✅ Bereit zur Umsetzung` im letzten Bericht („kleiner Hinweis“/„kleine Hinweise“ egal). Dateien = `<P>`, `<S>`, je nur mit Zeile in `git status --porcelain -- "<datei>"`; keine → nichts zu committen. Toplevel/Branch ≠ START-STATE → stopp, fragen. Dann `git add -- <dateien>` und `git commit -m "<betreff>" -- <dateien>`.
    - Betreff: `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`; leer → Projekt-`CLAUDE.md`, Typ `docs`. Scope `<WI>`; fehlt er und Konvention verlangt einen → einmal fragen. Nur eine Betreffzeile in einem `-m`, kein Body.
    - `⛔ Noch nicht bereit` / `❓ … offen` / `⚠️ Unvollständig` → kein Commit; Pfade + Commit-Stand nennen; bei `⚠️` ausgefallene Reviewer + Neustart in frischer Session.
-6. Abschlussbericht: Plan-Pfad, Review-Ergebnis, Followup, Offenes, Spec-Änderungsbedarf, Spec-Prüfungen, Branch, Commit-ID mit Dateien oder „nichts zu committen“. Bei `✅ Bereit zur Umsetzung` endet er mit einem Code-Block, der nur die zwei Pfade enthält, je Zeile einer:
+6. Abschlussbericht: Plan-Pfad, Review-Ergebnis, Followup, Offenes, Spec-Änderungsbedarf, Spec-Prüfungen, Branch, Commit-ID mit Dateien oder „nichts zu committen“. Bei `✅ Bereit zur Umsetzung` endet er mit genau diesen drei Code-Blöcken, `<WI>` nur wenn gegeben, davor je eine Zeile „Pfade:“, „Umsetzen (frische Session):“, „oder komplett (frische Session):“:
    ```
    <S>
    <P>
+   ```
+   ```
+   /dv-forge:implementation <P>
+   ```
+   ```
+   /dv-forge:implementation-orchestrator <P> <S> <WI>
    ```
 
 ## Rote Flaggen

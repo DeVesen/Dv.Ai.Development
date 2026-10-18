@@ -4,7 +4,7 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 
 ## Ablauf
 
-1. **Spec:** `spec-whiteboarding` (oder `spec-whiteboarding-with-docs`, verankert im bestehenden System) macht aus einer Anfrage eine `spec.md`. `spec-review` prüft sie.
+1. **Spec:** `spec-whiteboarding` (oder `spec-whiteboarding-with-docs`, verankert im bestehenden System) macht aus einer Anfrage eine `spec.md`. `spec-review` prüft sie. `spec-review-orchestrator` verkettet `spec-review` mit höchstens einem `review-followup` und committet die Spec im aktuellen Branch.
 2. **Plan:** `plan-writing` macht aus der Spec einen Umsetzungsplan mit exakten Dateien und Test-first-Schritten. `plan-review` prüft ihn. `plan-orchestrator` verkettet beides samt höchstens einem `review-followup` in einem Lauf und committet Spec und Plan am Ende.
 3. **Umsetzung:** `start-work` bereitet Branch oder Worktree vor, `implementation` setzt den Plan Task für Task um, `implementation-review` prüft das Ergebnis, `finish-work` schließt die Arbeit ab. `implementation-orchestrator` verkettet alle fünf samt höchstens einem `review-followup` in einem Lauf; der Feature-Branch bleibt lokal, nichts wird gepusht.
 
@@ -16,6 +16,7 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 | `spec-whiteboarding`, `spec-whiteboarding-with-docs` | Aus Anfrage oder Idee eine Spec erarbeiten |
 | `spec-review`, `plan-review`, `implementation-review` | Review durch parallele Reviewer, ein Rework, eine Verifikation |
 | `review-followup` | Gewählte Scout-Vorschläge aus einem Review umsetzen |
+| `spec-review-orchestrator` | Spec prüfen, einmal nacharbeiten und committen in einem Lauf; kein Worktree, kein Branch-Wechsel |
 | `plan-writing` | Spec in Plan überführen |
 | `plan-orchestrator` | Plan schreiben, prüfen, einmal nacharbeiten und committen in einem Lauf; die Spec bleibt unverändert |
 | `start-work`, `implementation`, `finish-work` | Arbeit vorbereiten, umsetzen, abschließen |

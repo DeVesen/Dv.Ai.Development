@@ -6,7 +6,7 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 
 1. **Spec:** `spec-whiteboarding` (oder `spec-whiteboarding-with-docs`, verankert im bestehenden System) macht aus einer Anfrage eine `spec.md`. `spec-review` prüft sie.
 2. **Plan:** `plan-writing` macht aus der Spec einen Umsetzungsplan mit exakten Dateien und Test-first-Schritten. `plan-review` prüft ihn. `plan-orchestrator` verkettet beides samt höchstens einem `review-followup` in einem Lauf und committet Spec und Plan am Ende.
-3. **Umsetzung:** `start-work` bereitet Branch oder Worktree vor, `implementation` setzt den Plan Task für Task um, `implementation-review` prüft das Ergebnis, `finish-work` schließt die Arbeit ab.
+3. **Umsetzung:** `start-work` bereitet Branch oder Worktree vor, `implementation` setzt den Plan Task für Task um, `implementation-review` prüft das Ergebnis, `finish-work` schließt die Arbeit ab. `implementation-orchestrator` verkettet alle fünf samt höchstens einem `review-followup` in einem Lauf; der Feature-Branch bleibt lokal, nichts wird gepusht.
 
 ## Skills
 
@@ -19,11 +19,12 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 | `plan-writing` | Spec in Plan überführen |
 | `plan-orchestrator` | Plan schreiben, prüfen, einmal nacharbeiten und committen in einem Lauf; die Spec bleibt unverändert |
 | `start-work`, `implementation`, `finish-work` | Arbeit vorbereiten, umsetzen, abschließen |
+| `implementation-orchestrator` | Umsetzen, prüfen, einmal nacharbeiten und abschließen in einem Lauf; Plan und Spec bleiben unverändert, kein Push |
 | `domain-modeling` | Unscharfe oder widersprüchliche Fachbegriffe klären, ADRs anstoßen |
 | `merge-conflict-resolution` | Gestoppten Merge oder Rebase auflösen |
 | `commit-message` | Commit-Message im Conventional-Commits-Stil schreiben (Text ausgeben, nicht committen); `init` trägt ihn als `Commit-Konvention` ein |
 
-Das Modell darf alle Skills außer `init`, `start-work`, `finish-work` und `spec-whiteboarding-with-docs` selbst aufrufen, auch aus Sub-Agenten, damit ein Orchestrator Review-, Plan- und Umsetzungsabläufe verketten kann. Die vier gesperrten Skills tragen `disable-model-invocation: true`: Sie berühren Branches, Worktrees und Push bzw. führen einen Dialog mit dem Nutzer. Per `/dv-forge:<skill>` startet der Nutzer jeden Skill weiterhin selbst.
+Das Modell darf alle Skills außer `init` selbst aufrufen, auch aus Sub-Agenten, damit ein Orchestrator Review-, Plan- und Umsetzungsabläufe verketten kann. `init` trägt `disable-model-invocation: true`, weil es einen Dialog mit dem Nutzer führt. Per `/dv-forge:<skill>` startet der Nutzer jeden Skill weiterhin selbst.
 
 ## Agents
 

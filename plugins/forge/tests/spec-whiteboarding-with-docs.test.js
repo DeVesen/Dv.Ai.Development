@@ -9,12 +9,11 @@ const { readMarkdown, wordCount } = require('./lib/markdown');
 const SKILL_DIR = path.join(__dirname, '..', 'skills', 'spec-whiteboarding-with-docs');
 const SKILL = path.join(SKILL_DIR, 'SKILL.md');
 
-test('withDocs_Frontmatter_ManualOnly', () => {
+test('withDocs_Frontmatter_ModelInvocable', () => {
   const { fields } = readMarkdown(SKILL);
-  assert.deepEqual(Object.keys(fields), ['name', 'description', 'disable-model-invocation']);
+  assert.deepEqual(Object.keys(fields), ['name', 'description']);
   assert.equal(fields.name, 'spec-whiteboarding-with-docs');
   assert.match(fields.description, /^Use when/);
-  assert.equal(fields['disable-model-invocation'], 'true');
 });
 
 test('withDocs_Body_LoadsBothSkillsViaSkillTool', () => {

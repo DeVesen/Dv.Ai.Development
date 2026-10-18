@@ -13,11 +13,11 @@ function skill(name) {
 }
 
 for (const name of ['init', 'start-work', 'finish-work']) {
-  test(`${name}_Frontmatter_ManualOnlyUseWhen`, () => {
+  test(`${name}_Frontmatter_UseWhenAndOnlyInitManual`, () => {
     const { fields } = skill(name);
     assert.equal(fields.name, name);
     assert.match(fields.description, /^Use when/);
-    assert.equal(fields['disable-model-invocation'], 'true');
+    assert.equal(fields['disable-model-invocation'], name === 'init' ? 'true' : undefined);
   });
 
   test(`${name}_Body_StaysUnder500WordsAndUsesPluginRoot`, () => {

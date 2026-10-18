@@ -62,8 +62,16 @@ test('planOrchestrator_Body_CommitsSpecAndPlanOnceWithSubjectOnly', () => {
   assert.ok(body.includes('`git add -- <dateien>` und `git commit -m "<betreff>" -- <dateien>`'));
   assert.ok(body.includes('`node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`'));
   assert.ok(body.includes('Nur eine Betreffzeile in einem `-m`, kein Body'));
-  assert.ok(body.includes('antwortest du „nein“'));
+  assert.ok(body.includes('Commit-Frage eines Skills → „nein“. Nur Schritt 5 committet.'));
   assert.ok(body.includes('Kein Branch, kein Worktree, kein Wechsel, kein Merge, kein Push.'));
+});
+
+test('planOrchestrator_Body_EndsReadyReportWithCopyablePathBlock', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('Bei `✅ Bereit zur Umsetzung` endet er mit einem Code-Block, der nur die zwei Pfade enthält, je Zeile einer:\n   ```\n   <S>\n   <P>\n   ```'));
 });
 
 test('planOrchestrator_Body_StaysUnder500WordsWithPairedQuotes', () => {

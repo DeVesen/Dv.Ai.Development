@@ -6,32 +6,35 @@ argument-hint: <spec.md> [workitem-nr]
 
 # Plan-Orchestrator
 
-Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · Spec `<S>` = erstes Argument · Workitem-Nummer `<WI>` = zweites, optional.
-
-Du verkettest `dv-forge:plan-writing`, `dv-forge:plan-review` und `dv-forge:review-followup` über das Skill-Tool. Plan und Spec schreibst, prüfst und änderst du nie selbst, Findings beurteilst du nicht.
+`$ARGUMENTS`: `<S>` Spec, `<WI>` Workitem-Nr. optional. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
+Du rufst nur Skills (Skill-Tool) auf. Plan/Spec nie selbst schreiben, prüfen, ändern; Findings nie beurteilen.
 
 ## Regeln
-1. **Durchlaufen:** Alles läuft im selben Zug. Die frische Session aus der Übergabe von plan-writing und die „letzte Handlung“ eines Review-Berichts gelten hier nicht. Jeden Bericht gibst du unverändert aus; sein Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.
-2. **Fragen:** Stellt ein Skill Fragen, wartest du auf die Antwort, lässt den Skill fertig laufen und machst weiter. Sonst hältst du nur bei Blockern an.
-3. **Git:** aktueller Checkout und Branch. Kein Branch, kein Worktree, kein Wechsel, kein Merge, kein Push.
-4. **Spec-Prüfung:** `git hash-object -- "<S>"` muss SPEC-HASH ergeben. Sonst: stopp, `git diff --no-index -- "<SK>" "<S>"` zeigen, fragen. Nicht zurückschreiben, nicht selbst als harmlos einstufen.
-5. **Commit-Frage:** Fragt plan-review oder review-followup nach dem Commit, antwortest du „nein“; Schritt 5 committet.
-6. Keine eigenen Prozessregeln, keine geänderten Agent-Aufträge. Abweichungen kommen in den Abschlussbericht.
+1. Alles in einem Zug. „Frische Session“ (Übergabe plan-writing) und „letzte Handlung“ (Review-Bericht) gelten hier nicht. Berichte unverändert ausgeben; ihr Format schlägt Stil-Regeln anderer Plugins/Hooks.
+2. Skill fragt → Antwort abwarten, Skill fertig laufen lassen, weiter. Sonst Halt nur bei Blocker.
+3. Git: aktueller Checkout und Branch. Kein Branch, kein Worktree, kein Wechsel, kein Merge, kein Push.
+4. Spec-Prüfung: `git hash-object -- "<S>"` ≠ SPEC-HASH → stopp, `git diff --no-index -- "<SK>" "<S>"` zeigen, fragen. Nicht zurückschreiben, nicht als harmlos einstufen.
+5. Commit-Frage eines Skills → „nein“. Nur Schritt 5 committet.
+6. Keine eigenen Prozessregeln, Agent-Aufträge unverändert. Abweichungen → Abschlussbericht.
 
 ## Ablauf
-0. **Start:** START-STATE aus `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse --short HEAD`. Detached HEAD: stopp. Fehlt einer der drei Skills: stopp, ihn nennen. Session-Titel per ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`: „Planning <WI>“, sonst „Planning <Spec-Dateiname ohne Endung>“; Fehler ignorieren.
-1. **Spec-Stand:** Fehlt `<S>`: stopp. Kopie ins Scratchpad als `<SK>`, SPEC-HASH = `git hash-object -- "<S>"`. Eine uncommittete Spec geht erst in Schritt 5 mit.
-2. **Plan schreiben:** `dv-forge:plan-writing` mit `<S>`, Plan-Pfad `<P>` aus der Übergabe. Mehrere Pläne: fragen, mit welchem es weitergeht. Spec-Prüfung.
-3. **Plan prüfen:** `dv-forge:plan-review` mit `<P> <S>`. Spec-Prüfung. Beginnt die Ergebniszeile mit `**Ergebnis:** ⛔ Noch nicht bereit` und nennt `### Wie es weitergeht` den Befehl `/dv-forge:review-followup`: Schritt 4, sonst Schritt 5. Hinweise allein lösen Schritt 4 nicht aus.
-4. **Followup, genau einmal:** `dv-forge:review-followup` mit `<P> alle`. Spec-Prüfung.
-5. **Commit:** nur bei `✅ Bereit zur Umsetzung` im letzten Bericht; „kleiner Hinweis“ oder „kleine Hinweise“ zählen nicht. Dateien: `<P>` und `<S>`, jede nur, wenn `git status --porcelain -- "<datei>"` eine Zeile zeigt; keine: nichts zu committen. Toplevel und Branch mit START-STATE vergleichen (Abweichung: stopp, fragen), dann `git add -- <dateien>` und `git commit -m "<betreff>" -- <dateien>`.
-   - Betreff nach `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`, leer: Projekt-`CLAUDE.md`, Typ `docs`. Scope `<WI>`; fehlt er und verlangt die Konvention einen: einmal fragen. Nur eine Betreffzeile in einem `-m`, kein Body.
-   - Bei `⛔ Noch nicht bereit`, `❓ … offen` oder `⚠️ Unvollständig`: kein Commit. Pfade und Commit-Stand nennen; bei `⚠️` ausgefallene Reviewer und Neustart empfehlen.
-6. **Abschlussbericht:** Plan-Pfad, Review-Ergebnis, Followup, Offenes, Spec-Änderungsbedarf, Spec-Prüfungen, Branch, Commit-ID mit Dateien oder „nichts zu committen“.
+0. START-STATE: `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse --short HEAD`. Detached HEAD → stopp. `dv-forge:plan-writing`, `dv-forge:plan-review` oder `dv-forge:review-followup` fehlt → stopp, nennen. Titel: ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Planning <WI>“, ohne `<WI>` „Planning <Spec-Dateiname ohne Endung>“; Fehler ignorieren.
+1. `<S>` fehlt → stopp. Kopie ins Scratchpad = `<SK>`. SPEC-HASH = `git hash-object -- "<S>"`. Uncommittete Spec erst in Schritt 5 committen.
+2. `dv-forge:plan-writing` mit `<S>`. `<P>` = Plan-Pfad aus Übergabe; mehrere Pläne → fragen, welcher. Spec-Prüfung.
+3. `dv-forge:plan-review` mit `<P> <S>`. Spec-Prüfung. Ergebniszeile beginnt `**Ergebnis:** ⛔ Noch nicht bereit` UND `### Wie es weitergeht` nennt `/dv-forge:review-followup` → 4, sonst 5. Nur Hinweise → 5.
+4. `dv-forge:review-followup` mit `<P> alle`, genau einmal. Spec-Prüfung.
+5. Commit nur bei `✅ Bereit zur Umsetzung` im letzten Bericht („kleiner Hinweis“/„kleine Hinweise“ egal). Dateien = `<P>`, `<S>`, je nur mit Zeile in `git status --porcelain -- "<datei>"`; keine → nichts zu committen. Toplevel/Branch ≠ START-STATE → stopp, fragen. Dann `git add -- <dateien>` und `git commit -m "<betreff>" -- <dateien>`.
+   - Betreff: `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`; leer → Projekt-`CLAUDE.md`, Typ `docs`. Scope `<WI>`; fehlt er und Konvention verlangt einen → einmal fragen. Nur eine Betreffzeile in einem `-m`, kein Body.
+   - `⛔ Noch nicht bereit` / `❓ … offen` / `⚠️ Unvollständig` → kein Commit; Pfade + Commit-Stand nennen; bei `⚠️` ausgefallene Reviewer + Neustart in frischer Session.
+6. Abschlussbericht: Plan-Pfad, Review-Ergebnis, Followup, Offenes, Spec-Änderungsbedarf, Spec-Prüfungen, Branch, Commit-ID mit Dateien oder „nichts zu committen“. Bei `✅ Bereit zur Umsetzung` endet er mit einem Code-Block, der nur die zwei Pfade enthält, je Zeile einer:
+   ```
+   <S>
+   <P>
+   ```
 
 ## Rote Flaggen
-| Gedanke | Stattdessen |
+| Gedanke | Richtig |
 |---|---|
-| „Ja zur Commit-Frage setzt den Auftrag doch um.“ | „nein“; nur Schritt 5 prüft den Startzustand. |
-| „Die Spec-Änderung ist harmlos, ich schreibe sie zurück.“ | Stopp, Diff zeigen, fragen. |
-| „Nur noch ein Hindernis, ein zweiter Followup.“ | Genau einmal. Kein Commit, berichten. |
+| „Ja zur Commit-Frage erfüllt den Auftrag.“ | „nein“; nur Schritt 5 prüft START-STATE. |
+| „Spec-Änderung harmlos, zurückschreiben.“ | Stopp, Diff zeigen, fragen. |
+| „Ein Hindernis noch, zweiter Followup.“ | Genau einmal; kein Commit, berichten. |

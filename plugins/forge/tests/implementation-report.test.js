@@ -342,3 +342,20 @@ test('implementationReport_EmbeddedWithoutScout_FollowupNein', () => {
   // Assert
   assert.match(result.stdout, /^ENDE geprüft, 1 × 🔴 offen\nERGEBNIS ⛔ Noch nicht bereit · 1 Hindernis offen\nFOLLOWUP nein\n/);
 });
+
+test('implementationReport_EmbeddedWithGreenGroup_DataListsGreenEntryAndOpenStaysEmpty', () => {
+  // Arrange
+  const env = setup({ groups: [GREEN] });
+  const file = path.join(env.workspace, 'bericht-review.json');
+
+  // Act
+  const result = embeddedReport(env, file);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.deepEqual(data.green.map((entry) => [entry.key, entry.color, entry.title, entry.angles, entry.hasProposal]), [['src/ok.js', 'green', 'src/ok.js', 'Tests', false]]);
+  assert.match(data.green[0].description, /^Name holpert/);
+  assert.deepEqual(data.open, []);
+  assert.equal(data.kind, 'ready');
+});

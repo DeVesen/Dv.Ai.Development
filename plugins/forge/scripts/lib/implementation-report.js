@@ -94,9 +94,21 @@ function scoutedOf(group, scout) {
   return scout.texts.has(key) && scout.blocks.has(key) ? { texts: scout.texts.get(key), block: scout.blocks.get(key) } : null;
 }
 
+function anglesOf(group) {
+  return group.reviewers.map((name) => reviewerLabel(REVIEW, name)).join(', ');
+}
+
+// 🟢 stehen nur im Abschlussbericht eines Orchestrators; sie haben nie einen Vorschlag.
+function greenEntry(group) {
+  return {
+    key: placeKey(group.location), color: 'green', title: group.location, description: fallbackDescription(group.items[0].consequence),
+    recommendation: null, angles: anglesOf(group), hasProposal: false,
+  };
+}
+
 function openEntry(group, scout) {
   const scouted = scoutedOf(group, scout);
-  const angles = group.reviewers.map((name) => reviewerLabel(REVIEW, name)).join(', ');
+  const angles = anglesOf(group);
   if (scouted) {
     const { title, description, recommendation } = scouted.texts;
     return { key: placeKey(group.location), color: group.severity, title, description, recommendation, angles, hasProposal: true };
@@ -130,7 +142,7 @@ function reportInput(options, result, open, scout) {
     reviewerCount: result.reviewers.length + result.failed.length, range: `${options.range}..HEAD`,
     fileCount: files.length, testCount: files.filter(isTestFile).length,
     reviewerLines: reviewerLines(result), failedLabels: result.failed.map((name) => reviewerLabel(REVIEW, name)),
-    open: open.map((group) => openEntry(group, scout)),
+    open: open.map((group) => openEntry(group, scout)), green: result.groups.filter((group) => group.severity === 'green').map(greenEntry),
     notes: notesOf(options, result, open, scout),
   };
 }
@@ -144,7 +156,7 @@ function embeddedOutput(options, input, status) {
   writeJson(options.reportFile, {
     format: FORMAT, review: REVIEW, title: 'Implementierungs-Review', followup: false, status, ...summary, offersFollowup: followup,
     plan: input.plan, topic: input.topic, openRed: input.openRed, failedLabels: input.failedLabels,
-    changes: [], decisions: [], questions: [], open: input.open, notes: input.notes,
+    changes: [], decisions: [], questions: [], open: input.open, green: input.green, notes: input.notes,
   });
   return [`ENDE ${status}`, `ERGEBNIS ${summary.resultLine.replace(RESULT_PREFIX, '')}`, `FOLLOWUP ${followup ? 'ja' : 'nein'}`, `BERICHT ${options.reportFile}`].join('\n');
 }

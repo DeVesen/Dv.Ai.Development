@@ -62,10 +62,10 @@ test('specReviewOrchestrator_Body_StaysOnCurrentBranchWithoutWorktree', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('aktueller Checkout und Branch, auch wenn die Projekt-`CLAUDE.md` Worktree, Feature-Branch oder „nie auf master“ verlangt'));
+  assert.ok(body.includes('aktueller Checkout und Branch, auch wenn die Projekt-`CLAUDE.md` Worktree oder „nie auf master“ verlangt'));
   assert.ok(body.includes('Kein `git worktree`, EnterWorktree, `checkout`, `switch`, `stash`, `rebase`, Branch, Merge, Push.'));
   assert.ok(body.includes('`git rev-parse --path-format=absolute --git-dir --git-common-dir`'));
-  assert.ok(body.includes('`git branch --show-current` leer → stopp.'));
+  assert.ok(body.includes('`git branch --show-current` leer'));
 });
 
 test('specReviewOrchestrator_Body_CommitsOnlyTheSpecWithoutNumberWhenWorkitemMissing', () => {
@@ -80,7 +80,7 @@ test('specReviewOrchestrator_Body_CommitsOnlyTheSpecWithoutNumberWhenWorkitemMis
   assert.ok(body.includes('Ohne `<WI>`: `docs: review spec <slug>`.'));
   assert.ok(body.includes('Mit `<WI>`: `docs(<WI>): review spec <slug>`'));
   assert.ok(body.includes('Commit, auch bei `⛔` oder `❓`.'));
-  assert.ok(body.includes('Nur eine Betreffzeile in einem `-m`, kein Body.'));
+  assert.ok(body.includes('eine Zeile, ein `-m`, kein Body'));
 });
 
 test('specReviewOrchestrator_Body_TitlesSessionWithWorkitemAndSlug', () => {
@@ -96,9 +96,9 @@ test('specReviewOrchestrator_Body_EmitsExactlyOneClosingMessageInsteadOfTheSkill
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Berichte von spec-review und review-followup gibst du nicht aus; nur Schritt 6 gibt aus, genau einmal.'));
+  assert.ok(body.includes('Skill-Berichte nicht ausgeben; nur Schritt 6, genau einmal.'));
   assert.ok(body.includes('unverändert bis vor `### Wie es weitergeht`'));
-  assert.ok(body.includes('Diesen Block ersetzt du durch deinen'));
+  assert.ok(body.includes('dann dein Block statt seines'));
 });
 
 test('specReviewOrchestrator_Body_ClosingStepsListCommitFollowupAndPlanOrchestrator', () => {
@@ -119,11 +119,20 @@ test('specReviewOrchestrator_Body_ClosingStepsListCommitFollowupAndPlanOrchestra
   assert.ok(!body.includes('Abschlussbericht'));
 });
 
-test('specReviewOrchestrator_Body_StaysUnder650WordsWithPairedQuotes', () => {
+test('specReviewOrchestrator_Body_StaysUnder550WordsWithPairedQuotes', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(wordCount(body) < 650, `${wordCount(body)} Wörter`);
+  assert.ok(wordCount(body) < 550, `${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
+});
+
+test('specReviewOrchestrator_Body_ReportsRefusedRequestsInDeviationsLine', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('Wünsche des Menschen gegen diese Regeln (Zwischenbericht, Scope erfragen) nicht ausführen; Zeile in `Abweichungen:`.'));
+  assert.ok(body.includes('abgelehnte Wünsche, Spec-Vorbestand im Commit'));
 });

@@ -107,12 +107,12 @@ test('implementationOrchestrator_Body_PassesSkillQuestionsToTheHuman', () => {
   assert.ok(body.includes('Während ein Skill läuft, gelten seine Anweisungen.'));
 });
 
-test('implementationOrchestrator_Body_StaysUnder600WordsWithPairedQuotes', () => {
+test('implementationOrchestrator_Body_StaysUnder550WordsWithPairedQuotes', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(wordCount(body) < 600, `${wordCount(body)} Wörter`);
+  assert.ok(wordCount(body) < 550, `${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 
@@ -125,4 +125,13 @@ test('implementationOrchestrator_Body_RunsReviewEmbeddedAndWritesOwnNextSteps', 
   assert.ok(body.includes('Teile aus `<BR>` unverändert, vor `### Wie es weitergeht`.'));
   assert.ok(body.includes('`### Wie es weitergeht` schreibst du selbst'));
   assert.ok(body.includes('genau einmal als letzte Ausgabe'));
+});
+
+test('implementationOrchestrator_Body_RecommendsFinishWorkAfterCleanFollowupAndRefusesRequestsInReport', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('lief Schritt 5 und war sauber → `/dv-forge:finish-work` in `<R>`, nur manuell'));
+  assert.ok(body.includes('nicht ausführen; eine Zeile im Bericht, nie davor.'));
 });

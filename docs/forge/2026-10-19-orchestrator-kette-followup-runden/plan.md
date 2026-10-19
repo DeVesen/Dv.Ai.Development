@@ -35,29 +35,30 @@
 
 **ACs:** AC-10, AC-13, AC-14, AC-15, AC-16, AC-17
 
+Die Dateien `plugins/forge/scripts/lib/chain.js` und `plugins/forge/tests/chain.test.js` liegen schon als nicht committeter Stand im Arbeitsverzeichnis, ebenso die Ausfuhr von `SLUG` in `followup.js`. Dieser Task ersetzt beide Dateien vollständig durch den Inhalt unten (fehlt eine, wird sie mit diesem Inhalt angelegt); der vorhandene Stand prüft bei der Stufe `implementation` nur den Worktree und hat in `chain.test.js` einen kaputten regulären Ausdruck.
+
 **Dateien:**
-- Create: `plugins/forge/scripts/lib/chain.js`
-- Create: `plugins/forge/tests/chain.test.js`
+- Modify: `plugins/forge/scripts/lib/chain.js` · `const EXISTING`
+- Modify: `plugins/forge/tests/chain.test.js` · `readEntry_PlanOrSpecPathMissing_ReturnsNull`
 - Modify: `plugins/forge/scripts/followup.js:235-237` · `module.exports`
+- Modify: `plugins/forge/scripts/lib/posix.js` · `function toPosix`
+- Modify: `plugins/forge/scripts/guard-orchestrator.js:89-92` · `function normalize`
+- Modify: `plugins/forge/tests/lib/git-repo.js` · `module.exports`
+- Create: `plugins/forge/tests/posix.test.js`
 
 **Interfaces:**
-- Bestehender Code: `slugOf(planPath)` in plan-tasks.js; `slugFor(artifactPath, roles)` in followup.js (bei `roles[0] === 'spec-review'` Elternordner von `spec.md`, sonst Dateiname ohne Endung); `SLUG` in followup.js (Slug-Regel der Reviews, bisher nicht exportiert); `toPosix(value)` in lib/posix.js.
-- Produces: `SLUG` zusätzlich im `module.exports` von followup.js; `class ChainError extends Error`; `STAGES: ['spec', 'plan', 'implementation']`; `writeEntry({ stage, spec, plan, wi, worktree, branch }): { stage, slug, spec, plan, wi, worktree, branch }` (Pfade absolut mit `/`, nicht gesetzte Felder `undefined`; wirft `ChainError`, wenn ein Wert oder Pfad der Stufe fehlt oder der Slug nicht der Regel `SLUG` folgt; der Speicher bleibt dann unverändert); `readEntry({ stage, artifact }): entry | null` (`artifact` ist die Spec bei `spec`, sonst der Plan; `null` bei fehlendem Eintrag, anderer Stufe, fehlendem Pfad der Stufe, Slug außerhalb der Regel `SLUG` oder Pfad außerhalb eines Git-Repos; wirft nur bei unbekannter Stufe); `removeByWorktree(dir, worktree): number` (Zahl der entfernten Einträge der Stufe `implementation`).
+- Bestehender Code: `slugOf(planPath)` in plan-tasks.js; `slugFor(artifactPath, roles)` in followup.js (bei `roles[0] === 'spec-review'` Elternordner von `spec.md`, sonst Dateiname ohne Endung); `SLUG` in followup.js (Slug-Regel der Reviews, im Stand `cffa8d4` nicht exportiert); `toPosix(value)` in lib/posix.js; `normalize(value)` in guard-orchestrator.js (nicht exportiert, Vorbild für `normalizePath`); `git`, `commitFile`, `makeRepo` in tests/lib/git-repo.js.
+- Produces: `normalizePath(value): string` in lib/posix.js (absoluter Pfad mit `/`, auf Windows kleingeschrieben; ohne Symlink-Auflösung), genutzt von `sameDir` in lib/chain.js und als `normalize` in guard-orchestrator.js (`canonicalPath` im Guard bleibt); Test-Helfer `addWorktree(repo, branch): string` (neuer Worktree im temporären Ordner auf neuem Branch) und `repoWithPlan(): { repo, spec, plan }` (Repo mit committeter Spec und Plan im Ordner `docs/forge/x`, Slug `x`) in tests/lib/git-repo.js, genutzt von chain.test.js, chain-cli.test.js (Task 2) und chain-reports.test.js (Task 4); `SLUG` zusätzlich im `module.exports` von followup.js; `class ChainError extends Error`; `STAGES: ['spec', 'plan', 'implementation']`; `writeEntry({ stage, spec, plan, wi, worktree, branch }): { stage, slug, spec, plan, wi, worktree, branch }` (Pfade absolut mit `/`, nicht gesetzte Felder `undefined`; wirft `ChainError`, wenn ein Wert oder Pfad der Stufe fehlt oder der Slug nicht der Regel `SLUG` folgt; der Speicher bleibt dann unverändert); `readEntry({ stage, artifact }): entry | null` (`artifact` ist die Spec bei `spec`, sonst der Plan; `null` bei fehlendem Eintrag, anderer Stufe, fehlendem Pfad der Stufe (`spec`: Spec; `plan`: Plan und Spec; `implementation`: Plan, Spec und Worktree), Slug außerhalb der Regel `SLUG` oder Pfad außerhalb eines Git-Repos; wirft nur bei unbekannter Stufe); `removeByWorktree(dir, worktree): number` (Zahl der entfernten Einträge der Stufe `implementation`).
 
-- [ ] **Schritt 1: Fehlschlagenden Test schreiben**
-  Datei `plugins/forge/tests/chain.test.js` anlegen:
+- [ ] **Schritt 1: Fehlschlagende Tests schreiben**
+  In `plugins/forge/tests/lib/git-repo.js` die Zeile `module.exports = { git, commitFile, makeRepo, samePath };` durch diesen Block ersetzen (gemeinsame Git-Fixtures für chain.test.js, chain-cli.test.js und chain-reports.test.js):
   ```js
-  'use strict';
-
-  const test = require('node:test');
-  const assert = require('node:assert/strict');
-  const fs = require('node:fs');
-  const os = require('node:os');
-  const path = require('node:path');
-  const { git, commitFile, makeRepo } = require('./lib/git-repo');
-  const { ChainError, writeEntry, readEntry, removeByWorktree } = require('../scripts/lib/chain');
-
-  const posix = (value) => path.resolve(value).replace(/\\/g, '/');
+  // Neuer Worktree im temporären Ordner auf dem neuen Branch `branch`; Rückgabe: Ordner des Worktrees.
+  function addWorktree(repo, branch) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-wt-'));
+    git(repo, 'worktree', 'add', '--quiet', dir, '-b', branch);
+    return dir;
+  }
 
   // Repo mit committeter Spec und Plan im Ordner docs/forge/x; Slug `x`.
   function repoWithPlan() {
@@ -67,11 +68,45 @@
     return { repo, spec: path.join(repo, 'docs/forge/x/spec.md'), plan: path.join(repo, 'docs/forge/x/plan.md') };
   }
 
-  function addWorktree(repo, branch) {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-chain-wt-'));
-    git(repo, 'worktree', 'add', '--quiet', dir, '-b', branch);
-    return dir;
-  }
+  module.exports = { git, commitFile, makeRepo, samePath, addWorktree, repoWithPlan };
+  ```
+  Datei `plugins/forge/tests/posix.test.js` anlegen:
+  ```js
+  'use strict';
+
+  const test = require('node:test');
+  const assert = require('node:assert/strict');
+  const path = require('node:path');
+  const { normalizePath } = require('../scripts/lib/posix');
+
+  test('normalizePath_RelativePathWithBackslashes_AbsoluteWithSlashesLowercaseOnWindows', () => {
+    // Act
+    const result = normalizePath('docs\\Forge\\x');
+
+    // Assert
+    const expected = path.resolve('docs', 'Forge', 'x').replace(/\\/g, '/');
+    assert.equal(result, process.platform === 'win32' ? expected.toLowerCase() : expected);
+  });
+
+  test('normalizePath_SamePathInBothSpellings_ReturnsSameKey', () => {
+    // Arrange
+    const dir = path.join(path.resolve('.'), 'A', 'b');
+
+    // Act & Assert
+    assert.equal(normalizePath(dir), normalizePath(dir.split(path.sep).join('/')));
+  });
+  ```
+  Inhalt von `plugins/forge/tests/chain.test.js` vollständig durch diesen Block ersetzen:
+  ```js
+  'use strict';
+
+  const test = require('node:test');
+  const assert = require('node:assert/strict');
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const { git, commitFile, makeRepo, addWorktree, repoWithPlan } = require('./lib/git-repo');
+  const { toPosix } = require('../scripts/lib/posix');
+  const { ChainError, writeEntry, readEntry, removeByWorktree } = require('../scripts/lib/chain');
 
   test('writeEntry_PlanStage_ReadEntryReturnsPlanSpecAndWorkitem', () => {
     // Arrange
@@ -83,8 +118,8 @@
     // Assert
     const entry = readEntry({ stage: 'plan', artifact: plan });
     assert.equal(entry.slug, 'x');
-    assert.equal(entry.plan, posix(plan));
-    assert.equal(entry.spec, posix(spec));
+    assert.equal(entry.plan, toPosix(path.resolve(plan)));
+    assert.equal(entry.spec, toPosix(path.resolve(spec)));
     assert.equal(entry.wi, '311404');
   });
 
@@ -164,7 +199,7 @@
 
     // Assert
     assert.equal(fromWorktree.wi, '5');
-    assert.equal(fromMain.worktree, posix(worktree));
+    assert.equal(fromMain.worktree, toPosix(path.resolve(worktree)));
     assert.equal(fromMain.branch, 'feature/x');
   });
 
@@ -176,6 +211,31 @@
     git(repo, 'worktree', 'remove', '--force', worktree);
 
     // Act & Assert
+    assert.equal(readEntry({ stage: 'implementation', artifact: plan }), null);
+  });
+
+  test('readEntry_ImplementationEntryWhoseSpecWasDeleted_ReturnsNull', () => {
+    // Arrange
+    const { repo, spec, plan } = repoWithPlan();
+    const worktree = addWorktree(repo, 'feature/s');
+    writeEntry({ stage: 'implementation', plan, spec, worktree, branch: 'feature/s' });
+    fs.rmSync(spec);
+
+    // Act & Assert
+    assert.equal(fs.existsSync(worktree), true);
+    assert.equal(readEntry({ stage: 'implementation', artifact: plan }), null);
+  });
+
+  test('readEntry_ImplementationEntryWhosePlanWasDeleted_ReturnsNull', () => {
+    // Arrange
+    const { repo, spec, plan } = repoWithPlan();
+    const worktree = addWorktree(repo, 'feature/p');
+    const planInWorktree = path.join(worktree, path.relative(repo, plan));
+    writeEntry({ stage: 'implementation', plan: planInWorktree, spec, worktree, branch: 'feature/p' });
+    fs.rmSync(planInWorktree);
+
+    // Act & Assert
+    assert.equal(fs.existsSync(worktree), true);
     assert.equal(readEntry({ stage: 'implementation', artifact: plan }), null);
   });
 
@@ -225,9 +285,38 @@
   });
   ```
 - [ ] **Schritt 2: Test rot laufen lassen**
-  Befehl: `node --test "<R>/plugins/forge/tests/chain.test.js"` — erwartet: FAIL `chain.test.js` (die Datei lädt nicht: `Cannot find module '../scripts/lib/chain'`)
+  Befehl: `node --test "<R>/plugins/forge/tests/chain.test.js" "<R>/plugins/forge/tests/posix.test.js"` — erwartet: FAIL `readEntry_ImplementationEntryWhoseSpecWasDeleted_ReturnsNull`, FAIL `readEntry_ImplementationEntryWhosePlanWasDeleted_ReturnsNull` (der vorhandene Stand von `lib/chain.js` prüft bei `implementation` nur den Worktree) und FAIL `normalizePath_RelativePathWithBackslashes_AbsoluteWithSlashesLowercaseOnWindows` (`normalizePath is not a function`). Liegt `lib/chain.js` nicht im Arbeitsverzeichnis, schlägt `chain.test.js` schon beim Laden fehl (`Cannot find module '../scripts/lib/chain'`).
 - [ ] **Schritt 3: Minimal implementieren**
-  Datei `plugins/forge/scripts/lib/chain.js` anlegen:
+  Inhalt von `plugins/forge/scripts/lib/posix.js` vollständig durch diesen Block ersetzen:
+  ```js
+  'use strict';
+
+  const path = require('node:path');
+
+  function toPosix(value) {
+    return String(value).replace(/\\/g, '/');
+  }
+
+  // Vergleichsschlüssel für Pfade: absolut, mit `/`, auf Windows kleingeschrieben; ohne Symlink-Auflösung.
+  function normalizePath(value) {
+    const resolved = toPosix(path.resolve(value));
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  }
+
+  module.exports = { toPosix, normalizePath };
+  ```
+  In `plugins/forge/scripts/guard-orchestrator.js` die Funktion `normalize` samt der Leerzeile danach entfernen:
+  ```js
+  function normalize(value) {
+    const resolved = path.resolve(value).replace(/\\/g, '/');
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  }
+  ```
+  und ebenda unter `const { turnText } = require('./lib/turn-text');` diese Zeile ergänzen (die Aufrufe von `normalize` in `canonicalPath` und im Arbeitsbereich-Check bleiben unverändert):
+  ```js
+  const { normalizePath: normalize } = require('./lib/posix');
+  ```
+  Inhalt von `plugins/forge/scripts/lib/chain.js` vollständig durch diesen Block ersetzen:
   ```js
   'use strict';
 
@@ -238,13 +327,14 @@
   const fs = require('node:fs');
   const path = require('node:path');
   const { spawnSync } = require('node:child_process');
-  const { toPosix } = require('./posix');
+  const { toPosix, normalizePath } = require('./posix');
   const { slugOf } = require('../plan-tasks');
   const { slugFor, SLUG } = require('../followup');
 
   const STAGES = ['spec', 'plan', 'implementation'];
   const NEEDED = { spec: ['spec'], plan: ['plan', 'spec'], implementation: ['plan', 'spec', 'worktree', 'branch'] };
-  const EXISTING = { spec: ['spec'], plan: ['plan', 'spec'], implementation: ['worktree'] };
+  // Pfade, die existieren müssen, damit der Eintrag gilt; bei `implementation` Spec, Plan und Worktree.
+  const EXISTING = { spec: ['spec'], plan: ['plan', 'spec'], implementation: ['plan', 'spec', 'worktree'] };
 
   class ChainError extends Error {}
 
@@ -273,11 +363,7 @@
   }
 
   function sameDir(a, b) {
-    const normal = (value) => {
-      const resolved = toPosix(path.resolve(value));
-      return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
-    };
-    return normal(a) === normal(b);
+    return normalizePath(a) === normalizePath(b);
   }
 
   function parseEntry(file) {
@@ -346,11 +432,11 @@
 
   module.exports = { ChainError, STAGES, writeEntry, readEntry, removeByWorktree };
   ```
-  In `plugins/forge/scripts/followup.js` im `module.exports` die Zeichenfolge `  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, FollowupError, ROLES,` ersetzen durch `  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, FollowupError, ROLES, SLUG,` (die Konstante `SLUG` selbst bleibt unverändert).
-- [ ] **Schritt 4: Test grün laufen lassen**
-  Befehl: `node --test "<R>/plugins/forge/tests/chain.test.js" "<R>/plugins/forge/tests/followup.test.js"` — erwartet: PASS (`chain.test.js` mit 12 Tests, `followup.test.js` unverändert grün)
+  In `plugins/forge/scripts/followup.js` im `module.exports` die Zeichenfolge `  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, FollowupError, ROLES,` ersetzen durch `  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, FollowupError, ROLES, SLUG,` (die Konstante `SLUG` selbst bleibt unverändert). Steht `SLUG,` dort schon direkt nach `ROLES,` (nicht committeter Stand im Arbeitsverzeichnis), bleibt die Zeile so.
+- [ ] **Schritt 4: Tests grün laufen lassen**
+  Befehl: `node --test "<R>/plugins/forge/tests/chain.test.js" "<R>/plugins/forge/tests/posix.test.js" "<R>/plugins/forge/tests/followup.test.js" "<R>/plugins/forge/tests/guard-orchestrator.test.js"` — erwartet: PASS (`chain.test.js` mit 14 Tests, `posix.test.js` mit 2 Tests, `followup.test.js` und `guard-orchestrator.test.js` unverändert grün)
 - [ ] **Schritt 5: Commit**
-  `git add plugins/forge/scripts/lib/chain.js plugins/forge/scripts/followup.js plugins/forge/tests/chain.test.js` · `git commit -m "feat(forge): add chain entry store shared by checkout and worktrees"`
+  `git add plugins/forge/scripts/lib/chain.js plugins/forge/scripts/lib/posix.js plugins/forge/scripts/guard-orchestrator.js plugins/forge/scripts/followup.js plugins/forge/tests/chain.test.js plugins/forge/tests/posix.test.js plugins/forge/tests/lib/git-repo.js` · `git commit -m "feat(forge): add chain entry store shared by checkout and worktrees"`
 
 ---
 
@@ -361,11 +447,11 @@
 **Dateien:**
 - Create: `plugins/forge/scripts/chain.js`
 - Create: `plugins/forge/tests/chain-cli.test.js`
-- Modify: `plugins/forge/scripts/guard-orchestrator.js:17` · `ALLOWED_SCRIPTS`
+- Modify: `plugins/forge/scripts/guard-orchestrator.js:17-18` · `ALLOWED_SCRIPTS`
 - Test: `plugins/forge/tests/guard-orchestrator.test.js` · `decidePreTool_OrchestratorReportNamingSpec_Allows`
 
 **Interfaces:**
-- Consumes: `ChainError`, `STAGES`, `writeEntry`, `readEntry`, `removeByWorktree` aus lib/chain.js (Task 1).
+- Consumes: `ChainError`, `STAGES`, `writeEntry`, `readEntry`, `removeByWorktree` aus lib/chain.js (Task 1); Test-Helfer `addWorktree`, `repoWithPlan` aus tests/lib/git-repo.js (Task 1).
 - Produces: CLI `node chain.js write --stage <spec|plan|implementation> [--spec <S>] [--plan <P>] [--worktree <R>] [--branch <b>] [--wi <nr>]` (stdout `EINTRAG <stage> <slug>`); `node chain.js lookup --stage <stage> (--spec <S> | --plan <P>)` (stdout Zeilen `stage=`, `slug=`, `spec=`, `plan=`, `wi=`, `worktree=`, `branch=` für gesetzte Felder oder die eine Zeile `KEIN EINTRAG`); `node chain.js remove --worktree <R>` (stdout `ENTFERNT <n>`). Exit 1 mit `dv-forge chain: <Grund>` bei `ChainError`, Exit 2 mit Aufruf-Text bei falschem Aufruf. Export `run(args: string[]): string`, `UsageError`, `NO_ENTRY = 'KEIN EINTRAG'`.
 
 - [ ] **Schritt 1: Fehlschlagende Tests schreiben**
@@ -379,17 +465,10 @@
   const os = require('node:os');
   const path = require('node:path');
   const { spawnSync } = require('node:child_process');
-  const { git, commitFile, makeRepo } = require('./lib/git-repo');
+  const { git, makeRepo, addWorktree, repoWithPlan } = require('./lib/git-repo');
+  const { toPosix } = require('../scripts/lib/posix');
 
   const SCRIPT = path.join(__dirname, '..', 'scripts', 'chain.js');
-  const posix = (value) => path.resolve(value).replace(/\\/g, '/');
-
-  function repoWithPlan() {
-    const repo = makeRepo();
-    commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'add spec');
-    commitFile(repo, 'docs/forge/x/plan.md', '# Plan\n\n### Task 1: Eins\n', 'add plan');
-    return { repo, spec: path.join(repo, 'docs/forge/x/spec.md'), plan: path.join(repo, 'docs/forge/x/plan.md') };
-  }
 
   function chain(cwd, ...args) {
     return spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8' });
@@ -406,7 +485,7 @@
     // Assert
     assert.equal(written.status, 0, written.stderr);
     assert.equal(written.stdout, 'EINTRAG plan x\n');
-    assert.equal(found.stdout, ['stage=plan', 'slug=x', `spec=${posix(spec)}`, `plan=${posix(plan)}`, 'wi=311404'].join('\n') + '\n');
+    assert.equal(found.stdout, ['stage=plan', 'slug=x', `spec=${toPosix(path.resolve(spec))}`, `plan=${toPosix(path.resolve(plan))}`, 'wi=311404'].join('\n') + '\n');
   });
 
   test('chainCli_LookupWithoutEntryOrOtherStage_PrintsNoEntry', () => {
@@ -438,8 +517,7 @@
   test('chainCli_RemoveByWorktree_RemovesImplementationEntryOnly', () => {
     // Arrange
     const { repo, spec, plan } = repoWithPlan();
-    const worktree = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-chain-cli-wt-'));
-    git(repo, 'worktree', 'add', '--quiet', worktree, '-b', 'feature/x');
+    const worktree = addWorktree(repo, 'feature/x');
     chain(repo, 'write', '--stage', 'implementation', '--plan', plan, '--spec', spec, '--worktree', worktree, '--branch', 'feature/x');
 
     // Act
@@ -698,8 +776,7 @@
   const { commitFile, makeRepo } = require('./lib/git-repo');
   const { SPEC, tempDir, writeReviewer, flow } = require('./lib/review-flow-fixture');
   const { writeEntry } = require('../scripts/lib/chain');
-
-  const posix = (value) => path.resolve(value).replace(/\\/g, '/');
+  const { toPosix } = require('../scripts/lib/posix');
 
   // Repo mit committeter Spec und Plan im Ordner docs/forge/x (Slug `x`) und einem sauberen Spec-Review ohne Findings.
   function specRun() {
@@ -845,8 +922,25 @@
 
     // Assert
     assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zur Umsetzung/);
-    assert.ok(text.includes(`\`/dv-forge:implementation-orchestrator ${run.plan} ${posix(run.spec)} 2\``), text);
+    assert.ok(text.includes(`\`/dv-forge:implementation-orchestrator ${run.plan} ${toPosix(path.resolve(run.spec))} 2\``), text);
     assert.equal(text.includes(`/dv-forge:implementation ${run.plan}`), false);
+  });
+
+  test('planReviewReport_PlanEntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', () => {
+    // Arrange
+    const run = planRun();
+    const baseline = planReport(run);
+    commitFile(run.repo, 'alt/x/spec.md', '# Alt\n', 'add other spec');
+    const otherSpec = path.join(run.repo, 'alt/x/spec.md');
+    writeEntry({ stage: 'plan', plan: run.plan, spec: otherSpec, wi: '1' });
+    fs.rmSync(otherSpec);
+
+    // Act
+    const text = planReport(run);
+
+    // Assert
+    assert.equal(text, baseline);
+    assert.equal(text.includes('implementation-orchestrator'), false);
   });
   ```
 - [ ] **Schritt 2: Tests rot laufen lassen**
@@ -905,7 +999,7 @@
 
 ### Task 4: Implementierungs-Bericht nutzt den Ketten-Eintrag
 
-**ACs:** AC-06, AC-07, AC-09, AC-14, AC-18
+**ACs:** AC-06, AC-07, AC-09, AC-13, AC-14, AC-18
 
 **Dateien:**
 - Modify: `plugins/forge/scripts/lib/report-text.js` · `function questionSteps`
@@ -919,7 +1013,7 @@
 - Test: `plugins/forge/tests/chain-reports.test.js` · `specRun`
 
 **Interfaces:**
-- Consumes: `readEntry` und `writeEntry` aus lib/chain.js (Task 1); `specRun` aus chain-reports.test.js (Task 3).
+- Consumes: `readEntry` und `writeEntry` aus lib/chain.js (Task 1); Test-Helfer `addWorktree` aus tests/lib/git-repo.js (Task 1); `specRun` aus chain-reports.test.js (Task 3).
 - Produces: `worktreeLine(worktree: string): string` (`Worktree bleibt: <worktree>`), `finishStepFor(worktree: string): [string, string]` (`['Arbeit abschließen (nur manuell, in <worktree>):', '/dv-forge:finish-work']`) und `pushLine(branch: string): string` (``Nicht gepusht: `git push -u origin <branch>` ``), exportiert aus `report-text.js`; Einzel-Bericht der Implementierung (hier) und Orchestrator-Bericht (Task 11) bilden diese drei Zeilen nur über sie. `renderImplementationReport(input)` liest `input.chain` (`{ worktree, branch }` oder `null`/fehlend); `buildReport(options)` liest `options.chain`; der Aufruf `node implementation-report.js` ohne `--bericht` übergibt `readEntry({ stage: 'implementation', artifact: <plan> })`.
 
 - [ ] **Schritt 1: Fehlschlagende Tests schreiben**
@@ -979,10 +1073,9 @@
   ```
   ersetzen durch
   ```js
-  const os = require('node:os');
   const path = require('node:path');
   const { spawnSync } = require('node:child_process');
-  const { git, commitFile, makeRepo } = require('./lib/git-repo');
+  const { git, commitFile, makeRepo, addWorktree } = require('./lib/git-repo');
   ```
   und am Ende der Datei anhängen:
   ```js
@@ -1004,10 +1097,9 @@
     return result.stdout;
   }
 
-  function addWorktree(repo, branch) {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-chain-reports-wt-'));
-    git(repo, 'worktree', 'add', '--quiet', dir, '-b', branch);
-    return dir;
+  // Ohne die Zeile `ENDE …`, die zwischen zwei Läufen abweichen darf.
+  function withoutStatus(text) {
+    return text.replace(/\r\n/g, '\n').split('\n').filter((line) => !line.startsWith('ENDE ')).join('\n');
   }
 
   test('implementationReport_ImplementationEntry_WorktreeLineFinishStepAndPushLine', () => {
@@ -1031,7 +1123,24 @@
     const worktree = addWorktree(run.repo, 'feature/y');
     writeEntry({ stage: 'implementation', plan: run.plan, spec: run.spec, worktree, branch: 'feature/y' });
     git(run.repo, 'worktree', 'remove', '--force', worktree);
-    const withoutStatus = (text) => text.replace(/\r\n/g, '\n').split('\n').filter((line) => !line.startsWith('ENDE ')).join('\n');
+
+    // Act
+    const text = implementationRun(run);
+
+    // Assert
+    assert.equal(withoutStatus(text), withoutStatus(baseline));
+    assert.equal(text.includes('Worktree bleibt'), false);
+  });
+
+  test('implementationReport_EntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', () => {
+    // Arrange
+    const run = specRun();
+    const baseline = implementationRun(run);
+    commitFile(run.repo, 'alt/x/spec.md', '# Alt\n', 'add other spec');
+    const otherSpec = path.join(run.repo, 'alt/x/spec.md');
+    const worktree = addWorktree(run.repo, 'feature/s');
+    writeEntry({ stage: 'implementation', plan: run.plan, spec: otherSpec, worktree, branch: 'feature/s' });
+    fs.rmSync(otherSpec);
 
     // Act
     const text = implementationRun(run);
@@ -2562,3 +2671,5 @@ Eine Aufgabe, weil beide Änderungen denselben Renderer (`renderOrchestratorRepo
 - **F · Task 3** — geändert — Vorschlag 1: Vom Ketten-Eintrag nutzt der Befehl des Plan-Reviews nur noch `chain.wi`; die Spec kommt aus `input.spec` (Berichtsoption `options.spec`, wie bei „Die Spec prüfen:“), ersatzweise `chain.spec` (`${input.spec ?? chain.spec}`). Neuer Test `renderReportText_PlanEntryWithOtherSpecThanReportOption_CommandNamesSpecOfReportOption` in `report-text.test.js`. Die `buildInput`-Anweisung fügt `CHAIN_STAGE` und `chainOf` vor `function buildInput` ein und ergänzt nur `chain: chainOf(options),` nach `spec: options.spec,`.
 - **F · Task 4** — geändert — Vorschlag 1: `report-text.js` bekommt und exportiert `worktreeLine`, `finishStepFor` und `pushLine` (neue Modify-Zeilen, `report-text.js` im Commit, `report-text.test.js` und `orchestrator-report.test.js` im Grün-Lauf). `implementation-report-text.js` (Task 4) und `orchestrator-report-text.js` (`implementationSteps`, `nextLines` in Task 11, Consumes nachgezogen) bilden die drei Zeilen nur über diese Funktionen; die vorhandenen Tests beider Berichte bleiben unverändert und belegen den gleichen Wortlaut.
 - **F · Task 9** — geändert — Vorschlag 1: Der Agent-Text nennt die Überschrift jetzt als `### <n> · <Farbe> <Stelle> (<Gutachter>)` und verlangt die Stelle ohne die Klammer mit den Gutachtern als Titel; `implementation-re-reviewer_Body_JudgesGroupsByPlaceWhenFindingsAreGrouped` prüft das samt `ohne die Klammer`. `isConfirmed` sucht zusätzlich unter `placeKey` der Überschrift `<Stelle> (<Gutachter>)` aus `prepare.js` Zeile 352; neuer Test `parseAnswer_TitleWithReviewerBracket_JudgesTheGroup`.
+- **R2 · Global Constraints** — geändert — Die Vorgabe „Spec-, Plan- oder (bei `implementation`) Worktree-Pfad“ und der W-Eintrag „Ungültiger Eintrag“ verlangen bei `implementation` alle drei Pfade; Task 1 setzt `EXISTING.implementation` auf `['plan', 'spec', 'worktree']` und belegt das mit `readEntry_ImplementationEntryWhoseSpecWasDeleted_ReturnsNull` und `readEntry_ImplementationEntryWhosePlanWasDeleted_ReturnsNull` (Plan im Worktree gelöscht, Worktree besteht). AC-13 ganz geprüft: Spec-Stufe war belegt; neu sind `planReviewReport_PlanEntryWhoseSpecWasDeleted_EqualsReportWithoutEntry` (Task 3) und `implementationReport_EntryWhoseSpecWasDeleted_EqualsReportWithoutEntry` (Task 4, nennt dafür AC-13). Falsche Treffer entstehen nicht, weil der Implementation-Orchestrator Plan und Spec aus dem bestehenden Worktree übergibt.
+- **R2 · Task 1** — geändert — (a) `addWorktree(repo, branch)` und `repoWithPlan()` liegen jetzt einmal in `tests/lib/git-repo.js` (Task 1); chain.test.js, chain-cli.test.js (Task 2, ersetzt das Inline-`git worktree add`) und chain-reports.test.js (Task 4) importieren sie; die lokalen `posix`-Funktionen sind durch `toPosix(path.resolve(…))` ersetzt. (b) Neue `normalizePath(value)` in `lib/posix.js` mit `posix.test.js`; `sameDir` in `lib/chain.js` und `normalize` im Guard (als Import-Alias, Aufrufe unverändert, `canonicalPath` bleibt) nutzen sie; Task 1 lässt dafür `guard-orchestrator.test.js` mitlaufen, Task 2 nennt die verschobene Zeile `ALLOWED_SCRIPTS` (17-18). (c) Festlegung: `lib/chain.js`, `chain.test.js` und die `SLUG`-Ausfuhr liegen als nicht committeter Stand im Arbeitsverzeichnis (nicht im Git-Index); Task 1 führt beide Dateien als Modify mit Anker und ersetzt ihren Inhalt vollständig (fehlt eine, wird sie angelegt), weil der vorhandene Stand bei `implementation` nur den Worktree prüft und in `chain.test.js` einen kaputten regulären Ausdruck hat; die `followup.js`-Ersetzung entfällt, wenn `SLUG,` schon dasteht. Der Rot-Lauf erwartet die zwei neuen Implementation-Tests und `normalizePath` als FAIL, `chain.test.js` hat 14 Tests.

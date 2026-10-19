@@ -25,7 +25,7 @@ test('planOrchestrator_Body_ChainsTheThreePlanSkillsInOrderWithEmbeddedReports',
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  const steps = ['`dv-forge:plan-writing` mit `<S>`', '`dv-forge:plan-review` mit `<P> <S> --bericht "<BR>"`', '`dv-forge:review-followup` mit `<P> alle --bericht "<BF>"`'];
+  const steps = ['`dv-forge:plan-writing` mit `<S>`', '`dv-forge:plan-review` mit `<P> <S> --bericht "<BR>"`', '`dv-forge:review-followup` mit `<P> alle --bericht "<BF1>"`'];
   const positions = steps.map((step) => body.indexOf(step));
   for (const [index, step] of steps.entries()) assert.ok(positions[index] !== -1, `${step} fehlt`);
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
@@ -38,7 +38,7 @@ test('planOrchestrator_Body_ChecksSpecByHashAfterEverySkill', () => {
   // Assert
   assert.ok(body.includes('SPEC-HASH = `git hash-object -- "<S>"`'));
   assert.ok(body.includes('`git diff --no-index -- "<SK>" "<S>"`'));
-  assert.equal(body.match(/Spec-Prüfung\./g).length, 3);
+  assert.equal(body.match(/Spec-Prüfung\./g).length, 4);
 });
 
 test('planOrchestrator_Body_BranchesOnTheLinesTheEmbeddedReviewPrints', () => {
@@ -50,9 +50,9 @@ test('planOrchestrator_Body_BranchesOnTheLinesTheEmbeddedReviewPrints', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Zeile `Review abgeschlossen: ⛔ Noch nicht bereit …` UND `FOLLOWUP ja` → 4, sonst 5.'));
+  assert.ok(body.includes('Schlusszeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · …`: `FOLLOWUP ja` und nicht `⚠️ Unvollständig` → 4, sonst 5.'));
   assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
-  assert.ok(script.includes('⛔ Noch nicht bereit'));
+  assert.ok(script.includes('⚠️ Unvollständig'));
 });
 
 test('planOrchestrator_Body_NeverCommitsAndKeepsCheckoutRules', () => {
@@ -74,7 +74,7 @@ test('planOrchestrator_Body_EmitsExactlyOneClosingReportFromTheScript', () => {
   // Assert
   assert.ok(body.includes('plan-review und review-followup laufen eingebettet (`--bericht`) und zeigen keinen Bericht; nur Schritt 5, genau einmal.'));
   assert.ok(body.includes('`node "<PLUGIN>/scripts/orchestrator-report.js" --art plan --review "<BR>" --out "<AB>" --plan "<P>" --spec "<S>" --stand "<Stand>"`'));
-  assert.ok(body.includes('`--followup "<BF>"` nur wenn Schritt 4 lief'));
+  assert.ok(body.includes('`--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief'));
   assert.ok(body.includes('`node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`'));
   assert.ok(body.includes('Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach.'));
   for (const gone of ['dein Block statt seines', 'Pfade:', '### Wie es weitergeht']) assert.ok(!body.includes(gone), `${gone} darf nicht im Skill stehen`);
@@ -118,12 +118,12 @@ test('planOrchestrator_Body_TreatsEmptyOrPlaceholderWorkitemAsNone', () => {
   assert.ok(body.includes('`<WI>` Workitem-Nr. optional; leer oder mit `<` beginnend = keine.'));
 });
 
-test('planOrchestrator_Body_StaysUnder450WordsWithPairedQuotes', () => {
+test('planOrchestrator_Body_StaysUnder550WordsWithPairedQuotes', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(wordCount(body) < 450, `${wordCount(body)} Wörter`);
+  assert.ok(wordCount(body) < 550, `${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 
@@ -134,4 +134,43 @@ test('planOrchestrator_Body_ReportsRefusedRequestsInDeviationsLine', () => {
   // Assert
   assert.ok(body.includes('Wünsche des Menschen gegen diese Regeln (Commit, Zwischenbericht) nicht ausführen; Zeile in `Abweichungen:`.'));
   assert.ok(body.includes('abgelehnte Wünsche.'));
+});
+
+test('planOrchestrator_Body_RunsUpToTwoFollowupRoundsAndStopsOnAbortOrWarning', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<P> alle --bericht "<BF1>"`.'));
+  assert.ok(body.includes('Endet sie mit `FOLLOWUP ja`, nicht mit Abbruch oder `⚠️`: Runde 2 mit `<P> alle --bericht "<BF2>"`, Spec-Prüfung. Nie eine dritte.'));
+  assert.ok(body.includes('`<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`'));
+  assert.ok(body.includes('| „Dritte Followup-Runde.“ | Höchstens zwei. |'));
+  assert.ok(!body.includes('Zweiter Followup'));
+});
+
+test('planOrchestrator_Body_TwoFollowupRoundsStillNeverCommit', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  const rounds = body.slice(body.indexOf('Followup-Runden, höchstens zwei.'), body.indexOf('Nie eine dritte.'));
+  assert.ok(rounds.length > 0, 'Abschnitt der Followup-Runden fehlt');
+  assert.equal(/ommit/.test(rounds), false, 'die Followup-Runden nennen keinen Commit');
+  assert.ok(body.includes('5. Nie committen. Commit-Frage und -Prüfung eines Skills entfallen.'));
+  assert.ok(body.includes('ich committe.') && body.includes('| Nie; der Bericht nennt den Stand. |'));
+  for (const forbidden of ['git add', 'git commit']) assert.ok(!body.includes(forbidden), `${forbidden} darf nicht im Skill stehen`);
+});
+
+test('planOrchestrator_Body_WritesChainEntryBeforeTheReportOnlyWhenThePlanStands', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  const chain = body.indexOf('`node "<PLUGIN>/scripts/chain.js" write --stage plan --plan "<P>" --spec "<S>"`');
+  const failure = body.indexOf('Endet der Aufruf mit Fehler: Meldung in die Zeile `Abweichungen: …` von `<FK>` aufnehmen, `<FK>` nötigenfalls anlegen; der Bericht folgt trotzdem.');
+  const report = body.indexOf('`node "<PLUGIN>/scripts/orchestrator-report.js" --art plan');
+  assert.ok(chain > -1 && chain < report, 'chain.js write muss vor orchestrator-report.js stehen');
+  assert.ok(failure > chain && failure < report, 'die Fehlerregel steht zwischen chain.js write und dem Bericht');
+  assert.ok(body.includes('Steht `<P>` fest (Datei existiert):'));
+  assert.ok(body.includes('dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben.'));
 });

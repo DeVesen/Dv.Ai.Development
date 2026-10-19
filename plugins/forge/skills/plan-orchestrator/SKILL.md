@@ -19,16 +19,17 @@ Nur Skills und Skripte aufrufen. Plan/Spec nie selbst schreiben, prüfen, änder
 
 ## Ablauf
 0. START-STATE: `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse --short HEAD`. Detached HEAD → stopp. Skill `dv-forge:plan-writing`, `dv-forge:plan-review` oder `dv-forge:review-followup` fehlt → stopp. Titel: `<slug>` = Elternordner bei `spec.md`, sonst Dateiname ohne Endung. ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Planning <WI> <slug>“, ohne `<WI>` „Planning <slug>“; Fehler egal.
-1. `<S>` fehlt → stopp. Kopie ins Scratchpad = `<SK>`. SPEC-HASH = `git hash-object -- "<S>"`. Im Scratchpad: `<BR>` = `bericht-review.json`, `<BF>` = `bericht-followup.json`, `<AB>` = `abschluss.md`, `<FK>` = `fakten.md`; absolute Pfade.
+1. `<S>` fehlt → stopp. Kopie ins Scratchpad = `<SK>`. SPEC-HASH = `git hash-object -- "<S>"`. Im Scratchpad: `<BR>` = `bericht-review.json`, `<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`, `<AB>` = `abschluss.md`, `<FK>` = `fakten.md`; absolute Pfade.
 2. `dv-forge:plan-writing` mit `<S>`. `<P>` = Plan-Pfad aus Übergabe, absolut; mehrere → fragen. Spec-Prüfung.
-3. `dv-forge:plan-review` mit `<P> <S> --bericht "<BR>"`. Spec-Prüfung. Zeile `Review abgeschlossen: ⛔ Noch nicht bereit …` UND `FOLLOWUP ja` → 4, sonst 5.
-4. `dv-forge:review-followup` mit `<P> alle --bericht "<BF>"`, genau einmal. Spec-Prüfung.
+3. `dv-forge:plan-review` mit `<P> <S> --bericht "<BR>"`. Spec-Prüfung. Schlusszeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · …`: `FOLLOWUP ja` und nicht `⚠️ Unvollständig` → 4, sonst 5.
+4. Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<P> alle --bericht "<BF1>"`. Spec-Prüfung. Endet sie mit `FOLLOWUP ja`, nicht mit Abbruch oder `⚠️`: Runde 2 mit `<P> alle --bericht "<BF2>"`, Spec-Prüfung. Nie eine dritte.
 5. Abschlussbericht, letzte Handlung:
    1. `Stand` aus `git status --porcelain -- "<S>" "<P>"`: je Datei „Spec uncommittet“/„Plan uncommittet“, sonst „committet“; beide sauber „bereits committet“.
    2. Nur bei Abweichungen `<FK>` schreiben, eine Zeile `Abweichungen: …`: Toplevel/Branch ≠ START-STATE, abgelehnte Wünsche.
-   3. `node "<PLUGIN>/scripts/orchestrator-report.js" --art plan --review "<BR>" --out "<AB>" --plan "<P>" --spec "<S>" --stand "<Stand>"`, dazu `--followup "<BF>"` nur wenn Schritt 4 lief, `--wi <WI>` nur wenn gegeben, `--fakten "<FK>"` nur wenn geschrieben.
-   4. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.
-   5. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach. Ein Hook verlangt die Überschriften wörtlich.
+   3. Steht `<P>` fest (Datei existiert): `node "<PLUGIN>/scripts/chain.js" write --stage plan --plan "<P>" --spec "<S>"`, dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben. Endet der Aufruf mit Fehler: Meldung in die Zeile `Abweichungen: …` von `<FK>` aufnehmen, `<FK>` nötigenfalls anlegen; der Bericht folgt trotzdem.
+   4. `node "<PLUGIN>/scripts/orchestrator-report.js" --art plan --review "<BR>" --out "<AB>" --plan "<P>" --spec "<S>" --stand "<Stand>"`, dazu `--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief, `--wi <WI>` nur wenn gegeben, `--fakten "<FK>"` nur wenn geschrieben.
+   5. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.
+   6. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach. Ein Hook verlangt die Überschriften wörtlich.
 
 ## Rote Flaggen
 | Gedanke | Richtig |
@@ -37,4 +38,4 @@ Nur Skills und Skripte aufrufen. Plan/Spec nie selbst schreiben, prüfen, änder
 | „Den Bericht stelle ich selbst zusammen.“ | Nur `orchestrator-report.js`, unverändert. |
 | „Plan bereit, ich committe.“ | Nie; der Bericht nennt den Stand. |
 | „Spec-Änderung harmlos.“ | Stopp, Diff zeigen, fragen. |
-| „Zweiter Followup.“ | Genau einmal. |
+| „Dritte Followup-Runde.“ | Höchstens zwei. |

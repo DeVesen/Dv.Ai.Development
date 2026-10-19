@@ -273,3 +273,49 @@ test('renderImplementationReport_WithoutNext_EndsBeforeNextSteps', () => {
   assert.match(text, /### Was geprüft wurde/);
   assert.equal(text.includes('### Wie es weitergeht'), false);
 });
+
+const WORKTREE_CHAIN = { stage: 'implementation', slug: 'x', worktree: '/repo-wt', branch: 'feature/x' };
+
+test('renderImplementationReport_ReadyWithImplementationEntry_WorktreeLineFinishStepWithPathAndPushLine', () => {
+  // Act
+  const text = renderImplementationReport(base({ chain: WORKTREE_CHAIN }));
+
+  // Assert
+  assert.ok(text.endsWith([
+    '### Wie es weitergeht',
+    'Worktree bleibt: /repo-wt',
+    '1. Arbeit abschließen (nur manuell, in /repo-wt):',
+    '   `/dv-forge:finish-work`',
+    'Nicht gepusht: `git push -u origin feature/x`',
+  ].join('\n')), text);
+});
+
+test('renderImplementationReport_BlockedWithImplementationEntry_BlockedStepsStayBetweenWorktreeAndPushLine', () => {
+  // Arrange
+  const input = base({ openRed: 1, open: [HINDRANCE] });
+
+  // Act
+  const text = renderImplementationReport({ ...input, chain: WORKTREE_CHAIN });
+
+  // Assert
+  const without = renderImplementationReport(input);
+  const steps = without.slice(without.indexOf('### Wie es weitergeht\n') + '### Wie es weitergeht\n'.length);
+  assert.ok(text.endsWith(`### Wie es weitergeht\nWorktree bleibt: /repo-wt\n${steps}\nNicht gepusht: \`git push -u origin feature/x\``), text);
+  assert.equal(text.includes('Arbeit abschließen'), false);
+});
+
+test('renderImplementationReport_HintsWithImplementationEntry_FinishStepNamesWorktreeAfterHintStep', () => {
+  // Act
+  const text = renderImplementationReport(base({ open: [HINT], chain: WORKTREE_CHAIN }));
+
+  // Assert
+  assert.match(text, /2\. Arbeit abschließen \(nur manuell, in \/repo-wt\):\n {3}`\/dv-forge:finish-work`\nNicht gepusht: `git push -u origin feature\/x`$/);
+});
+
+test('renderImplementationReport_EmbeddedWithoutNextAndEntry_HasNoNextSection', () => {
+  // Act
+  const text = renderImplementationReport(base({ withoutNext: true, chain: WORKTREE_CHAIN }));
+
+  // Assert
+  assert.equal(text.includes('Wie es weitergeht'), false);
+});

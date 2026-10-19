@@ -4,7 +4,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { commitFile, makeRepo } = require('./lib/git-repo');
+const { spawnSync } = require('node:child_process');
+const { git, commitFile, makeRepo, addWorktree } = require('./lib/git-repo');
 const { SPEC, tempDir, writeReviewer, flow } = require('./lib/review-flow-fixture');
 const { writeEntry } = require('../scripts/lib/chain');
 const { toPosix } = require('../scripts/lib/posix');
@@ -172,4 +173,88 @@ test('planReviewReport_PlanEntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', (
   // Assert
   assert.equal(text, baseline);
   assert.equal(text.includes('implementation-orchestrator'), false);
+});
+
+const IMPLEMENTATION_REPORT = path.join(__dirname, '..', 'scripts', 'implementation-report.js');
+const REVIEW_PACKAGE = ['# Review-Paket: a1b2c3d..HEAD', '', '## Commits', 'abc feat: x', '', '## Dateien', ' src/a.js | 3 ++-', ' 1 file changed', '', '## Diff', 'diff --git a/x b/x'].join('\n');
+
+// Implementation-Review ohne Findings zum Plan im Repo; Rückgabe der Berichtsausgabe.
+function implementationRun(run, extra = []) {
+  const workspace = tempDir('dv-forge-chain-impl-');
+  const dir = path.join(workspace, 'runde-1');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'ergebnis.json'), JSON.stringify({ reviewers: ['design'], failed: [], counts: { red: 0, yellow: 0, green: 0 }, groups: [] }));
+  fs.writeFileSync(path.join(dir, 'aggregate.md'), 'STATUS clean=true red=0 yellow=0 green=0 failed=-\n=== REPORT ===\nTabelle\n=== REWORK ===\n');
+  const packageFile = path.join(workspace, 'review.diff');
+  fs.writeFileSync(packageFile, REVIEW_PACKAGE);
+  const result = spawnSync(process.execPath, [IMPLEMENTATION_REPORT, '--dir', dir, '--workspace', workspace, '--plan', run.plan, '--bereich', 'a1b2c3d', '--paket', packageFile, ...extra], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout;
+}
+
+// Ohne die Zeile `ENDE …`, die zwischen zwei Läufen abweichen darf.
+function withoutStatus(text) {
+  return text.replace(/\r\n/g, '\n').split('\n').filter((line) => !line.startsWith('ENDE ')).join('\n');
+}
+
+test('implementationReport_ImplementationEntry_WorktreeLineFinishStepAndPushLine', () => {
+  // Arrange
+  const run = specRun();
+  const worktree = addWorktree(run.repo, 'feature/x');
+  writeEntry({ stage: 'implementation', plan: run.plan, spec: run.spec, worktree, branch: 'feature/x' });
+  const shown = worktree.split(path.sep).join('/');
+
+  // Act
+  const text = implementationRun(run);
+
+  // Assert
+  assert.ok(text.includes(`### Wie es weitergeht\nWorktree bleibt: ${shown}\n1. Arbeit abschließen (nur manuell, in ${shown}):\n   \`/dv-forge:finish-work\`\nNicht gepusht: \`git push -u origin feature/x\``), text);
+});
+
+test('implementationReport_NoEntryOrWorktreeRemoved_EqualsReportWithoutEntry', () => {
+  // Arrange
+  const run = specRun();
+  const baseline = implementationRun(run);
+  const worktree = addWorktree(run.repo, 'feature/y');
+  writeEntry({ stage: 'implementation', plan: run.plan, spec: run.spec, worktree, branch: 'feature/y' });
+  git(run.repo, 'worktree', 'remove', '--force', worktree);
+
+  // Act
+  const text = implementationRun(run);
+
+  // Assert
+  assert.equal(withoutStatus(text), withoutStatus(baseline));
+  assert.equal(text.includes('Worktree bleibt'), false);
+});
+
+test('implementationReport_EntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', () => {
+  // Arrange
+  const run = specRun();
+  const baseline = implementationRun(run);
+  commitFile(run.repo, 'alt/x/spec.md', '# Alt\n', 'add other spec');
+  const otherSpec = path.join(run.repo, 'alt/x/spec.md');
+  const worktree = addWorktree(run.repo, 'feature/s');
+  writeEntry({ stage: 'implementation', plan: run.plan, spec: otherSpec, worktree, branch: 'feature/s' });
+  fs.rmSync(otherSpec);
+
+  // Act
+  const text = implementationRun(run);
+
+  // Assert
+  assert.equal(withoutStatus(text), withoutStatus(baseline));
+  assert.equal(text.includes('Worktree bleibt'), false);
+});
+
+test('implementationReport_EmbeddedRunWithEntry_PrintsFourLinesWithoutNextSection', () => {
+  // Arrange
+  const run = specRun();
+  const worktree = addWorktree(run.repo, 'feature/z');
+  writeEntry({ stage: 'implementation', plan: run.plan, spec: run.spec, worktree, branch: 'feature/z' });
+  const file = path.join(tempDir('dv-forge-chain-impl-embedded-'), 'bericht.json');
+
+  // Act
+  const text = implementationRun(run, ['--bericht', file]);
+
+  // Assert
+  assert.equal(text, `ENDE sauber nach Review 1\nERGEBNIS ✅ Bereit zum Abschließen\nFOLLOWUP nein\nBERICHT ${file}\n`);
 });

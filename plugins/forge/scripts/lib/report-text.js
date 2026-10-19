@@ -79,6 +79,19 @@ function closingSteps(input) {
   return ['Spec und Plan committen (ich frage dich danach).', ['In einer frischen Session umsetzen:', implement]];
 }
 
+// Zeilen zu Worktree, Abschluss-Schritt und Push, geteilt vom Einzel-Bericht der Implementierung und vom Orchestrator-Bericht.
+function worktreeLine(worktree) {
+  return `Worktree bleibt: ${worktree}`;
+}
+
+function finishStepFor(worktree) {
+  return [`Arbeit abschließen (nur manuell, in ${worktree}):`, '/dv-forge:finish-work'];
+}
+
+function pushLine(branch) {
+  return `Nicht gepusht: \`git push -u origin ${branch}\``;
+}
+
 function questionSteps(input) {
   const rerun = `/dv-forge:${input.review} ${input.artifact}`;
   if (input.review === 'spec-review') return [['Die Fragen beantworten, indem du die Prüfung erneut startest:', rerun]];
@@ -188,5 +201,5 @@ function renderReportText(input) {
 
 module.exports = {
   renderReportText, summaryOf, resultLine, changeLines, openLines, section, stepLines, viewpointsPhrase, proposedCount, blockedSteps, hintSteps, questionSteps,
-  withWorkitem, DOCUMENT_TEXTS,
+  withWorkitem, worktreeLine, finishStepFor, pushLine, DOCUMENT_TEXTS,
 };

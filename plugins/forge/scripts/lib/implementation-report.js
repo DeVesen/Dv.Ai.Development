@@ -126,7 +126,7 @@ function notesOf(options, result, open, scout) {
 function reportInput(options, result, open, scout) {
   const files = changedFiles(readText(options.packageFile));
   return {
-    plan: options.planArg, topic: topicOf(readText(options.plan)), openRed: open.filter((group) => group.severity === 'red').length,
+    plan: options.planArg, chain: options.chain ?? null, topic: topicOf(readText(options.plan)), openRed: open.filter((group) => group.severity === 'red').length,
     reviewerCount: result.reviewers.length + result.failed.length, range: `${options.range}..HEAD`,
     fileCount: files.length, testCount: files.filter(isTestFile).length,
     reviewerLines: reviewerLines(result), failedLabels: result.failed.map((name) => reviewerLabel(REVIEW, name)),

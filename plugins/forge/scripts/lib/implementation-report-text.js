@@ -6,7 +6,7 @@
 // `withoutNext`: eingebetteter Lauf; der Aufrufer schreibt „Wie es weitergeht“ selbst, der Bericht endet davor.
 // `openRed`: Zahl der offenen Hindernisse; der Bericht nimmt das Maximum aus ihr und den gelisteten 🔴-Einträgen.
 
-const { openLines, section, stepLines, viewpointsPhrase, proposedCount, blockedSteps, hintSteps } = require('./report-text');
+const { openLines, section, stepLines, viewpointsPhrase, proposedCount, blockedSteps, hintSteps, worktreeLine, finishStepFor, pushLine } = require('./report-text');
 
 const FINISH = ['Arbeit abschließen:', '/dv-forge:finish-work'];
 
@@ -45,19 +45,36 @@ function rerunCommand(input) {
   return `/dv-forge:implementation-review ${input.plan}`;
 }
 
+// Mit Ketten-Eintrag (`input.chain`: worktree, branch) nennt der Schritt den Worktree.
+function finishStep(chain) {
+  return chain ? finishStepFor(chain.worktree) : FINISH;
+}
+
 // Die Schritte erfassen nur gelistete Hindernisse; ohne gelistete gilt die gemeldete Zahl.
 function steps(input, kind, counts) {
   const rerun = rerunCommand(input);
   const followup = `/dv-forge:review-followup ${input.plan} alle`;
+  const finish = finishStep(input.chain);
   if (kind === 'incomplete') return [['Den Lauf in einer frischen Session erneut starten:', rerun]];
   if (kind === 'blocked') {
     const openRed = counts.listedRed > 0 ? counts.listedRed : counts.openRed;
     return blockedSteps({ openRed, proposed: proposedCount(input.open, 'red'), followup, rerun, orSelf: 'oder selbst beheben', selfFix: 'Selbst beheben, dann erneut prüfen:' });
   }
   if (kind === 'hints') {
-    return hintSteps({ hints: counts.hints, proposed: proposedCount(input.open, 'yellow'), followup, selfFix: 'Bei Bedarf selbst beheben (optional).', closing: [FINISH] });
+    return hintSteps({ hints: counts.hints, proposed: proposedCount(input.open, 'yellow'), followup, selfFix: 'Bei Bedarf selbst beheben (optional).', closing: [finish] });
   }
-  return [FINISH];
+  return [finish];
+}
+
+// Mit Ketten-Eintrag stehen die Worktree-Zeile davor und die Push-Zeile danach, wie im Bericht des Orchestrators.
+function nextBlock(input, kind, counts) {
+  const { chain } = input;
+  return [
+    '### Wie es weitergeht',
+    ...(chain ? [worktreeLine(chain.worktree)] : []),
+    ...stepLines(steps(input, kind, counts)),
+    ...(chain ? [pushLine(chain.branch)] : []),
+  ];
 }
 
 function countsOf(input) {
@@ -90,7 +107,7 @@ function renderImplementationReport(input) {
     ...section('Noch offen · Hindernis', hindrances.flatMap(openLines)),
     ...section('Noch offen · kein Hindernis für das Abschließen', hintEntries.flatMap(openLines)),
     ...section('Hinweise zum Ablauf', input.notes.map((note) => `- ${note}`)),
-    ...(input.withoutNext ? [] : [['### Wie es weitergeht', ...stepLines(steps(input, kind, counts))]]),
+    ...(input.withoutNext ? [] : [nextBlock(input, kind, counts)]),
   ].map((block) => block.join('\n')).join('\n\n');
 }
 

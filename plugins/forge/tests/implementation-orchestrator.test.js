@@ -107,12 +107,29 @@ test('implementationOrchestrator_Body_PassesSkillQuestionsToTheHuman', () => {
   assert.ok(body.includes('Während ein Skill läuft, gelten seine Anweisungen.'));
 });
 
-test('implementationOrchestrator_Body_StaysUnder550WordsWithPairedQuotes', () => {
+test('implementationOrchestrator_Body_TitlesSessionWithActivityWorkitemAndSlug', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(wordCount(body) < 550, `${wordCount(body)} Wörter`);
+  assert.ok(body.includes('`<slug>` = Elternordner bei `plan.md`, sonst Dateiname ohne Endung.'));
+  assert.ok(body.includes('`select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Implementation <WI> <slug>“, ohne `<WI>` „Implementation <slug>“'));
+});
+
+test('implementationOrchestrator_Body_TreatsEmptyOrPlaceholderWorkitemAsNone', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('`<WI>` Workitem-Nr. optional; leer oder mit `<` oder `--` beginnend = keine'));
+});
+
+test('implementationOrchestrator_Body_StaysUnder575WordsWithPairedQuotes', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(wordCount(body) < 575,`${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 

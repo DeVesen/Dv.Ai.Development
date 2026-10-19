@@ -20,7 +20,7 @@ Nur Skills und Skripte aufrufen. Spec nie selbst lesen, prüfen, ändern; Findin
 ## Ablauf
 0. `dv-forge:spec-review` oder `dv-forge:review-followup` fehlt → stopp. `<S>` = `<S0>` absolut mit `/`; Datei fehlt → stopp.
 1. START-STATE, `<S>`, `<WI>`, `<slug>`, Schritt → `state.md` im Scratchpad, je Schritt aktualisieren. Im Scratchpad: `<BR>` = `bericht-review.json`, `<BF>` = `bericht-followup.json`, `<AB>` = `abschluss.md`, `<FK>` = `fakten.md`; absolute Pfade. Stopp bei: `git rev-parse --show-toplevel` ≠ `git -C "<Ordner von S>" rev-parse --show-toplevel`; `git rev-parse --path-format=absolute --git-dir --git-common-dir` mit zwei verschiedenen Zeilen (Worktree); `git branch --show-current` leer. Vorbestand `git status --porcelain`, Spec-Vorbestand `git status --porcelain -- "<S>"`.
-2. Titel: `<slug>` = Elternordner bei `spec.md`, sonst Dateiname ohne Endung. ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „<WI>: <slug>“, ohne `<WI>` „<slug>“. Fehler egal.
+2. Titel: `<slug>` = Elternordner bei `spec.md`, sonst Dateiname ohne Endung. ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Spec-Review <WI> <slug>“, ohne `<WI>` „Spec-Review <slug>“. Fehler egal.
 3. `dv-forge:spec-review` mit `<S> --bericht "<BR>"`, sonst kein Argument. `### Frage …` = Pause (Regel 2). Ende = Zeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · …`:
    - Keine solche Zeile oder `⚠️ Unvollständig` → kein Commit, 6.
    - `FOLLOWUP ja`, auch für Hinweise → 4, sonst 5.

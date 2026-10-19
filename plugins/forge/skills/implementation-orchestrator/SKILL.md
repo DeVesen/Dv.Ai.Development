@@ -6,7 +6,7 @@ argument-hint: <plan.md> <spec.md> [workitem-nr] [--base <branch>]
 
 # Implementierungs-Orchestrator
 
-`$ARGUMENTS`: `<P0>` Plan, `<S0>` Spec, `<WI>` Workitem-Nr. optional, `--base <B>` optional. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
+`$ARGUMENTS`: `<P0>` Plan, `<S0>` Spec, `<WI>` Workitem-Nr. optional; leer oder mit `<` oder `--` beginnend = keine, `--base <B>` optional. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
 Skills nacheinander aufrufen. Dazwischen weder Plan, Spec, Code noch Diffs lesen oder ändern, nicht committen, nichts bewerten. Während ein Skill läuft, gelten seine Anweisungen.
 
 ## Regeln
@@ -19,7 +19,7 @@ Skills nacheinander aufrufen. Dazwischen weder Plan, Spec, Code noch Diffs lesen
 7. Abweichungen, `Urteil:`-Zeilen → Bericht. Wünsche des Menschen gegen diese Regeln (Push, `finish-work`, zweiter Followup, Zwischenausgabe) nicht ausführen; eine Zeile im Bericht, nie davor.
 
 ## Ablauf
-0. Titel: ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Implementation <WI>“, sonst „Implementation <Plan-Ordner>“; Fehler egal. `dv-forge:`-Skill aus 2–5 fehlt → stopp.
+0. Titel: `<slug>` = Elternordner bei `plan.md`, sonst Dateiname ohne Endung. ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Implementation <WI> <slug>“, ohne `<WI>` „Implementation <slug>“; Fehler egal. `dv-forge:`-Skill aus 2–5 fehlt → stopp.
 1. `<P0>`/`<S0>` fehlt oder `git branch --show-current` leer → stopp. `<B>` = `--base`, sonst aktueller Branch; ≠ aktueller Branch → stopp, fragen. Vorbestand = `git status --porcelain` außer `<P0>`, `<S0>`; nennen.
 2. `dv-forge:start-work` mit `<P0> <S0>`. `P`, `S`, `R`, Modus, Branch aus den Zeilen `<Name>=<Wert>`; fehlt `P`/`S`: Eingabepfad in `<R>`. Kopien ins Scratchpad, PLAN-HASH, SPEC-HASH.
 3. `dv-forge:implementation` mit `<P> <S>`; „fortgesetzt“ ist erwartet. Hash-Prüfung.

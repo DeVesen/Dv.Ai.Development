@@ -6,7 +6,7 @@ argument-hint: <spec.md> [workitem-nr]
 
 # Plan-Orchestrator
 
-`$ARGUMENTS`: `<S>` Spec, `<WI>` Workitem-Nr. optional. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
+`$ARGUMENTS`: `<S>` Spec, `<WI>` Workitem-Nr. optional; leer oder mit `<` beginnend = keine. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
 Nur Skills und Skripte aufrufen. Plan/Spec nie selbst schreiben, prüfen, ändern; Findings nie beurteilen.
 
 ## Regeln
@@ -18,7 +18,7 @@ Nur Skills und Skripte aufrufen. Plan/Spec nie selbst schreiben, prüfen, änder
 6. Wünsche des Menschen gegen diese Regeln (Commit, Zwischenbericht) nicht ausführen; Zeile in `Abweichungen:`.
 
 ## Ablauf
-0. START-STATE: `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse --short HEAD`. Detached HEAD → stopp. Skill `dv-forge:plan-writing`, `dv-forge:plan-review` oder `dv-forge:review-followup` fehlt → stopp. Titel: ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Planning <WI>“, sonst „Planning <Spec-Name ohne Endung>“; Fehler egal.
+0. START-STATE: `git rev-parse --show-toplevel`, `git branch --show-current`, `git rev-parse --short HEAD`. Detached HEAD → stopp. Skill `dv-forge:plan-writing`, `dv-forge:plan-review` oder `dv-forge:review-followup` fehlt → stopp. Titel: `<slug>` = Elternordner bei `spec.md`, sonst Dateiname ohne Endung. ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Planning <WI> <slug>“, ohne `<WI>` „Planning <slug>“; Fehler egal.
 1. `<S>` fehlt → stopp. Kopie ins Scratchpad = `<SK>`. SPEC-HASH = `git hash-object -- "<S>"`. Im Scratchpad: `<BR>` = `bericht-review.json`, `<BF>` = `bericht-followup.json`, `<AB>` = `abschluss.md`, `<FK>` = `fakten.md`; absolute Pfade.
 2. `dv-forge:plan-writing` mit `<S>`. `<P>` = Plan-Pfad aus Übergabe, absolut; mehrere → fragen. Spec-Prüfung.
 3. `dv-forge:plan-review` mit `<P> <S> --bericht "<BR>"`. Spec-Prüfung. Zeile `Review abgeschlossen: ⛔ Noch nicht bereit …` UND `FOLLOWUP ja` → 4, sonst 5.

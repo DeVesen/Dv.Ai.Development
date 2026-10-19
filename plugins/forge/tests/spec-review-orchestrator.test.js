@@ -85,12 +85,12 @@ test('specReviewOrchestrator_Body_CommitsOnlyTheSpecWithoutNumberWhenWorkitemMis
   assert.ok(body.includes('eine Zeile, ein `-m`, kein Body'));
 });
 
-test('specReviewOrchestrator_Body_TitlesSessionWithWorkitemAndSlug', () => {
+test('specReviewOrchestrator_Body_TitlesSessionWithActivityWorkitemAndSlug', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('`select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „<WI>: <slug>“, ohne `<WI>` „<slug>“'));
+  assert.ok(body.includes('`select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Spec-Review <WI> <slug>“, ohne `<WI>` „Spec-Review <slug>“'));
 });
 
 test('specReviewOrchestrator_Body_EmitsExactlyOneClosingReportFromTheScript', () => {

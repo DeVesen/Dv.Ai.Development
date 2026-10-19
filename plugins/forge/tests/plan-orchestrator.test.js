@@ -101,6 +101,23 @@ test('planOrchestrator_Body_SuggestsArgumentsTheImplementationSkillsAccept', () 
   assert.match(hint('implementation-orchestrator'), /^<plan\.md> <spec\.md> \[workitem-nr\]/);
 });
 
+test('planOrchestrator_Body_TitlesSessionWithActivityWorkitemAndSlug', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('`<slug>` = Elternordner bei `spec.md`, sonst Dateiname ohne Endung.'));
+  assert.ok(body.includes('`select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Planning <WI> <slug>“, ohne `<WI>` „Planning <slug>“'));
+});
+
+test('planOrchestrator_Body_TreatsEmptyOrPlaceholderWorkitemAsNone', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('`<WI>` Workitem-Nr. optional; leer oder mit `<` beginnend = keine.'));
+});
+
 test('planOrchestrator_Body_StaysUnder450WordsWithPairedQuotes', () => {
   // Act
   const { body } = readMarkdown(SKILL);

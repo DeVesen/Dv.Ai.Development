@@ -48,32 +48,49 @@ test('planOrchestrator_Body_UsesReportMarkersTheReportScriptWrites', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  for (const marker of ['**Ergebnis:** ⛔ Noch nicht bereit', '✅', 'Bereit zur Umsetzung', '❓', '⚠️ Unvollständig', '### Wie es weitergeht', 'kleiner Hinweis', 'kleine Hinweise', '/dv-forge:review-followup']) {
+  for (const marker of ['**Ergebnis:** ⛔ Noch nicht bereit', '✅', 'Bereit zur Umsetzung', '❓', '⚠️ Unvollständig', '### Wie es weitergeht', '/dv-forge:review-followup']) {
     assert.ok(body.includes(marker), `${marker} fehlt im Skill`);
     assert.ok(script.includes(marker), `${marker} fehlt in report-text.js`);
   }
 });
 
-test('planOrchestrator_Body_CommitsSpecAndPlanOnceWithSubjectOnly', () => {
+test('planOrchestrator_Body_NeverCommitsAndKeepsCheckoutRules', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('`git add -- <dateien>` und `git commit -m "<betreff>" -- <dateien>`'));
-  assert.ok(body.includes('`node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`'));
-  assert.ok(body.includes('Nur eine Betreffzeile in einem `-m`, kein Body'));
-  assert.ok(body.includes('Commit-Frage eines Skills → „nein“. Nur Schritt 5 committet.'));
+  assert.ok(body.includes('Du committest nie. Commit-Frage und Commit-Prüfung eines Skills entfallen'));
   assert.ok(body.includes('Kein Branch, kein Worktree, kein Wechsel, kein Merge, kein Push.'));
+  for (const forbidden of ['git add', 'git commit', 'forge-config.js', 'Commit-ID', 'Spec-Änderungsbedarf']) {
+    assert.ok(!body.includes(forbidden), `${forbidden} darf nicht im Skill stehen`);
+  }
 });
 
-test('planOrchestrator_Body_EndsReadyReportWithPathsAndBothImplementationCommands', () => {
+test('planOrchestrator_Body_EmitsExactlyOneClosingMessageInsteadOfTheSkillReports', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  const blocks = ['```\n   <S>\n   <P>\n   ```', '```\n   /dv-forge:implementation <P>\n   ```', '```\n   /dv-forge:implementation-orchestrator <P> <S> <WI>\n   ```'];
-  assert.ok(body.includes(`Bei \`✅ Bereit zur Umsetzung\` endet er mit genau diesen drei Code-Blöcken, \`<WI>\` nur wenn gegeben,`));
-  assert.ok(body.includes(blocks.join('\n   ')));
+  assert.ok(body.includes('Berichte von plan-review und review-followup gibst du nicht aus; nur Ablauf Schritt 5 gibt aus, genau einmal.'));
+  assert.ok(body.includes('unverändert bis vor `### Wie es weitergeht`'));
+  assert.ok(body.includes('Diesen Block ersetzt du durch deinen'));
+  assert.ok(!body.includes('Pfade:'));
+});
+
+test('planOrchestrator_Body_ClosingStepsListCommitFollowupAndImplementOrchestrator', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('„Spec und Plan committen.“ Immer.'));
+  assert.ok(body.includes('`git status --porcelain -- "<S>" "<P>"`'));
+  assert.ok(body.includes('`/dv-forge:review-followup <P> alle`'));
+  assert.ok(body.includes('`/dv-forge:implementation-orchestrator <P> <S> <WI>`'));
+  assert.ok(body.includes('Bei `✅ Bereit zur Umsetzung`, auch mit kleinen Hinweisen'));
+  assert.ok(body.includes('Bei `⛔`, `❓`, `⚠️ Unvollständig` kein Aufruf'));
+  assert.ok(body.includes('Zeile `Abweichungen:`'));
+  assert.ok(!body.includes('/dv-forge:implementation <P>'));
+  assert.ok(body.indexOf('„Spec und Plan committen.“') < body.indexOf('`/dv-forge:review-followup <P> alle`', body.indexOf('„Spec und Plan committen.“')));
 });
 
 test('planOrchestrator_Body_SuggestsArgumentsTheImplementationSkillsAccept', () => {

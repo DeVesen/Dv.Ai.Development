@@ -264,3 +264,20 @@ test('implementationFollowup_GreenDamageInFixDiff_ListedAsGreenAndNotOpen', () =
   assert.deepEqual(data.green.map((entry) => [entry.color, entry.title, entry.description, entry.hasProposal]), [['green', 'src/d.js:1', 'Name holpert', false]]);
   assert.deepEqual(data.open, []);
 });
+
+test('implementationFollowup_GroupLinesConfirmedButNoVerdictLine_ChosenStayOpenAsHindranceAndFollowupJa', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+  const answer = ['### Findings', '- **src/a.js:3** — behoben — src/a.js:4', '- **src/b.js:9** — behoben — src/b.js:10', '', '### Neue Schäden im Fix-Diff', '- keine'].join('\n');
+
+  // Act
+  const { result, data } = run(dir, answer);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^ENDE offen nach Nach-Review\nERGEBNIS ⛔ Noch nicht bereit · 2 Hindernisse offen\nFOLLOWUP ja\nBERICHT [^\n]+\nBEHALTEN 1,2\n$/);
+  assert.deepEqual(data.changes.map((change) => change.ok), [false, false]);
+  assert.deepEqual(data.open.map((entry) => entry.color), ['red', 'red']);
+  assert.equal(data.kind, 'blocked');
+  assert.deepEqual(data.notes, ['Nach-Review: kein Urteil geliefert']);
+});

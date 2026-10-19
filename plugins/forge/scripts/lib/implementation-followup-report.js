@@ -58,7 +58,9 @@ function groupVerdict(group, answer) {
     ?? answer.judged.get(placeKey(`${group.location} (${group.reviewers.join(', ')})`));
 }
 
+// Ohne Gesamturteil (Zeile `**Fix-Runde:**`) bestätigt auch eine Gruppenzeile nichts: Die Antwort gilt als unvollständig.
 function isConfirmed(group, answer) {
+  if (answer.verdict === null) return false;
   const judged = groupVerdict(group, answer);
   return judged === undefined ? answer.clean : judged === 'behoben';
 }
@@ -66,7 +68,7 @@ function isConfirmed(group, answer) {
 // Farbe einer gewählten, nicht bestätigten Gruppe: Mit eigenem Gruppenurteil bleibt ihre Stufe (🟡 ist kein Hindernis);
 // ohne Nach-Review oder ohne eigenes Urteil zählt sie als Hindernis.
 function unconfirmedColor(group, reviewed, answer) {
-  const ownVerdict = reviewed.done && groupVerdict(group, answer) !== undefined;
+  const ownVerdict = reviewed.done && answer.verdict !== null && groupVerdict(group, answer) !== undefined;
   return ownVerdict && group.severity !== '🔴' ? 'yellow' : 'red';
 }
 

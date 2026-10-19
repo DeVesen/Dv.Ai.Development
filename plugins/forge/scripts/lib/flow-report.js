@@ -54,7 +54,8 @@ function collect(options) {
 // orchestrator-report.js setzt daraus den einen Abschlussbericht des Orchestrators zusammen.
 function embeddedOutput(options, input, status) {
   const { steps: _steps, ...summary } = summaryOf(input);
-  writeJson(options.reportFile, { format: FORMAT, status, ...summary, ...input });
+  const { chain: _chain, ...data } = input;
+  writeJson(options.reportFile, { format: FORMAT, status, ...summary, ...data });
   return [
     `ENDE ${status}`, `ERGEBNIS ${summary.resultLine.replace(RESULT_PREFIX, '')}`, `FOLLOWUP ${summary.offersFollowup ? 'ja' : 'nein'}`, `BERICHT ${options.reportFile}`,
   ].join('\n');

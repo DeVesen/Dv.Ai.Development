@@ -62,11 +62,21 @@ function openLines(entry) {
   ];
 }
 
+// Befehl mit Workitem-Nummer, falls es eine gibt.
+function withWorkitem(command, workitem) {
+  return workitem ? `${command} ${workitem}` : command;
+}
+
+// `input.chain`: Ketten-Eintrag der eigenen Stufe; mit ihm wechselt nur der Befehl zur nächsten Stufe, Commit-Zeile und Beschriftung bleiben.
+// Vom Eintrag zählt nur das Workitem; die Spec im Befehl kommt aus der Berichtsoption `input.spec`, ersatzweise aus dem Eintrag.
 function closingSteps(input) {
-  const artifact = input.artifact;
-  return input.review === 'spec-review'
-    ? ['Spec committen.', ['In einer frischen Session den Plan schreiben:', `/dv-forge:plan-writing ${artifact}`]]
-    : ['Spec und Plan committen (ich frage dich danach).', ['In einer frischen Session umsetzen:', `/dv-forge:implementation ${artifact}`]];
+  const { artifact, chain } = input;
+  if (input.review === 'spec-review') {
+    const plan = chain ? withWorkitem(`/dv-forge:plan-orchestrator ${artifact}`, chain.wi) : `/dv-forge:plan-writing ${artifact}`;
+    return ['Spec committen.', ['In einer frischen Session den Plan schreiben:', plan]];
+  }
+  const implement = chain ? withWorkitem(`/dv-forge:implementation-orchestrator ${artifact} ${input.spec ?? chain.spec}`, chain.wi) : `/dv-forge:implementation ${artifact}`;
+  return ['Spec und Plan committen (ich frage dich danach).', ['In einer frischen Session umsetzen:', implement]];
 }
 
 function questionSteps(input) {
@@ -178,5 +188,5 @@ function renderReportText(input) {
 
 module.exports = {
   renderReportText, summaryOf, resultLine, changeLines, openLines, section, stepLines, viewpointsPhrase, proposedCount, blockedSteps, hintSteps, questionSteps,
-  DOCUMENT_TEXTS,
+  withWorkitem, DOCUMENT_TEXTS,
 };

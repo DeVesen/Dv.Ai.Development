@@ -217,3 +217,75 @@ test('renderReportText_CleanStatusWithOpenHindrance_ReportsNotReady', () => {
   assert.match(text, /### Wie es weitergeht\n1\. Das Hindernis einarbeiten lassen \(oder das Dokument selbst anpassen\):\n   `\/dv-forge:review-followup docs\/specs\/x\.md alle`\n2\. Danach erneut prüfen:/);
   assert.equal(text.includes('plan-writing'), false);
 });
+
+const PLAN_CHAIN = { stage: 'plan', slug: 'x', plan: '/repo/docs/forge/x/plan.md', spec: '/repo/docs/forge/x/spec.md', wi: '311404' };
+
+function planBase(overrides = {}) {
+  return base({ review: 'plan-review', title: 'Plan-Review', artifact: '/repo/docs/forge/x/plan.md', spec: '/repo/docs/forge/x/spec.md', ...overrides });
+}
+
+test('renderReportText_ReadyPlanFollowupWithPlanEntry_NamesImplementationOrchestratorWithSpecAndWorkitem', () => {
+  // Act
+  const text = renderReportText(planBase({ followup: true, chosenCount: 1, chain: PLAN_CHAIN }));
+
+  // Assert
+  assert.ok(text.endsWith([
+    '### Wie es weitergeht',
+    '1. Spec und Plan committen (ich frage dich danach).',
+    '2. In einer frischen Session umsetzen:',
+    '   `/dv-forge:implementation-orchestrator /repo/docs/forge/x/plan.md /repo/docs/forge/x/spec.md 311404`',
+  ].join('\n')), text);
+  assert.equal(text.includes('/dv-forge:implementation /repo'), false);
+});
+
+test('renderReportText_ReadyPlanWithPlanEntryWithoutWorkitem_CommandHasNoNumber', () => {
+  // Act
+  const text = renderReportText(planBase({ chain: { ...PLAN_CHAIN, wi: undefined } }));
+
+  // Assert
+  assert.ok(text.endsWith('   `/dv-forge:implementation-orchestrator /repo/docs/forge/x/plan.md /repo/docs/forge/x/spec.md`'), text);
+});
+
+test('renderReportText_PlanHintsWithPlanEntry_HintStepsStayBeforeImplementationOrchestrator', () => {
+  // Arrange
+  const hint = { color: 'yellow', title: 'Reihenfolge', angles: 'Machbarkeit', description: 'Task 2 vor Task 1.', recommendation: 'tauschen, weil Task 2 die Basis ist.', hasProposal: true };
+
+  // Act
+  const text = renderReportText(planBase({ open: [hint], chain: PLAN_CHAIN }));
+
+  // Assert
+  const steps = text.slice(text.indexOf('### Wie es weitergeht'));
+  assert.match(steps, /^### Wie es weitergeht\n1\. Den Hinweis einarbeiten lassen \(optional\):\n {3}`\/dv-forge:review-followup \/repo\/docs\/forge\/x\/plan\.md alle`\n2\. Spec und Plan committen \(ich frage dich danach\)\.\n3\. In einer frischen Session umsetzen:\n {3}`\/dv-forge:implementation-orchestrator /);
+});
+
+test('renderReportText_BlockedPlanWithPlanEntry_EqualsReportWithoutEntry', () => {
+  // Arrange
+  const red = { color: 'red', title: 'Task 3 fehlt', angles: 'Abdeckung', description: 'AC-04 hat keinen Test.', recommendation: null, hasProposal: false };
+  const blocked = { status: 'nicht bereit, 1 × 🔴 offen', openRed: 1, open: [red] };
+
+  // Act & Assert
+  assert.equal(renderReportText(planBase({ ...blocked, chain: PLAN_CHAIN })), renderReportText(planBase(blocked)));
+});
+
+test('renderReportText_PlanEntryWithOtherSpecThanReportOption_CommandNamesSpecOfReportOption', () => {
+  // Arrange
+  const chain = { ...PLAN_CHAIN, spec: '/alt/docs/forge/x/spec.md' };
+
+  // Act
+  const text = renderReportText(planBase({ chain }));
+
+  // Assert
+  assert.ok(text.endsWith('   `/dv-forge:implementation-orchestrator /repo/docs/forge/x/plan.md /repo/docs/forge/x/spec.md 311404`'), text);
+  assert.equal(text.includes('/alt/docs/forge/x/spec.md'), false);
+});
+
+test('renderReportText_ReadySpecWithSpecEntry_OnlyCommandChanges', () => {
+  // Arrange
+  const chain = { stage: 'spec', slug: 'x', spec: 'docs/specs/x.md', wi: 'AB#7' };
+
+  // Act
+  const text = renderReportText(base({ chain }));
+
+  // Assert
+  assert.ok(text.endsWith('1. Spec committen.\n2. In einer frischen Session den Plan schreiben:\n   `/dv-forge:plan-orchestrator docs/specs/x.md AB#7`'), text);
+});

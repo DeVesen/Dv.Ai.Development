@@ -1,0 +1,175 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { commitFile, makeRepo } = require('./lib/git-repo');
+const { SPEC, tempDir, writeReviewer, flow } = require('./lib/review-flow-fixture');
+const { writeEntry } = require('../scripts/lib/chain');
+const { toPosix } = require('../scripts/lib/posix');
+
+// Repo mit committeter Spec und Plan im Ordner docs/forge/x (Slug `x`) und einem sauberen Spec-Review ohne Findings.
+function specRun() {
+  const repo = makeRepo();
+  commitFile(repo, 'docs/forge/x/spec.md', SPEC, 'add spec');
+  commitFile(repo, 'docs/forge/x/plan.md', '# Plan\n\n### Task 1: Eins\n', 'add plan');
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  const plan = path.join(repo, 'docs/forge/x/plan.md');
+  const workspace = tempDir();
+  writeReviewer({ workspace }, 'clarity', []);
+  flow('rate', '--review', 'spec-review', '--dir', workspace, '--doc', spec, '--expect', 'clarity');
+  return { repo, spec, plan, workspace };
+}
+
+function report(run, extra = []) {
+  const result = flow('report', '--review', 'spec-review', '--dir', run.workspace, '--doc', run.spec, '--titel', 'Spec-Review', '--artefakt', run.spec, ...extra);
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout;
+}
+
+// Wie specRun, dazu ein sauberes Plan-Review ohne Findings zum Plan im selben Ordner (eigener Arbeitsbereich).
+function planRun() {
+  const run = specRun();
+  const workspace = tempDir('dv-forge-chain-plan-');
+  writeReviewer({ workspace }, 'coverage', []);
+  flow('rate', '--review', 'plan-review', '--dir', workspace, '--doc', run.plan, '--expect', 'coverage');
+  return { ...run, workspace };
+}
+
+function planReport(run) {
+  const result = flow('report', '--review', 'plan-review', '--dir', run.workspace, '--doc', run.plan, '--titel', 'Plan-Review', '--artefakt', run.plan);
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout;
+}
+
+test('specReviewReport_SpecEntryWithWorkitem_NamesPlanOrchestratorWithWorkitem', () => {
+  // Arrange
+  const run = specRun();
+  writeEntry({ stage: 'spec', spec: run.spec, wi: 'AB#7' });
+
+  // Act
+  const text = report(run);
+
+  // Assert
+  assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zum Planen/);
+  assert.ok(text.includes(`1. Spec committen.\n2. In einer frischen Session den Plan schreiben:\n   \`/dv-forge:plan-orchestrator ${run.spec} AB#7\``), text);
+  assert.equal(text.includes('plan-writing'), false);
+});
+
+test('specReviewReport_SpecEntryWithoutWorkitem_CommandHasNoNumber', () => {
+  // Arrange
+  const run = specRun();
+  writeEntry({ stage: 'spec', spec: run.spec });
+
+  // Act
+  const text = report(run);
+
+  // Assert
+  assert.ok(text.includes(`\`/dv-forge:plan-orchestrator ${run.spec}\`\n`) || text.endsWith(`\`/dv-forge:plan-orchestrator ${run.spec}\``), text);
+});
+
+test('specReviewReport_NoEntry_NamesPlanWritingAsBefore', () => {
+  // Arrange
+  const run = specRun();
+
+  // Act
+  const text = report(run);
+
+  // Assert
+  assert.ok(text.includes(`\`/dv-forge:plan-writing ${run.spec}\``), text);
+});
+
+test('specReviewReport_EntryOfStagePlan_EqualsReportWithoutEntry', () => {
+  // Arrange
+  const run = specRun();
+  const baseline = report(run);
+  writeEntry({ stage: 'plan', plan: run.plan, spec: run.spec, wi: '1' });
+
+  // Act
+  const text = report(run);
+
+  // Assert
+  assert.equal(text, baseline);
+});
+
+test('specReviewReport_EntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', () => {
+  // Arrange
+  const run = specRun();
+  const baseline = report(run);
+  commitFile(run.repo, 'alt/x/spec.md', '# Alt\n', 'add other spec');
+  const otherSpec = path.join(run.repo, 'alt/x/spec.md');
+  writeEntry({ stage: 'spec', spec: otherSpec, wi: '1' });
+  fs.rmSync(otherSpec);
+
+  // Act
+  const text = report(run);
+
+  // Assert
+  assert.equal(text, baseline);
+});
+
+test('specReviewReport_EmbeddedRunWithEntry_PrintsSameLinesAndWritesNoEntryIntoJson', () => {
+  // Arrange
+  const run = specRun();
+  const dir = tempDir('dv-forge-chain-embedded-');
+  const without = flow('report', '--review', 'spec-review', '--dir', run.workspace, '--doc', run.spec, '--titel', 'Spec-Review', '--artefakt', run.spec, '--bericht', path.join(dir, 'a.json'));
+  writeEntry({ stage: 'spec', spec: run.spec, wi: 'AB#7' });
+
+  // Act
+  const file = path.join(dir, 'b.json');
+  const withEntry = flow('report', '--review', 'spec-review', '--dir', run.workspace, '--doc', run.spec, '--titel', 'Spec-Review', '--artefakt', run.spec, '--bericht', file);
+
+  // Assert
+  assert.equal(withEntry.stdout.replace(file, 'X'), without.stdout.replace(path.join(dir, 'a.json'), 'X'));
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(Object.hasOwn(data, 'chain'), false);
+  assert.equal(JSON.stringify(data).includes('plan-orchestrator'), false);
+});
+
+test('planReviewReport_EntryOfStageSpec_EqualsReportWithoutEntry', () => {
+  // Arrange
+  const run = planRun();
+  const baseline = planReport(run);
+  writeEntry({ stage: 'spec', spec: run.spec, wi: '1' });
+
+  // Act
+  const text = planReport(run);
+
+  // Assert
+  assert.equal(text, baseline);
+  assert.ok(text.includes(`\`/dv-forge:implementation ${run.plan}\``), text);
+  assert.equal(text.includes('implementation-orchestrator'), false);
+});
+
+test('planReviewReport_SpecEntryThenPlanEntry_NamesImplementationOrchestratorWithSpecAndWorkitem', () => {
+  // Arrange
+  const run = planRun();
+  writeEntry({ stage: 'spec', spec: run.spec, wi: '1' });
+  writeEntry({ stage: 'plan', plan: run.plan, spec: run.spec, wi: '2' });
+
+  // Act
+  const text = planReport(run);
+
+  // Assert
+  assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zur Umsetzung/);
+  assert.ok(text.includes(`\`/dv-forge:implementation-orchestrator ${run.plan} ${toPosix(path.resolve(run.spec))} 2\``), text);
+  assert.equal(text.includes(`/dv-forge:implementation ${run.plan}`), false);
+});
+
+test('planReviewReport_PlanEntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', () => {
+  // Arrange
+  const run = planRun();
+  const baseline = planReport(run);
+  commitFile(run.repo, 'alt/x/spec.md', '# Alt\n', 'add other spec');
+  const otherSpec = path.join(run.repo, 'alt/x/spec.md');
+  writeEntry({ stage: 'plan', plan: run.plan, spec: otherSpec, wi: '1' });
+  fs.rmSync(otherSpec);
+
+  // Act
+  const text = planReport(run);
+
+  // Assert
+  assert.equal(text, baseline);
+  assert.equal(text.includes('implementation-orchestrator'), false);
+});

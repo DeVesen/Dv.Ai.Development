@@ -10,6 +10,7 @@ const { reviewerLabel } = require('./reviewer-names');
 const { topicOf, shorten, fallbackDescription } = require('./halt-text');
 const { scoutTexts } = require('./scout-check');
 const { readAttempts } = require('./attempts');
+const { readEntry } = require('./chain');
 const { loadGroups } = require('../followup');
 const { verdictMap, fromSaved } = require('./open-groups');
 const { ROUND_ONE, ROUND_TWO, FlowError, readText, readLines, readJson, readAgentJson } = require('./flow-files');
@@ -169,11 +170,18 @@ function openEntry(options, ctx, group) {
   return { key: group.key, color: group.color, ...described(group, ctx.index), angles: angles(options.review, group.reviewers), hasProposal: ctx.index.has(group.scoutKey) };
 }
 
+const CHAIN_STAGE = { 'spec-review': 'spec', 'plan-review': 'plan' };
+
+// Der Ketten-Eintrag der eigenen Stufe; ein eingebetteter Lauf (reportFile) bleibt davon unberührt.
+function chainOf(options) {
+  return options.reportFile ? null : readEntry({ stage: CHAIN_STAGE[options.review], artifact: options.artifact });
+}
+
 function buildInput(options, data, status, open) {
   assertKnownStatus(status);
   const ctx = context(options, data);
   return {
-    review: options.review, followup: ctx.followup !== null, title: options.title, artifact: options.artifact, spec: options.spec,
+    review: options.review, followup: ctx.followup !== null, title: options.title, artifact: options.artifact, spec: options.spec, chain: chainOf(options),
     topic: topicOf(readText(options.doc)), status, openRed: openRedOf(data, ctx, open), reviewerCount: reviewerCount(data.one),
     reworked: data.reworked, verified: data.checked, chosenCount: ctx.followup?.gewaehlt.length ?? 0,
     failedLabels: data.failed.map((name) => failedLabel(options, name)),

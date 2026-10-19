@@ -91,3 +91,20 @@ test('reviewFollowupSkill_Body_TakesNoNextStepTextsFromImplementationReview', ()
   assert.ok(body.includes('Bei `implementation-review` entfällt der Schritt: Implementer und Re-Reviewer bekommen ihre Eingaben aus `flow.md`, und es läuft kein Scout.'));
   assert.equal(body.includes('des Abschnitts Abschluss-Scout'), false, 'das Followup der Implementierung startet keinen Scout');
 });
+
+test('reviewFollowupFlow_NextStep_ImplementationEntryAddsWorktreeFinishStepAndPushLine', () => {
+  // Arrange
+  const text = readText(FLOW);
+  const script = readText(path.join(__dirname, '..', 'scripts', 'chain.js'));
+  const next = text.slice(text.indexOf('## Nächster Schritt'));
+
+  // Act
+  const parts = ['chain.js" lookup --stage implementation --plan "<P>"', '`worktree=<R>`', '`branch=<b>`', 'KEIN EINTRAG', '`Worktree bleibt: <R>`',
+    '`git push -u origin <b>`', '`Arbeit abschließen (nur manuell, in <R>):`', '`/dv-forge:finish-work`', 'Noch nicht umgesetzt: …'];
+
+  // Assert
+  for (const part of parts) {
+    assert.ok(next.includes(part), `${part} fehlt`);
+  }
+  assert.ok(script.includes("'KEIN EINTRAG'") && script.includes("'worktree'") && script.includes("'branch'"));
+});

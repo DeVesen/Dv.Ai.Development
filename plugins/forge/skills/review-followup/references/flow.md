@@ -50,3 +50,4 @@ Bei Spec und Plan steht der nächste Schritt im Bericht; nur beim Plan kommt die
 - `sauber …` mit `offen` nicht leer: `Noch nicht umgesetzt: /dv-forge:review-followup <artefakt> alle.`
 - Implementierung offen, `keine Änderung` oder `blockiert`: `/dv-forge:implementation-review <P> erneut.`
 - `unvollständig, …`: `Ausgefallen: <liste>. Den Skill in einer frischen Session erneut starten.`
+- Implementierung mit Ketten-Eintrag: `node "<PLUGIN>/scripts/chain.js" lookup --stage implementation --plan "<P>"`. Gibt die Ausgabe `worktree=<R>` und `branch=<b>` aus (nicht `KEIN EINTRAG`), steht in jedem der Fälle oben die Zeile `Worktree bleibt: <R>` vor und die Zeile ``Nicht gepusht: `git push -u origin <b>` `` nach dem Text des nächsten Schritts. Bei `sauber …`, auch mit `offen` nicht leer, lautet der Abschluss-Schritt `Arbeit abschließen (nur manuell, in <R>):` mit `/dv-forge:finish-work` im Code-Block; das Angebot `Noch nicht umgesetzt: …` bleibt daneben stehen.

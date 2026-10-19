@@ -76,7 +76,7 @@ test('orchestratorReport_ReadyPlanWithoutFollowup_FourHeadingsAndImplementationO
   assert.doesNotMatch(text, /review-followup|Pfade:|\/dv-forge:implementation /);
 });
 
-test('orchestratorReport_BlockedPlan_NamesFollowupAndPlanReviewButNoImplementation', () => {
+test('orchestratorReport_BlockedPlan_SelfFixStepWithPlanReviewAndNoFollowup', () => {
   // Arrange
   const review = part({ status: 'nicht bereit, 1 × 🔴 offen', kind: 'blocked', openRed: 1, open: [entry('red', 'task 2')] });
 
@@ -85,12 +85,12 @@ test('orchestratorReport_BlockedPlan_NamesFollowupAndPlanReviewButNoImplementati
 
   // Assert
   assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
-  const next = sectionOf(text, '# Wie es weitergeht');
-  assert.match(next, /^1\. Spec und Plan committen\. Stand: Spec uncommittet, Plan uncommittet\. Nach dem Followup erneut committen\.\n/);
-  assert.match(next, /2\. Das Hindernis einarbeiten lassen \(oder das Dokument selbst anpassen\):\n {3}`\/dv-forge:review-followup \/repo\/docs\/forge\/x\/plan\.md alle`/);
-  assert.match(next, /3\. Danach erneut prüfen:\n {3}`\/dv-forge:plan-review \/repo\/docs\/forge\/x\/plan\.md`/);
-  assert.match(next, /4\. Implementieren erst nach ✅ Bereit zur Umsetzung\.$/);
-  assert.doesNotMatch(next, /implementation-orchestrator/);
+  assert.equal(sectionOf(text, '# Wie es weitergeht'), [
+    '1. Spec und Plan committen. Stand: Spec uncommittet, Plan uncommittet.',
+    '2. Das Dokument selbst anpassen, dann erneut prüfen:',
+    '   `/dv-forge:plan-review /repo/docs/forge/x/plan.md`',
+    '3. Implementieren erst nach ✅ Bereit zur Umsetzung.',
+  ].join('\n'));
 });
 
 test('orchestratorReport_OpenRedAndYellow_ListsHindranceBeforeHintAndBlocks', () => {
@@ -105,7 +105,7 @@ test('orchestratorReport_OpenRedAndYellow_ListsHindranceBeforeHintAndBlocks', ()
   assert.ok(open.indexOf('🔴') < open.indexOf('🟡'));
 });
 
-test('orchestratorReport_OnlyHintsOpen_ReadyWithHintsAndOptionalFollowupBeforeImplementation', () => {
+test('orchestratorReport_OnlyHintsOpen_ReadyWithHintsAndOptionalSelfStepBeforeImplementation', () => {
   // Arrange
   const review = part({ kind: 'hints', open: [entry('yellow', 'task 1')] });
 
@@ -114,7 +114,8 @@ test('orchestratorReport_OnlyHintsOpen_ReadyWithHintsAndOptionalFollowupBeforeIm
 
   // Assert
   assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen/);
-  assert.match(sectionOf(text, '# Wie es weitergeht'), /2\. Den Hinweis einarbeiten lassen \(optional\):[\s\S]*3\. Implementieren \(erst nach 1/);
+  assert.match(sectionOf(text, '# Wie es weitergeht'), /^1\. Spec und Plan committen\. Stand: Spec uncommittet, Plan uncommittet\.\n2\. Bei Bedarf das Dokument selbst anpassen \(optional\)\.\n3\. Implementieren \(erst nach 1/);
+  assert.doesNotMatch(text, /review-followup/);
 });
 
 test('orchestratorReport_SamePlaceInRoundOneAndFollowup_ShowsOneEntryWithFollowupEndState', () => {
@@ -149,7 +150,7 @@ test('orchestratorReport_ReviewHindranceWithoutProposal_StaysOpenAfterFollowup',
   // Assert
   assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
   assert.match(sectionOf(text, '# Was ist noch offen'), /^- 🔴 \*\*Titel kopf\*\*/);
-  assert.match(sectionOf(text, '# Wie es weitergeht'), /Das Hindernis hat keinen Lösungsvorschlag\. Das Dokument selbst anpassen, dann erneut prüfen:/);
+  assert.match(sectionOf(text, '# Wie es weitergeht'), /2\. Das Dokument selbst anpassen, dann erneut prüfen:/);
 });
 
 test('orchestratorReport_QuestionsAndDecisions_GoToOpenAndChangedSections', () => {
@@ -243,7 +244,7 @@ test('orchestratorReport_ReadyImplementationWithRedChecks_NoFinishWork', () => {
   assert.doesNotMatch(result.stdout, /finish-work/);
 });
 
-test('orchestratorReport_BlockedImplementation_FollowupWithSpecFlag', () => {
+test('orchestratorReport_BlockedImplementation_SelfFixStepWithReviewCommandAndNoFollowup', () => {
   // Arrange
   const dir = tempDir('dv-forge-orch-');
   const review = part({ review: 'implementation-review', kind: 'blocked', openRed: 1, open: [entry('red', 'src/a.js:3')] });
@@ -252,7 +253,8 @@ test('orchestratorReport_BlockedImplementation_FollowupWithSpecFlag', () => {
   const result = run(implementationArgs(dir, review, 'keine'));
 
   // Assert
-  assert.match(result.stdout, /`\/dv-forge:review-followup \/repo\/docs\/forge\/x\/plan\.md alle --spec \/repo\/docs\/forge\/x\/spec\.md`/);
+  assert.match(result.stdout, /1\. Selbst beheben, dann erneut prüfen:\n {3}`\/dv-forge:implementation-review \/repo\/docs\/forge\/x\/plan\.md \/repo\/docs\/forge\/x\/spec\.md`/);
+  assert.doesNotMatch(result.stdout, /review-followup/);
 });
 
 test('orchestratorReport_Report_AnchorsAreTheFourHeadingsForTheStopHook', () => {
@@ -400,4 +402,73 @@ test('orchestratorReport_ThreeFollowupOptions_ExitsWithTwoAndNamesLimit', () => 
   // Assert
   assert.equal(result.status, 2);
   assert.match(result.stderr, /--followup höchstens 2 Mal/);
+});
+
+function green(key, overrides = {}) {
+  return { key, color: 'green', title: key, description: `Folge ${key}.`, recommendation: null, angles: 'Klarheit', hasProposal: false, ...overrides };
+}
+
+test('orchestratorReport_GreenFindings_ListedAfterRedYellowAndQuestionsWithoutChangingResultOrSteps', () => {
+  // Arrange
+  const base = { kind: 'blocked', openRed: 1, open: [entry('yellow', 'task 1'), entry('red', 'task 3')], questions: ['Soll der Export CSV liefern?'] };
+  const withGreen = part({ ...base, green: [green('abschnitt a', { angles: 'Machbarkeit' }), green('abschnitt b')] });
+
+  // Act
+  const text = planReport(withGreen, null);
+  const without = planReport(part(base), null);
+
+  // Assert
+  const open = sectionOf(text, '# Was ist noch offen').trimEnd();
+  assert.ok(open.indexOf('🔴') < open.indexOf('🟡') && open.indexOf('🟡') < open.indexOf('❓') && open.indexOf('❓') < open.indexOf('🟢'));
+  assert.match(open, /- 🟢 \*\*abschnitt a\*\* · aus: Machbarkeit\n {2}Folge abschnitt a\.\n- 🟢 \*\*abschnitt b\*\* · aus: Klarheit\n {2}Folge abschnitt b\.$/);
+  assert.equal(sectionOf(text, '# Abschlussbericht'), sectionOf(without, '# Abschlussbericht'));
+  assert.equal(sectionOf(text, '# Wie es weitergeht'), sectionOf(without, '# Wie es weitergeht'));
+});
+
+test('orchestratorReport_OnlyGreenFindings_ListedInsteadOfNothingOpenAndResultStaysReady', () => {
+  // Act
+  const text = planReport(part({ green: [green('abschnitt a')] }), null);
+
+  // Assert
+  assert.equal(sectionOf(text, '# Was ist noch offen').trim(), '- 🟢 **abschnitt a** · aus: Klarheit\n  Folge abschnitt a.');
+  assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zur Umsetzung\n/);
+});
+
+test('orchestratorReport_PlaceGreenInReviewAndYellowInFollowup_ListedOnlyAsYellow', () => {
+  // Arrange
+  const review = part({ green: [green('task 4'), green('task 9')] });
+  const followup = part({ followup: true, kind: 'hints', open: [entry('yellow', 'task 4')] });
+
+  // Act
+  const open = sectionOf(planReportRounds(review, [followup]), '# Was ist noch offen');
+
+  // Assert
+  assert.equal(open.match(/\*\*Titel task 4\*\*/g).length, 1);
+  assert.equal(open.includes('**task 4**'), false);
+  assert.equal(open.match(/🟢/g).length, 1);
+});
+
+test('orchestratorReport_SameGreenInReviewAndBothRounds_ListedOnce', () => {
+  // Arrange
+  const review = part({ green: [green('task 4')] });
+  const roundOne = part({ followup: true, green: [green('task 4'), green('task 6')] });
+  const roundTwo = part({ followup: true, green: [green('task 6')] });
+
+  // Act
+  const open = sectionOf(planReportRounds(review, [roundOne, roundTwo]), '# Was ist noch offen');
+
+  // Assert
+  assert.deepEqual(open.match(/\*\*task \d\*\*/g), ['**task 4**', '**task 6**']);
+});
+
+test('orchestratorReport_ImplementationWithGreenFindings_GreenInOpenSectionStepsUnchanged', () => {
+  // Arrange
+  const dir = tempDir('dv-forge-orch-');
+  const review = part({ review: 'implementation-review', kind: 'ready', resultLine: '**Ergebnis:** ✅ Bereit zum Abschließen', green: [green('src/ok.js', { angles: 'Tests' })] });
+
+  // Act
+  const result = run(implementationArgs(dir, review, 'gruen'));
+
+  // Assert
+  assert.match(result.stdout, /# Was ist noch offen\n- 🟢 \*\*src\/ok\.js\*\* · aus: Tests\n {2}Folge src\/ok\.js\.\n\n# Wie es weitergeht\nWorktree bleibt: \/repo-wt\n1\. Arbeit abschließen/);
 });

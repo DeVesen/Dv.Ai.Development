@@ -9,7 +9,7 @@ const READY = { 'spec-review': 'Bereit zum Planen', 'plan-review': 'Bereit zur U
 const DOCUMENT_IN = { 'spec-review': 'in der Spec', 'plan-review': 'im Plan' };
 const NEXT_FOR = { 'spec-review': 'den Plan', 'plan-review': 'die Umsetzung' };
 const VIEWPOINTS = ['', 'einem', 'zwei', 'drei', 'vier', 'fünf', 'sechs'];
-const ICON = { red: '🔴', yellow: '🟡' };
+const ICON = { red: '🔴', yellow: '🟡', green: '🟢' };
 
 function kindOf(input, hints) {
   if (input.status.startsWith('unvollständig')) return 'incomplete';

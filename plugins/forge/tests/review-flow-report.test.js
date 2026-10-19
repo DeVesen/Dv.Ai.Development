@@ -751,3 +751,77 @@ test('report_PrepareFollowupWithOneGroupChosen_ChosenShownAsChangeAndUnchosenSta
   assert.match(output, /- ✅ \*\*Grenzwert festlegen\*\*[^\n]*\n[\s\S]*Gewählt: Vorschlag 1/);
   assert.match(output, /### Noch offen[^\n]*\n- 🟡 \*\*Eindeutige Formulierung\*\*/);
 });
+
+test('report_GreenFindingInRoundOne_EmbeddedDataListsGreenEntryButReportTextStaysClean', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'clarity', [finding({ location: 'AC-01', category: 'formulierung', quote: 'Gegeben A, wenn B, dann C.', consequence: 'Das Wort „dann“ steht zweimal' })]);
+  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'clarity');
+  const file = path.join(env.workspace, 'bericht.json');
+
+  // Act
+  const embedded = flow('report', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Spec-Review', '--artefakt', 'docs/x/spec.md', '--bericht', file);
+  const text = report(env);
+
+  // Assert
+  assert.equal(embedded.status, 0, embedded.stderr);
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.deepEqual(data.green.map((entry) => [entry.key, entry.color, entry.title, entry.hasProposal]), [['ac-1', 'green', 'AC-01', false]]);
+  assert.match(data.green[0].description, /^Das Wort „dann“ steht zweimal/);
+  assert.deepEqual(data.open, []);
+  assert.equal(text.includes('🟢'), false);
+});
+
+// 🟢 an AC-07 aus der Nachprüfung (Kategorie `formulierung`); Runde 1 hat ein 🔴 an AC-04, das die Nachprüfung als erledigt bestätigt.
+const GREEN_AC07 = (consequence) => finding({ location: 'AC-07', quote: 'Gegeben G, wenn H, dann I.', category: 'formulierung', consequence });
+
+function embeddedData(env, review = 'spec-review') {
+  const file = path.join(env.workspace, 'bericht.json');
+  const result = flow('report', '--review', review, '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review', '--artefakt', 'docs/x/doc.md', '--bericht', file);
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+test('report_GreenFindingOnlyInVerification_EmbeddedDataListsItOnceAndNoFollowupReceivesIt', () => {
+  // Arrange
+  const env = setup();
+  runWithVerification(env, [RED('AC-04')], [{ location: 'AC-04', status: 'changed', change: CHANGE }], { verdicts: [VERDICT('AC-04', 'erledigt')], findings: [GREEN_AC07('Satz holpert')] });
+
+  // Act
+  const data = embeddedData(env);
+
+  // Assert
+  assert.deepEqual(data.green.map((entry) => [entry.title, entry.color, entry.angles, entry.hasProposal]), [['AC-07', 'green', 'Nachprüfung', false]]);
+  assert.match(data.green[0].description, /^Satz holpert/);
+  assert.deepEqual(data.open, []);
+  assert.equal(fs.readFileSync(checkedFile(env, 'abschluss', 'aggregate.md'), 'utf8'), '=== REWORK ===\n');
+});
+
+test('report_SameGreenPlaceInRoundOneAndVerification_EmbeddedDataListsItOnce', () => {
+  // Arrange
+  const env = setup();
+  runWithVerification(env, [RED('AC-04'), GREEN_AC07('Satz holpert')], [{ location: 'AC-04', status: 'changed', change: CHANGE }], { verdicts: [VERDICT('AC-04', 'erledigt')], findings: [GREEN_AC07('Satz holpert weiterhin')] });
+
+  // Act
+  const data = embeddedData(env);
+
+  // Assert
+  assert.deepEqual(data.green.map((entry) => [entry.title, entry.color]), [['AC-07', 'green']]);
+  assert.deepEqual(data.open, []);
+  assert.equal(fs.readFileSync(checkedFile(env, 'abschluss', 'aggregate.md'), 'utf8'), '=== REWORK ===\n');
+});
+
+test('report_PlanGreenFindingInRoundOne_EmbeddedDataListsGreenEntryAndNothingOpen', () => {
+  // Arrange
+  const env = setup('# Plan\n\n### Task 1: Eins\nText.\n\n## Entscheidungen\n- Keine Fragen an den Menschen.\n');
+  writeReviewer(env, 'coverage', [finding({ location: 'Task 1', quote: 'Text.', category: 'formulierung', consequence: 'Satz holpert' })]);
+  flow('rate', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'coverage');
+
+  // Act
+  const data = embeddedData(env, 'plan-review');
+
+  // Assert
+  assert.deepEqual(data.green.map((entry) => [entry.color, entry.hasProposal]), [['green', false]]);
+  assert.match(data.green[0].description, /^Satz holpert/);
+  assert.deepEqual(data.open, []);
+});

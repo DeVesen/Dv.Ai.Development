@@ -170,6 +170,15 @@ function openEntry(options, ctx, group) {
   return { key: group.key, color: group.color, ...described(group, ctx.index), angles: angles(options.review, group.reviewers), hasProposal: ctx.index.has(group.scoutKey) };
 }
 
+// 🟢 aus Runde 1 und Nachprüfung, je Stelle einmal; sie erscheinen nur im Abschlussbericht eines Orchestrators, nie im Einzel-Bericht.
+function greenEntries(options, data) {
+  const groups = [...(data.one?.groups ?? []), ...(data.two?.groups ?? [])].filter((group) => group.color === 'green');
+  return [...new Map(groups.map((group) => [group.key, group])).values()].map((group) => ({
+    key: group.key, color: 'green', title: group.label, description: fallbackDescription(group.items[0].finding.consequence), recommendation: null,
+    angles: angles(options.review, group.reviewers), hasProposal: false,
+  }));
+}
+
 const CHAIN_STAGE = { 'spec-review': 'spec', 'plan-review': 'plan' };
 
 // Der Ketten-Eintrag der eigenen Stufe; ein eingebetteter Lauf (reportFile) bleibt davon unberührt.
@@ -187,7 +196,7 @@ function buildInput(options, data, status, open) {
     failedLabels: data.failed.map((name) => failedLabel(options, name)),
     changes: ctx.followup ? followupChanges(options, ctx) : [...reworkChanges(options, data, ctx), ...answeredChanges(options, ctx)],
     decisions: ctx.followup ? [] : decisionsOf(ctx), questions: questionLines(options, data, ctx),
-    open: open.map((group) => openEntry(options, ctx, group)),
+    open: open.map((group) => openEntry(options, ctx, group)), green: greenEntries(options, data),
     notes: notesOf(options),
   };
 }

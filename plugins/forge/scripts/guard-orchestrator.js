@@ -7,6 +7,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { mustShowOf, decideTurnEnd } = require('./lib/must-show');
 const { turnText } = require('./lib/turn-text');
+const { normalizePath: normalize } = require('./lib/posix');
 
 const FILE_TOOLS = {
   Read: 'file_path', Edit: 'file_path', Write: 'file_path', MultiEdit: 'file_path',
@@ -84,11 +85,6 @@ function followupEntries(artifact, cwd) {
 
 function markerPath(sessionId, tmpRoot = os.tmpdir()) {
   return path.join(tmpRoot, 'dv-forge', `${sessionId}.json`);
-}
-
-function normalize(value) {
-  const resolved = path.resolve(value).replace(/\\/g, '/');
-  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
 }
 
 function isWithin(filePath, dirPath) {

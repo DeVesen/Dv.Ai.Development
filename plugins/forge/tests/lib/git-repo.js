@@ -35,4 +35,19 @@ function samePath(a, b) {
   return normalize(a) === normalize(b);
 }
 
-module.exports = { git, commitFile, makeRepo, samePath };
+// Neuer Worktree im temporären Ordner auf dem neuen Branch `branch`; Rückgabe: Ordner des Worktrees.
+function addWorktree(repo, branch) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-wt-'));
+  git(repo, 'worktree', 'add', '--quiet', dir, '-b', branch);
+  return dir;
+}
+
+// Repo mit committeter Spec und Plan im Ordner docs/forge/x; Slug `x`.
+function repoWithPlan() {
+  const repo = makeRepo();
+  commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'add spec');
+  commitFile(repo, 'docs/forge/x/plan.md', '# Plan\n\n### Task 1: Eins\n', 'add plan');
+  return { repo, spec: path.join(repo, 'docs/forge/x/spec.md'), plan: path.join(repo, 'docs/forge/x/plan.md') };
+}
+
+module.exports = { git, commitFile, makeRepo, samePath, addWorktree, repoWithPlan };

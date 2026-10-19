@@ -233,7 +233,7 @@ function main() {
 }
 
 module.exports = {
-  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, FollowupError, ROLES, ART_OF_ROLE, followupDir, save, drop, keep, scoutBlocks, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework,
+  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, FollowupError, ROLES, SLUG, ART_OF_ROLE, followupDir, save, drop, keep, scoutBlocks, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework,
 };
 
 if (require.main === module) main();

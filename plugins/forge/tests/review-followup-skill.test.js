@@ -120,6 +120,22 @@ test('reviewFollowupFlow_ImplementationSave_FollowsTheBehaltenLineOfTheReportScr
   for (const word of ['BEHALTEN unveraendert', "kept.join(',') : 'keine'"]) assert.ok(script.includes(word), `${word} fehlt im Skript`);
 });
 
+test('reviewFollowupFlow_ImplementationWithoutReReview_ContinuesAtReportDataStepWithOhneValue', () => {
+  // Arrange
+  const text = readText(FLOW);
+  const implementing = text.slice(text.indexOf('### Implementierung'), text.indexOf('## Nachprüfung'));
+  const checking = text.slice(text.indexOf('### Implementierung', text.indexOf('## Nachprüfung')), text.indexOf('2. `dv-forge:implementation-re-reviewer`'));
+
+  // Act
+  const blocked = implementing.split('\n').find((line) => line.startsWith('3. Status `blocked`'));
+  const unchanged = checking.split('\n').find((line) => line.startsWith('1. Paket'));
+
+  // Assert
+  assert.ok(blocked?.includes('weiter mit Schritt 3 der Nachprüfung (`--ohne blockiert`)'));
+  assert.ok(unchanged?.includes('weiter mit Schritt 3 der Nachprüfung (`--ohne keine-aenderung`)'));
+  assert.equal(text.includes('weiter mit dem Bericht'), false);
+});
+
 test('reviewFollowupFlow_EmbeddedImplementation_PrintsBehaltenLineBesidesTheFourLines', () => {
   const text = readText(FLOW);
   const embedded = text.slice(text.indexOf('## Eingebetteter Lauf'), text.indexOf('## Nächster Schritt'));

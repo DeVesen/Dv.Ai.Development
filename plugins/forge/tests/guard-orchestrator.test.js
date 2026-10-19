@@ -548,3 +548,15 @@ test('onPrompt_PausedWithLeftoverMustShow_DropsMustShowKeepsProtection', () => {
   guard.onPrompt({ session_id: SESSION, cwd: env.cwd, prompt: 'danke' }, env.tmpRoot);
   assert.equal(fs.existsSync(guard.markerPath(SESSION, env.tmpRoot)), false);
 });
+
+test('decidePreTool_ImplementationFollowupReportWithReReviewerAnswerNamingSpec_Allows', () => {
+  const env = setup();
+  const command = `node "/plugins/forge/scripts/implementation-report.js" followup --workspace "/w" --bericht "/s/f.json" <<'ANTWORT'\nspec.md geprüft\nANTWORT`;
+  assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
+});
+
+test('decidePreTool_OrchestratorReportNamingSpec_Allows', () => {
+  const env = setup();
+  const command = `node "/plugins/forge/scripts/orchestrator-report.js" --art spec --review "/s/r.json" --out "/s/a.md" --spec "${env.specPath}" --commit "a1b2c3d"`;
+  assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
+});

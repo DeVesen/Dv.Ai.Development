@@ -307,21 +307,27 @@ function embeddedReport(env, file) {
   return spawnSync(process.execPath, [SCRIPT, '--dir', env.dir, '--workspace', env.workspace, '--plan', env.plan, '--bereich', 'a1b2c3d', '--paket', env.packageFile, '--bericht', file], { encoding: 'utf8' });
 }
 
-test('implementationReport_EmbeddedWithProposal_WritesReportWithoutNextStepsAndPrintsThreeLines', () => {
+test('implementationReport_EmbeddedWithProposal_WritesJsonDataAndPrintsFourLines', () => {
   // Arrange
   const env = setup({ groups: [YELLOW], scout: SCOUT_YELLOW });
-  const file = path.join(env.workspace, 'bericht-review.md');
+  const file = path.join(env.workspace, 'bericht-review.json');
 
   // Act
   const result = embeddedReport(env, file);
 
   // Assert
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout, `ENDE sauber nach Review 1\nFOLLOWUP ja\nBERICHT ${file}\n`);
-  const text = fs.readFileSync(file, 'utf8');
-  assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen/);
-  assert.match(text, /### Noch offen · kein Hindernis für das Abschließen/);
-  assert.equal(text.includes('### Wie es weitergeht'), false);
+  assert.equal(result.stdout, `ENDE sauber nach Review 1\nERGEBNIS ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen\nFOLLOWUP ja\nBERICHT ${file}\n`);
+  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(data.review, 'implementation-review');
+  assert.equal(data.kind, 'hints');
+  assert.equal(data.resultLine, '**Ergebnis:** ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen');
+  assert.equal(data.offersFollowup, true);
+  assert.deepEqual(data.changes, []);
+  assert.equal(data.open.length, 1);
+  assert.equal(data.open[0].color, 'yellow');
+  assert.equal(typeof data.open[0].key, 'string');
+  assert.ok(data.checked.some((line) => line.startsWith('- Bereich: ')));
   assert.match(read(env, 'bericht.md'), /### Wie es weitergeht/);
   assert.match(read(env, 'scout.md'), /^## Scout-Vorschläge/);
 });
@@ -331,8 +337,8 @@ test('implementationReport_EmbeddedWithoutScout_FollowupNein', () => {
   const env = setup({ groups: [RED] });
 
   // Act
-  const result = embeddedReport(env, path.join(env.workspace, 'bericht-review.md'));
+  const result = embeddedReport(env, path.join(env.workspace, 'bericht-review.json'));
 
   // Assert
-  assert.match(result.stdout, /^ENDE geprüft, 1 × 🔴 offen\nFOLLOWUP nein\n/);
+  assert.match(result.stdout, /^ENDE geprüft, 1 × 🔴 offen\nERGEBNIS ⛔ Noch nicht bereit · 1 Hindernis offen\nFOLLOWUP nein\n/);
 });

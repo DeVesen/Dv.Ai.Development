@@ -19,18 +19,18 @@ test('specReviewOrchestrator_Frontmatter_ModelInvocableWithSpecAndOptionalWorkit
   assert.equal(fields['argument-hint'], '<spec.md> [workitem-nr]');
 });
 
-test('specReviewOrchestrator_Body_ChainsReviewThenOneFollowup', () => {
+test('specReviewOrchestrator_Body_ChainsEmbeddedReviewThenOneFollowup', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  const steps = ['`dv-forge:spec-review` mit `<S>`, kein weiteres Argument', '`dv-forge:review-followup` mit `<S> alle`, genau einmal'];
+  const steps = ['`dv-forge:spec-review` mit `<S> --bericht "<BR>"`, sonst kein Argument', '`dv-forge:review-followup` mit `<S> alle --bericht "<BF>"`, genau einmal'];
   const positions = steps.map((step) => body.indexOf(step));
   for (const [index, step] of steps.entries()) assert.ok(positions[index] !== -1, `${step} fehlt`);
   assert.ok(positions[0] < positions[1]);
 });
 
-test('specReviewOrchestrator_Body_UsesReportMarkersTheReportScriptWrites', () => {
+test('specReviewOrchestrator_Body_BranchesOnTheLinesTheEmbeddedReviewPrints', () => {
   // Arrange
   const script = readText(REPORT_TEXT);
 
@@ -38,23 +38,25 @@ test('specReviewOrchestrator_Body_UsesReportMarkersTheReportScriptWrites', () =>
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  for (const marker of ['**Ergebnis:** ⚠️ Unvollständig', '⛔', '❓', 'Bereit zum Planen', '### Wie es weitergeht', '/dv-forge:review-followup']) {
+  for (const marker of ['⚠️ Unvollständig', '⛔', '❓']) {
     assert.ok(body.includes(marker), `${marker} fehlt im Skill`);
     assert.ok(script.includes(marker), `${marker} fehlt in report-text.js`);
   }
+  assert.ok(body.includes('`FOLLOWUP ja`, auch für Hinweise → 4, sonst 5.'));
 });
 
-test('specReviewOrchestrator_Body_TellsPauseFromReportByHeadingsTheScriptsWrite', () => {
+test('specReviewOrchestrator_Body_TellsPauseFromEndByHeadingAndClosingLine', () => {
   // Arrange
   const haltText = readText(path.join(__dirname, '..', 'scripts', 'lib', 'halt-text.js'));
+  const flow = readText(path.join(__dirname, '..', 'shared', 'review-flow', 'flow.md'));
 
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('`### Frage …` = Pause (Regel 2). Bericht = Text mit `### Wie es weitergeht`'));
+  assert.ok(body.includes('`### Frage …` = Pause (Regel 2). Ende = Zeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · …`'));
   assert.ok(haltText.includes('### Frage ${number} von ${total}'));
-  assert.ok(!haltText.includes('### Wie es weitergeht'));
+  assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
 });
 
 test('specReviewOrchestrator_Body_StaysOnCurrentBranchWithoutWorktree', () => {
@@ -91,17 +93,19 @@ test('specReviewOrchestrator_Body_TitlesSessionWithWorkitemAndSlug', () => {
   assert.ok(body.includes('`select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „<WI>: <slug>“, ohne `<WI>` „<slug>“'));
 });
 
-test('specReviewOrchestrator_Body_EmitsExactlyOneClosingMessageInsteadOfTheSkillReports', () => {
+test('specReviewOrchestrator_Body_EmitsExactlyOneClosingReportFromTheScript', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Skill-Berichte nicht ausgeben; nur Schritt 6, genau einmal.'));
-  assert.ok(body.includes('unverändert bis vor `### Wie es weitergeht`'));
-  assert.ok(body.includes('dann dein Block statt seines'));
+  assert.ok(body.includes('spec-review und review-followup laufen eingebettet (`--bericht`) und zeigen keinen Bericht; nur Schritt 6, genau einmal.'));
+  assert.ok(body.includes('`node "<PLUGIN>/scripts/orchestrator-report.js" --art spec --review "<BR>" --out "<AB>" --spec "<S>" --commit "<Commit>"`'));
+  assert.ok(body.includes('`node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`'));
+  assert.ok(body.includes('Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach.'));
+  assert.ok(!body.includes('dein Block statt seines'));
 });
 
-test('specReviewOrchestrator_Body_ClosingStepsListCommitFollowupAndPlanOrchestrator', () => {
+test('specReviewOrchestrator_Body_PassesCommitResultAndDeviationsToTheReportScript', () => {
   // Arrange
   const hint = readMarkdown(path.join(__dirname, '..', 'skills', 'plan-orchestrator', 'SKILL.md')).fields['argument-hint'];
 
@@ -110,13 +114,9 @@ test('specReviewOrchestrator_Body_ClosingStepsListCommitFollowupAndPlanOrchestra
 
   // Assert
   assert.equal(hint, '<spec.md> [workitem-nr]');
-  assert.ok(body.includes('„Spec committen.“ Immer, mit Ergebnis'));
-  assert.ok(body.includes('`/dv-forge:review-followup <S> alle`'));
-  assert.ok(body.includes('Bei `✅ Bereit zum Planen`'));
-  assert.ok(body.includes('`/dv-forge:plan-orchestrator <S> <WI>`'));
-  assert.ok(body.includes('Bei `⛔`, `❓`, `⚠️ Unvollständig` oder Abbruch kein Aufruf'));
-  assert.ok(body.includes('`Abweichungen:`'));
-  assert.ok(!body.includes('Abschlussbericht'));
+  assert.ok(body.includes('`Commit` = Commit-ID, „nichts zu committen“, „ignoriert“ oder Grund dagegen.'));
+  assert.ok(body.includes('`--followup "<BF>"` nur wenn Schritt 4 lief, `--wi <WI>` nur wenn gegeben'));
+  assert.ok(body.includes('`Abweichungen: …`: Stopp-Grund, abgelehnte Wünsche, Spec-Vorbestand im Commit, neue Pfade in `git status --porcelain`.'));
 });
 
 test('specReviewOrchestrator_Body_StaysUnder550WordsWithPairedQuotes', () => {

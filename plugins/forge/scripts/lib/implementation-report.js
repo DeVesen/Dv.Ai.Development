@@ -7,11 +7,14 @@ const { reworkHeading, reworkLine, SEVERITY_ICON } = require('../aggregate-findi
 const { reviewerLabel } = require('./reviewer-names');
 const { topicOf, fallbackDescription } = require('./halt-text');
 const { scoutTexts, scoutBlocks, checkScout } = require('./scout-check');
-const { renderImplementationReport } = require('./implementation-report-text');
+const { renderImplementationReport, summaryOf } = require('./implementation-report-text');
+const { placeKey } = require('./places');
 const { writeClosingFiles } = require('./closing');
-const { FlowError, readText, readLines, readJson, writeText } = require('./flow-files');
+const { FlowError, readText, readLines, readJson, writeText, writeJson } = require('./flow-files');
 
 const REVIEW = 'implementation-review';
+const FORMAT = 1;
+const RESULT_PREFIX = '**Ergebnis:** ';
 const CANONICAL = ['acceptance', 'plan-fidelity', 'design', 'tests', 'risks'];
 const TEST_PATHS = [/(^|[\\/])(tests?|__tests__)[\\/]/i, /[._-](test|spec)s?\./i, /[a-z0-9]Tests?\.[a-z0-9]+$/];
 const DOCUMENT_FILE = /\.(md|markdown|txt|rst|adoc)$/i;
@@ -96,9 +99,9 @@ function openEntry(group, scout) {
   const angles = group.reviewers.map((name) => reviewerLabel(REVIEW, name)).join(', ');
   if (scouted) {
     const { title, description, recommendation } = scouted.texts;
-    return { color: group.severity, title, description, recommendation, angles, hasProposal: true };
+    return { key: placeKey(group.location), color: group.severity, title, description, recommendation, angles, hasProposal: true };
   }
-  return { color: group.severity, title: group.location, description: fallbackDescription(group.items[0].consequence), recommendation: null, angles, hasProposal: false };
+  return { key: placeKey(group.location), color: group.severity, title: group.location, description: fallbackDescription(group.items[0].consequence), recommendation: null, angles, hasProposal: false };
 }
 
 function aggregateBlock(group) {
@@ -132,12 +135,18 @@ function reportInput(options, result, open, scout) {
   };
 }
 
-// Eingebetteter Lauf: Der Bericht ohne „Wie es weitergeht“ geht nach `reportFile`; stdout nennt nur Status, Followup-Fähigkeit und Datei.
+// Eingebetteter Lauf: Die Berichtsdaten gehen als JSON nach `reportFile` (Format wie review-flow.js report --bericht);
+// stdout nennt nur Status, Ergebnis, Followup-Fähigkeit und Datei. orchestrator-report.js setzt daraus den Abschlussbericht zusammen.
 // `FOLLOWUP ja`: mindestens eine offene Gruppe hat einen gesicherten Vorschlag, den `review-followup <P> alle` erreicht.
 function embeddedOutput(options, input, status) {
-  writeText(options.reportFile, renderImplementationReport({ ...input, withoutNext: true }));
-  const followup = input.open.some((entry) => entry.hasProposal) ? 'ja' : 'nein';
-  return [`ENDE ${status}`, `FOLLOWUP ${followup}`, `BERICHT ${options.reportFile}`].join('\n');
+  const { offersFollowup: _steps, ...summary } = summaryOf(input);
+  const followup = input.open.some((entry) => entry.hasProposal);
+  writeJson(options.reportFile, {
+    format: FORMAT, review: REVIEW, title: 'Implementierungs-Review', followup: false, status, ...summary, offersFollowup: followup,
+    plan: input.plan, topic: input.topic, openRed: input.openRed, failedLabels: input.failedLabels,
+    changes: [], decisions: [], questions: [], open: input.open, notes: input.notes,
+  });
+  return [`ENDE ${status}`, `ERGEBNIS ${summary.resultLine.replace(RESULT_PREFIX, '')}`, `FOLLOWUP ${followup ? 'ja' : 'nein'}`, `BERICHT ${options.reportFile}`].join('\n');
 }
 
 // `options`: dir (Rundenordner), workspace (W), plan (lesbare Plan-Datei), planArg (Pfad für die Befehle), range (Basis), packageFile,

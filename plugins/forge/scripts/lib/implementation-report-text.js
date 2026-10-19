@@ -60,16 +60,33 @@ function steps(input, kind, counts) {
   return [FINISH];
 }
 
+function countsOf(input) {
+  const hindrances = input.open.filter((entry) => entry.color === 'red');
+  return { openRed: Math.max(input.openRed, hindrances.length), listedRed: hindrances.length, hints: input.open.filter((entry) => entry.color === 'yellow').length };
+}
+
+// Art, Ergebnis-Zeile, Ablauf, Prüfumfang und Befund für den eingebetteten Lauf; `offersFollowup`: die Schritte nennen `/dv-forge:review-followup`.
+function summaryOf(input) {
+  const counts = countsOf(input);
+  const kind = kindOf(input, counts);
+  const list = steps(input, kind, counts);
+  return {
+    kind, resultLine: resultLine(input, kind, counts), flowLine: `Ablauf: Prüfung aus ${viewpointsPhrase(input.reviewerCount)}, keine Überarbeitung.`,
+    checked: checkedLines(input), found: input.reviewerLines.map(foundLine), offersFollowup: JSON.stringify(list).includes('/dv-forge:review-followup '),
+  };
+}
+
 function renderImplementationReport(input) {
   const hindrances = input.open.filter((entry) => entry.color === 'red');
   const hintEntries = input.open.filter((entry) => entry.color === 'yellow');
-  const counts = { openRed: Math.max(input.openRed, hindrances.length), listedRed: hindrances.length, hints: hintEntries.length };
+  const counts = countsOf(input);
   const kind = kindOf(input, counts);
+  const summary = summaryOf(input);
   const heading = `## Implementierungs-Review · Ergebnis${input.topic ? ` · ${input.topic}` : ''}`;
   return [
-    [heading, resultLine(input, kind, counts), `Ablauf: Prüfung aus ${viewpointsPhrase(input.reviewerCount)}, keine Überarbeitung.`],
-    ['### Was geprüft wurde', ...checkedLines(input)],
-    ...section('Gefunden', input.reviewerLines.map(foundLine)),
+    [heading, summary.resultLine, summary.flowLine],
+    ['### Was geprüft wurde', ...summary.checked],
+    ...section('Gefunden', summary.found),
     ...section('Noch offen · Hindernis', hindrances.flatMap(openLines)),
     ...section('Noch offen · kein Hindernis für das Abschließen', hintEntries.flatMap(openLines)),
     ...section('Hinweise zum Ablauf', input.notes.map((note) => `- ${note}`)),
@@ -77,4 +94,4 @@ function renderImplementationReport(input) {
   ].map((block) => block.join('\n')).join('\n\n');
 }
 
-module.exports = { renderImplementationReport };
+module.exports = { renderImplementationReport, summaryOf };

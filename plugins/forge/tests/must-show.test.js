@@ -7,7 +7,7 @@ const { anchorsOf, mustShowOf, decideTurnEnd } = require('../scripts/lib/must-sh
 const TEXT = ['## Spec-Review: docs/x/spec.md', '', '**Status:** sauber', '', '### Runde 1', '| a | b |', '', '### Offene Fragen', '- x'].join('\n');
 const ANCHORS = ['## Spec-Review: docs/x/spec.md', '### Runde 1', '### Offene Fragen'];
 
-test('anchorsOf_HeadingsAndQuestionLines_ReturnsThemTrimmed', () => {
+test('anchorsOf_HeadingsUpToLevelThreeAndQuestionLines_ReturnsThemTrimmed', () => {
   // Arrange
   const text = ['# Titel', '## Kopf', '#### zu tief', '  ### Eingerückt  ', '**Frage 1 — Regel**', 'Frage 2 von 2 · Titel', '- **Frage 3**', 'Fließtext'].join('\n');
 
@@ -15,7 +15,7 @@ test('anchorsOf_HeadingsAndQuestionLines_ReturnsThemTrimmed', () => {
   const anchors = anchorsOf(text);
 
   // Assert
-  assert.deepEqual(anchors, ['## Kopf', '### Eingerückt', '**Frage 1 — Regel**', 'Frage 2 von 2 · Titel']);
+  assert.deepEqual(anchors, ['# Titel', '## Kopf', '### Eingerückt', '**Frage 1 — Regel**', 'Frage 2 von 2 · Titel']);
 });
 
 test('anchorsOf_CrlfText_ReturnsLinesWithoutCarriageReturn', () => {

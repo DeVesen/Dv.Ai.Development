@@ -5,7 +5,7 @@
 // (Followup: der Status zählt nur die gewählten Gruppen). `open[].hasProposal`: die Gruppe hat einen gesicherten
 // Scout-Vorschlag; nur solche Gruppen erreicht `/dv-forge:review-followup <A> alle`.
 
-const READY = { 'spec-review': 'Bereit zum Planen', 'plan-review': 'Bereit zur Umsetzung' };
+const READY = { 'spec-review': 'Bereit zum Planen', 'plan-review': 'Bereit zur Umsetzung', 'implementation-review': 'Bereit zum Abschließen' };
 const DOCUMENT_IN = { 'spec-review': 'in der Spec', 'plan-review': 'im Plan' };
 const NEXT_FOR = { 'spec-review': 'den Plan', 'plan-review': 'die Umsetzung' };
 const VIEWPOINTS = ['', 'einem', 'zwei', 'drei', 'vier', 'fünf', 'sechs'];
@@ -151,21 +151,32 @@ function section(title, lines) {
   return lines.length > 0 ? [[`### ${title}`, ...lines]] : [];
 }
 
+// Art, Ergebnis-Zeile, Ablauf und nächste Schritte; `offersFollowup`: die Schritte nennen `/dv-forge:review-followup`.
+function summaryOf(input) {
+  const hints = input.open.filter((entry) => entry.color === 'yellow').length;
+  const kind = kindOf(input, hints);
+  const list = steps(input, kind, input.open);
+  return { kind, resultLine: resultLine(input, kind, hints), flowLine: flowLine(input), steps: list, offersFollowup: JSON.stringify(list).includes(followupCommand(input)) };
+}
+
 function renderReportText(input) {
   const hindrances = input.open.filter((entry) => entry.color === 'red');
   const hintEntries = input.open.filter((entry) => entry.color === 'yellow');
-  const kind = kindOf(input, hintEntries.length);
+  const summary = summaryOf(input);
   const heading = `## ${input.title} · Ergebnis${input.topic ? ` · ${input.topic}` : ''}`;
   return [
-    [heading, resultLine(input, kind, hintEntries.length), flowLine(input)],
+    [heading, summary.resultLine, summary.flowLine],
     ...section(`Was sich ${DOCUMENT_IN[input.review]} geändert hat`, input.changes.flatMap(changeLines)),
     ...section('Deine Entscheidungen', (input.followup ? [] : input.decisions).map((entry) => `- **${entry.title}:** ${entry.decision}`)),
     ...section('Offene Fragen', input.questions.map((line) => `- ${line}`)),
     ...section('Noch offen · Hindernis', hindrances.flatMap(openLines)),
     ...section(`Noch offen · kein Hindernis für ${NEXT_FOR[input.review]}`, hintEntries.flatMap(openLines)),
     ...section('Hinweise zum Ablauf', input.notes.map((note) => `- ${note}`)),
-    ['### Wie es weitergeht', ...stepLines(steps(input, kind, input.open))],
+    ['### Wie es weitergeht', ...stepLines(summary.steps)],
   ].map((block) => block.join('\n')).join('\n\n');
 }
 
-module.exports = { renderReportText, openLines, section, stepLines, viewpointsPhrase, proposedCount, blockedSteps, hintSteps };
+module.exports = {
+  renderReportText, summaryOf, resultLine, changeLines, openLines, section, stepLines, viewpointsPhrase, proposedCount, blockedSteps, hintSteps, questionSteps,
+  DOCUMENT_TEXTS,
+};

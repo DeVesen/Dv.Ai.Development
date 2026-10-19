@@ -41,7 +41,7 @@ test('implementationOrchestrator_Body_ChainsTheFourSkillsInOrder', () => {
     '`dv-forge:start-work` mit `<P0> <S0>`',
     '`dv-forge:implementation` mit `<P> <S>`',
     '`dv-forge:implementation-review` mit `<P> <S> --bericht "<BR>"`',
-    '`dv-forge:review-followup` mit `<P> alle --spec <S>`, genau einmal',
+    '`dv-forge:review-followup` mit `<P> alle --spec <S> --bericht "<BF>"`, genau einmal',
   ];
   const positions = steps.map((step) => body.indexOf(step));
   for (const [index, step] of steps.entries()) assert.ok(positions[index] !== -1, `${step} fehlt`);
@@ -59,7 +59,7 @@ test('implementationOrchestrator_Body_ChecksPlanAndSpecByHashAfterEveryWritingSk
   assert.equal(body.match(/Hash-Prüfung\./g).length, 3);
 });
 
-test('implementationOrchestrator_Body_UsesReportMarkersTheReportScriptWrites', () => {
+test('implementationOrchestrator_Body_BranchesOnTheResultsTheReportScriptWrites', () => {
   // Arrange
   const script = readText(REPORT_TEXT);
 
@@ -67,13 +67,14 @@ test('implementationOrchestrator_Body_UsesReportMarkersTheReportScriptWrites', (
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  for (const marker of ['**Ergebnis:** ✅ Bereit zum Abschließen', '**Ergebnis:** ⛔ Noch nicht bereit', '**Ergebnis:** ⚠️ Unvollständig', '### Wie es weitergeht']) {
+  for (const marker of ['✅ Bereit zum Abschließen', '⛔ Noch nicht bereit']) {
     assert.ok(body.includes(marker), `${marker} fehlt im Skill`);
     assert.ok(script.includes(marker), `${marker} fehlt in implementation-report-text.js`);
   }
+  assert.ok(body.includes('`⛔ Noch nicht bereit` UND `FOLLOWUP ja` → 5.'));
 });
 
-test('implementationOrchestrator_Body_ContinuesAfterFollowupOnlyOnTheCleanLine', () => {
+test('implementationOrchestrator_Body_ContinuesAfterFollowupOnlyOnAReadyResult', () => {
   // Arrange
   const flow = readText(FOLLOWUP_FLOW);
 
@@ -81,8 +82,8 @@ test('implementationOrchestrator_Body_ContinuesAfterFollowupOnlyOnTheCleanLine',
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(flow.includes('`Alles sauber. Arbeit abschließen mit:`'));
-  assert.ok(body.includes('`Alles sauber. Arbeit abschließen mit:` → 6; sonst Ende.'));
+  assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
+  assert.ok(body.includes('Schlusszeile `Review abgeschlossen: ✅ …` → 6; sonst Ende.'));
 });
 
 test('implementationOrchestrator_Body_NeverPushesNeverCallsFinishWorkAndKeepsWorktree', () => {
@@ -92,10 +93,9 @@ test('implementationOrchestrator_Body_NeverPushesNeverCallsFinishWorkAndKeepsWor
   // Assert
   assert.ok(body.includes('Kein `git switch`, `git checkout`, `git worktree`, Merge, Push, force von dir.'));
   assert.ok(body.includes('Der Worktree bleibt, `finish-work` ruft nur der Mensch.'));
-  assert.ok(body.includes('`Worktree bleibt: <R>`'));
   assert.ok(!body.includes('`dv-forge:finish-work` mit'));
-  assert.ok(body.includes('Erste Zeile `Feature-Branch: <branch>`'));
-  assert.ok(body.includes('Letzte Zeile: „Nicht gepusht: `git push -u origin <branch>`“.'));
+  assert.ok(body.includes('`Feature-Branch: <branch>` (belegt per `git branch --list`, `git worktree list`)'));
+  assert.ok(body.includes('--worktree "<R>" --branch <branch> --pruefung <gruen|rot|keine>'));
 });
 
 test('implementationOrchestrator_Body_PassesSkillQuestionsToTheHuman', () => {
@@ -116,22 +116,24 @@ test('implementationOrchestrator_Body_StaysUnder550WordsWithPairedQuotes', () =>
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 
-test('implementationOrchestrator_Body_RunsReviewEmbeddedAndWritesOwnNextSteps', () => {
+test('implementationOrchestrator_Body_RunsReviewEmbeddedAndEmitsOneClosingReportFromTheScript', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('--bericht "<BR>"'));
-  assert.ok(body.includes('Teile aus `<BR>` unverändert, vor `### Wie es weitergeht`.'));
-  assert.ok(body.includes('`### Wie es weitergeht` schreibst du selbst'));
+  assert.ok(body.includes('implementation-review und review-followup laufen eingebettet (`--bericht`) und zeigen keinen Bericht.'));
+  assert.ok(body.includes('`node "<PLUGIN>/scripts/orchestrator-report.js" --art implementation --review "<BR>" --out "<AB>"'));
+  assert.ok(body.includes('`--followup "<BF>"` nur wenn Schritt 5 lief'));
+  assert.ok(body.includes('`node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`'));
   assert.ok(body.includes('genau einmal als letzte Ausgabe'));
+  for (const gone of ['Teile aus `<BR>` unverändert', '`### Wie es weitergeht` schreibst du selbst']) assert.ok(!body.includes(gone), gone);
 });
 
-test('implementationOrchestrator_Body_RecommendsFinishWorkAfterCleanFollowupAndRefusesRequestsInReport', () => {
+test('implementationOrchestrator_Body_RefusesRequestsInReport', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('lief Schritt 5 und war sauber → `/dv-forge:finish-work` in `<R>`, nur manuell'));
   assert.ok(body.includes('nicht ausführen; eine Zeile im Bericht, nie davor.'));
+  assert.ok(body.includes('bei Abweichungen `Abweichungen: …`'));
 });

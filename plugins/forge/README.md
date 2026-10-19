@@ -5,8 +5,10 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 ## Ablauf
 
 1. **Spec:** `spec-whiteboarding` (oder `spec-whiteboarding-with-docs`, verankert im bestehenden System) macht aus einer Anfrage eine `spec.md`. `spec-review` prüft sie. `spec-review-orchestrator` verkettet `spec-review` mit höchstens einem `review-followup` und committet die Spec im aktuellen Branch.
-2. **Plan:** `plan-writing` macht aus der Spec einen Umsetzungsplan mit exakten Dateien und Test-first-Schritten. `plan-review` prüft ihn. `plan-orchestrator` verkettet beides samt höchstens einem `review-followup` in einem Lauf und committet Spec und Plan am Ende.
+2. **Plan:** `plan-writing` macht aus der Spec einen Umsetzungsplan mit exakten Dateien und Test-first-Schritten. `plan-review` prüft ihn. `plan-orchestrator` verkettet beides samt höchstens einem `review-followup` in einem Lauf; er committet nicht, der Abschlussbericht nennt den Commit-Stand.
 3. **Umsetzung:** `start-work` bereitet Branch oder Worktree vor, `implementation` setzt den Plan Task für Task um, `implementation-review` prüft das Ergebnis, `finish-work` schließt die Arbeit ab. `implementation-orchestrator` verkettet `start-work`, `implementation` und `implementation-review` samt höchstens einem `review-followup` in einem Lauf und endet mit einem Abschlussbericht; `finish-work` empfiehlt er nur, der Worktree bleibt, nichts wird gepusht.
+
+Alle drei Orchestratoren enden mit genau einem Abschlussbericht in vier Abschnitten (`# Abschlussbericht`, `# Was sich … geändert hat`, `# Was ist noch offen`, `# Wie es weitergeht`). Review und Followup laufen dabei eingebettet (`--bericht <datei>`) ohne eigenen Bericht; `orchestrator-report.js` setzt den Endstand aus ihren Berichtsdaten zusammen. Alleinstehend aufgerufen zeigen Review und Followup ihre Berichte wie bisher.
 
 ## Skills
 
@@ -18,7 +20,7 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 | `review-followup` | Gewählte Scout-Vorschläge aus einem Review umsetzen |
 | `spec-review-orchestrator` | Spec prüfen, einmal nacharbeiten und committen in einem Lauf; kein Worktree, kein Branch-Wechsel |
 | `plan-writing` | Spec in Plan überführen |
-| `plan-orchestrator` | Plan schreiben, prüfen, einmal nacharbeiten und committen in einem Lauf; die Spec bleibt unverändert |
+| `plan-orchestrator` | Plan schreiben, prüfen und einmal nacharbeiten in einem Lauf; kein Commit, die Spec bleibt unverändert |
 | `start-work`, `implementation`, `finish-work` | Arbeit vorbereiten, umsetzen, abschließen |
 | `implementation-orchestrator` | Umsetzen, prüfen und einmal nacharbeiten in einem Lauf; Worktree bleibt, `finish-work` manuell, Plan und Spec bleiben unverändert, kein Push |
 | `domain-modeling` | Unscharfe oder widersprüchliche Fachbegriffe klären, ADRs anstoßen |

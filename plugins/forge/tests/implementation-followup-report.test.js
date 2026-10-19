@@ -1,0 +1,130 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const { parseAnswer } = require('../scripts/lib/implementation-followup-report');
+const { tempDir, writeJsonFile } = require('./lib/review-flow-fixture');
+
+const SCRIPT = path.join(__dirname, '..', 'scripts', 'implementation-report.js');
+const AGGREGATE = [
+  '=== REWORK ===',
+  '### 🔴 src/a.js:3 (risks)',
+  '- [risks · fehlerfall] Zitat: „x“ · Konsequenz: Absturz bei leerer Liste · Begründung: b',
+  '',
+  '### 🟡 src/b.js:9 (design)',
+  '- [design · lesbarkeit] Zitat: „y“ · Konsequenz: Schwer lesbar · Begründung: b',
+  '',
+].join('\n');
+const SCOUT = [
+  '## Scout-Vorschläge', '',
+  '### 🔴 src/a.js:3', 'Titel: Leere Liste abfangen', 'Beschreibung: Eine leere Liste bringt die Summe zum Absturz.', 'Empfehlung: Früh zurückkehren, weil es am einfachsten ist.', '1. Früh zurückkehren.', '**Bevorzugt: 1** — klar.', '',
+  '### 🟡 src/b.js:9', 'Titel: Schleife benennen', 'Beschreibung: Die Schleife ist schwer zu lesen.', 'Empfehlung: Funktion extrahieren, weil der Name erklärt.', '1. Extrahieren.', '**Bevorzugt: 1** — lesbar.', '',
+].join('\n');
+const CLEAN = ['### Findings', '- **Leere Liste** — behoben — src/a.js:4', '', '### Neue Schäden im Fix-Diff', '- keine', '', '### Außerhalb', '- keine', '', '### Urteil', '**Fix-Runde:** alle behoben, keine neuen 🔴'].join('\n');
+const OPEN = ['### Findings', '- **Leere Liste** — nicht behoben — src/a.js:4', '', '### Neue Schäden im Fix-Diff', '- 🟡 `src/a.js:7` — Magische Zahl', '', '### Außerhalb', '- Logging fehlt in src/c.js', '', '### Urteil', '**Fix-Runde:** offen: Leere Liste'].join('\n');
+
+function workspace(chosen) {
+  const dir = tempDir('dv-forge-impl-followup-');
+  writeJsonFile(path.join(dir, 'sicherung-vorher', 'aggregate.md'), AGGREGATE);
+  writeJsonFile(path.join(dir, 'sicherung-vorher', 'scout.md'), SCOUT);
+  const all = [{ nummer: 1, stufe: '🔴', stelle: 'src/a.js:3' }, { nummer: 2, stufe: '🟡', stelle: 'src/b.js:9' }];
+  writeJsonFile(path.join(dir, 'followup.json'), {
+    gewaehlt: all.filter((group) => chosen.includes(group.nummer)).map((group) => ({ ...group, vorschlag: 1 })),
+    offen: all.filter((group) => !chosen.includes(group.nummer)),
+  });
+  return dir;
+}
+
+function run(dir, answer, extra = []) {
+  const file = path.join(dir, 'bericht-followup.json');
+  const result = spawnSync(process.execPath, [SCRIPT, 'followup', '--workspace', dir, '--bericht', file, ...extra], { encoding: 'utf8', input: answer });
+  return { result, file, data: result.status === 0 ? JSON.parse(fs.readFileSync(file, 'utf8')) : null };
+}
+
+test('parseAnswer_CleanVerdict_CleanWithoutDamages', () => {
+  // Act
+  const answer = parseAnswer(CLEAN);
+
+  // Assert
+  assert.equal(answer.clean, true);
+  assert.deepEqual(answer.damages, []);
+  assert.deepEqual(answer.outside, []);
+});
+
+test('parseAnswer_MissingVerdictLine_NotClean', () => {
+  // Act
+  const answer = parseAnswer('### Findings\n- **x** — behoben — a.js:1');
+
+  // Assert
+  assert.equal(answer.verdict, null);
+  assert.equal(answer.clean, false);
+});
+
+test('implementationFollowup_AllChosenAndClean_ChangesConfirmedAndNothingOpen', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+
+  // Act
+  const { result, file, data } = run(dir, CLEAN);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, `ENDE sauber nach Nach-Review\nERGEBNIS ✅ Bereit zum Abschließen\nFOLLOWUP nein\nBERICHT ${file}\n`);
+  assert.deepEqual(data.changes.map((change) => [change.title, change.ok, change.choice]), [['Leere Liste abfangen', true, 1], ['Schleife benennen', true, 1]]);
+  assert.equal(data.changes[0].key, 'src/a.js:3');
+  assert.deepEqual(data.open, []);
+  assert.equal(data.flowLine, 'Ablauf: 2 gewählte Vorschläge umgesetzt, ein Nach-Review.');
+});
+
+test('implementationFollowup_NotClean_ChosenStayOpenAsHindranceWithNewDamageAndVerdictNote', () => {
+  // Arrange
+  const dir = workspace([1]);
+
+  // Act
+  const { result, data } = run(dir, OPEN);
+
+  // Assert
+  assert.match(result.stdout, /^ENDE offen nach Nach-Review\nERGEBNIS ⛔ Noch nicht bereit · 1 Hindernis offen\n/);
+  assert.equal(data.changes[0].ok, false);
+  assert.deepEqual(data.open.map((entry) => [entry.color, entry.title]), [['yellow', 'Schleife benennen'], ['red', 'Leere Liste abfangen'], ['yellow', 'src/a.js:7']]);
+  assert.equal(data.open[2].description, 'Magische Zahl');
+  assert.deepEqual(data.notes, ['Nach-Review: offen: Leere Liste', 'Außerhalb des Fix-Diffs: Logging fehlt in src/c.js']);
+});
+
+test('implementationFollowup_UnchosenGroupLeft_CleanStatusNamesOpenGroups', () => {
+  // Arrange
+  const dir = workspace([1]);
+
+  // Act
+  const { result, data } = run(dir, CLEAN);
+
+  // Assert
+  assert.match(result.stdout, /^ENDE sauber nach Nach-Review, nicht gewählte Gruppen bleiben offen\nERGEBNIS ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen\n/);
+  assert.deepEqual(data.open.map((entry) => entry.title), ['Schleife benennen']);
+});
+
+test('implementationFollowup_WithoutReReview_BlockedAndChangeNotVerified', () => {
+  // Arrange
+  const dir = workspace([1]);
+
+  // Act
+  const { result, data } = run(dir, '', ['--ohne', 'blockiert']);
+
+  // Assert
+  assert.match(result.stdout, /^ENDE blockiert\nERGEBNIS ⛔ Noch nicht bereit · 1 Hindernis offen\n/);
+  assert.equal(data.changes[0].ok, null);
+  assert.deepEqual(data.notes, ['Kein Nach-Review: blockiert.']);
+  assert.equal(data.flowLine, 'Ablauf: 1 gewählter Vorschlag umgesetzt, kein Nach-Review.');
+});
+
+test('implementationFollowup_UnknownWithoutValue_ExitsWithOne', () => {
+  // Act
+  const { result } = run(workspace([1]), '', ['--ohne', 'vielleicht']);
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /--ohne erlaubt: blockiert, keine-aenderung/);
+});

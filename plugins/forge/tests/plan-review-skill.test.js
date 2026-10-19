@@ -16,7 +16,7 @@ test('planReviewSkill_Frontmatter_ModelInvocableWithoutRoundsArgument', () => {
   assert.equal(fields.name, 'plan-review');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--only <reviewer,...>]');
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--only <reviewer,...>] [--bericht <datei>]');
 });
 
 test('planReviewSkill_Body_ReadsSharedFlowWithPlaceholders', () => {

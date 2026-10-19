@@ -6,8 +6,11 @@ const { openQuestions } = require('./questions');
 const { failedInstances } = require('./attempts');
 const { openGroupsOf, writeClosing } = require('./closing');
 const { buildInput } = require('./report-data');
-const { renderReportText } = require('./report-text');
-const { ROUND_ONE, ROUND_TWO, CLOSING, FlowError, readText, readJson, writeText } = require('./flow-files');
+const { renderReportText, summaryOf } = require('./report-text');
+const { ROUND_ONE, ROUND_TWO, CLOSING, FlowError, readText, readJson, writeText, writeJson } = require('./flow-files');
+
+const FORMAT = 1;
+const RESULT_PREFIX = '**Ergebnis:** ';
 
 // Rangfolge: unvollständig → Fragen offen → nicht bereit → sauber.
 function flowStatus({ failed, openQuestions: questions, openRed, reworked }) {
@@ -47,13 +50,26 @@ function collect(options) {
   };
 }
 
+// Eingebetteter Lauf: Die Berichtsdaten gehen als JSON nach `reportFile`; stdout nennt Status, Ergebnis, Followup-Fähigkeit und Datei.
+// orchestrator-report.js setzt daraus den einen Abschlussbericht des Orchestrators zusammen.
+function embeddedOutput(options, input, status) {
+  const { steps: _steps, ...summary } = summaryOf(input);
+  writeJson(options.reportFile, { format: FORMAT, status, ...summary, ...input });
+  return [
+    `ENDE ${status}`, `ERGEBNIS ${summary.resultLine.replace(RESULT_PREFIX, '')}`, `FOLLOWUP ${summary.offersFollowup ? 'ja' : 'nein'}`, `BERICHT ${options.reportFile}`,
+  ].join('\n');
+}
+
+// `options.reportFile` (optional): eingebetteter Lauf, siehe embeddedOutput.
 function report(options) {
   const data = collect(options);
   const status = flowStatus({ failed: data.failed, openQuestions: data.questions.length, openRed: data.openRed, reworked: data.reworked });
   const open = openGroupsOf(options, data);
-  const text = renderReportText(buildInput(options, data, status, open));
+  const input = buildInput(options, data, status, open);
+  const text = renderReportText(input);
   writeClosing(options, open);
   writeText(path.join(options.workspace, CLOSING, 'bericht.md'), text);
+  if (options.reportFile) return embeddedOutput(options, input, status);
   return [`ENDE ${status}`, '=== BERICHT ===', text].join('\n');
 }
 

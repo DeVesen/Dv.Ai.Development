@@ -24,11 +24,11 @@ const USAGE = [
   '       node review-flow.js answers-check --review spec-review --dir <W> --doc <datei>',
   '       node review-flow.js checklist --review <..> --dir <W> --doc <datei> [--quelle runde-1|nacharbeit]',
   '       node review-flow.js verify --review <..> --dir <W> --doc <datei> [--spec <datei>] [--quelle runde-1|nacharbeit]',
-  '       node review-flow.js report --review <..> --dir <W> --doc <datei> --titel <text> --artefakt <pfad> [--quelle runde-1|nacharbeit]',
+  '       node review-flow.js report --review <..> --dir <W> --doc <datei> --titel <text> --artefakt <pfad> [--quelle runde-1|nacharbeit] [--bericht <datei>]',
   '       node review-flow.js script-checks --review <..> --dir <W> --doc <datei> [--spec <datei>] [--runde runde-1|runde-2]',
   '',
 ].join('\n');
-const VALUE_OPTIONS = ['--review', '--dir', '--doc', '--spec', '--expect', '--beratend', '--instanz', '--art', '--quelle', '--runde', '--titel', '--artefakt'];
+const VALUE_OPTIONS = ['--review', '--dir', '--doc', '--spec', '--expect', '--beratend', '--instanz', '--art', '--quelle', '--runde', '--titel', '--artefakt', '--bericht'];
 const SOURCES = [ROUND_ONE, FOLLOWUP];
 // Namen werden Dateinamen im Arbeitsbereich: kein `.`, kein Pfadtrenner.
 const INSTANCE_NAME = /^[\p{Ll}\d]+(?:-[\p{Ll}\d]+)*$/u;
@@ -102,7 +102,9 @@ const COMMANDS = {
   'answers-check': (values) => checkAnswers(flowOptions(values)),
   checklist: (values) => buildChecklist(flowOptions(values)),
   verify: (values) => verifyRoundTwo(flowOptions(values)),
-  report: (values) => report({ ...flowOptions(values), title: required(values, 'titel'), artifact: required(values, 'artefakt') }),
+  report: (values) => report({
+    ...flowOptions(values), title: required(values, 'titel'), artifact: required(values, 'artefakt'), reportFile: values.bericht ? path.resolve(values.bericht) : null,
+  }),
   'script-checks': (values) => writeScriptChecks({ ...flowOptions(values), round: checkedRound(values.runde) }),
 };
 

@@ -628,3 +628,14 @@ test('implementation_FreeTextArguments_AreRejectedWithCountAndText', () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /erwartet 1 bis 2 Pfade, übergeben 4: a\.md b\.md Zusatz: TDD\. Freitext gehört nicht in die Argumente/);
 });
+
+test('parseArgs_EmbeddedReportFlag_AcceptedForSpecPlanAndFollowup', () => {
+  // Arrange
+  const { parseArgs } = require('../scripts/prepare');
+
+  // Act
+  const calls = [['spec-review', ['s.md', '--bericht', 'r.json']], ['plan-review', ['p.md', '--bericht', 'r.json']], ['review-followup', ['p.md', 'alle', '--bericht', 'f.json']]];
+
+  // Assert
+  for (const [skill, args] of calls) assert.deepEqual(parseArgs(skill, args).flags['--bericht'], [args[args.length - 1]], skill);
+});

@@ -16,11 +16,11 @@ const { isScriptReviewer } = require('./lib/reviewer-names');
 const { ART_OF_ROLE, FollowupError, latest, loadGroups, rolesFor, slugFor } = require('./followup');
 
 const USAGE = [
-  'Aufruf: node prepare.js spec-review <spec> [quelle] [--only <reviewer,...>]',
-  '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>]',
+  'Aufruf: node prepare.js spec-review <spec> [quelle] [--only <reviewer,...>] [--bericht <datei>]',
+  '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>] [--bericht <datei>]',
   '       node prepare.js implementation <plan> [spec]',
   '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>] [--bericht <datei>]',
-  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
+  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>] [--bericht <datei>]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
@@ -29,11 +29,11 @@ class PrepareError extends Error {}
 class UsageError extends Error {}
 
 const FLAGS = {
-  'spec-review': ['--only'],
-  'plan-review': ['--only'],
+  'spec-review': ['--only', '--bericht'],
+  'plan-review': ['--only', '--bericht'],
   implementation: [],
   'implementation-review': ['--spec', '--context', '--base', '--only', '--bericht'],
-  'review-followup': ['--spec', '--base'],
+  'review-followup': ['--spec', '--base', '--bericht'],
 };
 
 // Reviewer je Review in fester Reihenfolge; --only wählt daraus, die Reihenfolge bleibt.

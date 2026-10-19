@@ -1,6 +1,7 @@
 'use strict';
 
 // Liest den Arbeitsbereich und baut die Eingabe des Berichts; der Text selbst entsteht in report-text.js.
+// `key` an Änderungen und offenen Gruppen ist der Stellen-Schlüssel (placeKey); orchestrator-report.js führt damit Review und Followup zusammen.
 
 const path = require('node:path');
 const { ICON } = require('./groups');
@@ -83,7 +84,7 @@ function reworkChanges(options, data, ctx) {
     if (!group) return [];
     const texts = described(group, ctx.index);
     return [{
-      ok: verdictOk(ctx.verdicts, [key]), title: texts.title, angles: angles(options.review, group.reviewers), description: texts.description,
+      key, ok: verdictOk(ctx.verdicts, [key]), title: texts.title, angles: angles(options.review, group.reviewers), description: texts.description,
       change: entry.change ?? '', evidence: entry.evidence ?? null, choice: null,
     }];
   });
@@ -98,7 +99,7 @@ function answeredBundles(ctx) {
 
 function answeredChanges(options, ctx) {
   return answeredBundles(ctx).map(({ bundle, keys, entries }) => ({
-    ok: verdictOk(ctx.verdicts, keys), title: bundle.title, angles: angles(options.review, bundle.reviewers ?? []),
+    key: [...keys].sort().join('|'), ok: verdictOk(ctx.verdicts, keys), title: bundle.title, angles: angles(options.review, bundle.reviewers ?? []),
     description: unique(entries.map((entry) => entry.change)).join(' '), change: null, evidence: null, choice: null,
   }));
 }
@@ -115,7 +116,7 @@ function followupChanges(options, ctx) {
     if (!saved || result?.status !== 'changed') return [];
     const texts = described(fromSaved(saved), ctx.index);
     return [{
-      ok: verdictOk(ctx.verdicts, [key]), title: texts.title, angles: angles(options.review, saved.reviewers), description: texts.description,
+      key, ok: verdictOk(ctx.verdicts, [key]), title: texts.title, angles: angles(options.review, saved.reviewers), description: texts.description,
       change: result.change ?? '', evidence: result.evidence ?? null, choice: chosen.vorschlag,
     }];
   });
@@ -165,7 +166,7 @@ function openRedOf(data, ctx, open) {
 
 // Gleiche Dateien und Schlüssel wie writeClosing: Nur Gruppen mit Scout-Block landen in abschluss/scout.md und damit bei `alle`.
 function openEntry(options, ctx, group) {
-  return { color: group.color, ...described(group, ctx.index), angles: angles(options.review, group.reviewers), hasProposal: ctx.index.has(group.scoutKey) };
+  return { key: group.key, color: group.color, ...described(group, ctx.index), angles: angles(options.review, group.reviewers), hasProposal: ctx.index.has(group.scoutKey) };
 }
 
 function buildInput(options, data, status, open) {

@@ -1,7 +1,7 @@
 ---
 name: plan-review
 description: Use when a dv-forge plan.md should run through the review of parallel reviewers against its spec and the code, one rework and one verification round, with a script deciding colors, stops and status.
-argument-hint: <plan.md> [spec.md] [--only <reviewer,...>]
+argument-hint: <plan.md> [spec.md] [--only <reviewer,...>] [--bericht <datei>]
 ---
 
 # Plan-Review (Orchestrator)
@@ -13,6 +13,9 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-flow/flow.md` und folge ihm. Hier steh
 ## Eingaben
 1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Plan `P`, Spec `S`, Repo `R`, Arbeitsbereich `W`, `slug`, `aktiv`, die erlaubten Befehle `Build`, `Test`, `Lint`, die Anker-Datei `A` und je Warnung eine Zeile `WARN` (der Bericht enthält die Hinweise).
 2. `aktiv` kommt aus `prepare.js`: alle fünf Reviewer, mit `--only` nur die genannten. Du startest genau die Reviewer aus `aktiv`. Dokument `<DOC>` = `<P>`, Rolle `plan-review`.
+
+## Eingebetteter Lauf
+Nennt `$ARGUMENTS` `--bericht <BD>`, ruft ein Orchestrator dich auf und zeigt am Ende selbst einen Bericht. Dann gilt der eingebettete Lauf aus `flow.md`, Abschnitt „Ende“: kein Bericht im Chat, kein Pflichttext, keine Commit-Prüfung; die Sicherung für `review-followup` bleibt. Ohne `--bericht` läuft alles wie beschrieben.
 
 ## Reviewer
 Jeder Reviewer bekommt zusätzlich `Anker: <A>`, wenn es `A` gibt.

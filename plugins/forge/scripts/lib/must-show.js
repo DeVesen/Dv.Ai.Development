@@ -2,7 +2,7 @@
 
 // Pflichttext im Chat: Anker aus einer Textdatei ableiten und am Zugende prüfen.
 
-const HEADING = /^#{2,3} /;
+const HEADING = /^#{1,3} /;
 const QUESTION = /^(?:\*\*)?Frage \d/;
 const MIN_SHARE = 0.6;
 const MAX_NAMED = 3;

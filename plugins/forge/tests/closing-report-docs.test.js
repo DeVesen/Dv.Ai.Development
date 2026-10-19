@@ -102,3 +102,27 @@ test('reviewFollowupSkill_Body_NamesAlleAndLeavesHintsAndNextStepToReport', () =
   assert.ok(body.includes('bei `plan-review` die Commit-Prüfung'));
   assert.ok(wordCount(body) < 500);
 });
+
+test('flow_End_EmbeddedRunWritesDataSkipsShowAndPrintsOneLine', () => {
+  const end = section(readText(FLOW), 'Ende');
+  for (const part of ['**Eingebetteter Lauf**', '`--bericht "<BD>"`', '`ERGEBNIS <ergebnis>`', 'In Schritt 3 entfällt `show`.', '`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`', 'keine Commit-Prüfung']) {
+    assert.ok(end.includes(part), `${part} fehlt`);
+  }
+});
+
+test('reviewSkills_EmbeddedSection_NamesBerichtAndKeepsStandaloneUnchanged', () => {
+  for (const file of [SPEC_SKILL, PLAN_SKILL]) {
+    const { fields, body } = readMarkdown(file);
+    assert.ok(fields['argument-hint'].endsWith('[--bericht <datei>]'), file);
+    const embedded = section(body, 'Eingebetteter Lauf');
+    assert.ok(embedded.includes('Ohne `--bericht` läuft alles wie beschrieben.'), file);
+  }
+  assert.ok(section(readMarkdown(PLAN_SKILL).body, 'Eingebetteter Lauf').includes('keine Commit-Prüfung'));
+});
+
+test('reviewFollowupFlow_EmbeddedRun_PassesBerichtToReportAndImplementationScript', () => {
+  const embedded = section(readText(FOLLOWUP_FLOW), 'Eingebetteter Lauf');
+  for (const part of ['`--bericht "<BD>"`', '`node "<PLUGIN>/scripts/implementation-report.js" followup --workspace "<W>" --bericht "<BD>" <<\'ANTWORT\'`', '`--ohne blockiert`', 'In Schritt 6 entfällt `show`.']) {
+    assert.ok(embedded.includes(part), `${part} fehlt`);
+  }
+});

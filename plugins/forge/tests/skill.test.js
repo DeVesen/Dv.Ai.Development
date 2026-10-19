@@ -16,7 +16,7 @@ test('skill_Frontmatter_ModelInvocableWithoutRoundsArgument', () => {
   assert.equal(fields.name, 'spec-review');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<spec.md> [quelle.md] [--only <reviewer,...>]');
+  assert.equal(fields['argument-hint'], '<spec.md> [quelle.md] [--only <reviewer,...>] [--bericht <datei>]');
 });
 
 test('skill_Body_DefinesPluginRootSessionAndReadsSharedFlow', () => {

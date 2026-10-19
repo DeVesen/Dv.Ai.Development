@@ -41,7 +41,7 @@ test('implementationOrchestrator_Body_ChainsTheFourSkillsInOrder', () => {
     '`dv-forge:start-work` mit `<P0> <S0>`',
     '`dv-forge:implementation` mit `<P> <S>`',
     '`dv-forge:implementation-review` mit `<P> <S> --bericht "<BR>"`',
-    '`dv-forge:review-followup` mit `<P> alle --spec <S> --bericht "<BF>"`, genau einmal',
+    '`dv-forge:review-followup` mit `<P> alle --spec <S> --bericht "<BF1>"`',
   ];
   const positions = steps.map((step) => body.indexOf(step));
   for (const [index, step] of steps.entries()) assert.ok(positions[index] !== -1, `${step} fehlt`);
@@ -56,7 +56,7 @@ test('implementationOrchestrator_Body_ChecksPlanAndSpecByHashAfterEveryWritingSk
   assert.ok(body.includes('`git hash-object -- "<P>"` = PLAN-HASH, `git hash-object -- "<S>"` = SPEC-HASH'));
   assert.ok(body.includes('`git diff --no-index -- "<Kopie>" "<Datei>"`'));
   assert.ok(body.includes('Nicht zurückschreiben, nicht committen, nicht als harmlos einstufen.'));
-  assert.equal(body.match(/Hash-Prüfung\./g).length, 3);
+  assert.equal(body.match(/Hash-Prüfung\./g).length, 4);
 });
 
 test('implementationOrchestrator_Body_BranchesOnTheResultsTheReportScriptWrites', () => {
@@ -67,11 +67,11 @@ test('implementationOrchestrator_Body_BranchesOnTheResultsTheReportScriptWrites'
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  for (const marker of ['✅ Bereit zum Abschließen', '⛔ Noch nicht bereit']) {
+  for (const marker of ['✅ Bereit zum Abschließen', '⚠️ Unvollständig']) {
     assert.ok(body.includes(marker), `${marker} fehlt im Skill`);
     assert.ok(script.includes(marker), `${marker} fehlt in implementation-report-text.js`);
   }
-  assert.ok(body.includes('`⛔ Noch nicht bereit` UND `FOLLOWUP ja` → 5.'));
+  assert.ok(body.includes('`FOLLOWUP ja` → 5.'));
 });
 
 test('implementationOrchestrator_Body_ContinuesAfterFollowupOnlyOnAReadyResult', () => {
@@ -83,7 +83,7 @@ test('implementationOrchestrator_Body_ContinuesAfterFollowupOnlyOnAReadyResult',
 
   // Assert
   assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
-  assert.ok(body.includes('Schlusszeile `Review abgeschlossen: ✅ …` → 6; sonst Ende.'));
+  assert.ok(body.includes('Nach der letzten Runde: Schlusszeile `Review abgeschlossen: ✅ …` → 6; sonst Ende.'));
 });
 
 test('implementationOrchestrator_Body_NeverPushesNeverCallsFinishWorkAndKeepsWorktree', () => {
@@ -124,12 +124,12 @@ test('implementationOrchestrator_Body_TreatsEmptyOrPlaceholderWorkitemAsNone', (
   assert.ok(body.includes('`<WI>` Workitem-Nr. optional; leer oder mit `<` oder `--` beginnend = keine'));
 });
 
-test('implementationOrchestrator_Body_StaysUnder575WordsWithPairedQuotes', () => {
+test('implementationOrchestrator_Body_StaysUnder700WordsWithPairedQuotes', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(wordCount(body) < 575,`${wordCount(body)} Wörter`);
+  assert.ok(wordCount(body) < 700, `${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 
@@ -140,7 +140,7 @@ test('implementationOrchestrator_Body_RunsReviewEmbeddedAndEmitsOneClosingReport
   // Assert
   assert.ok(body.includes('implementation-review und review-followup laufen eingebettet (`--bericht`) und zeigen keinen Bericht.'));
   assert.ok(body.includes('`node "<PLUGIN>/scripts/orchestrator-report.js" --art implementation --review "<BR>" --out "<AB>"'));
-  assert.ok(body.includes('`--followup "<BF>"` nur wenn Schritt 5 lief'));
+  assert.ok(body.includes('`--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief'));
   assert.ok(body.includes('`node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`'));
   assert.ok(body.includes('genau einmal als letzte Ausgabe'));
   for (const gone of ['Teile aus `<BR>` unverändert', '`### Wie es weitergeht` schreibst du selbst']) assert.ok(!body.includes(gone), gone);
@@ -153,4 +153,35 @@ test('implementationOrchestrator_Body_RefusesRequestsInReport', () => {
   // Assert
   assert.ok(body.includes('nicht ausführen; eine Zeile im Bericht, nie davor.'));
   assert.ok(body.includes('bei Abweichungen `Abweichungen: …`'));
+});
+
+test('implementationOrchestrator_Body_StartsFollowupRoundsOnFollowupJaBeforeBuildTestLintAndCapsAtTwo', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  const warning = body.indexOf('- `⚠️ Unvollständig` → Ende.');
+  const followup = body.indexOf('- `FOLLOWUP ja` → 5.');
+  const ready = body.indexOf('- `✅ Bereit zum Abschließen` → 6.');
+  assert.ok(warning > -1 && warning < followup && followup < ready, 'Reihenfolge ⚠️, FOLLOWUP ja, ✅');
+  assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<P> alle --spec <S> --bericht "<BF1>"`. Hash-Prüfung.'));
+  assert.ok(body.includes('Schlusszeile `⚠️` oder Abbruch → Ende. `FOLLOWUP ja` → Runde 2 mit `<BF2>`, Hash-Prüfung. Nie eine dritte.'));
+  assert.ok(body.indexOf('Nie eine dritte.') < body.indexOf('6. Frischer Sub-Agent in `<R>` belegt'), 'Build, Test und Lint erst nach den Runden');
+  assert.ok(body.includes('`<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`'));
+  assert.ok(body.includes('| „Dritte Followup-Runde.“ | Höchstens zwei. |'));
+  assert.ok(!body.includes('Zweiter Followup') && !body.includes('zweiter Followup'));
+});
+
+test('implementationOrchestrator_Body_WritesChainEntryWithWorktreeAndBranchBeforeTheReportWhenStartWorkRan', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  const chain = body.indexOf('`node "<PLUGIN>/scripts/chain.js" write --stage implementation --plan "<P>" --spec "<S>" --worktree "<R>" --branch <branch>`');
+  const failure = body.indexOf('Endet der Aufruf mit Fehler: Meldung in die Zeile `Abweichungen: …` von `<FK>` aufnehmen, `<FK>` nötigenfalls anlegen; der Bericht folgt trotzdem.');
+  const report = body.indexOf('`node "<PLUGIN>/scripts/orchestrator-report.js" --art implementation');
+  assert.ok(chain > -1 && chain < report, 'chain.js write muss vor orchestrator-report.js stehen');
+  assert.ok(failure > chain && failure < report, 'die Fehlerregel steht zwischen chain.js write und dem Bericht');
+  assert.ok(body.includes('Lief Schritt 2 (`<R>` und Branch stehen fest):'));
+  assert.ok(body.includes('dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen.'));
 });

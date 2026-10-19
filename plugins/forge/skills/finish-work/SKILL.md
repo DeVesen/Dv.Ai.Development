@@ -17,10 +17,12 @@ Du stellst sicher, dass alles committet ist und alle Prüfungen grün sind. Erst
 
 | Ausgabe | Tun |
 |---|---|
-| `modus=vor-ort` | Melden: alles committet und grün, Branch `<branch>` bleibt ausgecheckt. Ende. |
-| `modus=worktree` | `cd "<haupt>"`, dann `node "<PLUGIN>/scripts/work.js" remove "<R>"`. Melden: Worktree `<entfernt>` entfernt, Branch `<branch>` steht auf `<commit>`, weiter im Haupt-Checkout `<haupt>`. |
+| `modus=vor-ort` | Melden: alles committet und grün, Branch `<branch>` bleibt ausgecheckt. Weiter mit 5. |
+| `modus=worktree` | `cd "<haupt>"`, dann `node "<PLUGIN>/scripts/work.js" remove "<R>"`. Melden: Worktree `<entfernt>` entfernt, Branch `<branch>` steht auf `<commit>`, weiter im Haupt-Checkout `<haupt>`. Weiter mit 5. |
 
 `remove` bricht ab, wenn noch etwas offen ist oder der Branch nicht auf dem letzten Commit steht. Dann Meldung wörtlich ausgeben, Ende.
+
+5. Nur nach erfolgreichem Ende beider Fälle den Ketten-Eintrag der Umsetzung entfernen, im Haupt-Checkout: `node "<PLUGIN>/scripts/chain.js" remove --worktree "<R>"`, bei `modus=worktree` mit dem entfernten Pfad. Die Ausgabe zeigst du nicht. Brach ein Schritt ab, bleibt der Eintrag.
 
 ## Häufige Fehler
 | Fehler | Richtig |

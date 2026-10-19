@@ -86,3 +86,13 @@ test('commitMessage_Skill_IsShippedAndInitSuggestsItAsCommitKonvention', () => {
   assert.ok(init.includes('`Commit-Messages mit dem Skill dv-forge:commit-message schreiben.`'));
   assert.ok(init.includes('- Commit-Konvention: Commit-Messages mit dem Skill dv-forge:commit-message schreiben.'));
 });
+
+test('finishWork_Body_RemovesChainEntryOnlyAfterSuccessfulEndOfBothCases', () => {
+  const { body } = skill('finish-work');
+  const remove = body.indexOf('work.js" remove "<R>"');
+  const chain = body.indexOf('chain.js" remove --worktree "<R>"');
+  assert.ok(remove > -1 && chain > remove, 'chain.js remove muss nach work.js remove stehen');
+  assert.ok(body.includes('Nur nach erfolgreichem Ende beider Fälle'));
+  assert.ok(body.includes('Brach ein Schritt ab, bleibt der Eintrag.'));
+  assert.equal(body.match(/Weiter mit 5\./g).length, 2);
+});

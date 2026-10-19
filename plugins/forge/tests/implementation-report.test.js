@@ -302,3 +302,37 @@ test('isTestFile_DocumentationFiles_NeverCountAsTests', () => {
   const docs = ['docs/api-spec.md', 'docs/smoke-test.md', 'tests/README.md', 'notes/a.test.txt', 'doc/x.spec.rst', 'test/guide.adoc'];
   for (const file of docs) assert.equal(isTestFile(file), false, file);
 });
+
+function embeddedReport(env, file) {
+  return spawnSync(process.execPath, [SCRIPT, '--dir', env.dir, '--workspace', env.workspace, '--plan', env.plan, '--bereich', 'a1b2c3d', '--paket', env.packageFile, '--bericht', file], { encoding: 'utf8' });
+}
+
+test('implementationReport_EmbeddedWithProposal_WritesReportWithoutNextStepsAndPrintsThreeLines', () => {
+  // Arrange
+  const env = setup({ groups: [YELLOW], scout: SCOUT_YELLOW });
+  const file = path.join(env.workspace, 'bericht-review.md');
+
+  // Act
+  const result = embeddedReport(env, file);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, `ENDE sauber nach Review 1\nFOLLOWUP ja\nBERICHT ${file}\n`);
+  const text = fs.readFileSync(file, 'utf8');
+  assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen/);
+  assert.match(text, /### Noch offen · kein Hindernis für das Abschließen/);
+  assert.equal(text.includes('### Wie es weitergeht'), false);
+  assert.match(read(env, 'bericht.md'), /### Wie es weitergeht/);
+  assert.match(read(env, 'scout.md'), /^## Scout-Vorschläge/);
+});
+
+test('implementationReport_EmbeddedWithoutScout_FollowupNein', () => {
+  // Arrange
+  const env = setup({ groups: [RED] });
+
+  // Act
+  const result = embeddedReport(env, path.join(env.workspace, 'bericht-review.md'));
+
+  // Assert
+  assert.match(result.stdout, /^ENDE geprüft, 1 × 🔴 offen\nFOLLOWUP nein\n/);
+});

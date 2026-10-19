@@ -19,7 +19,7 @@ const USAGE = [
   'Aufruf: node prepare.js spec-review <spec> [quelle] [--only <reviewer,...>]',
   '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>]',
   '       node prepare.js implementation <plan> [spec]',
-  '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>]',
+  '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>] [--bericht <datei>]',
   '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
@@ -32,7 +32,7 @@ const FLAGS = {
   'spec-review': ['--only'],
   'plan-review': ['--only'],
   implementation: [],
-  'implementation-review': ['--spec', '--context', '--base', '--only'],
+  'implementation-review': ['--spec', '--context', '--base', '--only', '--bericht'],
   'review-followup': ['--spec', '--base'],
 };
 

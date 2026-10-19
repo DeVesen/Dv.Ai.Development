@@ -120,23 +120,38 @@ function notesOf(options, result, open, scout) {
   return [...prepared, ...failed, ...(fallback ? [SCOUT_NOTE] : [])];
 }
 
-// `options`: dir (Rundenordner), workspace (W), plan (lesbare Plan-Datei), planArg (Pfad für die Befehle), range (Basis), packageFile.
-function buildReport(options) {
-  const result = readResult(options.dir);
-  const open = result.groups.filter((group) => group.severity !== 'green');
-  const openRed = open.filter((group) => group.severity === 'red').length;
-  const scout = scoutState(options, open);
+function reportInput(options, result, open, scout) {
   const files = changedFiles(readText(options.packageFile));
-  const text = renderImplementationReport({
-    plan: options.planArg, topic: topicOf(readText(options.plan)), openRed,
+  return {
+    plan: options.planArg, topic: topicOf(readText(options.plan)), openRed: open.filter((group) => group.severity === 'red').length,
     reviewerCount: result.reviewers.length + result.failed.length, range: `${options.range}..HEAD`,
     fileCount: files.length, testCount: files.filter(isTestFile).length,
     reviewerLines: reviewerLines(result), failedLabels: result.failed.map((name) => reviewerLabel(REVIEW, name)),
     open: open.map((group) => openEntry(group, scout)),
     notes: notesOf(options, result, open, scout),
-  });
+  };
+}
+
+// Eingebetteter Lauf: Der Bericht ohne „Wie es weitergeht“ geht nach `reportFile`; stdout nennt nur Status, Followup-Fähigkeit und Datei.
+// `FOLLOWUP ja`: mindestens eine offene Gruppe hat einen gesicherten Vorschlag, den `review-followup <P> alle` erreicht.
+function embeddedOutput(options, input, status) {
+  writeText(options.reportFile, renderImplementationReport({ ...input, withoutNext: true }));
+  const followup = input.open.some((entry) => entry.hasProposal) ? 'ja' : 'nein';
+  return [`ENDE ${status}`, `FOLLOWUP ${followup}`, `BERICHT ${options.reportFile}`].join('\n');
+}
+
+// `options`: dir (Rundenordner), workspace (W), plan (lesbare Plan-Datei), planArg (Pfad für die Befehle), range (Basis), packageFile,
+// optional reportFile (eingebetteter Lauf).
+function buildReport(options) {
+  const result = readResult(options.dir);
+  const open = result.groups.filter((group) => group.severity !== 'green');
+  const scout = scoutState(options, open);
+  const input = reportInput(options, result, open, scout);
+  const text = renderImplementationReport(input);
+  const status = statusOf(result, input.openRed);
   writeClosing(options, open, scout, text);
-  return [`ENDE ${statusOf(result, openRed)}`, '=== BERICHT ===', text].join('\n');
+  if (options.reportFile) return embeddedOutput(options, input, status);
+  return [`ENDE ${status}`, '=== BERICHT ===', text].join('\n');
 }
 
 module.exports = { buildReport, changedFiles, isTestFile };

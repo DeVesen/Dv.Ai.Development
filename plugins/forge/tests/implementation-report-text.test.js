@@ -264,3 +264,12 @@ test('renderImplementationReport_Incomplete_ShowsFullLayout', () => {
     '   `/dv-forge:implementation-review docs/forge/x/plan.md`',
   ].join('\n'));
 });
+
+test('renderImplementationReport_WithoutNext_EndsBeforeNextSteps', () => {
+  // Act
+  const text = renderImplementationReport(base({ withoutNext: true }));
+
+  // Assert
+  assert.match(text, /### Was geprüft wurde/);
+  assert.equal(text.includes('### Wie es weitergeht'), false);
+});

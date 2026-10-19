@@ -3,6 +3,7 @@
 // Abschlussbericht des Implementierungs-Reviews in Klartext. Reine Funktion: Die Eingabe baut implementation-report.js.
 // `open[].hasProposal`: die Gruppe hat einen gesicherten Scout-Vorschlag; nur solche Gruppen erreicht
 // `/dv-forge:review-followup <P> alle`. Fehlt das Feld, gilt die Gruppe wie in report-text.js als ohne Vorschlag.
+// `withoutNext`: eingebetteter Lauf; der Aufrufer schreibt „Wie es weitergeht“ selbst, der Bericht endet davor.
 // `openRed`: Zahl der offenen Hindernisse; der Bericht nimmt das Maximum aus ihr und den gelisteten 🔴-Einträgen.
 
 const { openLines, section, stepLines, viewpointsPhrase, proposedCount, blockedSteps, hintSteps } = require('./report-text');
@@ -72,7 +73,7 @@ function renderImplementationReport(input) {
     ...section('Noch offen · Hindernis', hindrances.flatMap(openLines)),
     ...section('Noch offen · kein Hindernis für das Abschließen', hintEntries.flatMap(openLines)),
     ...section('Hinweise zum Ablauf', input.notes.map((note) => `- ${note}`)),
-    ['### Wie es weitergeht', ...stepLines(steps(input, kind, counts))],
+    ...(input.withoutNext ? [] : [['### Wie es weitergeht', ...stepLines(steps(input, kind, counts))]]),
   ].map((block) => block.join('\n')).join('\n\n');
 }
 

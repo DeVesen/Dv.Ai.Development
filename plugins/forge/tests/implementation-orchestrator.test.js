@@ -9,7 +9,7 @@ const SKILLS = path.join(__dirname, '..', 'skills');
 const SKILL = path.join(SKILLS, 'implementation-orchestrator', 'SKILL.md');
 const REPORT_TEXT = path.join(__dirname, '..', 'scripts', 'lib', 'implementation-report-text.js');
 const FOLLOWUP_FLOW = path.join(SKILLS, 'review-followup', 'references', 'flow.md');
-const CHAINED = ['start-work', 'implementation', 'implementation-review', 'review-followup', 'finish-work'];
+const CHAINED = ['start-work', 'implementation', 'implementation-review', 'review-followup'];
 
 test('implementationOrchestrator_Frontmatter_ModelInvocableWithPlanSpecWorkitemAndBase', () => {
   // Act
@@ -32,7 +32,7 @@ test('implementationOrchestrator_ChainedSkills_AreModelInvocable', () => {
   }
 });
 
-test('implementationOrchestrator_Body_ChainsTheFiveSkillsInOrder', () => {
+test('implementationOrchestrator_Body_ChainsTheFourSkillsInOrder', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
@@ -40,9 +40,8 @@ test('implementationOrchestrator_Body_ChainsTheFiveSkillsInOrder', () => {
   const steps = [
     '`dv-forge:start-work` mit `<P0> <S0>`',
     '`dv-forge:implementation` mit `<P> <S>`',
-    '`dv-forge:implementation-review` mit `<P> <S>`',
+    '`dv-forge:implementation-review` mit `<P> <S> --bericht "<BR>"`',
     '`dv-forge:review-followup` mit `<P> alle --spec <S>`, genau einmal',
-    '`dv-forge:finish-work` mit Arbeitsverzeichnis `<R>`',
   ];
   const positions = steps.map((step) => body.indexOf(step));
   for (const [index, step] of steps.entries()) assert.ok(positions[index] !== -1, `${step} fehlt`);
@@ -86,14 +85,16 @@ test('implementationOrchestrator_Body_ContinuesAfterFollowupOnlyOnTheCleanLine',
   assert.ok(body.includes('`Alles sauber. Arbeit abschließen mit:` → 6; sonst Ende.'));
 });
 
-test('implementationOrchestrator_Body_NeverPushesAndLeavesWorktreeToFinishWork', () => {
+test('implementationOrchestrator_Body_NeverPushesNeverCallsFinishWorkAndKeepsWorktree', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
   assert.ok(body.includes('Kein `git switch`, `git checkout`, `git worktree`, Merge, Push, force von dir.'));
-  assert.ok(body.includes('Abbruch → Meldung unverändert, Ende, nichts selbst aufräumen'));
-  assert.ok(body.includes('erste Zeile `Feature-Branch: <branch>`'));
+  assert.ok(body.includes('Der Worktree bleibt, `finish-work` ruft nur der Mensch.'));
+  assert.ok(body.includes('`Worktree bleibt: <R>`'));
+  assert.ok(!body.includes('`dv-forge:finish-work` mit'));
+  assert.ok(body.includes('Erste Zeile `Feature-Branch: <branch>`'));
   assert.ok(body.includes('Letzte Zeile: „Nicht gepusht: `git push -u origin <branch>`“.'));
 });
 
@@ -113,4 +114,15 @@ test('implementationOrchestrator_Body_StaysUnder600WordsWithPairedQuotes', () =>
   // Assert
   assert.ok(wordCount(body) < 600, `${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
+});
+
+test('implementationOrchestrator_Body_RunsReviewEmbeddedAndWritesOwnNextSteps', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('--bericht "<BR>"'));
+  assert.ok(body.includes('Teile aus `<BR>` unverändert, vor `### Wie es weitergeht`.'));
+  assert.ok(body.includes('`### Wie es weitergeht` schreibst du selbst'));
+  assert.ok(body.includes('genau einmal als letzte Ausgabe'));
 });

@@ -560,3 +560,9 @@ test('decidePreTool_OrchestratorReportNamingSpec_Allows', () => {
   const command = `node "/plugins/forge/scripts/orchestrator-report.js" --art spec --review "/s/r.json" --out "/s/a.md" --spec "${env.specPath}" --commit "a1b2c3d"`;
   assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
 });
+
+test('decidePreTool_ChainWriteNamingSpec_Allows', () => {
+  const env = setup();
+  const command = `node "/plugins/forge/scripts/chain.js" write --stage spec --spec "${env.specPath}" --wi 311404`;
+  assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
+});

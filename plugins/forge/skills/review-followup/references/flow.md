@@ -29,8 +29,8 @@ Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es sta
 ### Implementierung
 1. Paket = Ausgabe von `node "<PLUGIN>/scripts/review-package.js" <FIX_BASE> HEAD "<W>"`. Exit 1 (Bereich leer): Status `keine Änderung`, weiter mit dem Bericht.
 2. `dv-forge:implementation-re-reviewer` mit `Brief: <brief>`, `Findings: <F>`, `Bericht: <W>/followup-report.md`, `Paket: <paket>`.
-3. Ist `offen` leer: `node "<PLUGIN>/scripts/followup.js" drop review <slug>`. Sonst, wenn das Urteil `alle behoben, keine neuen 🔴` lautet: `node "<PLUGIN>/scripts/followup.js" keep review <slug> <offen>`. Sonst bleibt die alte Sicherung. Kein Scout.
-4. Status: Urteil `alle behoben, keine neuen 🔴` und `offen` leer → `sauber nach Nach-Review`; dasselbe Urteil mit `offen` nicht leer → `sauber nach Nach-Review, nicht gewählte Gruppen bleiben offen`; sonst `offen nach Nach-Review`.
+3. Berichtsdaten und Sicherung: `node "<PLUGIN>/scripts/implementation-report.js" followup --workspace "<W>" --bericht "<BD>" <<'ANTWORT'`, darunter die Antwort des Re-Reviewers unverändert, dann eine Zeile `ANTWORT`. `<BD>` ist der Wert nach `--bericht` aus `$ARGUMENTS`, sonst `<W>/bericht-followup.json`. Ohne Nach-Review statt der Antwort `--ohne blockiert` bzw. `--ohne keine-aenderung`, ohne Heredoc. Die Zeile `BEHALTEN <x>` der Ausgabe entscheidet über die Sicherung: `keine` → `node "<PLUGIN>/scripts/followup.js" drop review <slug>`; Nummern → `node "<PLUGIN>/scripts/followup.js" keep review <slug> <nummern>`, die Sicherung behält dann nur nicht gewählte und nicht bestätigte Gruppen; `unveraendert` → nichts, es bleibt die alte Sicherung. Kein Scout.
+4. Status: Urteil `alle behoben, keine neuen 🔴` und `offen` leer → `sauber nach Nach-Review`; dasselbe Urteil mit `offen` nicht leer → `sauber nach Nach-Review, nicht gewählte Gruppen bleiben offen`; sonst `offen nach Nach-Review`. Der Re-Reviewer urteilt je Gruppe; `offen nach Nach-Review` gilt auch, wenn eine gewählte Gruppe nicht `behoben` ist oder ein neues 🔴 gemeldet wird. Es ist die Zeile `ENDE <status>` der Ausgabe von Schritt 3.
 
 ## Bericht
 - Spec und Plan: der Text nach `=== BERICHT ===` unverändert.
@@ -40,7 +40,7 @@ Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug en
 ## Eingebetteter Lauf
 Nennt `$ARGUMENTS` `--bericht <BD>`, zeigt der aufrufende Orchestrator am Ende selbst einen Bericht. Dann gilt statt der Abschnitte Bericht und Nächster Schritt:
 - Spec und Plan: `report` (Nachprüfung, Schritt 5) bekommt zusätzlich `--bericht "<BD>"`; die Ausgabe sind vier Zeilen `ENDE <status>`, `ERGEBNIS <ergebnis>`, `FOLLOWUP <ja|nein>` und `BERICHT <BD>`. Auch nach `AUSGEFALLEN`.
-- Implementierung: nach Schritt 4 der Nachprüfung `node "<PLUGIN>/scripts/implementation-report.js" followup --workspace "<W>" --bericht "<BD>" <<'ANTWORT'`, darunter die Antwort des Re-Reviewers unverändert, dann eine Zeile `ANTWORT`. Ohne Nach-Review statt der Antwort `--ohne blockiert` bzw. `--ohne keine-aenderung`, ohne Heredoc. Die Ausgabe hat dieselben vier Zeilen.
+- Implementierung: Schritt 3 der Nachprüfung läuft mit dem `<BD>` aus `$ARGUMENTS`. Die Ausgabe hat die vier Zeilen und dazu `BEHALTEN <x>`; `FOLLOWUP ja` heißt, die Sicherung behält Vorschläge, die `review-followup <P> alle` erreicht.
 - In Schritt 6 entfällt `show`. Im Chat nur die eine Zeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`; keine Commit-Prüfung, keine Frage, nichts weiter.
 
 ## Nächster Schritt
@@ -48,6 +48,7 @@ Bei Spec und Plan steht der nächste Schritt im Bericht; nur beim Plan kommt die
 - `original=plan-review`, Status `sauber …` und der Berichtstext nach `=== BERICHT ===` hat die Ergebnis-Zeile `✅ Bereit zur Umsetzung` und keinen Abschnitt `### Noch offen · Hindernis`: nach dem Freigeben des Guards `git status --porcelain -- "<S>" "<P>"`. Leere Ausgabe: beide sind committet, keine Frage. Sonst: `Plan ist bereit. Soll ich Spec und Plan jetzt committen?` Nach dem Ja committest du beide Dateien, Nachricht nach `Commit-Konvention` aus `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`, mit der Workitem-Nummer der Spec, falls sie eine nennt. Bei Nein oder ohne Antwort: kein Commit. Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben. Steht im Bericht `⛔ Noch nicht bereit` oder `### Noch offen · Hindernis`: keine Commit-Prüfung und keine Frage.
 - `sauber nach Nach-Review`, `offen` leer: `Alles sauber. Arbeit abschließen mit:` und darunter in einem Code-Block `/dv-forge:finish-work`.
 - `sauber …` mit `offen` nicht leer: `Noch nicht umgesetzt: /dv-forge:review-followup <artefakt> alle.`
+- Implementierung `offen nach Nach-Review` mit `BEHALTEN <nummern>`: `Noch nicht umgesetzt: /dv-forge:review-followup <artefakt> alle.`
 - Implementierung offen, `keine Änderung` oder `blockiert`: `/dv-forge:implementation-review <P> erneut.`
 - `unvollständig, …`: `Ausgefallen: <liste>. Den Skill in einer frischen Session erneut starten.`
 - Implementierung mit Ketten-Eintrag: `node "<PLUGIN>/scripts/chain.js" lookup --stage implementation --plan "<P>"`. Gibt die Ausgabe `worktree=<R>` und `branch=<b>` aus (nicht `KEIN EINTRAG`), steht in jedem der Fälle oben die Zeile `Worktree bleibt: <R>` vor und die Zeile ``Nicht gepusht: `git push -u origin <b>` `` nach dem Text des nächsten Schritts. Bei `sauber …`, auch mit `offen` nicht leer, lautet der Abschluss-Schritt `Arbeit abschließen (nur manuell, in <R>):` mit `/dv-forge:finish-work` im Code-Block; das Angebot `Noch nicht umgesetzt: …` bleibt daneben stehen.

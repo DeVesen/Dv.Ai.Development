@@ -58,6 +58,14 @@ test('implementation-re-reviewer_Body_VerdictPerFindingAndScope', () => {
   }
 });
 
+test('implementation-re-reviewer_Body_JudgesGroupsByPlaceWhenFindingsAreGrouped', () => {
+  const { body } = readAgent('implementation-re-reviewer');
+  for (const part of ['`### <n> · <Farbe> <Stelle> (<Gutachter>)`', 'urteilst du je Gruppe, nicht je Finding', 'mit der Stelle ohne die Klammer mit den Gutachtern als Titel', 'ohne die Klammer',
+    'Eine Gruppe ist nur `behoben`, wenn jedes ihrer Findings behoben ist.', '<Finding in einer Zeile, bei Gruppen die Stelle der Gruppe>']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+});
+
 test('implementation-final-reviewer_Frontmatter_OpusReadOnly', () => {
   const { fields } = readAgent('implementation-final-reviewer');
   assert.equal(fields.name, 'implementation-final-reviewer');

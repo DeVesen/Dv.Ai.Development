@@ -53,7 +53,7 @@ test('implementationReviewSkill_Report_ComesFromScriptWithoutSelectionHint', () 
 test('reviewFollowupFlow_Implementation_KeepsOnlyOpenGroupsAndOffersAlle', () => {
   const text = readText(FOLLOWUP_FLOW);
   const implementation = text.slice(text.indexOf('### Implementierung', text.indexOf('## Nachprüfung')), text.indexOf('## Bericht'));
-  assert.ok(implementation.includes('followup.js" keep review <slug> <offen>'));
+  assert.ok(implementation.includes('followup.js" keep review <slug> <nummern>'));
   assert.ok(implementation.includes('`alle behoben, keine neuen 🔴`'));
   const next = text.slice(text.indexOf('## Nächster Schritt'));
   assert.ok(next.includes('/dv-forge:review-followup <artefakt> alle'));

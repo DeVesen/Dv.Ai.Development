@@ -108,3 +108,21 @@ test('reviewFollowupFlow_NextStep_ImplementationEntryAddsWorktreeFinishStepAndPu
   }
   assert.ok(script.includes("'KEIN EINTRAG'") && script.includes("'worktree'") && script.includes("'branch'"));
 });
+
+test('reviewFollowupFlow_ImplementationSave_FollowsTheBehaltenLineOfTheReportScript', () => {
+  const text = readText(FLOW);
+  const script = readText(path.join(__dirname, '..', 'scripts', 'lib', 'implementation-followup-report.js'));
+  const step = text.slice(text.indexOf('3. Berichtsdaten und Sicherung:'), text.indexOf('4. Status:'));
+  for (const part of ['implementation-report.js" followup --workspace "<W>" --bericht "<BD>" <<\'ANTWORT\'', '`BEHALTEN <x>`', '`keine` → ', 'followup.js" drop review <slug>',
+    'followup.js" keep review <slug> <nummern>', '`unveraendert` → nichts, es bleibt die alte Sicherung']) {
+    assert.ok(step.includes(part), `${part} fehlt`);
+  }
+  for (const word of ['BEHALTEN unveraendert', "kept.join(',') : 'keine'"]) assert.ok(script.includes(word), `${word} fehlt im Skript`);
+});
+
+test('reviewFollowupFlow_EmbeddedImplementation_PrintsBehaltenLineBesidesTheFourLines', () => {
+  const text = readText(FLOW);
+  const embedded = text.slice(text.indexOf('## Eingebetteter Lauf'), text.indexOf('## Nächster Schritt'));
+  assert.ok(embedded.includes('Die Ausgabe hat die vier Zeilen und dazu `BEHALTEN <x>`'));
+  assert.ok(embedded.includes('`FOLLOWUP ja` heißt, die Sicherung behält Vorschläge'));
+});

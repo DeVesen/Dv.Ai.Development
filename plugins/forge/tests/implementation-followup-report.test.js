@@ -72,7 +72,7 @@ test('implementationFollowup_AllChosenAndClean_ChangesConfirmedAndNothingOpen', 
 
   // Assert
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout, `ENDE sauber nach Nach-Review\nERGEBNIS ✅ Bereit zum Abschließen\nFOLLOWUP nein\nBERICHT ${file}\n`);
+  assert.equal(result.stdout, `ENDE sauber nach Nach-Review\nERGEBNIS ✅ Bereit zum Abschließen\nFOLLOWUP nein\nBERICHT ${file}\nBEHALTEN keine\n`);
   assert.deepEqual(data.changes.map((change) => [change.title, change.ok, change.choice]), [['Leere Liste abfangen', true, 1], ['Schleife benennen', true, 1]]);
   assert.equal(data.changes[0].key, 'src/a.js:3');
   assert.deepEqual(data.open, []);
@@ -127,4 +127,101 @@ test('implementationFollowup_UnknownWithoutValue_ExitsWithOne', () => {
   // Assert
   assert.equal(result.status, 1);
   assert.match(result.stderr, /--ohne erlaubt: blockiert, keine-aenderung/);
+});
+
+const GROUP_LINES = ['### Findings', '- **src/a.js:3** — behoben — src/a.js:4', '- **src/b.js:9** — nicht behoben — src/b.js:9', '', '### Neue Schäden im Fix-Diff', '- keine', '', '### Urteil', '**Fix-Runde:** offen: src/b.js:9'].join('\n');
+const ALL_FIXED_NEW_RED = ['### Findings', '- **src/a.js:3** — behoben — src/a.js:4', '- **src/b.js:9** — behoben — src/b.js:10', '', '### Neue Schäden im Fix-Diff', '- 🔴 `src/c.js:2` — Neuer Absturz bei null', '', '### Urteil', '**Fix-Runde:** offen: neues 🔴 in src/c.js'].join('\n');
+
+test('parseAnswer_GroupVerdictLines_JudgedByPlaceKeyAndGreenDamagesSeparate', () => {
+  // Arrange
+  const text = GROUP_LINES.replace('- keine', '- 🟢 `src/d.js:1` — Name holpert\n- 🟡 `src/e.js:2` — Magische Zahl');
+
+  // Act
+  const answer = parseAnswer(text);
+
+  // Assert
+  assert.equal(answer.judged.get('src/a.js:3'), 'behoben');
+  assert.equal(answer.judged.get('src/b.js:9'), 'nicht behoben');
+  assert.deepEqual(answer.damages.map((match) => match[1]), ['🟡']);
+  assert.deepEqual(answer.greens.map((match) => match[1]), ['🟢']);
+});
+
+test('implementationFollowup_OneChosenGroupNotConfirmed_KeepsOnlyItsProposalAndOffersFollowup', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+
+  // Act
+  const { result, data } = run(dir, GROUP_LINES);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\nFOLLOWUP ja\nBERICHT [^\n]+\nBEHALTEN 2\n$/);
+  assert.deepEqual(data.changes.map((change) => change.ok), [true, false]);
+  assert.deepEqual(data.open.map((entry) => [entry.color, entry.title, entry.hasProposal]), [['red', 'Schleife benennen', true]]);
+  assert.equal(data.offersFollowup, true);
+  assert.match(result.stdout, /^ENDE offen nach Nach-Review\n/);
+});
+
+test('parseAnswer_TitleWithReviewerBracket_JudgesTheGroup', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+  const text = GROUP_LINES.replace('- **src/a.js:3** —', '- **src/a.js:3 (risks)** —').replace('- **src/b.js:9** —', '- **src/b.js:9 (design)** —');
+
+  // Act
+  const { result, data } = run(dir, text);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\nFOLLOWUP ja\nBERICHT [^\n]+\nBEHALTEN 2\n$/);
+  assert.deepEqual(data.changes.map((change) => change.ok), [true, false]);
+});
+
+test('implementationFollowup_AllChosenConfirmedButNewRedWithoutProposal_FollowupNeinNothingKeptDamageOpen', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+
+  // Act
+  const { result, data } = run(dir, ALL_FIXED_NEW_RED);
+
+  // Assert
+  assert.match(result.stdout, /\nFOLLOWUP nein\nBERICHT [^\n]+\nBEHALTEN keine\n$/);
+  assert.deepEqual(data.changes.map((change) => change.ok), [true, true]);
+  assert.deepEqual(data.open.map((entry) => [entry.color, entry.title, entry.hasProposal]), [['red', 'src/c.js:2', false]]);
+  assert.equal(data.offersFollowup, false);
+});
+
+test('implementationFollowup_UnchosenGroupLeftAndChosenConfirmed_KeepsUnchosenAndOffersFollowup', () => {
+  // Arrange
+  const dir = workspace([1]);
+
+  // Act
+  const { result } = run(dir, CLEAN);
+
+  // Assert
+  assert.match(result.stdout, /\nFOLLOWUP ja\nBERICHT [^\n]+\nBEHALTEN 2\n$/);
+});
+
+test('implementationFollowup_WithoutReReview_FollowupNeinAndSaveUnchanged', () => {
+  // Arrange
+  const dir = workspace([1]);
+
+  // Act
+  const { result, data } = run(dir, '', ['--ohne', 'keine-aenderung']);
+
+  // Assert
+  assert.match(result.stdout, /\nFOLLOWUP nein\nBERICHT [^\n]+\nBEHALTEN unveraendert\n$/);
+  assert.equal(data.offersFollowup, false);
+});
+
+test('implementationFollowup_GreenDamageInFixDiff_ListedAsGreenAndNotOpen', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+  const answer = CLEAN.replace('### Neue Schäden im Fix-Diff\n- keine', '### Neue Schäden im Fix-Diff\n- 🟢 `src/d.js:1` — Name holpert');
+
+  // Act
+  const { data } = run(dir, answer);
+
+  // Assert
+  assert.deepEqual(data.green.map((entry) => [entry.color, entry.title, entry.description, entry.hasProposal]), [['green', 'src/d.js:1', 'Name holpert', false]]);
+  assert.deepEqual(data.open, []);
 });

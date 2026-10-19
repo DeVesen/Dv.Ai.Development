@@ -122,7 +122,11 @@ test('reviewSkills_EmbeddedSection_NamesBerichtAndKeepsStandaloneUnchanged', () 
 
 test('reviewFollowupFlow_EmbeddedRun_PassesBerichtToReportAndImplementationScript', () => {
   const embedded = section(readText(FOLLOWUP_FLOW), 'Eingebetteter Lauf');
-  for (const part of ['`--bericht "<BD>"`', '`node "<PLUGIN>/scripts/implementation-report.js" followup --workspace "<W>" --bericht "<BD>" <<\'ANTWORT\'`', '`--ohne blockiert`', 'In Schritt 6 entfällt `show`.']) {
+  for (const part of ['`--bericht "<BD>"`', 'Schritt 3 der Nachprüfung läuft mit dem `<BD>` aus `$ARGUMENTS`', 'In Schritt 6 entfällt `show`.']) {
     assert.ok(embedded.includes(part), `${part} fehlt`);
+  }
+  const flow = readText(FOLLOWUP_FLOW);
+  for (const part of ['`node "<PLUGIN>/scripts/implementation-report.js" followup --workspace "<W>" --bericht "<BD>" <<\'ANTWORT\'`', '`--ohne blockiert`']) {
+    assert.ok(flow.includes(part), `${part} fehlt`);
   }
 });

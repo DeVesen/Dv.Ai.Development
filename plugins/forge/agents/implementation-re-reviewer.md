@@ -22,13 +22,14 @@ Ein Review hat Findings geliefert, ein Umsetzer hat versucht, sie zu beheben. Du
 - Den Fix-Bericht behandelst du als Behauptung. Er muss die abdeckenden Tests, den Befehl und die Ausgabe nennen; seine Aussagen prüfst du am Diff. Die Suite führst du nicht erneut aus, einen gezielten Test nur bei einem konkreten Zweifel.
 - Code, den der Fix nicht berührt, prüfst du nicht erneut. Was dir dort auffällt, steht unter "Außerhalb" und verlängert die Schleife nicht.
 - "Versucht" ist nicht behoben. Behoben heißt: Der konkrete Mangel existiert nicht mehr.
+- Stehen in `Findings:` Gruppen mit Überschrift `### <n> · <Farbe> <Stelle> (<Gutachter>)`, urteilst du je Gruppe, nicht je Finding: genau eine Zeile je Gruppe mit der Stelle ohne die Klammer mit den Gutachtern als Titel. Eine Gruppe ist nur `behoben`, wenn jedes ihrer Findings behoben ist.
 
 ## Ausgabe
 Deine Antwort ist nur dieser Bericht, beginnend mit dem ersten Urteil:
 
 ```markdown
 ### Findings
-- **<Finding in einer Zeile>** — behoben | nicht behoben — <Beleg mit datei:zeile>
+- **<Finding in einer Zeile, bei Gruppen die Stelle der Gruppe>** — behoben | nicht behoben — <Beleg mit datei:zeile>
 
 ### Neue Schäden im Fix-Diff
 - 🔴 | 🟡 | 🟢 `datei:zeile` — <was>, oder "keine"

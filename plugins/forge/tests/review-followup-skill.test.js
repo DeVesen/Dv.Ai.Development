@@ -100,7 +100,8 @@ test('reviewFollowupFlow_NextStep_ImplementationEntryAddsWorktreeFinishStepAndPu
 
   // Act
   const parts = ['chain.js" lookup --stage implementation --plan "<P>"', '`worktree=<R>`', '`branch=<b>`', 'KEIN EINTRAG', '`Worktree bleibt: <R>`',
-    '`git push -u origin <b>`', '`Arbeit abschließen (nur manuell, in <R>):`', '`/dv-forge:finish-work`', 'Noch nicht umgesetzt: …'];
+    '`git push -u origin <b>`', '`Arbeit abschließen (nur manuell, in <R>):`', '`/dv-forge:finish-work`', 'Noch nicht umgesetzt: …',
+    'und bei Implementierung `offen nach Nach-Review` mit `BEHALTEN <nummern>`, wenn die Ergebnis-Zeile des Berichts mit `✅` beginnt'];
 
   // Assert
   for (const part of parts) {

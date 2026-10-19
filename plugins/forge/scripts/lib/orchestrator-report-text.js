@@ -4,7 +4,7 @@
 // (Endstand) zusammen mit den Angaben des Orchestrators (`facts`: Pfade, Commit-Stand, Prüfergebnis, Faktenzeilen).
 // „Wie es weitergeht“ bietet keinen Review-Followup an: Die Followup-Runden hat der Orchestrator schon gelaufen.
 
-const { changeLines, openLines, stepLines, withWorkitem, worktreeLine, finishStepFor, pushLine, questionSteps, DOCUMENT_TEXTS } = require('./report-text');
+const { changeLines, openLines, stepLines, withWorkitem, worktreeLine, finishStepFor, pushLine, questionSteps, withoutProposalSentence, DOCUMENT_TEXTS } = require('./report-text');
 
 const CHANGED_IN = { spec: 'in der Spec', plan: 'im Plan', implementation: 'im Code' };
 const NOTHING_CHANGED = 'Keine Änderung.';
@@ -45,12 +45,19 @@ function openSection(report) {
   return lines.length > 0 ? lines : [NOTHING_OPEN];
 }
 
+// Satz „… keinen Lösungsvorschlag.“ vor dem eigenen Schritt, wenn offene Einträge der Farbe keinen Scout-Vorschlag haben; sonst leer.
+// Einträge mit Vorschlag bekommen keinen Schritt: Die Followup-Runden hat der Orchestrator schon gelaufen.
+function withoutProposal(report, color, kind) {
+  const count = report.open.filter((entry) => entry.color === color && !entry.hasProposal).length;
+  return count > 0 ? `${withoutProposalSentence({ count, others: false, kind })} ` : '';
+}
+
 // Schritte aus offenen Hindernissen und Hinweisen; ohne Followup-Angebot: Hindernisse behebt der Mensch selbst, Hinweise optional.
 // `next` schließt bei ✅ ab.
 function reviewSteps(report, rerun, texts, next) {
   if (report.kind === 'incomplete') return [['Den Lauf in einer frischen Session erneut starten:', rerun]];
-  if (report.kind === 'blocked') return [[texts.selfFix, rerun]];
-  if (report.kind === 'hints') return [texts.selfFixOptional, ...next];
+  if (report.kind === 'blocked') return [[`${withoutProposal(report, 'red', 'hindrance')}${texts.selfFix}`, rerun]];
+  if (report.kind === 'hints') return [`${withoutProposal(report, 'yellow', 'hint')}${texts.selfFixOptional}`, ...next];
   return next;
 }
 

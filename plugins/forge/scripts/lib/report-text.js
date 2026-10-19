@@ -111,6 +111,19 @@ function proposedCount(open, color) {
   return open.filter((entry) => entry.color === color && entry.hasProposal).length;
 }
 
+const WITHOUT_PROPOSAL = {
+  hindrance: { article: 'Das', one: 'Hindernis', many: 'Hindernisse' },
+  hint: { article: 'Der', one: 'Hinweis', many: 'Hinweise' },
+};
+
+// Der Satz „… keinen Lösungsvorschlag.“ für `count` offene Einträge ohne Vorschlag; `kind`: `hindrance` | `hint`.
+// `others`: Andere Einträge mit Vorschlag sind schon genannt, diese sind die übrigen.
+function withoutProposalSentence({ count, others, kind }) {
+  const noun = WITHOUT_PROPOSAL[kind];
+  if (count === 1) return `${noun.article} ${others ? 'übrige ' : ''}${noun.one} hat keinen Lösungsvorschlag.`;
+  return `Die ${count} ${others ? 'übrigen ' : ''}${noun.many} haben keinen Lösungsvorschlag.`;
+}
+
 // Schritte für offene Hindernisse, geteilt von allen Abschlussberichten. `alle` (`followup`) erreicht nur die
 // `proposed` Hindernisse mit Vorschlag; die übrigen behebt der Mensch selbst. `orSelf` steht in Klammern
 // hinter dem Einarbeiten-Schritt, `selfFix` leitet den eigenen Schritt vor `rerun` ein.
@@ -120,13 +133,10 @@ function blockedSteps({ openRed, proposed, followup, rerun, orSelf, selfFix }) {
     const count = openRed === 1 ? 'Das Hindernis' : `Die ${openRed} Hindernisse`;
     return [[`${count} einarbeiten lassen (${orSelf}):`, followup], ['Danach erneut prüfen:', rerun]];
   }
-  if (proposed === 0) {
-    const count = rest === 1 ? 'Das Hindernis hat' : `Die ${rest} Hindernisse haben`;
-    return [[`${count} keinen Lösungsvorschlag. ${selfFix}`, rerun]];
-  }
+  if (proposed === 0) return [[`${withoutProposalSentence({ count: rest, others: false, kind: 'hindrance' })} ${selfFix}`, rerun]];
   const count = proposed === 1 ? 'Das Hindernis' : `Die ${proposed} Hindernisse`;
-  const others = rest === 1 ? 'Das übrige Hindernis hat' : `Die ${rest} übrigen Hindernisse haben`;
-  return [[`${count} mit Lösungsvorschlag einarbeiten lassen:`, followup], [`${others} keinen Lösungsvorschlag. ${selfFix}`, rerun]];
+  const others = withoutProposalSentence({ count: rest, others: true, kind: 'hindrance' });
+  return [[`${count} mit Lösungsvorschlag einarbeiten lassen:`, followup], [`${others} ${selfFix}`, rerun]];
 }
 
 // Schritte für offene Hinweise, geteilt von allen Abschlussberichten; `closing` sind die abschließenden Schritte.
@@ -137,10 +147,7 @@ function hintSteps({ hints, proposed, followup, selfFix, closing }) {
     const count = proposed === 1 ? 'Den Hinweis' : `Die ${proposed} Hinweise`;
     list.push([`${count}${rest > 0 ? ' mit Lösungsvorschlag' : ''} einarbeiten lassen (optional):`, followup]);
   }
-  if (rest > 0) {
-    const others = proposed > 0 ? ['Der übrige Hinweis hat', `Die ${rest} übrigen Hinweise haben`] : ['Der Hinweis hat', `Die ${rest} Hinweise haben`];
-    list.push(`${rest === 1 ? others[0] : others[1]} keinen Lösungsvorschlag. ${selfFix}`);
-  }
+  if (rest > 0) list.push(`${withoutProposalSentence({ count: rest, others: proposed > 0, kind: 'hint' })} ${selfFix}`);
   return [...list, ...closing];
 }
 
@@ -200,6 +207,6 @@ function renderReportText(input) {
 }
 
 module.exports = {
-  renderReportText, summaryOf, resultLine, changeLines, openLines, section, stepLines, viewpointsPhrase, proposedCount, blockedSteps, hintSteps, questionSteps,
+  renderReportText, summaryOf, resultLine, changeLines, openLines, section, stepLines, viewpointsPhrase, proposedCount, withoutProposalSentence, blockedSteps, hintSteps, questionSteps,
   withWorkitem, worktreeLine, finishStepFor, pushLine, DOCUMENT_TEXTS,
 };

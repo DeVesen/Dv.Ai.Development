@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { renderReportText } = require('../scripts/lib/report-text');
+const { renderReportText, withoutProposalSentence } = require('../scripts/lib/report-text');
 
 function base(overrides = {}) {
   return {
@@ -288,4 +288,30 @@ test('renderReportText_ReadySpecWithSpecEntry_OnlyCommandChanges', () => {
 
   // Assert
   assert.ok(text.endsWith('1. Spec committen.\n2. In einer frischen Session den Plan schreiben:\n   `/dv-forge:plan-orchestrator docs/specs/x.md AB#7`'), text);
+});
+
+test('withoutProposalSentence_CountAndOthers_ChoosesSingularPluralAndRestWording', () => {
+  // Act
+  const sentences = [
+    withoutProposalSentence({ count: 1, others: false, kind: 'hindrance' }),
+    withoutProposalSentence({ count: 2, others: false, kind: 'hindrance' }),
+    withoutProposalSentence({ count: 1, others: true, kind: 'hindrance' }),
+    withoutProposalSentence({ count: 3, others: true, kind: 'hindrance' }),
+    withoutProposalSentence({ count: 1, others: false, kind: 'hint' }),
+    withoutProposalSentence({ count: 2, others: false, kind: 'hint' }),
+    withoutProposalSentence({ count: 1, others: true, kind: 'hint' }),
+    withoutProposalSentence({ count: 2, others: true, kind: 'hint' }),
+  ];
+
+  // Assert
+  assert.deepEqual(sentences, [
+    'Das Hindernis hat keinen Lösungsvorschlag.',
+    'Die 2 Hindernisse haben keinen Lösungsvorschlag.',
+    'Das übrige Hindernis hat keinen Lösungsvorschlag.',
+    'Die 3 übrigen Hindernisse haben keinen Lösungsvorschlag.',
+    'Der Hinweis hat keinen Lösungsvorschlag.',
+    'Die 2 Hinweise haben keinen Lösungsvorschlag.',
+    'Der übrige Hinweis hat keinen Lösungsvorschlag.',
+    'Die 2 übrigen Hinweise haben keinen Lösungsvorschlag.',
+  ]);
 });

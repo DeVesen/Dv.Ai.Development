@@ -150,7 +150,35 @@ test('orchestratorReport_ReviewHindranceWithoutProposal_StaysOpenAfterFollowup',
   // Assert
   assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
   assert.match(sectionOf(text, '# Was ist noch offen'), /^- 🔴 \*\*Titel kopf\*\*/);
-  assert.match(sectionOf(text, '# Wie es weitergeht'), /2\. Das Dokument selbst anpassen, dann erneut prüfen:/);
+  const next = sectionOf(text, '# Wie es weitergeht');
+  assert.match(next, /2\. Das Hindernis hat keinen Lösungsvorschlag\. Das Dokument selbst anpassen, dann erneut prüfen:/);
+  assert.doesNotMatch(next, /review-followup/);
+});
+
+test('orchestratorReport_ReviewHintWithoutProposal_NamesMissingProposalBeforeOptionalSelfStep', () => {
+  // Arrange
+  const review = part({ kind: 'hints', open: [entry('yellow', 'task 1'), entry('yellow', 'kopf', { hasProposal: false })] });
+
+  // Act
+  const text = planReport(review, null);
+
+  // Assert
+  const next = sectionOf(text, '# Wie es weitergeht');
+  assert.match(next, /^1\. Spec und Plan committen\. Stand: Spec uncommittet, Plan uncommittet\.\n2\. Der Hinweis hat keinen Lösungsvorschlag\. Bei Bedarf das Dokument selbst anpassen \(optional\)\.\n3\. Implementieren \(erst nach 1/);
+  assert.doesNotMatch(text, /review-followup/);
+});
+
+test('orchestratorReport_ImplementationHindranceWithoutProposal_NamesMissingProposalBeforeSelfFix', () => {
+  // Arrange
+  const dir = tempDir('dv-forge-orch-');
+  const review = part({ review: 'implementation-review', kind: 'blocked', openRed: 1, open: [entry('red', 'src/a.js:3', { hasProposal: false })] });
+
+  // Act
+  const result = run(implementationArgs(dir, review, 'keine'));
+
+  // Assert
+  assert.match(result.stdout, /1\. Das Hindernis hat keinen Lösungsvorschlag\. Selbst beheben, dann erneut prüfen:\n {3}`\/dv-forge:implementation-review /);
+  assert.doesNotMatch(result.stdout, /review-followup/);
 });
 
 test('orchestratorReport_QuestionsAndDecisions_GoToOpenAndChangedSections', () => {

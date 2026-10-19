@@ -157,9 +157,48 @@ test('implementationFollowup_OneChosenGroupNotConfirmed_KeepsOnlyItsProposalAndO
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /\nFOLLOWUP ja\nBERICHT [^\n]+\nBEHALTEN 2\n$/);
   assert.deepEqual(data.changes.map((change) => change.ok), [true, false]);
-  assert.deepEqual(data.open.map((entry) => [entry.color, entry.title, entry.hasProposal]), [['red', 'Schleife benennen', true]]);
+  assert.deepEqual(data.open.map((entry) => [entry.color, entry.title, entry.hasProposal]), [['yellow', 'Schleife benennen', true]]);
   assert.equal(data.offersFollowup, true);
   assert.match(result.stdout, /^ENDE offen nach Nach-Review\n/);
+});
+
+test('implementationFollowup_YellowGroupNotConfirmedByOwnVerdict_ResultReadyWithOneHintAndFollowupJa', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+
+  // Act
+  const { result, data } = run(dir, GROUP_LINES);
+
+  // Assert
+  assert.match(result.stdout, /\nERGEBNIS ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen\nFOLLOWUP ja\n/);
+  assert.equal(data.kind, 'hints');
+  assert.equal(data.openRed, 0);
+});
+
+test('implementationFollowup_RedGroupNotConfirmedByOwnVerdict_StaysHindrance', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+  const answer = GROUP_LINES.replace('- **src/a.js:3** — behoben', '- **src/a.js:3** — nicht behoben').replace('- **src/b.js:9** — nicht behoben', '- **src/b.js:9** — behoben');
+
+  // Act
+  const { result, data } = run(dir, answer);
+
+  // Assert
+  assert.match(result.stdout, /\nERGEBNIS ⛔ Noch nicht bereit · 1 Hindernis offen\nFOLLOWUP ja\n/);
+  assert.deepEqual(data.open.map((entry) => entry.color), ['red']);
+});
+
+test('implementationFollowup_YellowGroupWithoutOwnVerdictAndNotCleanAnswer_CountsAsHindrance', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+  const answer = ['### Findings', '- keine', '', '### Neue Schäden im Fix-Diff', '- keine', '', '### Urteil', '**Fix-Runde:** offen: beide'].join('\n');
+
+  // Act
+  const { result, data } = run(dir, answer);
+
+  // Assert
+  assert.match(result.stdout, /\nERGEBNIS ⛔ Noch nicht bereit · 2 Hindernisse offen\n/);
+  assert.deepEqual(data.open.map((entry) => [entry.color, entry.title]), [['red', 'Leere Liste abfangen'], ['red', 'Schleife benennen']]);
 });
 
 test('parseAnswer_TitleWithReviewerBracket_JudgesTheGroup', () => {

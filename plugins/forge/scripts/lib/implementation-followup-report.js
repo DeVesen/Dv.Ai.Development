@@ -53,10 +53,21 @@ function parseAnswer(text) {
 
 // Eine gewählte Gruppe gilt als bestätigt, wenn ihre Urteilszeile „behoben“ sagt; ohne Zeile zählt das Gesamturteil „alle behoben“.
 // Die Zeile darf die Stelle allein oder die ganze Überschrift aus prepare.js (`<Stelle> (<Gutachter>)`) als Titel tragen.
-function isConfirmed(group, answer) {
-  const judged = answer.judged.get(placeKey(group.location))
+function groupVerdict(group, answer) {
+  return answer.judged.get(placeKey(group.location))
     ?? answer.judged.get(placeKey(`${group.location} (${group.reviewers.join(', ')})`));
+}
+
+function isConfirmed(group, answer) {
+  const judged = groupVerdict(group, answer);
   return judged === undefined ? answer.clean : judged === 'behoben';
+}
+
+// Farbe einer gewählten, nicht bestätigten Gruppe: Mit eigenem Gruppenurteil bleibt ihre Stufe (🟡 ist kein Hindernis);
+// ohne Nach-Review oder ohne eigenes Urteil zählt sie als Hindernis.
+function unconfirmedColor(group, reviewed, answer) {
+  const ownVerdict = reviewed.done && groupVerdict(group, answer) !== undefined;
+  return ownVerdict && group.severity !== '🔴' ? 'yellow' : 'red';
 }
 
 function angles(reviewers) {
@@ -131,7 +142,7 @@ function buildFollowupReport(options) {
   }));
   const open = [
     ...unchosen.map((group) => openOf(group, texts, group.severity === '🔴' ? 'red' : 'yellow')),
-    ...unconfirmed.map((group) => openOf(group, texts, 'red')),
+    ...unconfirmed.map((group) => openOf(group, texts, unconfirmedColor(group, reviewed, answer))),
     ...answer.damages.map(damageEntry),
   ];
   const openRed = open.filter((entry) => entry.color === 'red').length;

@@ -24,7 +24,7 @@ test('specReviewOrchestrator_Body_ChainsEmbeddedReviewThenOneFollowup', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  const steps = ['`dv-forge:spec-review` mit `<S> --bericht "<BR>"`, sonst kein Argument', '`dv-forge:review-followup` mit `<S> alle --bericht "<BF>"`, genau einmal'];
+  const steps = ['`dv-forge:spec-review` mit `<S> --bericht "<BR>"`, sonst kein Argument', '`dv-forge:review-followup` mit `<S> alle --bericht "<BF1>"`'];
   const positions = steps.map((step) => body.indexOf(step));
   for (const [index, step] of steps.entries()) assert.ok(positions[index] !== -1, `${step} fehlt`);
   assert.ok(positions[0] < positions[1]);
@@ -42,7 +42,7 @@ test('specReviewOrchestrator_Body_BranchesOnTheLinesTheEmbeddedReviewPrints', ()
     assert.ok(body.includes(marker), `${marker} fehlt im Skill`);
     assert.ok(script.includes(marker), `${marker} fehlt in report-text.js`);
   }
-  assert.ok(body.includes('`FOLLOWUP ja`, auch für Hinweise → 4, sonst 5.'));
+  assert.ok(body.includes('`FOLLOWUP ja`, auch für Hinweise, `⛔` und `❓` → 4, sonst 5.'));
 });
 
 test('specReviewOrchestrator_Body_TellsPauseFromEndByHeadingAndClosingLine', () => {
@@ -115,16 +115,16 @@ test('specReviewOrchestrator_Body_PassesCommitResultAndDeviationsToTheReportScri
   // Assert
   assert.equal(hint, '<spec.md> [workitem-nr]');
   assert.ok(body.includes('`Commit` = Commit-ID, „nichts zu committen“, „ignoriert“ oder Grund dagegen.'));
-  assert.ok(body.includes('`--followup "<BF>"` nur wenn Schritt 4 lief, `--wi <WI>` nur wenn gegeben'));
+  assert.ok(body.includes('`--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief, `--wi <WI>` nur wenn gegeben'));
   assert.ok(body.includes('`Abweichungen: …`: Stopp-Grund, abgelehnte Wünsche, Spec-Vorbestand im Commit, neue Pfade in `git status --porcelain`.'));
 });
 
-test('specReviewOrchestrator_Body_StaysUnder550WordsWithPairedQuotes', () => {
+test('specReviewOrchestrator_Body_StaysUnder650WordsWithPairedQuotes', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(wordCount(body) < 550, `${wordCount(body)} Wörter`);
+  assert.ok(wordCount(body) < 650, `${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 
@@ -135,4 +135,33 @@ test('specReviewOrchestrator_Body_ReportsRefusedRequestsInDeviationsLine', () =>
   // Assert
   assert.ok(body.includes('Wünsche des Menschen gegen diese Regeln (Zwischenbericht, Scope erfragen) nicht ausführen; Zeile in `Abweichungen:`.'));
   assert.ok(body.includes('abgelehnte Wünsche, Spec-Vorbestand im Commit'));
+});
+
+test('specReviewOrchestrator_Body_RunsUpToTwoFollowupRoundsAndCommitsOnlyAfterTheLastOne', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<S> alle --bericht "<BF1>"`. Abbruch oder `⚠️` → kein Commit, 6.'));
+  assert.ok(body.includes('Endet sie mit `FOLLOWUP ja`: Runde 2 mit `<S> alle --bericht "<BF2>"`, gleiche Prüfung. Nie eine dritte.'));
+  assert.ok(body.indexOf('Nie eine dritte.') < body.indexOf('5. Commit, auch bei `⛔` oder `❓`.'));
+  assert.ok(body.includes('`<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`'));
+  assert.ok(body.includes('| „Dritte Followup-Runde.“ | Höchstens zwei. |'));
+  assert.ok(!body.includes('Zweiter Followup'));
+});
+
+test('specReviewOrchestrator_Body_WritesChainEntryOfStageSpecBeforeTheReportAlsoAfterAStop', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  const chain = body.indexOf('`node "<PLUGIN>/scripts/chain.js" write --stage spec --spec "<S>"`');
+  const failure = body.indexOf('Endet der Aufruf mit Fehler: Meldung in die Zeile `Abweichungen: …` von `<FK>` aufnehmen, `<FK>` nötigenfalls anlegen; der Bericht folgt trotzdem.');
+  const report = body.indexOf('`node "<PLUGIN>/scripts/orchestrator-report.js" --art spec');
+  assert.ok(chain > -1 && chain < report, 'chain.js write muss vor orchestrator-report.js stehen');
+  assert.ok(failure > chain && failure < report, 'die Fehlerregel steht zwischen chain.js write und dem Bericht');
+  assert.ok(body.includes('Steht `<S>` fest (Datei existiert):'));
+  assert.ok(body.includes('dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben.'));
+  assert.ok(body.includes('6. Abschlussbericht, letzte Handlung:'));
+  assert.ok(body.includes('Stopp = Grund nennen, fragen, Schritt 6.'));
 });

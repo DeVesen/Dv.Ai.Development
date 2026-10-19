@@ -19,20 +19,21 @@ Nur Skills und Skripte aufrufen. Spec nie selbst lesen, prüfen, ändern; Findin
 
 ## Ablauf
 0. `dv-forge:spec-review` oder `dv-forge:review-followup` fehlt → stopp. `<S>` = `<S0>` absolut mit `/`; Datei fehlt → stopp.
-1. START-STATE, `<S>`, `<WI>`, `<slug>`, Schritt → `state.md` im Scratchpad, je Schritt aktualisieren. Im Scratchpad: `<BR>` = `bericht-review.json`, `<BF>` = `bericht-followup.json`, `<AB>` = `abschluss.md`, `<FK>` = `fakten.md`; absolute Pfade. Stopp bei: `git rev-parse --show-toplevel` ≠ `git -C "<Ordner von S>" rev-parse --show-toplevel`; `git rev-parse --path-format=absolute --git-dir --git-common-dir` mit zwei verschiedenen Zeilen (Worktree); `git branch --show-current` leer. Vorbestand `git status --porcelain`, Spec-Vorbestand `git status --porcelain -- "<S>"`.
+1. START-STATE, `<S>`, `<WI>`, `<slug>`, Schritt → `state.md` im Scratchpad, je Schritt aktualisieren. Im Scratchpad: `<BR>` = `bericht-review.json`, `<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`, `<AB>` = `abschluss.md`, `<FK>` = `fakten.md`; absolute Pfade. Stopp bei: `git rev-parse --show-toplevel` ≠ `git -C "<Ordner von S>" rev-parse --show-toplevel`; `git rev-parse --path-format=absolute --git-dir --git-common-dir` mit zwei verschiedenen Zeilen (Worktree); `git branch --show-current` leer. Vorbestand `git status --porcelain`, Spec-Vorbestand `git status --porcelain -- "<S>"`.
 2. Titel: `<slug>` = Elternordner bei `spec.md`, sonst Dateiname ohne Endung. ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Spec-Review <WI> <slug>“, ohne `<WI>` „Spec-Review <slug>“. Fehler egal.
 3. `dv-forge:spec-review` mit `<S> --bericht "<BR>"`, sonst kein Argument. `### Frage …` = Pause (Regel 2). Ende = Zeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · …`:
    - Keine solche Zeile oder `⚠️ Unvollständig` → kein Commit, 6.
-   - `FOLLOWUP ja`, auch für Hinweise → 4, sonst 5.
-4. `dv-forge:review-followup` mit `<S> alle --bericht "<BF>"`, genau einmal. Abbruch oder `⚠️` → kein Commit, 6.
+   - `FOLLOWUP ja`, auch für Hinweise, `⛔` und `❓` → 4, sonst 5.
+4. Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<S> alle --bericht "<BF1>"`. Abbruch oder `⚠️` → kein Commit, 6. Endet sie mit `FOLLOWUP ja`: Runde 2 mit `<S> alle --bericht "<BF2>"`, gleiche Prüfung. Nie eine dritte.
 5. Commit, auch bei `⛔` oder `❓`. `git status --porcelain -- "<S>"` leer → nichts zu committen; `git check-ignore -q -- "<S>"` trifft → „ignoriert“. Toplevel/Branch ≠ START-STATE → stopp. Sonst `git add -- "<S>"` und `git commit -m "<betreff>" -- "<S>"`, nie `--no-verify`. Fehlschlag → Meldung, Spec bleibt gestaged (nennen), 6.
    - Betreff: eine Zeile, ein `-m`, kein Body. Ohne `<WI>`: `docs: review spec <slug>`. Mit `<WI>`: `docs(<WI>): review spec <slug>`, außer `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention` (leer → Projekt-`CLAUDE.md`) verlangt es anders.
 6. Abschlussbericht, letzte Handlung:
    1. `Commit` = Commit-ID, „nichts zu committen“, „ignoriert“ oder Grund dagegen.
    2. Nur bei Abweichungen `<FK>` schreiben, eine Zeile `Abweichungen: …`: Stopp-Grund, abgelehnte Wünsche, Spec-Vorbestand im Commit, neue Pfade in `git status --porcelain`.
-   3. `node "<PLUGIN>/scripts/orchestrator-report.js" --art spec --review "<BR>" --out "<AB>" --spec "<S>" --commit "<Commit>"`, dazu `--followup "<BF>"` nur wenn Schritt 4 lief, `--wi <WI>` nur wenn gegeben, `--fakten "<FK>"` nur wenn geschrieben.
-   4. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.
-   5. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach. Ein Hook verlangt die Überschriften wörtlich.
+   3. Steht `<S>` fest (Datei existiert): `node "<PLUGIN>/scripts/chain.js" write --stage spec --spec "<S>"`, dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben. Endet der Aufruf mit Fehler: Meldung in die Zeile `Abweichungen: …` von `<FK>` aufnehmen, `<FK>` nötigenfalls anlegen; der Bericht folgt trotzdem.
+   4. `node "<PLUGIN>/scripts/orchestrator-report.js" --art spec --review "<BR>" --out "<AB>" --spec "<S>" --commit "<Commit>"`, dazu `--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief, `--wi <WI>` nur wenn gegeben, `--fakten "<FK>"` nur wenn geschrieben.
+   5. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.
+   6. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach. Ein Hook verlangt die Überschriften wörtlich.
 
 ## Rote Flaggen
 | Gedanke | Richtig |
@@ -40,4 +41,4 @@ Nur Skills und Skripte aufrufen. Spec nie selbst lesen, prüfen, ändern; Findin
 | „CLAUDE.md verbietet master.“ | Aktueller Branch. Committen. |
 | „Scope Pflicht, Nummer erfragen.“ | Ohne `<WI>` kein Scope, keine Frage. |
 | „Den Bericht stelle ich selbst zusammen.“ | Nur `orchestrator-report.js`, unverändert. |
-| „Zweiter Followup.“ | Genau einmal. |
+| „Dritte Followup-Runde.“ | Höchstens zwei. |

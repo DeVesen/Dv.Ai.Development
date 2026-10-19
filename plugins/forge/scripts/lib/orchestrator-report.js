@@ -1,9 +1,10 @@
 'use strict';
 
-// Führt die Berichtsdaten eines eingebetteten Reviews und seines Followups (JSON aus `--bericht`) zum Endstand zusammen.
-// Schlüssel einer Änderung oder offenen Gruppe ist `key` (placeKey der Stelle): Der Followup ersetzt den Eintrag des Reviews
-// an dessen Platz, neue Einträge kommen ans Ende. Offen bleibt, was der Followup offen meldet, und jede offene Gruppe des
-// Reviews ohne Scout-Vorschlag; die erreicht der Followup nicht, und seine Daten kennen sie nicht.
+// Führt die Berichtsdaten eines eingebetteten Reviews und seiner Followup-Runden (JSON aus `--bericht`) zum Endstand zusammen.
+// Schlüssel einer Änderung oder offenen Gruppe ist `key` (placeKey der Stelle): Eine spätere Runde ersetzt den Eintrag der früheren
+// an dessen Platz, neue Einträge kommen ans Ende. Offen bleibt, was die letzte Runde offen meldet, und jede offene Gruppe einer
+// früheren Runde ohne Scout-Vorschlag; die erreicht keine Runde, und ihre Daten kennen sie nicht.
+// 🟢 (`green`) aus allen Teilen stehen je Stelle einmal im Endstand, außer die Stelle ist dort offen.
 
 const fs = require('node:fs');
 const { resultLine } = require('./report-text');
@@ -12,7 +13,7 @@ const { FlowError } = require('./flow-error');
 const REVIEW_OF_ART = { spec: 'spec-review', plan: 'plan-review', implementation: 'implementation-review' };
 const RANK = { red: 0, yellow: 1 };
 const MISSING_REVIEW = '**Ergebnis:** ⚠️ Unvollständig · Review ohne Bericht';
-const MISSING_FOLLOWUP = 'Der Followup hat keinen Bericht geliefert; es gilt der Stand nach dem Review.';
+const MISSING_FOLLOWUP = 'Der Followup hat keinen Bericht geliefert; es gilt der Stand vor dieser Runde.';
 
 function readPart(file) {
   if (!file || !fs.existsSync(file)) return null;
@@ -32,18 +33,27 @@ function keyOf(entry, index, part) {
   return typeof entry.key === 'string' && entry.key !== '' ? entry.key : `${part}#${index}`;
 }
 
-function mergeChanges(review, followup) {
+function mergeByKey(parts, field, name) {
   const byKey = new Map();
-  (review?.changes ?? []).forEach((entry, index) => byKey.set(keyOf(entry, index, 'review'), entry));
-  (followup?.changes ?? []).forEach((entry, index) => byKey.set(keyOf(entry, index, 'followup'), entry));
+  parts.forEach((part, round) => (part?.[field] ?? []).forEach((entry, index) => byKey.set(keyOf(entry, index, `${name}${round}`), entry)));
   return [...byKey.values()];
 }
 
-function mergeOpen(review, followup, final) {
-  const unreachable = followup ? (review?.open ?? []).filter((entry) => !entry.hasProposal) : [];
+// `parts`: Review, dann die gelieferten Followup-Runden in Reihenfolge.
+function mergeOpen(parts) {
+  let open = parts[0]?.open ?? [];
+  for (const part of parts.slice(1)) {
+    const unreachable = open.filter((entry) => !entry.hasProposal);
+    open = [...unreachable, ...(part.open ?? [])];
+  }
   const byKey = new Map();
-  [...unreachable, ...(final?.open ?? [])].forEach((entry, index) => byKey.set(`${entry.color}:${keyOf(entry, index, 'open')}`, entry));
+  open.forEach((entry, index) => byKey.set(`${entry.color}:${keyOf(entry, index, 'open')}`, entry));
   return [...byKey.values()].filter((entry) => Object.hasOwn(RANK, entry.color)).sort((a, b) => RANK[a.color] - RANK[b.color]);
+}
+
+function mergeGreen(parts, open) {
+  const openKeys = new Set(open.map((entry) => entry.key));
+  return mergeByKey(parts, 'green', 'green').filter((entry) => !openKeys.has(entry.key));
 }
 
 function kindOf(state) {
@@ -53,18 +63,22 @@ function kindOf(state) {
   return state.open.some((entry) => entry.color === 'yellow') ? 'hints' : 'ready';
 }
 
-function flowLines(review, followup) {
-  return [review?.flowLine, followup?.flowLine?.replace(/^Ablauf: /, 'Followup: ')].filter(Boolean);
+// Eine Runde: `Followup: …`; zwei Runden: `Followup 1: …`, `Followup 2: …`.
+function flowLines(review, followups) {
+  const label = (index) => (followups.length > 1 ? `Followup ${index + 1}: ` : 'Followup: ');
+  return [review?.flowLine, ...followups.map((part, index) => part.flowLine?.replace(/^Ablauf: /, label(index)))].filter(Boolean);
 }
 
-// `art`: spec | plan | implementation; `reviewFile`, `followupFile` (optional): Dateien aus `--bericht`.
-function mergeReports({ art, reviewFile, followupFile }) {
+// `art`: spec | plan | implementation; `reviewFile`; `followupFiles` (optional, höchstens zwei): Dateien aus `--bericht`.
+function mergeReports({ art, reviewFile, followupFiles = [] }) {
   const reviewName = REVIEW_OF_ART[art];
   if (!reviewName) throw new FlowError(`--art erlaubt: ${Object.keys(REVIEW_OF_ART).join(', ')}; nicht ${art}`);
   const review = readPart(reviewFile);
-  const followup = review ? readPart(followupFile) : null;
-  const final = followup ?? review;
-  const open = mergeOpen(review, followup, final);
+  const read = review ? followupFiles.map(readPart) : [];
+  const followups = read.filter(Boolean);
+  const parts = [review, ...followups];
+  const final = parts[parts.length - 1];
+  const open = mergeOpen(parts);
   const listedRed = open.filter((entry) => entry.color === 'red').length;
   const state = {
     art, review: reviewName, open, questions: final?.questions ?? [], failedLabels: final?.failedLabels ?? [],
@@ -73,13 +87,14 @@ function mergeReports({ art, reviewFile, followupFile }) {
   const kind = review ? kindOf(state) : 'incomplete';
   const hints = open.filter((entry) => entry.color === 'yellow').length;
   return {
-    ...state, kind, followupRan: followup !== null,
+    ...state, kind, followupRan: followups.length > 0, followupRounds: followups.length,
     resultLine: review ? resultLine(state, kind, hints) : MISSING_REVIEW,
-    flowLines: flowLines(review, followup),
+    flowLines: flowLines(review, followups),
     checked: review?.checked ?? [], found: review?.found ?? [],
-    changes: mergeChanges(review, followup),
-    decisions: [...(review?.decisions ?? []), ...(followup?.decisions ?? [])],
-    notes: unique([...(review?.notes ?? []), ...(followup?.notes ?? []), ...(review && followupFile && !followup ? [MISSING_FOLLOWUP] : [])]),
+    changes: mergeByKey(parts, 'changes', 'change'),
+    green: mergeGreen(parts, open),
+    decisions: parts.flatMap((part) => part?.decisions ?? []),
+    notes: unique([...parts.flatMap((part) => part?.notes ?? []), ...(review && read.includes(null) ? [MISSING_FOLLOWUP] : [])]),
   };
 }
 

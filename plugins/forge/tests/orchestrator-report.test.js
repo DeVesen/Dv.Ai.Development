@@ -329,3 +329,75 @@ test('orchestratorReport_EndToEndRoundOneNotDoneThenFollowupDone_OneConfirmedEnt
   assert.equal(sectionOf(text, '# Was ist noch offen').trim(), 'Nichts weiter offen.');
   assert.match(text, /^# Abschlussbericht\n\*\*Ergebnis:\*\* ✅ Bereit zum Planen\n/);
 });
+
+// Plan-Lauf mit Review-Daten und bis zu zwei Followup-Runden.
+function planReportRounds(review, followups, extra = []) {
+  const dir = tempDir('dv-forge-orch-');
+  const args = ['--art', 'plan', '--review', writePart(dir, 'review.json', review), '--out', path.join(dir, 'abschluss.md'), '--plan', PLAN, '--spec', SPEC, '--stand', 'Spec uncommittet, Plan uncommittet', ...extra];
+  followups.forEach((followup, index) => args.push('--followup', writePart(dir, `followup-${index + 1}.json`, followup)));
+  const result = run(args);
+  assert.equal(result.status, 0, result.stderr);
+  return result.stdout.split('=== BERICHT ===\n')[1].trimEnd();
+}
+
+test('orchestratorReport_TwoFollowupRounds_FlowLinesNumberedAndRoundTwoReplacesEntryOfSamePlace', () => {
+  // Arrange
+  const review = part({ status: 'nicht bereit, 2 × 🔴 offen', kind: 'blocked', openRed: 2, changes: [change('task 1', false)], open: [entry('red', 'task 2'), entry('red', 'task 3')] });
+  const roundOne = part({ followup: true, flowLine: 'Ablauf: 2 gewählte Vorschläge umgesetzt, eine Nachprüfung.', kind: 'blocked', openRed: 1, changes: [change('task 2', true), change('task 3', false)], open: [entry('red', 'task 3')] });
+  const roundTwo = part({ followup: true, flowLine: 'Ablauf: 1 gewählter Vorschlag umgesetzt, eine Nachprüfung.', changes: [change('task 3', true, { change: 'Fehlerpfad ergänzt.' })] });
+
+  // Act
+  const text = planReportRounds(review, [roundOne, roundTwo]);
+
+  // Assert
+  assert.match(sectionOf(text, '# Abschlussbericht'), /\nFollowup 1: 2 gewählte Vorschläge umgesetzt, eine Nachprüfung\.\nFollowup 2: 1 gewählter Vorschlag umgesetzt, eine Nachprüfung\./);
+  const changed = sectionOf(text, '# Was sich im Plan geändert hat');
+  assert.equal(changed.match(/Änderung task 3/g).length, 1);
+  assert.match(changed, /Änderung task 3\*\*[\s\S]*Änderung: Fehlerpfad ergänzt\.\n {2}Nachprüfung: bestätigt\./);
+  assert.ok(changed.indexOf('task 1') < changed.indexOf('task 2') && changed.indexOf('task 2') < changed.indexOf('task 3'));
+  assert.equal(sectionOf(text, '# Was ist noch offen').trim(), 'Nichts weiter offen.');
+  assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zur Umsetzung/);
+});
+
+test('orchestratorReport_TwoRounds_OpenWithoutProposalFromReviewAndRoundOneStaysOpen', () => {
+  // Arrange
+  const review = part({ kind: 'blocked', openRed: 2, open: [entry('red', 'task 2'), entry('red', 'kopf', { hasProposal: false })] });
+  const roundOne = part({ followup: true, kind: 'hints', open: [entry('yellow', 'neu', { hasProposal: false }), entry('yellow', 'task 5')] });
+  const roundTwo = part({ followup: true, kind: 'hints', open: [entry('yellow', 'task 5')] });
+
+  // Act
+  const text = planReportRounds(review, [roundOne, roundTwo]);
+
+  // Assert
+  const open = sectionOf(text, '# Was ist noch offen');
+  assert.deepEqual(open.match(/\*\*Titel [^*]+\*\*/g), ['**Titel kopf**', '**Titel neu**', '**Titel task 5**']);
+  assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
+});
+
+test('orchestratorReport_SecondFollowupFileMissing_NoteAndStateOfRoundOne', () => {
+  // Arrange
+  const dir = tempDir('dv-forge-orch-');
+  const review = writePart(dir, 'review.json', part({ kind: 'blocked', openRed: 1, open: [entry('red', 'task 2')] }));
+  const roundOne = writePart(dir, 'f1.json', part({ followup: true, kind: 'hints', open: [entry('yellow', 'task 5')] }));
+
+  // Act
+  const result = run(['--art', 'plan', '--review', review, '--followup', roundOne, '--followup', path.join(dir, 'fehlt.json'), '--out', path.join(dir, 'a.md'), '--plan', PLAN, '--spec', SPEC, '--stand', 'x']);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\*\*Hinweise zum Ablauf:\*\*\n- Der Followup hat keinen Bericht geliefert; es gilt der Stand vor dieser Runde\./);
+  assert.match(result.stdout, /\*\*Ergebnis:\*\* ✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen/);
+});
+
+test('orchestratorReport_ThreeFollowupOptions_ExitsWithTwoAndNamesLimit', () => {
+  // Arrange
+  const dir = tempDir('dv-forge-orch-');
+  const file = writePart(dir, 'r.json', part());
+
+  // Act
+  const result = run(['--art', 'plan', '--review', file, '--followup', file, '--followup', file, '--followup', file, '--out', path.join(dir, 'a.md'), '--plan', PLAN, '--spec', SPEC, '--stand', 'x']);
+
+  // Assert
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /--followup höchstens 2 Mal/);
+});

@@ -17,11 +17,12 @@ const REQUIRED = {
   implementation: ['--review', '--out', '--plan', '--spec', '--worktree', '--branch', '--pruefung'],
 };
 const OPTIONAL = ['--followup', '--wi', '--fakten'];
+const MAX_FOLLOWUPS = 2;
 const CHECKS = ['gruen', 'rot', 'keine'];
 const USAGE = [
-  'Aufruf: node orchestrator-report.js --art spec --review <json> [--followup <json>] --out <md> --spec <S> --commit <text> [--wi <nr>] [--fakten <datei>]',
-  '       node orchestrator-report.js --art plan --review <json> [--followup <json>] --out <md> --plan <P> --spec <S> --stand <text> [--wi <nr>] [--fakten <datei>]',
-  '       node orchestrator-report.js --art implementation --review <json> [--followup <json>] --out <md> --plan <P> --spec <S> --worktree <R> --branch <name> --pruefung gruen|rot|keine [--wi <nr>] [--fakten <datei>]',
+  'Aufruf: node orchestrator-report.js --art spec --review <json> [--followup <json>]... --out <md> --spec <S> --commit <text> [--wi <nr>] [--fakten <datei>]',
+  '       node orchestrator-report.js --art plan --review <json> [--followup <json>]... --out <md> --plan <P> --spec <S> --stand <text> [--wi <nr>] [--fakten <datei>]',
+  '       node orchestrator-report.js --art implementation --review <json> [--followup <json>]... --out <md> --plan <P> --spec <S> --worktree <R> --branch <name> --pruefung gruen|rot|keine [--wi <nr>] [--fakten <datei>]',
   '',
 ].join('\n');
 
@@ -29,10 +30,14 @@ class UsageError extends Error {}
 
 function parse(args) {
   const values = {};
+  let followups = null;
   for (let index = 0; index < args.length; index += 2) {
     if (!args[index]?.startsWith('--') || index + 1 >= args.length) throw new UsageError(`Unvollständiges Argument: ${args[index]}`);
-    values[args[index]] = args[index + 1];
+    if (args[index] === '--followup') (followups ??= []).push(args[index + 1]);
+    else values[args[index]] = args[index + 1];
   }
+  if (followups) values['--followup'] = followups;
+  if ((followups?.length ?? 0) > MAX_FOLLOWUPS) throw new UsageError(`--followup höchstens ${MAX_FOLLOWUPS} Mal`);
   const required = REQUIRED[values['--art']];
   if (!required) throw new UsageError(`--art erlaubt: ${Object.keys(REQUIRED).join(', ')}`);
   const unknown = Object.keys(values).filter((name) => name !== '--art' && !required.includes(name) && !OPTIONAL.includes(name));
@@ -51,7 +56,7 @@ function factLines(file) {
 }
 
 function run(values) {
-  const report = mergeReports({ art: values['--art'], reviewFile: path.resolve(values['--review']), followupFile: values['--followup'] ? path.resolve(values['--followup']) : null });
+  const report = mergeReports({ art: values['--art'], reviewFile: path.resolve(values['--review']), followupFiles: (values['--followup'] ?? []).map((file) => path.resolve(file)) });
   const facts = {
     spec: values['--spec'], plan: values['--plan'], wi: values['--wi'], commit: values['--commit'], stand: values['--stand'],
     worktree: values['--worktree'], branch: values['--branch'], check: values['--pruefung'], lines: factLines(values['--fakten']),

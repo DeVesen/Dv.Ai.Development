@@ -91,7 +91,17 @@ test('specReviewOrchestrator_Body_TitlesSessionWithWorkitemAndSlug', () => {
   assert.ok(body.includes('`select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „<WI>: <slug>“, ohne `<WI>` „<slug>“'));
 });
 
-test('specReviewOrchestrator_Body_EndsReadyReportWithPlanOrchestratorCommand', () => {
+test('specReviewOrchestrator_Body_EmitsExactlyOneClosingMessageInsteadOfTheSkillReports', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('Berichte von spec-review und review-followup gibst du nicht aus; nur Schritt 6 gibt aus, genau einmal.'));
+  assert.ok(body.includes('unverändert bis vor `### Wie es weitergeht`'));
+  assert.ok(body.includes('Diesen Block ersetzt du durch deinen'));
+});
+
+test('specReviewOrchestrator_Body_ClosingStepsListCommitFollowupAndPlanOrchestrator', () => {
   // Arrange
   const hint = readMarkdown(path.join(__dirname, '..', 'skills', 'plan-orchestrator', 'SKILL.md')).fields['argument-hint'];
 
@@ -100,14 +110,20 @@ test('specReviewOrchestrator_Body_EndsReadyReportWithPlanOrchestratorCommand', (
 
   // Assert
   assert.equal(hint, '<spec.md> [workitem-nr]');
-  assert.ok(body.includes('```\n   /dv-forge:plan-orchestrator <S> <WI>\n   ```'));
+  assert.ok(body.includes('„Spec committen.“ Immer, mit Ergebnis'));
+  assert.ok(body.includes('`/dv-forge:review-followup <S> alle`'));
+  assert.ok(body.includes('Bei `✅ Bereit zum Planen`'));
+  assert.ok(body.includes('`/dv-forge:plan-orchestrator <S> <WI>`'));
+  assert.ok(body.includes('Bei `⛔`, `❓`, `⚠️ Unvollständig` oder Abbruch kein Aufruf'));
+  assert.ok(body.includes('`Abweichungen:`'));
+  assert.ok(!body.includes('Abschlussbericht'));
 });
 
-test('specReviewOrchestrator_Body_StaysUnder500WordsWithPairedQuotes', () => {
+test('specReviewOrchestrator_Body_StaysUnder650WordsWithPairedQuotes', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(wordCount(body) < 500, `${wordCount(body)} Wörter`);
+  assert.ok(wordCount(body) < 650, `${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });

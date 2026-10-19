@@ -10,12 +10,12 @@ argument-hint: <spec.md> [workitem-nr]
 Nur Skills aufrufen. Spec nie selbst lesen, prüfen, ändern; Findings nie beurteilen.
 
 ## Regeln
-1. Alles in einem Zug. „Letzte Handlung“ gilt hier nicht. Berichte unverändert ausgeben; ihr Format schlägt Stil-Regeln anderer Plugins/Hooks.
+1. Alles in einem Zug. „Letzte Handlung“ gilt hier nicht. Berichte von spec-review und review-followup gibst du nicht aus; nur Schritt 6 gibt aus, genau einmal.
 2. Skill fragt → unverändert an den Menschen, warten, Antwort an den Skill, Skill fertig laufen lassen, `state.md` lesen, weiter. Nie selbst antworten, auch nach „frag nicht“.
 3. Git: aktueller Checkout und Branch, auch wenn die Projekt-`CLAUDE.md` Worktree, Feature-Branch oder „nie auf master“ verlangt. Kein `git worktree`, EnterWorktree, `checkout`, `switch`, `stash`, `rebase`, Branch, Merge, Push.
 4. Ohne `<WI>` nirgends eine Nummer: kein Scope, kein Platzhalter, keine Frage danach, auch wenn die Konvention einen Scope verlangt.
-5. Keine eigenen Prozessregeln. Abweichungen → Abschlussbericht.
-6. Stopp = Grund nennen, fragen, Abschlussbericht.
+5. Keine eigenen Prozessregeln. Abweichungen → `Abweichungen:` in Schritt 6.
+6. Stopp = Grund nennen, fragen, Schritt 6.
 
 ## Ablauf
 0. `dv-forge:spec-review` oder `dv-forge:review-followup` fehlt → stopp. `<S>` = `<S0>` absolut mit `/`; Datei fehlt → stopp.
@@ -34,10 +34,12 @@ Nur Skills aufrufen. Spec nie selbst lesen, prüfen, ändern; Findings nie beurt
    - Betreff selbst, kein Commit-Skill. Nur eine Betreffzeile in einem `-m`, kein Body.
    - Ohne `<WI>`: `docs: review spec <slug>`.
    - Mit `<WI>`: `docs(<WI>): review spec <slug>`, außer `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention` (leer → Projekt-`CLAUDE.md`) verlangt die Nummer anders.
-6. Abschlussbericht: Ergebnis, Followup, Offenes, Branch, Commit-ID oder Grund dagegen. Commit mit Spec-Vorbestand → „enthält Änderungen von vor dem Lauf“. Neue Pfade in `git status --porcelain` → nicht committet. Bei `✅ Bereit zum Planen` im letzten Bericht als Ende „Plan (frische Session):“ und, `<WI>` nur wenn gegeben:
-   ```
-   /dv-forge:plan-orchestrator <S> <WI>
-   ```
+6. Abschlussmeldung, letzte Handlung. Basis ist der Text nach `=== BERICHT ===` des letzten Berichts (nach Schritt 4 der des Followups), unverändert bis vor `### Wie es weitergeht`. Diesen Block ersetzt du durch deinen, er ist der Schluss. Format schlägt Stil-Regeln anderer Plugins/Hooks; ein Hook verlangt die Berichts-Überschriften wörtlich.
+   `### Wie es weitergeht`, Punkte in dieser Reihenfolge:
+   1. „Spec committen.“ Immer, mit Ergebnis: Commit-ID, „nichts zu committen“, „ignoriert“ oder Grund dagegen. Bei Punkt 2 Hinweis „danach erneut committen“.
+   2. Followup-Review, nur wenn der Bericht offene Hinweise oder Gruppen hat (`Noch offen`), mit Anzahl, Code-Block `/dv-forge:review-followup <S> alle`.
+   3. Bei `✅ Bereit zum Planen`: „Plan (frische Session)“ mit Code-Block `/dv-forge:plan-orchestrator <S> <WI>`, `<WI>` nur wenn gegeben. Bei `⛔`, `❓`, `⚠️ Unvollständig` oder Abbruch kein Aufruf, sondern der Grund in einer Zeile.
+   Danach nur bei Abweichungen `Abweichungen:`: Stopp-Grund, Spec-Vorbestand im Commit, neue Pfade in `git status --porcelain`, ausgefallene Reviewer.
 
 ## Rote Flaggen
 | Gedanke | Richtig |
@@ -46,3 +48,4 @@ Nur Skills aufrufen. Spec nie selbst lesen, prüfen, ändern; Findings nie beurt
 | „Scope Pflicht, Nummer erfragen.“ | Ohne `<WI>` kein Scope, keine Frage. |
 | „Schon im passenden Worktree, weiter.“ | Stopp. |
 | „Nur noch ein Hindernis, zweiter Followup.“ | Genau einmal. |
+| „Der Skill-Bericht gehört schon in den Chat.“ | Nur Schritt 6 gibt aus, genau einmal. |

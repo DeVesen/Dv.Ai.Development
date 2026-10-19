@@ -10,7 +10,7 @@ const { reviewerLabel } = require('./reviewer-names');
 const { topicOf, shorten, fallbackDescription } = require('./halt-text');
 const { scoutTexts } = require('./scout-check');
 const { readAttempts } = require('./attempts');
-const { readEntry } = require('./chain');
+const { readEntryFor } = require('./chain');
 const { loadGroups } = require('../followup');
 const { verdictMap, fromSaved } = require('./open-groups');
 const { ROUND_ONE, ROUND_TWO, FlowError, readText, readLines, readJson, readAgentJson } = require('./flow-files');
@@ -183,7 +183,7 @@ const CHAIN_STAGE = { 'spec-review': 'spec', 'plan-review': 'plan' };
 
 // Der Ketten-Eintrag der eigenen Stufe; ein eingebetteter Lauf (reportFile) bleibt davon unberührt.
 function chainOf(options) {
-  return options.reportFile ? null : readEntry({ stage: CHAIN_STAGE[options.review], artifact: options.artifact });
+  return readEntryFor({ embedded: Boolean(options.reportFile), stage: CHAIN_STAGE[options.review], artifact: options.artifact });
 }
 
 function buildInput(options, data, status, open) {

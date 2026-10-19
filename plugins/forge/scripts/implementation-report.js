@@ -9,7 +9,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { buildReport } = require('./lib/implementation-report');
 const { buildFollowupReport } = require('./lib/implementation-followup-report');
-const { readEntry } = require('./lib/chain');
+const { readEntryFor } = require('./lib/chain');
 const { FlowError } = require('./lib/flow-error');
 
 const MODES = {
@@ -43,7 +43,7 @@ function run(mode, values) {
     dir: path.resolve(values.dir), workspace: path.resolve(values.workspace), plan: path.resolve(values.plan),
     planArg: values.plan, range: values.bereich, packageFile: path.resolve(values.paket),
     reportFile: values.bericht ? path.resolve(values.bericht) : undefined,
-    chain: values.bericht ? null : readEntry({ stage: 'implementation', artifact: values.plan }),
+    chain: readEntryFor({ embedded: Boolean(values.bericht), stage: 'implementation', artifact: values.plan }),
   });
 }
 

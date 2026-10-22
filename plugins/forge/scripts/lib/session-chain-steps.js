@@ -83,6 +83,47 @@ function blockFor(next, state, context) {
   return '';
 }
 
+// Übernimmt die Werte des `final` in den Zustand: Pfade und Branch aus den Bericht-Daten, Basis-Branch und Workitem nur, wenn
+// der Zustand sie noch nicht kennt. Läuft vor der Prüfung, weil `checkFinal` die übernommenen Werte braucht.
+function adoptValues(state, input, data) {
+  for (const key of VALUE_KEYS) if (data[key]) state[key] = data[key];
+  if (input.basis && !state.basis) state.basis = input.basis;
+  if (input.wi && !state.wi) state.wi = input.wi;
+}
+
+function checkedFinal(etappe, state, input, data, cwd) {
+  const checked = checkFinal(etappe, toplevel(cwd), {
+    commit: input.commit, spec: state.spec, plan: state.plan, dateien: data.dateien ?? [], branch: state.branch, basis: state.basis, worktree: state.worktree,
+  });
+  return { ...checked, abweichungen: [...checked.abweichungen, ...slugDeviations(data)] };
+}
+
+// Nächster Schritt nach dem `final`: Eine Abweichung hält die Kette, sonst entscheidet die Etappe mit ihrem Bericht.
+function nextAfterFinal(etappe, data, check) {
+  if (check.abweichungen.length > 0) return { halt: 'abweichung' };
+  return nextStep(etappe, { result: data.ergebnis, pruefung: data.pruefung, luecken: data.luecken ?? [], acOhneTest: data.acOhneTest ?? [] });
+}
+
+// Schreibt das `final` im Zustand fort: offene Punkte, Etappe mit Ergebnis, Entscheidungen, Dateien, aktuelle Etappe und Halt.
+function applyFinal(state, { etappe, input, data, check, schluessel, next }) {
+  state.offen = mergePoints(state.offen, etappe, openPoints(readParts(path.dirname(path.resolve(input.bericht))), etappe));
+  state.etappen = [...(state.etappen ?? []), {
+    etappe, session: input.session, ergebnis: data.ergebnis, tests: data.tests, commit: input.commit, geprueft: check.geprueft, bericht: toPosix(path.resolve(input.bericht)), schluessel,
+  }];
+  state.entscheidungen = [...(state.entscheidungen ?? []), ...(data.entscheidungen ?? []).map((text) => ({ etappe, text }))];
+  state.dateien = [...(state.dateien ?? []), ...(data.dateien ?? []).map((pfad) => ({ etappe, pfad }))];
+  state.etappe = etappe;
+  state.halt = next.halt ?? null;
+  return state;
+}
+
+function finalResult(data, next, check, text) {
+  return {
+    slug: data.slug, ergebnis: check.abweichungen.length > 0 ? 'abweichung' : 'ok', weiter: next.start ?? (next.halt ? 'halt' : 'ende'),
+    haltepunkt: next.halt ?? 'keiner', geprueft: check.geprueft, text,
+  };
+}
+
 // Verarbeitet das `final` einer Etappe. `input`: etappe, session, bericht, commit, basis, wi; `cwd`: Haupt-Checkout.
 // Ein schon verarbeitetes `final` (gleicher Schlüssel) ändert nichts und liefert `weiter: 'doppelt'`.
 function processFinal(input, cwd) {
@@ -94,29 +135,12 @@ function processFinal(input, cwd) {
   if ((state.etappen ?? []).some((entry) => entry.schluessel === schluessel)) {
     return { slug: data.slug, ergebnis: 'ok', weiter: 'doppelt', haltepunkt: 'keiner', geprueft: [], text: '' };
   }
-  for (const key of VALUE_KEYS) if (data[key]) state[key] = data[key];
-  if (input.basis && !state.basis) state.basis = input.basis;
-  if (input.wi && !state.wi) state.wi = input.wi;
-  const checked = checkFinal(etappe, toplevel(cwd), {
-    commit: input.commit, spec: state.spec, plan: state.plan, dateien: data.dateien ?? [], branch: state.branch, basis: state.basis, worktree: state.worktree,
-  });
-  const check = { ...checked, abweichungen: [...checked.abweichungen, ...slugDeviations(data)] };
-  state.offen = mergePoints(state.offen, etappe, openPoints(readParts(path.dirname(path.resolve(input.bericht))), etappe));
-  state.etappen = [...(state.etappen ?? []), {
-    etappe, session: input.session, ergebnis: data.ergebnis, tests: data.tests, commit: input.commit, geprueft: check.geprueft, bericht: toPosix(path.resolve(input.bericht)), schluessel,
-  }];
-  state.entscheidungen = [...(state.entscheidungen ?? []), ...(data.entscheidungen ?? []).map((text) => ({ etappe, text }))];
-  state.dateien = [...(state.dateien ?? []), ...(data.dateien ?? []).map((pfad) => ({ etappe, pfad }))];
-  const next = check.abweichungen.length > 0
-    ? { halt: 'abweichung' }
-    : nextStep(etappe, { result: data.ergebnis, pruefung: data.pruefung, luecken: data.luecken ?? [], acOhneTest: data.acOhneTest ?? [] });
-  state.etappe = etappe;
-  state.halt = next.halt ?? null;
+  adoptValues(state, input, data);
+  const check = checkedFinal(etappe, state, input, data, cwd);
+  const next = nextAfterFinal(etappe, data, check);
+  applyFinal(state, { etappe, input, data, check, schluessel, next });
   writeState(cwd, data.slug, state);
-  return {
-    slug: data.slug, ergebnis: check.abweichungen.length > 0 ? 'abweichung' : 'ok', weiter: next.start ?? (next.halt ? 'halt' : 'ende'),
-    haltepunkt: next.halt ?? 'keiner', geprueft: check.geprueft, text: blockFor(next, state, { etappe, abweichungen: check.abweichungen, session: input.session }),
-  };
+  return finalResult(data, next, check, blockFor(next, state, { etappe, abweichungen: check.abweichungen, session: input.session }));
 }
 
 // Schlussbericht; `stopp` hält den Zustand als gestoppt fest und nennt das Codewort für den späteren Einstieg.

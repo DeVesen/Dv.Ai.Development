@@ -51,6 +51,20 @@ function mergeOpen(parts) {
   return [...byKey.values()].filter((entry) => Object.hasOwn(RANK, entry.color)).sort((a, b) => RANK[a.color] - RANK[b.color]);
 }
 
+// Liste der Leit-Session einer Session-Kette (session-chain-points.js), nicht für den Abschlussbericht: Anders als mergeOpen
+// bleibt ein Eintrag offen, bis eine spätere Runde ihn als Änderung mit `ok: true` meldet. Ein Followup, der eine gewählte
+// Gruppe nicht ändert, lässt sie damit offen. 🟢 (`green`) gehören dazu. mergeOpen und der Abschlussbericht bleiben unverändert.
+function mergeOpenKeepUnchanged(parts) {
+  const byKey = new Map();
+  parts.forEach((part, round) => {
+    for (const change of part?.changes ?? []) {
+      if (change?.ok === true && typeof change.key === 'string') change.key.split('|').forEach((key) => byKey.delete(key));
+    }
+    [...(part?.open ?? []), ...(part?.green ?? [])].forEach((entry, index) => byKey.set(keyOf(entry, index, `open${round}`), entry));
+  });
+  return [...byKey.values()];
+}
+
 function mergeGreen(parts, open) {
   const openKeys = new Set(open.map((entry) => entry.key));
   return mergeByKey(parts, 'green', 'green').filter((entry) => !openKeys.has(entry.key));
@@ -98,4 +112,4 @@ function mergeReports({ art, reviewFile, followupFiles = [] }) {
   };
 }
 
-module.exports = { mergeReports, REVIEW_OF_ART };
+module.exports = { mergeReports, mergeOpenKeepUnchanged, readPart, keyOf, REVIEW_OF_ART };

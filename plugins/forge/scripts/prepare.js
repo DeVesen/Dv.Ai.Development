@@ -14,13 +14,14 @@ const { archivePath } = require('./ledger');
 const { writeAnchors } = require('./plan-anchors');
 const { isScriptReviewer } = require('./lib/reviewer-names');
 const { ART_OF_ROLE, FollowupError, latest, loadGroups, rolesFor, slugFor } = require('./followup');
+const { etappeError } = require('./lib/session-chain-store');
 
 const USAGE = [
   'Aufruf: node prepare.js spec-review <spec> [quelle] [--only <reviewer,...>] [--bericht <datei>]',
-  '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>] [--bericht <datei>]',
+  '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>] [--bericht <datei>] [--ablage <etappe>]',
   '       node prepare.js implementation <plan> [spec]',
   '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>] [--bericht <datei>]',
-  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>] [--bericht <datei>]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
+  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>] [--bericht <datei>] [--ablage <etappe>]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
@@ -30,10 +31,10 @@ class UsageError extends Error {}
 
 const FLAGS = {
   'spec-review': ['--only', '--bericht'],
-  'plan-review': ['--only', '--bericht'],
+  'plan-review': ['--only', '--bericht', '--ablage'],
   implementation: [],
   'implementation-review': ['--spec', '--context', '--base', '--only', '--bericht'],
-  'review-followup': ['--spec', '--base', '--bericht'],
+  'review-followup': ['--spec', '--base', '--bericht', '--ablage'],
 };
 
 // Reviewer je Review in fester Reihenfolge; --only wählt daraus, die Reihenfolge bleibt.
@@ -444,9 +445,20 @@ function render(values) {
     .join('\n');
 }
 
+// Etappe der Ablage aus `--ablage`; der Skill reicht sie als `ablage=<etappe>` an `review-flow.js report` weiter.
+function storageOf(flags) {
+  const etappe = flags['--ablage']?.[0];
+  const error = etappe === undefined ? null : etappeError(etappe);
+  if (error) throw new UsageError(`--ablage ${error}`);
+  return etappe;
+}
+
 function prepare(skill, args) {
   if (!Object.hasOwn(PREPARERS, skill)) throw new UsageError(`Unbekannter Skill: ${skill}`);
-  return render(PREPARERS[skill](parseArgs(skill, args)));
+  const call = parseArgs(skill, args);
+  const storage = storageOf(call.flags);
+  const values = PREPARERS[skill](call);
+  return render(storage ? { ...values, ablage: storage } : values);
 }
 
 function main() {

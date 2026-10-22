@@ -566,3 +566,24 @@ test('decidePreTool_ChainWriteNamingSpec_Allows', () => {
   const command = `node "/plugins/forge/scripts/chain.js" write --stage spec --spec "${env.specPath}" --wi 311404`;
   assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
 });
+
+test('parseSkillCall_PlanReviewWithAblage_DoesNotTakeTheEtappeAsSpec', () => {
+  // Act
+  const call = guard.parseSkillCall('/dv-forge:plan-review docs/plan.md --ablage plan-review', os.tmpdir());
+
+  // Assert
+  assert.equal(call.files[0], 'docs/plan.md');
+  assert.notEqual(call.files[1], 'plan-review');
+});
+
+test('decidePreTool_DirectoryEntrySessionChainStoreNamingRepo_Allows', () => {
+  // Arrange
+  const env = setupDirectory();
+  const command = `node "/plugins/forge/scripts/session-chain.js" store --etappe spec-review --spec "${env.repo}/docs/x/spec.md" --neu --datei "/s/abschluss.md"`;
+
+  // Act
+  const reason = preTool(env, { tool_name: 'Bash', tool_input: { command } });
+
+  // Assert
+  assert.equal(reason, null);
+});

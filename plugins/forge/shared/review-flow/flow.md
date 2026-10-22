@@ -73,3 +73,5 @@ Jedes Ende, auch nach einem Ausfall:
 4. Bericht im Chat: als letzte Handlung und genau einmal, ohne vorherige Ausgabe im selben Zug, der Text nach `=== BERICHT ===` unverändert. Nichts committen. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
 
 **Eingebetteter Lauf** (der Skill nennt eine Bericht-Datei `<BD>`): Ein Orchestrator ruft dich auf und zeigt am Ende selbst einen Bericht. In Schritt 1 hängst du `--bericht "<BD>"` an; die Ausgabe sind vier Zeilen `ENDE <status>`, `ERGEBNIS <ergebnis>`, `FOLLOWUP <ja|nein>` und `BERICHT <BD>`. In Schritt 3 entfällt `show`. Statt Schritt 4 nur die eine Zeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`; keine Commit-Prüfung, nichts weiter, der Aufrufer macht weiter.
+
+**Ablage** (`prepare.js` liefert `ablage=<E>`): Schritt 1 bekommt `--ablage <E>`; die Ausgabe hat zusätzlich die Zeile `ABLAGE <datei> · FOLLOWUP <ja|nein>`, sonst bleibt alles gleich.

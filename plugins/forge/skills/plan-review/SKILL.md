@@ -17,6 +17,9 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-flow/flow.md` und folge ihm. Hier steh
 ## Eingebetteter Lauf
 Nennt `$ARGUMENTS` `--bericht <BD>`, ruft ein Orchestrator dich auf und zeigt am Ende selbst einen Bericht. Dann gilt der eingebettete Lauf aus `flow.md`, Abschnitt „Ende“: kein Bericht im Chat, kein Pflichttext, keine Commit-Prüfung; die Sicherung für `review-followup` bleibt. Ohne `--bericht` läuft alles wie beschrieben.
 
+## Ablage
+Nennt `$ARGUMENTS` `--ablage <E>`, liefert `prepare.js` die Zeile `ablage=<E>`; dann gilt die Ablage aus `flow.md`, Abschnitt „Ende“. Ohne `--ablage` läuft alles wie beschrieben.
+
 ## Reviewer
 Jeder Reviewer bekommt zusätzlich `Anker: <A>`, wenn es `A` gibt.
 

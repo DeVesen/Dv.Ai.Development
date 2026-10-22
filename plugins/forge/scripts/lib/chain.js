@@ -35,11 +35,12 @@ function checkedSlug(stage, artifact) {
   return slug;
 }
 
-// Ordner der Einträge; null, wenn `dir` in keinem Git-Repo liegt.
-function storeDir(dir) {
+// Ordner `<git-common-dir>/dv-forge/<name>`, gemeinsam für Haupt-Checkout und Worktrees; null, wenn `dir` in keinem Git-Repo liegt.
+// `name` ist `chain` für die Ketten-Einträge, `session-chain` für Zustand und Ablage einer Session-Kette.
+function storeDir(dir, name = 'chain') {
   const result = spawnSync('git', ['-C', dir, 'rev-parse', '--git-common-dir'], { encoding: 'utf8' });
   if (result.status !== 0) return null;
-  return path.join(path.resolve(dir, result.stdout.trim()), 'dv-forge', 'chain');
+  return path.join(path.resolve(dir, result.stdout.trim()), 'dv-forge', name);
 }
 
 function sameDir(a, b) {
@@ -115,4 +116,4 @@ function removeByWorktree(dir, worktree) {
   return hits.length;
 }
 
-module.exports = { ChainError, STAGES, writeEntry, readEntry, readEntryFor, removeByWorktree };
+module.exports = { ChainError, STAGES, storeDir, writeEntry, readEntry, readEntryFor, removeByWorktree };

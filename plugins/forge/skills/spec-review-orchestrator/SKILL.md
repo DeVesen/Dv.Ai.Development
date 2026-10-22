@@ -6,7 +6,7 @@ argument-hint: <spec.md> [workitem-nr]
 
 # Spec-Review-Orchestrator
 
-`$ARGUMENTS`: `<S0>` Spec, `<WI>` Workitem-Nr. optional; leer oder mit `<` beginnend = keine. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
+`$ARGUMENTS`: `<S0>` Spec, `<WI>` Workitem-Nr. optional; leer oder mit `<` beginnend = keine. `--ablage <E>` optional, zählt nicht als `<WI>`. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
 Nur Skills und Skripte aufrufen. Spec nie selbst lesen, prüfen, ändern; Findings nie beurteilen.
 
 ## Regeln
@@ -33,7 +33,8 @@ Nur Skills und Skripte aufrufen. Spec nie selbst lesen, prüfen, ändern; Findin
    3. Steht `<S>` fest (Datei existiert): `node "<PLUGIN>/scripts/chain.js" write --stage spec --spec "<S>"`, dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben. Endet der Aufruf mit Fehler: Meldung in die Zeile `Abweichungen: …` von `<FK>` aufnehmen, `<FK>` nötigenfalls anlegen; der Bericht folgt trotzdem.
    4. `node "<PLUGIN>/scripts/orchestrator-report.js" --art spec --review "<BR>" --out "<AB>" --spec "<S>" --commit "<Commit>"`, dazu `--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief, `--wi <WI>` nur wenn gegeben, `--fakten "<FK>"` nur wenn geschrieben.
    5. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.
-   6. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach. Ein Hook verlangt die Überschriften wörtlich.
+   6. Nur mit `--ablage <E>`: Lies `<PLUGIN>/shared/session-chain/ablage.md` und folge dem Abschnitt `spec-review-orchestrator`; Ausgabe nicht zeigen, Fehler egal.
+   7. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach. Ein Hook verlangt die Überschriften wörtlich.
 
 ## Rote Flaggen
 | Gedanke | Richtig |

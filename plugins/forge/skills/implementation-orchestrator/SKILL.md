@@ -6,7 +6,7 @@ argument-hint: <plan.md> <spec.md> [workitem-nr] [--base <branch>]
 
 # Implementierungs-Orchestrator
 
-`$ARGUMENTS`: `<P0>` Plan, `<S0>` Spec, `<WI>` Workitem-Nr. optional; leer oder mit `<` oder `--` beginnend = keine, `--base <B>` optional. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
+`$ARGUMENTS`: `<P0>` Plan, `<S0>` Spec, `<WI>` Workitem-Nr. optional; leer oder mit `<` oder `--` beginnend = keine, `--base <B>` optional, `--ablage <E>` optional. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
 Skills nacheinander aufrufen. Dazwischen weder Plan, Spec, Code noch Diffs lesen oder ändern, nicht committen, nichts bewerten. Während ein Skill läuft, gelten seine Anweisungen.
 
 ## Regeln
@@ -35,7 +35,8 @@ Skills nacheinander aufrufen. Dazwischen weder Plan, Spec, Code noch Diffs lesen
    2. Lief Schritt 2 (`<R>` und Branch stehen fest): `node "<PLUGIN>/scripts/chain.js" write --stage implementation --plan "<P>" --spec "<S>" --worktree "<R>" --branch <branch>`, dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben. Endet der Aufruf mit Fehler: Meldung in die Zeile `Abweichungen: …` von `<FK>` aufnehmen, `<FK>` nötigenfalls anlegen; der Bericht folgt trotzdem.
    3. `node "<PLUGIN>/scripts/orchestrator-report.js" --art implementation --review "<BR>" --out "<AB>" --plan "<P>" --spec "<S>" --worktree "<R>" --branch <branch> --pruefung <gruen|rot|keine> --fakten "<FK>"`, dazu `--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief, `--wi <WI>` nur wenn gegeben. `keine`: Schritt 6 lief nicht.
    4. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.
-   5. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach.
+   5. Nur mit `--ablage <E>`: Lies `<PLUGIN>/shared/session-chain/ablage.md` und folge dem Abschnitt `implementation-orchestrator`; Ausgabe nicht zeigen, Fehler egal.
+   6. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach.
 
 ## Rote Flaggen
 | Gedanke | Richtig |

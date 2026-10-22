@@ -1,0 +1,249 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { git, commitFile, makeRepo, addWorktree, repoWithPlan } = require('./lib/git-repo');
+const { readState, writeState } = require('../scripts/lib/session-chain-store');
+const { storeFiles } = require('../scripts/lib/session-chain-ablage');
+const { etappeReport } = require('../scripts/lib/session-chain-report');
+const { setState, haltText, holdAt, processFinal, closing, recordCommit } = require('../scripts/lib/session-chain-steps');
+
+const EMPTY = { entscheidungen: [], dateien: [], anhang: [], luecken: [], acOhneTest: [] };
+
+function scratch(name, text) {
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-sc-')), name);
+  fs.writeFileSync(file, text);
+  return file;
+}
+
+function yellow(key, title) {
+  return { key, color: 'yellow', title };
+}
+
+// Spec-Review-Etappe mit Abschlussbericht und Bericht-Daten in der Ablage, wie ein Orchestrator mit `--ablage` sie ablegt.
+function specReviewEtappe(repo, spec, result, open) {
+  const abschluss = scratch('abschluss.md', `# Abschlussbericht\n**Ergebnis:** ${result}\n`);
+  storeFiles({ dir: repo, slug: 'x', etappe: 'spec-review', files: [abschluss, scratch('bericht-review.json', JSON.stringify({ open, green: [], changes: [] }))], fresh: true });
+  return etappeReport({ ...EMPTY, etappe: 'spec-review', slug: 'x', bericht: abschluss }, repo);
+}
+
+test('processFinal_SpecReviewReadyWithThreeHints_HoldsAtSpecHaltepunktRecommendingPlanning', () => {
+  // Arrange
+  const repo = makeRepo();
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: review spec x');
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const bericht = specReviewEtappe(repo, spec, '✅ Bereit zum Planen · 3 kleine Hinweise offen', [yellow('a', 'A'), yellow('b', 'B'), yellow('c', 'C')]);
+
+  // Act
+  const result = processFinal({ etappe: 'spec-review', session: 'local_s', bericht, commit }, repo);
+
+  // Assert
+  assert.equal(result.haltepunkt, 'spec');
+  assert.ok(result.text.includes('**Empfehlung:** Planning'));
+  for (const title of ['A', 'B', 'C']) assert.ok(result.text.includes(`- 🟡 ${title} · spec-review`), title);
+});
+
+test('processFinal_SpecReviewWithoutCommitAndUncommittedSpec_HoldsAndNamesTheSpec', () => {
+  // Arrange
+  const repo = makeRepo();
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  fs.mkdirSync(path.dirname(spec), { recursive: true });
+  fs.writeFileSync(spec, '# Spec\n');
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const bericht = specReviewEtappe(repo, spec, '✅ Bereit zum Planen', []);
+
+  // Act
+  const result = processFinal({ etappe: 'spec-review', session: 'local_s', bericht, commit: 'none' }, repo);
+
+  // Assert
+  assert.equal(result.ergebnis, 'abweichung');
+  assert.equal(result.haltepunkt, 'abweichung');
+  assert.ok(result.text.includes('- docs/forge/x/spec.md ist uncommittet'));
+});
+
+test('processFinal_SameFinalTwice_ProcessesItOnce', () => {
+  // Arrange
+  const repo = makeRepo();
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: review spec x');
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const bericht = specReviewEtappe(repo, spec, '✅ Bereit zum Planen', []);
+  processFinal({ etappe: 'spec-review', session: 'local_s', bericht, commit }, repo);
+
+  // Act
+  const again = processFinal({ etappe: 'spec-review', session: 'local_s', bericht, commit }, repo);
+
+  // Assert
+  assert.deepEqual(again, { slug: 'x', ergebnis: 'ok', weiter: 'doppelt', haltepunkt: 'keiner', geprueft: [], text: '' });
+  assert.equal(readState(repo, 'x').etappen.length, 1);
+});
+
+test('processFinal_SameSessionNewCommit_ProcessesAgain', () => {
+  // Arrange
+  const repo = makeRepo();
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  fs.mkdirSync(path.dirname(spec), { recursive: true });
+  fs.writeFileSync(spec, '# Spec\n');
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const bericht = specReviewEtappe(repo, spec, '✅ Bereit zum Planen', []);
+  processFinal({ etappe: 'spec-review', session: 'local_s', bericht, commit: 'none' }, repo);
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: review spec x');
+
+  // Act
+  const again = processFinal({ etappe: 'spec-review', session: 'local_s', bericht, commit }, repo);
+
+  // Assert
+  assert.equal(again.haltepunkt, 'spec');
+  assert.equal(readState(repo, 'x').etappen.length, 2);
+});
+
+test('processFinal_Whiteboarding_CreatesStateWithSpecBaseAndStartsGrill', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  const bericht = etappeReport({ ...EMPTY, etappe: 'whiteboarding', spec, dateien: [path.join(repo, 'CONTEXT.md')] }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'whiteboarding', session: 'local_w', bericht, commit: 'none', basis: 'main' }, repo);
+
+  // Assert
+  assert.equal(result.weiter, 'grill');
+  const state = readState(repo, 'x');
+  assert.equal(state.basis, 'main');
+  assert.equal(state.spec, spec.replace(/\\/g, '/'));
+  assert.equal(state.dateien[0].etappe, 'whiteboarding');
+});
+
+test('processFinal_UmsetzungReadyButAcWithoutTest_IsShowstopperNamingTheAc', () => {
+  // Arrange
+  const repo = makeRepo();
+  const worktree = addWorktree(repo, 'feature/x');
+  commitFile(worktree, 'src/a.js', 'a\n', 'feat: a');
+  setState({ slug: 'x', basis: 'main' }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Abschließen\n');
+  const bericht = etappeReport({ ...EMPTY, etappe: 'umsetzung', slug: 'x', bericht: abschluss, worktree, branch: 'feature/x', pruefung: 'gruen', acOhneTest: ['AC-05'] }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'umsetzung', session: 'local_u', bericht, commit: git(worktree, 'rev-parse', 'HEAD') }, repo);
+
+  // Assert
+  assert.equal(result.haltepunkt, 'showstopper');
+  assert.ok(result.text.includes('- AC-05 hat keinen beweisenden Test'));
+  assert.ok(result.text.includes('[Session](#local_u)'));
+});
+
+test('processFinal_UmsetzungIntegrationPointWithoutTestAsYellow_StartsAbschlussAndListsTheYellow', () => {
+  // Arrange
+  const repo = makeRepo();
+  const worktree = addWorktree(repo, 'feature/x');
+  commitFile(worktree, 'src/a.js', 'a\n', 'feat: a');
+  setState({ slug: 'x', basis: 'main' }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen\n');
+  storeFiles({ dir: repo, slug: 'x', etappe: 'umsetzung', files: [scratch('bericht-review.json', JSON.stringify({ open: [yellow('i', 'Integrationspunkt ohne Test')] }))], fresh: true });
+  const bericht = etappeReport({ ...EMPTY, etappe: 'umsetzung', slug: 'x', bericht: abschluss, worktree, branch: 'feature/x', pruefung: 'gruen' }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'umsetzung', session: 'local_u', bericht, commit: git(worktree, 'rev-parse', 'HEAD') }, repo);
+
+  // Assert
+  assert.equal(result.weiter, 'abschluss');
+  assert.deepEqual(readState(repo, 'x').offen.map((point) => point.titel), ['Integrationspunkt ohne Test']);
+});
+
+test('haltText_GoWithoutPlanReview_HasNoResultLine', () => {
+  // Arrange
+  const { repo, spec, plan } = repoWithPlan();
+  const state = setState({ slug: 'x', basis: 'main', spec, plan }, repo);
+
+  // Act
+  const text = haltText(state, 'go');
+
+  // Assert
+  assert.ok(!text.includes('**Ergebnis:**'));
+  assert.ok(text.includes('**Empfehlung:** GO'));
+  assert.ok(text.includes(`--base main`));
+});
+
+test('haltText_GoAfterBlockedPlanReview_RecommendsPlanNacharbeit', () => {
+  // Arrange
+  const state = { spec: 's', plan: 'p', basis: 'main', offen: [], etappen: [{ etappe: 'plan-review', ergebnis: '⛔ Noch nicht bereit · 1 Hindernis offen' }] };
+
+  // Act
+  const text = haltText(state, 'go');
+
+  // Assert
+  assert.ok(text.includes('**Ergebnis:** ⛔ Noch nicht bereit · 1 Hindernis offen'));
+  assert.ok(text.includes('**Empfehlung:** Plan-Nacharbeit'));
+});
+
+test('holdAt_GoOnStateWithOldSpecHalt_OverwritesHaltAndShowsGo', () => {
+  // Arrange
+  const { repo, spec, plan } = repoWithPlan();
+  writeState(repo, 'x', { halt: 'spec', basis: 'main', spec, plan, offen: [] });
+
+  // Act
+  const text = holdAt('x', 'go', repo);
+
+  // Assert
+  assert.ok(text.startsWith('# GO-Haltepunkt'));
+  assert.equal(readState(repo, 'x').halt, 'go');
+});
+
+test('closing_StoppAfterHoldAtGoWithoutFinal_NamesImplementationResume', () => {
+  // Arrange
+  const { repo, spec, plan } = repoWithPlan();
+  setState({ slug: 'x', basis: 'main', spec, plan }, repo);
+  holdAt('x', 'go', repo);
+
+  // Act
+  const text = closing('x', true, repo);
+
+  // Assert
+  const [specPath, planPath] = [spec, plan].map((file) => path.resolve(file).replace(/\\/g, '/'));
+  assert.ok(text.includes(`## Fortsetzen\n/dv-forge:session-orchestrator implementation ${specPath} ${planPath}`));
+});
+
+test('closing_StoppAtSpecHaltepunkt_NamesResumeCodewordAndMarksState', () => {
+  // Arrange
+  const repo = makeRepo();
+  writeState(repo, 'x', { halt: 'spec', spec: 'C:/r/spec.md', etappen: [], offen: [] });
+
+  // Act
+  const text = closing('x', true, repo);
+
+  // Assert
+  assert.ok(text.includes('## Fortsetzen\n/dv-forge:session-orchestrator planning C:/r/spec.md'));
+  assert.equal(readState(repo, 'x').gestoppt, true);
+});
+
+test('recordCommit_LeitSessionCommit_AppearsUnderCheckedInTheFinalReport', () => {
+  // Arrange
+  const repo = makeRepo();
+  writeState(repo, 'x', { etappen: [], offen: [] });
+
+  // Act
+  recordCommit('x', { hash: 'abc1234', dateien: ['docs/forge/x/plan.md'] }, 'go', repo);
+
+  // Assert
+  const text = closing('x', false, repo);
+  assert.ok(text.slice(text.indexOf('## Geprüft'), text.indexOf('## Gemeldet')).includes('- leit-session: Commit abc1234: docs/forge/x/plan.md'));
+});
+
+test('processFinal_PlanningWithPlanOfOtherSlug_HoldsNamingBothSlugs', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  commitFile(repo, 'docs/forge/y/plan.md', '# Plan\n\n### Task 1: Eins\n', 'docs: plan y');
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zur Umsetzung\n');
+  const bericht = etappeReport({ ...EMPTY, etappe: 'planning', slug: 'x', bericht: abschluss, plan: path.join(repo, 'docs/forge/y/plan.md') }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'planning', session: 'local_p', bericht, commit: 'none' }, repo);
+
+  // Assert
+  assert.equal(result.haltepunkt, 'abweichung');
+  assert.ok(result.text.includes('hat den Slug y, die Kette den Slug x'));
+});

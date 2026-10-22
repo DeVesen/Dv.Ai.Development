@@ -7,23 +7,25 @@
 const path = require('node:path');
 const { mergeOpenKeepUnchanged, readPart, keyOf } = require('./orchestrator-report');
 const { REVIEW_FILE, followupNumbers } = require('./session-chain-ablage');
+const { SessionChainError } = require('./session-chain-store');
+const { toPosix } = require('./posix');
 
 const ICON = { yellow: '🟡', green: '🟢' };
 const RANK = { yellow: 0, green: 1 };
 
-// Ein fehlender oder unlesbarer Teil fällt weg; die Liste der Leit-Session darf am Lesen nicht scheitern.
-function readSafely(file) {
+// Eine fehlende Datei fällt still weg (readPart liefert null); kaputte Bericht-Daten werfen, damit kein offener Punkt unbemerkt verschwindet.
+function readChecked(file) {
   try {
     return readPart(file);
-  } catch {
-    return null;
+  } catch (error) {
+    throw new SessionChainError(`Bericht-Daten nicht lesbar: ${toPosix(file)}`, { cause: error });
   }
 }
 
 // Teile in Reihenfolge: Review, dann Followups nach Nummer.
 function readParts(ablage) {
   const names = [REVIEW_FILE, ...followupNumbers(ablage).map((number) => `bericht-followup-${number}.json`)];
-  return names.map((name) => readSafely(path.join(ablage, name))).filter(Boolean);
+  return names.map((name) => readChecked(path.join(ablage, name))).filter(Boolean);
 }
 
 // `parts`: Bericht-Daten in Reihenfolge; `herkunft`: Etappe der Punkte.

@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { readParts, openPoints, mergePoints, pointLine } = require('../scripts/lib/session-chain-points');
 const { mergeReports } = require('../scripts/lib/orchestrator-report');
+const { SessionChainError } = require('../scripts/lib/session-chain-store');
 
 function yellow(key, title) {
   return { key, color: 'yellow', title };
@@ -59,6 +60,28 @@ test('readParts_ReviewAndTwoFollowups_ReturnsThemInRoundOrder', () => {
 
   // Assert
   assert.deepEqual(parts.map((part) => part.n), [0, 1, 2]);
+});
+
+test('readParts_BrokenJson_ThrowsSessionChainError', () => {
+  // Arrange
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-bj-'));
+  const file = path.join(dir, 'bericht-review.json');
+  fs.writeFileSync(file, '{ kaputt');
+  const message = `Bericht-Daten nicht lesbar: ${file.replace(/\\/g, '/')}`;
+
+  // Act & Assert
+  assert.throws(() => readParts(dir), (error) => error instanceof SessionChainError && error.message === message);
+});
+
+test('readParts_MissingFiles_ReturnsEmptyList', () => {
+  // Arrange
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-mf-'));
+
+  // Act
+  const parts = readParts(dir);
+
+  // Assert
+  assert.deepEqual(parts, []);
 });
 
 test('mergePoints_SameEtappeAgain_ReplacesItsPointsAndKeepsOthers', () => {

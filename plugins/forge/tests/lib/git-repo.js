@@ -50,4 +50,16 @@ function repoWithPlan() {
   return { repo, spec: path.join(repo, 'docs/forge/x/spec.md'), plan: path.join(repo, 'docs/forge/x/plan.md') };
 }
 
-module.exports = { git, commitFile, makeRepo, samePath, addWorktree, repoWithPlan };
+// Repo mit Remote `origin` (bare) und dem Branch `feature/x`, der einen Commit vor `main` liegt.
+function repoWithRemoteBranch() {
+  const repo = makeRepo();
+  const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-remote-'));
+  git(remote, 'init', '--quiet', '--bare');
+  git(repo, 'remote', 'add', 'origin', remote);
+  git(repo, 'switch', '--quiet', '-c', 'feature/x');
+  commitFile(repo, 'src/a.js', 'a\n', 'feat: a');
+  git(repo, 'switch', '--quiet', 'main');
+  return repo;
+}
+
+module.exports = { git, commitFile, makeRepo, samePath, addWorktree, repoWithPlan, repoWithRemoteBranch };

@@ -22,10 +22,21 @@ const EXPECTED = {
 };
 // Artefakte, die nach der Etappe committet sein müssen.
 const MUST_BE_COMMITTED = { 'spec-review': ['spec'], 'spec-nacharbeit': ['spec'] };
+// Werte, die die Etappe melden muss, mit der Meldung bei Fehlen; ohne sie stünde im nächsten Haltepunkt `undefined`.
+const REQUIRED = { planning: [['plan', 'Planning meldet keinen Plan (--plan fehlt)']] };
+
+function emptyResult() {
+  return { geprueft: [], abweichungen: [] };
+}
+
+// Hängt `textOk` an `geprueft`, wenn `ok`, sonst `textFail` an `abweichungen`.
+function record(result, ok, textOk, textFail) {
+  (ok ? result.geprueft : result.abweichungen).push(ok ? textOk : textFail);
+}
 
 function commitChecks(repo, values, expected) {
-  if (!values.commit || values.commit === 'none') return { geprueft: [], abweichungen: [] };
-  if (!git(repo, ['cat-file', '-e', `${values.commit}^{commit}`]).ok) return { geprueft: [], abweichungen: [`Commit ${values.commit} existiert nicht`] };
+  if (!values.commit || values.commit === 'none') return emptyResult();
+  if (!git(repo, ['cat-file', '-e', `${values.commit}^{commit}`]).ok) return { ...emptyResult(), abweichungen: [`Commit ${values.commit} existiert nicht`] };
   const files = git(repo, ['show', '--name-only', '--format=', values.commit]).out.split('\n').filter(Boolean);
   const allowed = expected === null ? null : new Set(expected.filter(Boolean).map((file) => relative(repo, file)));
   const foreign = allowed === null ? [] : files.filter((file) => !allowed.has(file));
@@ -36,12 +47,11 @@ function commitChecks(repo, values, expected) {
 }
 
 function committedChecks(repo, etappe, values) {
-  const result = { geprueft: [], abweichungen: [] };
+  const result = emptyResult();
   for (const key of MUST_BE_COMMITTED[etappe] ?? []) {
     const file = relative(repo, values[key]);
     try {
-      const dirty = isDirty(repo, file);
-      (dirty ? result.abweichungen : result.geprueft).push(dirty ? `${file} ist uncommittet` : `${file} ist committet`);
+      record(result, !isDirty(repo, file), `${file} ist committet`, `${file} ist uncommittet`);
     } catch (error) {
       if (!(error instanceof SessionChainError)) throw error;
       result.abweichungen.push(`${file} konnte nicht geprüft werden: ${error.message}`);
@@ -52,7 +62,7 @@ function committedChecks(repo, etappe, values) {
 
 // Umsetzung: Branch, Commits seit dem Basis-Branch, Worktree.
 function implementationChecks(repo, values) {
-  const result = { geprueft: [], abweichungen: [] };
+  const result = emptyResult();
   if (!git(repo, ['rev-parse', '--verify', '--quiet', `refs/heads/${values.branch}`]).ok) {
     result.abweichungen.push(`Branch ${values.branch ?? '-'} existiert nicht`);
     return result;
@@ -61,27 +71,31 @@ function implementationChecks(repo, values) {
   if (count > 0) result.geprueft.push(`Branch ${values.branch}: ${count} Commits seit ${values.basis}`);
   else result.abweichungen.push(`Branch ${values.branch} hat keine Commits seit ${values.basis}`);
   if (values.worktree && !sameDir(values.worktree, repo)) {
-    const listed = worktreeListed(repo, values.worktree);
-    (listed ? result.geprueft : result.abweichungen).push(listed ? `Worktree ${toPosix(values.worktree)} besteht` : `Worktree ${toPosix(values.worktree)} fehlt`);
+    record(result, worktreeListed(repo, values.worktree), `Worktree ${toPosix(values.worktree)} besteht`, `Worktree ${toPosix(values.worktree)} fehlt`);
   }
   return result;
 }
 
 // Abschluss: Upstream, kein Vorsprung davor, Worktree entfernt.
 function finishChecks(repo, values) {
-  const result = { geprueft: [], abweichungen: [] };
+  const result = emptyResult();
   const upstream = git(repo, ['rev-parse', '--abbrev-ref', `${values.branch}@{upstream}`]);
   if (!upstream.ok) result.abweichungen.push(`Branch ${values.branch} hat keinen Upstream`);
   else {
     const ahead = Number(git(repo, ['rev-list', '--count', `${upstream.out}..${values.branch}`]).out || 0);
     result.geprueft.push(`Branch ${values.branch} hat Upstream ${upstream.out}`);
-    (ahead === 0 ? result.geprueft : result.abweichungen).push(ahead === 0 ? `Branch ${values.branch} hat keinen Vorsprung vor ${upstream.out}` : `Branch ${values.branch} hat ${ahead} Commits Vorsprung vor ${upstream.out}`);
+    record(result, ahead === 0, `Branch ${values.branch} hat keinen Vorsprung vor ${upstream.out}`, `Branch ${values.branch} hat ${ahead} Commits Vorsprung vor ${upstream.out}`);
   }
   if (values.worktree && !sameDir(values.worktree, repo)) {
     const gone = !worktreeListed(repo, values.worktree) && !fs.existsSync(values.worktree);
-    (gone ? result.geprueft : result.abweichungen).push(gone ? `Worktree ${toPosix(values.worktree)} ist entfernt` : `Worktree ${toPosix(values.worktree)} besteht noch`);
+    record(result, gone, `Worktree ${toPosix(values.worktree)} ist entfernt`, `Worktree ${toPosix(values.worktree)} besteht noch`);
   }
   return result;
+}
+
+// Pflichtwerte der Etappe, die in `values` fehlen.
+function requiredChecks(etappe, values) {
+  return { ...emptyResult(), abweichungen: (REQUIRED[etappe] ?? []).filter(([key]) => !values[key]).map(([, text]) => text) };
 }
 
 const EXTRA = { umsetzung: implementationChecks, abschluss: finishChecks };
@@ -91,6 +105,7 @@ function checkFinal(etappe, repo, values) {
   const parts = [
     commitChecks(repo, values, EXPECTED[etappe]({ ...values, dateien: values.dateien ?? [] })),
     committedChecks(repo, etappe, values),
+    requiredChecks(etappe, values),
     ...(EXTRA[etappe] ? [EXTRA[etappe](repo, values)] : []),
   ];
   return { geprueft: parts.flatMap((part) => part.geprueft), abweichungen: parts.flatMap((part) => part.abweichungen) };

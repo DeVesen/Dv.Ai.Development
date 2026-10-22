@@ -5,20 +5,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { git, commitFile, makeRepo, addWorktree, repoWithPlan } = require('./lib/git-repo');
+const { git, commitFile, makeRepo, addWorktree, repoWithPlan, repoWithRemoteBranch } = require('./lib/git-repo');
 const { checkFinal } = require('../scripts/lib/session-chain-check');
-
-// Repo mit Remote `origin` (bare) und dem Branch `feature/x`, der einen Commit vor `main` liegt.
-function repoWithRemoteBranch() {
-  const repo = makeRepo();
-  const remote = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-remote-'));
-  git(remote, 'init', '--quiet', '--bare');
-  git(repo, 'remote', 'add', 'origin', remote);
-  git(repo, 'switch', '--quiet', '-c', 'feature/x');
-  commitFile(repo, 'src/a.js', 'a\n', 'feat: a');
-  git(repo, 'switch', '--quiet', 'main');
-  return repo;
-}
 
 test('checkFinal_SpecReviewCommitWithOnlyTheSpec_IsChecked', () => {
   // Arrange
@@ -168,4 +156,26 @@ test('checkFinal_SpecOutsideTheRepository_IsDeviationWithGitMessageInsteadOfChec
   assert.deepEqual(result.geprueft, []);
   assert.equal(result.abweichungen.length, 1);
   assert.match(result.abweichungen[0], /^.*spec\.md konnte nicht geprüft werden: git status --porcelain -- .*outside repository/s);
+});
+
+test('checkFinal_PlanningWithoutPlan_IsDeviationNamingTheMissingOption', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+
+  // Act
+  const result = checkFinal('planning', repo, { commit: 'none', spec });
+
+  // Assert
+  assert.deepEqual(result.abweichungen, ['Planning meldet keinen Plan (--plan fehlt)']);
+});
+
+test('checkFinal_PlanningWithPlan_HasNoDeviation', () => {
+  // Arrange
+  const { repo, spec, plan } = repoWithPlan();
+
+  // Act
+  const result = checkFinal('planning', repo, { commit: 'none', spec, plan });
+
+  // Assert
+  assert.deepEqual(result.abweichungen, []);
 });

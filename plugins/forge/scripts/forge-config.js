@@ -181,4 +181,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, workitemOf, branchWorkitem, branchFor, branchCandidates };
+module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, workitemOf, workitemPattern, branchWorkitem, branchFor, branchCandidates };

@@ -189,3 +189,43 @@ test('buildBrief_WhiteboardingWithoutSlug_NamesWhereTheSlugComesFrom', () => {
   const values = text.slice(text.indexOf('## Werte'), text.indexOf('## Auftrag'));
   assert.equal(values.trim(), '## Werte\n- Slug: folgt aus der Spec, die diese Etappe schreibt (Ordnername bei `spec.md`)\n- Basis-Branch: dev');
 });
+
+test('buildBrief_GrillAndNacharbeiten_AskForTheFullReportViaBericht', () => {
+  // Act
+  const texts = ['grill', 'spec-nacharbeit', 'plan-nacharbeit'].map((etappe) => brief(etappe).brief);
+
+  // Assert
+  for (const text of texts) {
+    const auftrag = text.slice(text.indexOf('## Auftrag'), text.indexOf('## Ketten-Regeln'));
+    assert.ok(auftrag.includes('`--bericht "<datei>"`'), auftrag);
+    assert.doesNotMatch(auftrag, /ohne `--bericht`/);
+  }
+});
+
+test('buildBrief_Grill_NamesSkillReportContentAndStillReportsGlossaryFilesWithDatei', () => {
+  // Act
+  const text = brief('grill').brief;
+
+  // Assert
+  assert.ok(text.includes('Abschlussbericht von spec-grilling'));
+  assert.ok(text.includes('neue W-Einträge'));
+  assert.ok(text.includes('Jede geänderte Glossar- oder ADR-Datei mit `--datei`'));
+});
+
+test('buildBrief_Whiteboarding_StaysWithoutBerichtOfASkill', () => {
+  // Act
+  const text = buildBrief({ etappe: 'whiteboarding', values: { basis: 'dev' }, kontext: 'Anliegen: Export' }).brief;
+
+  // Assert
+  assert.ok(text.includes('Berichtsdatei ohne `--bericht`, mit `--spec "<deine Spec>"`.'));
+});
+
+test('buildBrief_Umsetzung_AsksToEvaluateAcceptanceFindingsOfAllColors', () => {
+  // Act
+  const text = brief('umsetzung').brief;
+
+  // Assert
+  assert.ok(text.includes('Akzeptanz-Findings des Reviews aller Farben'));
+  assert.ok(text.includes('auch wenn das Review es nur als 🟡 führt'));
+  assert.ok(text.includes('Integrationspunkte ohne Test sind davon ausgenommen'));
+});

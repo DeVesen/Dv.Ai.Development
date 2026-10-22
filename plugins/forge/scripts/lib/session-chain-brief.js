@@ -21,6 +21,9 @@ function ablage(etappe) {
   return `Ruf den Skill mit den Argumenten der ersten Zeile und zusätzlich \`--ablage ${etappe}\` auf.`;
 }
 
+// Zeile der beiden Nacharbeiten: Kein Skill liefert ihren Bericht, also schreibt ihn die Etappe selbst.
+const REWORK_REPORT = 'Schreib einen kurzen Bericht (geänderte Stellen als Vorher/Nachher, neue W-Einträge) in eine Datei und übergib sie mit `--bericht "<datei>"`.';
+
 // Je Etappe: Modell, Titel, Pflichtwerte, erste Zeile und Auftrag. `v`: slug, wi, basis, spec, plan, worktree, branch, quelle.
 // Fehlt ein Pflichtwert, entsteht kein Brief (sonst stünde `undefined` im Befehl der ersten Zeile).
 const ETAPPEN_BRIEFS = {
@@ -35,7 +38,10 @@ const ETAPPEN_BRIEFS = {
   grill: {
     modell: 'opus', titel: 'Grill', pflicht: ['spec'],
     command: (v) => `/dv-forge:spec-grilling ${v.spec}`,
-    auftrag: () => ['Berichtsdatei ohne `--bericht`; jede geänderte Glossar- oder ADR-Datei mit `--datei`.'],
+    auftrag: () => [
+      'Schreib den Abschlussbericht von spec-grilling (Liste der geänderten Stellen, neue W-Einträge) in eine Datei und übergib sie mit `--bericht "<datei>"`.',
+      'Jede geänderte Glossar- oder ADR-Datei mit `--datei`.',
+    ],
   },
   'spec-review': {
     modell: 'sonnet', titel: 'Spec-Review', pflicht: ['spec'],
@@ -50,6 +56,7 @@ const ETAPPEN_BRIEFS = {
       'Kläre mit dem Menschen die offenen ❓ und die 🔴 ohne Vorschlag, eine Frage nach der anderen.',
       'Jede Änderung der Spec legst du als Vorher/Nachher vor und schreibst sie erst nach Bestätigung. Neue Entscheidungen werden W-Einträge unter `## Entscheidungen`.',
       `Danach committest du nur die Spec: \`git commit -m "<betreff>" -- "${v.spec}"\`.`,
+      REWORK_REPORT,
     ],
   },
   planning: {
@@ -75,6 +82,7 @@ const ETAPPEN_BRIEFS = {
       'Kläre mit dem Menschen die offenen ❓ und die 🔴 ohne Vorschlag, eine Frage nach der anderen.',
       'Jede Änderung des Plans legst du als Vorher/Nachher vor und schreibst sie erst nach Bestätigung. Neue Entscheidungen werden W-Einträge unter `## Entscheidungen`.',
       'Du committest nicht; den Plan committet die Leit-Session nach dem GO.',
+      REWORK_REPORT,
     ],
   },
   umsetzung: {
@@ -83,6 +91,7 @@ const ETAPPEN_BRIEFS = {
     auftrag: () => [
       ablage('umsetzung'),
       'Einen Showstopper klärst du mit dem Menschen hier.',
+      'Geh vor der Berichtsdatei die Akzeptanz-Findings des Reviews aller Farben (🔴, 🟡, 🟢) durch und melde jedes Akzeptanzkriterium ohne beweisenden Test mit `--ac-ohne-test <AC-nn>`, auch wenn das Review es nur als 🟡 führt. Integrationspunkte ohne Test sind davon ausgenommen.',
       'Berichtsdatei mit `--worktree "<R>"`, `--branch <branch>`, `--pruefung <gruen|rot|keine>`, `--luecke "<befehl>"` je nicht lauffähigem Build-, Test- oder Lint-Befehl und `--ac-ohne-test <AC-nn>` je Akzeptanzkriterium ohne beweisenden Test; `--bericht` ist sein Abschlussbericht.',
     ],
   },

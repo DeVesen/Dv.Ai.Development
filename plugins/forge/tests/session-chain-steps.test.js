@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { git, commitFile, makeRepo, addWorktree, repoWithPlan } = require('./lib/git-repo');
+const { git, commitFile, makeRepo, addWorktree, repoWithPlan, repoWithRemoteBranch } = require('./lib/git-repo');
 const { readState, writeState } = require('../scripts/lib/session-chain-store');
 const { storeFiles } = require('../scripts/lib/session-chain-ablage');
 const { etappeReport } = require('../scripts/lib/session-chain-report');
@@ -246,4 +246,80 @@ test('processFinal_PlanningWithPlanOfOtherSlug_HoldsNamingBothSlugs', () => {
   // Assert
   assert.equal(result.haltepunkt, 'abweichung');
   assert.ok(result.text.includes('hat den Slug y, die Kette den Slug x'));
+});
+
+test('processFinal_PlanningWithoutPlan_HoldsAsDeviationWithoutGoText', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zur Umsetzung\n');
+  const bericht = etappeReport({ ...EMPTY, etappe: 'planning', slug: 'x', bericht: abschluss }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'planning', session: 'local_p', bericht, commit: 'none' }, repo);
+
+  // Assert
+  assert.equal(result.haltepunkt, 'abweichung');
+  assert.ok(result.text.includes('- Planning meldet keinen Plan (--plan fehlt)'));
+  assert.doesNotMatch(result.text, /undefined|GO-Haltepunkt/);
+});
+
+test('processFinal_PlanningWithPlanAndSameSlug_HoldsAtGoWithCall', () => {
+  // Arrange
+  const { repo, spec, plan } = repoWithPlan();
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zur Umsetzung\n');
+  const bericht = etappeReport({ ...EMPTY, etappe: 'planning', slug: 'x', bericht: abschluss, plan }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'planning', session: 'local_p', bericht, commit: 'none' }, repo);
+
+  // Assert
+  const [specPath, planPath] = [spec, plan].map((file) => path.resolve(file).replace(/\\/g, '/'));
+  assert.equal(result.haltepunkt, 'go');
+  assert.ok(result.text.includes(`**Aufruf:** /dv-forge:implementation-orchestrator ${planPath} ${specPath} --base main`));
+});
+
+test('processFinal_SameSessionSameCommitNewReportData_ProcessesAgain', () => {
+  // Arrange
+  const repo = makeRepo();
+  const worktree = addWorktree(repo, 'feature/x');
+  const commit = commitFile(worktree, 'src/a.js', 'a\n', 'feat: a');
+  setState({ slug: 'x', basis: 'main' }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Abschließen\n');
+  const report = { ...EMPTY, etappe: 'umsetzung', slug: 'x', bericht: abschluss, worktree, branch: 'feature/x', pruefung: 'gruen' };
+  const first = etappeReport({ ...report, acOhneTest: ['AC-05'] }, repo);
+  const stopped = processFinal({ etappe: 'umsetzung', session: 'local_u', bericht: first, commit }, repo);
+  const second = etappeReport(report, repo);
+
+  // Act
+  const again = processFinal({ etappe: 'umsetzung', session: 'local_u', bericht: second, commit }, repo);
+
+  // Assert
+  assert.equal(stopped.haltepunkt, 'showstopper');
+  assert.equal(again.weiter, 'abschluss');
+  assert.equal(readState(repo, 'x').etappen.length, 2);
+});
+
+test('processFinal_AbschlussPushedAndWorktreeRemoved_EndsTheChainWithOriginOfChecksAndPoints', () => {
+  // Arrange
+  const repo = repoWithRemoteBranch();
+  git(repo, 'push', '--quiet', '-u', 'origin', 'feature/x');
+  const removed = path.join(os.tmpdir(), 'dv-forge-entfernt-gibt-es-nicht');
+  writeState(repo, 'x', { etappen: [], offen: [{ farbe: 'yellow', titel: 'Hinweis', key: 'k', herkunft: 'umsetzung' }], basis: 'main' });
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Abgeschlossen\n');
+  const bericht = etappeReport({ ...EMPTY, etappe: 'abschluss', slug: 'x', bericht: abschluss, branch: 'feature/x', worktree: removed, tests: '12/12' }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'abschluss', session: 'local_a', bericht, commit: 'none' }, repo);
+
+  // Assert
+  assert.equal(result.weiter, 'ende');
+  assert.equal(result.ergebnis, 'ok');
+  const [, checked, rest] = result.text.split(/## Geprüft\n|## Gemeldet\n/);
+  assert.ok(result.text.startsWith('# Schlussbericht der Session-Kette x'));
+  assert.ok(checked.includes('- abschluss: Branch feature/x hat Upstream origin/feature/x'));
+  assert.ok(rest.includes('- abschluss: Ergebnis ✅ Abgeschlossen'));
+  assert.ok(rest.includes('- abschluss: Testzahlen 12/12'));
+  assert.ok(result.text.includes('- 🟡 Hinweis · umsetzung'));
 });

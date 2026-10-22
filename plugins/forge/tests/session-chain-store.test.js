@@ -2,11 +2,12 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const { makeRepo, addWorktree, repoWithPlan, samePath } = require('./lib/git-repo');
 const { storeDir } = require('../scripts/lib/chain');
 const {
-  SessionChainError, etappeError, checkedEtappe, slugOfArtifact, chainsRoot, readState, writeState, slugByWorktree,
+  SessionChainError, etappeError, storageError, checkedEtappe, slugOfArtifact, chainsRoot, chainDir, readState, writeState, slugByWorktree,
 } = require('../scripts/lib/session-chain-store');
 
 test('slugOfArtifact_SpecAndPlanInSameFolder_ShareTheFolderName', () => {
@@ -93,4 +94,67 @@ test('slugByWorktree_StateNamesWorktree_ReturnsItsSlug', () => {
   // Act & Assert
   assert.equal(slugByWorktree(repo, worktree), 'x');
   assert.equal(slugByWorktree(repo, path.join(repo, 'anders')), null);
+});
+
+// Legt `text` als zustand.json der Kette x ab und liefert den Pfad.
+function brokenStateFile(repo, text) {
+  const file = path.join(chainDir(repo, 'x'), 'zustand.json');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, text);
+  return file;
+}
+
+test('readState_StateFileWithBrokenJson_ThrowsNamingThePath', () => {
+  // Arrange
+  const repo = makeRepo();
+  const file = brokenStateFile(repo, '{ "etappen": [');
+
+  // Act & Assert
+  assert.throws(() => readState(repo, 'x'),
+    (error) => error instanceof SessionChainError && error.message.startsWith('Zustand nicht lesbar: ') && error.message.endsWith('zustand.json'));
+  assert.ok(fs.existsSync(file));
+});
+
+test('readState_StateFileHoldingAJsonArray_Throws', () => {
+  // Arrange
+  const repo = makeRepo();
+  brokenStateFile(repo, '[]');
+
+  // Act & Assert
+  assert.throws(() => readState(repo, 'x'), /^Error: Zustand nicht lesbar: /);
+});
+
+test('readState_StateFileHoldingNull_Throws', () => {
+  // Arrange
+  const repo = makeRepo();
+  brokenStateFile(repo, 'null');
+
+  // Act & Assert
+  assert.throws(() => readState(repo, 'x'), SessionChainError);
+});
+
+test('writeState_AfterReadStateOnBrokenFile_LeavesTheFileUnchanged', () => {
+  // Arrange
+  const repo = makeRepo();
+  const file = brokenStateFile(repo, '{ kaputt');
+
+  // Act & Assert
+  assert.throws(() => writeState(repo, 'x', readState(repo, 'x') ?? { etappen: [] }), SessionChainError);
+  assert.equal(fs.readFileSync(file, 'utf8'), '{ kaputt');
+});
+
+test('storageError_MissingOrKnownEtappe_ReturnsNull', () => {
+  // Act
+  const results = [undefined, 'umsetzung'].map(storageError);
+
+  // Assert
+  assert.deepEqual(results, [null, null]);
+});
+
+test('storageError_UnknownEtappe_ReturnsTheAblageMessage', () => {
+  // Act
+  const message = storageError('review');
+
+  // Assert
+  assert.equal(message, `--ablage ${etappeError('review')}`);
 });

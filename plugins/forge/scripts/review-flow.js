@@ -13,7 +13,7 @@ const { checkScout } = require('./lib/scout-check');
 const { report } = require('./lib/flow-report');
 const { writeScriptChecks } = require('./lib/script-checks');
 const { ROUND_ONE, ROUND_TWO, FOLLOWUP, FlowError } = require('./lib/flow-files');
-const { etappeError } = require('./lib/session-chain-store');
+const { storageError } = require('./lib/session-chain-store');
 
 const USAGE = [
   'Aufruf: node review-flow.js rate --review <spec-review|plan-review> --dir <W> --doc <datei> [--spec <datei>] --expect <a,b> [--beratend <a,b>]',
@@ -89,10 +89,9 @@ function attempt(values) {
 }
 
 function checkedStorage(etappe) {
-  if (etappe === undefined) return null;
-  const error = etappeError(etappe);
-  if (error) throw new UsageError(`--ablage ${error}`);
-  return etappe;
+  const error = storageError(etappe);
+  if (error) throw new UsageError(error);
+  return etappe ?? null;
 }
 
 function checkedRound(round = ROUND_ONE) {

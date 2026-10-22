@@ -14,7 +14,7 @@ const { archivePath } = require('./ledger');
 const { writeAnchors } = require('./plan-anchors');
 const { isScriptReviewer } = require('./lib/reviewer-names');
 const { ART_OF_ROLE, FollowupError, latest, loadGroups, rolesFor, slugFor } = require('./followup');
-const { etappeError } = require('./lib/session-chain-store');
+const { storageError } = require('./lib/session-chain-store');
 
 const USAGE = [
   'Aufruf: node prepare.js spec-review <spec> [quelle] [--only <reviewer,...>] [--bericht <datei>]',
@@ -448,8 +448,8 @@ function render(values) {
 // Etappe der Ablage aus `--ablage`; der Skill reicht sie als `ablage=<etappe>` an `review-flow.js report` weiter.
 function storageOf(flags) {
   const etappe = flags['--ablage']?.[0];
-  const error = etappe === undefined ? null : etappeError(etappe);
-  if (error) throw new UsageError(`--ablage ${error}`);
+  const error = storageError(etappe);
+  if (error) throw new UsageError(error);
   return etappe;
 }
 

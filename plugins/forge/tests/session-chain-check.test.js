@@ -154,3 +154,18 @@ test('checkFinal_AbschlussAheadOfUpstreamAndWorktreeLeft_NamesBoth', () => {
   assert.match(result.abweichungen[0], /hat 1 Commits Vorsprung vor origin\/feature\/x/);
   assert.match(result.abweichungen[1], /besteht noch$/);
 });
+
+test('checkFinal_SpecOutsideTheRepository_IsDeviationWithGitMessageInsteadOfChecked', () => {
+  // Arrange
+  const repo = makeRepo();
+  const spec = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-outside-')), 'spec.md');
+  fs.writeFileSync(spec, '# Spec\n');
+
+  // Act
+  const result = checkFinal('spec-review', repo, { commit: 'none', spec });
+
+  // Assert
+  assert.deepEqual(result.geprueft, []);
+  assert.equal(result.abweichungen.length, 1);
+  assert.match(result.abweichungen[0], /^.*spec\.md konnte nicht geprüft werden: git status --porcelain -- .*outside repository/s);
+});

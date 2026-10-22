@@ -5,7 +5,8 @@
 
 const fs = require('node:fs');
 const { toPosix } = require('./posix');
-const { git, sameDir, worktreeListed, relative } = require('./session-chain-git');
+const { git, isDirty, sameDir, worktreeListed, relative } = require('./session-chain-git');
+const { SessionChainError } = require('./session-chain-store');
 
 // Dateien, die ein Commit der Etappe enthalten darf; null = beliebig (Code der Umsetzung).
 const EXPECTED = {
@@ -38,8 +39,13 @@ function committedChecks(repo, etappe, values) {
   const result = { geprueft: [], abweichungen: [] };
   for (const key of MUST_BE_COMMITTED[etappe] ?? []) {
     const file = relative(repo, values[key]);
-    const dirty = git(repo, ['status', '--porcelain', '--', file]).out !== '';
-    (dirty ? result.abweichungen : result.geprueft).push(dirty ? `${file} ist uncommittet` : `${file} ist committet`);
+    try {
+      const dirty = isDirty(repo, file);
+      (dirty ? result.abweichungen : result.geprueft).push(dirty ? `${file} ist uncommittet` : `${file} ist committet`);
+    } catch (error) {
+      if (!(error instanceof SessionChainError)) throw error;
+      result.abweichungen.push(`${file} konnte nicht geprüft werden: ${error.message}`);
+    }
   }
   return result;
 }

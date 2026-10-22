@@ -13,6 +13,7 @@ const { checkScout } = require('./lib/scout-check');
 const { report } = require('./lib/flow-report');
 const { writeScriptChecks } = require('./lib/script-checks');
 const { ROUND_ONE, ROUND_TWO, FOLLOWUP, FlowError } = require('./lib/flow-files');
+const { etappeError } = require('./lib/session-chain-store');
 
 const USAGE = [
   'Aufruf: node review-flow.js rate --review <spec-review|plan-review> --dir <W> --doc <datei> [--spec <datei>] --expect <a,b> [--beratend <a,b>]',
@@ -24,11 +25,11 @@ const USAGE = [
   '       node review-flow.js answers-check --review spec-review --dir <W> --doc <datei>',
   '       node review-flow.js checklist --review <..> --dir <W> --doc <datei> [--quelle runde-1|nacharbeit]',
   '       node review-flow.js verify --review <..> --dir <W> --doc <datei> [--spec <datei>] [--quelle runde-1|nacharbeit]',
-  '       node review-flow.js report --review <..> --dir <W> --doc <datei> --titel <text> --artefakt <pfad> [--quelle runde-1|nacharbeit] [--bericht <datei>]',
+  '       node review-flow.js report --review <..> --dir <W> --doc <datei> --titel <text> --artefakt <pfad> [--quelle runde-1|nacharbeit] [--bericht <datei>] [--ablage <etappe>]',
   '       node review-flow.js script-checks --review <..> --dir <W> --doc <datei> [--spec <datei>] [--runde runde-1|runde-2]',
   '',
 ].join('\n');
-const VALUE_OPTIONS = ['--review', '--dir', '--doc', '--spec', '--expect', '--beratend', '--instanz', '--art', '--quelle', '--runde', '--titel', '--artefakt', '--bericht'];
+const VALUE_OPTIONS = ['--review', '--dir', '--doc', '--spec', '--expect', '--beratend', '--instanz', '--art', '--quelle', '--runde', '--titel', '--artefakt', '--bericht', '--ablage'];
 const SOURCES = [ROUND_ONE, FOLLOWUP];
 // Namen werden Dateinamen im Arbeitsbereich: kein `.`, kein Pfadtrenner.
 const INSTANCE_NAME = /^[\p{Ll}\d]+(?:-[\p{Ll}\d]+)*$/u;
@@ -87,6 +88,13 @@ function attempt(values) {
   return nextAttempt(path.resolve(required(values, 'dir')), checkedName(required(values, 'instanz'), 'instanz'), kind);
 }
 
+function checkedStorage(etappe) {
+  if (etappe === undefined) return null;
+  const error = etappeError(etappe);
+  if (error) throw new UsageError(`--ablage ${error}`);
+  return etappe;
+}
+
 function checkedRound(round = ROUND_ONE) {
   if (![ROUND_ONE, ROUND_TWO].includes(round)) throw new UsageError(`--runde erlaubt: ${ROUND_ONE}, ${ROUND_TWO}`);
   return round;
@@ -104,6 +112,7 @@ const COMMANDS = {
   verify: (values) => verifyRoundTwo(flowOptions(values)),
   report: (values) => report({
     ...flowOptions(values), title: required(values, 'titel'), artifact: required(values, 'artefakt'), reportFile: values.bericht ? path.resolve(values.bericht) : null,
+    storage: checkedStorage(values.ablage),
   }),
   'script-checks': (values) => writeScriptChecks({ ...flowOptions(values), round: checkedRound(values.runde) }),
 };

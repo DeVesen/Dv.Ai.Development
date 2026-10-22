@@ -7,7 +7,9 @@ const { failedInstances } = require('./attempts');
 const { openGroupsOf, writeClosing } = require('./closing');
 const { buildInput } = require('./report-data');
 const { renderReportText, summaryOf } = require('./report-text');
-const { ROUND_ONE, ROUND_TWO, CLOSING, FlowError, readText, readJson, writeText, writeJson } = require('./flow-files');
+const { ROUND_ONE, ROUND_TWO, FOLLOWUP, CLOSING, FlowError, readText, readJson, writeText, writeJson } = require('./flow-files');
+const { SessionChainError, slugOfArtifact } = require('./session-chain-store');
+const { ablageDir, nextFollowupName } = require('./session-chain-ablage');
 
 const FORMAT = 1;
 const RESULT_PREFIX = '**Ergebnis:** ';
@@ -50,18 +52,45 @@ function collect(options) {
   };
 }
 
+// Berichtsdaten, wie sie ein eingebetteter Lauf und die Ablage schreiben.
+function reportData(input, status) {
+  const { steps: _steps, ...summary } = summaryOf(input);
+  const { chain: _chain, ...data } = input;
+  return { summary, data: { format: FORMAT, status, ...summary, ...data } };
+}
+
 // Eingebetteter Lauf: Die Berichtsdaten gehen als JSON nach `reportFile`; stdout nennt Status, Ergebnis, Followup-Fähigkeit und Datei.
 // orchestrator-report.js setzt daraus den einen Abschlussbericht des Orchestrators zusammen.
 function embeddedOutput(options, input, status) {
-  const { steps: _steps, ...summary } = summaryOf(input);
-  const { chain: _chain, ...data } = input;
-  writeJson(options.reportFile, { format: FORMAT, status, ...summary, ...data });
+  const { summary, data } = reportData(input, status);
+  writeJson(options.reportFile, data);
   return [
     `ENDE ${status}`, `ERGEBNIS ${summary.resultLine.replace(RESULT_PREFIX, '')}`, `FOLLOWUP ${summary.offersFollowup ? 'ja' : 'nein'}`, `BERICHT ${options.reportFile}`,
   ].join('\n');
 }
 
-// `options.reportFile` (optional): eingebetteter Lauf, siehe embeddedOutput.
+// Ablage (`options.storage` = Etappe): Bericht und Berichtsdaten gehen in die Ablage der Session-Kette je Slug. Ein Review
+// beginnt die Ablage seiner Etappe neu (`bericht-review`), ein Followup legt die nächste Runde daneben (`bericht-followup-<n>`).
+// Rückgabe: die Zeile `ABLAGE <datei> · FOLLOWUP <ja|nein>`.
+function storeReport(options, input, status, text) {
+  const { summary, data } = reportData(input, status);
+  const artifact = options.review === 'spec-review' ? { spec: options.artifact } : { plan: options.artifact };
+  try {
+    const target = ablageDir(path.dirname(path.resolve(options.artifact)), slugOfArtifact(artifact), options.storage);
+    const followup = options.source === FOLLOWUP;
+    if (!followup) fs.rmSync(target, { recursive: true, force: true });
+    const name = followup ? nextFollowupName(target) : 'bericht-review';
+    const file = path.join(target, `${name}.json`);
+    writeJson(file, data);
+    writeText(path.join(target, `${name}.md`), text);
+    return `ABLAGE ${file.replace(/\\/g, '/')} · FOLLOWUP ${summary.offersFollowup ? 'ja' : 'nein'}`;
+  } catch (error) {
+    if (error instanceof SessionChainError) throw new FlowError(`Ablage nicht möglich: ${error.message}`);
+    throw error;
+  }
+}
+
+// `options.reportFile` (optional): eingebetteter Lauf, siehe embeddedOutput. `options.storage` (optional): Ablage, siehe storeReport.
 function report(options) {
   const data = collect(options);
   const status = flowStatus({ failed: data.failed, openQuestions: data.questions.length, openRed: data.openRed, reworked: data.reworked });
@@ -70,8 +99,9 @@ function report(options) {
   const text = renderReportText(input);
   writeClosing(options, open);
   writeText(path.join(options.workspace, CLOSING, 'bericht.md'), text);
-  if (options.reportFile) return embeddedOutput(options, input, status);
-  return [`ENDE ${status}`, '=== BERICHT ===', text].join('\n');
+  const stored = options.storage ? [storeReport(options, input, status, text)] : [];
+  if (options.reportFile) return [embeddedOutput(options, input, status), ...stored].join('\n');
+  return [`ENDE ${status}`, ...stored, '=== BERICHT ===', text].join('\n');
 }
 
 module.exports = { flowStatus, report };

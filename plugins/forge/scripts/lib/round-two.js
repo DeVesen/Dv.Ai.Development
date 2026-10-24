@@ -6,6 +6,7 @@ const { findingProblem } = require('./rules');
 const { openQuestions, wEntriesOf } = require('./questions');
 const { groupRated, countColors, renderGroups } = require('./groups');
 const { rateReviewer, scriptItems, droppedList } = require('./rated-items');
+const { quoteCounts } = require('./quotes');
 const { parseRework } = require('../followup');
 const { ROUND_ONE, ROUND_TWO, readText, readLines, readJson, readAgentJson, writeText, writeJson } = require('./flow-files');
 
@@ -135,7 +136,7 @@ function verifyRoundTwo(options) {
   const places = parsePlaces(text);
   const context = {
     review: options.review, advisory: new Set(), wEntries: wEntriesOf(options), openKeys: openKeysNow(options, text),
-    phase: 'nachpruefung', checklistKeys: new Set(checklist.items.map((item) => item.key)), changedKeys: new Set(checklist.changed.map(placeKey)),
+    phase: 'nachpruefung', quoteSources: [text, options.spec ? readText(options.spec) : null], checklistKeys: new Set(checklist.items.map((item) => item.key)), changedKeys: new Set(checklist.changed.map(placeKey)),
   };
   const scripted = scriptItems(dir, places);
   const items = [...rateReviewer(VERIFIER, verifier.findings, places, context), ...scripted];
@@ -144,7 +145,7 @@ function verifyRoundTwo(options) {
   const notDone = verifier.verdicts.filter((verdict) => verdict.verdict === 'nicht erledigt').length;
   const counts = countColors(groups);
   const openRed = notDone + counts.red;
-  writeJson(path.join(dir, 'einstufung.json'), { verdicts, groups, dropped: droppedList(items), openRed });
+  writeJson(path.join(dir, 'einstufung.json'), { verdicts, groups, dropped: droppedList(items), openRed, belege: quoteCounts(items) });
   writeText(path.join(dir, 'scout-eingabe.md'), renderGroups(groups.filter((group) => group.color === 'yellow')));
   const scout = counts.yellow > 0 ? 'hinweise' : 'keiner';
   return `NACHPRUEFUNG ok offen=${openRed} hinweise=${counts.yellow}\nWEITER scout=${scout}`;

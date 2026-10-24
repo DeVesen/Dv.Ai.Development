@@ -312,7 +312,7 @@ const VERDICT = (verdict) => ({ verdicts: [{ location: 'AC-04', verdict, rationa
 
 function embeddedReview(file) {
   const env = setup();
-  runUntilRework(env, [finding({ location: 'AC-04', quote: 'x', category: 'widerspruch' })]);
+  runUntilRework(env, [finding({ location: 'AC-04', quote: 'AC-04', category: 'widerspruch' })]);
   writeJsonFile(path.join(env.workspace, 'runde-1', 'scout.md'), SCOUT_AC04);
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', change: 'Erster Versuch.' }], questions: [] });
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);

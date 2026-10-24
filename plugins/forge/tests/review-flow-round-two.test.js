@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { finding, setup, writeJsonFile, flow, readJsonFile, editDoc, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
 
-const RED = (location) => finding({ location, quote: 'x', category: 'widerspruch' });
+const RED = (location) => finding({ location, quote: location, category: 'widerspruch' });
 // Antwort auf „R1 · AC-04“ (U+201E, U+201C)
 const ANSWER_ENTRY = '- **W · AC-04** · Aussage — Antwort auf „R1 · AC-04“: ja.';
 

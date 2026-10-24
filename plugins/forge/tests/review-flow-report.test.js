@@ -11,7 +11,7 @@ const { commitFile, makeRepo } = require('./lib/git-repo');
 const PREPARE = path.join(__dirname, '..', 'scripts', 'prepare.js');
 const { SPEC, finding, setup, writeJsonFile, writeReviewer, flow, editDoc, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
 
-const RED = (location) => finding({ location, quote: 'x', category: 'widerspruch' });
+const RED = (location) => finding({ location, quote: location, category: 'widerspruch' });
 const VERDICT = (location, verdict) => ({ location, verdict, rationale: verdict === 'erledigt' ? 'ok' : 'F fehlt noch' });
 
 function status(overrides) {

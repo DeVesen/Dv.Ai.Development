@@ -1,6 +1,7 @@
 'use strict';
 
 const { placeKey, isHeaderKey, collapse } = require('./places');
+const { quoteStatus } = require('./quotes');
 
 const SPEC_CATEGORIES = {
   widerspruch: 'red', 'fehlendes-verhalten': 'red', unerfuellbar: 'red', detail: 'yellow', formulierung: 'green',
@@ -48,20 +49,23 @@ function isOutsideChecklist(finding, place, context) {
   return !(finding.category === 'widerspruch' && context.changedKeys.has(place.key));
 }
 
-function capsAtYellow(finding, place, context) {
+function capsAtYellow(finding, place, context, quote) {
   return context.advisory.has(context.reviewer)
+    || (quote === 'unbelegt' && context.review === 'spec-review')
     || isQuoteFromWEntry(finding.quote, context.wEntries)
     || isSpellingFinding(finding)
     || isOutsideChecklist(finding, place, context);
 }
 
 // Farbe eines gültigen Findings der KI an seiner Stelle; `dropped` nennt den Grund, wenn es entfällt.
+// Im Spec-Review deckelt ein Zitat, das nicht in der Spec steht, auf 🟡: Ein erfundener Beleg soll keine Nacharbeit erzwingen.
 function rateFinding(finding, place, context) {
   if (isHeaderKey(placeKey(finding.location))) return { color: null, dropped: 'Kopfzeile' };
   if (context.openKeys.has(place.key)) return { color: null, dropped: 'offene Frage' };
+  const quote = context.quoteSources ? quoteStatus(finding.quote, context.quoteSources) : null;
   const color = CATEGORIES[context.review][finding.category];
-  const capped = color === 'red' && capsAtYellow(finding, place, context);
-  return { color: capped ? 'yellow' : color, dropped: null };
+  const capped = color === 'red' && capsAtYellow(finding, place, context, quote);
+  return quote ? { color: capped ? 'yellow' : color, dropped: null, quote } : { color: capped ? 'yellow' : color, dropped: null };
 }
 
 module.exports = { CATEGORIES, isReview, findingProblem, resultProblem, rateFinding };

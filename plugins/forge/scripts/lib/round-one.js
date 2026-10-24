@@ -6,6 +6,7 @@ const { resultProblem } = require('./rules');
 const { documentQuestions, wEntriesOf } = require('./questions');
 const { groupRated, countColors, renderGroups, renderTable } = require('./groups');
 const { rateReviewer, scriptItems, droppedList } = require('./rated-items');
+const { quoteCounts } = require('./quotes');
 const { ROUND_ONE, readText, readAgentJson, writeText, writeJson } = require('./flow-files');
 
 function readReviewerResult(dir, name, review) {
@@ -45,7 +46,7 @@ function rateRoundOne(options) {
   const questions = documentQuestions(options, text);
   const context = {
     review: options.review, advisory: new Set(options.advisory), wEntries: wEntriesOf(options),
-    openKeys: new Set(questions.map((question) => question.key)), phase: 'suche', checklistKeys: new Set(), changedKeys: new Set(),
+    openKeys: new Set(questions.map((question) => question.key)), phase: 'suche', quoteSources: [text, options.spec ? readText(options.spec) : null], checklistKeys: new Set(), changedKeys: new Set(),
   };
   const results = options.expected.map((name) => readReviewerResult(dir, name, options.review));
   const failed = results.filter((result) => result.problem);
@@ -55,7 +56,7 @@ function rateRoundOne(options) {
   ];
   const groups = groupRated(items.filter((item) => !item.dropped));
   const counts = countColors(groups);
-  writeJson(path.join(dir, 'einstufung.json'), { groups, dropped: droppedList(items), failed, questions, reviewers: options.expected });
+  writeJson(path.join(dir, 'einstufung.json'), { groups, dropped: droppedList(items), failed, questions, reviewers: options.expected, belege: quoteCounts(items) });
   writeText(path.join(dir, 'aggregate.md'), `${renderTable(groups)}\n\n${renderGroups(groups)}`);
   writeText(path.join(dir, 'scout-eingabe.md'), renderGroups(scoutGroups(groups, scoutScope(counts))));
   const lines = statusLines(counts, questions.length, failed);

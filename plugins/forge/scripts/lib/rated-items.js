@@ -20,7 +20,7 @@ function rateReviewer(name, findings, places, context) {
   return findings.map((finding) => {
     const place = placeOf(finding, places);
     const rating = rateFinding(finding, place, { ...context, reviewer: name });
-    return { reviewer: name, category: finding.category, color: rating.color, dropped: rating.dropped, place, finding };
+    return { reviewer: name, category: finding.category, color: rating.color, dropped: rating.dropped, ...(rating.quote ? { quote: rating.quote } : {}), place, finding };
   });
 }
 

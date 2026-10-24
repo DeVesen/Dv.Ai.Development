@@ -19,7 +19,7 @@ Jeder Reviewer schreibt sein Ergebnis als JSON-Datei an den Pfad aus `Ergebnis:`
 ```
 
 - `location`: ein Stellen-Schlüssel des Skills — `AC-<Zahl>`, `Task <n>`, `Global Constraints` oder die exakte Abschnittsüberschrift ohne `#` und ohne Nummerierung davor. Details auf Schritt-Ebene gehören in `quote`.
-- `quote`: wörtlich aus dem geprüften Dokument. Bei Befunden aus einer Zusatzquelle mit Präfix `Quelle: `.
+- `quote`: wörtlich aus dem geprüften Dokument. Bei Befunden aus einer Zusatzquelle mit Präfix `Quelle: `. Ein Skript prüft jedes Zitat (`scripts/lib/quotes.js`): Im Spec-Review wird ein Finding, dessen Zitat nicht in der Spec steht, höchstens 🟡. Plan- und Implementierungs-Review zählen die Belege nur (`belege` in `einstufung.json` bzw. `ergebnis.json`).
 - `severity`: `red` | `yellow` | `green`, siehe `severity-rules.md`.
 - `summary`: was geprüft wurde, z. B. `32 Profile im Index, 5 gelesen, Ist-Stand gedeckt, 0 Findings`.
 - Keine Findings: `"findings": []`.

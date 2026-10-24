@@ -3,6 +3,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { quoteStatus } = require('./lib/quotes');
 
 const SEVERITY_RANK = { green: 1, yellow: 2, red: 3 };
 const TEXT_FIELDS = ['location', 'quote', 'consequence', 'rationale'];
@@ -245,9 +246,30 @@ function render(result) {
   ].join('\n');
 }
 
+// Beleg je Finding: Nennt `location` eine Datei im Repo, muss das Zitat in ihr stehen; sonst bleibt es ungeprüft.
+// Nur gezählt, nie umgefärbt: Implementierungs-Reviewer zitieren auch Testausgaben und Befehle.
+function evidenceOf(finding, repoRoot) {
+  const match = /^(\S*\.[A-Za-z0-9]+)(?::\d+(?:-\d+)?)?$/.exec(String(finding.location).trim());
+  if (!repoRoot || !match) return 'ungeprueft';
+  const file = path.resolve(repoRoot, match[1]);
+  if (!fs.existsSync(file) || !fs.statSync(file).isFile()) return 'datei-fehlt';
+  return quoteStatus(finding.quote, [fs.readFileSync(file, 'utf8')]);
+}
+
+function evidenceCounts(reviews, repoRoot) {
+  const counts = {};
+  for (const review of reviews) {
+    const entry = { belegt: 0, unbelegt: 0, quelle: 0, 'datei-fehlt': 0, ungeprueft: 0 };
+    for (const finding of review.findings) entry[evidenceOf(finding, repoRoot)] += 1;
+    counts[review.reviewer] = entry;
+  }
+  return counts;
+}
+
 // Strukturierte Fassung des Ergebnisses für den Bericht (implementation-report.js).
-function resultFile(result) {
+function resultFile(result, repoRoot = null) {
   return {
+    belege: evidenceCounts(result.reviews, repoRoot),
     reviewers: result.reviews.map((review) => review.reviewer),
     failed: result.status.failed,
     counts: result.status.counts,
@@ -290,7 +312,7 @@ function main() {
   const output = `${render(result)}\n`;
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'aggregate.md'), output);
-  fs.writeFileSync(path.join(dir, 'ergebnis.json'), `${JSON.stringify(resultFile(result), null, 2)}\n`);
+  fs.writeFileSync(path.join(dir, 'ergebnis.json'), `${JSON.stringify(resultFile(result, parseRepo(args)), null, 2)}\n`);
   process.stdout.write(output);
 }
 

@@ -39,6 +39,7 @@ Du korrigierst einen Umsetzungsplan an den 🔴-Stellen eines Reviews. Du änder
    Bei einer spec-rückfrage lautet er wie jede Frage an den Menschen `- **R<n> · <Stelle>** — frage an den menschen — <Rückfrage>`.
 8. Bei einem Finding an `AC-<Zahl>` prüfst du das ganze AC aus der Spec gegen den Plan, nicht nur den zitierten Teil, und schließt alle Lücken dieses AC in derselben Nacharbeit.
 9. Existiert die Stelle nicht im Plan, lautet der Eintrag `- **R<n> · <Stelle>** — nicht geändert — Stelle existiert nicht`.
+10. Ein Skript prüft danach W-Einträge, Abbruch-Abschnitt, Nummerierung und Kopf; ein Verstoß macht die Nacharbeit ungültig.
 
 ## Folge-Modus
 Bekommst du `Vorschläge:` statt `Findings:`, gelten die Regeln oben mit diesen Abweichungen:

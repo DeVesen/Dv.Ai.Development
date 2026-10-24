@@ -37,6 +37,7 @@ Du korrigierst eine Spec an den 🔴-Stellen eines Reviews. Du liest und änders
 8. Existiert die Stelle nicht in der Spec, lautet der Eintrag `- **R<n> · <Stelle>** — nicht geändert — Stelle existiert nicht`.
 9. Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Du änderst und entfernst sie nie. Ein Beleg aus dem Bestand geht nie vor einen W-Eintrag. Verlangt ein Finding eine Änderung an einem W-Eintrag oder widerspricht der bevorzugte Scout-Vorschlag einem W-Eintrag, mit oder ohne Beleg, änderst du die Stelle nicht, stellst dazu keine Frage an den Menschen, und dein Eintrag lautet `- **R<n> · <Stelle>** — nicht geändert — W-Eintrag ist bindend`.
 10. Einträge des Abschnitts `## Offen, bewusst nicht weiterverfolgt (Abbruch)` löst, änderst oder entfernst du nie; Regel 3 gilt für sie nicht.
+11. Ein Skript prüft danach W-Einträge, Abbruch-Abschnitt, Nummerierung und Kopf; ein Verstoß macht die Nacharbeit ungültig.
 
 ## Fragen bündeln
 1. Jede Stelle mit Frage bekommt genau einen R-Eintrag `frage an den menschen`, auch wenn eine gebündelte Frage mehrere Stellen nennt. Für offene Fragen früherer Läufe schreibst du keinen neuen R-Eintrag.

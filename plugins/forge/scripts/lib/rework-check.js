@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('node:fs');
 const path = require('node:path');
 const { placeKey } = require('./places');
 const { openQuestions, bundleShapeProblem, bundleProblem } = require('./questions');
@@ -7,6 +8,10 @@ const { plainProblem } = require('./plain-text');
 const { renderHalt, topicOf } = require('./halt-text');
 const { scoutTexts } = require('./scout-check');
 const { parseRework } = require('../followup');
+const { hashFile } = require('../file-hash');
+const { readContext } = require('../workspace');
+const { integrityProblem, specProblem } = require('./rework-integrity');
+const { SPEC_HASH_FILE } = require('./rework-input');
 const { ROUND_ONE, readText, readLines, readJson, readAgentJson, writeText, writeJson } = require('./flow-files');
 
 const STATUSES = {
@@ -113,6 +118,26 @@ function haltInput(options, value) {
   };
 }
 
+function savedSpecHash(workspace) {
+  const file = path.join(workspace, SPEC_HASH_FILE);
+  return fs.existsSync(file) ? readText(file).trim() : null;
+}
+
+function currentSpecHash(options) {
+  const spec = options.spec ?? readContext(options.workspace).spec;
+  return typeof spec === 'string' && fs.existsSync(spec) ? hashFile(spec) : null;
+}
+
+// Stand vor der Nacharbeit gegen den Stand danach; ohne `vorher.md` (alter Arbeitsbereich, Folge-Modus ohne Snapshot) entfällt die Prüfung.
+function integrityOf(options) {
+  const before = path.join(options.workspace, 'vorher.md');
+  if (!fs.existsSync(before)) return null;
+  const problem = integrityProblem(readText(before), readText(options.doc), options.review);
+  if (problem || options.review !== 'plan-review') return problem;
+  const current = currentSpecHash(options);
+  return specProblem(savedSpecHash(options.workspace), current);
+}
+
 // Ergebnis der Nacharbeit prüfen; in Runde 1 eines Spec-Reviews auch die Bündelung der Fragen.
 function checkRework(options) {
   const dir = path.join(options.workspace, options.source);
@@ -122,6 +147,8 @@ function checkRework(options) {
   const questions = questionsAfter(options, value.results);
   const missing = missingEntryProblem(options, value.results, questions);
   if (missing) return `NACHARBEIT ungültig: ${missing}`;
+  const broken = integrityOf(options);
+  if (broken) return `NACHARBEIT ungültig: ${broken}`;
   writeJson(path.join(dir, 'fragen.json'), questions);
   if (!mustBundle(options) || questions.length === 0) return `NACHARBEIT ok fragen=${questions.length} anhalten=nein`;
   const shape = bundlesProblem(value);

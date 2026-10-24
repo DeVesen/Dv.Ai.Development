@@ -7,12 +7,24 @@ const { renderGroup, REWORK_MARK } = require('./groups');
 const { parseScout } = require('../followup');
 const { preferredProblem } = require('./scout-check');
 const { ROUND_ONE, readText, readLines, readJson, writeText } = require('./flow-files');
+const { hashFile } = require('../file-hash');
+const { readContext } = require('../workspace');
+
+const SPEC_HASH_FILE = 'vorher-spec.sha256';
+
+// Nennt der Kontext eine lesbare Spec (Plan-Review), merkt sich der Snapshot ihren Hash.
+function saveSpecHash(workspace) {
+  const { spec } = readContext(workspace);
+  if (typeof spec !== 'string' || !fs.existsSync(spec)) return;
+  fs.writeFileSync(path.join(workspace, SPEC_HASH_FILE), `${hashFile(spec)}\n`);
+}
 
 // Stand vor der Nacharbeit sichern und die Nummer ihrer R-Einträge vergeben.
 function snapshot(workspace, doc) {
   const text = readText(doc);
   fs.mkdirSync(workspace, { recursive: true });
   fs.writeFileSync(path.join(workspace, 'vorher.md'), text);
+  saveSpecHash(workspace);
   return `EINTRAG R${nextEntryNumber(text)}`;
 }
 
@@ -48,4 +60,4 @@ function writeReworkInput(options) {
   return [`NACHARBEIT stellen=${reds.length} fragen=${questions.length}`, snapshot(options.workspace, options.doc)].join('\n');
 }
 
-module.exports = { snapshot, writeReworkInput };
+module.exports = { snapshot, writeReworkInput, SPEC_HASH_FILE };

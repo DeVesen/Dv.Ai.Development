@@ -30,7 +30,7 @@ Du korrigierst einen Umsetzungsplan an den 🔴-Stellen eines Reviews. Du änder
    - Task-Überschriften exakt `### Task <n>: <Komponente>`, `<n>` ganzzahlig und lückenlos ab 1.
    - Jede `Modify`-Zeile nennt nach `·` einen stabilen Anker: ein Symbol oder eine eindeutige Zeichenfolge in der Datei.
    - Jeder Code-Schritt enthält vollständigen Code, jeder Lauf-Schritt einen Befehl oder Tool-Aufruf mit erwarteter Ausgabe, erlaubt laut Projekt-`CLAUDE.md` im Repo.
-   - Keine Platzhalter: „TBD“, „TODO“, „später umsetzen“, „passende Fehlerbehandlung ergänzen“, „Tests für das Obige schreiben“, „wie Task N“, Verweise auf nirgends definierte Typen oder Funktionen.
+   - Keine Platzhalter: die feste Phrasenliste steht nur im Plan-Linter (`scripts/lib/plan-lint.js`, `PLACEHOLDERS`); dazu kein „Tests für das Obige schreiben“ ohne Testcode und keine Verweise auf nirgends definierte Typen oder Funktionen.
 4. Teilst du einen Task oder fügst einen ein, nummerierst du alle Tasks lückenlos neu und ziehst jeden Verweis im Plan nach (`Consumes`, `Produces`, „aus Task n“). Der R-Eintrag nennt die Zuordnung, z. B. `Task 3 → Task 3, Task 4`. R-Einträge früherer Läufe änderst du nicht; ihre Nummern gelten für den Stand ihres Laufs.
 5. W-Einträge sind bindende Entscheidungen des Menschen. Du änderst und entfernst sie nie.
 6. Am Ende des Plans steht `## Entscheidungen`. Fehlt der Abschnitt, legst du ihn an. Bestehende Einträge löschst du nie.

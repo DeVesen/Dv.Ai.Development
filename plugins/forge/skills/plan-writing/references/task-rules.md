@@ -35,10 +35,9 @@ Ein AC ohne Code-Änderung, etwa „bleibt wie bisher“, bekommt statt des Zykl
 
 Jeder Schritt enthält den tatsächlichen Inhalt, den der Umsetzer braucht. Diese Muster sind Plan-Fehler — du schreibst sie nie:
 
-- „TBD“, „TODO“, „später umsetzen“, „Details ergänzen“
-- „passende Fehlerbehandlung ergänzen“, „Validierung hinzufügen“, „Randfälle behandeln“
+- die feste Phrasenliste des Plan-Linters (`scripts/lib/plan-lint.js`, `PLACEHOLDERS`; `plan-tasks.js lint` meldet jeden Treffer)
 - „Tests für das Obige schreiben“ ohne den Testcode selbst
-- „wie Task N“ oder „analog zu Task N“ — du wiederholst den Code, weil der Umsetzer Tasks womöglich außer der Reihe liest
+- Verweise auf andere Tasks statt Code — du wiederholst den Code, weil der Umsetzer Tasks womöglich außer der Reihe liest
 - Schritte, die sagen, was zu tun ist, ohne zu zeigen, wie — ein Code-Schritt braucht einen Code-Block
 - Verweise auf Typen, Funktionen oder Methoden, die in keinem Task definiert sind und im Code nicht existieren
 

@@ -400,14 +400,15 @@ test('spec-review-completeness_Body_CategoriesPerCaseTitleHeadingAndSourceForEve
     'Fehlt es, meldest du ein Finding der Kategorie `fehlendes-verhalten` an der Abschnittsüberschrift der Funktion.',
     'etwa „dann funktioniert der Export korrekt“, meldest du an seiner AC-ID ein Finding der Kategorie `fehlendes-verhalten`.',
     'Nennt es ein Ergebnis ohne Maß, etwa „dann lädt die Liste schnell“, ist das Finding `detail`.',
-    'genau ein Finding der Kategorie `fehlendes-verhalten` an der Titelüberschrift (`#`) des Dokuments und keine weiteren Findings je Funktion ohne AC.',
-    '`location` ist der Text der Titelüberschrift ohne `#`, `quote` ist `Keine AC-ID in der Spec`.',
+    'Ob AC-IDs existieren und lückenlos sind, prüft ein Skript; das meldest du nicht.',
     'gleichst du sie bei jeder Art der Spec ab, auch bei `Art: frei`',
     '`quote` beginnt dann mit `Quelle: `.',
   ]) {
     assert.ok(body.includes(part), part);
   }
   assert.ok(!body.includes('an der ersten Überschrift der Spec'), 'alte Stelle ohne AC-ID');
+  assert.ok(!body.includes('Keine AC-ID in der Spec'), 'gestrichene Prüfung der AC-IDs steht nicht mehr als Auftrag da');
+  assert.ok(!body.includes('Titelüberschrift'), 'gestrichener Titel-Fall');
   assert.ok(!body.includes('„korrekt“, „möglich“, „sinnvoll“'), 'alte Liste vager Wörter');
 });
 
@@ -415,11 +416,13 @@ test('spec-review-consistency_Body_ContradictionAndReferenceCategories', () => {
   const { body } = readAgent('spec-review-consistency');
   for (const part of [
     'Jeden Widerspruch meldest du als `widerspruch` an der Stelle der späteren Aussage. In `quote` stehen beide Zitate, getrennt durch ` ↔ `.',
-    'Ein Verweis bei einer Funktion, die die Spec selbst beschreibt, ist `detail`.',
-    'Ist der Verweis die einzige Beschreibung einer Funktion, ist er `fehlendes-verhalten`.',
+    'Links, Ticket-Nummern und Pfade zu anderen Dateien findet ein Skript (🟡); die meldest du nicht.',
+    'Du meldest nur den Fall, dass ein Verweis die einzige Beschreibung einer Funktion ist: `fehlendes-verhalten`.',
   ]) {
     assert.ok(body.includes(part), part);
   }
+  assert.ok(!body.includes('Ein Verweis bei einer Funktion, die die Spec selbst beschreibt, ist `detail`.'), 'gestrichene Verweis-Meldung');
+  assert.ok(!body.includes('meldest du jeweils an ihrer Stelle'), 'gestrichene Meldung von Links und Tickets');
   assert.ok(!body.includes('hat `unerfuellbar`, wenn der Bau seinen Inhalt braucht'), 'alte Verweis-Regel');
 });
 
@@ -439,8 +442,8 @@ test('spec-review-clarity_Body_TwoReadingsHowInsteadOfWhatNoEdgeCaseSearch', () 
   for (const part of [
     '# Spec-Review: Klarheit',
     'Ein AC mit zwei verschiedenen Lesarten ist `detail`. In `rationale` stehen beide Lesarten.',
-    'Namen von Klassen, Dateien, Tabellen oder Frameworks, Dateipfade und technische Schritte',
-    'Solche Details sind `detail`.',
+    'Namen von Klassen, Dateien, Tabellen oder Frameworks und technische Schritte',
+    'Solche Details sind `detail`. Dateipfade meldet ein Skript; die meldest du nicht.',
     'meldest du als `detail`.',
     'Rand- und Fehlerfälle — nach ihnen suchst du nicht.',
   ]) {
@@ -536,7 +539,7 @@ test('plan-review-advisory_Body_FindingsAtMostYellow', () => {
 test('plan-review-coverage_Body_CategoryPerCheckAndDefinitions', () => {
   const { body } = readAgent('plan-review-coverage');
   for (const part of [
-    'Ob jede AC-ID der Spec unter `**ACs:**` eines Tasks steht, prüft ein Skript; das meldest du nicht.',
+    'Ob jede AC-ID der Spec unter `**ACs:**` eines Tasks steht und ob jeder Task eine Verifikation hat, prüft ein Skript; das meldest du nicht.',
     '1. **Teilweise umgesetzt:**',
     'Ein Test ist ein automatisierter Testfall, den der Plan anlegt, ändert oder als vorhanden nennt, samt dem Befehl, der ihn ausführt.',
     'Ein Befehl oder Tool-Aufruf mit erwarteter Ausgabe ohne solchen Testfall ist Verifikation, aber kein Test.',
@@ -545,11 +548,11 @@ test('plan-review-coverage_Body_CategoryPerCheckAndDefinitions', () => {
     'Fehlt sie dort oder weicht sie ab: je Soll-Vorgabe ein eigenes Finding an `Global Constraints`, immer Kategorie `ac-fehlt-im-plan`.',
     'Fehlt der Abschnitt `## Global Constraints`, fehlt jede Soll-Vorgabe.',
     'Hat die Spec keine Soll-Vorgaben, entsteht daraus kein Finding.',
-    'Fehlt sie: Finding an `Task <n>`, immer Kategorie `detail`.',
-    'Ein AC ohne Test und ein Task ohne Verifikation meldest du getrennt, jedes mit seinem eigenen Finding.',
   ]) {
     assert.ok(body.includes(part), part);
   }
+  assert.ok(!body.includes('4. **Verifikation:**'), 'gestrichene Verifikations-Regel');
+  assert.ok(!body.includes('Finding an `Task <n>`, immer Kategorie `detail`'), 'gestrichenes Finding je Task ohne Verifikation');
   assert.ok(!body.includes('1. Jede AC-ID der Spec steht unter `**ACs:**` in mindestens einem Task.'), 'alte Handprüfung der AC-Abdeckung');
 });
 
@@ -649,4 +652,24 @@ test('implementationReviewScout_Body_DescribesTitleDescriptionRecommendationInPl
     assert.ok(body.includes(part), part);
   }
   assert.ok(body.includes('Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>'));
+});
+
+test('spec-review-clarity_Body_FilePathsAreNoLongerAnAssignment', () => {
+  const { body } = readAgent('spec-review-clarity');
+  assert.ok(!body.includes('Dateien, Tabellen oder Frameworks, Dateipfade und'), 'Dateipfade stehen nicht mehr im Auftrag');
+  assert.ok(body.includes('Dateipfade meldet ein Skript; die meldest du nicht.'));
+});
+
+test('plan-review-buildability_Body_FixedPlaceholderPhrasesAreNoLongerAnAssignment', () => {
+  const { body } = readAgent('plan-review-buildability');
+  assert.ok(body.includes('Die feste Phrasenliste prüft der Plan-Linter (ein Skript); die meldest du nicht.'));
+  for (const phrase of ['„TBD“', '„später umsetzen“', '„Details ergänzen“', '„Randfälle behandeln“', '„wie Task N“']) {
+    assert.ok(!body.includes(phrase), `${phrase} steht nur im Skript`);
+  }
+});
+
+test('plan-rework_Body_PlaceholderListLivesOnlyInTheLinter', () => {
+  const { body } = readAgent('plan-rework');
+  assert.ok(body.includes('`scripts/lib/plan-lint.js`'));
+  assert.ok(!body.includes('„TBD“'), 'Phrasenliste steht nur im Skript');
 });

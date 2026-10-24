@@ -23,9 +23,12 @@ test('quoteStatus_SecondSource_Counts', () => {
   assert.equal(quoteStatus('nur in der Spec', [DOC, 'Text nur in der Spec.']), 'belegt');
 });
 
-test('quoteStatus_SourcePrefixAndFixedQuote_Quelle', () => {
+test('quoteStatus_SourcePrefix_Quelle', () => {
   assert.equal(quoteStatus('Quelle: Ticket sagt X', [DOC]), 'quelle');
-  assert.equal(quoteStatus('Keine AC-ID in der Spec', [DOC]), 'quelle');
+});
+
+test('quoteStatus_FormerFixedQuoteKeineAcId_Unbelegt', () => {
+  assert.equal(quoteStatus('Keine AC-ID in der Spec', [DOC]), 'unbelegt');
 });
 
 test('quoteStatus_InventedOrTooShort_Unbelegt', () => {

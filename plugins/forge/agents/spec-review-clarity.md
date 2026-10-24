@@ -18,7 +18,7 @@ Die Spec soll stimmig, verständlich und grob umsetzbar sein, nicht perfekt. Det
 
 ## Prüfauftrag
 1. Ein AC mit zwei verschiedenen Lesarten ist `detail`. In `rationale` stehen beide Lesarten.
-2. WIE statt WAS: Namen von Klassen, Dateien, Tabellen oder Frameworks, Dateipfade und technische Schritte. Eine Spec beschreibt beobachtbares Verhalten. Solche Details sind `detail`.
+2. WIE statt WAS: Namen von Klassen, Dateien, Tabellen oder Frameworks und technische Schritte. Eine Spec beschreibt beobachtbares Verhalten. Solche Details sind `detail`. Dateipfade meldet ein Skript; die meldest du nicht.
 3. Einen Begriff, den die Spec uneinheitlich schreibt (Groß- oder Kleinschreibung, ß oder ss, Umlaute), meldest du als `detail`.
 
 ## Nicht deine Aufgabe

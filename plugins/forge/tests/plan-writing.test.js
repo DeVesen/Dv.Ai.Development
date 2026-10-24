@@ -75,11 +75,12 @@ test('taskRules_Steps_FiveActionsTwoToFiveMinutes', () => {
   }
 });
 
-test('taskRules_Placeholders_ListsForbiddenPatterns', () => {
+test('taskRules_Placeholders_PointToLinterInsteadOfRepeatingPhrases', () => {
   const text = reference('task-rules.md');
-  const patterns = ['TBD', 'TODO', 'später umsetzen', 'Fehlerbehandlung ergänzen', 'Validierung hinzufügen',
-    'Randfälle behandeln', 'Tests für das Obige', 'wie Task N', 'in keinem Task definiert'];
-  for (const pattern of patterns) assert.ok(text.includes(pattern), `${pattern} fehlt`);
+  for (const pattern of ['Plan-Linters', 'plan-lint.js', 'Tests für das Obige', 'in keinem Task definiert']) assert.ok(text.includes(pattern), `${pattern} fehlt`);
+  for (const phrase of ['TBD', 'später umsetzen', 'Fehlerbehandlung ergänzen', 'Validierung hinzufügen', 'Randfälle behandeln', 'wie Task N']) {
+    assert.ok(!text.includes(phrase), `${phrase} steht nur im Skript`);
+  }
 });
 
 test('selfCheck_Checklist_CoveragePlaceholdersConsistencyFormat', () => {

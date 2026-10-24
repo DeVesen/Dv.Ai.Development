@@ -102,3 +102,14 @@ test('cli_CleanSpecExitZero_MissingArgumentExitTwo', () => {
   assert.equal(spawnSync(process.execPath, [SCRIPT, spec], { encoding: 'utf8' }).status, 0);
   assert.equal(spawnSync(process.execPath, [SCRIPT], { encoding: 'utf8' }).status, 2);
 });
+
+test('lintSpec_SpecWithoutAnyAcId_ErrorAcKeine', () => {
+  // Arrange
+  const text = VALID_SPEC.replace(/- \*\*AC-0[12]\*\*.*\n/g, '');
+
+  // Act
+  const found = rules(text);
+
+  // Assert
+  assert.ok(found.includes('fehler ac-keine Akzeptanzkriterien'), found.join(', '));
+});

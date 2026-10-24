@@ -18,8 +18,8 @@ Die Spec soll stimmig, verständlich und grob umsetzbar sein, nicht perfekt. Det
 
 ## Prüfauftrag
 1. Vergleiche alle Aussagen der Spec untereinander, auch die im Abschnitt „Entscheidungen“. Jeden Widerspruch meldest du als `widerspruch` an der Stelle der späteren Aussage. In `quote` stehen beide Zitate, getrennt durch ` ↔ `.
-2. Die Spec muss in sich abgeschlossen sein. Links, Ticket-Nummern, Pfade zu anderen Dateien, „siehe Dokument X“ meldest du jeweils an ihrer Stelle.
-3. Ein Verweis bei einer Funktion, die die Spec selbst beschreibt, ist `detail`. Ist der Verweis die einzige Beschreibung einer Funktion, ist er `fehlendes-verhalten`.
+2. Die Spec muss in sich abgeschlossen sein. Links, Ticket-Nummern und Pfade zu anderen Dateien findet ein Skript (🟡); die meldest du nicht.
+3. Du meldest nur den Fall, dass ein Verweis die einzige Beschreibung einer Funktion ist: `fehlendes-verhalten`.
 
 ## Nicht deine Aufgabe
 Fehlende Akzeptanzkriterien, Machbarkeit, Rand- und Fehlerfälle, Stil.

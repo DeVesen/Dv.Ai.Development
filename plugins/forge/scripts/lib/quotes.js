@@ -6,8 +6,6 @@
 // und bleibt ungeprüft. Markdown-Auszeichnung und Anführungszeichen zählen nicht, Leerraum wird zusammengefasst.
 
 const SOURCE_PREFIX = /^\s*Quelle:/;
-// Feste Zitate, die Reviewer laut Auftrag für ein Fehlen setzen (spec-review-completeness, Regel 3).
-const FIXED_QUOTES = new Set(['keine ac-id in der spec']);
 const FRAGMENT_SPLIT = /\s*(?:↔|…|\.\.\.)\s*/;
 const MIN_FRAGMENT = 4;
 
@@ -27,7 +25,7 @@ function fragments(quote) {
 
 // 'quelle' | 'belegt' | 'unbelegt'; `sources` sind die Volltexte, gegen die geprüft wird.
 function quoteStatus(quote, sources) {
-  if (SOURCE_PREFIX.test(String(quote)) || FIXED_QUOTES.has(normalize(quote))) return 'quelle';
+  if (SOURCE_PREFIX.test(String(quote))) return 'quelle';
   const parts = fragments(quote);
   if (parts.length === 0) return 'unbelegt';
   const haystacks = sources.filter(Boolean).map(normalize);

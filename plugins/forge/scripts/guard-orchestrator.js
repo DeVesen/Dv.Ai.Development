@@ -408,5 +408,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-  COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, onSkillCall, decidePreTool, release, clearMarker, pause, pauseWithShow, show, onTurnEnd,
+  ALLOWED_SCRIPTS, COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, onSkillCall, decidePreTool, release, clearMarker, pause, pauseWithShow, show, onTurnEnd,
 };

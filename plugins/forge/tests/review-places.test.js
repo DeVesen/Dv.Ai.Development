@@ -132,3 +132,10 @@ test('decisionLines_Spec_ReturnsEntriesOfDecisionSection', () => {
   // Assert
   assert.deepEqual(lines, ['- **W · Deckel** · Aussage — Zwei Runden, keine dritte.']);
 });
+
+test('parsePlaces_TaskWithLetterSuffix_IsOwnPlace', () => {
+  const { parsePlaces } = require('../scripts/lib/places');
+  const places = parsePlaces('# Plan\n\n## Global Constraints\n- x\n\n### Task 3a: Client\nText.\n');
+  assert.ok(places.has('task 3a'));
+  assert.equal(places.get('task 3a').label, 'Task 3a');
+});

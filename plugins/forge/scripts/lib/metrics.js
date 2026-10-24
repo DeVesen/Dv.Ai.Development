@@ -33,6 +33,11 @@ function colorCounts(groups = [], field = 'color') {
   return counts;
 }
 
+// Stellen eines Laufs, kompakt genug für die Messzeile; eval-review.js vergleicht sie mit einem Golden-Set.
+function placesOf(groups = []) {
+  return groups.map((group) => ({ key: group.key, color: group.color, kategorien: [...new Set((group.items ?? []).map((item) => item.finding?.category ?? item.category))] }));
+}
+
 function readJsonOr(file, fallback) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -67,6 +72,7 @@ function flowReviewRecord(options, data, status) {
     ausgefallen: data.failed,
     versuche: attemptCounts(options.workspace),
     belege: { runde1: data.one?.belege ?? {}, runde2: data.two?.belege ?? {} },
+    stellen: { runde1: placesOf(data.one?.groups), runde2: data.two ? placesOf(data.two.groups) : null },
   };
 }
 
@@ -77,10 +83,11 @@ function implementationReviewRecord(options, result, status) {
     artefakt: options.planArg ?? options.plan,
     bereich: options.range,
     status,
-    stellen: colorCounts(result.groups, 'severity'),
+    farben: colorCounts(result.groups, 'severity'),
     ausgefallen: result.failed ?? [],
     versuche: attemptCounts(options.workspace),
     belege: result.belege ?? {},
+    stellen: { runde1: result.groups.map((group) => ({ key: group.location, color: group.severity, reviewer: [...new Set(group.reviewers)] })), runde2: null },
   };
 }
 

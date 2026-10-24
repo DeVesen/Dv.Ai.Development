@@ -15,6 +15,8 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 
 **Messdaten:** Jeder Spec-, Plan- und Implementierungs-Review hängt eine Zeile an `<git-common-dir>/dv-forge/metrics/reviews.jsonl` (Farben je Runde, verworfene Findings, Nacharbeit, Fragen, Ausfälle, Nachforderungen, Belege je Reviewer). Die Session-Kette schreibt je Slug `events.jsonl` neben `zustand.json` (Start, final mit Dauer und offenen Punkten, Haltepunkt, Antwort, Commit, Schluss). dv-forge liefert nur die Rohdaten; die Auswertung gehört nach `toolbelt`.
 
+**Golden-Sets:** `evals/` hält je Review einen Fall mit eingebauten Mängeln und den Befunden, die gefunden werden sollen. `scripts/eval-review.js` misst Läufe daraus (Recall, Precision, Belegquote, Stabilität über mehrere Läufe), siehe `evals/README.md`.
+
 Alle drei Orchestratoren enden mit genau einem Abschlussbericht in vier Abschnitten (`# Abschlussbericht`, `# Was sich … geändert hat`, `# Was ist noch offen`, `# Wie es weitergeht`). Review und Followup laufen dabei eingebettet (`--bericht <datei>`) ohne eigenen Bericht; `orchestrator-report.js` setzt den Endstand aus ihren Berichtsdaten zusammen. Alleinstehend aufgerufen zeigen Review und Followup ihre Berichte wie bisher.
 
 Eine Followup-Runde startet, sobald das Review einen Followup anbietet (`FOLLOWUP ja`), unabhängig von ✅, ⛔ oder ❓; nur ⚠️ und ein Abbruch stoppen. Es gibt höchstens zwei Runden je Lauf. 🟢 arbeitet keine Runde ein; sie stehen nur im Abschlussbericht unter „Was ist noch offen“.

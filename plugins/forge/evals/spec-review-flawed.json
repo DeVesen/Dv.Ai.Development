@@ -1,0 +1,21 @@
+{
+  "fall": "spec-review-flawed",
+  "review": "spec-review",
+  "fixture": "tests/fixtures/flawed-spec.md",
+  "beschreibung": "Spec mit eingebauten Mängeln: Widerspruch, unprüfbares AC, WIE statt WAS, Verhalten ohne AC, externer Verweis.",
+  "erwartet": [
+    { "id": "anonym-gegen-konto", "stellen": ["AC-01", "AC-04"], "kategorien": ["widerspruch"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "AC-01 erlaubt anonyme Nutzung, AC-04 verlangt für jede Aktion ein Konto." },
+    { "id": "unpruefbar", "stellen": ["AC-03"], "minFarbe": "yellow", "pflicht": true,
+      "beschreibung": "„funktioniert korrekt“ ist nicht prüfbar." },
+    { "id": "wie-statt-was", "stellen": ["AC-05"], "minFarbe": "yellow", "pflicht": true,
+      "beschreibung": "Klasse und Tabelle im AC: WIE statt WAS." },
+    { "id": "export-ohne-ac", "stellen": ["Export"], "kategorien": ["fehlendes-verhalten"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "Export ist beschrieben, hat aber kein AC." },
+    { "id": "ticket-verweis", "stellen": ["Synchronisation"], "minFarbe": "yellow", "pflicht": false,
+      "beschreibung": "Verweis auf AB#1234; die Spec ist nicht in sich abgeschlossen." },
+    { "id": "ungekoppelt", "stellen": ["AC-06", "Synchronisation"], "minFarbe": "yellow", "pflicht": false,
+      "beschreibung": "Was gilt ohne gekoppeltes Gerät, bleibt offen." }
+  ],
+  "erlaubt": ["Aufgabenliste", "AC-02", "Anmelden", "Aufgaben verwalten"]
+}

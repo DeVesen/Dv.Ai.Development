@@ -1,0 +1,21 @@
+{
+  "fall": "implementation-review-flawed",
+  "review": "implementation-review",
+  "fixture": "tests/fixtures/implementation/build-repo.js --flawed",
+  "beschreibung": "Umsetzung mit eingebauten Mängeln: falscher Test, fehlende Negativ-Prüfung, fehlende Tasks 2 und 3, verschluckter Fehler, Test ohne Assertion.",
+  "erwartet": [
+    { "id": "suite-rot", "stellen": ["Testlauf", "tests/order-total.test.js"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "Der Test erwartet 400 statt 399 Cent; die Suite ist rot." },
+    { "id": "negative-menge", "stellen": ["src/order-total.js", "AC-02"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "AC-02: negative Menge wirft keinen Fehler." },
+    { "id": "format-fehlt", "stellen": ["src/format-total.js", "Task 2", "AC-03"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "Task 2 ist nicht umgesetzt." },
+    { "id": "laden-fehlt", "stellen": ["src/load-positions.js", "Task 3", "AC-04"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "Task 3 ist nicht umgesetzt; loadPositions liegt in der falschen Datei." },
+    { "id": "fehler-verschluckt", "stellen": ["src/order-total.js", "AC-04"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "loadPositions verschluckt den Lesefehler und liefert []." },
+    { "id": "test-ohne-assertion", "stellen": ["tests/order-total.test.js"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "loadPositions_MissingFile_Runs prüft nichts." }
+  ],
+  "erlaubt": ["tests/format-total.test.js", "tests/load-positions.test.js"]
+}

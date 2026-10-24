@@ -1,0 +1,19 @@
+{
+  "fall": "plan-review-flawed",
+  "review": "plan-review",
+  "fixture": "tests/fixtures/plan-review/plan.md",
+  "beschreibung": "Plan mit eingebauten Mängeln: Rückwärts-Abhängigkeit und Nummer 3a, Platzhalter, Scope-Creep, fehlendes AC, ungedeckte Soll-Vorgabe.",
+  "erwartet": [
+    { "id": "rueckwaerts-abhaengigkeit", "stellen": ["Task 1", "Task 3a"], "kategorien": ["umsetzer-steckt-fest"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "Task 1 braucht PaymentClient aus Task 3a, der später kommt und keine lückenlose Nummer hat." },
+    { "id": "platzhalter", "stellen": ["Task 2"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "Schritt 3 von Task 2 ist Prosa mit „Passende Fehlerbehandlung ergänzen“ statt Code." },
+    { "id": "ac-04-fehlt", "stellen": ["AC-04"], "kategorien": ["ac-fehlt-im-plan"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "Kein Task deckt AC-04 (Zahlungsdienst antwortet nicht)." },
+    { "id": "cache-scope", "stellen": ["Task 2"], "minFarbe": "yellow", "pflicht": false,
+      "beschreibung": "OrderCache steht in keiner Anforderung." },
+    { "id": "antwortzeit", "stellen": ["Task 3a", "Global Constraints"], "minFarbe": "yellow", "pflicht": false,
+      "beschreibung": "Kein Timeout gegen den Zahlungsdienst trotz Antwortzeit unter 2 Sekunden." }
+  ],
+  "erlaubt": ["Plan"]
+}

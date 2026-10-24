@@ -11,8 +11,13 @@ Du stellst sicher, dass alles committet ist und alle Prüfungen grün sind. Erst
 
 ## Ablauf
 1. `node "<PLUGIN>/scripts/work.js" check`. Exit ungleich 0: Meldung wörtlich ausgeben, Ende. Du committest, verwirfst und stashst nichts; das entscheidet der Mensch. Zeilen `vorbestand=<Datei>` sind Dateien, die schon beim Start offen waren; nenne sie getrennt in der Meldung, sie brechen nichts ab.
-2. Prüfungen: `node "<PLUGIN>/scripts/forge-config.js" get <Schlüssel>` für `Build`, `Test` und `Lint`. Jeden nicht leeren Wert im Ordner `<R>` ausführen, als Befehl oder als genanntes Tool; mehrere, mit ` ; ` getrennt, nacheinander; leere überspringst du. Sind alle drei leer, fragst du einmal, was laufen soll. `Test` entfällt, wenn der Umsetzungsbericht neben dem Plan eine Zeile `Gesamtlauf:` mit `grün` nennt und `git diff --name-only <commit> HEAD` seitdem nur Doku zeigt (`.md`); das meldest du mit dem Commit.
-3. Ein Lauf rot: Befund melden, Ende. Nichts aufräumen.
+2. Prüfungen: `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>" --seit-gruen "<Umsetzungsbericht>"`; der Umsetzungsbericht ist `umsetzung.md` neben dem Plan (bei `<name>.md` `<name>-umsetzung.md`), fehlt er, entfällt `--seit-gruen`. Das Skript führt `Build`, `Test` und `Lint` aus den Projekt-Einstellungen aus und überspringt `Test` nach einem grünen Gesamtlauf, wenn seither nur Doku geändert ist. Die Zeilen `LAUF` und `UEBERSPRUNGEN` nennst du.
+3. Nach `PRUEFUNG ergebnis=…`:
+   - `rot`: Befund mit dem Teil nach `=== AUSGABE` melden, Ende. Nichts aufräumen. Nennt das Ledger den Test unter `Basis rot:`, sagst du das dazu; der Mensch entscheidet.
+   - `docker`: Tests sind nur rot, weil Docker fehlt. Melden, Ende; der Mensch entscheidet.
+   - `keine`: Nichts konfiguriert. Einmal fragen, was laufen soll.
+   - `gruen` mit `offen` > 0: Die Läufe haben Dateien erzeugt oder geändert. `git status --porcelain` melden, Ende.
+   - `gruen` mit `offen=0`: weiter.
 4. Nach der Ausgabe von Schritt 1 handeln:
 
 | Ausgabe | Tun |
@@ -29,5 +34,6 @@ Du stellst sicher, dass alles committet ist und alle Prüfungen grün sind. Erst
 |---|---|
 | Offene Datei schnell selbst committen | Melden. Der Mensch entscheidet. |
 | Roter Test „gehört nicht zu uns“ | Rot ist rot. Stopp, nichts aufräumen. |
+| Prüfungen selbst ausführen und „grün“ melden | Nur `verify-run.js`; das Ergebnis steht in `PRUEFUNG`. |
 | `git worktree remove --force` | Nie. Nur `work.js remove`. |
 | Aus dem Worktree heraus entfernen | Erst `cd "<haupt>"`, dann `remove "<R>"`. |

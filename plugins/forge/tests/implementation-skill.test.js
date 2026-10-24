@@ -76,10 +76,11 @@ test('skill_Body_StartScriptsInOrder', () => {
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
 });
 
-test('skill_Body_SixStopReasonsAndWEntryGuard', () => {
+test('skill_Body_FiveStopReasonsAndWEntryGuard', () => {
   const { body } = readMarkdown(SKILL);
-  assert.match(body, /## Stopp-Gründe\n[\s\S]*6\. eine Prüfung beim Start scheitert/);
-  assert.match(body, /einem W-Eintrag in Spec oder Plan widerspräche/);
+  assert.match(body, /## Stopp-Gründe\n[\s\S]*5\. einer gescheiterten Prüfung beim Start/);
+  assert.match(body, /einem Urteil gegen einen W-Eintrag in Spec oder Plan/);
+  assert.match(body, /den Fragen aus Start 2 und 3/);
 });
 
 test('skill_Body_BranchRuleAndHandover', () => {

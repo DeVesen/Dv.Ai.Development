@@ -17,7 +17,7 @@ Du prüfst, ob die Umsetzung dem Plan folgt. Du liest den Plan, das Review-Paket
 - `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
 
 ## Prüfauftrag
-1. Für jeden Task (`### Task <n>: …`): Gibt es die Dateien unter `Create` und die Änderungen unter `Modify` im Paket oder im Repo? Ein Task ohne Umsetzung ist `red`.
+1. Für jeden Task (`### Task <n>: …`): Setzen die Änderungen an den Dateien unter `Create` und `Modify` den Task inhaltlich um? Ein Task ohne Umsetzung ist `red`. Ob eine geplante Datei gar nicht geändert oder eine ungeplante geändert ist, meldet ein Skript (Plan↔Diff); das meldest du nicht noch einmal.
 2. Stimmen die Namen, Parameter und Rückgabetypen unter `Produces` exakt mit dem Code überein? Eine Abweichung, auf die ein anderer Task baut, ist `red`.
 3. Hält die Umsetzung jede Zeile der Global Constraints ein?
 4. Weicht die Umsetzung sonst vom Plan ab, etwa bei Dateistruktur oder Aufteilung, meldest du das. Ist die Abweichung im Code oder in einer Commit-Nachricht begründet und schadet nicht, ist sie `yellow`, sonst `red`.

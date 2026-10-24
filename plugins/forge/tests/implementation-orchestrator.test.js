@@ -166,7 +166,7 @@ test('implementationOrchestrator_Body_StartsFollowupRoundsOnFollowupJaBeforeBuil
   assert.ok(warning > -1 && warning < followup && followup < ready, 'Reihenfolge ⚠️, FOLLOWUP ja, ✅');
   assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<P> alle --spec <S> --bericht "<BF1>"`. Hash-Prüfung.'));
   assert.ok(body.includes('Schlusszeile `⚠️` oder Abbruch → Ende. `FOLLOWUP ja` → Runde 2 mit `<BF2>`, Hash-Prüfung. Nie eine dritte.'));
-  assert.ok(body.indexOf('Nie eine dritte.') < body.indexOf('6. Frischer Sub-Agent in `<R>` belegt'), 'Build, Test und Lint erst nach den Runden');
+  assert.ok(body.indexOf('Nie eine dritte.') < body.indexOf('6. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>"'), 'Build, Test und Lint erst nach den Runden');
   assert.ok(body.includes('`<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`'));
   assert.ok(body.includes('| „Dritte Followup-Runde.“ | Höchstens zwei. |'));
   assert.ok(!body.includes('Zweiter Followup') && !body.includes('zweiter Followup'));

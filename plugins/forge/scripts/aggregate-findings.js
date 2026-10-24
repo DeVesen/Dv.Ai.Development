@@ -211,10 +211,13 @@ function formatRework(groups) {
   return groups.length === 0 ? 'Keine Findings.' : groups.map(formatReworkGroup).join('\n\n');
 }
 
+// Das Ergebnis der Skript-Prüfungen (`--skript`) heißt immer `skript` und gehört zu keinem gestarteten Reviewer.
+const SCRIPT_REVIEWER = 'skript';
+
 function dropUnexpected(reviews, expected, errors) {
   if (expected.length === 0) return reviews;
   return reviews.filter((review) => {
-    if (expected.includes(review.reviewer)) return true;
+    if (expected.includes(review.reviewer) || review.reviewer === SCRIPT_REVIEWER) return true;
     errors.push(`Unerwarteter Reviewer verworfen: ${review.reviewer}`);
     return false;
   });
@@ -230,8 +233,17 @@ function run(text, expected, types = LOCATION_TYPES) {
   return evaluate(extractReviews(text), expected, types);
 }
 
-function runDir(dir, expected, types = LOCATION_TYPES, round = null) {
-  return evaluate(readReviewDir(dir), expected, types, round);
+function readScriptReview(file, read) {
+  if (!file || !fs.existsSync(file)) return;
+  const review = parseReview(fs.readFileSync(file, 'utf8'), read.errors);
+  if (review && review.reviewer === SCRIPT_REVIEWER) read.reviews.push(review);
+  else if (review) read.errors.push(`${file} ist kein Ergebnis von ${SCRIPT_REVIEWER}`);
+}
+
+function runDir(dir, expected, types = LOCATION_TYPES, round = null, scriptFile = null) {
+  const read = readReviewDir(dir);
+  readScriptReview(scriptFile, read);
+  return evaluate(read, expected, types, round);
 }
 
 function render(result) {
@@ -308,7 +320,7 @@ function main() {
     process.stdout.write(`${render(run(fs.readFileSync(0, 'utf8'), parseExpected(args), types))}\n`);
     return;
   }
-  const result = runDir(dir, parseExpected(args), types, optionValue(args, '--round'));
+  const result = runDir(dir, parseExpected(args), types, optionValue(args, '--round'), optionValue(args, '--skript'));
   const output = `${render(result)}\n`;
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'aggregate.md'), output);

@@ -11,6 +11,8 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 
 **Spec-Format:** `scripts/spec-lint.js <spec.md>` prüft das Spec-Format ohne KI (Abschnitte, Kopf, lückenlose AC-IDs, Gegeben/wenn/dann, Beleg-Tags, W-Einträge, Abbruch). Whiteboarding und Grill rufen es nach dem Schreiben auf, der Spec-Review nutzt es als Skript-Prüfung (Formfehler 🔴, Kopf und Warnungen 🟡), und die Session-Kette hält bei Formfehlern nach Whiteboarding, Grill und Spec-Nacharbeit.
 
+**Prüfläufe:** `scripts/verify-run.js --repo <R>` führt `Build`, `Test` und `Lint` aus den Projekt-Einstellungen aus und schreibt Exit-Codes, Ausgabe-Ende und HEAD als JSON (`ergebnis` gruen, rot, docker oder keine). `finish-work`, der Implementierungs-Orchestrator, der Abschluss der Umsetzung (Zeile `Gesamtlauf:`) und der Implementierungs-Review nutzen es statt eigener Läufe. `scripts/implementation-checks.js` gleicht dort zusätzlich die Dateien des Plans mit dem Diff ab (geplant, aber nicht geändert: 🔴; ungeplant geändert: 🟡) und liefert das Ergebnis als Reviewer `skript`.
+
 Alle drei Orchestratoren enden mit genau einem Abschlussbericht in vier Abschnitten (`# Abschlussbericht`, `# Was sich … geändert hat`, `# Was ist noch offen`, `# Wie es weitergeht`). Review und Followup laufen dabei eingebettet (`--bericht <datei>`) ohne eigenen Bericht; `orchestrator-report.js` setzt den Endstand aus ihren Berichtsdaten zusammen. Alleinstehend aufgerufen zeigen Review und Followup ihre Berichte wie bisher.
 
 Eine Followup-Runde startet, sobald das Review einen Followup anbietet (`FOLLOWUP ja`), unabhängig von ✅, ⛔ oder ❓; nur ⚠️ und ein Abbruch stoppen. Es gibt höchstens zwei Runden je Lauf. 🟢 arbeitet keine Runde ein; sie stehen nur im Abschlussbericht unter „Was ist noch offen“.

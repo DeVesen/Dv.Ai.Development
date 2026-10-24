@@ -14,12 +14,14 @@ Du prüfst die Tests der Umsetzung und führst die Suite einmal aus. Du liest Pl
 - `Paket:` Datei mit Commits, Stat und Diff des geprüften Bereichs
 - `Repo:` Wurzel des Repos
 - `Test:` Testbefehl aus der Projekt-Konfiguration, wörtlich; leer heißt: nicht festgelegt
+- `Testlauf:` optional, Ergebnis von `verify-run.js` als JSON: `ergebnis`, `head`, je Lauf `befehl`, `exit` und `ausgabe` (Ende der Ausgabe), `uebersprungen`
 - `Ergebnis:` absoluter Pfad deiner Ergebnisdatei
 - `Zurückgestellt:` optional, Datei der Umsetzung mit Urteilen, Bedenken, zurückgestellten und geparkten Punkten
 
 ## Prüfauftrag
 1. Befehl für die komplette Suite: der aus `Test:`; ist er leer, der aus dem Plan (Global Constraints oder die Lauf-Schritte der Tasks). Du führst ihn genau so aus, auch kein MCP-Tool mit gleichem Zweck.
-2. Führ die komplette Suite genau einmal aus. Ausnahme: Nennt `Zurückgestellt:` im Abschnitt Stand eine Zeile `Gesamtlauf:` mit `grün` und zeigt `git diff --name-only <commit> HEAD` seitdem nur Doku (`.md`), läuft die Suite nicht erneut; du lässt nur die Testdateien aus dem Paket laufen und nennst den Gesamtlauf in `summary`.
+   Mit `Testlauf:` lief die Suite schon per Skript; du führst sie nicht erneut aus und nimmst Exit-Code und Ausgabe aus der Datei. Eine rote Suite meldet das Skript selbst an `Testlauf`; du meldest nur die roten Tests einzeln an ihrer Testdatei. Nennt die Datei keinen Lauf für `Test`, gilt Schritt 2.
+2. Ohne `Testlauf:`: Führ die komplette Suite genau einmal aus. Ausnahme: Nennt `Zurückgestellt:` im Abschnitt Stand eine Zeile `Gesamtlauf:` mit `grün` und zeigt `git diff --name-only <commit> HEAD` seitdem nur Doku (`.md`), läuft die Suite nicht erneut; du lässt nur die Testdateien aus dem Paket laufen und nennst den Gesamtlauf in `summary`.
    - Ein roter Test im Paket ist `red` an der Stelle seiner Testdatei.
    - Ein roter Test außerhalb des Pakets läuft einmal einzeln nach. Ist er einzeln auch rot, ist er `red` an seiner Testdatei; sonst `green` mit `consequence` `flaky im Gesamtlauf`.
    - Warnungen oder Rauschen in der Ausgabe sind `yellow` an der Stelle `Testlauf`.

@@ -63,7 +63,7 @@ test('startWork_Body_DelegatesDecisionToScript', () => {
 
 test('finishWork_Body_ChecksTestsThenRemoves', () => {
   const { body } = skill('finish-work');
-  const order = ['work.js" check', 'forge-config.js" get <Schlüssel>', 'cd "<haupt>"', 'work.js" remove "<R>"'];
+  const order = ['work.js" check', 'verify-run.js" --repo "<R>"', 'cd "<haupt>"', 'work.js" remove "<R>"'];
   const positions = order.map((part) => body.indexOf(part));
   assert.ok(positions.every((position) => position !== -1), `fehlt: ${order[positions.indexOf(-1)]}`);
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
@@ -72,9 +72,9 @@ test('finishWork_Body_ChecksTestsThenRemoves', () => {
 
 test('finishWork_Body_SkipsTestRunWhenReportShowsGreenRunOnSameCode', () => {
   const { body } = skill('finish-work');
-  assert.ok(body.includes('`Gesamtlauf:`'));
-  assert.ok(body.includes('git diff --name-only <commit> HEAD'));
-  assert.match(body, /nur Doku/);
+  assert.ok(body.includes('--seit-gruen "<Umsetzungsbericht>"'));
+  assert.match(body, /nach einem grünen Gesamtlauf, wenn seither nur Doku geändert ist/);
+  for (const result of ['`rot`', '`docker`', '`keine`', '`gruen` mit `offen` > 0']) assert.ok(body.includes(result), result);
 });
 
 test('commitMessage_Skill_IsShippedAndInitSuggestsItAsCommitKonvention', () => {

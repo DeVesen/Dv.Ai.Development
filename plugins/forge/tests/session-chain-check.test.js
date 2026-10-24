@@ -1,5 +1,7 @@
 'use strict';
 
+const { VALID_SPEC } = require('./lib/spec-fixtures');
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -66,7 +68,7 @@ test('checkFinal_GrillCommitWithGlossary_AllowsReportedGlossaryFile', () => {
   // Arrange
   const repo = makeRepo();
   fs.writeFileSync(path.join(repo, 'CONTEXT.md'), '# Glossar\n');
-  const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: spec');
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', VALID_SPEC, 'docs: spec');
 
   // Act
   const result = checkFinal('grill', repo, { commit, spec: path.join(repo, 'docs/forge/x/spec.md'), dateien: [path.join(repo, 'CONTEXT.md')] });
@@ -178,4 +180,16 @@ test('checkFinal_PlanningWithPlan_HasNoDeviation', () => {
 
   // Assert
   assert.deepEqual(result.abweichungen, []);
+});
+
+test('checkFinal_GrillSpecWithAcGap_HoldsChain', () => {
+  // Arrange
+  const repo = makeRepo();
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', VALID_SPEC.replace('**AC-02**', '**AC-03**'), 'docs: spec');
+
+  // Act
+  const result = checkFinal('grill', repo, { commit, spec: path.join(repo, 'docs/forge/x/spec.md') });
+
+  // Assert
+  assert.deepEqual(result.abweichungen, ['Spec-Format docs/forge/x/spec.md: ac-luecke · AC-03: An Position 2 steht AC-03; AC-IDs laufen lückenlos ab AC-01.']);
 });

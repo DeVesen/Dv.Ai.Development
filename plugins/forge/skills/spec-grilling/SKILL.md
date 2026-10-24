@@ -10,15 +10,15 @@ argument-hint: <spec.md>
 Du prüfst eine geschriebene Spec nur auf Grenzfälle, Widersprüche und Lücken. Du entwirfst nichts Neues, schreibst keinen Plan und keinen Code.
 
 ## Ablauf
-1. **Lesen:** `<S>` fehlt → „Spec nicht gefunden: <S>“, Ende. Lies `<S>`, dann `<PLUGIN>/skills/spec-whiteboarding/references/grill-rounds.md`, `ac-rules.md` und `spec-format.md` im selben Ordner.
+1. **Lesen:** `<S>` fehlt → „Spec nicht gefunden: <S>“, Ende. Lies `<S>`, dann aus `<PLUGIN>/skills/spec-whiteboarding/references/` die Dateien `grill-rounds.md`, `ac-rules.md` und `spec-format.md`. Aus `grill-rounds.md` gelten Rundenformat und Abbruch-Regel; die Rahmenfragen entfallen.
 2. **Beantwortet:** Jeder W-Eintrag unter `## Entscheidungen` ist beantwortet. Eine Frage, die ein W-Eintrag beantwortet, stellst du nicht, auch nicht anders formuliert oder als Bestätigung.
 3. **Frontier:** nur
    - Grenzfälle: leere, doppelte oder fehlende Werte, Abbruch, Fehlerpfad, gleichzeitige Aktionen
    - Widersprüche zwischen Abschnitten, Akzeptanzkriterien und W-Einträgen
    - Lücken: Vorgabe ohne Akzeptanzkriterium, Akzeptanzkriterium ohne Vorgabe, Begriff ohne Bedeutung
 
-   Fragen im Rundenformat aus `grill-rounds.md`, Nummern ab Q1, je Runde die komplette Frontier. Ist sie leer, weiter mit 6.
-4. **Änderung:** Ändert eine Antwort die Spec, legst du je Stelle Abschnitt, Vorher und Nachher wörtlich vor. Du schreibst erst nach ausdrücklicher Bestätigung; bis dahin bleibt die Datei unverändert.
+   Zeilen mit Tag `ungeklärt` gehören zur Frontier, der Abbruch-Abschnitt nicht. Fragen im Rundenformat aus `grill-rounds.md`, Nummern ab Q1, je Runde die komplette Frontier; nach jeder Antwort neu berechnen. Ist sie leer, weiter mit 6.
+4. **Änderung:** Ändert eine Antwort die Spec, legst du je Stelle Abschnitt, Vorher und Nachher wörtlich vor. Du schreibst erst nach ausdrücklicher Bestätigung („ja“ oder gleichwertig zu genau dieser Änderung); bis dahin bleibt die Datei unverändert. Neue Zeilen folgen `spec-format.md`, der Kopf bleibt unverändert. Nach dem Schreiben `node "<PLUGIN>/scripts/spec-lint.js" "<S>"`; jeden `FEHLER` behebst du wie eine Änderung.
 5. **Entscheidung:** Jede neue Entscheidung des Menschen steht im selben bestätigten Schreibschritt als `- **W · <Kurztitel>** · Aussage — <Antwort>` unter `## Entscheidungen`.
 6. **Ende:** Liste der geänderten Stellen und der neuen W-Einträge, oder „Keine Änderung.“. Kein Commit, kein automatischer Start.
 

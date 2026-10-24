@@ -639,3 +639,13 @@ test('parseArgs_EmbeddedReportFlag_AcceptedForSpecPlanAndFollowup', () => {
   // Assert
   for (const [skill, args] of calls) assert.deepEqual(parseArgs(skill, args).flags['--bericht'], [args[args.length - 1]], skill);
 });
+
+test('specReview_ArtWithTypo_FailsInsteadOfAnchoredMode', () => {
+  const repo = makeRepo();
+  const spec = path.join(repo, 'docs', 'spec.md');
+  fs.mkdirSync(path.dirname(spec), { recursive: true });
+  fs.writeFileSync(spec, '# T\n\nStatus: bestätigt am 2026-01-01\nArt: frie\n\n## Was, wie, wo, warum\nx · Aussage\n');
+  const result = run(repo, 'spec-review', spec);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Art in der Spec ist weder frei noch verankert: frie/);
+});

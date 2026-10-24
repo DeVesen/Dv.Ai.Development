@@ -31,7 +31,7 @@ Bei `art=frei` prüfen alle Reviewer nur die innere Stimmigkeit; `profile` ist d
 Keine.
 
 ## Skript-Prüfungen
-Keine.
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/review-flow.js" script-checks <FLAGS> --runde <runde>`
 
 ## Nacharbeiter
 `dv-forge:spec-rework` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`

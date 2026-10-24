@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const { toPosix } = require('./posix');
 const { git, isDirty, sameDir, worktreeListed, relative } = require('./session-chain-git');
 const { SessionChainError } = require('./session-chain-store');
+const { lintSpec } = require('./spec-lint');
 
 // Dateien, die ein Commit der Etappe enthalten darf; null = beliebig (Code der Umsetzung).
 const EXPECTED = {
@@ -98,7 +99,22 @@ function requiredChecks(etappe, values) {
   return { ...emptyResult(), abweichungen: (REQUIRED[etappe] ?? []).filter(([key]) => !values[key]).map(([, text]) => text) };
 }
 
-const EXTRA = { umsetzung: implementationChecks, abschluss: finishChecks };
+// Etappen, die die Spec schreiben: Formfehler halten die Kette, Warnungen nennt nur `geprueft`.
+function specFormatChecks(repo, values) {
+  const result = emptyResult();
+  if (!values.spec || !fs.existsSync(values.spec)) return result;
+  const { issues, metrics } = lintSpec(fs.readFileSync(values.spec, 'utf8'));
+  const file = relative(repo, values.spec);
+  result.geprueft.push(`Spec-Format ${file}: ${metrics.fehler} Fehler, ${metrics.warnungen} Warnungen`);
+  result.abweichungen.push(...issues.filter((entry) => entry.severity === 'fehler')
+    .map((entry) => `Spec-Format ${file}: ${entry.rule} · ${entry.location}: ${entry.message}`));
+  return result;
+}
+
+const EXTRA = {
+  whiteboarding: specFormatChecks, grill: specFormatChecks, 'spec-nacharbeit': specFormatChecks,
+  umsetzung: implementationChecks, abschluss: finishChecks,
+};
 
 // `values`: commit, spec, plan, dateien (Glossar/ADR), branch, basis, worktree; `repo`: Haupt-Checkout.
 function checkFinal(etappe, repo, values) {

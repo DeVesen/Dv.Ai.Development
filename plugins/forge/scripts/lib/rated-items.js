@@ -43,12 +43,12 @@ function scriptReviewer(finding) {
   return typeof finding.check === 'string' ? `${SCRIPT_REVIEWER}:${finding.check}` : SCRIPT_REVIEWER;
 }
 
-// Befunde einer Skript-Prüfung sind immer 🔴 und entfallen nie.
+// Befunde einer Skript-Prüfung entfallen nie. Sie sind 🔴, außer die Prüfung stuft einen Kandidaten selbst als `color: yellow` ein.
 function scriptItems(dir, places) {
   const file = path.join(dir, SCRIPT_FILE);
   if (!fs.existsSync(file)) return [];
   return scriptFindings(file).map((finding) => ({
-    reviewer: scriptReviewer(finding), category: SCRIPT_CATEGORY, color: 'red', dropped: null, script: true,
+    reviewer: scriptReviewer(finding), category: SCRIPT_CATEGORY, color: finding.color === 'yellow' ? 'yellow' : 'red', dropped: null, script: true,
     place: placeOf(finding, places), finding,
   }));
 }

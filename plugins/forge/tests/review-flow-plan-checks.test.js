@@ -8,6 +8,8 @@ const { writeContext } = require('../scripts/workspace');
 const { finding, tempDir, setup, writeJsonFile, writeReviewer, flow, readJsonFile } = require('./lib/review-flow-fixture');
 const { PLAN_SPEC, SOURCE, ALL_ACS, planTask: task, planText: plan } = require('./lib/plan-fixtures');
 
+const { VALID_SPEC } = require('./lib/spec-fixtures');
+
 // Plan im Repo-Ordner, Kontext wie von prepare.js: Spec neben dem Plan, Repo ist der Test-Ordner.
 function planEnv(text, files = {}) {
   const root = tempDir('dv-forge-plan-');
@@ -73,9 +75,10 @@ test('scriptChecks_AcInNoTask_RateCountsScriptRedWithCheckAndCategory', () => {
   assert.deepEqual(scriptItemsOf(env), [{ label: 'AC-05', category: 'skript-prüfung', finding: 'ac-abdeckung/ac-fehlt-im-plan' }]);
 });
 
-test('scriptChecks_SpecReview_WritesNoFindings', () => {
+test('scriptChecks_SpecReview_ValidSpec_WritesNoFindings', () => {
   // Arrange
   const env = setup();
+  fs.writeFileSync(env.doc, VALID_SPEC);
 
   // Act
   const out = flow('script-checks', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc).stdout;
@@ -83,6 +86,21 @@ test('scriptChecks_SpecReview_WritesNoFindings', () => {
   // Assert
   assert.equal(out, 'SKRIPT befunde=0\n');
   assert.deepEqual(readRound(env, 'runde-1/skript-pruefung.json'), { findings: [] });
+});
+
+test('scriptChecks_SpecReview_AcGapAndMissingTag_RedGapYellowTag', () => {
+  // Arrange
+  const env = setup();
+  fs.writeFileSync(env.doc, VALID_SPEC.replace('**AC-02** Gegeben', '**AC-03** Gegeben').replace('Name, Ort. · Aussage', 'Name, Ort.'));
+
+  // Act
+  const out = flow('script-checks', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc).stdout;
+
+  // Assert
+  assert.equal(out, 'SKRIPT befunde=2\n');
+  const { findings } = readRound(env, 'runde-1/skript-pruefung.json');
+  assert.deepEqual(findings.map((entry) => [entry.location, entry.color, entry.check]).sort(),
+    [['AC-03', 'red', 'spec-format'], ['Soll-Vorgaben', 'yellow', 'spec-format']]);
 });
 
 test('rate_PlanWithoutTasks_PlanRedAndEveryAcRed', () => {

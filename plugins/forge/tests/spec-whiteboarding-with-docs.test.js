@@ -29,7 +29,7 @@ test('withDocs_Body_DefinesPrecedenceRules', () => {
   assert.match(body, /nur für brainstorming, Plan und Code/);
   assert.match(body, /ausschließlich die kanonischen Begriffe/);
   assert.match(body, /höchstens in dem W-Eintrag, der den Begriff festlegt/);
-  assert.match(body, /tragen `Historie`/);
+  assert.match(body, /`Historie` \(Glossar, Profile, ADRs\)/);
   assert.match(body, /`Art: verankert`/);
   assert.match(body, /nur der aktuelle Branch-Stand/);
   assert.ok(body.includes('forge-config.js" get Suche'));

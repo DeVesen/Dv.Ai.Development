@@ -194,6 +194,15 @@ function writeHints(workspace, notes) {
   fs.writeFileSync(path.join(workspace, 'hinweise.json'), `${JSON.stringify(notes, null, 2)}\n`);
 }
 
+// Ein Tippfehler in `Art:` darf den Review nicht still in einen anderen Modus schicken; nur eine fehlende Zeile gilt als verankert.
+// Die fehlende Zeile meldet die Skript-Prüfung spec-format als Befund.
+function specArt(text) {
+  const line = /^Art:[ \t]*(.*?)[ \t]*$/m.exec(text);
+  if (!line) return 'verankert';
+  if (line[1] !== 'frei' && line[1] !== 'verankert') throw new UsageError(`Art in der Spec ist weder frei noch verankert: ${line[1]}`);
+  return line[1];
+}
+
 function prepareSpecReview({ positional, flags }) {
   const spec = existingFile(path.resolve(positional[0]), 'Spec');
   const root = gitRoot(path.dirname(spec));
@@ -203,9 +212,9 @@ function prepareSpecReview({ positional, flags }) {
   const slug = path.basename(spec).toLowerCase() === 'spec.md' ? path.basename(path.dirname(spec)) : path.basename(spec, path.extname(spec));
   values.slug = slug;
   values.W = createWorkspace('spec-review', slug, root);
-  values.art = /^Art:\s*frei\s*$/m.test(fs.readFileSync(spec, 'utf8')) ? 'frei' : 'verankert';
   const warnings = [];
   const hints = [];
+  values.art = specArt(fs.readFileSync(spec, 'utf8'));
   if (values.art === 'frei') {
     values.profile = 'nein';
   } else {

@@ -35,7 +35,7 @@ test('specGrilling_Body_AsksOnlyEdgeCasesContradictionsAndGapsInRoundFormat', ()
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  for (const part of ['Grenzfälle:', 'Widersprüche zwischen Abschnitten', 'Lücken:', '<PLUGIN>/skills/spec-whiteboarding/references/grill-rounds.md', 'Rundenformat aus `grill-rounds.md`', 'je Runde die komplette Frontier']) {
+  for (const part of ['Grenzfälle:', 'Widersprüche zwischen Abschnitten', 'Lücken:', '<PLUGIN>/skills/spec-whiteboarding/references/', '`grill-rounds.md`', 'Rundenformat aus `grill-rounds.md`', 'je Runde die komplette Frontier']) {
     assert.ok(body.includes(part), part);
   }
 });
@@ -45,7 +45,9 @@ test('specGrilling_Body_WritesChangesOnlyAfterBeforeAfterAndConfirmation', () =>
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('legst du je Stelle Abschnitt, Vorher und Nachher wörtlich vor. Du schreibst erst nach ausdrücklicher Bestätigung; bis dahin bleibt die Datei unverändert.'));
+  assert.ok(body.includes('legst du je Stelle Abschnitt, Vorher und Nachher wörtlich vor. Du schreibst erst nach ausdrücklicher Bestätigung'));
+  assert.ok(body.includes('bis dahin bleibt die Datei unverändert.'));
+  assert.ok(body.includes('scripts/spec-lint.js'));
 });
 
 test('specGrilling_Body_RecordsNewDecisionsAsWEntries', () => {

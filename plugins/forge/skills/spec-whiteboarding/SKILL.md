@@ -18,11 +18,11 @@ Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergeb
 
 ## Ablauf
 
-1. **Rahmenfragen** und **Design-Tree:** Rahmenfragen nach `references/grill-rounds.md`, dann offene Punkte sammeln — Was/Wie/Wo/Warum, Verhalten danach, Soll-Vorgaben, Akzeptanzkriterien nach `references/ac-rules.md`.
+1. **Rahmenfragen** nach `references/grill-rounds.md`, dann offene Punkte sammeln — Was/Wie/Wo/Warum, Verhalten danach, Soll-Vorgaben, Akzeptanzkriterien nach `references/ac-rules.md`.
 2. **Runden:** je Runde die komplette Frontier im Format aus `references/grill-rounds.md`. Antworten verbuchen, Frontier neu berechnen, bis sie leer ist. Sagt der Mensch „trenn das auf“, gilt `references/split.md`.
 3. **Bestätigen:** Erst bei leerer Frontier Inhalt, Titel und Slug vorlegen, als vollständigen Entwurf. Erst nach ausdrücklicher Bestätigung aller drei schreiben.
 4. **Zielpfad:** `node "<PLUGIN>/scripts/forge-config.js" get Spec-Ablage`, Platzhalter `<datum>` und `<slug>` einsetzen. Existiert der Ordner bereits, nachfragen und einen abweichenden Slug vorschlagen. Nie überschreiben.
-5. **Schreiben:** ausschließlich als Datei am Zielpfad, Format nach `references/spec-format.md`, `Art: frei`. Die Datei ist wortgleich mit dem bestätigten Entwurf, (`Status`, `Basis` ausgenommen). Vorher Branch-Abgleich, Commit-Regeln: `references/spec-format.md`. Jede spätere Änderung legst du als Vorher/Nachher vor und schreibst sie erst nach erneuter Bestätigung.
+5. **Schreiben:** ausschließlich als Datei am Zielpfad, Format nach `references/spec-format.md`, `Art: frei`. Die Datei ist wortgleich mit dem bestätigten Entwurf (`Status`, `Basis` ausgenommen). Vorher Branch-Abgleich, Commit-Regeln: `references/spec-format.md`. Danach `node "<PLUGIN>/scripts/spec-lint.js" <pfad>`; jeden `FEHLER` beheben wie eine spätere Änderung. Jede spätere Änderung legst du als Vorher/Nachher vor und schreibst sie erst nach erneuter Bestätigung.
 6. **Übergabe:** mit genau diesen vier Punkten enden:
    - Pfad der Spec relativ zum Repo und aktueller Branch
    - kopierbarer Befehl `/dv-forge:spec-review <pfad>`
@@ -47,4 +47,3 @@ Will der Mensch aufhören, gilt die Abbruch-Regel aus `references/grill-rounds.m
 | Klasse, Dateipfad oder Architektur in der Spec | gehört in Plan und Umsetzung |
 | Empfehlung ohne Grund | Grund ausschreiben; bei `ungeklärt` als Vermutung |
 | Offener Punkt als W-Eintrag | in den Abbruch-Abschnitt, Tag `ungeklärt` |
-| Link oder Ticket-Nummer im Inhalt | zusammenfassen, Tag `Anhang`; Workitem nur im Kopf |

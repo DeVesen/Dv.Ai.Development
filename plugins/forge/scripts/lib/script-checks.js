@@ -2,12 +2,13 @@
 
 const path = require('node:path');
 const { PLAN_CHECKS } = require('./plan-checks');
+const { SPEC_CHECKS } = require('./spec-checks');
 const { readContext } = require('../workspace');
 const { SCRIPT_FILE } = require('./rated-items');
 const { readText, writeJson } = require('./flow-files');
 
 // Skript-Prüfungen je Review: { name, run(text, context) → [{ location, quote, category, consequence, rationale }] }.
-const SCRIPT_CHECKS = { 'spec-review': [], 'plan-review': PLAN_CHECKS };
+const SCRIPT_CHECKS = { 'spec-review': SPEC_CHECKS, 'plan-review': PLAN_CHECKS };
 
 function checkContext(options) {
   const { spec = null, repo = null } = readContext(options.workspace);

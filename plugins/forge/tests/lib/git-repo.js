@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { VALID_SPEC } = require('./spec-fixtures');
 
 function git(cwd, ...args) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -45,7 +46,7 @@ function addWorktree(repo, branch) {
 // Repo mit committeter Spec und Plan im Ordner docs/forge/x; Slug `x`.
 function repoWithPlan() {
   const repo = makeRepo();
-  commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'add spec');
+  commitFile(repo, 'docs/forge/x/spec.md', VALID_SPEC, 'add spec');
   commitFile(repo, 'docs/forge/x/plan.md', '# Plan\n\n### Task 1: Eins\n', 'add plan');
   return { repo, spec: path.join(repo, 'docs/forge/x/spec.md'), plan: path.join(repo, 'docs/forge/x/plan.md') };
 }

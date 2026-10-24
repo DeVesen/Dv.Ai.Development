@@ -37,7 +37,7 @@ test('skill_Body_NamesEveryBuildingBlockOfTheFlow', () => {
 
   // Assert
   for (const agent of [...AGENTS, 'dv-forge:spec-rework', 'dv-forge:spec-review-verifier', 'dv-forge:spec-review-scout']) assert.ok(body.includes(agent), `${agent} fehlt`);
-  for (const heading of ['## Beratend\nKeine.', '## Skript-Prüfungen\nKeine.', '## Nachprüfer\n`dv-forge:spec-review-verifier`', '## Scout\n`dv-forge:spec-review-scout`']) {
+  for (const heading of ['## Beratend\nKeine.', '## Skript-Prüfungen\n`node "${CLAUDE_PLUGIN_ROOT}/scripts/review-flow.js" script-checks <FLAGS> --runde <runde>`', '## Nachprüfer\n`dv-forge:spec-review-verifier`', '## Scout\n`dv-forge:spec-review-scout`']) {
     assert.ok(body.includes(heading), `${heading} fehlt`);
   }
   assert.ok(body.includes('Dokument `<DOC>` = `<S>`, Rolle `spec-review`'));

@@ -28,7 +28,7 @@ Du räumst zuerst Stolperfallen aus dem Projekt-Setup und schreibst dann die Pro
 | `Worktree` | `ja` = Worktree vor der Umsetzung | `nein` |
 | `Branch-Schema` | Muster mit `<slug>`, optional `<workitem>`; `<slug>` = Plan-Dateiname ohne Datum und ohne doppelte Workitem-Nummer | `feature/<slug>` |
 | `Worktree-Ordner` | relativ zur Projektwurzel | `../<repo>-worktrees` |
-| `Planungs-Skills` | Skill-Namen, mit Komma getrennt; `<skill> @<pfad>` nur, wenn der Plan `<pfad>` berührt | leer: Plan-Writing fragt |
+| `Planungs-Skills` | Skill-Namen, mit Komma getrennt; `<skill> @<pfad>` nur, wenn der Plan `<pfad>` berührt | leer: keine |
 | `Build`, `Test`, `Lint` | Befehl, z. B. `npm test`; mehrere mit ` ; ` | leer |
 | `Suche` | Such- und Index-Werkzeuge | leer |
 | `Commit-Konvention` | ein Satz: Regel oder Skill, z. B. `dv-forge:commit-message` | leer |

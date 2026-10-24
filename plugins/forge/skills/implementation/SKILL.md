@@ -23,7 +23,7 @@ Du hältst nur an und fragst bei
 
 ## Start
 1. `node "<PLUGIN>/scripts/prepare.js" implementation $ARGUMENTS` (nur Pfade); Exit ungleich 0: Meldung ausgeben, Ende. Liefert `P`, `S` und `slug`.
-2. `node "<PLUGIN>/scripts/work.js" start <slug> --spec "<S>" --plan "<P>"`; Exit ungleich 0: Meldung ausgeben, Ende. Ab jetzt gelten die ausgegebenen `R`, `P` und `S`; lies Plan und Spec. Bei `modus=worktree`: `cd "<R>"`. Bei `modus=vor-ort` und `standard=true` fragst du einmal, ob auf dem Standard-Branch gearbeitet wird; bei Nein `git switch -c <vorschlag>`.
+2. `node "<PLUGIN>/scripts/work.js" start <slug> --spec "<S>" --plan "<P>"`; Exit ungleich 0: Meldung ausgeben, Ende. Ab jetzt gelten die ausgegebenen `R`, `P` und `S`; lies Plan und Spec. Bei `modus=worktree`: `cd "<R>"`. Bei `modus=vor-ort` und `standard=true` fragst du einmal, ob auf dem Standard-Branch gearbeitet wird; bei Nein `node "<PLUGIN>/scripts/work.js" switch <vorschlag>`.
 3. Bei `drift=` (Plan-Dateien seit der Basis geändert) oder `workitem-konflikt=` fragst du einmal, ob trotzdem umgesetzt wird.
 4. `node "<PLUGIN>/scripts/base-tag.js" ensure <slug>`; Exit ungleich 0: Meldung ausgeben, Ende.
 5. `W` = Ausgabe von `node "<PLUGIN>/scripts/workspace.js" create implementation <slug>`; Ledger nach `ledger.md` anlegen oder fortsetzen.

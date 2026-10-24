@@ -10,7 +10,7 @@ const { ConfigError, readConfig, branchFor, branchCandidates, workitemOf, branch
 const { describeTasks, PlanError } = require('./plan-tasks');
 
 const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const USAGE = 'Aufruf: node work.js start <slug> [--spec <pfad>] [--plan <pfad>] | check | remove [<worktree>]\n';
+const USAGE = 'Aufruf: node work.js start <slug> [--spec <pfad>] [--plan <pfad>] | switch <branch> | check | remove [<worktree>]\n';
 
 class WorkError extends Error {}
 
@@ -257,6 +257,18 @@ function remove(cwd = process.cwd()) {
   return { entfernt: state.R, branch: state.branch, commit, haupt: state.haupt };
 }
 
+// Neuer Branch vor Ort statt des Standard-Branches; wie jeder Ortswechsel über das Skript, damit die Baseline zum Branch passt.
+function switchBranch(branch, cwd = process.cwd()) {
+  const root = toplevel(cwd);
+  if (!git(root, ['check-ref-format', '--branch', branch]).ok) throw new WorkError(`Kein gültiger Branch-Name: ${branch}`);
+  if (hasBranchRef(root, branch)) throw new WorkError(`Branch ${branch} existiert schon. Bitte einen anderen Namen wählen.`);
+  const switched = git(root, ['switch', '--quiet', '-c', branch]);
+  if (!switched.ok) throw new WorkError(`Branch ${branch} konnte nicht angelegt werden: ${switched.err}`);
+  fs.rmSync(baselinePath(root), { force: true });
+  saveBaseline(root, branch);
+  return { modus: 'vor-ort', branch, standard: 'false', R: root };
+}
+
 function parseStart(args) {
   const [slug, ...rest] = args;
   if (!SLUG.test(slug ?? '')) return null;
@@ -274,6 +286,7 @@ function run(command, args) {
     const parsed = parseStart(args);
     return parsed && (() => start(parsed.slug, parsed.options));
   }
+  if (command === 'switch' && args.length === 1) return () => switchBranch(args[0]);
   if (command === 'check' && args.length === 0) return () => check();
   if (command === 'remove' && args.length <= 1) return () => remove(args[0] ? path.resolve(args[0]) : process.cwd());
   return null;
@@ -297,4 +310,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { WorkError, start, check, remove, removeDirectory, isLinkedWorktree };
+module.exports = { WorkError, start, switchBranch, check, remove, removeDirectory, isLinkedWorktree };

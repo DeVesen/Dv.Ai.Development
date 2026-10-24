@@ -1,7 +1,7 @@
 ---
 name: plan-review
 description: Use when a dv-forge plan.md should run through the review of parallel reviewers against its spec and the code, one rework and one verification round, with a script deciding colors, stops and status.
-argument-hint: <plan.md> [spec.md] [--only <reviewer,...>] [--bericht <datei>]
+argument-hint: <plan.md> [spec.md] [--only <reviewer,...>] [--bericht <datei>] [--ablage <etappe>]
 ---
 
 # Plan-Review (Orchestrator)
@@ -47,4 +47,4 @@ Keine.
 ## Bericht
 Titel `Plan-Review`, Artefakt `<P>`; den Rest liefert `report`. Eine Spec-Rückfrage hält den Lauf nicht an; sie steht im Bericht unter den offenen Fragen.
 
-Commit-Prüfung nach dem Freigeben des Guards, bei `sauber nach Runde 1` und `sauber nach Nachprüfung`: `git status --porcelain -- "<S>" "<P>"`. Leere Ausgabe: beide sind committet, keine Frage. Sonst: `Plan ist bereit. Soll ich Spec und Plan jetzt committen?` Nach dem Ja committest du beide Dateien, Nachricht nach `Commit-Konvention` aus `node "${CLAUDE_PLUGIN_ROOT}/scripts/forge-config.js" get Commit-Konvention`, mit der Workitem-Nummer der Spec, falls sie eine nennt. Bei Nein oder ohne Antwort: kein Commit. Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben.
+Commit-Prüfung nach dem Freigeben des Guards, bei `sauber nach Runde 1` und `sauber nach Nachprüfung`: `git status --porcelain -- "<S>" "<P>"`. Leere Ausgabe: beide sind committet, keine Frage. Sonst steht direkt nach dem Bericht als einzige weitere Zeile: `Plan ist bereit. Soll ich Spec und Plan jetzt committen?` Nach dem Ja committest du beide Dateien, Nachricht nach `Commit-Konvention` aus `node "${CLAUDE_PLUGIN_ROOT}/scripts/forge-config.js" get Commit-Konvention`, mit der Workitem-Nummer der Spec, falls sie eine nennt. Bei Nein oder ohne Antwort: kein Commit. Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben.

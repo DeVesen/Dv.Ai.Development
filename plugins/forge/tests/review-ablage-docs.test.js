@@ -33,7 +33,7 @@ test('planReview_AblageSection_PointsToFlowAndKeepsStandaloneRun', () => {
 
   // Assert
   assert.ok(body.includes('## Ablage\nNennt `$ARGUMENTS` `--ablage <E>`, liefert `prepare.js` die Zeile `ablage=<E>`; dann gilt die Ablage aus `flow.md`, Abschnitt „Ende“. Ohne `--ablage` läuft alles wie beschrieben.'));
-  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--only <reviewer,...>] [--bericht <datei>]');
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--only <reviewer,...>] [--bericht <datei>] [--ablage <etappe>]');
 });
 
 test('reviewFollowup_Body_NamesAblageOption', () => {

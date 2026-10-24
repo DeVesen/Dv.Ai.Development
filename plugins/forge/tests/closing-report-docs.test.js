@@ -113,7 +113,7 @@ test('flow_End_EmbeddedRunWritesDataSkipsShowAndPrintsOneLine', () => {
 test('reviewSkills_EmbeddedSection_NamesBerichtAndKeepsStandaloneUnchanged', () => {
   for (const file of [SPEC_SKILL, PLAN_SKILL]) {
     const { fields, body } = readMarkdown(file);
-    assert.ok(fields['argument-hint'].endsWith('[--bericht <datei>]'), file);
+    assert.ok(fields['argument-hint'].includes('[--bericht <datei>]'), file);
     const embedded = section(body, 'Eingebetteter Lauf');
     assert.ok(embedded.includes('Ohne `--bericht` läuft alles wie beschrieben.'), file);
   }

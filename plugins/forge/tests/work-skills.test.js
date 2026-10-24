@@ -2,6 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const { readMarkdown, wordCount } = require('./lib/markdown');
 const { DEFAULTS } = require('../scripts/forge-config');
@@ -57,7 +58,7 @@ test('startWork_Body_DelegatesDecisionToScript', () => {
   const { body } = skill('start-work');
   assert.ok(body.includes('prepare.js" implementation $ARGUMENTS'));
   assert.ok(body.includes('work.js" start <slug> --spec "<S>" --plan "<P>"'));
-  assert.ok(body.includes('git switch -c <vorschlag>'));
+  assert.ok(body.includes('work.js" switch <vorschlag>'));
   assert.ok(body.includes('/dv-forge:implementation <P>'));
 });
 
@@ -95,4 +96,13 @@ test('finishWork_Body_RemovesChainEntryOnlyAfterSuccessfulEndOfBothCases', () =>
   assert.ok(body.includes('Nur nach erfolgreichem Ende beider Fälle'));
   assert.ok(body.includes('Brach ein Schritt ab, bleibt der Eintrag.'));
   assert.equal(body.match(/Weiter mit 5\./g).length, 2);
+});
+
+test('startWork_Body_HandlesEveryOutputKeyOfWorkStart', () => {
+  const { body } = skill('start-work');
+  for (const key of ['`modus=worktree`', '`standard=true`', '`drift=<datei>`', '`workitem-konflikt=<nr>`', '`angehaengt`', '`fortgesetzt`', '`Nicht committet:`']) {
+    assert.ok(body.includes(key), key);
+  }
+  const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'work.js'), 'utf8');
+  for (const key of ["values['workitem-konflikt']", '{ ...mapped, drift }', "'angehaengt'", "'fortgesetzt'", '`Nicht committet:']) assert.ok(source.includes(key), key);
 });

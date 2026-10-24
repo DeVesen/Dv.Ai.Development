@@ -85,7 +85,7 @@ test('skill_Body_FiveStopReasonsAndWEntryGuard', () => {
 
 test('skill_Body_BranchRuleAndHandover', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('git switch -c <vorschlag>'));
+  assert.ok(body.includes('work.js" switch <vorschlag>'));
   assert.ok(body.includes('cd "<R>"'));
   assert.ok(body.includes('/dv-forge:implementation-review <P>'));
   assert.ok(body.includes('workspace.js" remove implementation <slug>'));

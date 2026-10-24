@@ -70,7 +70,7 @@ Jedes Ende, auch nach einem Ausfall:
 1. `node "<PLUGIN>/scripts/review-flow.js" report <FLAGS> --titel "<Titel>" --artefakt "<Artefakt>"`. Die Zeile `ENDE <status>` braucht der Skill für eigene Schritte (Plan: Commit-Prüfung).
 2. `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"`.
 3. Nur wenn `report` ohne Exit 1 lief: `node "<PLUGIN>/scripts/guard-orchestrator.js" show <SESSION> --file "<W>/abschluss/bericht.md"`. Dann `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.
-4. Bericht im Chat: als letzte Handlung und genau einmal, ohne vorherige Ausgabe im selben Zug, der Text nach `=== BERICHT ===` unverändert. Nichts committen. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
+4. Bericht im Chat: als letzte Handlung und genau einmal, ohne vorherige Ausgabe im selben Zug, der Text nach `=== BERICHT ===` unverändert. Danach höchstens die Commit-Frage des Skills. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
 
 **Eingebetteter Lauf** (der Skill nennt eine Bericht-Datei `<BD>`): Ein Orchestrator ruft dich auf und zeigt am Ende selbst einen Bericht. In Schritt 1 hängst du `--bericht "<BD>"` an; die Ausgabe sind vier Zeilen `ENDE <status>`, `ERGEBNIS <ergebnis>`, `FOLLOWUP <ja|nein>` und `BERICHT <BD>`. In Schritt 3 entfällt `show`. Statt Schritt 4 nur die eine Zeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`; keine Commit-Prüfung, nichts weiter, der Aufrufer macht weiter.
 

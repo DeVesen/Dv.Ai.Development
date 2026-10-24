@@ -262,3 +262,13 @@ test('remove_LockedWorktree_KeepsItInsteadOfForcingDeletion', () => {
   assert.match(result.stderr, /gesperrt/);
   assert.ok(fs.existsSync(dir));
 });
+
+test('switchBranch_NewName_SwitchesAndKeepsBaselineOfNewBranch', () => {
+  const { switchBranch } = require('../scripts/work.js');
+  const repo = makeRepo();
+  const result = switchBranch('feature/neu', repo);
+  assert.deepEqual([result.branch, result.modus], ['feature/neu', 'vor-ort']);
+  assert.equal(git(repo, 'branch', '--show-current'), 'feature/neu');
+  assert.throws(() => switchBranch('feature/neu', repo), /existiert schon/);
+  assert.throws(() => switchBranch('kaputt..name', repo), /Kein gültiger Branch-Name/);
+});

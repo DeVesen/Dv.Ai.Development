@@ -193,3 +193,17 @@ test('checkFinal_GrillSpecWithAcGap_HoldsChain', () => {
   // Assert
   assert.deepEqual(result.abweichungen, ['Spec-Format docs/forge/x/spec.md: ac-luecke · AC-03: An Position 2 steht AC-03; AC-IDs laufen lückenlos ab AC-01.']);
 });
+
+test('checkFinal_CommitFromOtherBranch_IsDeviation', () => {
+  // Arrange
+  const repo = makeRepo();
+  git(repo, 'switch', '--quiet', '-c', 'seite');
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', VALID_SPEC, 'docs: spec');
+  git(repo, 'switch', '--quiet', 'main');
+
+  // Act
+  const result = checkFinal('spec-review', repo, { commit, spec: path.join(repo, 'docs/forge/x/spec.md') });
+
+  // Assert
+  assert.deepEqual(result.abweichungen.slice(0, 1), [`Commit ${commit} liegt nicht auf HEAD`]);
+});

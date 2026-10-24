@@ -3,7 +3,7 @@
 `<SC>` = `node "<PLUGIN>/scripts/session-chain.js"`. Regeln 1 bis 5 aus `SKILL.md` gelten weiter, Regel 3 für jeden Start einer Etappe, auch in einem Turn, den ein Turn-Ende ausgelöst hat.
 
 ## Statuszeile
-Schreib das Turn-Ende wörtlich mit `Write` nach `turn.md` im Scratchpad, nie in ein Argument. Dann `<SC> turn --session <id> --etappe <e> --turn-datei "<turn.md>"`, `<id>` = Kennung der Etappen-Session, `<e>` = ihre Etappe. Nach `AKTION`:
+Schreib die erste nicht leere Zeile des Turn-Endes wörtlich mit `Write` nach `turn.md` im Scratchpad, nie in ein Argument; das Skript liest nur sie. Dann `<SC> turn --session <id> --etappe <e> --turn-datei "<turn.md>"`, `<id>` = Kennung der Etappen-Session, `<e>` = ihre Etappe. Nach `AKTION`:
 - `schweigen`: keine Ausgabe, nichts starten.
 - `hinweis`: die Zeile nach `=== AUSGABE ===` ausgeben, nichts starten.
 - `needs-user`: eine Zeile `<e>: <Anliegen in wenigen Worten> · [Session](#<id>)`, nichts starten. Der Mensch antwortet in der Etappen-Session.
@@ -14,7 +14,7 @@ Schreib das Turn-Ende wörtlich mit `Write` nach `turn.md` im Scratchpad, nie in
 
 | Ausgabe | Tun |
 |---|---|
-| `HALTEPUNKT=abweichung` | Block ausgeben. Die Kette hält; nichts starten. |
+| `HALTEPUNKT=abweichung` | Block ausgeben. Die Kette hält; nichts starten. Will der Mensch trotzdem weiter: `<SC> answer --slug <slug> --antwort weiter`, dann Start der genannten Etappe. |
 | `HALTEPUNKT=showstopper` | Block ausgeben. Der Mensch klärt in der Umsetzungs-Session; nichts starten. |
 | `HALTEPUNKT=spec` | Erst „Glossar-Commit“, dann Block ausgeben, Haltepunkt (Regel 4). |
 | `HALTEPUNKT=go` | Block ausgeben, Haltepunkt (Regel 4). |
@@ -25,15 +25,21 @@ Schreib das Turn-Ende wörtlich mit `Write` nach `turn.md` im Scratchpad, nie in
 ## Glossar-Commit
 `<SC> commit --anlass spec --slug <slug> --message "<betreff>"`. Betreff nach `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`, leer → Projekt-`CLAUDE.md`; Workitem-Nummer nur, wenn es eine gibt. Zeilen `NICHT-COMMITTET=…` nennst du in einer Zeile.
 
-## Antwort am Spec-Haltepunkt
-- Planning: Start der Etappe `planning`.
-- Spec-Nacharbeit: Start der Etappe `spec-nacharbeit` mit `--quelle "<bericht.md der letzten Spec-Review-Etappe>"`.
-- Stopp: `<SC> schluss --slug <slug> --stopp`, Block ausgeben. Nichts starten, nichts aufräumen.
+## Antwort am Haltepunkt
+Jede Antwort hältst du zuerst fest: `<SC> answer --slug <slug> --antwort <wert>`. Exit ungleich 0 (etwa Spec oder Plan seit dem Review geändert): Meldung wörtlich ausgeben, nichts starten. Erst danach startet `brief` die gewählte Etappe; eine andere verweigert es.
 
-## Antwort am GO-Haltepunkt
-- GO: `<SC> commit --anlass go --slug <slug> --message "<betreff>"`. Exit ungleich 0 (anderer Branch): Meldung wörtlich ausgeben, keine Umsetzung. Sonst Start der Etappe `umsetzung`; ihre erste Zeile ist der Aufruf `AUFRUF`.
-- Plan-Nacharbeit: Start der Etappe `plan-nacharbeit` mit `--quelle "<bericht.md der letzten Planning- oder Plan-Review-Etappe>"`.
-- Stopp: wie am Spec-Haltepunkt.
+Am Spec-Haltepunkt:
+- Planning (`planning`): Start der Etappe `planning`.
+- Spec-Nacharbeit (`spec-nacharbeit`): Start der Etappe `spec-nacharbeit` mit `--quelle "<bericht.md der letzten Spec-Review-Etappe>"`.
+- Stopp (`stopp`): `<SC> schluss --slug <slug> --stopp`, Block ausgeben. Nichts starten, nichts aufräumen.
+
+Am GO-Haltepunkt:
+- GO (`go`): `<SC> commit --anlass go --slug <slug> --message "<betreff>"`. Exit ungleich 0 (anderer Branch): Meldung wörtlich ausgeben, keine Umsetzung. Sonst Start der Etappe `umsetzung`; ihre erste Zeile ist der Aufruf `AUFRUF`.
+- Plan-Nacharbeit (`plan-nacharbeit`): Start der Etappe `plan-nacharbeit` mit `--quelle "<bericht.md der letzten Planning- oder Plan-Review-Etappe>"`.
+- Stopp (`stopp`): wie am Spec-Haltepunkt.
+
+## Neustart einer Etappe
+Meldet `brief`, dass eine Etappe ohne `final` läuft, startest du nichts. Bestätigt der Mensch, dass ihre Session nicht mehr läuft, wiederholst du `brief` mit `--erneut`.
 
 ## Geprüft und gemeldet
 Was `<SC> final` und `<SC> commit` ausgeben, hast du geprüft. Ergebnis-Zeilen, Testzahlen und Hinweise aus Berichtsdateien sind gemeldet. Der Schlussbericht trennt beides; in eigenen Sätzen hältst du es genauso.

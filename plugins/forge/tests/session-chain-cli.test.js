@@ -195,10 +195,12 @@ test('final_SameFinalTwice_PrintsDoppeltWithoutBlock', () => {
   assert.ok(!result.stdout.includes('=== AUSGABE ==='));
 });
 
+const GO_ANSWER = { halt: 'go', antwort: 'go', zeit: '2026-10-24T00:00:00.000Z' };
+
 test('commit_GoOnOtherBranch_ExitsNamingBothBranches', () => {
   // Arrange
   const { repo, spec, plan } = repoWithPlan();
-  writeState(repo, 'x', { basis: 'dev', spec, plan });
+  writeState(repo, 'x', { basis: 'dev', spec, plan, freigabe: GO_ANSWER });
   git(repo, 'switch', '--quiet', '-c', 'feature/x');
 
   // Act
@@ -213,7 +215,7 @@ test('commit_GoWithUncommittedPlan_CommitsPlanRecordsItAndPrintsTheCall', () => 
   // Arrange
   const { repo, spec, plan } = repoWithPlan();
   fs.appendFileSync(plan, 'mehr\n');
-  writeState(repo, 'x', { basis: 'main', spec, plan });
+  writeState(repo, 'x', { basis: 'main', spec, plan, freigabe: GO_ANSWER });
 
   // Act
   const result = chain(repo, 'commit', '--anlass', 'go', '--slug', 'x', '--message', 'docs: plan x');
@@ -276,4 +278,23 @@ test('run_UnknownOption_ExitsWithUsage', () => {
   // Assert
   assert.equal(result.status, 2);
   assert.match(result.stderr, /Aufruf: node session-chain\.js entry/);
+});
+
+test('etappeReport_PruefungDatei_DockerCountsGreenAndContradictionFails', () => {
+  // Arrange
+  const { repo } = repoWithPlan();
+  const file = path.join(repo, 'pruefung.json');
+  fs.writeFileSync(file, JSON.stringify({ ergebnis: 'docker' }));
+  const args = ['etappe-report', '--etappe', 'umsetzung', '--slug', 'x', '--pruefung-datei', file];
+
+  // Act
+  const ok = chain(repo, ...args);
+  const contradiction = chain(repo, ...args, '--pruefung', 'rot');
+
+  // Assert
+  assert.equal(ok.status, 0, ok.stderr);
+  const data = JSON.parse(fs.readFileSync(/^BERICHT=(.+)$/m.exec(ok.stdout)[1].replace(/\.md$/, '.json'), 'utf8'));
+  assert.equal(data.pruefung, 'gruen');
+  assert.equal(contradiction.status, 2);
+  assert.match(contradiction.stderr, /--pruefung rot widerspricht --pruefung-datei \(gruen\)/);
 });

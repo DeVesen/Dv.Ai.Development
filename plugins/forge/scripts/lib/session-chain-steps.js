@@ -13,6 +13,7 @@ const { recommendation, nextStep } = require('./session-chain-decide');
 const { checkFinal } = require('./session-chain-check');
 const { specHalt, goHalt, showstopperText, deviationText, finalReport } = require('./session-chain-text');
 const { readData } = require('./session-chain-report');
+const { artifactHashes } = require('./session-chain-gate');
 
 const VALUE_KEYS = ['spec', 'plan', 'worktree', 'branch'];
 const PLAN_RESULTS = ['planning', 'plan-review'];
@@ -31,9 +32,10 @@ function stateOf(cwd, slug) {
   return state;
 }
 
-// Legt den Zustand an oder ergänzt ihn um die übergebenen Werte (Basis-Branch, Workitem, Pfade).
+// Legt den Zustand an oder ergänzt ihn um die übergebenen Werte (Basis-Branch, Workitem, Pfade). `set` ist ein neuer Einstieg
+// des Menschen: offener Haltepunkt, Freigabe, erwartete und laufende Etappe gelten danach nicht mehr.
 function setState(input, cwd) {
-  const state = readState(cwd, input.slug) ?? emptyState(input.slug);
+  const state = { ...(readState(cwd, input.slug) ?? emptyState(input.slug)), halt: null, freigabe: null, naechste: null, gestartet: null };
   for (const key of ['basis', 'wi', 'branch']) if (input[key]) state[key] = input[key];
   for (const key of ['spec', 'plan', 'worktree']) if (input[key]) state[key] = absolute(input[key]);
   return writeState(cwd, input.slug, state);
@@ -105,15 +107,20 @@ function nextAfterFinal(etappe, data, check) {
 }
 
 // Schreibt das `final` im Zustand fort: offene Punkte, Etappe mit Ergebnis, Entscheidungen, Dateien, aktuelle Etappe und Halt.
-function applyFinal(state, { etappe, input, data, check, schluessel, next }) {
+// Spec- und Plan-Hash halten den Stand fest, auf den sich ein späterer Haltepunkt bezieht (session-chain-gate.js).
+function applyFinal(state, { etappe, input, data, check, schluessel, next, now = new Date() }) {
   state.offen = mergePoints(state.offen, etappe, openPoints(readParts(path.dirname(path.resolve(input.bericht))), etappe));
   state.etappen = [...(state.etappen ?? []), {
     etappe, session: input.session, ergebnis: data.ergebnis, tests: data.tests, commit: input.commit, geprueft: check.geprueft, bericht: toPosix(path.resolve(input.bericht)), schluessel,
+    hashes: artifactHashes(state), gestartet: state.gestartet?.etappe === etappe ? state.gestartet.zeit : null, zeit: now.toISOString(),
   }];
   state.entscheidungen = [...(state.entscheidungen ?? []), ...(data.entscheidungen ?? []).map((text) => ({ etappe, text }))];
   state.dateien = [...(state.dateien ?? []), ...(data.dateien ?? []).map((pfad) => ({ etappe, pfad }))];
   state.etappe = etappe;
   state.halt = next.halt ?? null;
+  state.naechste = next.start ?? null;
+  state.gestartet = null;
+  state.freigabe = null;
   return state;
 }
 

@@ -92,7 +92,7 @@ const ETAPPEN_BRIEFS = {
       ablage('umsetzung'),
       'Einen Showstopper klärst du mit dem Menschen hier.',
       'Geh vor der Berichtsdatei die Akzeptanz-Findings des Reviews aller Farben (🔴, 🟡, 🟢) durch und melde jedes Akzeptanzkriterium ohne beweisenden Test mit `--ac-ohne-test <AC-nn>`, auch wenn das Review es nur als 🟡 führt. Integrationspunkte ohne Test sind davon ausgenommen.',
-      'Berichtsdatei mit `--worktree "<R>"`, `--branch <branch>`, `--pruefung <gruen|rot|keine>`, `--luecke "<befehl>"` je nicht lauffähigem Build-, Test- oder Lint-Befehl und `--ac-ohne-test <AC-nn>` je Akzeptanzkriterium ohne beweisenden Test; `--bericht` ist sein Abschlussbericht.',
+      'Berichtsdatei mit `--worktree "<R>"`, `--branch <branch>`, `--pruefung-datei "<pruefung.json des Orchestrators>"` (ohne Prüflauf `--pruefung keine`), `--luecke "<befehl>"` je nicht lauffähigem Build-, Test- oder Lint-Befehl und `--ac-ohne-test <AC-nn>` je Akzeptanzkriterium ohne beweisenden Test; `--bericht` ist sein Abschlussbericht.',
     ],
   },
   abschluss: {

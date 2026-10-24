@@ -74,7 +74,7 @@ test('sessionOrchestrator_Body_HoldsAtHaltepunktUntilTheHumanAnswers', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('**Haltepunkt:** Block ausgeben, Turn beenden; im Next-Step-Feld Knöpfe mit der Empfehlung zuerst. Bis zur Antwort startest du nichts.'));
+  assert.ok(body.includes('**Haltepunkt:** Block ausgeben, Turn beenden; im Next-Step-Feld Knöpfe mit der Empfehlung zuerst. Bis zur Antwort startest du nichts; sie hältst du mit `<SC> answer` fest.'));
   assert.ok(body.includes('`etappe=go`: `<SC> halt --slug <slug> --art go`, Haltepunkt (Regel 4).'));
 });
 
@@ -102,7 +102,7 @@ test('sessionOrchestratorFlow_TurnEnd_SilentOnInProgressAndOneLineOnNeedsUser', 
   const text = readText(FLOW);
 
   // Assert
-  assert.ok(text.includes('Schreib das Turn-Ende wörtlich mit `Write` nach `turn.md` im Scratchpad, nie in ein Argument. Dann `<SC> turn --session <id> --etappe <e> --turn-datei "<turn.md>"`'));
+  assert.ok(text.includes('Schreib die erste nicht leere Zeile des Turn-Endes wörtlich mit `Write` nach `turn.md` im Scratchpad, nie in ein Argument; das Skript liest nur sie. Dann `<SC> turn --session <id> --etappe <e> --turn-datei "<turn.md>"`'));
   assert.ok(text.includes('- `schweigen`: keine Ausgabe, nichts starten.'));
   assert.ok(text.includes('- `needs-user`: eine Zeile `<e>: <Anliegen in wenigen Worten> · [Session](#<id>)`, nichts starten.'));
 });
@@ -112,7 +112,7 @@ test('sessionOrchestratorFlow_Final_ChecksAgainstGitBeforeAnyNextStage', () => {
   const text = readText(FLOW);
 
   // Assert
-  for (const part of ['`<SC> final --etappe <e> --session <id> --bericht "<BERICHT>" --commit <COMMIT>`', '| `HALTEPUNKT=abweichung` | Block ausgeben. Die Kette hält; nichts starten. |',
+  for (const part of ['`<SC> final --etappe <e> --session <id> --bericht "<BERICHT>" --commit <COMMIT>`', '| `HALTEPUNKT=abweichung` | Block ausgeben. Die Kette hält; nichts starten.',
     '| `HALTEPUNKT=showstopper` |', '| `WEITER=doppelt` | Schweigen: dieses `final` ist schon verarbeitet; nichts starten. |', '| `WEITER=<etappe>` | Start dieser Etappe (Regel 3)',
     '| `WEITER=ende` | Block (Schlussbericht) ausgeben.']) {
     assert.ok(text.includes(part), part);
@@ -133,7 +133,7 @@ test('sessionOrchestratorFlow_Go_CommitsThenStartsTheShownCall', () => {
   const text = readText(FLOW);
 
   // Assert
-  assert.ok(text.includes('- GO: `<SC> commit --anlass go --slug <slug> --message "<betreff>"`. Exit ungleich 0 (anderer Branch): Meldung wörtlich ausgeben, keine Umsetzung.'));
+  assert.ok(text.includes('- GO (`go`): `<SC> commit --anlass go --slug <slug> --message "<betreff>"`. Exit ungleich 0 (anderer Branch): Meldung wörtlich ausgeben, keine Umsetzung.'));
   assert.ok(text.includes('Sonst Start der Etappe `umsetzung`; ihre erste Zeile ist der Aufruf `AUFRUF`.'));
 });
 
@@ -142,7 +142,7 @@ test('sessionOrchestratorFlow_Stopp_ShowsFinalReportAndCleansNothing', () => {
   const text = readText(FLOW);
 
   // Assert
-  assert.ok(text.includes('- Stopp: `<SC> schluss --slug <slug> --stopp`, Block ausgeben. Nichts starten, nichts aufräumen.'));
+  assert.ok(text.includes('- Stopp (`stopp`): `<SC> schluss --slug <slug> --stopp`, Block ausgeben. Nichts starten, nichts aufräumen.'));
 });
 
 test('sessionOrchestratorFlow_Report_SeparatesCheckedFromReported', () => {
@@ -151,4 +151,10 @@ test('sessionOrchestratorFlow_Report_SeparatesCheckedFromReported', () => {
 
   // Assert
   assert.ok(text.includes('Was `<SC> final` und `<SC> commit` ausgeben, hast du geprüft. Ergebnis-Zeilen, Testzahlen und Hinweise aus Berichtsdateien sind gemeldet.'));
+});
+
+test('sessionOrchestratorFlow_Halt_RecordsAnswerBeforeStart', () => {
+  const text = readText(FLOW);
+  assert.ok(text.includes('Jede Antwort hältst du zuerst fest: `<SC> answer --slug <slug> --antwort <wert>`.'));
+  assert.ok(text.includes('wiederholst du `brief` mit `--erneut`'));
 });

@@ -103,3 +103,8 @@ test('writeTurns_CountPerSession_ReadBackFromWorktree', () => {
   assert.equal(readTurns(repo, 'local_neu'), 0);
   assert.throws(() => readTurns(repo, '../x'), SessionChainError);
 });
+
+test('turnAction_FourthAndSixthTurnEndWithoutStatus_HintAgainEveryThird', () => {
+  assert.equal(turnAction(3, null).aktion, 'schweigen');
+  assert.equal(turnAction(5, null).aktion, 'hinweis');
+});

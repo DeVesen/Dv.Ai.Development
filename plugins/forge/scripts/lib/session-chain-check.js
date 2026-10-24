@@ -35,9 +35,18 @@ function record(result, ok, textOk, textFail) {
   (ok ? result.geprueft : result.abweichungen).push(ok ? textOk : textFail);
 }
 
-function commitChecks(repo, values, expected) {
+// Der gemeldete Commit muss auf dem Stand liegen, den die Kette fortsetzt: in der Umsetzung auf ihrem Branch, sonst auf HEAD
+// des Haupt-Checkouts. Ein alter Commit oder einer von einem anderen Branch belegt die Etappe nicht.
+function commitRef(etappe, values) {
+  return ['umsetzung', 'abschluss'].includes(etappe) && values.branch ? `refs/heads/${values.branch}` : 'HEAD';
+}
+
+function commitChecks(repo, values, expected, ref = 'HEAD') {
   if (!values.commit || values.commit === 'none') return emptyResult();
   if (!git(repo, ['cat-file', '-e', `${values.commit}^{commit}`]).ok) return { ...emptyResult(), abweichungen: [`Commit ${values.commit} existiert nicht`] };
+  if (!git(repo, ['merge-base', '--is-ancestor', values.commit, ref]).ok) {
+    return { ...emptyResult(), abweichungen: [`Commit ${values.commit} liegt nicht auf ${ref.replace(/^refs\/heads\//, '')}`] };
+  }
   const files = git(repo, ['show', '--name-only', '--format=', values.commit]).out.split('\n').filter(Boolean);
   const allowed = expected === null ? null : new Set(expected.filter(Boolean).map((file) => relative(repo, file)));
   const foreign = allowed === null ? [] : files.filter((file) => !allowed.has(file));
@@ -119,7 +128,7 @@ const EXTRA = {
 // `values`: commit, spec, plan, dateien (Glossar/ADR), branch, basis, worktree; `repo`: Haupt-Checkout.
 function checkFinal(etappe, repo, values) {
   const parts = [
-    commitChecks(repo, values, EXPECTED[etappe]({ ...values, dateien: values.dateien ?? [] })),
+    commitChecks(repo, values, EXPECTED[etappe]({ ...values, dateien: values.dateien ?? [] }), commitRef(etappe, values)),
     committedChecks(repo, etappe, values),
     requiredChecks(etappe, values),
     ...(EXTRA[etappe] ? [EXTRA[etappe](repo, values)] : []),

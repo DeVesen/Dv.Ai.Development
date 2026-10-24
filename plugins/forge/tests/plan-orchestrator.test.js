@@ -17,7 +17,7 @@ test('planOrchestrator_Frontmatter_ModelInvocableWithSpecAndOptionalWorkitem', (
   assert.equal(fields.name, 'plan-orchestrator');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<spec.md> [workitem-nr]');
+  assert.equal(fields['argument-hint'], '<spec.md> [workitem-nr] [--ablage <etappe>]');
 });
 
 test('planOrchestrator_Body_ChainsTheThreePlanSkillsInOrderWithEmbeddedReports', () => {
@@ -36,9 +36,9 @@ test('planOrchestrator_Body_ChecksSpecByHashAfterEverySkill', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('SPEC-HASH = `git hash-object -- "<S>"`'));
-  assert.ok(body.includes('`git diff --no-index -- "<SK>" "<S>"`'));
-  assert.equal(body.match(/Spec-Prüfung\./g).length, 4);
+  assert.ok(body.includes('orchestrator-state.js" start --state "<ST>" --spec "<S>"'));
+  assert.ok(body.includes('orchestrator-state.js" check --state "<ST>"`. Exit 1 → stopp, den Teil nach `=== DIFF ===` zeigen, fragen.'));
+  assert.equal(body.match(/Spec-Prüfung\./g).length, 3);
 });
 
 test('planOrchestrator_Body_BranchesOnTheLinesTheEmbeddedReviewPrints', () => {
@@ -50,7 +50,7 @@ test('planOrchestrator_Body_BranchesOnTheLinesTheEmbeddedReviewPrints', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Schlusszeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · …`: `FOLLOWUP ja` und nicht `⚠️ Unvollständig` → 4, sonst 5.'));
+  assert.ok(body.includes('Dann `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>"`: `NEXT=followup` → 4, sonst 5.'));
   assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
   assert.ok(script.includes('⚠️ Unvollständig'));
 });
@@ -87,7 +87,7 @@ test('planOrchestrator_Body_PassesCommitStateAndDeviationsToTheReportScript', ()
   // Assert
   assert.ok(body.includes('`Stand` aus `git status --porcelain -- "<S>" "<P>"`'));
   assert.ok(body.includes('beide sauber „bereits committet“'));
-  assert.ok(body.includes('eine Zeile `Abweichungen: …`: Toplevel/Branch ≠ START-STATE, abgelehnte Wünsche.'));
+  assert.ok(body.includes('check --state "<ST>" --ort`. Nur bei Abweichungen `<FK>` schreiben, eine Zeile `Abweichungen: …`: `ORT=abweichung`, abgelehnte Wünsche.'));
   assert.ok(body.includes('`--wi <WI>` nur wenn gegeben'));
   assert.ok(!body.includes('/dv-forge:implementation <P>'));
 });
@@ -141,8 +141,8 @@ test('planOrchestrator_Body_RunsUpToTwoFollowupRoundsAndStopsOnAbortOrWarning', 
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<P> alle --bericht "<BF1>"`.'));
-  assert.ok(body.includes('Endet sie mit `FOLLOWUP ja`, nicht mit Abbruch oder `⚠️`: Runde 2 mit `<P> alle --bericht "<BF2>"`, Spec-Prüfung. Nie eine dritte.'));
+  assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> alle --bericht "<BF1>"` bzw. `"<BF2>"`.'));
+  assert.ok(body.includes('mit `--followup` je gelaufener Runde: `NEXT=followup` → nächste Runde, sonst 5. Nie eine dritte.'));
   assert.ok(body.includes('`<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`'));
   assert.ok(body.includes('| „Dritte Followup-Runde.“ | Höchstens zwei. |'));
   assert.ok(!body.includes('Zweiter Followup'));

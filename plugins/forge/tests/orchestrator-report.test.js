@@ -500,3 +500,21 @@ test('orchestratorReport_ImplementationWithGreenFindings_GreenInOpenSectionSteps
   // Assert
   assert.match(result.stdout, /# Was ist noch offen\n- 🟢 \*\*src\/ok\.js\*\* · aus: Tests\n {2}Folge src\/ok\.js\.\n\n# Wie es weitergeht\nWorktree bleibt: \/repo-wt\n1\. Arbeit abschließen/);
 });
+
+test('orchestratorReport_AbortBeforeReview_FourSectionsWithoutReviewData', () => {
+  // Arrange
+  const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'dv-forge-abort-'));
+  const out = path.join(dir, 'abschluss.md');
+  const script = path.join(__dirname, '..', 'scripts', 'orchestrator-report.js');
+
+  // Act
+  const result = require('node:child_process').spawnSync(process.execPath,
+    [script, '--art', 'implementation', '--abbruch', 'Plan fehlt: docs/x/plan.md', '--out', out, '--plan', 'docs/x/plan.md', '--spec', 'docs/x/spec.md'], { encoding: 'utf8' });
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const text = fs.readFileSync(out, 'utf8');
+  for (const heading of ['# Abschlussbericht', '# Was sich im Code geändert hat', '# Was ist noch offen', '# Wie es weitergeht']) assert.ok(text.includes(heading), heading);
+  assert.ok(text.includes('**Ergebnis:** ⚠️ Abgebrochen vor dem Review: Plan fehlt: docs/x/plan.md'));
+  assert.ok(text.includes('/dv-forge:implementation-orchestrator docs/x/plan.md docs/x/spec.md'));
+});

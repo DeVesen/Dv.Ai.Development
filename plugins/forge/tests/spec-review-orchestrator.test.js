@@ -16,7 +16,7 @@ test('specReviewOrchestrator_Frontmatter_ModelInvocableWithSpecAndOptionalWorkit
   assert.equal(fields.name, 'spec-review-orchestrator');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<spec.md> [workitem-nr]');
+  assert.equal(fields['argument-hint'], '<spec.md> [workitem-nr] [--ablage <etappe>]');
 });
 
 test('specReviewOrchestrator_Body_ChainsEmbeddedReviewThenOneFollowup', () => {
@@ -38,11 +38,13 @@ test('specReviewOrchestrator_Body_BranchesOnTheLinesTheEmbeddedReviewPrints', ()
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  for (const marker of ['⚠️ Unvollständig', '⛔', '❓']) {
+  for (const marker of ['⛔', '❓']) {
     assert.ok(body.includes(marker), `${marker} fehlt im Skill`);
     assert.ok(script.includes(marker), `${marker} fehlt in report-text.js`);
   }
-  assert.ok(body.includes('`FOLLOWUP ja`, auch für Hinweise, `⛔` und `❓` → 4, sonst 5.'));
+  assert.ok(script.includes('⚠️ Unvollständig'));
+  assert.ok(readText(path.join(__dirname, '..', 'scripts', 'orchestrator-state.js')).includes("result.startsWith('⚠️')"), 'next endet bei ⚠️');
+  assert.ok(body.includes('`NEXT=followup`, auch für Hinweise, `⛔` und `❓` → 4, sonst 5.'));
 });
 
 test('specReviewOrchestrator_Body_TellsPauseFromEndByHeadingAndClosingLine', () => {
@@ -54,7 +56,7 @@ test('specReviewOrchestrator_Body_TellsPauseFromEndByHeadingAndClosingLine', () 
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('`### Frage …` = Pause (Regel 2). Ende = Zeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · …`'));
+  assert.ok(body.includes('`### Frage …` = Pause (Regel 2). Danach `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>"`'));
   assert.ok(haltText.includes('### Frage ${number} von ${total}'));
   assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
 });
@@ -66,8 +68,7 @@ test('specReviewOrchestrator_Body_StaysOnCurrentBranchWithoutWorktree', () => {
   // Assert
   assert.ok(body.includes('aktueller Checkout und Branch, auch wenn die Projekt-`CLAUDE.md` Worktree oder „nie auf master“ verlangt'));
   assert.ok(body.includes('Kein `git worktree`, EnterWorktree, `checkout`, `switch`, `stash`, `rebase`, Branch, Merge, Push.'));
-  assert.ok(body.includes('`git rev-parse --path-format=absolute --git-dir --git-common-dir`'));
-  assert.ok(body.includes('`git branch --show-current` leer'));
+  assert.ok(body.includes('Stopp bei Exit 1, `SPEC-IM-CHECKOUT=nein` oder `WORKTREE=ja`.'));
 });
 
 test('specReviewOrchestrator_Body_CommitsOnlyTheSpecWithoutNumberWhenWorkitemMissing', () => {
@@ -113,7 +114,7 @@ test('specReviewOrchestrator_Body_PassesCommitResultAndDeviationsToTheReportScri
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.equal(hint, '<spec.md> [workitem-nr]');
+  assert.equal(hint, '<spec.md> [workitem-nr] [--ablage <etappe>]');
   assert.ok(body.includes('`Commit` = Commit-ID, „nichts zu committen“, „ignoriert“ oder Grund dagegen.'));
   assert.ok(body.includes('`--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief, `--wi <WI>` nur wenn gegeben'));
   assert.ok(body.includes('`Abweichungen: …`: Stopp-Grund, abgelehnte Wünsche, Spec-Vorbestand im Commit, neue Pfade in `git status --porcelain`.'));
@@ -142,8 +143,8 @@ test('specReviewOrchestrator_Body_RunsUpToTwoFollowupRoundsAndCommitsOnlyAfterTh
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<S> alle --bericht "<BF1>"`. Abbruch oder `⚠️` → kein Commit, 6.'));
-  assert.ok(body.includes('Endet sie mit `FOLLOWUP ja`: Runde 2 mit `<S> alle --bericht "<BF2>"`, gleiche Prüfung. Nie eine dritte.'));
+  assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde `RUNDE`: `dv-forge:review-followup` mit `<S> alle --bericht "<BF1>"` bzw. `"<BF2>"`.'));
+  assert.ok(body.includes('`NEXT=ende` → kein Commit, 6; `NEXT=followup` → nächste Runde; sonst 5. Nie eine dritte.'));
   assert.ok(body.indexOf('Nie eine dritte.') < body.indexOf('5. Commit, auch bei `⛔` oder `❓`.'));
   assert.ok(body.includes('`<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`'));
   assert.ok(body.includes('| „Dritte Followup-Runde.“ | Höchstens zwei. |'));
@@ -163,5 +164,5 @@ test('specReviewOrchestrator_Body_WritesChainEntryOfStageSpecBeforeTheReportAlso
   assert.ok(body.includes('Steht `<S>` fest (Datei existiert):'));
   assert.ok(body.includes('dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben.'));
   assert.ok(body.includes('6. Abschlussbericht, letzte Handlung:'));
-  assert.ok(body.includes('Stopp = Grund nennen, fragen, Schritt 6.'));
+  assert.ok(body.includes('Stopp = Schritt 6 mit dem Grund; nach dem Bericht nichts weiter.'));
 });

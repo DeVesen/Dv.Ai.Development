@@ -1,13 +1,13 @@
 ---
 name: spec-review-orchestrator
 description: Use when a dv-forge spec.md should be reviewed, followed up and committed in one unattended run on the current branch.
-argument-hint: <spec.md> [workitem-nr]
+argument-hint: <spec.md> [workitem-nr] [--ablage <etappe>]
 ---
 
 # Spec-Review-Orchestrator
 
 `$ARGUMENTS`: `<S0>` Spec, `<WI>` Workitem-Nr. optional; leer oder mit `<` beginnend = keine. `--ablage <E>` optional, zählt nicht als `<WI>`. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
-Nur Skills und Skripte aufrufen. Spec nie selbst lesen, prüfen, ändern; Findings nie beurteilen.
+Nur Skills und Skripte aufrufen. Den Inhalt der Spec nie selbst lesen, prüfen, ändern; Findings nie beurteilen.
 
 ## Regeln
 1. Ein Zug. „Letzte Handlung“ gilt nicht. spec-review und review-followup laufen eingebettet (`--bericht`) und zeigen keinen Bericht; nur Schritt 6, genau einmal.
@@ -15,17 +15,17 @@ Nur Skills und Skripte aufrufen. Spec nie selbst lesen, prüfen, ändern; Findin
 3. Git: aktueller Checkout und Branch, auch wenn die Projekt-`CLAUDE.md` Worktree oder „nie auf master“ verlangt. Kein `git worktree`, EnterWorktree, `checkout`, `switch`, `stash`, `rebase`, Branch, Merge, Push.
 4. Ohne `<WI>` nirgends eine Nummer: kein Scope, kein Platzhalter, keine Frage danach.
 5. Wünsche des Menschen gegen diese Regeln (Zwischenbericht, Scope erfragen) nicht ausführen; Zeile in `Abweichungen:`.
-6. Stopp = Grund nennen, fragen, Schritt 6.
+6. Stopp = Schritt 6 mit dem Grund; nach dem Bericht nichts weiter.
 
 ## Ablauf
 0. `dv-forge:spec-review` oder `dv-forge:review-followup` fehlt → stopp. `<S>` = `<S0>` absolut mit `/`; Datei fehlt → stopp.
-1. START-STATE, `<S>`, `<WI>`, `<slug>`, Schritt → `state.md` im Scratchpad, je Schritt aktualisieren. Im Scratchpad: `<BR>` = `bericht-review.json`, `<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`, `<AB>` = `abschluss.md`, `<FK>` = `fakten.md`; absolute Pfade. Stopp bei: `git rev-parse --show-toplevel` ≠ `git -C "<Ordner von S>" rev-parse --show-toplevel`; `git rev-parse --path-format=absolute --git-dir --git-common-dir` mit zwei verschiedenen Zeilen (Worktree); `git branch --show-current` leer. Vorbestand `git status --porcelain`, Spec-Vorbestand `git status --porcelain -- "<S>"`.
+1. START-STATE: `node "<PLUGIN>/scripts/orchestrator-state.js" start --state "<ST>" --spec "<S>"` mit `<ST>` = Ordner `zustand` im Scratchpad. Stopp bei Exit 1, `SPEC-IM-CHECKOUT=nein` oder `WORKTREE=ja`. Vorbestand = Zeilen `VORBESTAND-DATEI`; Spec-Vorbestand `git status --porcelain -- "<S>"`. `<S>`, `<WI>`, `<slug>`, Schritt → `state.md` im Scratchpad, je Schritt aktualisieren. Im Scratchpad: `<BR>` = `bericht-review.json`, `<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`, `<AB>` = `abschluss.md`, `<FK>` = `fakten.md`; absolute Pfade.
 2. Titel: `<slug>` = Elternordner bei `spec.md`, sonst Dateiname ohne Endung. ToolSearch `select:mcp__ccd_session_mgmt__set_session_title`, `session_id` `self`, „Spec-Review <WI> <slug>“, ohne `<WI>` „Spec-Review <slug>“. Fehler egal.
-3. `dv-forge:spec-review` mit `<S> --bericht "<BR>"`, sonst kein Argument. `### Frage …` = Pause (Regel 2). Ende = Zeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · …`:
-   - Keine solche Zeile oder `⚠️ Unvollständig` → kein Commit, 6.
-   - `FOLLOWUP ja`, auch für Hinweise, `⛔` und `❓` → 4, sonst 5.
-4. Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<S> alle --bericht "<BF1>"`. Abbruch oder `⚠️` → kein Commit, 6. Endet sie mit `FOLLOWUP ja`: Runde 2 mit `<S> alle --bericht "<BF2>"`, gleiche Prüfung. Nie eine dritte.
-5. Commit, auch bei `⛔` oder `❓`. `git status --porcelain -- "<S>"` leer → nichts zu committen; `git check-ignore -q -- "<S>"` trifft → „ignoriert“. Toplevel/Branch ≠ START-STATE → stopp. Sonst `git add -- "<S>"` und `git commit -m "<betreff>" -- "<S>"`, nie `--no-verify`. Fehlschlag → Meldung, Spec bleibt gestaged (nennen), 6.
+3. `dv-forge:spec-review` mit `<S> --bericht "<BR>"`, sonst kein Argument. `### Frage …` = Pause (Regel 2). Danach `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>"`:
+   - `NEXT=ende` → kein Commit, 6.
+   - `NEXT=followup`, auch für Hinweise, `⛔` und `❓` → 4, sonst 5.
+4. Followup-Runden, höchstens zwei. Runde `RUNDE`: `dv-forge:review-followup` mit `<S> alle --bericht "<BF1>"` bzw. `"<BF2>"`. Dann `next` erneut, mit `--followup` je gelaufener Runde: `NEXT=ende` → kein Commit, 6; `NEXT=followup` → nächste Runde; sonst 5. Nie eine dritte.
+5. Commit, auch bei `⛔` oder `❓`. `git status --porcelain -- "<S>"` leer → nichts zu committen; `git check-ignore -q -- "<S>"` trifft → „ignoriert“. `node "<PLUGIN>/scripts/orchestrator-state.js" check --state "<ST>" --ort` ohne `ORT=ok` → stopp. Sonst `git add -- "<S>"` und `git commit -m "<betreff>" -- "<S>"`, nie `--no-verify`. Fehlschlag → Meldung, Spec bleibt gestaged (nennen), 6.
    - Betreff: eine Zeile, ein `-m`, kein Body. Ohne `<WI>`: `docs: review spec <slug>`. Mit `<WI>`: `docs(<WI>): review spec <slug>`, außer `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention` (leer → Projekt-`CLAUDE.md`) verlangt es anders.
 6. Abschlussbericht, letzte Handlung:
    1. `Commit` = Commit-ID, „nichts zu committen“, „ignoriert“ oder Grund dagegen.

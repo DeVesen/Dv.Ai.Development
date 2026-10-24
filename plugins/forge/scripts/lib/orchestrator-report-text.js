@@ -102,4 +102,18 @@ function renderOrchestratorReport(report, facts) {
   ].map((block) => block.join('\n')).join('\n\n');
 }
 
-module.exports = { renderOrchestratorReport, NOTHING_OPEN, NOTHING_CHANGED };
+// Bericht eines Laufs, der vor dem Review endete (`--abbruch`): dieselben vier Abschnitte, ohne Review-Daten.
+const RERUN = { spec: 'spec-review-orchestrator', plan: 'plan-orchestrator', implementation: 'implementation-orchestrator' };
+
+function renderAbortReport(art, reason, facts) {
+  const args = art === 'spec' ? [facts.spec] : [facts.plan, facts.spec].filter(Boolean);
+  const rerun = withWorkitem(`/dv-forge:${RERUN[art]} ${args.join(' ')}`.trim(), facts.wi);
+  return [
+    ['# Abschlussbericht', `**Ergebnis:** ⚠️ Abgebrochen vor dem Review: ${reason}`, ...facts.lines],
+    [`# Was sich ${CHANGED_IN[art]} geändert hat`, NOTHING_CHANGED],
+    ['# Was ist noch offen', `- ${reason}`],
+    ['# Wie es weitergeht', ...stepLines([['Grund beheben, dann in einer frischen Session erneut starten:', rerun]])],
+  ].map((block) => block.join('\n')).join('\n\n');
+}
+
+module.exports = { renderOrchestratorReport, renderAbortReport, NOTHING_OPEN, NOTHING_CHANGED };

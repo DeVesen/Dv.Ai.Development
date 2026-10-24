@@ -19,7 +19,7 @@ test('implementationOrchestrator_Frontmatter_ModelInvocableWithPlanSpecWorkitemA
   assert.equal(fields.name, 'implementation-orchestrator');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<plan.md> <spec.md> [workitem-nr] [--base <branch>]');
+  assert.equal(fields['argument-hint'], '<plan.md> <spec.md> [workitem-nr] [--base <branch>] [--ablage <etappe>]');
 });
 
 test('implementationOrchestrator_ChainedSkills_AreModelInvocable', () => {
@@ -53,10 +53,10 @@ test('implementationOrchestrator_Body_ChecksPlanAndSpecByHashAfterEveryWritingSk
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('`git hash-object -- "<P>"` = PLAN-HASH, `git hash-object -- "<S>"` = SPEC-HASH'));
-  assert.ok(body.includes('`git diff --no-index -- "<Kopie>" "<Datei>"`'));
+  assert.ok(body.includes('orchestrator-state.js" start --state "<ST>" --spec "<S>" --plan "<P>"'));
+  assert.ok(body.includes('orchestrator-state.js" check --state "<ST>"`. Exit 1 → stopp, den Teil nach `=== DIFF ===` zeigen, fragen.'));
   assert.ok(body.includes('Nicht zurückschreiben, nicht committen, nicht als harmlos einstufen.'));
-  assert.equal(body.match(/Hash-Prüfung\./g).length, 4);
+  assert.equal(body.match(/Hash-Prüfung\./g).length, 3);
 });
 
 test('implementationOrchestrator_Body_BranchesOnTheResultsTheReportScriptWrites', () => {
@@ -67,11 +67,9 @@ test('implementationOrchestrator_Body_BranchesOnTheResultsTheReportScriptWrites'
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  for (const marker of ['✅ Bereit zum Abschließen', '⚠️ Unvollständig']) {
-    assert.ok(body.includes(marker), `${marker} fehlt im Skill`);
-    assert.ok(script.includes(marker), `${marker} fehlt in implementation-report-text.js`);
-  }
-  assert.ok(body.includes('`FOLLOWUP ja` → 5.'));
+  for (const marker of ['✅ Bereit zum Abschließen', '⚠️ Unvollständig']) assert.ok(script.includes(marker), `${marker} fehlt in implementation-report-text.js`);
+  assert.ok(body.includes('- `NEXT=followup` → 5.'));
+  assert.ok(body.includes('- `NEXT=weiter` und `BEREIT=ja` → 6.'));
 });
 
 test('implementationOrchestrator_Body_ContinuesAfterFollowupOnlyOnAReadyResult', () => {
@@ -83,7 +81,7 @@ test('implementationOrchestrator_Body_ContinuesAfterFollowupOnlyOnAReadyResult',
 
   // Assert
   assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
-  assert.ok(body.includes('Nach der letzten Runde: Schlusszeile `Review abgeschlossen: ✅ …` → 6; sonst Ende.'));
+  assert.ok(body.includes('`NEXT=followup` → nächste Runde; `NEXT=weiter` und `BEREIT=ja` → 6; sonst Ende. Nie eine dritte.'));
 });
 
 test('implementationOrchestrator_Body_NeverPushesNeverCallsFinishWorkAndKeepsWorktree', () => {
@@ -160,12 +158,10 @@ test('implementationOrchestrator_Body_StartsFollowupRoundsOnFollowupJaBeforeBuil
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  const warning = body.indexOf('- `⚠️ Unvollständig` → Ende.');
-  const followup = body.indexOf('- `FOLLOWUP ja` → 5.');
-  const ready = body.indexOf('- `✅ Bereit zum Abschließen` → 6.');
-  assert.ok(warning > -1 && warning < followup && followup < ready, 'Reihenfolge ⚠️, FOLLOWUP ja, ✅');
-  assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde 1: `dv-forge:review-followup` mit `<P> alle --spec <S> --bericht "<BF1>"`. Hash-Prüfung.'));
-  assert.ok(body.includes('Schlusszeile `⚠️` oder Abbruch → Ende. `FOLLOWUP ja` → Runde 2 mit `<BF2>`, Hash-Prüfung. Nie eine dritte.'));
+  const followup = body.indexOf('- `NEXT=followup` → 5.');
+  const ready = body.indexOf('- `NEXT=weiter` und `BEREIT=ja` → 6.');
+  assert.ok(followup > -1 && followup < ready, 'Reihenfolge followup, weiter');
+  assert.ok(body.includes('Followup-Runden, höchstens zwei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> alle --spec <S> --bericht "<BF1>"` bzw. `"<BF2>"`. Hash-Prüfung.'));
   assert.ok(body.indexOf('Nie eine dritte.') < body.indexOf('6. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>"'), 'Build, Test und Lint erst nach den Runden');
   assert.ok(body.includes('`<BF1>` = `bericht-followup-1.json`, `<BF2>` = `bericht-followup-2.json`'));
   assert.ok(body.includes('| „Dritte Followup-Runde.“ | Höchstens zwei. |'));
@@ -178,10 +174,15 @@ test('implementationOrchestrator_Body_WritesChainEntryWithWorktreeAndBranchBefor
 
   // Assert
   const chain = body.indexOf('`node "<PLUGIN>/scripts/chain.js" write --stage implementation --plan "<P>" --spec "<S>" --worktree "<R>" --branch <branch>`');
-  const failure = body.indexOf('Endet der Aufruf mit Fehler: Meldung in die Zeile `Abweichungen: …` von `<FK>` aufnehmen, `<FK>` nötigenfalls anlegen; der Bericht folgt trotzdem.');
+  const failure = body.indexOf('Fehler: Meldung in `Abweichungen: …` von `<FK>`; der Bericht folgt trotzdem.');
   const report = body.indexOf('`node "<PLUGIN>/scripts/orchestrator-report.js" --art implementation');
   assert.ok(chain > -1 && chain < report, 'chain.js write muss vor orchestrator-report.js stehen');
   assert.ok(failure > chain && failure < report, 'die Fehlerregel steht zwischen chain.js write und dem Bericht');
   assert.ok(body.includes('Lief Schritt 2 (`<R>` und Branch stehen fest):'));
   assert.ok(body.includes('dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen.'));
+});
+
+test('implementationOrchestrator_Body_AbortBeforeReviewStillGetsReport', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('Lief Schritt 4 nicht: `node "<PLUGIN>/scripts/orchestrator-report.js" --art implementation --abbruch "<Grund>" --out "<AB>"'));
 });

@@ -63,7 +63,7 @@ test('keyOf_FileWithLines_NormalizedLikeAggregation', () => {
 });
 
 // Baseline ohne KI: Was die Skript-Prüfungen allein vom Golden-Set des Plan-Reviews finden.
-test('baseline_PlanReviewScriptChecksOnly_FindDependencyAndMissingAc', () => {
+test('baseline_PlanReviewScriptChecksOnly_FindDependencyPlaceholderAndMissingAc', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-eval-'));
   const doc = path.join(root, 'plan.md');
   const spec = path.join(root, 'spec.md');
@@ -80,6 +80,7 @@ test('baseline_PlanReviewScriptChecksOnly_FindDependencyAndMissingAc', () => {
   const result = evaluate(golden('plan-review-flawed'), [readJsonFile(path.join(workspace, 'runde-1', 'einstufung.json'))]);
   assert.ok(result.je[0].treffer.includes('ac-04-fehlt'), JSON.stringify(result.je[0]));
   assert.ok(result.je[0].treffer.includes('rueckwaerts-abhaengigkeit'), JSON.stringify(result.je[0]));
+  assert.ok(result.je[0].treffer.includes('platzhalter'), JSON.stringify(result.je[0]));
 });
 
 test('baseline_ImplementationChecksOnly_FindMissingTasksAndRedSuite', () => {

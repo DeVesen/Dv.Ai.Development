@@ -12,13 +12,15 @@ const PLAN_SPEC = [
 const SOURCE = 'class Klasse {\n  methode() {\n    return 1;\n  }\n}\n';
 const ALL_ACS = 'AC-01, AC-03, AC-05';
 
-// Ein Task mit Überschrift, Zeile **ACs:**, Zusatzzeilen und der Zeile Text., die Reviewer-Findings zitieren können.
+// Ein Task mit Überschrift, Zeile **ACs:**, Zusatzzeilen, der Zeile Text., die Reviewer-Findings zitieren können, und einem Schritt mit Verifikation,
+// damit der Plan-Linter keinen Befund liefert.
 function planTask(heading, acs, extra = []) {
-  return [`### Task ${heading}: T`, '', `**ACs:** ${acs}`, '', ...extra, 'Text.', ''];
+  return [`### Task ${heading}: T`, '', `**ACs:** ${acs}`, '', ...extra, 'Text.', '',
+    '- [ ] **Schritt 1: Test laufen lassen**', '  Befehl: `node --test` — erwartet: PASS', ''];
 }
 
 function planText(...tasks) {
-  return ['# Demo — Umsetzungsplan', '', '**Basis:** abc', '', '## Global Constraints', '- Nur Node.js.', '', '---', '',
+  return ['# Demo — Umsetzungsplan', '', '**Ziel:** Ein Demo-Ziel.', '**Architektur:** Eine Klasse.', '**Tech-Stack:** Node.js', '**Spec:** `spec.md`', '**Basis:** abc', '', '## Global Constraints', '- Nur Node.js.', '', '---', '',
     ...tasks.flat(), '## Entscheidungen', '- Keine Fragen an den Menschen.', ''].join('\n');
 }
 

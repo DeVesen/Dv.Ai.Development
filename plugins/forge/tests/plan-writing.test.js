@@ -193,3 +193,15 @@ test('planFormat_DecisionEntries_FollowupEntryOnlyFromFollowupRework', () => {
   assert.ok(text.includes('- **F · <Stelle>** — geändert | nicht geändert | spec-rückfrage — Vorschlag <n>: <Begründung>'));
   assert.ok(text.includes('F-Einträge schreibt nur der Nacharbeiter im Folge-Modus'));
 });
+
+test('skill_SelfCheckStep_RunsPlanLintBeforeFinishing', () => {
+  const { body } = readMarkdown(SKILL);
+  assert.ok(body.includes('node "<PLUGIN>/scripts/plan-tasks.js" lint "<Ziel>"'));
+  assert.match(body, /jeden Fehler beheben/);
+});
+
+test('selfCheck_PlaceholdersAndFormat_PointToLintInsteadOfRepeatingChecks', () => {
+  const text = readText(path.join(SKILL_DIR, 'references', 'self-check.md'));
+  assert.match(text, /`plan-tasks\.js lint` sucht die festen Phrasen/);
+  assert.match(text, /prüft `plan-tasks\.js lint`/);
+});

@@ -65,7 +65,7 @@ test('numbering_SuffixedTaskNumber_FindingAtThatTask', () => {
 test('numbering_PlanWithoutTasks_FindingAtPlanAndEveryAcMissing', () => {
   const env = setup(plan());
   const result = PLAN_CHECKS.map((candidate) => places(candidate.run(env.text, env.context)));
-  assert.deepEqual(result, [['Plan: umsetzer-steckt-fest'], ['AC-01: ac-fehlt-im-plan', 'AC-03: ac-fehlt-im-plan', 'AC-05: ac-fehlt-im-plan'], []]);
+  assert.deepEqual(result, [['Plan: umsetzer-steckt-fest'], ['AC-01: ac-fehlt-im-plan', 'AC-03: ac-fehlt-im-plan', 'AC-05: ac-fehlt-im-plan'], [], [], []]);
 });
 
 test('anchors_RedLine_UmsetzerStecktFestAtItsTask', () => {
@@ -117,5 +117,5 @@ test('planChecks_SamePlanSpecAndCodeTwice_SameFindings', () => {
   const runAll = () => PLAN_CHECKS.map((candidate) => candidate.run(env.text, env.context));
   const first = runAll();
   assert.deepEqual(runAll(), first);
-  assert.deepEqual(first.map((findings) => findings.length), [1, 1, 1]);
+  assert.deepEqual(first.map((findings) => findings.length), [1, 1, 1, 0, 0]);
 });

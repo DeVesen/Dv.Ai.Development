@@ -2,13 +2,12 @@
 
 const fs = require('node:fs');
 const { normalizeLocation } = require('../aggregate-findings');
-const { markFences, numberingError, scanPlan, splitLines, taskSections } = require('../plan-tasks');
+const { numberingError, scanPlan, splitLines } = require('../plan-tasks');
 const { anchorMarks } = require('../plan-anchors');
 const { parsePlaces, collapse } = require('./places');
+const { lintFormat, lintConsumes, readPlan, ANY_TASK_HEADING, toFinding } = require('./plan-lint');
 
 // Skript-Prüfungen des Plan-Reviews. Sie urteilen ohne KI über den Plan-Text und über Spec und Repo aus { doc, spec, repo }.
-// Weiter als TASK_HEADING in plan-tasks.js: Jede Überschrift ### Task <x>: zählt, auch mit einer Nummer wie 3a.
-const ANY_TASK_HEADING = /^###\s+Task\s+([^\s:]+)\s*:/;
 const AC_LINE = /^\s*\*\*ACs:\*\*(.*)$/;
 const AC_ID = /AC-\d+/gi;
 const AC_KEY = /^AC-\d+$/i;
@@ -22,14 +21,6 @@ function finding(location, quote, category, consequence, rationale) {
 function failure(check, message) {
   return finding(PLAN_KEY, `Quelle: Skript-Prüfung ${check}`, 'umsetzer-steckt-fest',
     `Die Skript-Prüfung ${check} konnte nicht laufen; ihr Ergebnis fehlt.`, message);
-}
-
-// Dieselbe Zerlegung wie die Umsetzung, nur mit der weiteren Überschrift.
-function readPlan(text) {
-  const lines = splitLines(text);
-  const fenced = markFences(lines);
-  const tasks = taskSections(lines, ANY_TASK_HEADING, fenced).map((task) => ({ ...task, heading: lines[task.start] }));
-  return { lines, fenced, tasks };
 }
 
 function numberingFindings(text) {
@@ -99,6 +90,8 @@ const PLAN_CHECKS = [
   { name: 'nummerierung', run: (text) => numberingFindings(text) },
   { name: 'ac-abdeckung', run: coverageFindings },
   { name: 'anker', run: anchorFindings },
+  { name: 'plan-format', run: (text) => lintFormat(text).map(toFinding) },
+  { name: 'schnittstellen', run: (text) => lintConsumes(text).map(toFinding) },
 ];
 
 module.exports = { PLAN_CHECKS };

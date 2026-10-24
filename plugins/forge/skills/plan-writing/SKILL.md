@@ -14,15 +14,15 @@ Kündige an: „Ich schreibe mit dv-forge:plan-writing den Umsetzungsplan.“
 Du schreibst für einen Umsetzer, der sein Handwerk beherrscht, aber null Kontext zu Projekt, Werkzeugen und Fachgebiet hat — und dessen Testentwurf du nicht vertrauen darfst. Alles steht im Plan: Dateien, Code, Tests, nachzulesende Doku, Prüfung. Kleine Tasks. DRY. YAGNI. TDD. Häufige Commits.
 
 ## Ablauf
-1. **Spec lesen.** Das erste Argument ist die Spec. Fehlt die Datei: melden „Spec nicht gefunden: <pfad>“ und Ende. Steht im Kopf `Status: Abbruch` oder `abgetrennt`: warnen und den Menschen entscheiden lassen. Zeigt `git status --porcelain -- <spec>` eine Zeile, warnst du: Die Spec ist nicht committet.
+1. **Spec lesen.** Das erste Argument ist die Spec. Fehlt die Datei: melden „Spec nicht gefunden: <pfad>“ und Ende. Steht im Kopf `Status: Abbruch` oder `abgetrennt`: warnen und den Menschen entscheiden lassen. Zeigt `git status --porcelain -- <spec>` eine Zeile, warnst du: Spec nicht committet.
 2. **Umfang prüfen.** Beschreibt die Spec mehrere unabhängige Teilsysteme, empfiehlst du einen Plan pro Teilsystem und fragst nach. Jeder Plan muss für sich lauffähige, testbare Software ergeben.
 3. **Ziel festlegen:** das zweite Argument, sonst `node "<PLUGIN>/scripts/forge-config.js" get Plan-Ablage` mit `<spec-ordner>` eingesetzt. Existiert die Datei schon: nachfragen, nie überschreiben.
 4. **Kontext lesen:** genau diese Quellen — die Spec, die Projekt-`CLAUDE.md`, den betroffenen Code, Glossar und Profile an den Orten aus `forge-config.js get Glossar` und `get Profile`, und Dateien, die der Mensch ausdrücklich mitgibt. Andere Specs oder Pläne suchst du nie, auch nicht zur selben Workitem-Nummer. Wie du suchst, liest und Zwischenstände gibst: `references/context-reading.md`. Dann legst du die Dateistruktur nach `references/task-rules.md` fest.
 5. **Planungs-Skills laden:** `forge-config.js get Planungs-Skills`, die betroffenen nach `references/context-reading.md` über das Skill-Tool laden; ihre Kernregeln kommen unter `Global Constraints`. Ist er leer, gelten keine; du fragst nicht.
 6. **Offene Fragen** stellst du dem Menschen, eine Frage pro Nachricht, mit Empfehlung und Grund. Dazu gehören echte Architektur-Alternativen; geplant wird genau eine. Offen ist auch jedes AC, das ein Ergebnis fordert, dessen Form die Spec nicht festlegt — diese Form wählst du nicht selbst. Jede Antwort notierst du sofort als W-Eintrag mit Tag `Aussage`. Sagt der Mensch „entscheide du“, gilt deine Empfehlung mit Tag `delegiert`. Du triffst keine Annahme stillschweigend.
 7. **Plan schreiben** nach `references/plan-format.md` und `references/task-rules.md`, mit `**Basis:**` aus `git rev-parse --short HEAD`.
-8. **Selbst-Check** nach `references/self-check.md`; Befunde korrigierst du sofort im Plan.
-9. **Übergabe:** Plan-Pfad nennen und als nächste Schritte: Spec und Plan committen, dann in einer frischen Session der Befehl in einem Code-Block:
+8. **Selbst-Check:** vor dem Abschluss `node "<PLUGIN>/scripts/plan-tasks.js" lint "<Ziel>"`, jeden Fehler beheben; dann `references/self-check.md`.
+9. **Übergabe:** Plan-Pfad nennen und als nächste Schritte: Spec und Plan committen, dann in einer frischen Session der Befehl:
    ```
    /dv-forge:plan-review <pfad/plan.md>
    ```

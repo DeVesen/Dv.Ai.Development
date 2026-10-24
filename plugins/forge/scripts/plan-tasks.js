@@ -9,7 +9,7 @@ const TASK_HEADING = /^###\s+Task\s+(\d+):/;
 const SECTION_HEADING = /^##\s/;
 const FENCE = /^\s*(`{3,}|~{3,})(.*)$/;
 const RULE = /^---\s*$/;
-const USAGE = 'Aufruf: node plan-tasks.js list <plan> | scan <plan> <dir> | brief <plan> <n> <dir> | header <plan> <dir> | slug <plan> | anchors <plan> <repo> <out>\n';
+const USAGE = 'Aufruf: node plan-tasks.js list <plan> | scan <plan> <dir> | brief <plan> <n> <dir> | header <plan> <dir> | slug <plan> | anchors <plan> <repo> <out> | lint <plan>\n';
 
 class PlanError extends Error {}
 
@@ -76,12 +76,15 @@ function numberingError(tasks) {
   return `Task-Nummerierung lückenhaft: an Position ${wrong + 1} steht Task ${tasks[wrong].number}`;
 }
 
-function checkedPlan(planPath) {
-  const lines = readLines(planPath);
+function checkedLines(lines) {
   const scan = scanPlan(lines);
   const error = numberingError(scan.tasks);
   if (error) throw new PlanError(error);
   return { lines, ...scan };
+}
+
+function checkedPlan(planPath) {
+  return checkedLines(readLines(planPath));
 }
 
 function trimTrailing(block) {
@@ -132,6 +135,12 @@ function describeTask(lines, task) {
 
 function describeTasks(planPath) {
   const { lines, tasks } = checkedPlan(planPath);
+  return tasks.map((task) => describeTask(lines, task));
+}
+
+// Wie describeTasks, aber auf dem Plan-Text; die Skript-Prüfungen haben den Text schon gelesen.
+function describePlan(text) {
+  const { lines, tasks } = checkedLines(splitLines(text));
   return tasks.map((task) => describeTask(lines, task));
 }
 
@@ -216,6 +225,7 @@ const COMMANDS = {
   header: { arity: 2, run: ([plan, dir]) => writeHeader(plan, dir) },
   slug: { arity: 1, run: ([plan]) => slugOf(plan) },
   anchors: { arity: 3, run: ([plan, repo, out]) => require('./plan-anchors').writeAnchors(plan, repo, out) },
+  lint: { arity: 1, run: ([plan]) => require('./lib/plan-lint').lintReport(readLines(plan).join('\n')) },
 };
 
 function isValidCall(command, args) {
@@ -230,7 +240,9 @@ function main() {
     process.exit(2);
   }
   try {
-    process.stdout.write(`${COMMANDS[command].run(args)}\n`);
+    const result = COMMANDS[command].run(args);
+    process.stdout.write(`${result.text ?? result}\n`);
+    if (result.exit) process.exitCode = result.exit;
   } catch (error) {
     if (!(error instanceof PlanError)) throw error;
     process.stderr.write(`${error.message}\n`);
@@ -239,7 +251,7 @@ function main() {
 }
 
 module.exports = {
-  PlanError, scanPlan, numberingError, listTasks, describeTasks, recommendModel, formatOverview, buildHeader, buildBrief, writeBrief, writeHeader, slugOf,
+  PlanError, scanPlan, numberingError, listTasks, describeTasks, describePlan, recommendModel, formatOverview, buildHeader, buildBrief, writeBrief, writeHeader, slugOf,
   checkedPlan, markFences, parseFileLine, taskTitle, taskSections, splitLines,
 };
 

@@ -85,6 +85,20 @@ function writeState(dir, slug, state) {
   return state;
 }
 
+// Ereignisliste der Kette (events.jsonl neben zustand.json): eine Zeile je Start, final, Haltepunkt, Antwort, Commit und Schluss,
+// mit Zeitstempel. Rohdaten für Dauer je Etappe, Haltepunkte und Abweichungen; die Auswertung liegt außerhalb von dv-forge.
+function appendEvent(dir, slug, event, now = new Date()) {
+  const file = path.join(chainDir(dir, slug), 'events.jsonl');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.appendFileSync(file, `${JSON.stringify({ zeit: now.toISOString(), ...event })}\n`);
+}
+
+function readEvents(dir, slug) {
+  const file = path.join(chainDir(dir, slug), 'events.jsonl');
+  if (!fs.existsSync(file)) return [];
+  return fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line));
+}
+
 // Slug der Kette, deren Zustand diesen Worktree nennt; sonst null.
 function slugByWorktree(dir, worktree) {
   const root = chainsRoot(dir);
@@ -99,5 +113,5 @@ function slugByWorktree(dir, worktree) {
 
 module.exports = {
   SessionChainError, ETAPPEN, etappeError, storageError, checkedEtappe, checkedSlug, slugOfArtifact, chainsRoot, chainDir, readJsonFile, writeJsonFile,
-  readState, writeState, slugByWorktree,
+  readState, writeState, slugByWorktree, appendEvent, readEvents,
 };

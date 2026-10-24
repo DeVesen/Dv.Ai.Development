@@ -11,6 +11,7 @@ const { renderImplementationReport, summaryOf } = require('./implementation-repo
 const { placeKey } = require('./places');
 const { writeClosingFiles } = require('./closing');
 const { FlowError, readText, readLines, readJson, writeText, writeJson } = require('./flow-files');
+const { appendMetric, implementationReviewRecord } = require('./metrics');
 
 const REVIEW = 'implementation-review';
 const FORMAT = 1;
@@ -171,6 +172,7 @@ function buildReport(options) {
   const text = renderImplementationReport(input);
   const status = statusOf(result, input.openRed);
   writeClosing(options, open, scout, text);
+  appendMetric(path.dirname(options.plan), 'reviews', implementationReviewRecord(options, result, status));
   if (options.reportFile) return embeddedOutput(options, input, status);
   return [`ENDE ${status}`, '=== BERICHT ===', text].join('\n');
 }

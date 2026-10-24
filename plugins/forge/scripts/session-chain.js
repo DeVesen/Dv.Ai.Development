@@ -5,7 +5,7 @@
 // ein Block nach `=== AUSGABE ===`, `=== ZUSTAND ===`, `=== HINTERGRUND ===` oder `=== BRIEF ===`, den der Aufrufer unverändert nutzt.
 
 const path = require('node:path');
-const { SessionChainError, slugOfArtifact, readState, writeState } = require('./lib/session-chain-store');
+const { SessionChainError, slugOfArtifact, readState, writeState, appendEvent } = require('./lib/session-chain-store');
 const { answerHalt, startEtappe, checkGo } = require('./lib/session-chain-gate');
 const { storeFiles } = require('./lib/session-chain-ablage');
 const { EntryError, analyseEntry } = require('./lib/session-chain-entry');
@@ -83,7 +83,10 @@ function brief(values) {
     kontext: values.kontext ? readInput(values.kontext, 'Kontext') : null,
   });
   // Erst nach dem gebauten Brief: Ein fehlender Pflichtwert hinterlässt keinen gestarteten Zustand.
-  if (state) writeState(process.cwd(), state.slug, startEtappe(state, values.etappe, { erneut: values.erneut === true }));
+  if (state) {
+    writeState(process.cwd(), state.slug, startEtappe(state, values.etappe, { erneut: values.erneut === true }));
+    appendEvent(process.cwd(), state.slug, { typ: 'start', etappe: values.etappe, modell: result.modell, erneut: values.erneut === true });
+  }
   return [`MODELL=${result.modell}`, `TITEL=${result.titel}`, '=== HINTERGRUND ===', result.hintergrund, '=== BRIEF ===', result.brief].join('\n');
 }
 
@@ -101,6 +104,12 @@ function final(values) {
   const result = processFinal({
     etappe: required(values, 'etappe'), session: required(values, 'session'), bericht: required(values, 'bericht'), commit: required(values, 'commit'), basis: values.basis, wi: values.wi,
   }, process.cwd());
+  if (result.weiter !== 'doppelt') {
+    appendEvent(process.cwd(), result.slug, {
+      typ: 'final', etappe: values.etappe, session: values.session, commit: values.commit, ergebnis: result.ergebnis, weiter: result.weiter,
+      haltepunkt: result.haltepunkt, dauerMs: result.dauerMs ?? null, offen: result.offen ?? null,
+    });
+  }
   const lines = [`SLUG=${result.slug}`, `ERGEBNIS=${result.ergebnis}`, `WEITER=${result.weiter}`, `HALTEPUNKT=${result.haltepunkt}`, ...result.geprueft.map((line) => `GEPRUEFT=${line}`)];
   return withBlock(lines, 'AUSGABE', result.text).join('\n');
 }
@@ -114,7 +123,9 @@ function stateOf(slug) {
 function halt(values) {
   const art = required(values, 'art');
   if (!['spec', 'go'].includes(art)) throw new UsageError('--art erlaubt: spec, go');
-  return ['=== AUSGABE ===', holdAt(required(values, 'slug'), art, process.cwd())].join('\n');
+  const text = holdAt(required(values, 'slug'), art, process.cwd());
+  appendEvent(process.cwd(), values.slug, { typ: 'halt', art });
+  return ['=== AUSGABE ===', text].join('\n');
 }
 
 function commit(values) {
@@ -124,6 +135,7 @@ function commit(values) {
   if (anlass === 'go') checkGo(state);
   const result = commitFor(anlass, process.cwd(), state, required(values, 'message'));
   if (result.commit) recordCommit(slug, result.commit, anlass, process.cwd());
+  appendEvent(process.cwd(), slug, { typ: 'commit', anlass, commit: result.commit?.hash ?? null });
   return [
     result.commit ? `COMMIT=${result.commit.hash} ${result.commit.dateien.join(' ')}` : 'COMMIT=keiner',
     ...result.nichtCommittet.map((file) => `NICHT-COMMITTET=${file} (keine Markdown-Datei)`),
@@ -136,11 +148,14 @@ function answer(values) {
   const slug = required(values, 'slug');
   const state = answerHalt(stateOf(slug), required(values, 'antwort'));
   writeState(process.cwd(), slug, state);
+  appendEvent(process.cwd(), slug, { typ: 'antwort', halt: state.freigabe.halt, antwort: state.freigabe.antwort });
   return `FREIGABE=${state.freigabe.halt} ${state.freigabe.antwort}`;
 }
 
 function schluss(values) {
-  return ['=== AUSGABE ===', closing(required(values, 'slug'), values.stopp === true, process.cwd())].join('\n');
+  const text = closing(required(values, 'slug'), values.stopp === true, process.cwd());
+  appendEvent(process.cwd(), values.slug, { typ: 'schluss', stopp: values.stopp === true });
+  return ['=== AUSGABE ===', text].join('\n');
 }
 
 function store(values) {

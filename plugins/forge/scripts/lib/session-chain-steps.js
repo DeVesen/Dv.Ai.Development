@@ -124,10 +124,15 @@ function applyFinal(state, { etappe, input, data, check, schluessel, next, now =
   return state;
 }
 
-function finalResult(data, next, check, text) {
+// `dauerMs` und `offen` (Zähler je Farbe) sind Messwerte für die Ereignisliste der Kette.
+function finalResult(data, next, check, text, state) {
+  const entry = state.etappen.at(-1);
+  const dauerMs = entry.gestartet ? Date.parse(entry.zeit) - Date.parse(entry.gestartet) : null;
+  const offen = { red: 0, yellow: 0, green: 0 };
+  for (const point of state.offen ?? []) if (Object.hasOwn(offen, point.farbe)) offen[point.farbe] += 1;
   return {
     slug: data.slug, ergebnis: check.abweichungen.length > 0 ? 'abweichung' : 'ok', weiter: next.start ?? (next.halt ? 'halt' : 'ende'),
-    haltepunkt: next.halt ?? 'keiner', geprueft: check.geprueft, text,
+    haltepunkt: next.halt ?? 'keiner', geprueft: check.geprueft, text, dauerMs, offen, abweichungen: check.abweichungen.length,
   };
 }
 
@@ -147,7 +152,7 @@ function processFinal(input, cwd) {
   const next = nextAfterFinal(etappe, data, check);
   applyFinal(state, { etappe, input, data, check, schluessel, next });
   writeState(cwd, data.slug, state);
-  return finalResult(data, next, check, blockFor(next, state, { etappe, abweichungen: check.abweichungen, session: input.session }));
+  return finalResult(data, next, check, blockFor(next, state, { etappe, abweichungen: check.abweichungen, session: input.session }), state);
 }
 
 // Schlussbericht; `stopp` hält den Zustand als gestoppt fest und nennt das Codewort für den späteren Einstieg.

@@ -80,3 +80,18 @@ test('cli_AnswerThenBrief_StartsChosenEtappeOnce', () => {
   assert.equal(again.status, 1);
   assert.match(again.stderr, /--erneut/);
 });
+
+test('cli_EventsJsonl_RecordsHaltAnswerCommitAndStart', () => {
+  const { readEvents } = require('../scripts/lib/session-chain-store');
+  const { repo, spec, plan } = repoWithPlan();
+  writeState(repo, 'x', reviewed({ slug: 'x', basis: 'main', spec, plan }));
+  const run = (...args) => spawnSync(process.execPath, [SCRIPT, ...args], { cwd: repo, encoding: 'utf8' });
+  run('halt', '--slug', 'x', '--art', 'go');
+  run('answer', '--slug', 'x', '--antwort', 'go');
+  run('commit', '--anlass', 'go', '--slug', 'x', '--message', 'docs: plan x');
+  run('brief', '--etappe', 'umsetzung', '--slug', 'x');
+  const events = readEvents(repo, 'x');
+  assert.deepEqual(events.map((event) => event.typ), ['halt', 'antwort', 'commit', 'start']);
+  assert.ok(events.every((event) => /^\d{4}-\d{2}-\d{2}T/.test(event.zeit)));
+  assert.equal(events[3].modell, 'opus');
+});

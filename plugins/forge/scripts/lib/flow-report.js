@@ -10,6 +10,7 @@ const { renderReportText, summaryOf } = require('./report-text');
 const { ROUND_ONE, ROUND_TWO, FOLLOWUP, CLOSING, FlowError, readText, readJson, writeText, writeJson } = require('./flow-files');
 const { SessionChainError, slugOfArtifact } = require('./session-chain-store');
 const { ablageDir, nextFollowupName } = require('./session-chain-ablage');
+const { appendMetric, flowReviewRecord } = require('./metrics');
 
 const FORMAT = 1;
 const RESULT_PREFIX = '**Ergebnis:** ';
@@ -99,6 +100,7 @@ function report(options) {
   const text = renderReportText(input);
   writeClosing(options, open);
   writeText(path.join(options.workspace, CLOSING, 'bericht.md'), text);
+  appendMetric(path.dirname(path.resolve(options.doc)), 'reviews', flowReviewRecord(options, data, status));
   const stored = options.storage ? [storeReport(options, input, status, text)] : [];
   if (options.reportFile) return [embeddedOutput(options, input, status), ...stored].join('\n');
   return [`ENDE ${status}`, ...stored, '=== BERICHT ===', text].join('\n');

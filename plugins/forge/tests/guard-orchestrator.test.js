@@ -587,3 +587,61 @@ test('decidePreTool_DirectoryEntrySessionChainStoreNamingRepo_Allows', () => {
   // Assert
   assert.equal(reason, null);
 });
+
+function skillCall(env, skill, args, extra = {}) {
+  guard.onSkillCall({ session_id: SESSION, cwd: env.cwd, tool_name: 'Skill', tool_input: { skill, args }, ...extra }, env.tmpRoot);
+}
+
+function freshEnv() {
+  return {
+    tmpRoot: fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-guard-')),
+    cwd: fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-repo-')),
+  };
+}
+
+test('onSkillCall_OrchestratorCallsSpecReview_ProtectsSpec', () => {
+  const env = freshEnv();
+  skillCall(env, 'dv-forge:spec-review', 'docs/spec.md --bericht /tmp/b.json');
+  const specPath = path.join(env.cwd, 'docs', 'spec.md');
+  assert.ok(preTool(env, { tool_name: 'Read', tool_input: { file_path: specPath } }));
+});
+
+test('onSkillCall_ReleaseAfterEmbeddedReview_UnblocksOrchestrator', () => {
+  const env = freshEnv();
+  skillCall(env, 'dv-forge:review-followup', 'docs/spec.md alle --bericht /tmp/b.json');
+  guard.release(SESSION, env.tmpRoot);
+  const specPath = path.join(env.cwd, 'docs', 'spec.md');
+  assert.equal(preTool(env, { tool_name: 'Read', tool_input: { file_path: specPath } }), null);
+});
+
+test('onSkillCall_KeepsRegisteredMustShow', () => {
+  const env = freshEnv();
+  guard.writeMarker(SESSION, { mustShow: { anchors: ['# A'], file: 'x' } }, env.tmpRoot);
+  skillCall(env, 'dv-forge:spec-review', 'docs/spec.md');
+  const marker = JSON.parse(fs.readFileSync(guard.markerPath(SESSION, env.tmpRoot), 'utf8'));
+  assert.deepEqual(marker.mustShow.anchors, ['# A']);
+  assert.equal(marker.command, '/dv-forge:spec-review');
+});
+
+test('onSkillCall_OtherSkillOrSubAgent_WritesNoMarker', () => {
+  const env = freshEnv();
+  skillCall(env, 'dv-forge:plan-writing', 'docs/spec.md');
+  skillCall(env, 'spec-review', 'docs/spec.md');
+  skillCall(env, 'dv-forge:spec-review', 'docs/spec.md', { agent_id: 'sub-1' });
+  assert.equal(fs.existsSync(guard.markerPath(SESSION, env.tmpRoot)), false);
+});
+
+test('hooksJson_PreToolUseMatcher_IncludesSkill', () => {
+  const { hooks } = JSON.parse(fs.readFileSync(HOOKS, 'utf8'));
+  assert.ok(hooks.PreToolUse[0].matcher.split('|').includes('Skill'));
+});
+
+test('main_PretoolSkillEvent_WritesMarkerAndPrintsNothing', () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-guard-'));
+  const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-repo-'));
+  const input = JSON.stringify({ session_id: 'main-skill', cwd, tool_name: 'Skill', tool_input: { skill: 'dv-forge:spec-review', args: 'spec.md' } });
+  const result = spawnSync(process.execPath, [SCRIPT, 'pretool'], { input, encoding: 'utf8', env: { ...process.env, TMPDIR: tmp, TMP: tmp, TEMP: tmp } });
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout, '');
+  assert.ok(fs.existsSync(guard.markerPath('main-skill', tmp)));
+});

@@ -187,6 +187,17 @@ function onPrompt(input, tmpRoot) {
   clearMarker(input.session_id, tmpRoot);
 }
 
+// Ein Orchestrator ruft die Review-Skills über das Skill-Tool auf; das löst kein UserPromptSubmit aus.
+function onSkillCall(input, tmpRoot) {
+  if (input.agent_id) return;
+  const skill = String(input.tool_input?.skill ?? '').trim().replace(/^\//, '');
+  const call = parseSkillCall(`/${skill} ${input.tool_input?.args ?? ''}`, input.cwd);
+  if (!call) return;
+  const entries = call.files.flatMap((entry) => toEntries(entry, input.cwd));
+  const { mustShow } = readMarker(input.session_id, tmpRoot) ?? {};
+  writeMarker(input.session_id, { command: call.command, protected: entries, ...(mustShow ? { mustShow } : {}) }, tmpRoot);
+}
+
 function hitsEntry(target, entry) {
   return entry.kind === 'dir' ? isWithin(target, entry.path) : canonicalPath(target) === canonicalPath(entry.path);
 }
@@ -382,6 +393,7 @@ function main() {
   if (event === 'show') return show(argument, flagValue(rest, '--file'));
   const input = readStdinJson();
   if (event === 'prompt') return onPrompt(input);
+  if (event === 'pretool' && input.tool_name === 'Skill') return onSkillCall(input);
   if (event === 'pretool') return writeDeny(decidePreTool(input));
   if (event === 'turn-end') return writeBlock(onTurnEnd(input));
   if (event === 'stop') return clearMarker(input.session_id);
@@ -396,5 +408,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-  COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, decidePreTool, release, clearMarker, pause, pauseWithShow, show, onTurnEnd,
+  COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, onSkillCall, decidePreTool, release, clearMarker, pause, pauseWithShow, show, onTurnEnd,
 };

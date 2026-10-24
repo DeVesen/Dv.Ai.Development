@@ -26,9 +26,13 @@ Jede Zeile schreibst du in derselben Nachricht, in der du den Schritt abschließ
 ## Nach der Umsetzung
 Das Ledger bleibt nicht im Arbeitsbereich liegen: Der Abschluss legt Urteile, Bedenken, zurückgestellte und geparkte Punkte mit `ledger.js archive` neben Spec und Plan ab. Das Implementierungs-Review liest diese Datei.
 
+Vor `archive` prüfst du das Ledger: `node "<PLUGIN>/scripts/ledger.js" check "<W>" --plan "<P>" --repo "<R>"`. Exit 1 listet je Zeile `FEHLER <zeile>: <grund>`; diese Meldung kommt in den Abschlussbericht, und du archivierst trotzdem. `archive` fügt dem Archiv einen Abschnitt `## Kennzahlen` an.
+
 ## Wiederaufnahme
+Den nächsten Schritt liefert `node "<PLUGIN>/scripts/ledger.js" next "<P>" "<W>"`: `NEXT=task <n>`, `NEXT=fixrunde <n> <r>`, `NEXT=urteil <n>`, `NEXT=final` oder `NEXT=abschluss`. Dahinter stehen diese Regeln:
 - Ein Task mit `fertig`-Zeile ist erledigt. Du startest ihn nie erneut.
 - Du setzt beim ersten Task ohne `fertig`-Zeile fort.
-- Ist die letzte Zeile eines Tasks eine `Fix-Runde`, setzt du die Schleife mit der nächsten Runde fort.
+- Ist die letzte Zeile eines Tasks eine `Fix-Runde`, setzt du die Schleife mit der nächsten Runde fort; nach Runde 5 folgt das Urteil am Cap (`NEXT=urteil`).
+- Sind alle Tasks `fertig` und gibt es keine `Final:`-Zeile, folgt das Final-Review (`NEXT=final`); mit `Final:`-Zeile der Abschluss.
 - Die Commits im Ledger existieren in Git, auch wenn du dich nicht erinnerst, sie erzeugt zu haben.
 - Fehlt der Arbeitsbereich, rekonstruierst du den Stand aus `git log --oneline forge-base/<slug>..HEAD`.

@@ -118,3 +118,11 @@ test('baseline_BasisRotFlowsFromLedgerToEveryImplementationAgent', () => {
     assert.match(read('agents', `implementation-${agent}.md`), /`Basis rot:`/, agent);
   }
 });
+
+test('ledger_ResumeAndArchive_UseNextAndCheck', () => {
+  const text = reference('ledger.md');
+  for (const part of ['node "<PLUGIN>/scripts/ledger.js" next "<P>" "<W>"', '`NEXT=fixrunde <n> <r>`', '`NEXT=urteil <n>`', '`NEXT=abschluss`',
+    'node "<PLUGIN>/scripts/ledger.js" check "<W>" --plan "<P>" --repo "<R>"', 'FEHLER <zeile>: <grund>', 'archivierst trotzdem', '## Kennzahlen']) {
+    assert.ok(text.includes(part), `${part} fehlt`);
+  }
+});

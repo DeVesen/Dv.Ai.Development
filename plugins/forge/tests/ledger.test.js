@@ -78,3 +78,207 @@ test('archive_NoLedger_ExitsWithOne', () => {
   assert.equal(spawnSync(process.execPath, [SCRIPT, 'archive', env.plan, env.workspace], { encoding: 'utf8' }).status, 1);
   assert.equal(spawnSync(process.execPath, [SCRIPT, 'archive'], { encoding: 'utf8' }).status, 2);
 });
+
+const LEDGER_HEAD = '# Ledger — Plan: docs/forge/x/plan.md';
+const THREE_TASKS = ['# Plan', '', ...[1, 2, 3].flatMap((n) => [`### Task ${n}: T${n}`, '', 'Text.', ''])].join('\n');
+
+// Arbeitsbereich mit Plan (drei Tasks) und Ledger aus `lines`.
+function ledgerEnv(lines, plan = THREE_TASKS) {
+  const env = setup();
+  fs.writeFileSync(env.plan, plan);
+  fs.writeFileSync(path.join(env.workspace, 'progress.md'), `${lines.join('\n')}\n`);
+  return env;
+}
+
+function runLedger(...args) {
+  return spawnSync(process.execPath, [SCRIPT, ...args], { encoding: 'utf8' });
+}
+
+function checkOf(lines, ...extra) {
+  const env = ledgerEnv(lines);
+  return runLedger('check', env.workspace, ...extra);
+}
+
+function nextOf(lines) {
+  const env = ledgerEnv(lines);
+  return runLedger('next', env.plan, env.workspace).stdout;
+}
+
+test('check_ValidLedger_OkWithFigures', () => {
+  // Arrange
+  const lines = [LEDGER_HEAD, 'Vorab-Scan: scan.md; 0 offen — keine', 'Basis rot: keine', 'Urteil: A — weil — kostet wenig',
+    'Task 1: Fix-Runde 1/5 (1 behoben, 0 offen — ok; Commits abc1234..def5678)', 'Task 1: geparkt — Finding X — Urteil: bleibt',
+    'Task 1: fertig (Commits abc1234..def5678, Review sauber)', 'Task 2: zurückgestellt: Name', 'Gesamtlauf: def5678 grün (verify-run)'];
+
+  // Act
+  const result = checkOf(lines);
+
+  // Assert
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(result.stdout, 'LEDGER ok tasks=1 fixrunden=1 urteile=1 geparkt=1\n');
+});
+
+test('check_WithPlan_CountsTasksOfPlan', () => {
+  // Arrange
+  const env = ledgerEnv([LEDGER_HEAD, 'Task 1: fertig (Commits abc1234..def5678, Review sauber)']);
+
+  // Act
+  const result = runLedger('check', env.workspace, '--plan', env.plan);
+
+  // Assert
+  assert.equal(result.stdout, 'LEDGER ok tasks=1/3 fixrunden=0 urteile=0 geparkt=0\n');
+});
+
+test('check_FirstLineNotLedgerHead_Error', () => {
+  // Act
+  const result = checkOf(['Basis rot: keine', 'Task 1: fertig (Commits abc1234..def5678, Review sauber)']);
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, 'FEHLER 1: erste Zeile ist nicht „# Ledger — Plan: …“\n');
+});
+
+test('check_UnknownLineForm_Error', () => {
+  // Act
+  const result = checkOf([LEDGER_HEAD, 'Task 1: irgendwie erledigt']);
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, 'FEHLER 2: unbekannte Zeilenform: Task 1: irgendwie erledigt\n');
+});
+
+test('check_TaskNumbersDescending_Error', () => {
+  // Act
+  const result = checkOf([LEDGER_HEAD, 'Task 2: fertig (Commits abc1234..def5678, Review sauber)', 'Task 1: zurückgestellt: Name']);
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, 'FEHLER 3: Task-Nummern nicht aufsteigend: Task 1 nach Task 2\n');
+});
+
+test('check_FixRoundOutsideRangeOrSkipped_Error', () => {
+  // Act
+  const outside = checkOf([LEDGER_HEAD, 'Task 1: Fix-Runde 6/5 (1 behoben, 0 offen — x; Commits abc1234..def5678)']);
+  const skipped = checkOf([LEDGER_HEAD, 'Task 1: Fix-Runde 1/5 (1 behoben, 1 offen — x; Commits abc1234..def5678)', 'Task 1: Fix-Runde 3/5 (1 behoben, 0 offen — x; Commits abc1234..def5678)']);
+
+  // Assert
+  assert.equal(outside.stdout, 'FEHLER 2: Fix-Runde 6/5 außerhalb von 1 bis 5\n');
+  assert.equal(skipped.stdout, 'FEHLER 3: Fix-Runde 3/5 nicht fortlaufend (erwartet 2)\n');
+});
+
+test('check_DoneWithoutReviewLine_AllowedButDoneTwice_Error', () => {
+  // Arrange
+  const done = 'Task 1: fertig (Commits abc1234..def5678, Review sauber)';
+
+  // Act
+  const once = checkOf([LEDGER_HEAD, done]);
+  const twice = checkOf([LEDGER_HEAD, done, done]);
+
+  // Assert
+  assert.equal(once.status, 0);
+  assert.equal(twice.stdout, 'FEHLER 3: Task 1 ist zweimal fertig\n');
+});
+
+test('check_CommitRangeUnknownToGit_ErrorOnlyWithRepo', () => {
+  // Arrange
+  const repo = makeRepo();
+  const head = git(repo, 'rev-parse', '--short', 'HEAD');
+  const known = `Task 1: fertig (Commits ${head}..${head}, Review sauber)`;
+  const unknown = 'Task 2: fertig (Commits abc1234..def5678, Review sauber)';
+
+  // Act
+  const withoutRepo = checkOf([LEDGER_HEAD, known, unknown]);
+  const withRepo = checkOf([LEDGER_HEAD, known, unknown], '--repo', repo);
+
+  // Assert
+  assert.equal(withoutRepo.status, 0);
+  assert.equal(withRepo.stdout, 'FEHLER 3: Commit-Bereich unbekannt: abc1234..def5678\n');
+});
+
+test('check_NoLedgerOrBadCall_ExitOneOrTwo', () => {
+  // Arrange
+  const env = setup();
+
+  // Act
+  const missing = runLedger('check', env.workspace);
+  const bad = runLedger('check');
+  const badOption = runLedger('check', env.workspace, '--foo', 'x');
+
+  // Assert
+  assert.equal(missing.status, 1);
+  assert.equal(bad.status, 2);
+  assert.equal(badOption.status, 2);
+});
+
+test('next_NoLedgerYet_TaskOne', () => {
+  // Arrange
+  const env = setup();
+  fs.writeFileSync(env.plan, THREE_TASKS);
+
+  // Act
+  const result = runLedger('next', env.plan, env.workspace);
+
+  // Assert
+  assert.equal(result.stdout, 'NEXT=task 1\n');
+});
+
+test('next_FirstTaskDone_TaskTwo', () => {
+  assert.equal(nextOf([LEDGER_HEAD, 'Task 1: fertig (Commits abc1234..def5678, Review sauber)']), 'NEXT=task 2\n');
+});
+
+test('next_LastLineIsFixRound_NextRound', () => {
+  assert.equal(nextOf([LEDGER_HEAD, 'Task 1: fertig (Commits abc1234..def5678, Review sauber)',
+    'Task 2: Fix-Runde 2/5 (1 behoben, 1 offen — x; Commits abc1234..def5678)']), 'NEXT=fixrunde 2 3\n');
+});
+
+test('next_FixRoundFiveReached_Urteil', () => {
+  const rounds = [1, 2, 3, 4, 5].map((r) => `Task 1: Fix-Runde ${r}/5 (0 behoben, 1 offen — x; Commits abc1234..def5678)`);
+  assert.equal(nextOf([LEDGER_HEAD, ...rounds]), 'NEXT=urteil 1\n');
+});
+
+test('next_AllTasksDoneWithoutFinal_Final', () => {
+  const done = [1, 2, 3].map((n) => `Task ${n}: fertig (Commits abc1234..def5678, Review sauber)`);
+  assert.equal(nextOf([LEDGER_HEAD, ...done]), 'NEXT=final\n');
+});
+
+test('next_FinalLinePresent_Abschluss', () => {
+  const done = [1, 2, 3].map((n) => `Task ${n}: fertig (Commits abc1234..def5678, Review sauber)`);
+  assert.equal(nextOf([LEDGER_HEAD, ...done, 'Final: sauber']), 'NEXT=abschluss\n');
+});
+
+test('next_PlanWithoutTasks_ExitOne', () => {
+  // Arrange
+  const env = ledgerEnv([LEDGER_HEAD], '# Plan\n');
+
+  // Act
+  const result = runLedger('next', env.plan, env.workspace);
+
+  // Assert
+  assert.equal(result.status, 1);
+});
+
+test('archive_KennzahlenSection_CountsTasksRoundsJudgementsParkedDeferred', () => {
+  // Arrange
+  const env = ledgerEnv([LEDGER_HEAD, 'Urteil: A — weil — kostet wenig', 'Task 1: zurückgestellt: Name', 'Task 1: Fix-Runde 1/5 (1 behoben, 0 offen — x; Commits abc1234..def5678)',
+    'Task 1: geparkt — Finding X — Urteil: bleibt', 'Task 1: fertig (Commits abc1234..def5678, 1 geparkt)', 'Gesamtlauf: def5678 grün (verify-run)']);
+
+  // Act
+  const result = runLedger('archive', env.plan, env.workspace);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const text = fs.readFileSync(path.join(env.dir, 'umsetzung.md'), 'utf8');
+  assert.match(text, /## Stand\n- Stand: .+\n- Gesamtlauf: def5678 grün \(verify-run\)\n\n## Kennzahlen\n- Tasks fertig: 1\/3\n- Fix-Runden: 1\n- Urteile: 1\n- Geparkt: 1\n- Zurückgestellt: 1\n$/);
+});
+
+test('archive_KennzahlenWithoutReadablePlanTasks_QuestionMarkForTotal', () => {
+  // Arrange
+  const env = setup();
+  fs.writeFileSync(path.join(env.workspace, 'progress.md'), `${LEDGER_HEAD}\n`);
+
+  // Act
+  runLedger('archive', env.plan, env.workspace);
+
+  // Assert
+  assert.match(fs.readFileSync(path.join(env.dir, 'umsetzung.md'), 'utf8'), /- Tasks fertig: 0\/\?/);
+});

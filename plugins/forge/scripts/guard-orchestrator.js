@@ -16,7 +16,7 @@ const FILE_TOOLS = {
 const SHELL_TOOLS = new Set(['Bash', 'PowerShell']);
 const ALLOWED_SCRIPTS = ['file-hash.js', 'aggregate-findings.js', 'rework-outcome.js', 'review-flow.js',
   'plan-tasks.js', 'workspace.js', 'base-tag.js', 'review-package.js', 'prepare.js', 'forge-config.js', 'work.js', 'ledger.js', 'followup.js', 'implementation-report.js', 'orchestrator-report.js', 'chain.js', 'session-chain.js',
-  'spec-lint.js', 'verify-run.js', 'implementation-checks.js', 'orchestrator-state.js'];
+  'spec-lint.js', 'verify-run.js', 'implementation-checks.js', 'orchestrator-state.js', 'implementation-verdict.js'];
 const VALUE_FLAGS = new Set(['--rounds', '--spec', '--context', '--base', '--bericht', '--ablage']);
 const TOKEN = /"([^"]*)"|'([^']*)'|(\S+)/g;
 const DIR_ALLOWED_SCRIPTS = [...ALLOWED_SCRIPTS, 'guard-orchestrator.js'];

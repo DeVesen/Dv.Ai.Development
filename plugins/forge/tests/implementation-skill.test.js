@@ -126,3 +126,12 @@ test('ledger_ResumeAndArchive_UseNextAndCheck', () => {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
 });
+
+test('references_TaskLoopAndFinalReview_ActOnTheVerdictScriptNotOnTheirOwnReading', () => {
+  const loop = reference('task-loop.md');
+  const final = reference('final-review.md');
+  for (const text of [loop, final]) assert.ok(text.includes('implementation-verdict.js" - <<\'BERICHT\''), 'Aufruf fehlt');
+  assert.ok(loop.includes('Du handelst nach `URTEIL`, nicht nach deiner Lesart'));
+  assert.equal(loop.includes('zählt als `nachbessern`'), false, 'die Korrektur macht das Skript');
+  assert.ok(final.includes('`URTEIL ja`'));
+});

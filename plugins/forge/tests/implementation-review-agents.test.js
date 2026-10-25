@@ -4,9 +4,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { readMarkdown } = require('./lib/markdown');
+const { IMPLEMENTATION_CATEGORIES } = require('../scripts/lib/implementation-categories');
 
 const AGENTS = path.join(__dirname, '..', 'agents');
-const FORMAT_KEYS = ['"reviewer"', '"summary"', '"findings"', '"location"', '"quote"', '"severity"', '"consequence"', '"rationale"'];
+const FORMAT_KEYS = ['"reviewer"', '"summary"', '"findings"', '"location"', '"quote"', '"category"', '"consequence"', '"rationale"'];
 const TYPOGRAPHIC_QUOTES = /[\u201C\u201D\u201E]/;
 const REVIEWERS = {
   acceptance: { tools: 'Read, Grep, Glob, Write', location: '`AC-<Zahl>`' },
@@ -46,7 +47,7 @@ test('implementation-review-acceptance_Body_ReadsSpecNotPlanAndMissingAcIsRed', 
   assert.ok(body.includes('`Spec:`'));
   assert.ok(!body.includes('`Plan:`'));
   assert.match(body, /Den Plan liest du nicht/);
-  assert.match(body, /ist immer `red`/);
+  assert.match(body, /ist immer `ac-verfehlt`/);
 });
 
 test('implementation-review-design_Body_ReadsProjectRulesNotSpecOrPlan', () => {
@@ -59,7 +60,7 @@ test('implementation-review-tests_Body_RunsSuiteOnceAndMayNotEdit', () => {
   const { body } = readAgent('implementation-review-tests');
   assert.match(body, /komplette Suite genau einmal/);
   assert.match(body, /Du änderst keine Datei/);
-  assert.match(body, /Ein Test ohne Assertion ist `red`/);
+  assert.match(body, /Ein Test ohne Assertion ist `test-ohne-assertion`/);
 });
 
 test('implementation-review-tests_Body_ConfiguredCommandFirstAndReusesGreenRun', () => {
@@ -104,3 +105,31 @@ test('implementation-review-scout_Body_FormatContextProfilesAndNoEdits', () => {
   assert.doesNotMatch(body, /Spec so ändern/);
   assert.doesNotMatch(body, TYPOGRAPHIC_QUOTES);
 });
+
+function categorySection(body) {
+  const start = body.indexOf('## Kategorie\n');
+  assert.ok(start > -1, '## Kategorie fehlt');
+  const end = body.indexOf('\n## ', start + 1);
+  return body.slice(start, end === -1 ? undefined : end);
+}
+
+for (const [reviewer, categories] of Object.entries(IMPLEMENTATION_CATEGORIES)) {
+  test(`implementation-review-${reviewer}_Body_NamesItsCategoriesNeverColours`, () => {
+    const { body } = readAgent(`implementation-review-${reviewer}`);
+    const section = categorySection(body);
+    const listed = [...section.matchAll(/^- `([a-z-]+)` — /gm)].map((match) => match[1]);
+    assert.deepEqual(listed, Object.keys(categories), 'Liste im Agent und im Skript stimmen überein');
+    assert.ok(!body.includes('## Einstufung'));
+    assert.ok(!body.includes('"severity"'));
+    assert.ok(!/`(red|yellow|green)`/.test(body), 'Farbe als Wert');
+    assert.ok(section.includes('Ein Feld `severity` oder `color` macht dein Ergebnis ungültig.'));
+    const example = /"category": "([a-z-]+)"/.exec(body)?.[1];
+    assert.ok(Object.hasOwn(categories, example), `Beispiel-Kategorie ${example}`);
+  });
+
+  test(`implementation-review-${reviewer}_Body_EveryCategoryExceptRemarkIsNamedInThePrueflauf`, () => {
+    const { body } = readAgent(`implementation-review-${reviewer}`);
+    const auftrag = body.slice(body.indexOf('## Prüfauftrag'), body.indexOf('## Nicht deine Aufgabe')) + body.slice(body.indexOf('## W-Einträge'), body.indexOf('## Kalibrierung'));
+    for (const category of Object.keys(categories).filter((name) => name !== 'anmerkung')) assert.ok(auftrag.includes(`\`${category}\``), `${category} fehlt im Prüfauftrag`);
+  });
+}

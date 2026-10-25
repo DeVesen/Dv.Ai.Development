@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { quoteStatus } = require('./lib/quotes');
+const { categoryColor } = require('./lib/implementation-categories');
 
 const SEVERITY_RANK = { green: 1, yellow: 2, red: 3 };
 const TEXT_FIELDS = ['location', 'quote', 'consequence', 'rationale'];
@@ -40,26 +41,41 @@ function normalizeLocation(location, types = LOCATION_TYPES) {
   return collapsed;
 }
 
-function isValidFinding(finding) {
+function hasTexts(finding) {
   return finding !== null && typeof finding === 'object'
     && TEXT_FIELDS.every((field) => typeof finding[field] === 'string')
-    && finding.location.trim() !== ''
-    && Object.hasOwn(SEVERITY_RANK, finding.severity);
+    && finding.location.trim() !== '';
 }
 
-function isValidReview(review) {
-  return review !== null && typeof review === 'object'
-    && typeof review.reviewer === 'string' && review.reviewer !== ''
-    && (review.summary === undefined || typeof review.summary === 'string')
-    && Array.isArray(review.findings)
-    && review.findings.every(isValidFinding);
+// Ein Finding trägt entweder `severity` (Skript-Ergebnis, ältere Form) oder `category` (die Implementierungs-Reviewer); beides zugleich gilt nicht.
+// Gibt den Grund zurück, warum es ungültig ist, sonst null.
+function findingProblem(finding, reviewer) {
+  if (!hasTexts(finding)) return 'Pflichtfeld fehlt oder leer';
+  const hasCategory = Object.hasOwn(finding, 'category');
+  if (hasCategory && Object.hasOwn(finding, 'severity')) return `Farbe und Kategorie im Finding: ${finding.location}`;
+  if (!hasCategory) return Object.hasOwn(SEVERITY_RANK, finding.severity) ? null : 'severity fehlt oder unbekannt';
+  return categoryColor(reviewer, finding.category) ? null : `Kategorie unbekannt: ${finding.category} (${finding.location})`;
+}
+
+// Setzt die Farbe der Kategorie als `severity` ein, damit die weitere Verarbeitung nur eine Form kennt.
+function rated(finding, reviewer) {
+  return Object.hasOwn(finding, 'category') ? { ...finding, severity: categoryColor(reviewer, finding.category) } : finding;
+}
+
+function reviewProblem(review) {
+  if (review === null || typeof review !== 'object') return 'kein Objekt';
+  if (typeof review.reviewer !== 'string' || review.reviewer === '') return 'reviewer fehlt';
+  if (review.summary !== undefined && typeof review.summary !== 'string') return 'summary ist kein Text';
+  if (!Array.isArray(review.findings)) return 'findings fehlt';
+  return review.findings.map((finding) => findingProblem(finding, review.reviewer)).find(Boolean) ?? null;
 }
 
 function parseReview(body, errors) {
   try {
     const review = JSON.parse(body);
-    if (isValidReview(review)) return review;
-    errors.push(`Block verletzt das Findings-Format: ${String(review?.reviewer ?? 'unbekannt')}`);
+    const problem = reviewProblem(review);
+    if (!problem) return { ...review, findings: review.findings.map((finding) => rated(finding, review.reviewer)) };
+    errors.push(`Block verletzt das Findings-Format: ${String(review?.reviewer ?? 'unbekannt')}${/^(Farbe|Kategorie)/.test(problem) ? ` — ${problem}` : ''}`);
   } catch (error) {
     errors.push(`Ungültiges JSON: ${error.message}`);
   }
@@ -289,7 +305,9 @@ function resultFile(result, repoRoot = null) {
       location: group.location,
       severity: group.severity,
       reviewers: group.reviewers,
-      items: group.items.map(({ reviewer, severity, location, quote, consequence, rationale }) => ({ reviewer, severity, location, quote, consequence, rationale })),
+      items: group.items.map(({ reviewer, severity, category, location, quote, consequence, rationale }) => ({
+        reviewer, severity, ...(category ? { category } : {}), location, quote, consequence, rationale,
+      })),
     })),
   };
 }

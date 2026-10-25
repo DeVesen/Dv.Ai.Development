@@ -45,10 +45,10 @@ Denselben Auftrag wiederholst du nie unverändert. Fragt der Umsetzer etwas, ant
 ## 3. Task-Review
 1. Paket-Pfad = Ausgabe von `node "<PLUGIN>/scripts/review-package.js" <BASE> HEAD "<W>"`. Nie `HEAD~1` als Basis; das schneidet Tasks mit mehreren Commits ab.
 2. `dv-forge:implementation-task-reviewer` mit `Brief:`, `Bericht:`, `Paket:`, `Basis rot:` und `Global Constraints: <Pfad>`; den Pfad liefert einmal pro Umsetzung `node "<PLUGIN>/scripts/plan-tasks.js" header "<P>" "<W>"`.
-3. Statuszeile `Task <n>: Review <k> × 🔴, <j> × 🟡.`
+3. Die Antwort des Reviewers unverändert an `node "<PLUGIN>/scripts/implementation-verdict.js" - <<'BERICHT'`, darunter die Antwort, dann eine Zeile `BERICHT`. Ausgabe `URTEIL <wert> ROT=<n> GELB=<n>`; Statuszeile `Task <n>: Review <ROT> × 🔴, <GELB> × 🟡.` Exit 1 (Urteilszeile fehlt): das Review gilt als nicht erfolgt, nachfordern.
 4. Keine offenen Prüfaufträge wie "prüf alle Verwendungen" ohne konkreten Grund, keine Wiederholung der Tests.
 5. Du urteilst nicht vorab. Steht in deinem Auftrag "nicht melden", "höchstens 🟡" oder "der Plan hat das entschieden", streichst du es.
-6. Fehlt dem Bericht das Spec-Urteil oder der Findings-Teil, gilt das Review als nicht erfolgt. Ein Urteil `freigegeben` neben einem 🔴 zählt als `nachbessern`.
+6. Du handelst nach `URTEIL`, nicht nach deiner Lesart: `freigegeben` heißt weiter, `nachbessern` (auch das korrigierte neben einem 🔴) heißt Fix-Schleife. Fehlt dem Bericht das Spec-Urteil oder der Findings-Teil, gilt das Review als nicht erfolgt.
 7. Jedes ⚠️ klärst du selbst mit deinem Wissen über Plan und Nachbar-Tasks. Ist es eine echte Lücke, zählt es wie ❌.
 
 ## 4. Fix-Schleife
@@ -63,7 +63,7 @@ Eine Runde ist ein Fix-Auftrag plus ein Re-Review; es gibt höchstens 5 Runden:
 - **Runde 1 bis 3:** denselben Umsetzer per `SendMessage` fortsetzen, mit den offenen Findings wörtlich. Geht das nicht, startest du einen frischen Umsetzer mit `Brief:`, `Bericht:` und `Findings:`; die Berichtsdatei ist das Gedächtnis.
 - **Runde 4 und 5:** frischer Umsetzer eine Modellstufe höher, mit `Brief:`, `Bericht:`, `Findings:` und unter `Kontext:` dem Satz: Ein früherer Umsetzer hat diesen Task <k>-mal versucht; er gehört jetzt dir, in der Berichtsdatei steht, was versucht wurde.
 - **In jeder Runde:** Du nennst im Fix-Auftrag die abdeckenden Testdateien. Vor dem Re-Review prüfst du, dass der Fix-Bericht Tests, Befehl und Ausgabe nennt.
-- **Re-Review:** Paket-Pfad = Ausgabe von `review-package.js <FIX_BASE> HEAD "<W>"`, wobei `FIX_BASE` der Stand ist, den die vorige Prüfung sah. Dann `dv-forge:implementation-re-reviewer` mit `Brief:`, `Findings:`, `Bericht:`, `Paket:`, `Basis rot:`. Neue 🔴 im Fix-Diff kommen zu den offenen Findings; Beobachtungen außerhalb werden zurückgestellt.
+- **Re-Review:** Paket-Pfad = Ausgabe von `review-package.js <FIX_BASE> HEAD "<W>"`, wobei `FIX_BASE` der Stand ist, den die vorige Prüfung sah. Dann `dv-forge:implementation-re-reviewer` mit `Brief:`, `Findings:`, `Bericht:`, `Paket:`, `Basis rot:`. Die Antwort läuft wie in Abschnitt 3 durch `implementation-verdict.js`: `URTEIL sauber` beendet die Runde, bei `offen` oder `nachbessern` (auch neue 🔴 im Fix-Diff) bleiben die Findings offen. Neue 🔴 im Fix-Diff kommen zu den offenen Findings; Beobachtungen außerhalb werden zurückgestellt.
 - **Nach jeder Runde:** `Task <n>: Fix-Runde <r>/5 (…)` ins Ledger und die Statuszeile `Task <n>: Fix-Runde <r> von 5, <k> offen.`
 
 Du behebst nie selbst etwas. Dein Kontext bleibt für die Koordination frei, und ein eigener Fix ginge ungeprüft durch.

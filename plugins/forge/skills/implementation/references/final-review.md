@@ -2,8 +2,9 @@
 
 1. Paket-Pfad = Ausgabe von `node "<PLUGIN>/scripts/review-package.js" forge-base/<slug> HEAD "<W>"`.
 2. `dv-forge:implementation-final-reviewer` mit `model: opus` und den Zeilen `Plan: <P>`, `Spec: <S>` (entfällt ohne Spec), `Paket:`, `Basis rot: <W>/basis-rot.md` und `Zurückgestellt:` mit allen `Bedenken`-, `zurückgestellt`- und `geparkt`-Zeilen des Ledgers.
-3. Keine 🔴 und kein Punkt unter `Zurückgestellt` mit `beheben`: `Final: sauber` ins Ledger, weiter zum Abschluss.
-4. Sonst `FIX_BASE` = Ausgabe von `git rev-parse HEAD` und **ein** Fixer: `dv-forge:implementation-implementer` mit
+   Die Antwort läuft durch `node "<PLUGIN>/scripts/implementation-verdict.js" - <<'BERICHT'` (Antwort darunter, dann eine Zeile `BERICHT`); du handelst nach `URTEIL`, nicht nach deiner Lesart.
+3. `URTEIL ja` (keine 🔴 und kein Punkt unter `Zurückgestellt` mit `beheben`): `Final: sauber` ins Ledger, weiter zum Abschluss.
+4. Sonst (`URTEIL mit-korrekturen` oder `nein`) `FIX_BASE` = Ausgabe von `git rev-parse HEAD` und **ein** Fixer: `dv-forge:implementation-implementer` mit
    - `Brief:` Ausgabe von `node "<PLUGIN>/scripts/plan-tasks.js" header "<P>" "<W>"`
    - `Bericht: <W>/final-report.md`
    - `Repo: <R>`
@@ -11,6 +12,6 @@
    - `Basis rot: <W>/basis-rot.md`
 
    Nie ein Fixer pro Finding; jeder würde den Kontext neu aufbauen und die Suiten erneut laufen lassen.
-5. **Ein** Re-Review: Paket-Pfad = Ausgabe von `review-package.js <FIX_BASE> HEAD "<W>"`, dann `dv-forge:implementation-re-reviewer` mit `Brief:`, `Findings:`, `Bericht:`, `Paket:`, `Basis rot:`.
+5. **Ein** Re-Review: Paket-Pfad = Ausgabe von `review-package.js <FIX_BASE> HEAD "<W>"`, dann `dv-forge:implementation-re-reviewer` mit `Brief:`, `Findings:`, `Bericht:`, `Paket:`, `Basis rot:`; die Antwort läuft durch `implementation-verdict.js` wie in Schritt 2.
 6. Was danach offen ist, beurteilst du wie am Breaker der Task-Schleife: parken mit Urteil oder, wenn es tragend ist, ein Urteil mit Folge. Eine zweite Welle gibt es nicht; offene tragende Punkte stehen im Abschlussbericht.
 7. `Final: Fix-Welle (Commits <BASE>..<HEAD>)` ins Ledger.

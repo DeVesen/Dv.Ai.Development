@@ -114,4 +114,9 @@ function specProblem(savedHash, currentHash) {
   return savedHash === null || savedHash === currentHash ? null : 'Spec geändert';
 }
 
-module.exports = { integrityProblem, specProblem };
+// Zahl der W-Einträge außerhalb von Code-Blöcken.
+function wEntryCount(text) {
+  return scan(text).filter((item) => !item.inFence && W_ENTRY.test(item.line)).length;
+}
+
+module.exports = { integrityProblem, specProblem, wEntryCount };

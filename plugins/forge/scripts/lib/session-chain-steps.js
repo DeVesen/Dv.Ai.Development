@@ -4,9 +4,10 @@
 // ein `final` verarbeiten (Prüfung gegen git, offene Punkte, nächster Schritt), Schlussbericht zeigen, eigene Commits festhalten.
 // Die Berichtsdatei einer Etappe schreibt session-chain-report.js in der Etappen-Session.
 
+const fs = require('node:fs');
 const path = require('node:path');
 const { toPosix } = require('./posix');
-const { SessionChainError, checkedEtappe, slugOfArtifact, readState, writeState } = require('./session-chain-store');
+const { SessionChainError, checkedEtappe, slugOfArtifact, readState, writeState, chainDir } = require('./session-chain-store');
 const { toplevel } = require('./session-chain-git');
 const { readParts, openPoints, mergePoints } = require('./session-chain-points');
 const { recommendation, nextStep } = require('./session-chain-decide');
@@ -17,6 +18,8 @@ const { artifactHashes } = require('./session-chain-gate');
 
 const VALUE_KEYS = ['spec', 'plan', 'worktree', 'branch'];
 const PLAN_RESULTS = ['planning', 'plan-review'];
+// Etappen, die die Spec ändern dürfen; ihr Stand bei Start liegt als Kopie neben dem Zustand (`gestartet.specKopie`).
+const SPEC_COPY_ETAPPEN = ['grill', 'spec-nacharbeit'];
 
 function emptyState(slug) {
   return { slug, etappen: [], offen: [], entscheidungen: [], dateien: [], commits: [] };
@@ -53,6 +56,15 @@ function haltText(state, art) {
   }
   const result = lastResult(state, PLAN_RESULTS);
   return goHalt({ spec: state.spec, plan: state.plan, wi: state.wi, basis: state.basis, result, recommendation: recommendation('go', result), points: state.offen });
+}
+
+// Kopiert die Spec beim Start von Grill und Spec-Nacharbeit nach `<Kettenordner>/spec-vor-<etappe>.md` und vermerkt den Pfad in `gestartet`;
+// `check` vergleicht damit am Ende. Ohne Spec im Zustand oder bei anderen Etappen bleibt der Zustand unverändert. Ein Neustart (`--erneut`) kopiert neu.
+function copySpecAtStart(state, etappe, cwd) {
+  if (!SPEC_COPY_ETAPPEN.includes(etappe) || !state.spec || !fs.existsSync(state.spec) || !state.gestartet) return state;
+  const target = path.join(chainDir(cwd, state.slug), `spec-vor-${etappe}.md`);
+  fs.copyFileSync(state.spec, target);
+  return { ...state, gestartet: { ...state.gestartet, specKopie: toPosix(target) } };
 }
 
 // Zeigt den Haltepunkt `art` und hält ihn im Zustand fest, damit ein Stopp das passende Codewort nennt; auch beim
@@ -96,6 +108,7 @@ function adoptValues(state, input, data) {
 function checkedFinal(etappe, state, input, data, cwd) {
   const checked = checkFinal(etappe, toplevel(cwd), {
     commit: input.commit, spec: state.spec, plan: state.plan, dateien: data.dateien ?? [], branch: state.branch, basis: state.basis, worktree: state.worktree,
+    specKopie: state.gestartet?.etappe === etappe ? state.gestartet.specKopie : undefined, entscheidungen: data.entscheidungen ?? [], bericht: input.bericht,
   });
   return { ...checked, abweichungen: [...checked.abweichungen, ...slugDeviations(data)] };
 }
@@ -168,4 +181,4 @@ function recordCommit(slug, commit, anlass, cwd) {
   return writeState(cwd, slug, { ...state, commits: [...(state.commits ?? []), { etappe: 'leit-session', anlass, ...commit }] });
 }
 
-module.exports = { setState, haltText, holdAt, processFinal, closing, recordCommit };
+module.exports = { setState, copySpecAtStart, haltText, holdAt, processFinal, closing, recordCommit };

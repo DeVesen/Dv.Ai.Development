@@ -8,6 +8,7 @@ const { toPosix } = require('./posix');
 const { git, isDirty, sameDir, worktreeListed, relative } = require('./session-chain-git');
 const { SessionChainError } = require('./session-chain-store');
 const { lintSpec } = require('./spec-lint');
+const { integrityProblem, wEntryCount } = require('./rework-integrity');
 
 // Dateien, die ein Commit der Etappe enthalten darf; null = beliebig (Code der Umsetzung).
 const EXPECTED = {
@@ -120,8 +121,38 @@ function specFormatChecks(repo, values) {
   return result;
 }
 
+// Keine Änderung laut Bericht der Etappe: eine Zeile „Keine Änderung.“ (Abschluss von spec-grilling).
+const NO_CHANGE = /^\W*Keine Änderung\.?\W*$/m;
+
+function reportSaysNoChange(file) {
+  try {
+    return NO_CHANGE.test(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return false;
+  }
+}
+
+// Grill und Spec-Nacharbeit gegen den Stand bei Etappenstart (`values.specKopie`, von `brief` angelegt): W-Einträge, AC-Folge und Kopf
+// bleiben (rework-integrity.js, wie bei der Nacharbeit im Review). Im Grill entspricht die Zahl neuer W-Einträge den gemeldeten Entscheidungen;
+// ohne Entscheidung und mit dem Bericht „Keine Änderung.“ ist die Spec byte-gleich. Ohne Kopie (älterer Zustand) entfällt die Prüfung.
+function specCopyChecks(repo, values, etappe) {
+  const result = emptyResult();
+  if (!values.specKopie || !values.spec || !fs.existsSync(values.specKopie) || !fs.existsSync(values.spec)) return result;
+  const before = fs.readFileSync(values.specKopie, 'utf8');
+  const after = fs.readFileSync(values.spec, 'utf8');
+  const file = relative(repo, values.spec);
+  const problems = [integrityProblem(before, after, 'spec-review')].filter(Boolean);
+  const decisions = (values.entscheidungen ?? []).length;
+  const added = wEntryCount(after) - wEntryCount(before);
+  if (etappe === 'grill' && added !== decisions) problems.push(`${added} neue W-Einträge, aber ${decisions} Entscheidungen gemeldet`);
+  if (etappe === 'grill' && decisions === 0 && values.bericht && reportSaysNoChange(values.bericht) && before !== after) problems.push('Bericht sagt „Keine Änderung.“, die Spec ist aber geändert');
+  result.geprueft.push(`Spec gegen ${etappe}-Start ${file}: ${problems.length === 0 ? 'W-Einträge, AC-Folge und Kopf unverändert' : 'Abweichung'}`);
+  result.abweichungen.push(...problems.map((problem) => `Spec ${file} seit ${etappe}-Start: ${problem}`));
+  return result;
+}
+
 const EXTRA = {
-  whiteboarding: specFormatChecks, grill: specFormatChecks, 'spec-nacharbeit': specFormatChecks,
+  whiteboarding: specFormatChecks, grill: [specFormatChecks, specCopyChecks], 'spec-nacharbeit': [specFormatChecks, specCopyChecks],
   umsetzung: implementationChecks, abschluss: finishChecks,
 };
 
@@ -131,7 +162,7 @@ function checkFinal(etappe, repo, values) {
     commitChecks(repo, values, EXPECTED[etappe]({ ...values, dateien: values.dateien ?? [] }), commitRef(etappe, values)),
     committedChecks(repo, etappe, values),
     requiredChecks(etappe, values),
-    ...(EXTRA[etappe] ? [EXTRA[etappe](repo, values)] : []),
+    ...[EXTRA[etappe] ?? []].flat().map((extra) => extra(repo, values, etappe)),
   ];
   return { geprueft: parts.flatMap((part) => part.geprueft), abweichungen: parts.flatMap((part) => part.abweichungen) };
 }

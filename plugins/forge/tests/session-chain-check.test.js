@@ -207,3 +207,101 @@ test('checkFinal_CommitFromOtherBranch_IsDeviation', () => {
   // Assert
   assert.deepEqual(result.abweichungen.slice(0, 1), [`Commit ${commit} liegt nicht auf HEAD`]);
 });
+
+function specCopyFixture(afterText, beforeText = VALID_SPEC) {
+  const repo = makeRepo();
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  const copy = path.join(repo, 'spec-vor-grill.md');
+  fs.mkdirSync(path.dirname(spec), { recursive: true });
+  fs.writeFileSync(copy, beforeText);
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', afterText, 'docs: grill spec x');
+  return { repo, spec, copy, commit };
+}
+
+test('checkFinal_GrillSpecEqualToCopyWithNoChangeReport_IsChecked', () => {
+  // Arrange
+  const { repo, spec, copy, commit } = specCopyFixture(VALID_SPEC);
+  const bericht = path.join(repo, 'bericht.md');
+  fs.writeFileSync(bericht, '# Bericht der Etappe grill\nKeine Änderung.\n');
+
+  // Act
+  const result = checkFinal('grill', repo, { commit, spec, specKopie: copy, entscheidungen: [], bericht });
+
+  // Assert
+  assert.deepEqual(result.abweichungen, []);
+  assert.ok(result.geprueft.includes('Spec gegen grill-Start docs/forge/x/spec.md: W-Einträge, AC-Folge und Kopf unverändert'));
+});
+
+test('checkFinal_GrillChangedSpecDespiteNoChangeReport_IsDeviation', () => {
+  // Arrange
+  const { repo, spec, copy, commit } = specCopyFixture(`${VALID_SPEC}\n`);
+  const bericht = path.join(repo, 'bericht.md');
+  fs.writeFileSync(bericht, 'Keine Änderung.\n');
+
+  // Act
+  const result = checkFinal('grill', repo, { commit, spec, specKopie: copy, entscheidungen: [], bericht });
+
+  // Assert
+  assert.deepEqual(result.abweichungen, ['Spec docs/forge/x/spec.md seit grill-Start: Bericht sagt „Keine Änderung.“, die Spec ist aber geändert']);
+});
+
+test('checkFinal_GrillRenumbersAc_IsDeviation', () => {
+  // Arrange
+  const renumbered = VALID_SPEC.replace('**AC-01**', '**AC-03**');
+  const { repo, spec, copy, commit } = specCopyFixture(renumbered);
+
+  // Act
+  const result = checkFinal('grill', repo, { commit, spec, specKopie: copy, entscheidungen: [] });
+
+  // Assert
+  assert.ok(result.abweichungen.includes('Spec docs/forge/x/spec.md seit grill-Start: AC verschwunden: AC-01'), result.abweichungen.join('\n'));
+});
+
+test('checkFinal_GrillChangesHeadLine_IsDeviation', () => {
+  // Arrange
+  const { repo, spec, copy, commit } = specCopyFixture(VALID_SPEC.replace('Art: frei', 'Art: verankert'));
+
+  // Act
+  const result = checkFinal('grill', repo, { commit, spec, specKopie: copy, entscheidungen: [] });
+
+  // Assert
+  assert.ok(result.abweichungen.includes('Spec docs/forge/x/spec.md seit grill-Start: Kopf geändert: Art'), result.abweichungen.join('\n'));
+});
+
+test('checkFinal_GrillDecisionCountDiffers_IsDeviation', () => {
+  // Arrange
+  const added = `${VALID_SPEC.trimEnd()}\n- **W · Trenner** · Aussage — Semikolon.\n`;
+  const { repo, spec, copy, commit } = specCopyFixture(added);
+
+  // Act
+  const none = checkFinal('grill', repo, { commit, spec, specKopie: copy, entscheidungen: [] });
+  const one = checkFinal('grill', repo, { commit, spec, specKopie: copy, entscheidungen: ['Trenner'] });
+
+  // Assert
+  assert.deepEqual(none.abweichungen, ['Spec docs/forge/x/spec.md seit grill-Start: 1 neue W-Einträge, aber 0 Entscheidungen gemeldet']);
+  assert.deepEqual(one.abweichungen, []);
+});
+
+test('checkFinal_SpecNacharbeitAddsDecisionWithoutReport_IsNoDeviation', () => {
+  // Arrange: Die Zahl der Entscheidungen prüft nur der Grill.
+  const added = `${VALID_SPEC.trimEnd()}\n- **W · Trenner** · Aussage — Semikolon.\n`;
+  const { repo, spec, copy, commit } = specCopyFixture(added);
+
+  // Act
+  const result = checkFinal('spec-nacharbeit', repo, { commit, spec, specKopie: copy, entscheidungen: [] });
+
+  // Assert
+  assert.deepEqual(result.abweichungen, []);
+});
+
+test('checkFinal_GrillWithoutCopy_SkipsTheComparison', () => {
+  // Arrange
+  const { repo, spec, commit } = specCopyFixture(VALID_SPEC.replace('CSV.', 'XML.'));
+
+  // Act
+  const result = checkFinal('grill', repo, { commit, spec, entscheidungen: [] });
+
+  // Assert
+  assert.deepEqual(result.abweichungen, []);
+  assert.equal(result.geprueft.some((line) => line.startsWith('Spec gegen')), false);
+});

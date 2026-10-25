@@ -14,7 +14,7 @@ const { parseStatusLine, turnAction, readTurns, writeTurns } = require('./lib/se
 const { commitFor } = require('./lib/session-chain-commit');
 const { goCall, adoptedText, noStatusHint } = require('./lib/session-chain-text');
 const { etappeReport, readInput } = require('./lib/session-chain-report');
-const { setState, holdAt, processFinal, closing, recordCommit } = require('./lib/session-chain-steps');
+const { setState, copySpecAtStart, holdAt, processFinal, closing, recordCommit } = require('./lib/session-chain-steps');
 
 const USAGE = [
   'Aufruf: node session-chain.js entry [<codewort> <pfade>... [workitem-nr]]',
@@ -84,7 +84,7 @@ function brief(values) {
   });
   // Erst nach dem gebauten Brief: Ein fehlender Pflichtwert hinterlässt keinen gestarteten Zustand.
   if (state) {
-    writeState(process.cwd(), state.slug, startEtappe(state, values.etappe, { erneut: values.erneut === true }));
+    writeState(process.cwd(), state.slug, copySpecAtStart(startEtappe(state, values.etappe, { erneut: values.erneut === true }), values.etappe, process.cwd()));
     appendEvent(process.cwd(), state.slug, { typ: 'start', etappe: values.etappe, modell: result.modell, erneut: values.erneut === true });
   }
   return [`MODELL=${result.modell}`, `TITEL=${result.titel}`, '=== HINTERGRUND ===', result.hintergrund, '=== BRIEF ===', result.brief].join('\n');

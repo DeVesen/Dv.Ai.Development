@@ -231,6 +231,68 @@ test('chain_SpecNacharbeitLoopAtSpecHalt_BackToSpecReview', () => {
   assert.equal(readState(env.repo, 'x').naechste, 'spec-review');
 });
 
+test('chain_BriefOfGrillAndSpecNacharbeit_CopiesTheSpecIntoTheChainDirAndRecordsIt', () => {
+  // Arrange
+  const env = newChain();
+  const review = reachSpecHalt(env);
+  const before = fs.readFileSync(env.spec, 'utf8');
+
+  // Act
+  succeeded(chain(env.repo, 'answer', '--slug', 'x', '--antwort', 'spec-nacharbeit'));
+  succeeded(chain(env.repo, 'brief', '--etappe', 'spec-nacharbeit', '--slug', 'x', '--quelle', review.bericht));
+  const copy = readState(env.repo, 'x').gestartet.specKopie;
+
+  // Assert
+  assert.match(copy, /\/session-chain\/x\/spec-vor-spec-nacharbeit\.md$/);
+  assert.equal(fs.readFileSync(copy, 'utf8'), before);
+});
+
+test('chain_GrillRewritesAnExistingDecision_HoldsTheChainAsDeviation', () => {
+  // Arrange
+  const env = newChain();
+  runWhiteboarding(env);
+
+  // Act
+  const grill = runEtappe(env, 'grill', {
+    effect: () => ({ commit: commitFile(env.repo, 'docs/forge/x/spec.md', fs.readFileSync(env.spec, 'utf8').replace('CSV.', 'XML.'), 'docs: grill spec x') }),
+  });
+
+  // Assert
+  assert.equal(grill.halt, 'abweichung');
+  assert.ok(grill.out.includes('seit grill-Start: W-Eintrag geändert: Format'), grill.out);
+});
+
+test('chain_GrillAddsDecisionWithoutReportingIt_HoldsTheChainAsDeviation', () => {
+  // Arrange
+  const env = newChain();
+  runWhiteboarding(env);
+  const added = fs.readFileSync(env.spec, 'utf8').trimEnd().concat('\n- **W · Trenner** · Aussage — Semikolon.\n');
+
+  // Act
+  const grill = runEtappe(env, 'grill', { effect: () => ({ commit: commitFile(env.repo, 'docs/forge/x/spec.md', added, 'docs: grill spec x') }) });
+
+  // Assert
+  assert.equal(grill.halt, 'abweichung');
+  assert.ok(grill.out.includes('1 neue W-Einträge, aber 0 Entscheidungen gemeldet'), grill.out);
+});
+
+test('chain_GrillAddsDecisionAndReportsIt_ContinuesWithSpecReview', () => {
+  // Arrange
+  const env = newChain();
+  runWhiteboarding(env);
+  const added = fs.readFileSync(env.spec, 'utf8').trimEnd().concat('\n- **W · Trenner** · Aussage — Semikolon.\n');
+
+  // Act
+  const grill = runEtappe(env, 'grill', {
+    effect: () => ({ commit: commitFile(env.repo, 'docs/forge/x/spec.md', added, 'docs: grill spec x') }),
+    reportExtra: () => ['--entscheidung', 'Trenner: Semikolon'],
+  });
+
+  // Assert
+  assert.equal(grill.weiter, 'spec-review');
+  assert.ok(grill.out.includes('GEPRUEFT=Spec gegen grill-Start docs/forge/x/spec.md: W-Einträge, AC-Folge und Kopf unverändert'), grill.out);
+});
+
 test('chain_ShowstopperAtImplementation_BriefRefusedUntilGreenFinalOfSameEtappe', () => {
   // Arrange
   const env = newChain();

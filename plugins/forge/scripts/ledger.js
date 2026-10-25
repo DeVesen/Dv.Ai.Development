@@ -7,8 +7,9 @@ const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 const { describeTasks, PlanError } = require('./plan-tasks');
 const { parseLedger, checkLedger, metrics, nextStep } = require('./lib/ledger-lines');
+const { tddFindings, formatTdd } = require('./lib/ledger-tdd');
 
-const USAGE = 'Aufruf: node ledger.js archive <plan> <arbeitsbereich> | check <arbeitsbereich> [--plan <plan>] [--repo <R>] | next <plan> <arbeitsbereich>\n';
+const USAGE = 'Aufruf: node ledger.js archive <plan> <arbeitsbereich> | check <arbeitsbereich> [--plan <plan>] [--repo <R>] | next <plan> <arbeitsbereich> | tdd <plan> <arbeitsbereich> --repo <R>\n';
 const JUDGEMENT = /^Urteil:/;
 const DEFERRED = /^Task \d+: (?:zurückgestellt:|geparkt —|Bedenken:)/;
 const FULL_RUN = /^Gesamtlauf:/;
@@ -47,6 +48,14 @@ function planTaskNumbers(planPath) {
   }
 }
 
+// Test-first-Hinweise je fertigem Task; das Repo ist der Ordner des Plans, wie bei `stateLines`.
+function tddLines(planPath, ledger) {
+  const numbers = planTaskNumbers(planPath);
+  if (!numbers) return [];
+  const findings = tddFindings({ parsed: parseLedger(ledger), taskNumbers: numbers, repo: path.dirname(path.resolve(planPath)) });
+  return formatTdd(findings.filter((entry) => entry.befund !== 'unbekannt')).map((line) => `- ${line}`);
+}
+
 function figureLines(planPath, ledger) {
   const numbers = planTaskNumbers(planPath);
   const figures = metrics(parseLedger(ledger), numbers ? numbers.length : null);
@@ -56,6 +65,7 @@ function figureLines(planPath, ledger) {
     `- Urteile: ${figures.urteile}`,
     `- Geparkt: ${figures.geparkt}`,
     `- Zurückgestellt: ${figures.zurueckgestellt}`,
+    ...tddLines(planPath, ledger),
   ];
 }
 
@@ -129,9 +139,18 @@ function next(plan, workspace) {
   return { text: `NEXT=${nextStep(parseLedger(ledgerLines(workspace)), numbers)}`, exit: 0 };
 }
 
+// `tdd <plan> <arbeitsbereich> --repo <R>`: ein Hinweis je fertigem Task, nie ein Fehler-Exit.
+function tdd(plan, workspace, repo) {
+  const numbers = planTaskNumbers(plan);
+  if (!numbers) throw new LedgerError(`Plan nicht lesbar oder ohne lückenlose Tasks: ${toPosix(plan)}`);
+  const lines = formatTdd(tddFindings({ parsed: parseLedger(ledgerLines(workspace)), taskNumbers: numbers, repo: path.resolve(repo) }));
+  return { text: lines.length > 0 ? lines.join('\n') : 'TDD keine fertigen Tasks', exit: 0 };
+}
+
 function run(command, args) {
   if (command === 'archive' && args.length === 2) return { text: archive(args[0], args[1]), exit: 0 };
   if (command === 'next' && args.length === 2) return next(args[0], args[1]);
+  if (command === 'tdd' && args.length === 4 && args[2] === '--repo') return tdd(args[0], args[1], args[3]);
   const options = command === 'check' ? checkOptions(args) : null;
   return options ? check(options) : null;
 }

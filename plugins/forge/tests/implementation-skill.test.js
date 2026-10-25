@@ -146,3 +146,8 @@ test('taskLoop_BasisLauf_ScriptRunsFirstAndAgentOnlyReadsStoredOutputsOnRot', ()
   assert.ok(basis.indexOf('verify-run.js') < basis.indexOf('Nur bei `rot=ja`'));
   assert.equal(basis.includes('rote Suiten ein zweites Mal'), false, 'der zweite Lauf gehört dem Skript');
 });
+
+test('ledger_Archive_NamesTheTddHintsAsNoticeOnly', () => {
+  const text = reference('ledger.md');
+  for (const part of ['ledger.js" tdd "<P>" "<W>" --repo "<R>"', '`TDD ok|danach|fehlt-test task <n>`', 'nur ein Hinweis, nie ein Abbruch']) assert.ok(text.includes(part), `${part} fehlt`);
+});

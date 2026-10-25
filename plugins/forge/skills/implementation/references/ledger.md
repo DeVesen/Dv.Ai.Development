@@ -26,7 +26,7 @@ Jede Zeile schreibst du in derselben Nachricht, in der du den Schritt abschließ
 ## Nach der Umsetzung
 Das Ledger bleibt nicht im Arbeitsbereich liegen: Der Abschluss legt Urteile, Bedenken, zurückgestellte und geparkte Punkte mit `ledger.js archive` neben Spec und Plan ab. Das Implementierungs-Review liest diese Datei.
 
-Vor `archive` prüfst du das Ledger: `node "<PLUGIN>/scripts/ledger.js" check "<W>" --plan "<P>" --repo "<R>"`. Exit 1 listet je Zeile `FEHLER <zeile>: <grund>`; diese Meldung kommt in den Abschlussbericht, und du archivierst trotzdem. `archive` fügt dem Archiv einen Abschnitt `## Kennzahlen` an.
+Vor `archive` prüfst du das Ledger: `node "<PLUGIN>/scripts/ledger.js" check "<W>" --plan "<P>" --repo "<R>"`. Exit 1 listet je Zeile `FEHLER <zeile>: <grund>`; diese Meldung kommt in den Abschlussbericht, und du archivierst trotzdem. `archive` fügt dem Archiv einen Abschnitt `## Kennzahlen` an, dort auch je fertigem Task die Zeile `TDD ok|danach|fehlt-test task <n>` von `node "<PLUGIN>/scripts/ledger.js" tdd "<P>" "<W>" --repo "<R>"` (Reihenfolge von Test und Code im Commit-Bereich; nur ein Hinweis, nie ein Abbruch).
 
 ## Wiederaufnahme
 Den nächsten Schritt liefert `node "<PLUGIN>/scripts/ledger.js" next "<P>" "<W>"`: `NEXT=task <n>`, `NEXT=fixrunde <n> <r>`, `NEXT=urteil <n>`, `NEXT=final` oder `NEXT=abschluss`. Dahinter stehen diese Regeln:

@@ -282,3 +282,90 @@ test('archive_KennzahlenWithoutReadablePlanTasks_QuestionMarkForTotal', () => {
   // Assert
   assert.match(fs.readFileSync(path.join(env.dir, 'umsetzung.md'), 'utf8'), /- Tasks fertig: 0\/\?/);
 });
+
+// Repo mit drei fertigen Tasks: Task 1 Test vor Code, Task 2 Code vor Test, Task 3 nur Code. Rückgabe: Umgebung mit Ledger.
+function tddEnv() {
+  const { commitFile } = require('./lib/git-repo');
+  const repo = makeRepo();
+  const range = (from) => `${from}..${git(repo, 'rev-parse', '--short', 'HEAD')}`;
+  const base1 = git(repo, 'rev-parse', '--short', 'HEAD');
+  commitFile(repo, 'tests/a.test.js', 't\n', 'test: a');
+  commitFile(repo, 'src/a.js', 'a\n', 'feat: a');
+  const range1 = range(base1);
+  const base2 = git(repo, 'rev-parse', '--short', 'HEAD');
+  commitFile(repo, 'src/b.js', 'b\n', 'feat: b');
+  commitFile(repo, 'tests/b.test.js', 't\n', 'test: b');
+  const range2 = range(base2);
+  const base3 = git(repo, 'rev-parse', '--short', 'HEAD');
+  commitFile(repo, 'src/c.js', 'c\n', 'feat: c');
+  commitFile(repo, 'docs/c.md', 'doku\n', 'docs: c');
+  const range3 = range(base3);
+  const workspace = path.join(repo, 'w');
+  fs.mkdirSync(workspace);
+  const plan = path.join(repo, 'plan.md');
+  fs.writeFileSync(plan, THREE_TASKS);
+  fs.writeFileSync(path.join(workspace, 'progress.md'), [LEDGER_HEAD, ...[range1, range2, range3].map((r, index) => `Task ${index + 1}: fertig (Commits ${r}, Review sauber)`)].join('\n'));
+  return { repo, workspace, plan, ranges: [range1, range2, range3] };
+}
+
+test('tdd_TestFirstCodeFirstAndNoTest_OneFindingPerDoneTask', () => {
+  // Arrange
+  const env = tddEnv();
+
+  // Act
+  const result = runLedger('tdd', env.plan, env.workspace, '--repo', env.repo);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, 'TDD ok task 1\nTDD danach task 2\nTDD fehlt-test task 3\n');
+});
+
+test('tdd_TestAndCodeInTheFirstCommit_Ok', () => {
+  // Arrange
+  const { commitFile } = require('./lib/git-repo');
+  const repo = makeRepo();
+  const base = git(repo, 'rev-parse', '--short', 'HEAD');
+  fs.mkdirSync(path.join(repo, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(repo, 'tests'), { recursive: true });
+  fs.writeFileSync(path.join(repo, 'src/a.js'), 'a\n');
+  commitFile(repo, 'tests/a.test.js', 't\n', 'feat: a with test');
+  const env = ledgerEnv([LEDGER_HEAD, `Task 1: fertig (Commits ${base}..${git(repo, 'rev-parse', '--short', 'HEAD')}, Review sauber)`]);
+
+  // Act
+  const result = runLedger('tdd', env.plan, env.workspace, '--repo', repo);
+
+  // Assert
+  assert.equal(result.stdout, 'TDD ok task 1\n');
+});
+
+test('tdd_UnknownRangeOrNoDoneTask_HintsOnlyNeverFailure', () => {
+  // Arrange
+  const unknown = ledgerEnv([LEDGER_HEAD, 'Task 1: fertig (Commits abc1234..def5678, Review sauber)']);
+  const none = ledgerEnv([LEDGER_HEAD]);
+
+  // Act
+  const first = runLedger('tdd', unknown.plan, unknown.workspace, '--repo', makeRepo());
+  const second = runLedger('tdd', none.plan, none.workspace, '--repo', makeRepo());
+
+  // Assert
+  assert.deepEqual([first.status, first.stdout], [0, 'TDD unbekannt task 1\n']);
+  assert.deepEqual([second.status, second.stdout], [0, 'TDD keine fertigen Tasks\n']);
+});
+
+test('tdd_WithoutRepoOption_ExitTwo', () => {
+  const env = ledgerEnv([LEDGER_HEAD]);
+  assert.equal(runLedger('tdd', env.plan, env.workspace).status, 2);
+});
+
+test('archive_KennzahlenSection_ListsTheTddFindingsAfterTheFigures', () => {
+  // Arrange
+  const env = tddEnv();
+
+  // Act
+  const result = runLedger('archive', env.plan, env.workspace);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const text = fs.readFileSync(path.join(env.repo, 'umsetzung.md'), 'utf8');
+  assert.match(text, /- Zurückgestellt: 0\n- TDD ok task 1\n- TDD danach task 2\n- TDD fehlt-test task 3\n$/);
+});

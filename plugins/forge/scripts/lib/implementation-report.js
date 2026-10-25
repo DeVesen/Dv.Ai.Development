@@ -68,6 +68,11 @@ function isTestFile(file) {
   return !DOCUMENT_FILE.test(file) && TEST_PATHS.some((pattern) => pattern.test(file));
 }
 
+// Produktivcode: weder Test noch Dokument.
+function isProductionFile(file) {
+  return !DOCUMENT_FILE.test(file) && !isTestFile(file);
+}
+
 function reviewerLines(result) {
   const items = result.groups.flatMap((group) => group.items);
   const count = (name, severity) => items.filter((item) => item.reviewer === name && item.severity === severity).length;
@@ -177,4 +182,4 @@ function buildReport(options) {
   return [`ENDE ${status}`, '=== BERICHT ===', text].join('\n');
 }
 
-module.exports = { buildReport, changedFiles, isTestFile };
+module.exports = { buildReport, changedFiles, isTestFile, isProductionFile };

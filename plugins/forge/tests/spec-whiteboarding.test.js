@@ -94,7 +94,9 @@ test('skill_Body_LinksAllReferencesThatExist', () => {
 
 test('skill_Body_WritesOnlyTheForgeSpecFile', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('forge-config.js" get Spec-Ablage'));
+  assert.ok(body.includes('spec-path.js" --slug <slug>'));
+  assert.ok(body.includes('`PFAD=` ist der Zielpfad, `BASIS=` der Wert für `Basis`.'));
+  assert.equal(body.includes('forge-config.js" get Spec-Ablage'), false, 'Platzhalter setzt das Skript ein');
   assert.match(body, /Nie überschreiben/);
   assert.match(body, /wortgleich mit dem bestätigten Entwurf/);
   assert.match(body, /Kein Branch, kein Worktree/);

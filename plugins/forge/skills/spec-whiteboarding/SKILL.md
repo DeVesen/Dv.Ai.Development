@@ -21,7 +21,7 @@ Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergeb
 1. **Rahmenfragen** nach `references/grill-rounds.md`, dann offene Punkte sammeln — Was/Wie/Wo/Warum, Verhalten danach, Soll-Vorgaben, Akzeptanzkriterien nach `references/ac-rules.md`.
 2. **Runden:** je Runde die komplette Frontier im Format aus `references/grill-rounds.md`. Antworten verbuchen, Frontier neu berechnen, bis sie leer ist. Sagt der Mensch „trenn das auf“, gilt `references/split.md`.
 3. **Bestätigen:** Erst bei leerer Frontier Inhalt, Titel und Slug vorlegen, als vollständigen Entwurf. Erst nach ausdrücklicher Bestätigung aller drei schreiben.
-4. **Zielpfad:** `node "<PLUGIN>/scripts/forge-config.js" get Spec-Ablage`, Platzhalter `<datum>` und `<slug>` einsetzen. Existiert der Ordner bereits, nachfragen und einen abweichenden Slug vorschlagen. Nie überschreiben.
+4. **Zielpfad:** `node "<PLUGIN>/scripts/spec-path.js" --slug <slug>`; `PFAD=` ist der Zielpfad, `BASIS=` der Wert für `Basis`. Exit 1 (Ort existiert bereits): nachfragen und den Vorschlag der Meldung anbieten. Nie überschreiben.
 5. **Schreiben:** ausschließlich als Datei am Zielpfad, Format nach `references/spec-format.md`, `Art: frei`. Die Datei ist wortgleich mit dem bestätigten Entwurf (`Status`, `Basis` ausgenommen). Vorher Branch-Abgleich, Commit-Regeln: `references/spec-format.md`. Danach `node "<PLUGIN>/scripts/spec-lint.js" <pfad>`; jeden `FEHLER` beheben wie eine spätere Änderung. Jede spätere Änderung legst du als Vorher/Nachher vor und schreibst sie erst nach erneuter Bestätigung.
 6. **Übergabe:** mit genau diesen vier Punkten enden:
    - Pfad der Spec relativ zum Repo und aktueller Branch

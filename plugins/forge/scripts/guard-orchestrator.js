@@ -411,10 +411,36 @@ function storeAfterTurn(sessionId, marker, mustShow, tmpRoot) {
   else writeMarker(sessionId, next, tmpRoot);
 }
 
-// Block-Grund, wenn der vorgemerkte Pflichttext im Zugtext fehlt; sonst `null`.
+const REPORT_HEADINGS = ['# Abschlussbericht', '# Was sich', '# Was ist noch offen', '# Wie es weitergeht'];
+const REPORT_MISSING_REASON = 'dv-forge: Der Lauf endet ohne Abschlussbericht. Erzeuge ihn mit orchestrator-report.js '
+  + '(bei frühem Ende mit --abbruch) und gib ihn aus.';
+
+function lastFilledLine(text) {
+  const lines = String(text).split('\n').map((line) => line.trim()).filter((line) => line !== '');
+  return lines.length > 0 ? lines[lines.length - 1] : '';
+}
+
+function showsReport(text) {
+  const lines = String(text).split('\n').map((line) => line.trim());
+  return REPORT_HEADINGS.some((heading) => lines.some((line) => line.startsWith(heading)));
+}
+
+// Zugende eines Stufen-Orchestrator-Laufs ohne Bericht: einmal je Lauf blocken. Eine Frage an den Menschen
+// (Zugtext endet mit `?`) und ein gesetztes `pause` sind legitime Zugenden.
+function onRunTurnEnd(input, marker, tmpRoot) {
+  if (input.stop_hook_active || marker?.mustShow || marker?.paused) return null;
+  const run = readRun(input.session_id, tmpRoot);
+  if (!run || !STAGE_RUNS.includes(run.skill) || run.abschlussGeblockt) return null;
+  const shown = turnText(input.transcript_path, input.last_assistant_message);
+  if (showsReport(shown) || lastFilledLine(shown).endsWith('?')) return null;
+  fs.writeFileSync(runMarkerPath(input.session_id, tmpRoot), JSON.stringify({ ...run, abschlussGeblockt: 1 }));
+  return REPORT_MISSING_REASON;
+}
+
+// Block-Grund, wenn der vorgemerkte Pflichttext im Zugtext fehlt oder der Lauf ohne Bericht endet; sonst `null`.
 function onTurnEnd(input, tmpRoot) {
   const marker = readMarker(input.session_id, tmpRoot);
-  if (!marker?.mustShow) return null;
+  if (!marker?.mustShow) return onRunTurnEnd(input, marker, tmpRoot);
   const shown = turnText(input.transcript_path, input.last_assistant_message);
   const { reason, mustShow } = decideTurnEnd(marker.mustShow, shown);
   storeAfterTurn(input.session_id, marker, mustShow, tmpRoot);

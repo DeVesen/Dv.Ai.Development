@@ -4,6 +4,7 @@
 const fs = require('node:fs');
 const { agentProblem } = require('./lib/agent-check');
 const { mayBlock, release } = require('./lib/block-budget');
+const { recordAgent } = require('./lib/agent-metrics');
 
 // Blockt höchstens zweimal je Sub-Agent; ohne agent_id nur einmal (stop_hook_active beendet es).
 function decide(input, tmpRoot) {
@@ -19,8 +20,14 @@ function decide(input, tmpRoot) {
 
 function main() {
   const raw = fs.readFileSync(0, 'utf8');
-  const decision = decide(raw.trim() === '' ? {} : JSON.parse(raw));
-  if (decision) process.stdout.write(JSON.stringify(decision));
+  const input = raw.trim() === '' ? {} : JSON.parse(raw);
+  const decision = decide(input);
+  if (decision) {
+    process.stdout.write(JSON.stringify(decision));
+    return;
+  }
+  // Die Messzeile entsteht erst, wenn der Sub-Agent wirklich endet, nicht bei jedem geblockten Versuch.
+  recordAgent(input);
 }
 
 if (require.main === module) {

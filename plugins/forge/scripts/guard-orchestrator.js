@@ -365,9 +365,16 @@ function decideImplementerGit(input) {
     + `und git commit -m "<betreff>"; Push, Merge und Rebase sind Sache des Menschen. Geblockt: ${blockedAction(input)}.`;
 }
 
+// Im Review-Lauf wartet der nächste Schritt auf jeden Agent; ein Agent im Hintergrund würde übergangen.
+function decideBackgroundAgent(input, tmpRoot) {
+  if (input.tool_name !== 'Agent' || input.tool_input?.run_in_background !== true) return null;
+  if (!readMarker(input.session_id, tmpRoot)?.command) return null;
+  return 'Im Review-Lauf laufen Agents im Vordergrund (run_in_background: false).';
+}
+
 function decidePreTool(input, tmpRoot) {
   if (input.agent_id) return writesOutsideWorkspace(input) ? WORKSPACE_REASON : decideImplementerGit(input);
-  return decideRunGit(input, tmpRoot) ?? decideReviewGuard(input, tmpRoot);
+  return decideRunGit(input, tmpRoot) ?? decideBackgroundAgent(input, tmpRoot) ?? decideReviewGuard(input, tmpRoot);
 }
 
 function decideReviewGuard(input, tmpRoot) {

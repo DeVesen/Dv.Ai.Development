@@ -83,7 +83,7 @@ test('baseline_PlanReviewScriptChecksOnly_FindDependencyPlaceholderAndMissingAc'
   assert.ok(result.je[0].treffer.includes('platzhalter'), JSON.stringify(result.je[0]));
 });
 
-test('baseline_ImplementationChecksOnly_FindMissingTasksAndRedSuite', () => {
+test('baseline_ImplementationChecksOnly_FindMissingTasksRedSuiteAndSwallowedError', () => {
   const repo = buildRepo(fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-eval-impl-')), { flawed: true });
   const out = path.join(repo, '.forge', 'skript.json');
   const testlauf = path.join(repo, '.forge', 'testlauf.json');
@@ -93,7 +93,7 @@ test('baseline_ImplementationChecksOnly_FindMissingTasksAndRedSuite', () => {
   assert.equal(run.status, 0, run.stderr);
   const review = JSON.parse(fs.readFileSync(out, 'utf8'));
   const result = evaluateRun(golden('implementation-review-flawed'), { groups: review.findings.map((finding) => ({ location: finding.location, severity: finding.severity })) });
-  for (const id of ['format-fehlt', 'laden-fehlt']) assert.ok(result.treffer.includes(id), `${id}: ${JSON.stringify(result)}`);
+  for (const id of ['format-fehlt', 'laden-fehlt', 'fehler-verschluckt']) assert.ok(result.treffer.includes(id), `${id}: ${JSON.stringify(result)}`);
 });
 
 test('cli_ReviewsJsonlFiltersByReviewAndLastN', () => {

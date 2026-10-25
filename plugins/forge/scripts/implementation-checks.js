@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 
-// Skript-Prüfungen des Implementierungs-Reviews: Plan↔Diff und, falls gegeben, das Ergebnis von verify-run.js.
+// Skript-Prüfungen des Implementierungs-Reviews: Plan↔Diff, mechanische Code-Hinweise (alle 🟡) und, falls gegeben, das Ergebnis von verify-run.js.
 // Schreibt ein Reviewer-Ergebnis `skript` im Findings-Format; aggregate-findings.js liest es mit `--skript`.
 // Ausgabe: `SKRIPT befunde=<n>` und die Zeilen des Plan-Abgleichs. Exit 2 bei falschem Aufruf, 1 bei Fehler.
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { planDiff, formatPlanDiff, planDiffFindings } = require('./lib/plan-diff');
+const { codeHints } = require('./lib/code-hints');
 
 const USAGE = 'Aufruf: node implementation-checks.js --plan <P> --repo <R> --base <B> --out <datei> [--testlauf <pruefung.json>]\n';
 const OPTIONS = ['--plan', '--repo', '--base', '--out', '--testlauf'];
@@ -43,7 +44,7 @@ function main() {
   const repo = path.resolve(values.repo);
   try {
     const diff = planDiff(values.plan, repo, values.base);
-    const findings = [...planDiffFindings(diff, repo), ...testFindings(values.testlauf)];
+    const findings = [...planDiffFindings(diff, repo), ...codeHints(repo, values.base), ...testFindings(values.testlauf)];
     const summary = `Plan↔Diff: ${diff.planned} geplante, ${diff.changed} geänderte Dateien${values.testlauf ? '; Testlauf aus verify-run.js' : ''}`;
     fs.mkdirSync(path.dirname(path.resolve(values.out)), { recursive: true });
     fs.writeFileSync(values.out, `${JSON.stringify({ reviewer: 'skript', summary, findings }, null, 2)}\n`);

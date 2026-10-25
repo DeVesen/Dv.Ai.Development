@@ -136,4 +136,4 @@ function checkFinal(etappe, repo, values) {
   return { geprueft: parts.flatMap((part) => part.geprueft), abweichungen: parts.flatMap((part) => part.abweichungen) };
 }
 
-module.exports = { checkFinal };
+module.exports = { checkFinal, EXPECTED };

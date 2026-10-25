@@ -101,9 +101,14 @@ function reportedLines(state) {
   return lines.length > 0 ? lines : [NONE];
 }
 
+// Haltepunkt, an dem die Kette steht: der offene oder, nach `answer stopp`, der beantwortete (die Antwort schließt den offenen).
+function haltOf(state) {
+  return state.halt ?? (state.freigabe?.antwort === 'stopp' ? state.freigabe.halt : null);
+}
+
 // Schlussbericht: `stopp` nennt das Codewort für den späteren Einstieg; mit Workitem den optionalen Abschluss im Workitem.
 function finalReport(state, { stopp = false } = {}) {
-  const resume = stopp && RESUME[state.halt] ? ['## Fortsetzen', RESUME[state.halt](state)] : [];
+  const resume = stopp && RESUME[haltOf(state)] ? ['## Fortsetzen', RESUME[haltOf(state)](state)] : [];
   const workitem = state.wi ? ['## Workitem', `Optional: \`finishing-workitem ${state.wi}\``] : [];
   return [
     `# Schlussbericht der Session-Kette ${state.slug}`,

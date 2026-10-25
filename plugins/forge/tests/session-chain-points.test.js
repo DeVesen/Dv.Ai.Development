@@ -120,3 +120,18 @@ test('openPoints_SameInputAsMergeReports_DiffersOnlyForUnchangedChosenGroups', (
   assert.deepEqual(report.open.map((entry) => entry.key), ['b']);
   assert.deepEqual(points.map((point) => point.key), ['a', 'b']);
 });
+
+test('mergePoints_PlanReviewAfterPlanning_ReplacesPlanningPointsAndKeepsSpecPoints', () => {
+  // Arrange
+  const existing = [
+    { farbe: 'yellow', titel: 'Spec-Begriff', key: 's', herkunft: 'spec-review' },
+    { farbe: 'yellow', titel: 'Plan-Begriff', key: 'p', herkunft: 'planning' },
+  ];
+  const fresh = [{ farbe: 'green', titel: 'Reihenfolge', key: 'r', herkunft: 'plan-review' }];
+
+  // Act
+  const merged = mergePoints(existing, 'plan-review', fresh);
+
+  // Assert
+  assert.deepEqual(merged.map((point) => point.titel), ['Spec-Begriff', 'Reihenfolge']);
+});

@@ -148,3 +148,25 @@ test('finalReport_WithWorkitem_NamesOptionalFinishingWorkitemCall', () => {
   assert.ok(text.includes('## Workitem\nOptional: `finishing-workitem 311021`'));
   assert.ok(!text.includes('## Fortsetzen'));
 });
+
+test('finalReport_StoppAfterAnswerStopp_NamesResumeOfTheAnsweredHaltepunkt', () => {
+  // Arrange
+  const state = { slug: 'x', halt: null, freigabe: { halt: 'go', antwort: 'stopp' }, spec: 'C:/r/spec.md', plan: 'C:/r/plan.md', etappen: [], offen: [] };
+
+  // Act
+  const text = finalReport(state, { stopp: true });
+
+  // Assert
+  assert.ok(text.includes('## Fortsetzen\n/dv-forge:session-orchestrator implementation C:/r/spec.md C:/r/plan.md'), text);
+});
+
+test('finalReport_FreigabeOtherThanStopp_NoResume', () => {
+  // Arrange
+  const state = { slug: 'x', halt: null, freigabe: { halt: 'spec', antwort: 'planning' }, spec: 'C:/r/spec.md', etappen: [], offen: [] };
+
+  // Act
+  const text = finalReport(state, { stopp: true });
+
+  // Assert
+  assert.ok(!text.includes('## Fortsetzen'));
+});

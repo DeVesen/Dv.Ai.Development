@@ -59,4 +59,4 @@ function nextStep(etappe, report = {}) {
   return NEXT[etappe];
 }
 
-module.exports = { resultOf, verdictOf, recommendation, showstoppers, nextStep };
+module.exports = { resultOf, verdictOf, recommendation, showstoppers, nextStep, NEXT };

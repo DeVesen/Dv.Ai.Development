@@ -35,9 +35,13 @@ function openPoints(parts, herkunft) {
     .sort((a, b) => RANK[a.farbe] - RANK[b.farbe]);
 }
 
-// Die Punkte einer Etappe ersetzen die ihres früheren Laufs; Punkte anderer Etappen bleiben unverändert stehen.
+// Das Plan-Review ist eine neue Prüfung desselben Plans: Es löst die Punkte ab, die der Plan-Entwurf (planning) selbst gemeldet hat.
+const SUPERSEDES = { 'plan-review': ['planning'] };
+
+// Die Punkte einer Etappe ersetzen die ihres früheren Laufs und die der Etappen, die sie ablöst; Punkte anderer Etappen bleiben stehen.
 function mergePoints(existing, herkunft, points) {
-  return [...(existing ?? []).filter((point) => point.herkunft !== herkunft), ...points];
+  const replaced = [herkunft, ...(SUPERSEDES[herkunft] ?? [])];
+  return [...(existing ?? []).filter((point) => !replaced.includes(point.herkunft)), ...points];
 }
 
 function pointLine(point) {

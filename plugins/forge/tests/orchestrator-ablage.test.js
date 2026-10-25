@@ -43,7 +43,9 @@ for (const [name, store] of Object.entries(STORE)) {
     const text = readText(ABLAGE);
 
     // Assert
-    assert.ok(text.includes(`## ${name}\n${store}`), `${name}: ${store}`);
+    // Spec- und Plan-Orchestrator teilen sich einen Abschnitt; die Überschrift nennt beide.
+    const heading = text.split('\n').find((line) => line.startsWith('## ') && line.split(/ und |, /).some((part) => part.replace(/^## /, '') === name));
+    assert.ok(heading && text.includes(`${heading}\n${store}`), `${name}: ${store}`);
   });
 }
 

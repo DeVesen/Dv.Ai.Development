@@ -38,7 +38,7 @@ test('reviewFollowupFlow_Reference_SpecAndPlanWithoutReviewerRound', () => {
 
 test('reviewFollowupFlow_Reference_FailedReworkOrVerifierStillReportsWithoutSaveOrDrop', () => {
   const text = readText(FLOW);
-  assert.ok(text.includes('Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es statt mit dem Abschnitt Ende von `flow.md` mit Schritt 5 der Nachprüfung (`report`) weiter, danach Schritt 6 ohne `save` und ohne `drop`.'));
+  assert.ok(text.includes('Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es statt mit dem Abschnitt Ende von `flow.md` mit Schritt 5 von „Nachprüfung · Spec und Plan“ (`report`) weiter, danach mit dessen Schritt 6 ohne `save` und ohne `drop`.'));
 });
 
 test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => {
@@ -66,7 +66,7 @@ test('reviewFollowupSkill_Body_ShowsReportFileBeforeCleanupAndKeepsPriority', ()
   const show = body.indexOf('scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<W>/abschluss/bericht.md"');
   assert.ok(show > -1, 'show fehlt');
   assert.ok(show < body.indexOf('scripts/workspace.js" remove <rolle> <slug>'), 'show muss vor remove stehen');
-  assert.ok(body.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht.'));
+  assert.ok(body.includes('die Formatregeln stehen in `flow.md`, Abschnitt Bericht'));
   assert.ok(wordCount(body) < 500);
 });
 
@@ -123,8 +123,8 @@ test('reviewFollowupFlow_ImplementationWithoutReReview_ContinuesAtReportDataStep
   const unchanged = checking.split('\n').find((line) => line.startsWith('1. Paket'));
 
   // Assert
-  assert.ok(blocked?.includes('weiter mit Schritt 3 der Nachprüfung (`--ohne blockiert`)'));
-  assert.ok(unchanged?.includes('weiter mit Schritt 3 der Nachprüfung (`--ohne keine-aenderung`)'));
+  assert.ok(blocked?.includes('weiter mit Schritt 3 von „Nachprüfung · Implementierung“ (`--ohne blockiert`)'));
+  assert.ok(unchanged?.includes('weiter mit Schritt 3 dieses Abschnitts (`--ohne keine-aenderung`)'));
   assert.equal(text.includes('weiter mit dem Bericht'), false);
 });
 

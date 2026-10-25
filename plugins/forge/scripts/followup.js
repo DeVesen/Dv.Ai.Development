@@ -46,11 +46,14 @@ function scoutSection(lines) {
 }
 
 // Zeilen jeder Scout-Gruppe, von ihrer Überschrift bis vor die nächste; Schlüssel `<icon> <stelle>`.
+// Eine Überschrift in einem Code-Block ist keine Gruppe, wie in parseScout.
 function scoutBlocks(lines) {
   const blocks = new Map();
   let current = null;
+  let inFence = false;
   for (const line of scoutSection(lines).slice(1)) {
-    const heading = GROUP_HEADING.exec(line);
+    const heading = inFence ? null : GROUP_HEADING.exec(line);
+    if (FENCE.test(line)) inFence = !inFence;
     if (heading) {
       current = [line];
       blocks.set(`${heading[1]} ${heading[2]}`, current);
@@ -63,8 +66,10 @@ function scoutBlocks(lines) {
 
 function numberedScout(lines) {
   let number = 0;
+  let inFence = false;
   return scoutSection(lines).map((line) => {
-    const heading = GROUP_HEADING.exec(line);
+    const heading = inFence ? null : GROUP_HEADING.exec(line);
+    if (FENCE.test(line)) inFence = !inFence;
     if (!heading) return line;
     number += 1;
     return `### ${number} · ${heading[1]} ${heading[2]}`;
@@ -78,7 +83,10 @@ function save(role, slug, dir) {
   const aggregateFile = path.join(dir, 'aggregate.md');
   if (scoutSection(scout).length > 0 && !fs.existsSync(aggregateFile)) throw new FollowupError(`aggregate.md fehlt: ${toPosix(aggregateFile)}`);
   // Eine Scout-Gruppe ohne passende Aggregat-Gruppe macht die Sicherung unbrauchbar: wie kein Scout, der Loop startet ihn neu.
-  if (scoutSection(scout).length === 0 || !matchesAggregate(readLines(aggregateFile), scout)) {
+  // Der Grund geht nach stderr, damit ein verworfener Scout nicht still verschwindet.
+  const problem = scoutSection(scout).length === 0 ? null : aggregateProblem(readLines(aggregateFile), scout);
+  if (scoutSection(scout).length === 0 || problem) {
+    if (problem) process.stderr.write(`dv-forge followup: Scout verworfen: ${problem}\n`);
     fs.rmSync(target, { recursive: true, force: true });
     return 'KEIN SCOUT';
   }
@@ -172,21 +180,27 @@ function parseRework(lines) {
   return groups;
 }
 
+// Zwei Scout-Gruppen mit derselben Stufe und Stelle lassen sich keiner Aggregat-Gruppe eindeutig zuordnen.
 function groupsOf(aggregateLines, scoutLines) {
   const rework = parseRework(aggregateLines);
-  return parseScout(scoutLines).map((group, index) => {
+  const scouted = parseScout(scoutLines);
+  const keys = scouted.map((group) => `${group.severity} ${group.location}`);
+  const doubled = keys.find((key, index) => keys.indexOf(key) !== index);
+  if (doubled) throw new FollowupError(`Scout-Gruppe doppelt: ${doubled}`);
+  return scouted.map((group, index) => {
     const match = rework.find((item) => item.severity === group.severity && item.location === group.location);
     if (!match) throw new FollowupError(`Keine Aggregat-Gruppe zu ${group.severity} ${group.location}`);
     return { number: index + 1, ...group, reviewers: match.reviewers, findings: match.findings };
   });
 }
 
-function matchesAggregate(aggregateLines, scoutLines) {
+// Grund, warum Scout und Aggregat nicht zusammenpassen, sonst null.
+function aggregateProblem(aggregateLines, scoutLines) {
   try {
     groupsOf(aggregateLines, scoutLines);
-    return true;
+    return null;
   } catch (error) {
-    if (error instanceof FollowupError) return false;
+    if (error instanceof FollowupError) return error.message;
     throw error;
   }
 }

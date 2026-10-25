@@ -298,3 +298,16 @@ test('etappeReport_PruefungDatei_DockerCountsGreenAndContradictionFails', () => 
   assert.equal(contradiction.status, 2);
   assert.match(contradiction.stderr, /--pruefung rot widerspricht --pruefung-datei \(gruen\)/);
 });
+
+test('brief_SonnetEtappe_PrintsFixedModelId', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  chain(repo, 'set', '--slug', 'x', '--spec', spec, '--basis', 'main');
+
+  // Act
+  const result = chain(repo, 'brief', '--etappe', 'spec-review', '--slug', 'x');
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^MODELL=sonnet\nMODELL-ID=claude-sonnet-5-5\nTITEL=Spec-Review x\n/);
+});

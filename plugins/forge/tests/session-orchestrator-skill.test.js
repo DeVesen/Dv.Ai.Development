@@ -63,7 +63,7 @@ test('sessionOrchestrator_Body_StartsStageItselfOrShowsProposalCard', () => {
 
   // Assert
   for (const part of ['`mcp__ccd_session__start_session` mit `initiation` `user_asked`', '`prompt` = Text nach `=== BRIEF ===`', '`background` = Text nach `=== HINTERGRUND ===`',
-    '`MODELL=sonnet`: `model` = Sonnet-Modell-ID aus deiner Umgebung; `MODELL=opus`: kein `model`',
+    '`MODELL=sonnet`: `model` = Wert von `MODELL-ID`; `MODELL=opus`: kein `model`',
     'Lehnt die App den Start ab: derselbe Aufruf mit `initiation` `own_initiative` und eine Zeile „Ein Klick auf die Karte startet die Etappe <e>.“']) {
     assert.ok(body.includes(part), part);
   }

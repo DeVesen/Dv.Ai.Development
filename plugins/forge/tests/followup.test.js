@@ -288,3 +288,28 @@ test('cli_Keep_UnknownGroupNumber_ExitsZeroRemovesSaveButInvalidNumberExitsOneAn
   assert.equal(run(repo, 'keep', 'plan-review', 'demo', '9').status, 0);
   assert.equal(fs.existsSync(dir), false);
 });
+
+test('save_HeadingInsideCodeBlock_IsNoGroupAndNumbersStayAligned', () => {
+  const scout = SCOUT.replace('```js\n1. kein Vorschlag, nur Code\n```', '```md\n### 🟡 AC-99\n```');
+  const env = roundDir({ 'aggregate.md': AGGREGATE, 'scout.md': scout });
+  const output = followup.save('plan-review', 'demo', env.dir);
+  assert.ok(output.includes('### 1 · 🔴 Task 2'));
+  assert.ok(output.includes('### 🟡 AC-99'), 'Überschrift im Code-Block bleibt unverändert');
+  assert.ok(output.includes('### 2 · 🟡 AC-03'));
+  followup.keep('plan-review', 'demo', '1', env.repo);
+  assert.ok(fs.readFileSync(path.join(env.saved, 'scout.md'), 'utf8').includes('### 🟡 AC-99'), 'keep behält den Code-Block der Gruppe');
+});
+
+test('save_DuplicateScoutGroup_KeinScoutWithReasonOnStderr', () => {
+  const env = roundDir({ 'aggregate.md': AGGREGATE, 'scout.md': `${SCOUT}### 🟡 AC-03\n1. noch einmal\n` });
+  const result = run(env.repo, 'save', 'plan-review', 'demo', env.dir);
+  assert.equal(result.stdout.trim(), 'KEIN SCOUT');
+  assert.match(result.stderr, /Scout verworfen: Scout-Gruppe doppelt: 🟡 AC-03/);
+});
+
+test('save_ScoutGroupWithoutAggregate_ReasonOnStderr', () => {
+  const env = roundDir({ 'aggregate.md': AGGREGATE, 'scout.md': SCOUT.replace('### 🟡 AC-03', '### 🟡 AC-04') });
+  const result = run(env.repo, 'save', 'plan-review', 'demo', env.dir);
+  assert.equal(result.stdout.trim(), 'KEIN SCOUT');
+  assert.match(result.stderr, /Keine Aggregat-Gruppe zu 🟡 AC-04/);
+});

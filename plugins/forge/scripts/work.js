@@ -96,13 +96,21 @@ function saveBaseline(root, branch) {
   fs.writeFileSync(file, JSON.stringify({ branch, files: snapshot(root) }));
 }
 
+// Ohne Datei gibt es keinen Vorbestand. Eine kaputte Datei bricht ab: Ein stiller leerer Vorbestand würde jede schon
+// beim Start offene Datei als neue Änderung melden.
 function readBaseline(root, branch) {
+  const file = baselinePath(root);
+  if (!fs.existsSync(file)) return {};
+  let stored;
   try {
-    const stored = JSON.parse(fs.readFileSync(baselinePath(root), 'utf8'));
-    return stored.branch === branch ? stored.files : {};
+    stored = JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch {
-    return {};
+    stored = null;
   }
+  if (stored === null || typeof stored !== 'object' || typeof stored.files !== 'object' || stored.files === null) {
+    throw new WorkError(`Vorbestand nicht lesbar: ${toPosix(file)}. Datei löschen, dann zählt jede offene Datei als neue Änderung.`);
+  }
+  return stored.branch === branch ? stored.files : {};
 }
 
 function splitByBaseline(root, branch) {

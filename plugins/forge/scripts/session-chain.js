@@ -9,7 +9,7 @@ const { SessionChainError, slugOfArtifact, readState, writeState, appendEvent } 
 const { answerHalt, startEtappe, checkGo } = require('./lib/session-chain-gate');
 const { storeFiles } = require('./lib/session-chain-ablage');
 const { EntryError, analyseEntry } = require('./lib/session-chain-entry');
-const { buildBrief } = require('./lib/session-chain-brief');
+const { buildBrief, SONNET_MODEL_ID } = require('./lib/session-chain-brief');
 const { parseStatusLine, turnAction, readTurns, writeTurns } = require('./lib/session-chain-turn');
 const { commitFor } = require('./lib/session-chain-commit');
 const { goCall, adoptedText, noStatusHint } = require('./lib/session-chain-text');
@@ -88,7 +88,7 @@ function brief(values) {
     writeState(process.cwd(), state.slug, copySpecAtStart(startEtappe(state, values.etappe, { erneut: values.erneut === true, briefHash: briefHashOf(result.brief), modell: result.modell }), values.etappe, process.cwd()));
     appendEvent(process.cwd(), state.slug, { typ: 'start', etappe: values.etappe, modell: result.modell, erneut: values.erneut === true });
   }
-  return [`MODELL=${result.modell}`, `TITEL=${result.titel}`, '=== HINTERGRUND ===', result.hintergrund, '=== BRIEF ===', result.brief].join('\n');
+  return [`MODELL=${result.modell}`, ...(result.modell === 'sonnet' ? [`MODELL-ID=${SONNET_MODEL_ID}`] : []), `TITEL=${result.titel}`, '=== HINTERGRUND ===', result.hintergrund, '=== BRIEF ===', result.brief].join('\n');
 }
 
 // Das Turn-Ende einer Etappen-Session kommt als Datei: sein Text stammt aus einer fremden Session und gehört nie auf die Kommandozeile.

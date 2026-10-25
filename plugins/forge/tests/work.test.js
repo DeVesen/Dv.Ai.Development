@@ -272,3 +272,10 @@ test('switchBranch_NewName_SwitchesAndKeepsBaselineOfNewBranch', () => {
   assert.throws(() => switchBranch('feature/neu', repo), /existiert schon/);
   assert.throws(() => switchBranch('kaputt..name', repo), /Kein gültiger Branch-Name/);
 });
+
+test('check_CorruptBaseline_FailsWithPathInsteadOfEmptyBaseline', () => {
+  const { check } = require('../scripts/work.js');
+  const repo = makeRepo();
+  fs.writeFileSync(path.join(repo, '.git', 'forge-baseline.json'), '{kaputt');
+  assert.throws(() => check(repo), /Vorbestand nicht lesbar: .*forge-baseline\.json/);
+});

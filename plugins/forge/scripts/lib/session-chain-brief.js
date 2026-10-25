@@ -11,6 +11,8 @@ const { SessionChainError, checkedEtappe } = require('./session-chain-store');
 const { goCall } = require('./session-chain-text');
 
 const PLUGIN_ROOT = path.resolve(__dirname, '..', '..');
+// Modell der Sonnet-Etappen; die Leit-Session übergibt es wörtlich an das Start-Tool, statt es zu raten.
+const SONNET_MODEL_ID = 'claude-sonnet-5-5';
 const BASE_FILE = path.join(PLUGIN_ROOT, 'shared', 'session-chain', 'base-sub-agent.md');
 
 function withWi(command, wi) {
@@ -151,4 +153,4 @@ function buildBrief({ etappe, values, decisions = [], kontext = null }) {
   return { modell: etappenBrief.modell, titel: `${etappenBrief.titel} ${values.slug ?? ''}`.trim(), brief: sections.join('\n\n'), hintergrund: background };
 }
 
-module.exports = { buildBrief, ETAPPEN_BRIEFS, BASE_FILE };
+module.exports = { buildBrief, ETAPPEN_BRIEFS, BASE_FILE, SONNET_MODEL_ID };

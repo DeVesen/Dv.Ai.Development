@@ -115,7 +115,7 @@ test('reviewSkills_EmbeddedSection_NamesBerichtAndKeepsStandaloneUnchanged', () 
 
 test('reviewFollowupFlow_EmbeddedRun_PassesBerichtToReportAndImplementationScript', () => {
   const embedded = section(readText(FOLLOWUP_FLOW), 'Eingebetteter Lauf');
-  for (const part of ['`--bericht "<BD>"`', 'Schritt 3 der Nachprüfung läuft mit dem `<BD>` aus `$ARGUMENTS`', 'In Schritt 6 entfällt `show`.']) {
+  for (const part of ['`--bericht "<BD>"`', 'Schritt 3 von „Nachprüfung · Implementierung“ läuft mit dem `<BD>` aus `$ARGUMENTS`', 'Im Schritt „Ende“ des Skills entfällt `show`.']) {
     assert.ok(embedded.includes(part), `${part} fehlt`);
   }
   const flow = readText(FOLLOWUP_FLOW);

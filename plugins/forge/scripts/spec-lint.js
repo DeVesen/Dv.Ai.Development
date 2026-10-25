@@ -3,11 +3,13 @@
 
 // Formprüfung einer Spec ohne KI. Ausgabe: Kopfzeile `LINT fehler=<n> warnungen=<m> …`, je Befund eine Zeile.
 // Exit 1 bei mindestens einem Fehler, 2 bei falschem Aufruf. Mit --json schreibt das Skript Befunde und Kennzahlen als Datei.
+// `--runde <datei>` prüft stattdessen die Form einer Grill-Runde (Ausgabe `RUNDE fehler=<n> warnungen=<m> fragen=<k>`); kein Hook, nur Aufruf von Hand.
 
 const fs = require('node:fs');
 const { lintSpec } = require('./lib/spec-lint');
+const { lintRound, formatRound } = require('./lib/round-format');
 
-const USAGE = 'Aufruf: node spec-lint.js <spec.md> [--json <datei>]\n';
+const USAGE = 'Aufruf: node spec-lint.js <spec.md> [--json <datei>] | --runde <datei>\n';
 
 function formatResult({ issues, metrics }) {
   const head = `LINT fehler=${metrics.fehler} warnungen=${metrics.warnungen} ac=${metrics.ac} w=${metrics.w} ohne-tag=${metrics.ohneTag}`;
@@ -15,8 +17,31 @@ function formatResult({ issues, metrics }) {
   return [head, ...lines].join('\n');
 }
 
+function readOrExit(file, what) {
+  try {
+    return fs.readFileSync(file, 'utf8');
+  } catch {
+    process.stderr.write(`${what} nicht lesbar: ${file}\n`);
+    process.exit(2);
+  }
+  return '';
+}
+
+function roundMain(file) {
+  const result = lintRound(readOrExit(file, 'Runde'));
+  process.stdout.write(`${formatRound(result)}\n`);
+  process.exit(result.metrics.fehler > 0 ? 1 : 0);
+}
+
 function main() {
   const args = process.argv.slice(2);
+  if (args[0] === '--runde') {
+    if (args.length !== 2) {
+      process.stderr.write(USAGE);
+      process.exit(2);
+    }
+    roundMain(args[1]);
+  }
   const jsonIndex = args.indexOf('--json');
   const json = jsonIndex === -1 ? null : args[jsonIndex + 1];
   const [spec] = jsonIndex === -1 ? args : args.filter((arg, index) => index !== jsonIndex && index !== jsonIndex + 1);
@@ -24,14 +49,7 @@ function main() {
     process.stderr.write(USAGE);
     process.exit(2);
   }
-  let text;
-  try {
-    text = fs.readFileSync(spec, 'utf8');
-  } catch {
-    process.stderr.write(`Spec nicht lesbar: ${spec}\n`);
-    process.exit(2);
-  }
-  const result = lintSpec(text);
+  const result = lintSpec(readOrExit(spec, 'Spec'));
   if (json) fs.writeFileSync(json, `${JSON.stringify({ spec, ...result }, null, 2)}\n`);
   process.stdout.write(`${formatResult(result)}\n`);
   process.exit(result.metrics.fehler > 0 ? 1 : 0);

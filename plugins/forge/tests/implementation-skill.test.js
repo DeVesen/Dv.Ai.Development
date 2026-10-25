@@ -135,3 +135,14 @@ test('references_TaskLoopAndFinalReview_ActOnTheVerdictScriptNotOnTheirOwnReadin
   assert.equal(loop.includes('zählt als `nachbessern`'), false, 'die Korrektur macht das Skript');
   assert.ok(final.includes('`URTEIL ja`'));
 });
+
+test('taskLoop_BasisLauf_ScriptRunsFirstAndAgentOnlyReadsStoredOutputsOnRot', () => {
+  const loop = reference('task-loop.md');
+  const basis = loop.slice(loop.indexOf('## 0. Basis-Lauf'), loop.indexOf('## 1. Umsetzer starten'));
+  for (const part of ['verify-run.js" --repo "<R>" --basis "<W>/basis-lauf.json"', '`BASIS rot=nein|ja`', '`rot=nein`: Ledger `Basis rot: keine`, kein Agent', 'Nur bei `rot=ja`',
+    '`Läufe: <W>/basis-lauf.json`', 'nichts erneut ausführen']) {
+    assert.ok(basis.includes(part), `${part} fehlt`);
+  }
+  assert.ok(basis.indexOf('verify-run.js') < basis.indexOf('Nur bei `rot=ja`'));
+  assert.equal(basis.includes('rote Suiten ein zweites Mal'), false, 'der zweite Lauf gehört dem Skript');
+});

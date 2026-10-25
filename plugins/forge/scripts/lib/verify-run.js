@@ -33,7 +33,7 @@ function runCommand(command, repo, timeout) {
   const result = spawnSync(command, { cwd: repo, shell: true, encoding: 'utf8', timeout, maxBuffer: 64 * 1024 * 1024 });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   const exit = result.error?.code === 'ETIMEDOUT' ? 124 : result.status ?? 1;
-  return { befehl: command, exit, dauerMs: Date.now() - started, ausgabe: tail(output), docker: DOCKER_MARKER.test(output) };
+  return { befehl: command, exit, dauerMs: Date.now() - started, ausgabe: tail(output), voll: output, docker: DOCKER_MARKER.test(output) };
 }
 
 function isDocOnly(file) {
@@ -78,7 +78,8 @@ function verifyRun({ repo, config, only = KEYS, report = null, timeout = DEFAULT
     if (commands.length === 0) skipped.push({ schluessel: key, grund: 'nicht konfiguriert' });
     let red = false;
     for (const command of commands) {
-      const run = { schluessel: key, ...runCommand(command, repo, timeout) };
+      const { voll: _full, ...executed } = runCommand(command, repo, timeout);
+      const run = { schluessel: key, ...executed };
       runs.push(run);
       if (run.exit !== 0) { red = true; break; }
     }
@@ -86,6 +87,33 @@ function verifyRun({ repo, config, only = KEYS, report = null, timeout = DEFAULT
   }
   const offen = git(repo, ['status', '--porcelain']).out.split('\n').filter(Boolean);
   return { head: git(repo, ['rev-parse', 'HEAD']).out, ergebnis: overall(runs, docker), laeufe: runs, uebersprungen: skipped, offen };
+}
+
+// Ein Lauf der Test-Befehle: Exit-Code des ersten roten Befehls (sonst 0) und die vollständige Ausgabe aller gelaufenen Befehle.
+function testRun(commands, repo, timeout) {
+  const executed = [];
+  for (const command of commands) {
+    const run = runCommand(command, repo, timeout);
+    executed.push(run);
+    if (run.exit !== 0) break;
+  }
+  return { exit: executed.find((run) => run.exit !== 0)?.exit ?? 0, ausgabe: executed.map((run) => run.voll).join('') };
+}
+
+// Basis-Lauf vor Task 1: `Test` höchstens zweimal, der zweite Lauf nur, wenn der erste rot ist. `beideRot`: erst dann gibt es Tests,
+// die auf dem unveränderten Stand rot sind. Ohne konfigurierten Test: keine Läufe.
+function basisRun({ repo, config, timeout = DEFAULT_TIMEOUT_MS }) {
+  const commands = commandsOf(config.Test);
+  const laeufe = [];
+  while (commands.length > 0 && laeufe.length < 2) {
+    laeufe.push(testRun(commands, repo, timeout));
+    if (laeufe.at(-1).exit === 0) break;
+  }
+  return { laeufe, beideRot: laeufe.length === 2 && laeufe.every((run) => run.exit !== 0) };
+}
+
+function formatBasis(result) {
+  return `BASIS rot=${result.beideRot ? 'ja' : 'nein'}`;
 }
 
 function formatVerify(result, out) {
@@ -101,4 +129,4 @@ function writeResult(file, result) {
   fs.writeFileSync(file, `${JSON.stringify(result, null, 2)}\n`);
 }
 
-module.exports = { KEYS, verifyRun, formatVerify, writeResult, greenSince, isDocOnly, overall };
+module.exports = { KEYS, verifyRun, basisRun, formatBasis, formatVerify, writeResult, greenSince, isDocOnly, overall };

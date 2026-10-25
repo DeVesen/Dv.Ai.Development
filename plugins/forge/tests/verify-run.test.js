@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { verifyRun, formatVerify, greenSince, isDocOnly } = require('../scripts/lib/verify-run');
+const { verifyRun, basisRun, formatVerify, greenSince, isDocOnly } = require('../scripts/lib/verify-run');
 const { makeRepo, commitFile, git } = require('./lib/git-repo');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'verify-run.js');
@@ -100,4 +100,105 @@ test('cli_ReadsConfigFromClaudeMdAndWritesFile', () => {
   assert.match(result.stdout, /^PRUEFUNG ergebnis=rot /);
   assert.equal(JSON.parse(fs.readFileSync(out, 'utf8')).laeufe[0].exit, 3);
   assert.equal(spawnSync(process.execPath, [SCRIPT, '--nur', 'x'], { encoding: 'utf8' }).status, 2);
+});
+
+function configRepo(testCommand) {
+  const repo = makeRepo();
+  commitFile(repo, 'CLAUDE.md', `# X\n\n## dv-forge\n- Test: \`${testCommand}\`\n`, 'config');
+  return repo;
+}
+
+function basisCli(repo, out) {
+  return spawnSync(process.execPath, [SCRIPT, '--repo', repo, '--basis', out], { encoding: 'utf8' });
+}
+
+function tempOut(name = 'basis-lauf.json') {
+  return path.join(fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'dv-forge-basis-')), name);
+}
+
+test('basisRun_FirstRunGreen_OneRunAndNotRed', () => {
+  const result = basisRun({ repo: makeRepo(), config: { Test: OK } });
+  assert.deepEqual(result.laeufe.map((run) => run.exit), [0]);
+  assert.equal(result.beideRot, false);
+});
+
+test('basisRun_BothRunsRed_TwoRunsAndRed', () => {
+  const result = basisRun({ repo: makeRepo(), config: { Test: FAIL } });
+  assert.deepEqual(result.laeufe.map((run) => run.exit), [3, 3]);
+  assert.equal(result.beideRot, true);
+  assert.match(result.laeufe[1].ausgabe, /1 failing/);
+});
+
+test('basisRun_FlakyFirstRedThenGreen_NotRed', () => {
+  // Arrange: Der Befehl scheitert beim ersten Aufruf und besteht beim zweiten (Zählerdatei im Repo).
+  const repo = makeRepo();
+  const flaky = `${NODE} -e "const fs=require('fs');const f='zaehler.txt';const n=fs.existsSync(f)?1:0;fs.writeFileSync(f,'x');process.exit(n===0?1:0)"`;
+
+  // Act
+  const result = basisRun({ repo, config: { Test: flaky } });
+
+  // Assert
+  assert.deepEqual(result.laeufe.map((run) => run.exit), [1, 0]);
+  assert.equal(result.beideRot, false);
+});
+
+test('basisRun_NoTestConfigured_NoRunsAndNotRed', () => {
+  assert.deepEqual(basisRun({ repo: makeRepo(), config: { Test: '' } }), { laeufe: [], beideRot: false });
+});
+
+test('basisRun_LongOutput_KeepsTheWholeOutputNotOnlyTheTail', () => {
+  const long = `${NODE} -e "for (let i = 1; i <= 100; i++) console.log('zeile ' + i); process.exit(1)"`;
+  const result = basisRun({ repo: makeRepo(), config: { Test: long } });
+  assert.ok(result.laeufe[0].ausgabe.startsWith('zeile 1\n'));
+  assert.ok(result.laeufe[0].ausgabe.includes('zeile 100'));
+});
+
+test('basisRun_SeveralTestCommands_StopsAtTheFirstRedOneAndKeepsBothOutputs', () => {
+  const first = `${NODE} -e "console.log('eins')"`;
+  const second = `${NODE} -e "console.log('zwei'); process.exit(2)"`;
+  const third = `${NODE} -e "console.log('drei')"`;
+  const result = basisRun({ repo: makeRepo(), config: { Test: `${first} ; ${second} ; ${third}` } });
+  assert.equal(result.laeufe[0].exit, 2);
+  assert.match(result.laeufe[0].ausgabe, /eins[\s\S]*zwei/);
+  assert.equal(result.laeufe[0].ausgabe.includes('drei'), false);
+});
+
+test('verifyRun_RunsKeepOnlyTheTailNotTheFullOutput', () => {
+  const result = verifyRun({ repo: makeRepo(), config: { Build: '', Test: OK, Lint: '' }, docker: noDocker });
+  assert.equal('voll' in result.laeufe[0], false);
+});
+
+test('cli_BasisBothRed_PrintsRotJaAndWritesBothOutputsWithoutBasisRotFile', () => {
+  // Arrange
+  const repo = configRepo(FAIL);
+  const out = tempOut();
+
+  // Act
+  const result = basisCli(repo, out);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, 'BASIS rot=ja\n');
+  const data = JSON.parse(fs.readFileSync(out, 'utf8'));
+  assert.deepEqual([data.beideRot, data.laeufe.map((run) => run.exit)], [true, [3, 3]]);
+  assert.equal(fs.existsSync(path.join(path.dirname(out), 'basis-rot.md')), false);
+});
+
+test('cli_BasisGreen_PrintsRotNeinAndWritesBasisRotKeine', () => {
+  // Arrange
+  const repo = configRepo(OK);
+  const out = tempOut();
+
+  // Act
+  const result = basisCli(repo, out);
+
+  // Assert
+  assert.equal(result.stdout, 'BASIS rot=nein\n');
+  assert.deepEqual(JSON.parse(fs.readFileSync(out, 'utf8')).laeufe.map((run) => run.exit), [0]);
+  assert.equal(fs.readFileSync(path.join(path.dirname(out), 'basis-rot.md'), 'utf8'), 'keine\n');
+});
+
+test('cli_BasisWithOtherSelectionOptions_ExitTwo', () => {
+  const repo = makeRepo();
+  assert.equal(spawnSync(process.execPath, [SCRIPT, '--repo', repo, '--basis', tempOut(), '--nur', 'test'], { encoding: 'utf8' }).status, 2);
 });

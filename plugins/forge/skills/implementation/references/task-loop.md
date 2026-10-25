@@ -11,9 +11,10 @@ Nennt der Plan mehrere kleine, gleichartige Tasks, etwa dieselbe Einzeilen-Ände
 ## 0. Basis-Lauf
 Einmal vor Task 1, nur wenn das Ledger noch keine `Basis rot:`-Zeile hat.
 1. `node "<PLUGIN>/scripts/forge-config.js" get Test`. Leer: Ledger `Basis rot: nicht ermittelt (Test leer)`, weiter mit Abschnitt 1.
-2. Ein `Agent`-Aufruf `general-purpose` mit `model: sonnet` und den Zeilen `Befehl: <Test-Wert>`, `Repo: <R>`, `Bericht: <W>/basis-rot.md`. Auftrag: den Befehl im Repo auf dem unveränderten Stand ausführen, rote Suiten ein zweites Mal; in den Bericht nur Tests, die in beiden Läufen rot waren, je Zeile `<Suite> :: <vollständiger Testname>`, sonst `keine`. Nichts ändern, nichts committen. Antwort: Anzahl und Pfad.
-3. Ledger: `Basis rot: keine` oder je Test eine Zeile `Basis rot: <Suite> :: <Name>`. Nur dort genannte Tests sind bekannte Ausnahmen, alle anderen roten Tests bleiben Fehler.
-4. Jeder weitere Auftrag an Umsetzer, Fixer, Task-Reviewer, Re-Reviewer und Final-Reviewer bekommt die Zeile `Basis rot: <W>/basis-rot.md`.
+2. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>" --basis "<W>/basis-lauf.json"` führt `Test` auf dem unveränderten Stand aus, ein zweites Mal nur nach einem roten ersten Lauf. Ausgabe `BASIS rot=nein|ja`. `rot=nein`: Ledger `Basis rot: keine`, kein Agent; das Skript hat `<W>/basis-rot.md` mit `keine` angelegt.
+3. Nur bei `rot=ja`: ein `Agent`-Aufruf `general-purpose` mit `model: sonnet` und den Zeilen `Läufe: <W>/basis-lauf.json`, `Bericht: <W>/basis-rot.md`. Auftrag: die beiden gespeicherten Ausgaben lesen, nichts erneut ausführen; in den Bericht nur Tests, die in beiden Läufen rot waren, je Zeile `<Suite> :: <vollständiger Testname>`, sonst `keine`. Nichts ändern, nichts committen. Antwort: Anzahl und Pfad.
+4. Ledger bei `rot=ja`: `Basis rot: keine` oder je Test eine Zeile `Basis rot: <Suite> :: <Name>`. Nur dort genannte Tests sind bekannte Ausnahmen, alle anderen roten Tests bleiben Fehler.
+5. Jeder weitere Auftrag an Umsetzer, Fixer, Task-Reviewer, Re-Reviewer und Final-Reviewer bekommt die Zeile `Basis rot: <W>/basis-rot.md`.
 
 ## 1. Umsetzer starten
 1. `BASE` = Ausgabe von `git rev-parse HEAD`.

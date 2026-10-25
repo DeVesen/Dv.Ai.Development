@@ -73,4 +73,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { expectedResult, problemWith, decide };
+module.exports = { expectedResult, problemWith, decide, firstPrompt, messageText };

@@ -117,10 +117,12 @@ function addsEverything(args) {
   return args.some((arg) => arg === '-A' || arg === '--all' || arg === '.');
 }
 
-// Grund (kurzer Text) für einen verbotenen git-Aufruf oder `null`.
-function forbiddenGit(call, { noCommit }) {
+// Grund (kurzer Text) für einen verbotenen git-Aufruf oder `null`. `agent`: engere Liste für den Umsetzer-Agent
+// (kein Push, Merge, Rebase, reset --hard, Sammel-Staging, --no-verify; Ortswechsel und Stash bleiben erlaubt).
+function forbiddenGit(call, { noCommit, agent }) {
   const { sub, args } = call;
   if (args.includes('--no-verify')) return 'git … --no-verify';
+  if (agent) return forbiddenForAgent(call);
   if (['push', 'checkout', 'switch', 'merge', 'rebase'].includes(sub)) return `git ${sub}`;
   if (sub === 'worktree' && args[0] !== 'list') return 'git worktree';
   if (sub === 'stash' && !['list', 'show'].includes(args[0])) return 'git stash';
@@ -128,6 +130,13 @@ function forbiddenGit(call, { noCommit }) {
   if (sub === 'add' && addsEverything(args)) return 'git add -A / .';
   if (sub === 'commit' && commitUsesAll(args)) return 'git commit -a';
   if (sub === 'commit' && noCommit) return 'git commit';
+  return null;
+}
+
+function forbiddenForAgent({ sub, args }) {
+  if (['push', 'merge', 'rebase'].includes(sub)) return `git ${sub}`;
+  if (sub === 'reset' && args.includes('--hard')) return 'git reset --hard';
+  if (sub === 'add' && addsEverything(args)) return 'git add -A / .';
   return null;
 }
 

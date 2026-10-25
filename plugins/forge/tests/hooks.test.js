@@ -22,5 +22,5 @@ test('hooksJson_StageGuard_ReadsBriefAtPromptAndClearsAtSessionEnd', () => {
 
 test('hooksJson_SessionEndAndSubagentStop_KeepTheirGuardCommands', () => {
   assert.equal(commandOf('SessionEnd')[0], 'node "${CLAUDE_PLUGIN_ROOT}/scripts/guard-orchestrator.js" stop');
-  assert.deepEqual(commandOf('SubagentStop'), ['node "${CLAUDE_PLUGIN_ROOT}/scripts/result-check.js"']);
+  assert.equal(commandOf('SubagentStop')[0], 'node "${CLAUDE_PLUGIN_ROOT}/scripts/result-check.js"');
 });

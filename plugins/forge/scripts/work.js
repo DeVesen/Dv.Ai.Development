@@ -310,4 +310,10 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { WorkError, start, switchBranch, check, remove, removeDirectory, isLinkedWorktree };
+// Offene Dateien eines Checkouts, getrennt in neue (`open`) und Vorbestand seit dem Start (`before`).
+function openFiles(cwd = process.cwd()) {
+  const root = toplevel(cwd);
+  return splitByBaseline(root, currentBranch(root));
+}
+
+module.exports = { WorkError, start, switchBranch, check, remove, removeDirectory, isLinkedWorktree, openFiles };

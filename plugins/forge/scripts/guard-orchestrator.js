@@ -28,6 +28,7 @@ const CHAINING = /[;&|`<>\r\n]|\$\(/;
 const HEREDOC_START = /\s<<(?:'([A-Za-z_]\w*)'|([A-Za-z_]\w*))\s*$/;
 const UNQUOTED_EXPANSION = /`|\$\(/;
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
+const IMPLEMENTER = 'dv-forge:implementation-implementer';
 const REVIEW_AGENT = /^dv-forge:(?:(?:spec|plan|implementation)-review-[a-z-]+|(?:spec|plan)-rework)$/;
 const WORKSPACE_SEGMENT = /\/\.forge\//;
 const WORKSPACE_REASON = 'dv-forge: Review- und Nacharbeits-Agents schreiben mit Write nur in den Arbeitsbereich .forge/. '
@@ -355,8 +356,17 @@ function decideRunGit(input, tmpRoot) {
     + `node "<PLUGIN>/scripts/guard-orchestrator.js" run-end ${input.session_id} auf. Geblockt: ${blockedAction(input)}.`;
 }
 
+// Der Umsetzer committet nur seine eigenen Dateien; er pusht, mergt und rebased nie und stagt nie alles.
+function decideImplementerGit(input) {
+  if (input.agent_type !== IMPLEMENTER || !SHELL_TOOLS.has(input.tool_name)) return null;
+  const forbidden = forbiddenIn(input.tool_input?.command, { agent: true });
+  if (!forbidden) return null;
+  return `dv-forge: Der Umsetzer darf ${forbidden} nicht ausführen. Committe mit git add <genau deine Dateien> `
+    + `und git commit -m "<betreff>"; Push, Merge und Rebase sind Sache des Menschen. Geblockt: ${blockedAction(input)}.`;
+}
+
 function decidePreTool(input, tmpRoot) {
-  if (input.agent_id) return writesOutsideWorkspace(input) ? WORKSPACE_REASON : null;
+  if (input.agent_id) return writesOutsideWorkspace(input) ? WORKSPACE_REASON : decideImplementerGit(input);
   return decideRunGit(input, tmpRoot) ?? decideReviewGuard(input, tmpRoot);
 }
 

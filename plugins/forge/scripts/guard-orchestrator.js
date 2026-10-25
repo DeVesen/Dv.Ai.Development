@@ -8,6 +8,7 @@ const { spawnSync } = require('node:child_process');
 const { mustShowOf, decideTurnEnd } = require('./lib/must-show');
 const { turnText } = require('./lib/turn-text');
 const { normalizePath: normalize } = require('./lib/posix');
+const { forbiddenIn } = require('./lib/git-commands');
 
 const FILE_TOOLS = {
   Read: 'file_path', Edit: 'file_path', Write: 'file_path', MultiEdit: 'file_path',
@@ -55,6 +56,10 @@ const COMMANDS = {
     protect: ([artifact], cwd) => (artifact ? followupEntries(path.resolve(cwd ?? '.', artifact), cwd) : null),
   },
 };
+
+// Orchestratoren, deren Lauf ein eigener Marker begleitet (Git-Sperre bis `run-end` oder Sitzungsende).
+const RUN_SKILLS = ['spec-review-orchestrator', 'plan-orchestrator', 'implementation-orchestrator', 'session-orchestrator'];
+const STAGE_RUNS = RUN_SKILLS.filter((skill) => skill !== 'session-orchestrator');
 
 const HARNESS_NOTICE = /<(?:task-notification|agent-message|system-reminder)\b/;
 const ALLOWED_WAYS = 'Erlaubt sind: ein einzelner Aufruf node "<PLUGIN>/scripts/<script>.js" ohne Verkettung, '
@@ -118,6 +123,36 @@ function parseSkillCall(prompt, cwd) {
   return files ? { command, files } : null;
 }
 
+function runMarkerPath(sessionId, tmpRoot = os.tmpdir()) {
+  return path.join(tmpRoot, 'dv-forge', `${sessionId}.lauf.json`);
+}
+
+function runSkillOf(text) {
+  const [first = ''] = tokenize(String(text ?? '').trim());
+  const name = first.replace(/^\//, '');
+  const skill = name.startsWith('dv-forge:') ? name.slice('dv-forge:'.length) : null;
+  return RUN_SKILLS.includes(skill) ? skill : null;
+}
+
+function startRun(sessionId, skill, tmpRoot) {
+  const file = runMarkerPath(sessionId, tmpRoot);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, JSON.stringify({ skill, seit: new Date().toISOString() }));
+}
+
+function readRun(sessionId, tmpRoot) {
+  try {
+    const run = JSON.parse(fs.readFileSync(runMarkerPath(sessionId, tmpRoot), 'utf8'));
+    return RUN_SKILLS.includes(run?.skill) ? run : null;
+  } catch {
+    return null;
+  }
+}
+
+function endRun(sessionId, tmpRoot) {
+  fs.rmSync(runMarkerPath(sessionId, tmpRoot), { force: true });
+}
+
 function writeMarker(sessionId, marker, tmpRoot) {
   const file = markerPath(sessionId, tmpRoot);
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -170,6 +205,8 @@ function toEntries(entry, cwd) {
 }
 
 function onPrompt(input, tmpRoot) {
+  const run = runSkillOf(input.prompt);
+  if (run) startRun(input.session_id, run, tmpRoot);
   const call = parseSkillCall(input.prompt, input.cwd);
   if (call) {
     const entries = call.files.flatMap((entry) => toEntries(entry, input.cwd));
@@ -192,6 +229,8 @@ function onPrompt(input, tmpRoot) {
 function onSkillCall(input, tmpRoot) {
   if (input.agent_id) return;
   const skill = String(input.tool_input?.skill ?? '').trim().replace(/^\//, '');
+  const run = runSkillOf(skill);
+  if (run) startRun(input.session_id, run, tmpRoot);
   const call = parseSkillCall(`/${skill} ${input.tool_input?.args ?? ''}`, input.cwd);
   if (!call) return;
   const entries = call.files.flatMap((entry) => toEntries(entry, input.cwd));
@@ -304,8 +343,24 @@ function writesOutsideWorkspace(input) {
   return !target || !WORKSPACE_SEGMENT.test(normalize(path.resolve(input.cwd ?? '.', target)));
 }
 
+// Während eines Orchestrator-Laufs verweigert: git-Ortswechsel, Push, Sammel-Staging und --no-verify.
+function decideRunGit(input, tmpRoot) {
+  if (!SHELL_TOOLS.has(input.tool_name)) return null;
+  const run = readRun(input.session_id, tmpRoot);
+  if (!run) return null;
+  const forbidden = forbiddenIn(input.tool_input?.command, { noCommit: run.skill === 'plan-orchestrator' });
+  if (!forbidden) return null;
+  return `dv-forge: Der Lauf von ${run.skill} verbietet ${forbidden}. Erlaubt bleiben die Plugin-Skripte und git-Befehle, die weder den Ort wechseln noch pushen noch alles stagen`
+    + `${run.skill === 'plan-orchestrator' ? ' noch committen' : ''}. Endet der Lauf, ruft die letzte Handlung `
+    + `node "<PLUGIN>/scripts/guard-orchestrator.js" run-end ${input.session_id} auf. Geblockt: ${blockedAction(input)}.`;
+}
+
 function decidePreTool(input, tmpRoot) {
   if (input.agent_id) return writesOutsideWorkspace(input) ? WORKSPACE_REASON : null;
+  return decideRunGit(input, tmpRoot) ?? decideReviewGuard(input, tmpRoot);
+}
+
+function decideReviewGuard(input, tmpRoot) {
   const marker = readMarker(input.session_id, tmpRoot);
   if (!marker || !Array.isArray(marker.protected)) return null;
   if (!touchesProtected(input, marker.protected)) return null;
@@ -390,6 +445,7 @@ function readStdinJson() {
 function main() {
   const [event, argument, ...rest] = process.argv.slice(2);
   if (event === 'release') return release(argument);
+  if (event === 'run-end') return endRun(argument);
   if (event === 'pause') return pauseWithShow(argument, flagValue(rest, '--show'));
   if (event === 'show') return show(argument, flagValue(rest, '--file'));
   const input = readStdinJson();
@@ -397,7 +453,10 @@ function main() {
   if (event === 'pretool' && input.tool_name === 'Skill') return onSkillCall(input);
   if (event === 'pretool') return writeDeny(decidePreTool(input));
   if (event === 'turn-end') return writeBlock(onTurnEnd(input));
-  if (event === 'stop') return clearMarker(input.session_id);
+  if (event === 'stop') {
+    clearMarker(input.session_id);
+    return endRun(input.session_id);
+  }
 }
 
 if (require.main === module) {
@@ -409,5 +468,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-  ALLOWED_SCRIPTS, COMMANDS, PLUGIN_ROOT, markerPath, parseSkillCall, writeMarker, onPrompt, onSkillCall, decidePreTool, release, clearMarker, pause, pauseWithShow, show, onTurnEnd,
+  ALLOWED_SCRIPTS, COMMANDS, PLUGIN_ROOT, RUN_SKILLS, STAGE_RUNS, markerPath, runMarkerPath, readRun, endRun, parseSkillCall, writeMarker, onPrompt, onSkillCall, decidePreTool, release, clearMarker, pause, pauseWithShow, show, onTurnEnd,
 };

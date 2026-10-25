@@ -36,6 +36,7 @@ Skills nacheinander aufrufen. Dazwischen weder Plan, Spec, Code noch Diffs lesen
    4. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.
    5. Nur mit `--ablage <E>`: Lies `<PLUGIN>/shared/session-chain/ablage.md` und folge dem Abschnitt `implementation-orchestrator`; Ausgabe nicht zeigen, Fehler egal.
    6. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach.
+   7. Danach, ohne Text: `node "<PLUGIN>/scripts/guard-orchestrator.js" run-end ${CLAUDE_SESSION_ID}`.
 
 ## Rote Flaggen
 | Gedanke | Richtig |

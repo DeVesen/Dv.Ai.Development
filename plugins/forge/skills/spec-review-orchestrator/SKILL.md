@@ -35,6 +35,7 @@ Nur Skills und Skripte aufrufen. Den Inhalt der Spec nie selbst lesen, prüfen, 
    5. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.
    6. Nur mit `--ablage <E>`: Lies `<PLUGIN>/shared/session-chain/ablage.md` und folge dem Abschnitt `spec-review-orchestrator`; Ausgabe nicht zeigen, Fehler egal.
    7. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach. Ein Hook verlangt die Überschriften wörtlich.
+   8. Danach, ohne Text: `node "<PLUGIN>/scripts/guard-orchestrator.js" run-end ${CLAUDE_SESSION_ID}`.
 
 ## Rote Flaggen
 | Gedanke | Richtig |

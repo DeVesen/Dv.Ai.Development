@@ -20,7 +20,7 @@ Schreib die erste nicht leere Zeile des Turn-Endes wörtlich mit `Write` nach `t
 | `HALTEPUNKT=go` | Block ausgeben, Haltepunkt (Regel 4). |
 | `WEITER=doppelt` | Schweigen: dieses `final` ist schon verarbeitet; nichts starten. |
 | `WEITER=<etappe>` | Start dieser Etappe (Regel 3), Slug aus `SLUG`. |
-| `WEITER=ende` | Block (Schlussbericht) ausgeben. Ende der Kette. |
+| `WEITER=ende` | Block (Schlussbericht) ausgeben. Ende der Kette; danach `node "<PLUGIN>/scripts/guard-orchestrator.js" run-end ${CLAUDE_SESSION_ID}`. |
 
 ## Glossar-Commit
 `<SC> commit --anlass spec --slug <slug> --message "<betreff>"`. Betreff nach `node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`, leer → Projekt-`CLAUDE.md`; Workitem-Nummer nur, wenn es eine gibt. Zeilen `NICHT-COMMITTET=…` nennst du in einer Zeile.
@@ -31,7 +31,7 @@ Jede Antwort hältst du zuerst fest: `<SC> answer --slug <slug> --antwort <wert>
 Am Spec-Haltepunkt:
 - Planning (`planning`): Start der Etappe `planning`.
 - Spec-Nacharbeit (`spec-nacharbeit`): Start der Etappe `spec-nacharbeit` mit `--quelle "<bericht.md der letzten Spec-Review-Etappe>"`.
-- Stopp (`stopp`): `<SC> schluss --slug <slug> --stopp`, Block ausgeben. Nichts starten, nichts aufräumen.
+- Stopp (`stopp`): `<SC> schluss --slug <slug> --stopp`, Block ausgeben. Nichts starten, nichts aufräumen. Danach `run-end` wie bei `WEITER=ende`.
 
 Am GO-Haltepunkt:
 - GO (`go`): `<SC> commit --anlass go --slug <slug> --message "<betreff>"`. Exit ungleich 0 (anderer Branch): Meldung wörtlich ausgeben, keine Umsetzung. Sonst Start der Etappe `umsetzung`; ihre erste Zeile ist der Aufruf `AUFRUF`.

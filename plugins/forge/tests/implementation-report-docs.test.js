@@ -56,6 +56,6 @@ test('reviewFollowupFlow_Implementation_KeepsOnlyOpenGroupsAndOffersAlle', () =>
   assert.ok(implementation.includes('followup.js" keep review <slug> <nummern>'));
   assert.ok(implementation.includes('`alle behoben, keine neuen 🔴`'));
   const next = text.slice(text.indexOf('## Nächster Schritt'));
-  assert.ok(next.includes('/dv-forge:review-followup <artefakt> alle'));
+  assert.ok(next.includes('`--behalten <x>`'));
   assert.equal(next.includes('mit den bisherigen Nummern'), false);
 });

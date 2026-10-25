@@ -281,3 +281,63 @@ test('implementationFollowup_GroupLinesConfirmedButNoVerdictLine_ChosenStayOpenA
   assert.equal(data.kind, 'blocked');
   assert.deepEqual(data.notes, ['Nach-Review: kein Urteil geliefert']);
 });
+
+function runStandalone(dir, answer, extra = []) {
+  const result = spawnSync(process.execPath, [SCRIPT, 'followup', '--workspace', dir, '--artefakt', 'plans/p.md', ...extra], { encoding: 'utf8', input: answer });
+  return { result, file: path.join(dir, 'abschluss', 'bericht.md') };
+}
+
+test('implementationFollowup_StandaloneWithReReview_WritesReportFileAndPrintsItAfterMarker', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+
+  // Act
+  const { result, file } = runStandalone(dir, CLEAN);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const report = fs.readFileSync(file, 'utf8');
+  assert.equal(result.stdout, `ENDE sauber nach Nach-Review\nERGEBNIS ✅ Bereit zum Abschließen\nBEHALTEN keine\n=== BERICHT ===\n${report}`);
+  assert.ok(report.startsWith('## Review-Followup (implementation-review): plans/p.md\n\n**Status:** sauber nach Nach-Review\n**Reviews:** 1 · **Nacharbeiten:** 1\n\n### Letztes Review\n### Findings\n'), report);
+  assert.ok(report.includes(`${CLEAN}\n\n### Umgesetzt\n- 1 · 🔴 src/a.js:3 · Vorschlag 1\n- 2 · 🟡 src/b.js:9 · Vorschlag 1\n`), report);
+  assert.equal(report.includes('Hinweise des Orchestrators'), false);
+});
+
+test('implementationFollowup_StandaloneWithoutReReview_ReportsZeroReviewsAndNotesTheReason', () => {
+  // Arrange
+  const dir = workspace([1]);
+
+  // Act
+  const { result, file } = runStandalone(dir, '', ['--ohne', 'blockiert', '--hinweis', 'Implementer: needs-context, Schema fehlt']);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const report = fs.readFileSync(file, 'utf8');
+  assert.ok(report.includes('**Status:** blockiert\n**Reviews:** 0 · **Nacharbeiten:** 1'), report);
+  assert.ok(report.includes('### Letztes Review\nKein Nach-Review: blockiert.'), report);
+  assert.ok(report.includes('### Hinweise des Orchestrators\n- Kein Nach-Review: blockiert.\n- Implementer: needs-context, Schema fehlt\n\n### Umgesetzt\n- 1 · 🔴 src/a.js:3 · Vorschlag 1'), report);
+});
+
+test('implementationFollowup_StandaloneOpen_KeepsAnswerUnchangedAndStatusOffen', () => {
+  // Arrange
+  const dir = workspace([1, 2]);
+
+  // Act
+  const { result, file } = runStandalone(dir, OPEN);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(fs.readFileSync(file, 'utf8').includes(`### Letztes Review\n${OPEN}\n\n### Umgesetzt`));
+  assert.ok(result.stdout.startsWith('ENDE offen nach Nach-Review\nERGEBNIS ⛔ Noch nicht bereit'), result.stdout);
+});
+
+test('implementationFollowup_NeitherBerichtNorArtefakt_UsageExitTwo', () => {
+  // Arrange
+  const dir = workspace([1]);
+
+  // Act
+  const result = spawnSync(process.execPath, [SCRIPT, 'followup', '--workspace', dir], { encoding: 'utf8', input: CLEAN });
+
+  // Assert
+  assert.equal(result.status, 2);
+});

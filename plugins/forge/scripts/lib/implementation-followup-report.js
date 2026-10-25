@@ -12,7 +12,7 @@ const { reviewerLabel } = require('./reviewer-names');
 const { fallbackDescription } = require('./halt-text');
 const { scoutTexts } = require('./scout-check');
 const { resultLine } = require('./report-text');
-const { FlowError, readJson, readLines, writeJson } = require('./flow-files');
+const { FlowError, readJson, readLines, writeJson, writeText } = require('./flow-files');
 
 const REVIEW = 'implementation-review';
 const FORMAT = 1;
@@ -27,6 +27,7 @@ const GREEN_ICON = '🟢';
 const GROUP_VERDICT = /^- \*\*(.+?)\*\*\s+—\s+(nicht behoben|behoben)\b/u;
 const NONE = /^-?\s*„?"?keine"?“?\.?$/i;
 // `--ohne`: der Re-Reviewer lief nicht.
+const TITLE = `Review-Followup (${REVIEW})`;
 const WITHOUT_REVIEW = { blockiert: 'blockiert', 'keine-aenderung': 'keine Änderung' };
 
 function sectionLines(text, title) {
@@ -125,7 +126,23 @@ function keptLine(kept) {
   return `BEHALTEN ${kept.length > 0 ? kept.join(',') : 'keine'}`;
 }
 
-// `options`: workspace (W), reportFile, answer (Antwort des Re-Reviewers) oder without (`blockiert` | `keine-aenderung`).
+// Bericht für den Chat nach `shared/review-loop/report-format.md`: kein Scout, kein Zusatz-Status; `### Umgesetzt` listet die gewählten Punkte.
+// `### Letztes Review` ist die Antwort des Re-Reviewers unverändert; der nächste Schritt kommt aus `followup.js next`.
+function reportText({ artifact, status, reviewed, answer, notes, chosen }) {
+  const last = reviewed.done ? String(answer).trim() : `Kein Nach-Review: ${reviewed.status}.`;
+  const parts = [
+    [`## ${TITLE}: ${artifact}`],
+    [`**Status:** ${status}`, `**Reviews:** ${reviewed.done ? 1 : 0} · **Nacharbeiten:** 1`],
+    ['### Letztes Review', last],
+    ...(notes.length > 0 ? [['### Hinweise des Orchestrators', ...notes.map((note) => `- ${note}`)]] : []),
+    ['### Umgesetzt', ...chosen.map(({ entry }) => `- ${entry.nummer} · ${entry.stufe} ${entry.stelle} · Vorschlag ${entry.vorschlag}`)],
+  ];
+  return parts.map((lines) => lines.join('\n')).join('\n\n');
+}
+
+// `options`: workspace (W), answer (Antwort des Re-Reviewers) oder without (`blockiert` | `keine-aenderung`), dazu
+// entweder reportFile (eingebetteter Lauf: Berichtsdaten als JSON) oder artifact (Einzellauf: `<W>/abschluss/bericht.md` und Text im Chat);
+// optional note (eine Zeile für die Hinweise des Orchestrators).
 // `FOLLOWUP ja`: die Sicherung behält Vorschläge (`BEHALTEN <nummern>`); `/dv-forge:review-followup <P> alle` setzt nur diese um.
 function buildFollowupReport(options) {
   const reviewed = options.without ? { done: false, status: WITHOUT_REVIEW[options.without] } : { done: true };
@@ -154,8 +171,15 @@ function buildFollowupReport(options) {
   const kept = keptNumbers(reviewed, unchosen, unconfirmed);
   const offersFollowup = kept !== null && kept.length > 0;
   const count = chosen.length === 1 ? '1 gewählter Vorschlag' : `${chosen.length} gewählte Vorschläge`;
+  const embedded = Boolean(options.reportFile);
+  if (!embedded) {
+    const notes = [...(reviewed.done ? [] : [`Kein Nach-Review: ${reviewed.status}.`]), ...(options.note ? [options.note] : [])];
+    const text = reportText({ artifact: options.artifact, status, reviewed, answer: options.answer, notes, chosen });
+    writeText(path.join(options.workspace, 'abschluss', 'bericht.md'), text);
+    return [`ENDE ${status}`, `ERGEBNIS ${line.replace(RESULT_PREFIX, '')}`, keptLine(kept), '=== BERICHT ===', text].join('\n');
+  }
   writeJson(options.reportFile, {
-    format: FORMAT, review: REVIEW, title: `Review-Followup (${REVIEW})`, followup: true, status, kind, resultLine: line,
+    format: FORMAT, review: REVIEW, title: TITLE, followup: true, status, kind, resultLine: line,
     flowLine: `Ablauf: ${count} umgesetzt, ${reviewed.done ? 'ein Nach-Review' : 'kein Nach-Review'}.`, offersFollowup,
     openRed, failedLabels: [], chosenCount: chosen.length, changes, decisions: [], questions: [], open, green: answer.greens.map(damageEntry), notes: notesOf(reviewed, answer),
   });

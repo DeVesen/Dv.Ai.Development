@@ -49,7 +49,7 @@ test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => 
     'review-flow.js" script-checks <FLAGS> --runde runde-2',
     'Prüfliste: <W>/runde-2/pruefliste.md', 'Kein Reviewer läuft.', 'followup.js" save <rolle> <slug> "<W>/abschluss"',
     'plan-tasks.js" header "<P>" "<W>"', 'review-package.js" <FIX_BASE> HEAD "<W>"', 'followup.js" drop review <slug>', 'Kein Scout', 'nicht gewählt',
-    'bleibt die alte Sicherung', '### Umgesetzt', 'WAHL', 'keine Änderung', 'blockiert', '- `unvollständig, …`:']) {
+    'bleibt die alte Sicherung', 'followup.js" next --original <original>', '--hinweis', 'keine Änderung', 'blockiert']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
 });
@@ -76,13 +76,11 @@ test('reviewFollowupFlow_Report_KeepsPriority', () => {
   assert.ok(report.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht.'));
 });
 
-test('reviewFollowupFlow_NextStep_CleanImplementationNamesFinishWorkItself', () => {
+test('reviewFollowupFlow_NextStep_TakesTheStepsFromTheScriptOutputUnchanged', () => {
   const text = readText(FLOW);
   const next = text.slice(text.indexOf('## Nächster Schritt'));
-  const clean = next.split('\n').find((line) => line.startsWith('- `sauber nach Nach-Review`, `offen` leer:'));
-  assert.ok(clean, 'Zeile fehlt');
-  assert.ok(clean.includes('/dv-forge:finish-work'));
-  assert.equal(clean.includes('Original-Skills'), false, 'der Skill des Implementierungs-Reviews nennt keinen nächsten Schritt mehr');
+  assert.ok(next.includes('Die Ausgabe übernimmst du unverändert nach dem Bericht'));
+  assert.equal(next.includes('/dv-forge:finish-work'), false, 'die Schritte stehen im Skript, nicht im Markdown');
 });
 
 test('reviewFollowupSkill_Body_TakesNoNextStepTextsFromImplementationReview', () => {
@@ -92,29 +90,22 @@ test('reviewFollowupSkill_Body_TakesNoNextStepTextsFromImplementationReview', ()
   assert.equal(body.includes('des Abschnitts Abschluss-Scout'), false, 'das Followup der Implementierung startet keinen Scout');
 });
 
-test('reviewFollowupFlow_NextStep_ImplementationEntryAddsWorktreeFinishStepAndPushLine', () => {
+test('reviewFollowupFlow_NextStep_ChainEntryIsLookedUpByTheScriptItself', () => {
   // Arrange
   const text = readText(FLOW);
-  const script = readText(path.join(__dirname, '..', 'scripts', 'chain.js'));
+  const script = readText(path.join(__dirname, '..', 'scripts', 'followup.js'));
   const next = text.slice(text.indexOf('## Nächster Schritt'));
 
-  // Act
-  const parts = ['chain.js" lookup --stage implementation --plan "<P>"', '`worktree=<R>`', '`branch=<b>`', 'KEIN EINTRAG', '`Worktree bleibt: <R>`',
-    '`git push -u origin <b>`', '`Arbeit abschließen (nur manuell, in <R>):`', '`/dv-forge:finish-work`', 'Noch nicht umgesetzt: …',
-    'und bei Implementierung `offen nach Nach-Review` mit `BEHALTEN <nummern>`, wenn die Ergebnis-Zeile des Berichts mit `✅` beginnt'];
-
   // Assert
-  for (const part of parts) {
-    assert.ok(next.includes(part), `${part} fehlt`);
-  }
-  assert.ok(script.includes("'KEIN EINTRAG'") && script.includes("'worktree'") && script.includes("'branch'"));
+  assert.ok(next.includes('Den Ketten-Eintrag der Implementierung schlägt das Skript selbst nach.'));
+  assert.ok(script.includes("readEntry({ stage: 'implementation', artifact: values.plan })"));
 });
 
 test('reviewFollowupFlow_ImplementationSave_FollowsTheBehaltenLineOfTheReportScript', () => {
   const text = readText(FLOW);
   const script = readText(path.join(__dirname, '..', 'scripts', 'lib', 'implementation-followup-report.js'));
-  const step = text.slice(text.indexOf('3. Berichtsdaten und Sicherung:'), text.indexOf('4. Status:'));
-  for (const part of ['implementation-report.js" followup --workspace "<W>" --bericht "<BD>" <<\'ANTWORT\'', '`BEHALTEN <x>`', '`keine` → ', 'followup.js" drop review <slug>',
+  const step = text.slice(text.indexOf('3. Bericht und Sicherung:'), text.indexOf('4. Status:'));
+  for (const part of ['implementation-report.js" followup --workspace "<W>" --artefakt "<P>" <<\'ANTWORT\'', '`BEHALTEN <x>`', '`keine` → ', 'followup.js" drop review <slug>',
     'followup.js" keep review <slug> <nummern>', '`unveraendert` → nichts, es bleibt die alte Sicherung']) {
     assert.ok(step.includes(part), `${part} fehlt`);
   }

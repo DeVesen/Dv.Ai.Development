@@ -58,9 +58,7 @@ test('reviewFollowupFlow_SpecAndPlan_ReportFromScriptAndSaveAlways', () => {
   assert.ok(verification.includes('6. Sicherung: `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"`; die Ausgabe zeigst du nicht.'));
   assert.equal(verification.includes('entfällt `save`'), false);
   const report = section(text, 'Bericht');
-  assert.ok(report.includes('- Spec und Plan: der Text nach `=== BERICHT ===` unverändert.'));
-  const specPlanLine = report.split('\n').find((line) => line.startsWith('- Spec und Plan:'));
-  assert.equal(specPlanLine.includes('Umgesetzt'), false);
+  assert.ok(report.includes('Der Text nach `=== BERICHT ===` unverändert'));
   assert.ok(section(text, 'Nächster Schritt').includes('Bei Spec und Plan steht der nächste Schritt im Bericht'));
 });
 
@@ -70,26 +68,21 @@ test('flow_End_StepOne_NamesStatusLineForSkillStepsInsteadOfNextStep', () => {
   assert.equal(end.includes('wählt den nächsten Schritt'), false);
 });
 
-test('reviewFollowupFlow_NextStep_PlanKeepsCommitCheck', () => {
-  const next = section(readText(FOLLOWUP_FLOW), 'Nächster Schritt');
-  for (const part of ['original=plan-review', 'git status --porcelain -- "<S>" "<P>"', 'Soll ich Spec und Plan jetzt committen?', 'forge-config.js" get Commit-Konvention', 'Bei Nein oder ohne Antwort: kein Commit.']) {
+test('reviewFollowupFlow_NextStep_PlanCommitCheckComesFromScriptLineAndLivesOnlyInPlanReviewSkill', () => {
+  const flow = readText(FOLLOWUP_FLOW);
+  const next = section(flow, 'Nächster Schritt');
+  for (const part of ['followup.js" next --original <original> --status "<status>" --ergebnis "<zeile>"', '`COMMIT-PRUEFUNG ja`', 'Commit-Prüfung des Original-Skills (`plan-review`, Abschnitt Bericht)', 'weder Commit-Prüfung noch Frage']) {
     assert.ok(next.includes(part), `${part} fehlt`);
   }
+  for (const gone of ['git status --porcelain', 'Soll ich Spec und Plan jetzt committen?', 'Commit-Konvention']) assert.equal(flow.includes(gone), false, `${gone} steht nur im Original-Skill`);
+  const plan = readText(PLAN_SKILL);
+  for (const part of ['git status --porcelain -- "<S>" "<P>"', 'Soll ich Spec und Plan jetzt committen?', 'forge-config.js" get Commit-Konvention']) assert.ok(plan.includes(part), `${part} fehlt im plan-review-Skill`);
 });
 
-test('reviewFollowupFlow_NextStep_AsksForPlanCommitOnlyWhenReportIsReady', () => {
+test('reviewFollowupFlow_NextStep_HasNoHandWrittenStepList', () => {
   const next = section(readText(FOLLOWUP_FLOW), 'Nächster Schritt');
-  const check = next.split('\n').find((line) => line.startsWith('- `original=plan-review`'));
-  for (const part of ['`✅ Bereit zur Umsetzung`', 'keinen Abschnitt `### Noch offen · Hindernis`', 'Steht im Bericht `⛔ Noch nicht bereit` oder `### Noch offen · Hindernis`: keine Commit-Prüfung und keine Frage.']) {
-    assert.ok(check.includes(part), `${part} fehlt`);
-  }
-  assert.ok(check.indexOf('`✅ Bereit zur Umsetzung`') < check.indexOf('git status --porcelain'), 'Bedingung steht vor der Commit-Prüfung');
-});
-
-test('reviewFollowupFlow_NextStep_ListsOnlyStatusesTheImplementationEmits', () => {
-  const next = section(readText(FOLLOWUP_FLOW), 'Nächster Schritt');
-  for (const gone of ['- `Fragen offen`:', '- `nicht bereit, …`:', '`sauber nach Nachprüfung`']) assert.equal(next.includes(gone), false, gone);
-  for (const kept of ['`sauber nach Nach-Review`, `offen` leer', 'Implementierung offen, `keine Änderung` oder `blockiert`', '`unvollständig, …`']) assert.ok(next.includes(kept), `${kept} fehlt`);
+  for (const gone of ['- `sauber nach Nach-Review`', '- `unvollständig, …`:', 'Implementierung offen, `keine Änderung`', 'chain.js" lookup']) assert.equal(next.includes(gone), false, gone);
+  for (const kept of ['`NAECHSTER <text>`', '`CODE <befehl>`', '`--behalten <x>`', '`--plan "<P>"`']) assert.ok(next.includes(kept), `${kept} fehlt`);
 });
 
 test('reviewFollowupSkill_Body_NamesAlleAndLeavesHintsAndNextStepToReport', () => {
@@ -126,7 +119,7 @@ test('reviewFollowupFlow_EmbeddedRun_PassesBerichtToReportAndImplementationScrip
     assert.ok(embedded.includes(part), `${part} fehlt`);
   }
   const flow = readText(FOLLOWUP_FLOW);
-  for (const part of ['`node "<PLUGIN>/scripts/implementation-report.js" followup --workspace "<W>" --bericht "<BD>" <<\'ANTWORT\'`', '`--ohne blockiert`']) {
+  for (const part of ['`node "<PLUGIN>/scripts/implementation-report.js" followup --workspace "<W>" --artefakt "<P>" <<\'ANTWORT\'`', 'statt `--artefakt "<P>"` die Option `--bericht "<BD>"`', '`--ohne blockiert`']) {
     assert.ok(flow.includes(part), `${part} fehlt`);
   }
 });

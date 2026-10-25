@@ -11,6 +11,7 @@ const { ROUND_ONE, ROUND_TWO, FOLLOWUP, CLOSING, FlowError, readText, readJson, 
 const { SessionChainError, slugOfArtifact } = require('./session-chain-store');
 const { ablageDir, nextFollowupName } = require('./session-chain-ablage');
 const { appendMetric, flowReviewRecord } = require('./metrics');
+const { commitCheckOf } = require('./followup-next');
 
 const FORMAT = 1;
 const RESULT_PREFIX = '**Ergebnis:** ';
@@ -91,6 +92,11 @@ function storeReport(options, input, status, text) {
   }
 }
 
+// Nur der Einzellauf des Plan-Reviews: ob die Commit-Prüfung des Skills läuft (`sauber …` und `✅ Bereit zur Umsetzung`).
+function commitCheckLines(review, status, input) {
+  return review === 'plan-review' ? [`COMMIT-PRUEFUNG ${commitCheckOf({ status, ergebnis: summaryOf(input).resultLine })}`] : [];
+}
+
 // `options.reportFile` (optional): eingebetteter Lauf, siehe embeddedOutput. `options.storage` (optional): Ablage, siehe storeReport.
 function report(options) {
   const data = collect(options);
@@ -103,7 +109,7 @@ function report(options) {
   appendMetric(path.dirname(path.resolve(options.doc)), 'reviews', flowReviewRecord(options, data, status));
   const stored = options.storage ? [storeReport(options, input, status, text)] : [];
   if (options.reportFile) return [embeddedOutput(options, input, status), ...stored].join('\n');
-  return [`ENDE ${status}`, ...stored, '=== BERICHT ===', text].join('\n');
+  return [`ENDE ${status}`, ...commitCheckLines(options.review, status, input), ...stored, '=== BERICHT ===', text].join('\n');
 }
 
 module.exports = { flowStatus, report };

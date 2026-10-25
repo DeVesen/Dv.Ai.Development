@@ -76,14 +76,15 @@ test('specReviewOrchestrator_Body_CommitsOnlyTheSpecWithoutNumberWhenWorkitemMis
   const { body } = readMarkdown(SKILL);
 
   // Assert
+  assert.ok(body.includes('`node "<PLUGIN>/scripts/spec-commit.js" preflight --spec "<S>" --state "<ST>"`; Exit 1 (anderer Ort) → stopp'));
+  assert.ok(body.includes('`node "<PLUGIN>/scripts/spec-commit.js" commit --spec "<S>" --slug "<slug>"`, dazu `--wi <WI>` nur wenn gegeben.'));
+  assert.ok(body.includes('Exit 1 → Meldung, Spec bleibt gestaged (nennen), 6.'));
+  assert.ok(body.includes('`COMMIT=frei`: das Projekt setzt eine Konvention (`node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`)'));
   assert.ok(body.includes('`git add -- "<S>"` und `git commit -m "<betreff>" -- "<S>"`, nie `--no-verify`'));
-  assert.ok(body.includes('`git check-ignore -q -- "<S>"`'));
-  assert.ok(body.includes('`node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`'));
   assert.ok(body.includes('Ohne `<WI>` nirgends eine Nummer: kein Scope, kein Platzhalter, keine Frage danach'));
-  assert.ok(body.includes('Ohne `<WI>`: `docs: review spec <slug>`.'));
-  assert.ok(body.includes('Mit `<WI>`: `docs(<WI>): review spec <slug>`'));
   assert.ok(body.includes('Commit, auch bei `⛔` oder `❓`.'));
   assert.ok(body.includes('eine Zeile, ein `-m`, kein Body'));
+  for (const gone of ['git check-ignore', 'docs: review spec <slug>', 'git status --porcelain -- "<S>"']) assert.equal(body.includes(gone), false, `${gone} steht jetzt im Skript`);
 });
 
 test('specReviewOrchestrator_Body_TitlesSessionWithActivityWorkitemAndSlug', () => {
@@ -115,7 +116,7 @@ test('specReviewOrchestrator_Body_PassesCommitResultAndDeviationsToTheReportScri
 
   // Assert
   assert.equal(hint, '<spec.md> [workitem-nr] [--ablage <etappe>]');
-  assert.ok(body.includes('`Commit` = Commit-ID, „nichts zu committen“, „ignoriert“ oder Grund dagegen.'));
+  assert.ok(body.includes('`Commit` = Hash aus `COMMIT=`, „nichts zu committen“, „ignoriert“ oder Grund dagegen.'));
   assert.ok(body.includes('`--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief, `--wi <WI>` nur wenn gegeben'));
   assert.ok(body.includes('`Abweichungen: …`: Stopp-Grund, abgelehnte Wünsche, Spec-Vorbestand im Commit, neue Pfade in `git status --porcelain`.'));
 });

@@ -27,7 +27,7 @@ class StateError extends Error {}
 
 function git(cwd, args) {
   const result = spawnSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
-  return { ok: result.status === 0, out: (result.stdout ?? '').trim(), err: (result.stderr ?? '').trim() };
+  return { ok: result.status === 0, out: (result.stdout ?? '').trim(), raw: result.stdout ?? '', err: (result.stderr ?? '').trim() };
 }
 
 function hashOf(file) {
@@ -72,7 +72,8 @@ function start(values) {
   const artifacts = { spec: snapshot(dir, 'spec', values.spec) };
   if (values.plan) artifacts.plan = snapshot(dir, 'plan', values.plan);
   const specTop = git(path.dirname(artifacts.spec.pfad), ['rev-parse', '--show-toplevel']).out;
-  const before = git(process.cwd(), ['status', '--porcelain']).out.split('\n').filter(Boolean);
+  // Roh, nicht getrimmt: Die erste Zeile ` M datei` verlöre sonst ihr führendes Leerzeichen und `slice(3)` einen Buchstaben des Pfads.
+  const before = git(process.cwd(), ['status', '--porcelain']).raw.split('\n').filter(Boolean);
   writeStateFile(dir, { start: here, artefakte: artifacts, vorbestand: before });
   return [
     `TOPLEVEL=${here.toplevel}`, `BRANCH=${here.branch}`, `HEAD=${here.head}`, `WORKTREE=${here.worktree ? 'ja' : 'nein'}`,
@@ -91,6 +92,12 @@ function add(values) {
   return `${key.toUpperCase()}=${state.artefakte[key].pfad}`;
 }
 
+// Toplevel und Branch jetzt gegen den Start; `same` ist falsch bei einem anderen Checkout oder Branch.
+function placeOf(state, cwd) {
+  const here = location(cwd);
+  return { here, same: here.toplevel === state.start.toplevel && here.branch === state.start.branch };
+}
+
 function check(values) {
   const state = readStateFile(path.resolve(values.state));
   const lines = [];
@@ -101,10 +108,9 @@ function check(values) {
     if (!same) diffs.push(git(process.cwd(), ['diff', '--no-index', '--', artifact.kopie, artifact.pfad]).out || `${artifact.pfad} fehlt`);
   }
   if (values.ort === true) {
-    const here = location(process.cwd());
-    const same = here.toplevel === state.start.toplevel && here.branch === state.start.branch;
-    lines.push(`ORT=${same ? 'ok' : `abweichung ${here.toplevel} ${here.branch || '(kein Branch)'}`}`);
-    if (!same) diffs.push(`Start: ${state.start.toplevel} ${state.start.branch}`);
+    const place = placeOf(state, process.cwd());
+    lines.push(`ORT=${place.same ? 'ok' : `abweichung ${place.here.toplevel} ${place.here.branch || '(kein Branch)'}`}`);
+    if (!place.same) diffs.push(`Start: ${state.start.toplevel} ${state.start.branch}`);
   }
   const output = diffs.length > 0 ? [...lines, '=== DIFF ===', ...diffs].join('\n') : lines.join('\n');
   return { output, failed: diffs.length > 0 };
@@ -181,4 +187,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { next, check, start, add, StateError };
+module.exports = { next, check, start, add, placeOf, readStateFile, location, StateError };

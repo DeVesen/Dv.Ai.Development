@@ -36,7 +36,7 @@ test('report_PlanReviewWithAblage_StoresReportAndDataAndNamesFollowupOffer', () 
   // Assert
   assert.equal(result.status, 0, result.stderr);
   const target = ablageDir(run.repo, 'x', 'plan-review');
-  assert.match(result.stdout, /^ENDE sauber nach Runde 1\nABLAGE .+\/bericht-review\.json · FOLLOWUP nein\n=== BERICHT ===\n/);
+  assert.match(result.stdout, /^ENDE sauber nach Runde 1\nCOMMIT-PRUEFUNG ja\nABLAGE .+\/bericht-review\.json · FOLLOWUP nein\n=== BERICHT ===\n/);
   assert.deepEqual(fs.readdirSync(target).sort(), ['bericht-review.json', 'bericht-review.md']);
   assert.equal(JSON.parse(fs.readFileSync(path.join(target, 'bericht-review.json'), 'utf8')).status, 'sauber nach Runde 1');
   assert.ok(result.stdout.endsWith(`${fs.readFileSync(path.join(target, 'bericht-review.md'), 'utf8').trimEnd()}\n`));
@@ -93,4 +93,42 @@ test('report_UnknownAblageEtappe_ExitsWithUsage', () => {
   // Assert
   assert.equal(result.status, 2);
   assert.match(result.stderr, /--ablage erlaubt: whiteboarding, grill, spec-review/);
+});
+
+test('report_PlanReviewStandalone_PrintsCommitCheckLineRightAfterEnde', () => {
+  // Arrange
+  const run = planRun();
+
+  // Act
+  const result = planReport(run);
+
+  // Assert
+  assert.match(result.stdout, /^ENDE sauber nach Runde 1\nCOMMIT-PRUEFUNG ja\n=== BERICHT ===\n/);
+});
+
+test('report_PlanReviewWithOpenRed_CommitCheckNein', () => {
+  // Arrange
+  const run = planRun();
+  writeReviewer({ workspace: run.workspace }, 'coverage', [{ location: 'AC-01', quote: 'Gegeben A, wenn B, dann C.', category: 'ac-fehlt-im-plan', consequence: 'Folge', rationale: 'Grund' }]);
+  flow('rate', '--review', 'plan-review', '--dir', run.workspace, '--doc', run.plan, '--spec', run.spec, '--expect', 'coverage');
+
+  // Act
+  const result = planReport(run);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^ENDE [^\n]+\nCOMMIT-PRUEFUNG nein\n=== BERICHT ===\n/);
+});
+
+test('report_PlanReviewEmbedded_PrintsNoCommitCheckLine', () => {
+  // Arrange
+  const run = planRun();
+  const data = path.join(run.workspace, 'bericht.json');
+
+  // Act
+  const result = planReport(run, ['--bericht', data]);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.includes('COMMIT-PRUEFUNG'), false);
 });

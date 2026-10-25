@@ -64,7 +64,7 @@ test('reviewFollowupFlow_SpecAndPlan_ReportFromScriptAndSaveAlways', () => {
 
 test('flow_End_StepOne_NamesStatusLineForSkillStepsInsteadOfNextStep', () => {
   const end = section(readText(FLOW), 'Ende');
-  assert.ok(end.includes('Die Zeile `ENDE <status>` braucht der Skill für eigene Schritte (Plan: Commit-Prüfung).'));
+  assert.ok(end.includes('Die Zeile `ENDE <status>` braucht der Skill für eigene Schritte (Plan: `COMMIT-PRUEFUNG ja|nein`).'));
   assert.equal(end.includes('wählt den nächsten Schritt'), false);
 });
 
@@ -122,4 +122,10 @@ test('reviewFollowupFlow_EmbeddedRun_PassesBerichtToReportAndImplementationScrip
   for (const part of ['`node "<PLUGIN>/scripts/implementation-report.js" followup --workspace "<W>" --artefakt "<P>" <<\'ANTWORT\'`', 'statt `--artefakt "<P>"` die Option `--bericht "<BD>"`', '`--ohne blockiert`']) {
     assert.ok(flow.includes(part), `${part} fehlt`);
   }
+});
+
+test('planReviewSkill_CommitCheck_RunsOnlyOnTheCommitCheckLineOfReport', () => {
+  const report = section(readMarkdown(PLAN_SKILL).body, 'Bericht');
+  assert.ok(report.includes('nur bei `COMMIT-PRUEFUNG ja` in der Ausgabe von `report` (bei `nein` weder Prüfung noch Frage)'));
+  assert.equal(report.includes('bei `sauber nach Runde 1` und `sauber nach Nachprüfung`'), false, 'die Bedingung prüft das Skript');
 });

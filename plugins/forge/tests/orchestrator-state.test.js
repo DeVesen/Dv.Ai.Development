@@ -100,3 +100,11 @@ test('cli_BadCall_ExitTwo', () => {
   assert.equal(run(tmp(), 'start', '--state', 'x').status, 2);
   assert.equal(run(tmp(), 'bogus').status, 2);
 });
+
+test('start_ModifiedTrackedFileAsFirstStatusLine_KeepsItsFullPath', () => {
+  const { repo, spec } = repoWithPlan();
+  fs.appendFileSync(spec, 'Vorbestand\n');
+  const result = run(repo, 'start', '--state', tmp(), '--spec', spec);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^VORBESTAND-DATEI=docs\/forge\/x\/spec\.md$/m);
+});

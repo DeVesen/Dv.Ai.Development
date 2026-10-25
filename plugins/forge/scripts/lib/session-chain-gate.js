@@ -48,8 +48,8 @@ function answerHalt(state, antwort, now = new Date()) {
   return { ...state, halt: null, freigabe: entry, antworten: [...(state.antworten ?? []), entry] };
 }
 
-// Prüft den Start der Etappe und hält ihn fest. `erneut` erlaubt den Neustart einer Etappe ohne `final`.
-function startEtappe(state, etappe, { erneut = false, now = new Date() } = {}) {
+// Prüft den Start der Etappe und hält ihn fest (samt sha256 des Brief-Texts und Modell, wenn übergeben). `erneut` erlaubt den Neustart einer Etappe ohne `final`.
+function startEtappe(state, etappe, { erneut = false, now = new Date(), briefHash, modell } = {}) {
   if (state.halt) throw new SessionChainError(`Haltepunkt ${state.halt} offen: erst die Antwort mit \`answer\` festhalten`);
   if (state.gestartet && !(erneut && state.gestartet.etappe === etappe)) {
     throw new SessionChainError(`Etappe ${state.gestartet.etappe} läuft seit ${state.gestartet.zeit} ohne final; Neustart derselben Etappe nur mit --erneut`);
@@ -59,7 +59,9 @@ function startEtappe(state, etappe, { erneut = false, now = new Date() } = {}) {
   if (target && target !== '*' && target !== etappe && !(state.gestartet && erneut)) {
     throw new SessionChainError(`Als Nächstes startet ${target}, nicht ${etappe}`);
   }
-  return { ...state, freigabe: null, gestartet: { etappe, zeit: now.toISOString() } };
+  // briefHash und modell prüft der Hook auf das Start-Tool der Leit-Session (scripts/start-guard.js).
+  const facts = { ...(briefHash ? { briefHash } : {}), ...(modell ? { modell } : {}) };
+  return { ...state, freigabe: null, gestartet: { etappe, zeit: now.toISOString(), ...facts } };
 }
 
 // GO-Commit nur nach der Antwort `go` und mit Spec und Plan im Stand des Reviews.

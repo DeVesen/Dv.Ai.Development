@@ -13,6 +13,7 @@ const { buildBrief } = require('./lib/session-chain-brief');
 const { parseStatusLine, turnAction, readTurns, writeTurns } = require('./lib/session-chain-turn');
 const { commitFor } = require('./lib/session-chain-commit');
 const { goCall, adoptedText, noStatusHint } = require('./lib/session-chain-text');
+const { briefHashOf } = require('./lib/stage-start-guard');
 const { etappeReport, readInput } = require('./lib/session-chain-report');
 const { setState, copySpecAtStart, holdAt, processFinal, closing, recordCommit } = require('./lib/session-chain-steps');
 
@@ -84,7 +85,7 @@ function brief(values) {
   });
   // Erst nach dem gebauten Brief: Ein fehlender Pflichtwert hinterlässt keinen gestarteten Zustand.
   if (state) {
-    writeState(process.cwd(), state.slug, copySpecAtStart(startEtappe(state, values.etappe, { erneut: values.erneut === true }), values.etappe, process.cwd()));
+    writeState(process.cwd(), state.slug, copySpecAtStart(startEtappe(state, values.etappe, { erneut: values.erneut === true, briefHash: briefHashOf(result.brief), modell: result.modell }), values.etappe, process.cwd()));
     appendEvent(process.cwd(), state.slug, { typ: 'start', etappe: values.etappe, modell: result.modell, erneut: values.erneut === true });
   }
   return [`MODELL=${result.modell}`, `TITEL=${result.titel}`, '=== HINTERGRUND ===', result.hintergrund, '=== BRIEF ===', result.brief].join('\n');

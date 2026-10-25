@@ -23,6 +23,15 @@
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/guard-orchestrator.js\" pretool"
           }
         ]
+      },
+      {
+        "matcher": "mcp__ccd_session__start_session",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/start-guard.js\""
+          }
+        ]
       }
     ],
     "Stop": [

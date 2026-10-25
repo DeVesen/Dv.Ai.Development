@@ -62,6 +62,10 @@ const COMMANDS = {
 const RUN_SKILLS = ['spec-review-orchestrator', 'plan-orchestrator', 'implementation-orchestrator', 'session-orchestrator'];
 const STAGE_RUNS = RUN_SKILLS.filter((skill) => skill !== 'session-orchestrator');
 
+// Ein Lauf-Marker, den kein `run-end` und kein neuer Slash-Befehl beendet hat, verfällt nach dieser Zeit.
+const RUN_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+const SLASH_COMMAND = /^\/[A-Za-z][\w.-]*(?::[\w.-]+)*$/;
+
 const HARNESS_NOTICE = /<(?:task-notification|agent-message|system-reminder)\b/;
 const ALLOWED_WAYS = 'Erlaubt sind: ein einzelner Aufruf node "<PLUGIN>/scripts/<script>.js" ohne Verkettung, '
   + '`git rev-parse --show-toplevel` und das Lesen von Plugin-Dateien. Die geschützten Dateien lesen und ändern nur SubAgents.';
@@ -141,13 +145,29 @@ function startRun(sessionId, skill, tmpRoot) {
   fs.writeFileSync(file, JSON.stringify({ skill, seit: new Date().toISOString() }));
 }
 
+function isSlashCommand(text) {
+  const [first = ''] = tokenize(String(text ?? '').trim());
+  return SLASH_COMMAND.test(first);
+}
+
+function isExpired(run, now = Date.now()) {
+  const since = Date.parse(run?.seit);
+  return Number.isNaN(since) || now - since > RUN_MAX_AGE_MS;
+}
+
 function readRun(sessionId, tmpRoot) {
+  let run;
   try {
-    const run = JSON.parse(fs.readFileSync(runMarkerPath(sessionId, tmpRoot), 'utf8'));
-    return RUN_SKILLS.includes(run?.skill) ? run : null;
+    run = JSON.parse(fs.readFileSync(runMarkerPath(sessionId, tmpRoot), 'utf8'));
   } catch {
     return null;
   }
+  if (!RUN_SKILLS.includes(run?.skill)) return null;
+  if (isExpired(run)) {
+    endRun(sessionId, tmpRoot);
+    return null;
+  }
+  return run;
 }
 
 function endRun(sessionId, tmpRoot) {
@@ -208,6 +228,7 @@ function toEntries(entry, cwd) {
 function onPrompt(input, tmpRoot) {
   const run = runSkillOf(input.prompt);
   if (run) startRun(input.session_id, run, tmpRoot);
+  else if (isSlashCommand(input.prompt)) endRun(input.session_id, tmpRoot);
   const call = parseSkillCall(input.prompt, input.cwd);
   if (call) {
     const entries = call.files.flatMap((entry) => toEntries(entry, input.cwd));
@@ -353,7 +374,8 @@ function decideRunGit(input, tmpRoot) {
   if (!forbidden) return null;
   return `dv-forge: Der Lauf von ${run.skill} verbietet ${forbidden}. Erlaubt bleiben die Plugin-Skripte und git-Befehle, die weder den Ort wechseln noch pushen noch alles stagen`
     + `${run.skill === 'plan-orchestrator' ? ' noch committen' : ''}. Endet der Lauf, ruft die letzte Handlung `
-    + `node "<PLUGIN>/scripts/guard-orchestrator.js" run-end ${input.session_id} auf. Geblockt: ${blockedAction(input)}.`;
+    + `node "<PLUGIN>/scripts/guard-orchestrator.js" run-end ${input.session_id} auf. Ein neuer Slash-Befehl (außer den Orchestratoren) `
+    + `oder run-end hebt die Sperre auf. Geblockt: ${blockedAction(input)}.`;
 }
 
 // Der Umsetzer committet nur seine eigenen Dateien; er pusht, mergt und rebased nie und stagt nie alles.

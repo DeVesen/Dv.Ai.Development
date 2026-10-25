@@ -172,6 +172,74 @@ test('forbiddenIn_NonStringCommand_ReturnsNull', () => {
   assert.equal(forbiddenIn(42), null);
 });
 
+function startPlanRun(e) {
+  guard.onPrompt({ session_id: SESSION, cwd: e.cwd, prompt: '/dv-forge:plan-orchestrator s.md' }, e.tmpRoot);
+}
+
+function ageRun(e, hours) {
+  const file = guard.runMarkerPath(SESSION, e.tmpRoot);
+  const run = JSON.parse(fs.readFileSync(file, 'utf8'));
+  fs.writeFileSync(file, JSON.stringify({ ...run, seit: new Date(Date.now() - hours * 3600 * 1000).toISOString() }));
+}
+
+test('onPrompt_RunActiveOtherSlashCommand_RemovesRunMarker', () => {
+  const e = env();
+  startPlanRun(e);
+  guard.onPrompt({ session_id: SESSION, cwd: e.cwd, prompt: '/dv-forge:grill neue Idee' }, e.tmpRoot);
+  assert.equal(runMarker(e), null);
+  assert.equal(bash(e, 'git push'), null);
+});
+
+test('onPrompt_RunActiveOtherOrchestrator_ReplacesRunMarker', () => {
+  const e = env();
+  startPlanRun(e);
+  guard.onPrompt({ session_id: SESSION, cwd: e.cwd, prompt: '/dv-forge:session-orchestrator x' }, e.tmpRoot);
+  assert.equal(runMarker(e).skill, 'session-orchestrator');
+});
+
+test('onPrompt_RunActiveFreeText_KeepsRunMarker', () => {
+  const e = env();
+  startPlanRun(e);
+  guard.onPrompt({ session_id: SESSION, cwd: e.cwd, prompt: 'ja, bitte weiter' }, e.tmpRoot);
+  assert.equal(runMarker(e).skill, 'plan-orchestrator');
+});
+
+test('onPrompt_RunActiveHarnessNotice_KeepsRunMarker', () => {
+  const e = env();
+  startPlanRun(e);
+  guard.onPrompt({ session_id: SESSION, cwd: e.cwd, prompt: '<task-notification>fertig</task-notification>' }, e.tmpRoot);
+  assert.equal(runMarker(e).skill, 'plan-orchestrator');
+});
+
+test('decidePreTool_RunMarkerOlderThan12Hours_AllowsAndDeletesMarker', () => {
+  const e = env();
+  startPlanRun(e);
+  ageRun(e, 13);
+  assert.equal(bash(e, 'git push'), null);
+  assert.equal(fs.existsSync(guard.runMarkerPath(SESSION, e.tmpRoot)), false);
+});
+
+test('decidePreTool_RunMarkerYoungerThan12Hours_StillDenies', () => {
+  const e = env();
+  startPlanRun(e);
+  ageRun(e, 11);
+  assert.match(bash(e, 'git push'), /plan-orchestrator/);
+});
+
+test('onTurnEnd_RunMarkerOlderThan12Hours_DoesNotBlockAndDeletesMarker', () => {
+  const e = env();
+  startPlanRun(e);
+  ageRun(e, 13);
+  assert.equal(guard.onTurnEnd({ session_id: SESSION, last_assistant_message: 'fertig' }, e.tmpRoot), null);
+  assert.equal(fs.existsSync(guard.runMarkerPath(SESSION, e.tmpRoot)), false);
+});
+
+test('decidePreTool_RunDenial_NamesWayOut', () => {
+  const e = env();
+  startPlanRun(e);
+  assert.match(bash(e, 'git push'), /neuer Slash-Befehl.*oder run-end hebt die Sperre auf/);
+});
+
 function cli(e, args, input) {
   const tmp = { ...process.env, TMPDIR: e.tmpRoot, TMP: e.tmpRoot, TEMP: e.tmpRoot };
   return spawnSync(process.execPath, [SCRIPT, ...args], { input, encoding: 'utf8', env: tmp });

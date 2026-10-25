@@ -93,7 +93,11 @@ test('baseline_ImplementationChecksOnly_FindMissingTasksRedSuiteAndSwallowedErro
   assert.equal(run.status, 0, run.stderr);
   const review = JSON.parse(fs.readFileSync(out, 'utf8'));
   const result = evaluateRun(golden('implementation-review-flawed'), { groups: review.findings.map((finding) => ({ location: finding.location, severity: finding.severity })) });
-  for (const id of ['format-fehlt', 'laden-fehlt', 'fehler-verschluckt']) assert.ok(result.treffer.includes(id), `${id}: ${JSON.stringify(result)}`);
+  for (const id of ['format-fehlt', 'laden-fehlt']) assert.ok(result.treffer.includes(id), `${id}: ${JSON.stringify(result)}`);
+  const hint = review.findings.find((finding) => finding.location.startsWith('src/order-total.js') && finding.rationale.includes('Code-Hinweis'));
+  assert.ok(hint, JSON.stringify(review.findings));
+  assert.equal(hint.severity, 'yellow');
+  assert.match(hint.rationale, /verschluckter Fehler/);
 });
 
 test('cli_ReviewsJsonlFiltersByReviewAndLastN', () => {

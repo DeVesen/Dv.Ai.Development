@@ -12,8 +12,8 @@
       "beschreibung": "Task 2 ist nicht umgesetzt." },
     { "id": "laden-fehlt", "stellen": ["src/load-positions.js", "Task 3", "AC-04"], "minFarbe": "red", "pflicht": true,
       "beschreibung": "Task 3 ist nicht umgesetzt; loadPositions liegt in der falschen Datei." },
-    { "id": "fehler-verschluckt", "stellen": ["src/order-total.js", "AC-04"], "minFarbe": "yellow", "pflicht": true,
-      "beschreibung": "loadPositions verschluckt den Lesefehler und liefert []. Das Skript meldet das als 🟡 Hinweis, ein Reviewer stuft es auf 🔴." },
+    { "id": "fehler-verschluckt", "stellen": ["src/order-total.js", "AC-04"], "minFarbe": "red", "pflicht": true,
+      "beschreibung": "loadPositions verschluckt den Lesefehler und liefert []." },
     { "id": "test-ohne-assertion", "stellen": ["tests/order-total.test.js"], "minFarbe": "red", "pflicht": true,
       "beschreibung": "loadPositions_MissingFile_Runs prüft nichts." }
   ],

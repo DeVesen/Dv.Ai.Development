@@ -9,9 +9,10 @@ const { scanPlanLines } = require('./plan-scan');
 const ANY_TASK_HEADING = /^###\s+Task\s+([^\s:]+)\s*:/;
 const SECTION = /^##\s+(.+?)\s*$/;
 const HEAD_KEYS = ['Ziel', 'Architektur', 'Tech-Stack', 'Spec', 'Basis'];
-const PLACEHOLDERS = [/\bTBD\b/i, /\bTODO\b/i, /später umsetzen/i, /Details ergänzen/i, /passende Fehlerbehandlung ergänzen/i,
+// TBD und TODO nur in Großschreibung als eigenes Wort (nicht Todo-App, todo-Liste, todos); Bindestrich-Zusammensetzungen wie TODO-Liste zählen nicht.
+const PLACEHOLDERS = [/(?<![\w-])TBD(?![\w-])/, /(?<![\w-])TODO(?![\w-])/, /später umsetzen/i, /Details ergänzen/i, /passende Fehlerbehandlung ergänzen/i,
   /Validierung hinzufügen/i, /Randfälle behandeln/i, /\b(?:wie|analog zu) Task \d+[a-z]?\b/i];
-const CODE_PLACEHOLDER = /(?:\/\/|#|\/\*|<!--|--)\s*(?:TODO|FIXME)\b/i;
+const CODE_PLACEHOLDER = /(?:\/\/|#|\/\*|<!--|--)\s*(?:TODO|FIXME)\b/;
 const INLINE_CODE = /`[^`]*`/g;
 const FILE_LINE = /^\s*-\s*(Create|Modify|Test):\s*`?([^`\s]+)/;
 const ABSOLUTE = /^(?:[/\\~]|[A-Za-z]:[\\/])/;
@@ -20,6 +21,7 @@ const COMMAND = /\bBefehl:/;
 const EXPECTED = /\berwartet\s*:/i;
 const TEST_PATH = /test|spec/i;
 const CONSUMES_OPEN = /^OFFEN Task (\d+) Consumes (.+?): (.+)$/;
+const LATER_PRODUCER = /erst in Task \d+/;
 const DECISIONS = 'Entscheidungen';
 
 function issue(rule, severity, location, quote, message) {
@@ -165,6 +167,7 @@ function lintFormat(text) {
 }
 
 // Ein Consumes ohne Produces in einem früheren Task; die Zuordnung liefert der Vorab-Scan, den Kandidaten ohne Symbol meldet er nur als offen.
+// Produziert ein späterer Task das Symbol, ist die Reihenfolge falsch (🔴); fehlt jedes Produces, kann es Bestandscode im Repo sein (🟡).
 function lintConsumes(text) {
   let lines;
   try {
@@ -174,7 +177,12 @@ function lintConsumes(text) {
     throw error;
   }
   return lines.map((line) => CONSUMES_OPEN.exec(line.text)).filter((match) => match && !match[3].startsWith('kein Symbol'))
-    .map(([, task, entry, reason]) => issue('consumes', 'fehler', `Task ${task}`, `Consumes: ${entry}`, `Der Task braucht ${entry}, das kein früherer Task produziert (${reason}).`));
+    .map(([, task, entry, reason]) => {
+      if (LATER_PRODUCER.test(reason)) {
+        return issue('consumes', 'fehler', `Task ${task}`, `Consumes: ${entry}`, `Der Task braucht ${entry}, das kein früherer Task produziert (${reason}).`);
+      }
+      return issue('consumes-bestand', 'warnung', `Task ${task}`, `Consumes: ${entry}`, `Kein früherer Task produziert ${entry}; existiert es im Repo, ist das in Ordnung (${reason}).`);
+    });
 }
 
 function lintPlan(text) {

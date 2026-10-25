@@ -161,6 +161,8 @@ test('plan-rework_Body_DecisionEntryRenumberingAndJsonResult', () => {
   assert.ok(body.includes('`spec-question`'));
   assert.match(body, /änderst sie nie/);
   assert.match(body, /W-Einträge/);
+  assert.ok(body.includes('W-Einträge, Nummerierung, alte Einträge und Kopf'), 'Prüfumfang der Regel 10 fehlt');
+  assert.ok(!body.includes('Abbruch-Abschnitt'), 'Pläne haben keinen Abbruch-Abschnitt');
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length, 'Anführungszeichen unpaarig');
 });
 test('plan-review-scout_Frontmatter_ReadGrepGlobWriteSonnet', () => {

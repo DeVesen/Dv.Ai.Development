@@ -32,13 +32,24 @@ test('lintPlan_CleanPlanFixture_NoIssues', () => {
 
 test('lintPlan_PlaceholderPhrasesInProse_RedAtTheirTask', () => {
   // Arrange
-  const phrases = ['TBD', 'todo', 'Später umsetzen', 'Details ergänzen', 'Passende Fehlerbehandlung ergänzen', 'Validierung hinzufügen', 'Randfälle behandeln', 'Wie Task 2'];
+  const phrases = ['TBD', 'TODO: Fehler behandeln', 'Später umsetzen', 'Details ergänzen', 'Passende Fehlerbehandlung ergänzen', 'Validierung hinzufügen', 'Randfälle behandeln', 'Wie Task 2'];
 
   // Act
   const found = phrases.map((phrase) => rules(inTask([`Hier: ${phrase}.`])));
 
   // Assert
   assert.deepEqual(found, phrases.map(() => ['fehler platzhalter Task 1']));
+});
+
+test('lintPlan_TodoAsPartOfWord_NoIssue', () => {
+  // Arrange
+  const lines = ['Eine Todo-App.', 'Die todo-Liste.', 'Die TODO-Liste.', 'Alle todos.'];
+
+  // Act
+  const found = lines.map((line) => rules(inTask([line])));
+
+  // Assert
+  assert.deepEqual(found, lines.map(() => []));
 });
 
 test('lintPlan_PlaceholderInsideCodeFence_OnlyTodoComments', () => {
@@ -134,7 +145,7 @@ test('lintPlan_AbsolutePathInFileLine_RedAtTask', () => {
   assert.deepEqual(found, ['fehler pfad-absolut Task 1', 'fehler pfad-absolut Task 1']);
 });
 
-test('lintPlan_ConsumesWithoutEarlierProducer_RedAtConsumer', () => {
+test('lintPlan_ConsumesProducedByLaterTask_RedAtConsumer', () => {
   // Arrange
   const first = planTask(1, 'AC-01', ['- Consumes: `Foo.bar(x)`']);
   const second = planTask(2, 'AC-03', ['- Produces: `Foo.bar(x)`']);
@@ -145,6 +156,18 @@ test('lintPlan_ConsumesWithoutEarlierProducer_RedAtConsumer', () => {
 
   // Assert
   assert.deepEqual(found, ['fehler consumes Task 1']);
+});
+
+test('lintPlan_ConsumesWithoutAnyProducer_YellowAsExistingCode', () => {
+  // Arrange
+  const text = inTask(['- Consumes: `Foo.bar(x)`']);
+
+  // Act
+  const found = lintPlan(text).filter((entry) => entry.rule.startsWith('consumes'));
+
+  // Assert
+  assert.deepEqual(found.map((entry) => `${entry.severity} ${entry.rule} ${entry.location}`), ['warnung consumes-bestand Task 1']);
+  assert.match(found[0].message, /existiert es im Repo, ist das in Ordnung/);
 });
 
 test('lintPlan_ConsumesNothing_NoIssue', () => {

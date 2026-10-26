@@ -9,7 +9,7 @@ const { SessionChainError, slugOfArtifact, readState, writeState, appendEvent } 
 const { answerHalt, startEtappe, checkGo } = require('./lib/session-chain-gate');
 const { storeFiles } = require('./lib/session-chain-ablage');
 const { EntryError, analyseEntry } = require('./lib/session-chain-entry');
-const { buildBrief, SONNET_MODEL_ID } = require('./lib/session-chain-brief');
+const { buildBrief, SONNET_MODEL_ID, LEIT_ID } = require('./lib/session-chain-brief');
 const { parseStatusLine, turnAction, readTurns, writeTurns } = require('./lib/session-chain-turn');
 const { commitFor, checkWhiteboardingCommitted } = require('./lib/session-chain-commit');
 const { goCall, adoptedText, noStatusHint } = require('./lib/session-chain-text');
@@ -21,7 +21,7 @@ const { reviewStand } = require('./lib/session-chain-review');
 const USAGE = [
   'Aufruf: node session-chain.js entry [<codewort> <pfade>... [workitem-nr]]',
   '       node session-chain.js set --slug <slug> [--basis <branch>] [--wi <nr>] [--spec <S>] [--plan <P>] [--worktree <R>]',
-  '       node session-chain.js brief --etappe <etappe> [--slug <slug>] [--kontext <datei>] [--quelle <datei>] [--basis <branch>] [--wi <nr>] [--erneut]',
+  '       node session-chain.js brief --etappe <etappe> --leit <local_…> [--slug <slug>] [--kontext <datei>] [--quelle <datei>] [--basis <branch>] [--wi <nr>] [--erneut]',
   '       node session-chain.js turn --session <id> --etappe <etappe> --turn-datei <datei>',
   '       node session-chain.js final --etappe <etappe> --session <id> --bericht <datei> --commit <hash|none> [--basis <branch>] [--wi <nr>]',
   '       node session-chain.js halt --slug <slug> --art spec|go',
@@ -34,7 +34,7 @@ const USAGE = [
   '              [--tests <text>] [--anhang <datei>]... [--plan <P>] [--worktree <R>] [--branch <name>] [--pruefung gruen|rot|keine | --pruefung-datei <pruefung.json>] [--luecke <befehl>]... [--ac-ohne-test <AC>]...',
   '',
 ].join('\n');
-const VALUE_OPTIONS = ['--slug', '--basis', '--wi', '--spec', '--plan', '--worktree', '--etappe', '--kontext', '--quelle', '--session', '--turn-datei', '--bericht',
+const VALUE_OPTIONS = ['--slug', '--leit', '--basis', '--wi', '--spec', '--plan', '--worktree', '--etappe', '--kontext', '--quelle', '--session', '--turn-datei', '--bericht',
   '--commit', '--art', '--anlass', '--message', '--antwort', '--datei', '--entscheidung', '--tests', '--anhang', '--branch', '--pruefung', '--luecke', '--ac-ohne-test', '--pruefung-datei'];
 const LIST_OPTIONS = ['--datei', '--entscheidung', '--anhang', '--luecke', '--ac-ohne-test'];
 const FLAG_OPTIONS = ['--neu', '--stopp', '--erneut'];
@@ -77,13 +77,16 @@ function entry(args) {
 }
 
 function brief(values) {
+  const leit = required(values, 'leit');
+  if (!LEIT_ID.test(leit)) throw new UsageError(`--leit erwartet die Kennung der Leit-Session (local_…), nicht ${leit}`);
   const state = values.slug ? readState(process.cwd(), values.slug) : null;
   if (state && values.etappe === 'grill') checkWhiteboardingCommitted(state, process.cwd());
   const chain = { ...(state ?? {}), ...(values.slug ? { slug: values.slug } : {}), ...(values.basis ? { basis: values.basis } : {}), ...(values.wi ? { wi: values.wi } : {}) };
   const result = buildBrief({
     etappe: required(values, 'etappe'),
-    values: { slug: chain.slug, wi: chain.wi, basis: chain.basis, spec: chain.spec, plan: chain.plan, worktree: chain.worktree, branch: chain.branch, quelle: values.quelle },
+    values: { slug: chain.slug, wi: chain.wi, basis: chain.basis, spec: chain.spec, plan: chain.plan, worktree: chain.worktree, branch: chain.branch, quelle: values.quelle, leit },
     decisions: state?.entscheidungen ?? [],
+    points: state?.offen ?? [],
     kontext: values.kontext ? readInput(values.kontext, 'Kontext') : null,
   });
   // Erst nach dem gebauten Brief: Ein fehlender Pflichtwert hinterlässt keinen gestarteten Zustand.

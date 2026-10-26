@@ -87,7 +87,7 @@ test('buildBrief_AnyEtappe_ContainsValuesAndAllFixedBuildingBlocks', () => {
     '- Slug: x', '- Basis-Branch: dev', '- Spec: C:/r/docs/forge/x/spec.md', '- Plan: C:/r/docs/forge/x/plan.md',
     'nur deine eigenen Dateien, auf Pfade beschränkt', 'Nie alle Änderungen stagen', 'fremde Dateien nicht anfassen', 'Commit-Konvention des Projekts', 'Push nur in der Abschluss-Etappe',
     '`[planning] STATUS=<in-progress|needs-user|final> · ROT=<n> · GELB=<n> · COMMIT=<hash|none> · BERICHT=<pfad|none>`',
-    'Starte keine weitere Session und sende keine Nachricht an die Leit-Session',
+    '4. Starte keine weitere Session. Eine Nachricht schickst du nur nach Regel 9; sonst meldest du dich über dein Turn-Ende.',
     'stellst sie am Ende deiner Antwort',
     'Aufräumpflicht: Vor deinem letzten Turn-Ende beendest du alle Hintergrundprozesse',
     'Die Statuszeile ersetzt die Übergabe-Hinweise deines Skills',
@@ -212,12 +212,12 @@ test('buildBrief_Grill_NamesSkillReportContentAndStillReportsGlossaryFilesWithDa
   assert.ok(text.includes('Jede geänderte Glossar- oder ADR-Datei mit `--datei`'));
 });
 
-test('buildBrief_Whiteboarding_StaysWithoutBerichtOfASkill', () => {
+test('buildBrief_Whiteboarding_ReportsWithTheAbschlussOfTheReview', () => {
   // Act
   const text = buildBrief({ etappe: 'whiteboarding', values: { basis: 'dev' }, kontext: 'Anliegen: Export' }).brief;
 
   // Assert
-  assert.ok(text.includes('Berichtsdatei ohne `--bericht`, mit `--spec "<deine Spec>"`.'));
+  assert.ok(text.includes('Abschließen: Berichtsdatei mit `--spec "<deine Spec>"` und `--bericht "<ABSCHLUSS aus review-stand>"`, dazu `--datei` je geänderter Glossar- oder ADR-Datei.'));
 });
 
 test('buildBrief_Umsetzung_AsksToEvaluateAcceptanceFindingsOfAllColors', () => {
@@ -228,4 +228,78 @@ test('buildBrief_Umsetzung_AsksToEvaluateAcceptanceFindingsOfAllColors', () => {
   assert.ok(text.includes('Akzeptanz-Findings des Reviews aller Farben'));
   assert.ok(text.includes('auch wenn das Review es nur als 🟡 führt'));
   assert.ok(text.includes('Integrationspunkte ohne Test sind davon ausgenommen'));
+});
+
+test('buildBrief_WithLeit_NamesTheLeitSessionUnderValues', () => {
+  // Act
+  const text = brief('grill', { ...VALUES, leit: 'local_leit-1' }).brief;
+
+  // Assert
+  const values = text.slice(text.indexOf('## Werte'), text.indexOf('## Auftrag'));
+  assert.ok(values.includes('- Leit-Session: local_leit-1'), values);
+});
+
+test('buildBrief_AnyEtappe_SendsOneMessageOnlyOnFinalWithoutHandover', () => {
+  // Act
+  const text = brief('planning').brief;
+
+  // Assert
+  for (const part of [
+    '9. Meldung bei `final`: Vor jedem Turn-Ende mit `STATUS=final` schickst du in diesem Turn genau eine Nachricht per `SendMessage` (vorher per `ToolSearch` mit `select:SendMessage` laden) an die Leit-Session aus „Werte“; `to` ist ihre Kennung.',
+    'Inhalt: die Statuszeile als erste Zeile, als zweite `Spec: <pfad>`, wenn du den Pfad der Spec kennst; sonst nichts, kein Übergabe-Hinweis, keine nächste Etappe, kein Befehl.',
+    'Ein wiederholtes `final` verarbeitet die Leit-Session nur einmal.',
+    'Bei `in-progress` und `needs-user` schickst du keine Nachricht.',
+    'Scheitert sie, steht nach der Statuszeile die Zeile `Leit-Session nicht benachrichtigt: [Leit-Session](#<Kennung>)`; dein Turn-Ende bleibt `final`.',
+  ]) assert.ok(text.includes(part), part);
+});
+
+test('buildBrief_Whiteboarding_RunsTheSpecReviewInTheSameSessionWithoutCommit', () => {
+  // Act
+  const result = buildBrief({ etappe: 'whiteboarding', values: { basis: 'dev' }, kontext: 'Anliegen: Export' });
+
+  // Assert
+  assert.equal(result.modell, 'sonnet');
+  for (const part of [
+    'Du committest nichts, weder Spec noch Glossar oder ADRs; das macht die Leit-Session. Die Übergabe deines Skills (Review-Befehl, frische Session) gibst du nicht aus.',
+    'Nach der Bestätigung und dem Schreiben der Spec rufst du ohne Rückfrage in dieser Session über das Skill-Werkzeug `dv-forge:spec-review-orchestrator` mit `"<deine Spec>" --ablage whiteboarding --whiteboarding` auf.',
+    'review-stand --spec "<deine Spec>"`. `FRAGE=nein`: Etappe abschließen. `FRAGE=ja`: am Ende deiner Antwort die Frage „Spec abschließen“ oder „Weiter an der Spec arbeiten“, Status `needs-user`.',
+    '„Weiter an der Spec arbeiten“: jede Änderung als Vorher/Nachher, erst nach Bestätigung schreiben, danach erneut das Review und `review-stand`. Änderungen der Followup-Runden lösen kein weiteres Review aus.',
+  ]) assert.ok(result.brief.includes(part), part);
+});
+
+// AC-06: Nach den Followup-Runden folgt nur `review-stand` (Frage oder Abschluss), kein zweiter Review-Lauf.
+test('buildBrief_Whiteboarding_FollowupChangesTriggerNoSecondReview', () => {
+  // Act
+  const text = buildBrief({ etappe: 'whiteboarding', values: { basis: 'dev' }, kontext: 'Anliegen: Export' }).brief;
+
+  // Assert
+  assert.ok(text.includes('Änderungen der Followup-Runden lösen kein weiteres Review aus.'));
+  assert.ok(text.includes('review-stand --spec "<deine Spec>"`. `FRAGE=nein`: Etappe abschließen.'));
+});
+
+test('buildBrief_Whiteboarding_ReviewStandFailureRetriesOnceThenNeedsUser', () => {
+  // Act
+  const text = buildBrief({ etappe: 'whiteboarding', values: { basis: 'dev' }, kontext: 'Anliegen: Export' }).brief;
+
+  // Assert
+  assert.ok(text.includes('Scheitert `review-stand` mit „Kein Spec-Review in der Ablage“: Review erneut aufrufen; scheitert es wieder, Status `needs-user` mit der Fehlermeldung, nicht abschließen.'));
+});
+
+test('buildBrief_GrillWithOpenPoints_ListsThemInTheirOwnSection', () => {
+  // Arrange
+  const points = [{ farbe: 'yellow', titel: 'A', herkunft: 'whiteboarding' }, { farbe: 'yellow', titel: 'B', herkunft: 'whiteboarding' }, { farbe: 'green', titel: 'C', herkunft: 'whiteboarding' }];
+
+  // Act
+  const text = brief('grill', VALUES, { points }).brief;
+
+  // Assert
+  assert.ok(text.includes('## Offene Punkte aus früheren Etappen\nPrüf sie im Grill mit; sie gelten nicht als beantwortet.\n- 🟡 A · whiteboarding\n- 🟡 B · whiteboarding\n- 🟢 C · whiteboarding'));
+});
+
+test('buildBrief_PlanningWithOpenPoints_HasNoPointSection', () => {
+  // Act
+  const text = brief('planning', VALUES, { points: [{ farbe: 'yellow', titel: 'A', herkunft: 'spec-review' }] }).brief;
+
+  // Assert
+  assert.ok(!text.includes('## Offene Punkte aus früheren Etappen'));
 });

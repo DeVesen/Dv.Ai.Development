@@ -9,11 +9,20 @@ const path = require('node:path');
 const { toPosix } = require('./posix');
 const { SessionChainError, checkedEtappe } = require('./session-chain-store');
 const { goCall } = require('./session-chain-text');
+const { pointLine } = require('./session-chain-points');
 
 const PLUGIN_ROOT = path.resolve(__dirname, '..', '..');
 // Modell der Sonnet-Etappen; die Leit-Session übergibt es wörtlich an das Start-Tool, statt es zu raten.
 const SONNET_MODEL_ID = 'claude-sonnet-5-5';
 const BASE_FILE = path.join(PLUGIN_ROOT, 'shared', 'session-chain', 'base-sub-agent.md');
+const CHAIN_SCRIPT = `${toPosix(PLUGIN_ROOT)}/scripts/session-chain.js`;
+
+// Kennung der Leit-Session, an die die Etappen-Session ihr `final` schickt, und ihre Zeile `- Leit-Session: <id>` unter `## Werte`.
+// Das eine Format für Brief (erzeugt), CLI `brief --leit` (prüft) und Hook der Etappen-Session (liest). Zeichensatz ohne
+// Shell-Zeichen; Unterstrich und Punkt sind erlaubt, weil das Format der Kennung aus `get_session` nicht festgelegt ist.
+const LEIT_LABEL = 'Leit-Session';
+const LEIT_ID_PATTERN = 'local_[A-Za-z0-9_.-]+';
+const LEIT_ID = new RegExp(`^${LEIT_ID_PATTERN}$`);
 
 function withWi(command, wi) {
   return wi ? `${command} ${wi}` : command;
@@ -34,7 +43,12 @@ const ETAPPEN_BRIEFS = {
     command: () => '/dv-forge:spec-whiteboarding-with-docs',
     auftrag: () => [
       'Eingabe des Whiteboardings ist der Abschnitt „Kontext“ unten.',
-      'Berichtsdatei ohne `--bericht`, mit `--spec "<deine Spec>"`.',
+      'Du committest nichts, weder Spec noch Glossar oder ADRs; das macht die Leit-Session. Die Übergabe deines Skills (Review-Befehl, frische Session) gibst du nicht aus.',
+      'Nach der Bestätigung und dem Schreiben der Spec rufst du ohne Rückfrage in dieser Session über das Skill-Werkzeug `dv-forge:spec-review-orchestrator` mit `"<deine Spec>" --ablage whiteboarding --whiteboarding` auf.',
+      `Nach jedem Review-Lauf: \`node "${CHAIN_SCRIPT}" review-stand --spec "<deine Spec>"\`. \`FRAGE=nein\`: Etappe abschließen. \`FRAGE=ja\`: am Ende deiner Antwort die Frage „Spec abschließen“ oder „Weiter an der Spec arbeiten“, Status \`needs-user\`.`,
+      'Scheitert `review-stand` mit „Kein Spec-Review in der Ablage“: Review erneut aufrufen; scheitert es wieder, Status `needs-user` mit der Fehlermeldung, nicht abschließen.',
+      '„Weiter an der Spec arbeiten“: jede Änderung als Vorher/Nachher, erst nach Bestätigung schreiben, danach erneut das Review und `review-stand`. Änderungen der Followup-Runden lösen kein weiteres Review aus.',
+      'Abschließen: Berichtsdatei mit `--spec "<deine Spec>"` und `--bericht "<ABSCHLUSS aus review-stand>"`, dazu `--datei` je geänderter Glossar- oder ADR-Datei.',
     ],
   },
   grill: {
@@ -108,7 +122,7 @@ const ETAPPEN_BRIEFS = {
   },
 };
 
-const VALUE_LINES = [['slug', 'Slug'], ['wi', 'Workitem'], ['basis', 'Basis-Branch'], ['spec', 'Spec'], ['plan', 'Plan'], ['worktree', 'Worktree']];
+const VALUE_LINES = [['slug', 'Slug'], ['wi', 'Workitem'], ['basis', 'Basis-Branch'], ['spec', 'Spec'], ['plan', 'Plan'], ['worktree', 'Worktree'], ['leit', LEIT_LABEL]];
 
 // Ohne Slug (Whiteboarding) nennt der Brief, woher er kommt: Das Whiteboarding legt ihn mit der Spec fest.
 const SLUG_FROM_SPEC = 'folgt aus der Spec, die diese Etappe schreibt (Ordnername bei `spec.md`)';
@@ -136,8 +150,9 @@ function baseRules(etappe, values) {
     .replaceAll('{{ETAPPE}}', etappe).replaceAll('{{PLUGIN}}', toPosix(PLUGIN_ROOT)).replaceAll('{{BERICHT}}', reportCommand(etappe, values));
 }
 
-// `values`: Werte der Kette; `decisions`: Entscheidungen früherer Etappen ({ etappe, text }); `kontext`: Text, nur Whiteboarding.
-function buildBrief({ etappe, values, decisions = [], kontext = null }) {
+// `values`: Werte der Kette (mit `leit`, der Kennung der Leit-Session); `decisions`: Entscheidungen früherer Etappen ({ etappe, text });
+// `kontext`: Text, nur Whiteboarding; `points`: offene Punkte der Kette, nur im Grill als eigener Abschnitt.
+function buildBrief({ etappe, values, decisions = [], kontext = null, points = [] }) {
   const etappenBrief = ETAPPEN_BRIEFS[checkedEtappe(etappe)];
   checkedValues(etappe, etappenBrief, values);
   const sections = [
@@ -146,6 +161,7 @@ function buildBrief({ etappe, values, decisions = [], kontext = null }) {
     ['## Werte', ...valueLines(values)].join('\n'),
     ['## Auftrag', ...etappenBrief.auftrag(values).map((line) => `- ${line}`)].join('\n'),
     ...(decisions.length > 0 ? [['## Entscheidungen aus früheren Etappen', ...decisions.map((entry) => `- ${entry.etappe}: ${entry.text}`)].join('\n')] : []),
+    ...(etappe === 'grill' && points.length > 0 ? [['## Offene Punkte aus früheren Etappen', 'Prüf sie im Grill mit; sie gelten nicht als beantwortet.', ...points.map(pointLine)].join('\n')] : []),
     ...(etappe === 'whiteboarding' ? [['## Kontext', String(kontext ?? '').trim()].join('\n')] : []),
     baseRules(etappe, values),
   ];
@@ -153,4 +169,4 @@ function buildBrief({ etappe, values, decisions = [], kontext = null }) {
   return { modell: etappenBrief.modell, titel: `${etappenBrief.titel} ${values.slug ?? ''}`.trim(), brief: sections.join('\n\n'), hintergrund: background };
 }
 
-module.exports = { buildBrief, ETAPPEN_BRIEFS, BASE_FILE, SONNET_MODEL_ID };
+module.exports = { buildBrief, ETAPPEN_BRIEFS, BASE_FILE, SONNET_MODEL_ID, LEIT_LABEL, LEIT_ID_PATTERN, LEIT_ID };

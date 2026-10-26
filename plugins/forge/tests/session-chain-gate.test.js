@@ -67,7 +67,7 @@ test('checkGo_WithoutGoAnswer_Throws', () => {
 test('cli_AnswerThenBrief_StartsChosenEtappeOnce', () => {
   const { repo, spec, plan } = repoWithPlan();
   writeState(repo, 'x', reviewed({ slug: 'x', basis: 'main', spec, plan, halt: 'go' }));
-  const run = (...args) => spawnSync(process.execPath, [SCRIPT, ...args], { cwd: repo, encoding: 'utf8' });
+  const run = (...args) => spawnSync(process.execPath, [SCRIPT, ...args, ...(args[0] === 'brief' ? ['--leit', 'local_leit-1'] : [])], { cwd: repo, encoding: 'utf8' });
 
   assert.equal(run('brief', '--etappe', 'umsetzung', '--slug', 'x').status, 1);
   const answered = run('answer', '--slug', 'x', '--antwort', 'go');
@@ -85,7 +85,7 @@ test('cli_EventsJsonl_RecordsHaltAnswerCommitAndStart', () => {
   const { readEvents } = require('../scripts/lib/session-chain-store');
   const { repo, spec, plan } = repoWithPlan();
   writeState(repo, 'x', reviewed({ slug: 'x', basis: 'main', spec, plan }));
-  const run = (...args) => spawnSync(process.execPath, [SCRIPT, ...args], { cwd: repo, encoding: 'utf8' });
+  const run = (...args) => spawnSync(process.execPath, [SCRIPT, ...args, ...(args[0] === 'brief' ? ['--leit', 'local_leit-1'] : [])], { cwd: repo, encoding: 'utf8' });
   run('halt', '--slug', 'x', '--art', 'go');
   run('answer', '--slug', 'x', '--antwort', 'go');
   run('commit', '--anlass', 'go', '--slug', 'x', '--message', 'docs: plan x');

@@ -142,7 +142,7 @@ test('brief_Cli_StoresHashOfBriefTextAndModelInStartedState', () => {
   const spec = path.join(repo, 'docs', 'forge', 'x', 'spec.md');
   fs.mkdirSync(path.dirname(spec), { recursive: true });
   fs.writeFileSync(spec, '# Spec\n');
-  const run = (...args) => spawnSync(process.execPath, [CHAIN, ...args], { cwd: repo, encoding: 'utf8' });
+  const run = (...args) => spawnSync(process.execPath, [CHAIN, ...args, ...(args[0] === 'brief' ? ['--leit', 'local_leit-1'] : [])], { cwd: repo, encoding: 'utf8' });
   assert.equal(run('set', '--slug', 'x', '--spec', spec).status, 0);
   const result = run('brief', '--etappe', 'planning', '--slug', 'x');
   assert.equal(result.status, 0, result.stderr);

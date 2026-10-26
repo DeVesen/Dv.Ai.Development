@@ -21,8 +21,10 @@ const PLAN_TEXT = '# Plan\n\n### Task 1: Eins\n';
 const SPEC_READY = '✅ Bereit zum Planen';
 const PLAN_READY = '✅ Bereit zur Umsetzung';
 
+// `brief` braucht die Kennung der Leit-Session; die Szenarien geben immer dieselbe mit.
 function chain(cwd, ...args) {
-  return spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8' });
+  const full = args[0] === 'brief' ? [...args, '--leit', 'local_leit-1'] : args;
+  return spawnSync(process.execPath, [SCRIPT, ...full], { cwd, encoding: 'utf8' });
 }
 
 function scratch(name, text) {
@@ -441,4 +443,31 @@ test('chain_StageTables_SameSetOfEtappenAndEveryStartTargetIsAnEtappe', () => {
   // Assert
   assert.deepEqual(differing, []);
   assert.deepEqual(starts.filter((etappe) => !ETAPPEN.includes(etappe)), []);
+});
+
+// AC-10: Review im Whiteboarding mit zwei 🟡 und einem 🟢, Abschluss mit dem ABSCHLUSS aus review-stand, Commit der Leit-Session, Grill-Brief.
+test('chain_WhiteboardingClosedWithThreeOpenPoints_StateAndGrillBriefListThem', () => {
+  // Arrange
+  const env = newChain();
+  succeeded(chain(env.repo, 'entry'));
+  succeeded(chain(env.repo, 'brief', '--etappe', 'whiteboarding', '--basis', 'main', '--kontext', scratch('kontext.md', 'Anliegen: Export\n')));
+  fs.mkdirSync(path.dirname(env.spec), { recursive: true });
+  fs.writeFileSync(env.spec, VALID_SPEC);
+  const abschluss = reportFile(SPEC_READY);
+  const review = path.join(path.dirname(abschluss), 'bericht-review.json');
+  fs.writeFileSync(review, JSON.stringify({ open: [{ key: 'a', color: 'yellow', title: 'A' }, { key: 'b', color: 'yellow', title: 'B' }], green: [{ key: 'c', color: 'green', title: 'C' }], changes: [] }));
+  succeeded(chain(env.repo, 'store', '--etappe', 'whiteboarding', '--spec', env.spec, '--neu', '--datei', abschluss, '--datei', review));
+  const stand = succeeded(chain(env.repo, 'review-stand', '--spec', env.spec));
+  const bericht = /^BERICHT=(.+)$/m.exec(succeeded(chain(env.repo, 'etappe-report', '--etappe', 'whiteboarding', '--spec', env.spec, '--bericht', field(stand, 'ABSCHLUSS'))))[1];
+  succeeded(runFinal(env, 'whiteboarding', bericht, 'none', ['--basis', 'main']).result);
+  succeeded(chain(env.repo, 'commit', '--anlass', 'whiteboarding', '--slug', 'x', '--message', 'docs: spec x'));
+
+  // Act
+  const grill = succeeded(chain(env.repo, 'brief', '--etappe', 'grill', '--slug', 'x'));
+
+  // Assert
+  assert.equal(field(stand, 'FRAGE'), 'ja');
+  const offen = readState(env.repo, 'x').offen.map((point) => `${point.farbe} ${point.titel} ${point.herkunft}`);
+  assert.deepEqual(offen, ['yellow A whiteboarding', 'yellow B whiteboarding', 'green C whiteboarding']);
+  assert.ok(grill.includes('## Offene Punkte aus früheren Etappen\nPrüf sie im Grill mit; sie gelten nicht als beantwortet.\n- 🟡 A · whiteboarding\n- 🟡 B · whiteboarding\n- 🟢 C · whiteboarding'), grill);
 });

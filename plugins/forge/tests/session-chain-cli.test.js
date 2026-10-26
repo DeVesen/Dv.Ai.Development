@@ -12,8 +12,12 @@ const { ablageDir } = require('../scripts/lib/session-chain-ablage');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'session-chain.js');
 
+const LEIT = 'local_leit-1';
+
+// `brief` braucht die Kennung der Leit-Session; die Tests geben immer dieselbe mit.
 function chain(cwd, ...args) {
-  return spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8' });
+  const full = args[0] === 'brief' ? [...args, '--leit', LEIT] : args;
+  return spawnSync(process.execPath, [SCRIPT, ...full], { cwd, encoding: 'utf8' });
 }
 
 function scratch(name, text) {
@@ -330,4 +334,65 @@ test('brief_SonnetEtappe_PrintsFixedModelId', () => {
   // Assert
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^MODELL=sonnet\nMODELL-ID=claude-sonnet-5-5\nTITEL=Spec-Review x\n/);
+});
+
+test('brief_WithoutLeit_ExitsWithUsage', () => {
+  // Arrange
+  const repo = makeRepo();
+
+  // Act
+  const result = spawnSync(process.execPath, [SCRIPT, 'brief', '--etappe', 'whiteboarding', '--basis', 'main', '--kontext', scratch('kontext.md', 'Anliegen\n')], { cwd: repo, encoding: 'utf8' });
+
+  // Assert
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /^--leit fehlt/);
+});
+
+test('brief_LeitWithoutLocalPrefix_ExitsWithUsage', () => {
+  // Arrange
+  const repo = makeRepo();
+
+  // Act
+  const result = spawnSync(process.execPath, [SCRIPT, 'brief', '--etappe', 'whiteboarding', '--basis', 'main', '--kontext', scratch('kontext.md', 'Anliegen\n'), '--leit', 'leit; rm'], { cwd: repo, encoding: 'utf8' });
+
+  // Assert
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /^--leit erwartet die Kennung der Leit-Session \(local_…\), nicht leit; rm/);
+});
+
+test('brief_LeitWithUnderscoreAndDot_IsAccepted', () => {
+  // Arrange
+  const repo = makeRepo();
+
+  // Act
+  const result = spawnSync(process.execPath, [SCRIPT, 'brief', '--etappe', 'whiteboarding', '--basis', 'main', '--kontext', scratch('kontext.md', 'Anliegen\n'), '--leit', 'local_a_b.c-1'], { cwd: repo, encoding: 'utf8' });
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(result.stdout.includes('- Leit-Session: local_a_b.c-1'));
+});
+
+test('brief_WithLeit_NamesItInTheBrief', () => {
+  // Arrange
+  const repo = makeRepo();
+
+  // Act
+  const result = chain(repo, 'brief', '--etappe', 'whiteboarding', '--basis', 'main', '--kontext', scratch('kontext.md', 'Anliegen\n'));
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(result.stdout.includes(`- Leit-Session: ${LEIT}`));
+});
+
+test('brief_GrillWithOpenPointsInState_ListsThemInTheBrief', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  writeState(repo, 'x', { basis: 'main', spec: spec.replace(/\\/g, '/'), naechste: 'grill', offen: [{ farbe: 'red', titel: 'Lücke', key: 'l', herkunft: 'whiteboarding' }] });
+
+  // Act
+  const result = chain(repo, 'brief', '--etappe', 'grill', '--slug', 'x');
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(result.stdout.includes('## Offene Punkte aus früheren Etappen\nPrüf sie im Grill mit; sie gelten nicht als beantwortet.\n- 🔴 Lücke · whiteboarding'));
 });

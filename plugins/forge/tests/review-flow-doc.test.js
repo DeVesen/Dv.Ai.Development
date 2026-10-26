@@ -8,6 +8,7 @@ const { readText, wordCount } = require('./lib/markdown');
 const FLOW = path.join(__dirname, '..', 'shared', 'review-flow', 'flow.md');
 const LOOP = path.join(__dirname, '..', 'shared', 'review-loop', 'loop.md');
 const PRIO = 'Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.';
+const PRIO_CHAT = 'Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.';
 
 function section(text, title) {
   const start = text.indexOf(`## ${title}\n`);
@@ -118,24 +119,24 @@ test('flow_Pause_ShowsQuestionsFileAndPutsPriorityFirst', () => {
   assert.ok(pause.includes(PRIO));
 });
 
-test('flow_End_ShowsReportFileBeforeCleanupAndKeepsPriority', () => {
+test('flow_End_ReportsThenSavesThenCleansUpAndEndsOnTheStatusLineWithPriority', () => {
   // Act
   const end = section(readText(FLOW), 'Ende');
 
   // Assert
-  const order = ['review-flow.js" report', 'guard-orchestrator.js" show <SESSION> --file "<W>/abschluss/bericht.md"', 'workspace.js" remove <rolle> <slug>', 'guard-orchestrator.js" release <SESSION>'];
+  const order = ['review-flow.js" report', 'followup.js" save <rolle> <slug> "<W>/abschluss"', 'workspace.js" remove <rolle> <slug>', 'guard-orchestrator.js" release <SESSION>', 'Im Chat steht als letzte Handlung genau die Review-Statuszeile'];
   const positions = order.map((part) => end.indexOf(part));
   assert.ok(positions.every((position) => position > -1), JSON.stringify(positions));
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
-  assert.ok(end.includes(PRIO));
+  assert.ok(end.includes(PRIO_CHAT));
 });
 
-test('loop_Closing_KeepsPriorityForTheReport', () => {
+test('loop_Closing_KeepsPriorityForTheStatusLine', () => {
   // Act
   const closing = section(readText(LOOP), 'Abschluss');
 
   // Assert
-  assert.ok(closing.includes(PRIO));
+  assert.ok(closing.includes(PRIO_CHAT));
 });
 
 test('flow_Pause_DoesNotAddItsOwnAnswerLine', () => {

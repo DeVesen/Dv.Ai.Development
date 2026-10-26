@@ -7,7 +7,6 @@ const { readMarkdown, readText, wordCount } = require('./lib/markdown');
 
 const SKILL = path.join(__dirname, '..', 'skills', 'plan-orchestrator', 'SKILL.md');
 const REPORT_TEXT = path.join(__dirname, '..', 'scripts', 'lib', 'report-text.js');
-const FLOW = path.join(__dirname, '..', 'shared', 'review-flow', 'flow.md');
 
 test('planOrchestrator_Frontmatter_ModelInvocableWithSpecAndOptionalWorkitem', () => {
   // Act
@@ -44,14 +43,12 @@ test('planOrchestrator_Body_ChecksSpecByHashAfterEverySkill', () => {
 test('planOrchestrator_Body_BranchesOnTheLinesTheEmbeddedReviewPrints', () => {
   // Arrange
   const script = readText(REPORT_TEXT);
-  const flow = readText(FLOW);
 
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
   assert.ok(body.includes('Dann `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>"`: `NEXT=followup` → 4, sonst 5.'));
-  assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
   assert.ok(script.includes('⚠️ Unvollständig'));
 });
 

@@ -1,7 +1,7 @@
 ---
 name: spec-review
 description: Use when a finished spec.md should run through the dv-forge review of parallel reviewers, one rework and one verification round, with a script deciding colors, stops and status.
-argument-hint: <spec.md> [quelle.md] [--only <reviewer,...>] [--bericht <datei>]
+argument-hint: <spec.md> [quelle.md] [--only <reviewer,...>] [--whiteboarding] [--debug]
 ---
 
 # Spec-Review (Orchestrator)
@@ -15,8 +15,8 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-flow/flow.md` und folge ihm. Hier steh
 2. Die `WARN`-Zeilen musst du nicht weitergeben; der Bericht enthält die Hinweise. Du liest weder Profile noch Index.
 3. `aktiv` kommt aus `prepare.js`: alle Reviewer, mit `--only` nur die genannten; `profiles` nur bei `profile=ja`. Du startest genau die Reviewer aus `aktiv`. Dokument `<DOC>` = `<S>`, Rolle `spec-review`.
 
-## Eingebetteter Lauf
-Nennt `$ARGUMENTS` `--bericht <BD>`, ruft ein Orchestrator dich auf und zeigt am Ende selbst einen Bericht. Dann gilt der eingebettete Lauf aus `flow.md`, Abschnitt „Ende“: kein Bericht im Chat, kein Pflichttext; die Sicherung für `review-followup` bleibt. Ohne `--bericht` läuft alles wie beschrieben.
+## Ablage
+Bericht und Bericht-Daten liegen in der Ablage der Etappe, die `prepare.js` festlegt; du übergibst dafür nichts. `--whiteboarding` und `--debug` reicht `prepare.js` selbst durch.
 
 ## Reviewer
 - `dv-forge:spec-review-completeness` — `Spec: <S>` und, falls vorhanden, `Quelle: <Q>`
@@ -43,4 +43,4 @@ Keine.
 `dv-forge:spec-review-scout` — `Spec: <S>` und, nur bei `art=verankert`, `Repo: <R>`; bei `profile=ja` zusätzlich `Profil-Index: <PI>`
 
 ## Bericht
-Titel `Spec-Review`, Artefakt `<S>`; den Rest liefert `report` (Ergebnis, Entscheidungen, Offenes, Hinweise, nächste Schritte).
+Titel `Spec-Review`, Artefakt `<S>`; den Rest liefert `report`: Bericht und Bericht-Daten in der Ablage, im Chat nur die Review-Statuszeile (`flow.md`, Abschnitt Ende).

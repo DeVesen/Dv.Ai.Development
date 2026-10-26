@@ -8,7 +8,6 @@ const { readMarkdown, readText, wordCount } = require('./lib/markdown');
 const SKILLS = path.join(__dirname, '..', 'skills');
 const SKILL = path.join(SKILLS, 'implementation-orchestrator', 'SKILL.md');
 const REPORT_TEXT = path.join(__dirname, '..', 'scripts', 'lib', 'implementation-report-text.js');
-const FOLLOWUP_FLOW = path.join(SKILLS, 'review-followup', 'references', 'flow.md');
 const CHAINED = ['start-work', 'implementation', 'implementation-review', 'review-followup'];
 
 test('implementationOrchestrator_Frontmatter_ModelInvocableWithPlanSpecWorkitemAndBase', () => {
@@ -74,13 +73,11 @@ test('implementationOrchestrator_Body_BranchesOnTheResultsTheReportScriptWrites'
 
 test('implementationOrchestrator_Body_ContinuesAfterFollowupOnlyOnAReadyResult', () => {
   // Arrange
-  const flow = readText(FOLLOWUP_FLOW);
 
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
   assert.ok(body.includes('`NEXT=followup` → nächste Runde; `NEXT=weiter` und `BEREIT=ja` → 6; sonst Ende. Nie eine dritte.'));
 });
 

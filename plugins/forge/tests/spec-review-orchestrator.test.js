@@ -50,7 +50,6 @@ test('specReviewOrchestrator_Body_BranchesOnTheLinesTheEmbeddedReviewPrints', ()
 test('specReviewOrchestrator_Body_TellsPauseFromEndByHeadingAndClosingLine', () => {
   // Arrange
   const haltText = readText(path.join(__dirname, '..', 'scripts', 'lib', 'halt-text.js'));
-  const flow = readText(path.join(__dirname, '..', 'shared', 'review-flow', 'flow.md'));
 
   // Act
   const { body } = readMarkdown(SKILL);
@@ -58,7 +57,6 @@ test('specReviewOrchestrator_Body_TellsPauseFromEndByHeadingAndClosingLine', () 
   // Assert
   assert.ok(body.includes('`### Frage …` = Pause (Regel 2). Danach `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>"`'));
   assert.ok(haltText.includes('### Frage ${number} von ${total}'));
-  assert.ok(flow.includes('`Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`'));
 });
 
 test('specReviewOrchestrator_Body_StaysOnCurrentBranchWithoutWorktree', () => {

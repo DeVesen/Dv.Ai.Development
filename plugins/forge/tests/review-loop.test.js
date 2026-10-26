@@ -10,10 +10,11 @@ const SHARED = path.join(__dirname, '..', 'shared', 'review-loop');
 const OLD_REFERENCES = path.join(__dirname, '..', 'skills', 'spec-review', 'references');
 
 test('sharedLoop_Files_ExistAndOldReferencesAreGone', () => {
-  for (const name of ['loop.md', 'finding-format.md', 'severity-rules.md', 'report-format.md']) {
+  for (const name of ['loop.md', 'finding-format.md', 'severity-rules.md']) {
     assert.ok(fs.existsSync(path.join(SHARED, name)), `${name} fehlt`);
   }
   assert.equal(fs.existsSync(OLD_REFERENCES), false);
+  assert.equal(fs.existsSync(path.join(SHARED, 'report-format.md')), false);
 });
 
 test('loop_BuildingBlocks_AllNamed', () => {
@@ -30,7 +31,7 @@ test('loop_Closing_ScoutWritesFileAndSaveRunsBeforeCleanup', () => {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
   const closing = text.slice(text.indexOf('## Abschluss'));
-  assert.ok(closing.indexOf('followup.js" save') < closing.indexOf('Die zwei Befehle aus \u201EJedes Ende\u201C'));
+  assert.ok(closing.indexOf('followup.js" save') < closing.indexOf('Die zwei Befehle aus Abschnitt Jedes Ende'));
 });
 
 test('loop_Round_ForegroundAggregateStopsAndProgress', () => {
@@ -69,16 +70,6 @@ test('severityRules_TwoYellow_NoLongerEscalate', () => {
   assert.ok(!text.includes('hochgestuft'));
   assert.ok(text.includes('3. Stufe der Gruppe = höchste Stufe ihrer Einzel-Findings. Zwei 🟡 an einer Stelle bleiben 🟡.'));
   assert.ok(text.includes('4. Sortierung 🔴 → 🟡 → 🟢.'));
-});
-
-test('reportFormat_Generic_TitleAndSkillSpecificParts', () => {
-  const text = readText(path.join(SHARED, 'report-format.md'));
-  assert.ok(text.includes('## <Berichtstitel>: <pfad des Artefakts>'));
-  assert.ok(text.includes('<Zusatz-Status des Skills>'));
-  assert.ok(text.includes('<Zusatz-Abschnitte des Skills>'));
-  assert.ok(text.includes('Scout ausgefallen'));
-  assert.ok(text.includes('Ausgabe von `followup.js save`'));
-  assert.ok(!text.includes('Spec-Review:'));
 });
 
 test('loop_Intro_PointsSpecAndPlanToSharedFlow', () => {

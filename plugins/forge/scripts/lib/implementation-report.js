@@ -10,12 +10,14 @@ const { scoutTexts, scoutBlocks, checkScout } = require('./scout-check');
 const { renderImplementationReport, summaryOf } = require('./implementation-report-text');
 const { placeKey } = require('./places');
 const { writeClosingFiles } = require('./closing');
-const { FlowError, readText, readLines, readJson, writeText, writeJson } = require('./flow-files');
+const { FlowError, readText, readLines, readJson } = require('./flow-files');
 const { appendMetric, implementationReviewRecord } = require('./metrics');
+const { storeReviewReport } = require('./session-chain-ablage');
+const { reviewStatusLine } = require('./review-status');
+const { REPORT_FORMAT } = require('./report-format');
+const { ablageOf } = require('./report-ablage');
 
 const REVIEW = 'implementation-review';
-const FORMAT = 1;
-const RESULT_PREFIX = '**Ergebnis:** ';
 const CANONICAL = ['acceptance', 'plan-fidelity', 'design', 'tests', 'risks'];
 const TEST_PATHS = [/(^|[\\/])(tests?|__tests__)[\\/]/i, /[._-](test|spec)s?\./i, /[a-z0-9]Tests?\.[a-z0-9]+$/];
 const DOCUMENT_FILE = /\.(md|markdown|txt|rst|adoc)$/i;
@@ -126,10 +128,9 @@ function aggregateBlock(group) {
   return [reworkHeading(SEVERITY_ICON[group.severity], group.location, group.reviewers), ...group.items.map((item) => reworkLine(item.reviewer, item.severity, item))].join('\n');
 }
 
-function writeClosing(options, open, scout, text) {
+function writeClosing(options, open, scout) {
   const scouted = open.map((group) => scoutedOf(group, scout)).filter(Boolean).map(({ block }) => block);
-  const dir = writeClosingFiles(options.workspace, open.map(aggregateBlock), scouted);
-  writeText(path.join(dir, 'bericht.md'), text);
+  writeClosingFiles(options.workspace, open.map(aggregateBlock), scouted);
 }
 
 function notesOf(options, result, open, scout) {
@@ -153,22 +154,24 @@ function reportInput(options, result, open, scout) {
   };
 }
 
-// Eingebetteter Lauf: Die Berichtsdaten gehen als JSON nach `reportFile` (Format wie review-flow.js report --bericht);
-// stdout nennt nur Status, Ergebnis, Followup-Fähigkeit und Datei. orchestrator-report.js setzt daraus den Abschlussbericht zusammen.
+// Bericht (.md) und Bericht-Daten (.json) gehen in die Ablage der Etappe aus dem Arbeitsbereich; rückgegeben wird die Review-Statuszeile.
 // `FOLLOWUP ja`: mindestens eine offene Gruppe hat einen gesicherten Vorschlag, den `review-followup <P> alle` erreicht.
-function embeddedOutput(options, input, status) {
+function storeReport(options, input, status, text) {
   const summary = summaryOf(input);
   const followup = input.open.some((entry) => entry.hasProposal);
-  writeJson(options.reportFile, {
-    format: FORMAT, review: REVIEW, title: 'Implementierungs-Review', followup: false, status, ...summary, offersFollowup: followup,
-    plan: input.plan, topic: input.topic, openRed: input.openRed, failedLabels: input.failedLabels,
-    changes: [], decisions: [], questions: [], open: input.open, green: input.green, notes: input.notes,
+  const stored = storeReviewReport({
+    target: ablageOf(options.workspace), followup: false, text,
+    data: {
+      format: REPORT_FORMAT, review: REVIEW, title: 'Implementierungs-Review', followup: false, status, ...summary, offersFollowup: followup,
+      plan: input.plan, topic: input.topic, openRed: input.openRed, failedLabels: input.failedLabels,
+      changes: [], decisions: [], questions: [], open: input.open, green: input.green, notes: input.notes,
+    },
   });
-  return [`ENDE ${status}`, `ERGEBNIS ${summary.resultLine.replace(RESULT_PREFIX, '')}`, `FOLLOWUP ${followup ? 'ja' : 'nein'}`, `BERICHT ${options.reportFile}`].join('\n');
+  return reviewStatusLine({ resultLine: summary.resultLine, followup, report: stored.md });
 }
 
-// `options`: dir (Rundenordner), workspace (W), plan (lesbare Plan-Datei), planArg (Pfad für die Befehle), range (Basis), packageFile,
-// optional reportFile (eingebetteter Lauf).
+// `options`: dir (Rundenordner), workspace (W), plan (lesbare Plan-Datei), planArg (Pfad für die Befehle), range (Basis), packageFile.
+// Ausgabe: `ENDE <status>` und `STATUSZEILE <Review-Statuszeile>`.
 function buildReport(options) {
   const result = readResult(options.dir);
   const open = result.groups.filter((group) => group.severity !== 'green');
@@ -176,10 +179,9 @@ function buildReport(options) {
   const input = reportInput(options, result, open, scout);
   const text = renderImplementationReport(input);
   const status = statusOf(result, input.openRed);
-  writeClosing(options, open, scout, text);
+  writeClosing(options, open, scout);
   appendMetric(path.dirname(options.plan), 'reviews', implementationReviewRecord(options, result, status));
-  if (options.reportFile) return embeddedOutput(options, input, status);
-  return [`ENDE ${status}`, '=== BERICHT ===', text].join('\n');
+  return [`ENDE ${status}`, `STATUSZEILE ${storeReport(options, input, status, text)}`].join('\n');
 }
 
 module.exports = { buildReport, changedFiles, isTestFile, isProductionFile };

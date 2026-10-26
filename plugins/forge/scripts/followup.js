@@ -8,14 +8,11 @@ const { toPosix } = require('./lib/posix');
 const { scanPlan, slugOf } = require('./plan-tasks');
 const { REWORK_MARK, reworkHeading } = require('./aggregate-findings');
 const { writeSavedClosing } = require('./lib/saved-closing');
-const { nextStepOf, NextStepError } = require('./lib/followup-next');
 
 const ROLES = ['spec-review', 'plan-review', 'review'];
 const ART_OF_ROLE = { 'spec-review': 'spec-review', 'plan-review': 'plan-review', review: 'implementation-review' };
 const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const USAGE = 'Aufruf: node followup.js save <spec-review|plan-review|review> <slug> <dir> | drop <spec-review|plan-review|review> <slug> | keep <spec-review|plan-review|review> <slug> <nummern>\n'
-  + '       node followup.js next --original <spec-review|plan-review|implementation-review> --status <status> [--offen <n>] [--behalten <x>] [--ergebnis <zeile>] [--plan <plan>]\n';
-const NEXT_OPTIONS = ['--original', '--status', '--offen', '--behalten', '--ergebnis', '--plan'];
+const USAGE = 'Aufruf: node followup.js save <spec-review|plan-review|review> <slug> <dir> | drop <spec-review|plan-review|review> <slug> | keep <spec-review|plan-review|review> <slug> <nummern>\n';
 const SCOUT_HEADING = /^## Scout-Vorschläge\s*$/;
 const GROUP_HEADING = /^### (🔴|🟡|🟢) (.+?)\s*$/u;
 const REWORK_HEADING = /^### (🔴|🟡|🟢) (.+) \(([^()]*)\)\s*$/u;
@@ -232,45 +229,8 @@ function isValidCall(action, args) {
   return (action === 'save' && args.length === 3) || (action === 'drop' && args.length === 2) || (action === 'keep' && args.length === 3);
 }
 
-function parseNextOptions(args) {
-  const values = {};
-  for (let index = 0; index < args.length; index += 2) {
-    if (!NEXT_OPTIONS.includes(args[index]) || index + 1 >= args.length) return null;
-    values[args[index].slice(2)] = args[index + 1];
-  }
-  if (values.original === 'implementation-review' && !values.plan) return null;
-  return values.original && values.status ? values : null;
-}
-
-// Ketten-Eintrag der Implementierung zum Plan; erst hier geladen, weil lib/chain.js selbst followup.js einliest.
-function nextStep(values) {
-  const { readEntry } = require('./lib/chain');
-  const implementation = values.original === 'implementation-review';
-  const offen = values.offen === undefined ? undefined : Number(values.offen);
-  if (offen !== undefined && !Number.isInteger(offen)) throw new NextStepError(`--offen ist keine Zahl: ${values.offen}`);
-  const chain = implementation ? readEntry({ stage: 'implementation', artifact: values.plan }) : null;
-  return nextStepOf({ ...values, offen, artefakt: values.plan, chain });
-}
-
-function mainNext(args) {
-  const values = parseNextOptions(args);
-  if (!values) {
-    process.stderr.write(USAGE);
-    process.exit(2);
-  }
-  try {
-    const lines = nextStep(values);
-    if (lines.length > 0) process.stdout.write(`${lines.join('\n')}\n`);
-  } catch (error) {
-    if (!(error instanceof NextStepError)) throw error;
-    process.stderr.write(`${error.message}\n`);
-    process.exit(1);
-  }
-}
-
 function main() {
   const [action, ...args] = process.argv.slice(2);
-  if (action === 'next') return mainNext(args);
   if (!isValidCall(action, args)) {
     process.stderr.write(USAGE);
     process.exit(2);

@@ -16,7 +16,7 @@ test('planReviewSkill_Frontmatter_ModelInvocableWithoutRoundsArgument', () => {
   assert.equal(fields.name, 'plan-review');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--only <reviewer,...>] [--bericht <datei>] [--ablage <etappe>]');
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md] [--only <reviewer,...>] [--debug]');
 });
 
 test('planReviewSkill_Body_ReadsSharedFlowWithPlaceholders', () => {
@@ -83,29 +83,14 @@ test('planReviewSkill_Report_SpecQuestionStaysInReport', () => {
   assert.ok(body.includes('den Rest liefert `report`'));
 });
 
-test('planReviewSkill_Report_KeepsCommitQuestionForCleanPlan', () => {
+test('planReviewSkill_Report_AsksNoCommitQuestion', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.match(body, /Soll ich Spec und Plan jetzt committen\?/);
-  assert.ok(body.includes('forge-config.js" get Commit-Konvention'));
-  assert.ok(body.includes('git status --porcelain -- "<S>" "<P>"'));
-  assert.match(body, /Leere Ausgabe: beide sind committet, keine Frage/);
-});
-
-test('planReviewSkill_Report_CommitOutcomesStayInSkill', () => {
-  // Act
-  const { body } = readMarkdown(SKILL);
-  const next = body.slice(body.indexOf('## Bericht'));
-
-  // Assert
-  for (const part of [
-    'Nach dem Ja committest du beide Dateien',
-    'Bei Nein oder ohne Antwort: kein Commit.',
-    'Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben.',
-  ]) {
-    assert.ok(next.includes(part), `${part} fehlt`);
+  assert.ok(body.includes('Du fragst nicht nach einem Commit.'));
+  for (const gone of ['Soll ich Spec und Plan jetzt committen?', 'forge-config.js" get Commit-Konvention', 'git status --porcelain', 'COMMIT-PRUEFUNG']) {
+    assert.equal(body.includes(gone), false, `${gone} entfällt`);
   }
 });
 

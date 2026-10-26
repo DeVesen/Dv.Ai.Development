@@ -1,7 +1,7 @@
 ---
 name: plan-review
 description: Use when a dv-forge plan.md should run through the review of parallel reviewers against its spec and the code, one rework and one verification round, with a script deciding colors, stops and status.
-argument-hint: <plan.md> [spec.md] [--only <reviewer,...>] [--bericht <datei>] [--ablage <etappe>]
+argument-hint: <plan.md> [spec.md] [--only <reviewer,...>] [--debug]
 ---
 
 # Plan-Review (Orchestrator)
@@ -14,11 +14,8 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-flow/flow.md` und folge ihm. Hier steh
 1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" plan-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: Plan `P`, Spec `S`, Repo `R`, Arbeitsbereich `W`, `slug`, `aktiv`, die erlaubten Befehle `Build`, `Test`, `Lint`, die Anker-Datei `A` und je Warnung eine Zeile `WARN` (der Bericht enthält die Hinweise).
 2. `aktiv` kommt aus `prepare.js`: alle fünf Reviewer, mit `--only` nur die genannten. Du startest genau die Reviewer aus `aktiv`. Dokument `<DOC>` = `<P>`, Rolle `plan-review`.
 
-## Eingebetteter Lauf
-Nennt `$ARGUMENTS` `--bericht <BD>`, ruft ein Orchestrator dich auf und zeigt am Ende selbst einen Bericht. Dann gilt der eingebettete Lauf aus `flow.md`, Abschnitt „Ende“: kein Bericht im Chat, kein Pflichttext, keine Commit-Prüfung; die Sicherung für `review-followup` bleibt. Ohne `--bericht` läuft alles wie beschrieben.
-
 ## Ablage
-Nennt `$ARGUMENTS` `--ablage <E>`, liefert `prepare.js` die Zeile `ablage=<E>`; dann gilt die Ablage aus `flow.md`, Abschnitt „Ende“. Ohne `--ablage` läuft alles wie beschrieben.
+Bericht und Bericht-Daten liegen in der Ablage der Etappe, die `prepare.js` festlegt; du übergibst dafür nichts. `--debug` reicht `prepare.js` selbst durch.
 
 ## Reviewer
 Jeder Reviewer bekommt zusätzlich `Anker: <A>`, wenn es `A` gibt.
@@ -45,6 +42,4 @@ Keine.
 `dv-forge:plan-review-scout` — `Plan: <P>`, `Spec: <S>`, `Repo: <R>`
 
 ## Bericht
-Titel `Plan-Review`, Artefakt `<P>`; den Rest liefert `report`. Eine Spec-Rückfrage hält den Lauf nicht an; sie steht im Bericht unter den offenen Fragen.
-
-Commit-Prüfung nach dem Freigeben des Guards, nur bei `COMMIT-PRUEFUNG ja` in der Ausgabe von `report` (bei `nein` weder Prüfung noch Frage): `git status --porcelain -- "<S>" "<P>"`. Leere Ausgabe: beide sind committet, keine Frage. Sonst steht direkt nach dem Bericht als einzige weitere Zeile: `Plan ist bereit. Soll ich Spec und Plan jetzt committen?` Nach dem Ja committest du beide Dateien, Nachricht nach `Commit-Konvention` aus `node "${CLAUDE_PLUGIN_ROOT}/scripts/forge-config.js" get Commit-Konvention`, mit der Workitem-Nummer der Spec, falls sie eine nennt. Bei Nein oder ohne Antwort: kein Commit. Schlägt der Commit fehl: die Fehlermeldung wörtlich ausgeben.
+Titel `Plan-Review`, Artefakt `<P>`; den Rest liefert `report`: Bericht und Bericht-Daten in der Ablage, im Chat nur die Review-Statuszeile. Eine Spec-Rückfrage hält den Lauf nicht an; sie steht im Bericht unter den offenen Fragen. Du fragst nicht nach einem Commit.

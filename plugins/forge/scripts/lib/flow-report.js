@@ -11,7 +11,7 @@ const { ROUND_ONE, ROUND_TWO, FOLLOWUP, FlowError, readText, readJson } = requir
 const { storeReviewReport } = require('./session-chain-ablage');
 const { reviewStatusLine } = require('./review-status');
 const { REPORT_FORMAT } = require('./report-format');
-const { readContext } = require('../workspace');
+const { ablageOf } = require('./report-ablage');
 const { appendMetric, flowReviewRecord } = require('./metrics');
 
 // Rangfolge: unvollständig → Fragen offen → nicht bereit → sauber.
@@ -55,9 +55,7 @@ function collect(options) {
 // Bericht und Bericht-Daten gehen in die Ablage der Etappe, die prepare.js im Arbeitsbereich festgelegt hat: Ein Review beginnt die
 // Ablage seiner Etappe neu (`bericht-review`), ein Followup legt die nächste Runde daneben (`bericht-followup-<n>`).
 function storeReport(options, data, text) {
-  const { ablage } = readContext(options.workspace);
-  if (typeof ablage !== 'string' || ablage === '') throw new FlowError('Ablage fehlt im Arbeitsbereich: prepare.js legt sie in kontext.json fest');
-  return storeReviewReport({ target: path.resolve(ablage), followup: options.source === FOLLOWUP, data, text });
+  return storeReviewReport({ target: ablageOf(options.workspace), followup: options.source === FOLLOWUP, data, text });
 }
 
 // Ausgabe: `ENDE <status>` und `STATUSZEILE <Review-Statuszeile>`; der Bericht liegt in der Ablage, nicht im Chat.

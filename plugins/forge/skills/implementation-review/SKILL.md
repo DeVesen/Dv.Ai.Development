@@ -1,7 +1,7 @@
 ---
 name: implementation-review
 description: Use when a finished dv-forge implementation should be checked once by parallel reviewers against plan, spec and code, with mechanical aggregation and a scout that proposes solutions for every red or yellow finding.
-argument-hint: <plan.md> [spec.md] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>] [--bericht <datei>]
+argument-hint: <plan.md> [spec.md] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>] [--debug]
 ---
 
 # Implementierungs-Review (Orchestrator)
@@ -16,8 +16,8 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 3. Skript-Prüfungen, einmal vor Review 1: `node "${CLAUDE_PLUGIN_ROOT}/scripts/verify-run.js" --repo "<R>" --nur test --out "<W>/testlauf.json"`, dazu `--seit-gruen "<Z>"`, wenn es `Z` gibt; Exit 1 (rot) ist erwartet. Dann `node "${CLAUDE_PLUGIN_ROOT}/scripts/implementation-checks.js" --plan "<P>" --repo "<R>" --base "<B>" --out "<W>/skript.json" --testlauf "<W>/testlauf.json"`.
 4. An jeden Aggregations-Aufruf aus `loop.md` hängst du `--repo "<R>" --skript "<W>/skript.json"` an.
 
-## Eingebetteter Lauf
-Nennt `$ARGUMENTS` `--bericht <BD>`, ruft ein Orchestrator dich auf und zeigt den Bericht selbst. Du gibst ihn dann nicht im Chat aus, merkst keinen Pflichttext vor und gibst `<BD>` an den Berichts-Aufruf weiter; die Sicherung für `review-followup` bleibt. Ohne `--bericht` läuft alles wie beschrieben.
+## Ablage
+Bericht und Bericht-Daten liegen in der Ablage der Etappe, die `prepare.js` festlegt; du übergibst dafür nichts. `--debug` reicht `prepare.js` selbst durch.
 
 ## Reviewer
 Jeder Reviewer und der Scout bekommen zusätzlich `Zurückgestellt: <Z>`, wenn es `Z` gibt.
@@ -38,4 +38,4 @@ Keine.
 `dv-forge:implementation-review-scout` — `Plan: <P>`, `Spec: <S>`, `Repo: <R>` und je `C` eine Zeile `Context: <pfad>`
 
 ## Bericht
-Titel `Implementierungs-Review`, Artefakt `<P>`; den Rest liefert `implementation-report.js` (Ergebnis, Prüfumfang, Offenes, Hinweise, nächste Schritte). `<P>`, `<B>` und `<K>` sind die Werte aus `prepare.js`. Status: `sauber nach Review 1`, `geprüft, k × 🔴 offen` oder `unvollständig nach Review 1, ausgefallen: <liste>`.
+Titel `Implementierungs-Review`, Artefakt `<P>`; den Rest liefert `implementation-report.js`: Bericht und Bericht-Daten in der Ablage, im Chat nur die Review-Statuszeile. `<P>`, `<B>` und `<K>` sind die Werte aus `prepare.js`. Status: `sauber nach Review 1`, `geprüft, k × 🔴 offen` oder `unvollständig nach Review 1, ausgefallen: <liste>`.

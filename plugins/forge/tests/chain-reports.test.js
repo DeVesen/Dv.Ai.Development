@@ -152,8 +152,8 @@ test('planReviewReport_PlanEntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', (
 const IMPLEMENTATION_REPORT = path.join(__dirname, '..', 'scripts', 'implementation-report.js');
 const REVIEW_PACKAGE = ['# Review-Paket: a1b2c3d..HEAD', '', '## Commits', 'abc feat: x', '', '## Dateien', ' src/a.js | 3 ++-', ' 1 file changed', '', '## Diff', 'diff --git a/x b/x'].join('\n');
 
-// Implementation-Review ohne Findings zum Plan im Repo; Rückgabe der Berichtsausgabe.
-function implementationRun(run, extra = []) {
+// Implementation-Review ohne Findings zum Plan im Repo; Rückgabe: stdout des Berichts-Skripts.
+function runImplementation(run) {
   const workspace = tempDir('dv-forge-chain-impl-');
   const dir = path.join(workspace, 'runde-1');
   fs.mkdirSync(dir, { recursive: true });
@@ -161,14 +161,16 @@ function implementationRun(run, extra = []) {
   fs.writeFileSync(path.join(dir, 'aggregate.md'), 'STATUS clean=true red=0 yellow=0 green=0 failed=-\n=== REPORT ===\nTabelle\n=== REWORK ===\n');
   const packageFile = path.join(workspace, 'review.diff');
   fs.writeFileSync(packageFile, REVIEW_PACKAGE);
-  const result = spawnSync(process.execPath, [IMPLEMENTATION_REPORT, '--dir', dir, '--workspace', workspace, '--plan', run.plan, '--bereich', 'a1b2c3d', '--paket', packageFile, ...extra], { encoding: 'utf8' });
+  fs.writeFileSync(path.join(workspace, 'kontext.json'), JSON.stringify({ etappe: 'umsetzung', ablage: ablageDir(run.repo, 'x', 'umsetzung') }));
+  const result = spawnSync(process.execPath, [IMPLEMENTATION_REPORT, '--dir', dir, '--workspace', workspace, '--plan', run.plan, '--bereich', 'a1b2c3d', '--paket', packageFile], { encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   return result.stdout;
 }
 
-// Ohne die Zeile `ENDE …`, die zwischen zwei Läufen abweichen darf.
-function withoutStatus(text) {
-  return text.replace(/\r\n/g, '\n').split('\n').filter((line) => !line.startsWith('ENDE ')).join('\n');
+// Der Bericht liegt in der Ablage; die Statuszeile nennt die Datei.
+function implementationRun(run) {
+  const statusLine = runImplementation(run).split('\n').find((line) => line.startsWith('STATUSZEILE '));
+  return fs.readFileSync(parseReviewStatusLine(statusLine.replace(/^STATUSZEILE /, '')).bericht, 'utf8');
 }
 
 test('implementationReport_ImplementationEntry_EqualsReportWithoutEntryAndNamesNoNextStep', () => {
@@ -182,7 +184,7 @@ test('implementationReport_ImplementationEntry_EqualsReportWithoutEntryAndNamesN
   const text = implementationRun(run);
 
   // Assert
-  assert.equal(withoutStatus(text), withoutStatus(baseline));
+  assert.equal(text, baseline);
   assert.doesNotMatch(text, /Wie es weitergeht|Worktree bleibt|Nicht gepusht|finish-work/);
 });
 
@@ -198,7 +200,7 @@ test('implementationReport_NoEntryOrWorktreeRemoved_EqualsReportWithoutEntry', (
   const text = implementationRun(run);
 
   // Assert
-  assert.equal(withoutStatus(text), withoutStatus(baseline));
+  assert.equal(text, baseline);
   assert.equal(text.includes('Worktree bleibt'), false);
 });
 
@@ -216,20 +218,20 @@ test('implementationReport_EntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', (
   const text = implementationRun(run);
 
   // Assert
-  assert.equal(withoutStatus(text), withoutStatus(baseline));
+  assert.equal(text, baseline);
   assert.equal(text.includes('Worktree bleibt'), false);
 });
 
-test('implementationReport_EmbeddedRunWithEntry_PrintsFourLinesWithoutNextSection', () => {
+test('implementationReport_RunWithEntry_PrintsOnlyEndeAndTheStatusLine', () => {
   // Arrange
   const run = specRun();
   const worktree = addWorktree(run.repo, 'feature/z');
   writeEntry({ stage: 'implementation', plan: run.plan, spec: run.spec, worktree, branch: 'feature/z' });
-  const file = path.join(tempDir('dv-forge-chain-impl-embedded-'), 'bericht.json');
 
   // Act
-  const text = implementationRun(run, ['--bericht', file]);
+  const stdout = runImplementation(run);
 
   // Assert
-  assert.equal(text, `ENDE sauber nach Review 1\nERGEBNIS ✅ Bereit zum Abschließen\nFOLLOWUP nein\nBERICHT ${file}\n`);
+  const file = path.join(ablageDir(run.repo, 'x', 'umsetzung'), 'bericht-review.md').replace(/\\/g, '/');
+  assert.equal(stdout, `ENDE sauber nach Review 1\nSTATUSZEILE Review abgeschlossen: ✅ Bereit zum Abschließen · FOLLOWUP nein · Bericht: ${file}\n`);
 });

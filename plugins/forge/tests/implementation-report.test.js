@@ -8,6 +8,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { anchorsOf } = require('../scripts/lib/must-show');
 const { isTestFile } = require('../scripts/lib/implementation-report');
+const { parseReviewStatusLine } = require('../scripts/lib/review-status');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'implementation-report.js');
 const Q = (text) => `\u201E${text}\u201C`;
@@ -59,11 +60,22 @@ function setup({ groups = [YELLOW], reviewers = ['acceptance', 'plan-fidelity', 
   fs.writeFileSync(plan, '# Bestellsumme berechnen — Plan\n\n### Task 1: Eins\n');
   const packageFile = path.join(workspace, 'review.diff');
   fs.writeFileSync(packageFile, PACKAGE);
-  return { workspace, dir, plan, packageFile };
+  const ablage = path.join(workspace, 'ablage');
+  fs.writeFileSync(path.join(workspace, 'kontext.json'), JSON.stringify({ etappe: 'umsetzung', ablage, artifact: plan }));
+  return { workspace, dir, plan, packageFile, ablage };
 }
 
+function runReport(env, extra = []) {
+  return spawnSync(process.execPath, [SCRIPT, '--dir', env.dir, '--workspace', env.workspace, '--plan', env.plan, '--bereich', 'a1b2c3d', '--paket', env.packageFile, ...extra], { encoding: 'utf8' });
+}
+
+// Der Bericht liegt in der Ablage, die Statuszeile nennt die Datei. stdout des Ergebnisses: die ENDE-Zeile, dann === BERICHT === und der Bericht.
 function report(env) {
-  return spawnSync(process.execPath, [SCRIPT, '--dir', env.dir, '--workspace', env.workspace, '--plan', env.plan, '--bereich', 'a1b2c3d', '--paket', env.packageFile], { encoding: 'utf8' });
+  const result = runReport(env);
+  if (result.status !== 0) return result;
+  const status = parseReviewStatusLine(result.stdout.split('\n').find((line) => line.startsWith('STATUSZEILE '))?.slice('STATUSZEILE '.length));
+  assert.ok(status, result.stdout);
+  return { ...result, stdout: `${result.stdout.split('\n')[0]}\n=== BERICHT ===\n${fs.readFileSync(status.bericht, 'utf8')}`, statusLine: status };
 }
 
 function read(env, ...parts) {
@@ -85,7 +97,7 @@ test('implementationReport_OneYellowWithValidScout_ReadyAndFilesFiltered', () =>
   assert.match(result.stdout, /- 🟡 \*\*Rundung der Summe\*\* · aus: Aufbau\n  Die Rundung steht an zwei Stellen und kann auseinanderlaufen\.\n  Vorschlag \(empfohlen\): Die Rundung in einer Funktion bündeln/);
   assert.match(result.stdout, /### Hinweise zum Ablauf\n- Ein Hinweis aus der Vorbereitung\./);
   assert.equal(result.stdout.includes('/dv-forge:'), false);
-  assert.equal(read(env, 'bericht.md'), `${result.stdout.split('=== BERICHT ===\n')[1].trimEnd()}\n`);
+  assert.equal(fs.existsSync(path.join(env.workspace, 'abschluss', 'bericht.md')), false);
   const aggregate = read(env, 'aggregate.md');
   assert.ok(aggregate.includes('### 🟡 src/round.js (design)'));
   assert.equal(aggregate.includes('src/ok.js'), false);
@@ -207,7 +219,7 @@ test('implementationReport_Bericht_CarriesHeadingAnchorsWithoutNextSection', () 
   report(env);
 
   // Assert
-  const anchors = anchorsOf(read(env, 'bericht.md'));
+  const anchors = anchorsOf(fs.readFileSync(path.join(env.ablage, 'bericht-review.md'), 'utf8'));
   assert.ok(anchors.includes('## Implementierungs-Review · Ergebnis · Bestellsumme berechnen — Plan'));
   assert.ok(anchors.includes('### Was geprüft wurde'));
   assert.equal(anchors.includes('### Wie es weitergeht'), false);
@@ -289,6 +301,35 @@ test('implementationReport_MissingArgument_ExitsTwoWithUsage', () => {
   assert.match(result.stderr, /^Aufruf: node implementation-report\.js/);
 });
 
+test('implementationReport_WorkspaceWithoutAblage_ExitsOneAndNamesPrepare', () => {
+  // Arrange
+  const env = setup();
+  fs.rmSync(path.join(env.workspace, 'kontext.json'));
+
+  // Act
+  const result = runReport(env);
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^dv-forge implementation-report: Ablage fehlt im Arbeitsbereich: prepare\.js legt sie in kontext\.json fest/);
+});
+
+for (const parts of [['--', 'ber', 'icht'], ['--', 'abl', 'age']]) {
+  const parameter = parts.join('');
+  test(`implementationReport_FormerParameter${parts[1]}${parts[2]}_ExitsWithTwoAndSaysUnknownParameter`, () => {
+    // Arrange
+    const env = setup();
+
+    // Act
+    const result = runReport(env, [parameter, 'x']);
+
+    // Assert
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, new RegExp(`^unbekannter Parameter: ${parameter}\\n`));
+    assert.equal(fs.existsSync(env.ablage), false);
+  });
+}
+
 test('isTestFile_PathPatterns_CountTestFilesOnly', () => {
   const tests = ['tests/round.test.js', 'src/OrderTests.cs', 'src/OrderTest.java', 'pkg/order_test.go', 'web/app.spec.ts', 'src/__tests__/a.js', 'test/a.js'];
   const others = ['src/latest.js', 'src/contest.ts', 'src/round.js', 'docs/testing.md'];
@@ -301,22 +342,20 @@ test('isTestFile_DocumentationFiles_NeverCountAsTests', () => {
   for (const file of docs) assert.equal(isTestFile(file), false, file);
 });
 
-function embeddedReport(env, file) {
-  return spawnSync(process.execPath, [SCRIPT, '--dir', env.dir, '--workspace', env.workspace, '--plan', env.plan, '--bereich', 'a1b2c3d', '--paket', env.packageFile, '--bericht', file], { encoding: 'utf8' });
-}
-
-test('implementationReport_EmbeddedWithProposal_WritesJsonDataAndPrintsFourLines', () => {
+test('implementationReport_RunWithProposal_StoresJsonDataAndPrintsOnlyEndeAndTheStatusLine', () => {
   // Arrange
   const env = setup({ groups: [YELLOW], scout: SCOUT_YELLOW });
-  const file = path.join(env.workspace, 'bericht-review.json');
+  const file = path.join(env.ablage, 'bericht-review.json');
 
   // Act
-  const result = embeddedReport(env, file);
+  const result = runReport(env);
 
   // Assert
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout, `ENDE sauber nach Review 1\nERGEBNIS ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen\nFOLLOWUP ja\nBERICHT ${file}\n`);
+  assert.equal(result.stdout, `ENDE sauber nach Review 1\nSTATUSZEILE Review abgeschlossen: ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen · FOLLOWUP ja · Bericht: ${path.join(env.ablage, 'bericht-review.md').replace(/\\/g, '/')}\n`);
+  assert.deepEqual(fs.readdirSync(env.ablage).sort(), ['bericht-review.json', 'bericht-review.md']);
   const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(data.format, 2);
   assert.equal(data.review, 'implementation-review');
   assert.equal(data.kind, 'hints');
   assert.equal(data.resultLine, '**Ergebnis:** ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen');
@@ -326,28 +365,28 @@ test('implementationReport_EmbeddedWithProposal_WritesJsonDataAndPrintsFourLines
   assert.equal(data.open[0].color, 'yellow');
   assert.equal(typeof data.open[0].key, 'string');
   assert.ok(data.checked.some((line) => line.startsWith('- Bereich: ')));
-  assert.doesNotMatch(read(env, 'bericht.md'), /Wie es weitergeht/);
+  assert.doesNotMatch(fs.readFileSync(path.join(env.ablage, 'bericht-review.md'), 'utf8'), /Wie es weitergeht/);
   assert.match(read(env, 'scout.md'), /^## Scout-Vorschläge/);
 });
 
-test('implementationReport_EmbeddedWithoutScout_FollowupNein', () => {
+test('implementationReport_RunWithoutScout_StatusLineSaysFollowupNein', () => {
   // Arrange
   const env = setup({ groups: [RED] });
 
   // Act
-  const result = embeddedReport(env, path.join(env.workspace, 'bericht-review.json'));
+  const result = runReport(env);
 
   // Assert
-  assert.match(result.stdout, /^ENDE geprüft, 1 × 🔴 offen\nERGEBNIS ⛔ Noch nicht bereit · 1 Hindernis offen\nFOLLOWUP nein\n/);
+  assert.match(result.stdout, /^ENDE geprüft, 1 × 🔴 offen\nSTATUSZEILE Review abgeschlossen: ⛔ Noch nicht bereit · 1 Hindernis offen · FOLLOWUP nein · Bericht: /);
 });
 
-test('implementationReport_EmbeddedWithGreenGroup_DataListsGreenEntryAndOpenStaysEmpty', () => {
+test('implementationReport_RunWithGreenGroup_DataListsGreenEntryAndOpenStaysEmpty', () => {
   // Arrange
   const env = setup({ groups: [GREEN] });
-  const file = path.join(env.workspace, 'bericht-review.json');
+  const file = path.join(env.ablage, 'bericht-review.json');
 
   // Act
-  const result = embeddedReport(env, file);
+  const result = runReport(env);
 
   // Assert
   assert.equal(result.status, 0, result.stderr);

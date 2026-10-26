@@ -19,7 +19,7 @@ Gemeinsamer Ablauf von Spec- und Plan-Review: Runde 1 sucht, danach gibt es höc
 Vor Runde 1 liest du `<PLUGIN>/shared/review-loop/loop.md`, Abschnitte „Rolle“ und „Hintergrund oder Vordergrund“. Deine Rolle, die Werkzeuge ohne Verkettung und die Regel für Agents im Vordergrund gelten hier unverändert; sie stehen nur dort. Davon abweichend gilt hier:
 - Nach `pause` (siehe „Anhalten“) gibt die Antwort des Menschen den Hook nicht frei, erst seine Eingabe danach.
 - Ergebnisse laufen nur über Dateien im Arbeitsbereich `W`.
-- Endet ein Aufruf von `review-flow.js` mit Exit 1, gibst du seine Zeile `dv-forge review-flow: <grund>` unverändert aus und führst von „Ende“ nur Schritt 4 aus.
+- Endet ein Aufruf von `review-flow.js` mit Exit 1, gibst du seine Zeile `dv-forge review-flow: <grund>` unverändert aus und sonst nichts; der Abschnitt Ende entfällt.
 
 ## Nachfordern
 Liefert eine Instanz kein gültiges Ergebnis: `node "<PLUGIN>/scripts/review-flow.js" attempt --dir "<W>" --instanz <name>`. `<name>` ist der Kurzname des Reviewers, `nacharbeit`, `nachprüfer`, `scout` oder `scout-nachpruefung`.
@@ -67,11 +67,7 @@ Genau eine je Lauf.
 
 ## Ende
 Jedes Ende, auch nach einem Ausfall:
-1. `node "<PLUGIN>/scripts/review-flow.js" report <FLAGS> --titel "<Titel>" --artefakt "<Artefakt>"`. Die Zeile `ENDE <status>` braucht der Skill für eigene Schritte (Plan: `COMMIT-PRUEFUNG ja|nein`).
+1. `node "<PLUGIN>/scripts/review-flow.js" report <FLAGS> --titel "<Titel>" --artefakt "<Artefakt>"`. Die Ausgabe hat zwei Zeilen: `ENDE <status>` und `STATUSZEILE <Review-Statuszeile>`. Bericht und Bericht-Daten liegen danach in der Ablage der Etappe; `prepare.js` hat sie im Arbeitsbereich festgelegt, du übergibst dafür nichts.
 2. `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"`.
-3. Nur wenn `report` ohne Exit 1 lief: `node "<PLUGIN>/scripts/guard-orchestrator.js" show <SESSION> --file "<W>/abschluss/bericht.md"`. Dann `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.
-4. Bericht im Chat: als letzte Handlung und genau einmal, ohne vorherige Ausgabe im selben Zug, der Text nach `=== BERICHT ===` unverändert. Danach höchstens die Commit-Frage des Skills. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Text.
-
-**Eingebetteter Lauf** (der Skill nennt eine Bericht-Datei `<BD>`): Ein Orchestrator ruft dich auf und zeigt am Ende selbst einen Bericht. In Schritt 1 hängst du `--bericht "<BD>"` an; die Ausgabe sind vier Zeilen `ENDE <status>`, `ERGEBNIS <ergebnis>`, `FOLLOWUP <ja|nein>` und `BERICHT <BD>`. In Schritt 3 entfällt `show`. Statt Schritt 4 nur die eine Zeile `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <BD>`; keine Commit-Prüfung, nichts weiter, der Aufrufer macht weiter.
-
-**Ablage** (`prepare.js` liefert `ablage=<E>`): Schritt 1 bekommt `--ablage <E>`; die Ausgabe hat zusätzlich die Zeile `ABLAGE <datei> · FOLLOWUP <ja|nein>`, sonst bleibt alles gleich.
+3. Nur wenn `report` ohne Exit 1 lief: `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.
+4. Im Chat steht als letzte Handlung genau die Review-Statuszeile, der Text nach `STATUSZEILE ` unverändert, nichts davor oder danach: kein Bericht, kein Hinweis, keine Frage. Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.

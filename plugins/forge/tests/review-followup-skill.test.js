@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { readMarkdown, readText, wordCount } = require('./lib/markdown');
+const { FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION, FORMER_EMBEDDED_SECTION } = require('./lib/former-names');
 
 const DIR = path.join(__dirname, '..', 'skills', 'review-followup');
 const SKILL = path.join(DIR, 'SKILL.md');
@@ -49,7 +50,7 @@ test('reviewFollowupFlow_Reference_BranchesForSpecPlanAndImplementation', () => 
     'review-flow.js" script-checks <FLAGS> --runde runde-2',
     'Prüfliste: <W>/runde-2/pruefliste.md', 'Kein Reviewer läuft.', 'followup.js" save <rolle> <slug> "<W>/abschluss"',
     'plan-tasks.js" header "<P>" "<W>"', 'review-package.js" <FIX_BASE> HEAD "<W>"', 'followup.js" drop review <slug>', 'Kein Scout', 'nicht gewählt',
-    'bleibt die alte Sicherung', 'followup.js" next --original <original>', '--hinweis', 'keine Änderung', 'blockiert']) {
+    'bleibt die alte Sicherung', '--hinweis', 'keine Änderung', 'blockiert']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }
 });
@@ -61,26 +62,27 @@ test('reviewFollowupFlow_ImplementationStatus_NamesNoGroupNumbersOfTheOldSave', 
   assert.equal(text.includes('Gruppen <offen>'), false);
 });
 
-test('reviewFollowupSkill_Body_ShowsReportFileBeforeCleanupAndKeepsPriority', () => {
+test('reviewFollowupSkill_Body_EndsWithTheStatusLineAfterCleanupAndPassesNoReportParameter', () => {
+  // Arrange
   const { body } = readMarkdown(SKILL);
-  const show = body.indexOf('scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<W>/abschluss/bericht.md"');
-  assert.ok(show > -1, 'show fehlt');
-  assert.ok(show < body.indexOf('scripts/workspace.js" remove <rolle> <slug>'), 'show muss vor remove stehen');
-  assert.ok(body.includes('die Formatregeln stehen in `flow.md`, Abschnitt Bericht'));
+
+  // Act
+  const release = body.indexOf('scripts/guard-orchestrator.js" release ${CLAUDE_SESSION_ID}');
+
+  // Assert
+  assert.ok(release > -1, 'release fehlt');
+  assert.ok(body.indexOf('Im Chat steht als letzte Handlung die Review-Statuszeile') > release, 'die Statuszeile steht nach dem Aufräumen');
+  assert.ok(body.includes('die Formatregeln stehen in `flow.md`, Abschnitt Ende'));
+  for (const gone of ['guard-orchestrator.js" show', FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION, 'Commit-Prüfung']) assert.equal(body.includes(gone), false, `${gone} entfällt`);
   assert.ok(wordCount(body) < 500);
 });
 
-test('reviewFollowupFlow_Report_KeepsPriority', () => {
+test('reviewFollowupFlow_End_KeepsPriorityAndShowsOnlyTheStatusLine', () => {
   const text = readText(FLOW);
-  const report = text.slice(text.indexOf('## Bericht'), text.indexOf('## Nächster Schritt'));
-  assert.ok(report.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks. Der Zug endet nicht ohne diesen Bericht.'));
-});
-
-test('reviewFollowupFlow_NextStep_TakesTheStepsFromTheScriptOutputUnchanged', () => {
-  const text = readText(FLOW);
-  const next = text.slice(text.indexOf('## Nächster Schritt'));
-  assert.ok(next.includes('Die Ausgabe übernimmst du unverändert nach dem Bericht'));
-  assert.equal(next.includes('/dv-forge:finish-work'), false, 'die Schritte stehen im Skript, nicht im Markdown');
+  const ending = text.slice(text.indexOf('## Ende'));
+  assert.ok(ending.includes('genau die Review-Statuszeile'));
+  assert.ok(ending.includes('Dieses Format hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.'));
+  for (const gone of [`## ${FORMER_EMBEDDED_SECTION}`, '## Nächster Schritt', '=== BERICHT ===', FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION, 'followup.js" next']) assert.equal(text.includes(gone), false, `${gone} entfällt`);
 });
 
 test('reviewFollowupSkill_Body_TakesNoNextStepTextsFromImplementationReview', () => {
@@ -90,22 +92,11 @@ test('reviewFollowupSkill_Body_TakesNoNextStepTextsFromImplementationReview', ()
   assert.equal(body.includes('des Abschnitts Abschluss-Scout'), false, 'das Followup der Implementierung startet keinen Scout');
 });
 
-test('reviewFollowupFlow_NextStep_ChainEntryIsLookedUpByTheScriptItself', () => {
-  // Arrange
-  const text = readText(FLOW);
-  const script = readText(path.join(__dirname, '..', 'scripts', 'followup.js'));
-  const next = text.slice(text.indexOf('## Nächster Schritt'));
-
-  // Assert
-  assert.ok(next.includes('Den Ketten-Eintrag der Implementierung schlägt das Skript selbst nach.'));
-  assert.ok(script.includes("readEntry({ stage: 'implementation', artifact: values.plan })"));
-});
-
 test('reviewFollowupFlow_ImplementationSave_FollowsTheBehaltenLineOfTheReportScript', () => {
   const text = readText(FLOW);
   const script = readText(path.join(__dirname, '..', 'scripts', 'lib', 'implementation-followup-report.js'));
   const step = text.slice(text.indexOf('3. Bericht und Sicherung:'), text.indexOf('4. Status:'));
-  for (const part of ['implementation-report.js" followup --workspace "<W>" --artefakt "<P>" <<\'ANTWORT\'', '`BEHALTEN <x>`', '`keine` → ', 'followup.js" drop review <slug>',
+  for (const part of ['implementation-report.js" followup --workspace "<W>" <<\'ANTWORT\'', '`STATUSZEILE <Review-Statuszeile>`', '`BEHALTEN <x>`', '`keine` → ', 'followup.js" drop review <slug>',
     'followup.js" keep review <slug> <nummern>', '`unveraendert` → nichts, es bleibt die alte Sicherung']) {
     assert.ok(step.includes(part), `${part} fehlt`);
   }
@@ -126,11 +117,4 @@ test('reviewFollowupFlow_ImplementationWithoutReReview_ContinuesAtReportDataStep
   assert.ok(blocked?.includes('weiter mit Schritt 3 von „Nachprüfung · Implementierung“ (`--ohne blockiert`)'));
   assert.ok(unchanged?.includes('weiter mit Schritt 3 dieses Abschnitts (`--ohne keine-aenderung`)'));
   assert.equal(text.includes('weiter mit dem Bericht'), false);
-});
-
-test('reviewFollowupFlow_EmbeddedImplementation_PrintsBehaltenLineBesidesTheFourLines', () => {
-  const text = readText(FLOW);
-  const embedded = text.slice(text.indexOf('## Eingebetteter Lauf'), text.indexOf('## Nächster Schritt'));
-  assert.ok(embedded.includes('Die Ausgabe hat die vier Zeilen und dazu `BEHALTEN <x>`'));
-  assert.ok(embedded.includes('`FOLLOWUP ja` heißt, die Sicherung behält Vorschläge'));
 });

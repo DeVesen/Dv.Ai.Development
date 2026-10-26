@@ -16,7 +16,7 @@ test('skill_Frontmatter_ModelInvocableWithoutRoundsArgument', () => {
   assert.equal(fields.name, 'spec-review');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<spec.md> [quelle.md] [--only <reviewer,...>] [--bericht <datei>]');
+  assert.equal(fields['argument-hint'], '<spec.md> [quelle.md] [--only <reviewer,...>] [--whiteboarding] [--debug]');
 });
 
 test('skill_Body_DefinesPluginRootSessionAndReadsSharedFlow', () => {
@@ -73,7 +73,7 @@ test('skill_Report_DelegatedToScript', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Titel `Spec-Review`, Artefakt `<S>`; den Rest liefert `report` (Ergebnis, Entscheidungen, Offenes, Hinweise, nächste Schritte).'));
+  assert.ok(body.includes('Titel `Spec-Review`, Artefakt `<S>`; den Rest liefert `report`: Bericht und Bericht-Daten in der Ablage, im Chat nur die Review-Statuszeile (`flow.md`, Abschnitt Ende).'));
   for (const gone of ['- `Fragen offen`:', '- `nicht bereit, …`:', '/dv-forge:plan-writing <S>', 'Offene 🟡', 'Auswahl: b =', 'Spec nicht bereit']) assert.equal(body.includes(gone), false, gone);
 });
 

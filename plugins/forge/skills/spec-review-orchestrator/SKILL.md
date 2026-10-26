@@ -1,12 +1,12 @@
 ---
 name: spec-review-orchestrator
 description: Use when a dv-forge spec.md should be reviewed, followed up and committed in one unattended run on the current branch.
-argument-hint: <spec.md> [workitem-nr] [--ablage <etappe>]
+argument-hint: <spec.md> [workitem-nr] [--ablage <etappe>] [--whiteboarding]
 ---
 
 # Spec-Review-Orchestrator
 
-`$ARGUMENTS`: `<S0>` Spec, `<WI>` Workitem-Nr. optional; leer oder mit `<` beginnend = keine. `--ablage <E>` optional, zählt nicht als `<WI>`. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
+`$ARGUMENTS`: `<S0>` Spec, `<WI>` Workitem-Nr. optional; leer oder mit `<` beginnend = keine. `--ablage <E>` optional, zählt nicht als `<WI>`. `--whiteboarding` optional, zählt nicht als `<WI>`: Prüfung im Whiteboarding einer Session-Kette. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
 Nur Skills und Skripte aufrufen. Den Inhalt der Spec nie selbst lesen, prüfen, ändern; Findings nie beurteilen.
 
 ## Regeln
@@ -25,13 +25,13 @@ Nur Skills und Skripte aufrufen. Den Inhalt der Spec nie selbst lesen, prüfen, 
    - `NEXT=ende` → kein Commit, 6.
    - `NEXT=followup`, auch für Hinweise, `⛔` und `❓` → 4, sonst 5.
 4. Followup-Runden, höchstens zwei. Runde `RUNDE`: `dv-forge:review-followup` mit `<S> alle --bericht "<BF1>"` bzw. `"<BF2>"`. Dann `next` erneut, mit `--followup` je gelaufener Runde: `NEXT=ende` → kein Commit, 6; `NEXT=followup` → nächste Runde; sonst 5. Nie eine dritte.
-5. Commit, auch bei `⛔` oder `❓`. `node "<PLUGIN>/scripts/spec-commit.js" preflight --spec "<S>" --state "<ST>"`; Exit 1 (anderer Ort) → stopp, `SPEC-VORBESTAND=ja` → `Abweichungen:`. Dann `node "<PLUGIN>/scripts/spec-commit.js" commit --spec "<S>" --slug "<slug>"`, dazu `--wi <WI>` nur wenn gegeben. Ausgabe `COMMIT=<hash>`, `nichts` oder `ignoriert`. Exit 1 → Meldung, Spec bleibt gestaged (nennen), 6.
+5. Commit, auch bei `⛔` oder `❓`. Mit `--whiteboarding` kein Commit: `Commit` = „kein Commit (Whiteboarding)“, weiter mit 6. Sonst `node "<PLUGIN>/scripts/spec-commit.js" preflight --spec "<S>" --state "<ST>"`; Exit 1 (anderer Ort) → stopp, `SPEC-VORBESTAND=ja` → `Abweichungen:`. Dann `node "<PLUGIN>/scripts/spec-commit.js" commit --spec "<S>" --slug "<slug>"`, dazu `--wi <WI>` nur wenn gegeben. Ausgabe `COMMIT=<hash>`, `nichts` oder `ignoriert`. Exit 1 → Meldung, Spec bleibt gestaged (nennen), 6.
    - `COMMIT=frei`: das Projekt setzt eine Konvention (`node "<PLUGIN>/scripts/forge-config.js" get Commit-Konvention`). Betreff danach, eine Zeile, ein `-m`, kein Body; `git add -- "<S>"` und `git commit -m "<betreff>" -- "<S>"`, nie `--no-verify`.
 6. Abschlussbericht, letzte Handlung:
    1. `Commit` = Hash aus `COMMIT=`, „nichts zu committen“, „ignoriert“ oder Grund dagegen.
    2. Nur bei Abweichungen `<FK>` schreiben, eine Zeile `Abweichungen: …`: Stopp-Grund, abgelehnte Wünsche, Spec-Vorbestand im Commit, neue Pfade in `git status --porcelain`.
    3. Steht `<S>` fest (Datei existiert): `node "<PLUGIN>/scripts/chain.js" write --stage spec --spec "<S>"`, dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben. Endet der Aufruf mit Fehler: Meldung in die Zeile `Abweichungen: …` von `<FK>` aufnehmen, `<FK>` nötigenfalls anlegen; der Bericht folgt trotzdem.
-   4. `node "<PLUGIN>/scripts/orchestrator-report.js" --art spec --review "<BR>" --out "<AB>" --spec "<S>" --commit "<Commit>"`, dazu `--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief, `--wi <WI>` nur wenn gegeben, `--fakten "<FK>"` nur wenn geschrieben.
+   4. `node "<PLUGIN>/scripts/orchestrator-report.js" --art spec --review "<BR>" --out "<AB>" --spec "<S>" --commit "<Commit>"`, dazu `--followup "<BF1>"` und `--followup "<BF2>"` je nur wenn die Runde lief, `--wi <WI>` nur wenn gegeben, `--fakten "<FK>"` nur wenn geschrieben, `--ohne-weiter ja` nur mit `--whiteboarding`.
    5. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.
    6. Nur mit `--ablage <E>`: Lies `<PLUGIN>/shared/session-chain/ablage.md` und folge dem Abschnitt `spec-review-orchestrator`; Ausgabe nicht zeigen, Fehler egal.
    7. Den Text nach `=== BERICHT ===` unverändert ausgeben, nichts davor oder danach. Ein Hook verlangt die Überschriften wörtlich.

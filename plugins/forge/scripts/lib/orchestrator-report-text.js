@@ -93,12 +93,13 @@ function nextLines(report, facts) {
   ];
 }
 
+// `facts.ohneWeiter`: ohne Abschnitt „Wie es weitergeht“ (Spec-Review im Whiteboarding einer Session-Kette; die Etappe fragt selbst).
 function renderOrchestratorReport(report, facts) {
   return [
     ['# Abschlussbericht', ...closingLines(report, facts)],
     [`# Was sich ${CHANGED_IN[report.art]} geändert hat`, ...changedLines(report)],
     ['# Was ist noch offen', ...openSection(report)],
-    ['# Wie es weitergeht', ...nextLines(report, facts)],
+    ...(facts.ohneWeiter ? [] : [['# Wie es weitergeht', ...nextLines(report, facts)]]),
   ].map((block) => block.join('\n')).join('\n\n');
 }
 

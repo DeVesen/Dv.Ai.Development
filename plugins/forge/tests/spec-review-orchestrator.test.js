@@ -16,7 +16,7 @@ test('specReviewOrchestrator_Frontmatter_ModelInvocableWithSpecAndOptionalWorkit
   assert.equal(fields.name, 'spec-review-orchestrator');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<spec.md> [workitem-nr] [--ablage <etappe>]');
+  assert.equal(fields['argument-hint'], '<spec.md> [workitem-nr] [--ablage <etappe>] [--whiteboarding]');
 });
 
 test('specReviewOrchestrator_Body_ChainsEmbeddedReviewThenOneFollowup', () => {
@@ -121,12 +121,12 @@ test('specReviewOrchestrator_Body_PassesCommitResultAndDeviationsToTheReportScri
   assert.ok(body.includes('`Abweichungen: …`: Stopp-Grund, abgelehnte Wünsche, Spec-Vorbestand im Commit, neue Pfade in `git status --porcelain`.'));
 });
 
-test('specReviewOrchestrator_Body_StaysUnder650WordsWithPairedQuotes', () => {
+test('specReviewOrchestrator_Body_StaysUnder700WordsWithPairedQuotes', () => {
   // Act
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(wordCount(body) < 650, `${wordCount(body)} Wörter`);
+  assert.ok(wordCount(body) < 700, `${wordCount(body)} Wörter`);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
 
@@ -166,4 +166,14 @@ test('specReviewOrchestrator_Body_WritesChainEntryOfStageSpecBeforeTheReportAlso
   assert.ok(body.includes('dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben.'));
   assert.ok(body.includes('6. Abschlussbericht, letzte Handlung:'));
   assert.ok(body.includes('Stopp = Schritt 6 mit dem Grund; nach dem Bericht nichts weiter.'));
+});
+
+test('specReviewOrchestrator_Body_WhiteboardingSkipsCommitAndNextSteps', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('`--whiteboarding` optional, zählt nicht als `<WI>`: Prüfung im Whiteboarding einer Session-Kette.'));
+  assert.ok(body.includes('Mit `--whiteboarding` kein Commit: `Commit` = „kein Commit (Whiteboarding)“, weiter mit 6.'));
+  assert.ok(body.includes('`--ohne-weiter ja` nur mit `--whiteboarding`'));
 });

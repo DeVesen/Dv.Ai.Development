@@ -237,6 +237,34 @@ test('orchestratorReport_ReadySpec_CommitResultAndPlanOrchestratorStep', () => {
   assert.match(result.stdout, /# Wie es weitergeht\n1\. Spec committen\. Ergebnis: a1b2c3d\.\n2\. Plan \(frische Session\):\n {3}`\/dv-forge:plan-orchestrator \/repo\/docs\/forge\/x\/spec\.md`\n$/);
 });
 
+test('orchestratorReport_SpecWithOhneWeiter_ThreeHeadingsWithoutNextSteps', () => {
+  // Arrange
+  const dir = tempDir('dv-forge-orch-');
+  const review = writePart(dir, 'review.json', part({ review: 'spec-review', resultLine: '**Ergebnis:** ✅ Bereit zum Planen' }));
+
+  // Act
+  const result = run(['--art', 'spec', '--review', review, '--out', path.join(dir, 'a.md'), '--spec', SPEC, '--commit', 'kein Commit (Whiteboarding)', '--ohne-weiter', 'ja']);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const text = result.stdout.split('=== BERICHT ===\n')[1];
+  assert.deepEqual(anchorsOf(text), ['# Abschlussbericht', '# Was sich in der Spec geändert hat', '# Was ist noch offen']);
+  assert.doesNotMatch(text, /plan-orchestrator|Spec committen/);
+});
+
+test('orchestratorReport_OhneWeiterWithOtherValue_ExitsWithTwo', () => {
+  // Arrange
+  const dir = tempDir('dv-forge-orch-');
+  const review = writePart(dir, 'review.json', part({ review: 'spec-review' }));
+
+  // Act
+  const result = run(['--art', 'spec', '--review', review, '--out', path.join(dir, 'a.md'), '--spec', SPEC, '--commit', 'x', '--ohne-weiter', 'nein']);
+
+  // Assert
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /--ohne-weiter erlaubt: ja/);
+});
+
 function implementationArgs(dir, review, check, extra = []) {
   return ['--art', 'implementation', '--review', writePart(dir, 'review.json', review), '--out', path.join(dir, 'a.md'), '--plan', PLAN, '--spec', SPEC,
     '--worktree', '/repo-wt', '--branch', 'feature/x', '--pruefung', check, ...extra];

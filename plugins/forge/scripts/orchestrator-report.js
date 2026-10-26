@@ -16,13 +16,13 @@ const REQUIRED = {
   plan: ['--review', '--out', '--plan', '--spec', '--stand'],
   implementation: ['--review', '--out', '--plan', '--spec', '--worktree', '--branch', '--pruefung'],
 };
-const OPTIONAL = ['--followup', '--wi', '--fakten'];
+const OPTIONAL = ['--followup', '--wi', '--fakten', '--ohne-weiter'];
 // Ein Lauf, der vor dem Review endet, hat weder Review-Daten noch Worktree oder Prüfergebnis: nur Grund und Bericht-Datei sind Pflicht.
 const ABORT_REQUIRED = ['--out', '--abbruch'];
 const MAX_FOLLOWUPS = 2;
 const CHECKS = ['gruen', 'rot', 'keine'];
 const USAGE = [
-  'Aufruf: node orchestrator-report.js --art spec --review <json> [--followup <json>]... --out <md> --spec <S> --commit <text> [--wi <nr>] [--fakten <datei>]',
+  'Aufruf: node orchestrator-report.js --art spec --review <json> [--followup <json>]... --out <md> --spec <S> --commit <text> [--wi <nr>] [--fakten <datei>] [--ohne-weiter ja]',
   '       node orchestrator-report.js --art plan --review <json> [--followup <json>]... --out <md> --plan <P> --spec <S> --stand <text> [--wi <nr>] [--fakten <datei>]',
   '       node orchestrator-report.js --art implementation --review <json> [--followup <json>]... --out <md> --plan <P> --spec <S> --worktree <R> --branch <name> --pruefung gruen|rot|keine [--wi <nr>] [--fakten <datei>]',
   '       node orchestrator-report.js --art spec|plan|implementation --abbruch <grund> --out <md> [--spec <S>] [--plan <P>] [--wi <nr>] [--fakten <datei>]',
@@ -50,6 +50,7 @@ function parse(args) {
   const missing = required.filter((name) => !values[name]);
   if (missing.length > 0) throw new UsageError(`fehlt: ${missing.join(', ')}`);
   if (values['--pruefung'] && !CHECKS.includes(values['--pruefung'])) throw new UsageError(`--pruefung erlaubt: ${CHECKS.join(', ')}`);
+  if (values['--ohne-weiter'] !== undefined && values['--ohne-weiter'] !== 'ja') throw new UsageError('--ohne-weiter erlaubt: ja');
   return values;
 }
 
@@ -71,7 +72,7 @@ function run(values) {
   const report = mergeReports({ art: values['--art'], reviewFile: path.resolve(values['--review']), followupFiles: (values['--followup'] ?? []).map((file) => path.resolve(file)) });
   const facts = {
     spec: values['--spec'], plan: values['--plan'], wi: values['--wi'], commit: values['--commit'], stand: values['--stand'],
-    worktree: values['--worktree'], branch: values['--branch'], check: values['--pruefung'], lines: factLines(values['--fakten']),
+    worktree: values['--worktree'], branch: values['--branch'], check: values['--pruefung'], lines: factLines(values['--fakten']), ohneWeiter: values['--ohne-weiter'] === 'ja',
   };
   const text = renderOrchestratorReport(report, facts);
   const out = path.resolve(values['--out']);

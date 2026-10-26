@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { anchorsOf } = require('../scripts/lib/must-show');
-const { finding, setup, tempDir, writeJsonFile, flow, runUntilRework } = require('./lib/review-flow-fixture');
+const { finding, setup, withAblage, tempDir, writeJsonFile, flow, runUntilRework } = require('./lib/review-flow-fixture');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'orchestrator-report.js');
 const HEADINGS = ['# Abschlussbericht', '# Was sich im Plan geändert hat', '# Was ist noch offen', '# Wie es weitergeht'];
@@ -21,10 +21,10 @@ function change(key, ok, overrides = {}) {
   return { key, ok, title: `Änderung ${key}`, angles: 'Machbarkeit', description: `Beschreibung ${key}.`, change: `Geändert ${key}.`, evidence: null, choice: null, ...overrides };
 }
 
-// Berichtsdaten wie aus `review-flow.js report --bericht`; `open`, `changes` usw. überschreiben den sauberen Stand.
+// Berichtsdaten wie aus review-flow.js report in der Ablage (Format 2); `open`, `changes` usw. überschreiben den sauberen Stand.
 function part(overrides = {}) {
   return {
-    format: 1, review: 'plan-review', followup: false, status: 'sauber nach Runde 1', kind: 'ready', resultLine: '**Ergebnis:** ✅ Bereit zur Umsetzung',
+    format: 2, review: 'plan-review', followup: false, status: 'sauber nach Runde 1', kind: 'ready', resultLine: '**Ergebnis:** ✅ Bereit zur Umsetzung',
     flowLine: 'Ablauf: Prüfung aus fünf Blickwinkeln, keine Überarbeitung, keine Nachprüfung.', offersFollowup: false,
     openRed: 0, failedLabels: [], changes: [], decisions: [], questions: [], open: [], notes: [], ...overrides,
   };
@@ -338,19 +338,19 @@ const SCOUT_AC04 = [
 const SAVED_AC04 = '=== REWORK ===\n### 🔴 AC-04 (consistency)\n- [consistency · widerspruch] Zitat: „x“ · Konsequenz: Folge · Begründung: Grund\n';
 const VERDICT = (verdict) => ({ verdicts: [{ location: 'AC-04', verdict, rationale: verdict }], findings: [] });
 
-function embeddedReview(file) {
-  const env = setup();
+function storedReview(ablage) {
+  const env = withAblage(setup(), 'spec-review', ablage);
   runUntilRework(env, [finding({ location: 'AC-04', quote: 'AC-04', category: 'widerspruch' })]);
   writeJsonFile(path.join(env.workspace, 'runde-1', 'scout.md'), SCOUT_AC04);
   writeJsonFile(path.join(env.workspace, 'runde-1', 'rework.json'), { results: [{ location: 'AC-04', status: 'changed', change: 'Erster Versuch.' }], questions: [] });
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
   writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), VERDICT('nicht erledigt'));
   flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
-  return flow('report', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Spec-Review', '--artefakt', SPEC, '--bericht', file);
+  return flow('report', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Spec-Review', '--artefakt', SPEC);
 }
 
-function embeddedFollowup(file) {
-  const env = setup();
+function storedFollowup(ablage) {
+  const env = withAblage(setup(), 'spec-review', ablage);
   const source = ['--quelle', 'nacharbeit'];
   flow('snapshot', '--dir', env.workspace, '--doc', env.doc);
   writeJsonFile(path.join(env.workspace, 'sicherung-vorher', 'aggregate.md'), SAVED_AC04);
@@ -362,23 +362,24 @@ function embeddedFollowup(file) {
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
   writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), VERDICT('erledigt'));
   flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
-  return flow('report', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review-Followup (spec-review)', '--artefakt', SPEC, ...source, '--bericht', file);
+  return flow('report', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review-Followup (spec-review)', '--artefakt', SPEC, ...source);
 }
 
 test('orchestratorReport_EndToEndRoundOneNotDoneThenFollowupDone_OneConfirmedEntryAndNothingOpen', () => {
   // Arrange
   const dir = tempDir('dv-forge-orch-');
-  const reviewFile = path.join(dir, 'bericht-review.json');
-  const followupFile = path.join(dir, 'bericht-followup.json');
-  const review = embeddedReview(reviewFile);
-  const followup = embeddedFollowup(followupFile);
+  const ablage = path.join(dir, 'ablage');
+  const reviewFile = path.join(ablage, 'bericht-review.json');
+  const followupFile = path.join(ablage, 'bericht-followup-1.json');
+  const review = storedReview(ablage);
+  const followup = storedFollowup(ablage);
 
   // Act
   const result = run(['--art', 'spec', '--review', reviewFile, '--followup', followupFile, '--out', path.join(dir, 'a.md'), '--spec', SPEC, '--commit', 'a1b2c3d']);
 
   // Assert
-  assert.equal(review.stdout, `ENDE nicht bereit, 1 × 🔴 offen\nERGEBNIS ⛔ Noch nicht bereit · 1 Hindernis offen\nFOLLOWUP ja\nBERICHT ${reviewFile}\n`);
-  assert.match(followup.stdout, /^ENDE sauber nach Nachprüfung\nERGEBNIS ✅ Bereit zum Planen\nFOLLOWUP nein\n/);
+  assert.match(review.stdout, /^ENDE nicht bereit, 1 × 🔴 offen\nSTATUSZEILE Review abgeschlossen: ⛔ Noch nicht bereit · 1 Hindernis offen · FOLLOWUP ja · Bericht: .+\/bericht-review\.md\n$/);
+  assert.match(followup.stdout, /^ENDE sauber nach Nachprüfung\nSTATUSZEILE Review abgeschlossen: ✅ Bereit zum Planen · FOLLOWUP nein · Bericht: .+\/bericht-followup-1\.md\n$/);
   assert.equal(result.status, 0, result.stderr);
   const text = result.stdout.split('=== BERICHT ===\n')[1];
   const changed = sectionOf(text, '# Was sich in der Spec geändert hat');
@@ -458,6 +459,19 @@ test('orchestratorReport_ThreeFollowupOptions_ExitsWithTwoAndNamesLimit', () => 
   // Assert
   assert.equal(result.status, 2);
   assert.match(result.stderr, /--followup höchstens 2 Mal/);
+});
+
+test('orchestratorReport_ReviewDataInTheFormerFormat_ExitsWithOneAndNamesTheOldFormat', () => {
+  // Arrange
+  const dir = tempDir('dv-forge-orch-');
+  const review = writePart(dir, 'review.json', part({ format: 1 }));
+
+  // Act
+  const result = run(['--art', 'plan', '--review', review, '--out', path.join(dir, 'a.md'), '--plan', PLAN, '--spec', SPEC, '--stand', 'x']);
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /^dv-forge orchestrator-report: Ablage im alten Format: .+review\.json/);
 });
 
 function green(key, overrides = {}) {

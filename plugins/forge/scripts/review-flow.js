@@ -13,7 +13,6 @@ const { checkScout } = require('./lib/scout-check');
 const { report } = require('./lib/flow-report');
 const { writeScriptChecks } = require('./lib/script-checks');
 const { ROUND_ONE, ROUND_TWO, FOLLOWUP, FlowError } = require('./lib/flow-files');
-const { storageError } = require('./lib/session-chain-store');
 
 const USAGE = [
   'Aufruf: node review-flow.js rate --review <spec-review|plan-review> --dir <W> --doc <datei> [--spec <datei>] --expect <a,b> [--beratend <a,b>]',
@@ -25,11 +24,11 @@ const USAGE = [
   '       node review-flow.js answers-check --review spec-review --dir <W> --doc <datei>',
   '       node review-flow.js checklist --review <..> --dir <W> --doc <datei> [--quelle runde-1|nacharbeit]',
   '       node review-flow.js verify --review <..> --dir <W> --doc <datei> [--spec <datei>] [--quelle runde-1|nacharbeit]',
-  '       node review-flow.js report --review <..> --dir <W> --doc <datei> --titel <text> --artefakt <pfad> [--quelle runde-1|nacharbeit] [--bericht <datei>] [--ablage <etappe>]',
+  '       node review-flow.js report --review <..> --dir <W> --doc <datei> --titel <text> --artefakt <pfad> [--quelle runde-1|nacharbeit]',
   '       node review-flow.js script-checks --review <..> --dir <W> --doc <datei> [--spec <datei>] [--runde runde-1|runde-2]',
   '',
 ].join('\n');
-const VALUE_OPTIONS = ['--review', '--dir', '--doc', '--spec', '--expect', '--beratend', '--instanz', '--art', '--quelle', '--runde', '--titel', '--artefakt', '--bericht', '--ablage'];
+const VALUE_OPTIONS = ['--review', '--dir', '--doc', '--spec', '--expect', '--beratend', '--instanz', '--art', '--quelle', '--runde', '--titel', '--artefakt'];
 const SOURCES = [ROUND_ONE, FOLLOWUP];
 // Namen werden Dateinamen im Arbeitsbereich: kein `.`, kein Pfadtrenner.
 const INSTANCE_NAME = /^[\p{Ll}\d]+(?:-[\p{Ll}\d]+)*$/u;
@@ -39,7 +38,8 @@ class UsageError extends Error {}
 function parseOptions(args) {
   const values = {};
   for (let index = 0; index < args.length; index += 2) {
-    if (!VALUE_OPTIONS.includes(args[index]) || index + 1 >= args.length) throw new UsageError(`Unbekanntes oder unvollständiges Argument: ${args[index]}`);
+    if (!VALUE_OPTIONS.includes(args[index])) throw new UsageError(`unbekannter Parameter: ${args[index]}`);
+    if (index + 1 >= args.length) throw new UsageError(`Parameter ohne Wert: ${args[index]}`);
     values[args[index].slice(2)] = args[index + 1];
   }
   return values;
@@ -88,12 +88,6 @@ function attempt(values) {
   return nextAttempt(path.resolve(required(values, 'dir')), checkedName(required(values, 'instanz'), 'instanz'), kind);
 }
 
-function checkedStorage(etappe) {
-  const error = storageError(etappe);
-  if (error) throw new UsageError(error);
-  return etappe ?? null;
-}
-
 function checkedRound(round = ROUND_ONE) {
   if (![ROUND_ONE, ROUND_TWO].includes(round)) throw new UsageError(`--runde erlaubt: ${ROUND_ONE}, ${ROUND_TWO}`);
   return round;
@@ -109,10 +103,7 @@ const COMMANDS = {
   'answers-check': (values) => checkAnswers(flowOptions(values)),
   checklist: (values) => buildChecklist(flowOptions(values)),
   verify: (values) => verifyRoundTwo(flowOptions(values)),
-  report: (values) => report({
-    ...flowOptions(values), title: required(values, 'titel'), artifact: required(values, 'artefakt'), reportFile: values.bericht ? path.resolve(values.bericht) : null,
-    storage: checkedStorage(values.ablage),
-  }),
+  report: (values) => report({ ...flowOptions(values), title: required(values, 'titel'), artifact: required(values, 'artefakt') }),
   'script-checks': (values) => writeScriptChecks({ ...flowOptions(values), round: checkedRound(values.runde) }),
 };
 

@@ -9,6 +9,7 @@
 const fs = require('node:fs');
 const { resultLine } = require('./report-text');
 const { FlowError } = require('./flow-error');
+const { assertCurrentFormat } = require('./report-format');
 
 const REVIEW_OF_ART = { spec: 'spec-review', plan: 'plan-review', implementation: 'implementation-review' };
 const RANK = { red: 0, yellow: 1 };
@@ -17,11 +18,13 @@ const MISSING_FOLLOWUP = 'Der Followup hat keinen Bericht geliefert; es gilt der
 
 function readPart(file) {
   if (!file || !fs.existsSync(file)) return null;
+  let data;
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
+    data = JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch (error) {
     throw new FlowError(`kein gültiges JSON: ${file}: ${error.message}`);
   }
+  return assertCurrentFormat(data, file);
 }
 
 function unique(list) {

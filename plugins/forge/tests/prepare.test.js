@@ -194,7 +194,7 @@ test('specAndPlanReview_RoundsArgument_AbortWithUnknownArgument', () => {
   ];
   for (const result of results) {
     assert.equal(result.status, 2);
-    assert.match(result.stderr, /^Unbekanntes oder unvollständiges Argument: --rounds$/m);
+    assert.match(result.stderr, /^unbekannter Parameter: --rounds$/m);
   }
 });
 
@@ -202,7 +202,7 @@ test('planReview_OnlyWithoutValue_AbortsWithIncompleteArgument', () => {
   const repo = planRepo();
   const result = run(repo, 'plan-review', 'docs/forge/demo/plan.md', '--only');
   assert.equal(result.status, 2);
-  assert.match(result.stderr, /^Unbekanntes oder unvollständiges Argument: --only$/m);
+  assert.match(result.stderr, /^Parameter ohne Wert: --only$/m);
 });
 
 test('specReview_ProfilesFound_WritesIndexAndWarnsOnDuplicates', () => {
@@ -629,15 +629,17 @@ test('implementation_FreeTextArguments_AreRejectedWithCountAndText', () => {
   assert.match(result.stderr, /erwartet 1 bis 2 Pfade, übergeben 4: a\.md b\.md Zusatz: TDD\. Freitext gehört nicht in die Argumente/);
 });
 
-test('parseArgs_EmbeddedReportFlag_AcceptedForSpecPlanAndFollowup', () => {
+test('parseArgs_DebugAndWhiteboardingSwitches_AreCollectedApartFromTheValueFlags', () => {
   // Arrange
   const { parseArgs } = require('../scripts/prepare');
 
   // Act
-  const calls = [['spec-review', ['s.md', '--bericht', 'r.json']], ['plan-review', ['p.md', '--bericht', 'r.json']], ['review-followup', ['p.md', 'alle', '--bericht', 'f.json']]];
+  const call = parseArgs('spec-review', ['s.md', '--only', 'clarity', '--whiteboarding', '--debug']);
 
   // Assert
-  for (const [skill, args] of calls) assert.deepEqual(parseArgs(skill, args).flags['--bericht'], [args[args.length - 1]], skill);
+  assert.deepEqual(call.positional, ['s.md']);
+  assert.deepEqual(call.flags, { '--only': ['clarity'] });
+  assert.deepEqual([...call.switches].sort(), ['--debug', '--whiteboarding']);
 });
 
 test('specReview_ArtWithTypo_FailsInsteadOfAnchoredMode', () => {

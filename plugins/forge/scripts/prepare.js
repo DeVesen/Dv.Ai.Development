@@ -7,21 +7,23 @@ const { spawnSync } = require('node:child_process');
 const { toPosix } = require('./lib/posix');
 const { slugOf } = require('./plan-tasks');
 const { resolveTag, TagError } = require('./base-tag');
-const { createWorkspace, writeContext } = require('./workspace');
+const { createWorkspace, readContext, writeContext } = require('./workspace');
 const { writePackage, PackageError } = require('./review-package');
 const { ConfigError, readConfig, branchFor } = require('./forge-config');
 const { archivePath } = require('./ledger');
 const { writeAnchors } = require('./plan-anchors');
 const { isScriptReviewer } = require('./lib/reviewer-names');
 const { ART_OF_ROLE, FollowupError, latest, loadGroups, rolesFor, slugFor } = require('./followup');
-const { storageError } = require('./lib/session-chain-store');
+const { SessionChainError } = require('./lib/session-chain-store');
+const { etappeFor } = require('./lib/etappe-of');
+const { ablageDir } = require('./lib/session-chain-ablage');
 
 const USAGE = [
-  'Aufruf: node prepare.js spec-review <spec> [quelle] [--only <reviewer,...>] [--bericht <datei>]',
-  '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>] [--bericht <datei>] [--ablage <etappe>]',
-  '       node prepare.js implementation <plan> [spec]',
-  '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>] [--bericht <datei>]',
-  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>] [--bericht <datei>] [--ablage <etappe>]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
+  'Aufruf: node prepare.js spec-review <spec> [quelle] [--only <reviewer,...>] [--whiteboarding] [--debug]',
+  '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>] [--debug]',
+  '       node prepare.js implementation <plan> [spec] [--debug]',
+  '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>] [--debug]',
+  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
@@ -30,11 +32,20 @@ class PrepareError extends Error {}
 class UsageError extends Error {}
 
 const FLAGS = {
-  'spec-review': ['--only', '--bericht'],
-  'plan-review': ['--only', '--bericht', '--ablage'],
+  'spec-review': ['--only'],
+  'plan-review': ['--only'],
   implementation: [],
-  'implementation-review': ['--spec', '--context', '--base', '--only', '--bericht'],
-  'review-followup': ['--spec', '--base', '--bericht', '--ablage'],
+  'implementation-review': ['--spec', '--context', '--base', '--only'],
+  'review-followup': ['--spec', '--base'],
+};
+
+// Schalter ohne Wert: `--debug` (Unter-Skill von Hand mit Debug-Schalter) und `--whiteboarding` (Review im Whiteboarding einer Session-Kette).
+const SWITCHES = {
+  'spec-review': ['--debug', '--whiteboarding'],
+  'plan-review': ['--debug'],
+  implementation: ['--debug'],
+  'implementation-review': ['--debug'],
+  'review-followup': ['--debug', '--whiteboarding'],
 };
 
 // Reviewer je Review in fester Reihenfolge; --only wählt daraus, die Reihenfolge bleibt.
@@ -48,20 +59,24 @@ const MAX_POSITIONAL = { 'spec-review': 2, 'plan-review': 2, implementation: 2, 
 function parseArgs(skill, args) {
   const positional = [];
   const flags = {};
+  const switches = new Set();
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (!arg.startsWith('--')) {
       positional.push(arg.replace(/^@/, ''));
       continue;
     }
-    const isKnown = FLAGS[skill].includes(arg);
-    const hasMissingValue = index + 1 >= args.length;
-    if (!isKnown || hasMissingValue) throw new UsageError(`Unbekanntes oder unvollständiges Argument: ${arg}`);
+    if (SWITCHES[skill].includes(arg)) {
+      switches.add(arg);
+      continue;
+    }
+    if (!FLAGS[skill].includes(arg)) throw new UsageError(`unbekannter Parameter: ${arg}`);
+    if (index + 1 >= args.length) throw new UsageError(`Parameter ohne Wert: ${arg}`);
     index += 1;
     (flags[arg] ??= []).push(args[index].replace(/^@/, ''));
   }
   if (positional.length === 0 || positional.length > MAX_POSITIONAL[skill]) throw new UsageError(`Falsche Zahl an Pfad-Argumenten: erwartet 1 bis ${MAX_POSITIONAL[skill]} Pfade, übergeben ${positional.length}: ${positional.join(' ')}. Freitext gehört nicht in die Argumente.`);
-  return { positional, flags };
+  return { positional, flags, switches };
 }
 
 function existingFile(file, label = 'Datei') {
@@ -454,20 +469,22 @@ function render(values) {
     .join('\n');
 }
 
-// Etappe der Ablage aus `--ablage`; der Skill reicht sie als `ablage=<etappe>` an `review-flow.js report` weiter.
-function storageOf(flags) {
-  const etappe = flags['--ablage']?.[0];
-  const error = storageError(etappe);
-  if (error) throw new UsageError(error);
-  return etappe;
+// Reviews und Followups schreiben ihren Bericht in die Ablage der Etappe. prepare.js legt Etappe und Ablage im Arbeitsbereich fest
+// (kontext.json), damit kein Skript einen Parameter dafür braucht.
+function recordAblage(review, values, artifact, switches) {
+  const dir = path.dirname(path.resolve(artifact));
+  const etappe = etappeFor({ skill: review, dir, slug: values.slug, whiteboarding: switches.has('--whiteboarding') });
+  writeContext(values.W, {
+    ...readContext(values.W), etappe, ablage: toPosix(ablageDir(dir, values.slug, etappe)), artifact: toPosix(path.resolve(artifact)),
+  });
 }
 
 function prepare(skill, args) {
   if (!Object.hasOwn(PREPARERS, skill)) throw new UsageError(`Unbekannter Skill: ${skill}`);
   const call = parseArgs(skill, args);
-  const storage = storageOf(call.flags);
   const values = PREPARERS[skill](call);
-  return render(storage ? { ...values, ablage: storage } : values);
+  if (skill !== 'implementation') recordAblage(skill === 'review-followup' ? values.original : skill, values, call.positional[0], call.switches);
+  return render(values);
 }
 
 function main() {
@@ -479,7 +496,7 @@ function main() {
       process.stderr.write(`${error.message}\n${USAGE}`);
       process.exit(2);
     }
-    if (![PrepareError, TagError, PackageError, ConfigError, FollowupError].some((type) => error instanceof type)) throw error;
+    if (![PrepareError, TagError, PackageError, ConfigError, FollowupError, SessionChainError].some((type) => error instanceof type)) throw error;
     process.stderr.write(`${error.message}\n`);
     process.exit(1);
   }

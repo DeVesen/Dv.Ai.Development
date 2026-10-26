@@ -47,6 +47,14 @@ function setup(spec = SPEC) {
   return { workspace, doc };
 }
 
+// Legt Etappe und Ablage im Arbeitsbereich fest, wie es prepare.js tut; `report` schreibt dorthin. `ablage` ersetzt den Ordner.
+function withAblage(env, etappe = 'spec-review', ablage = path.join(tempDir('dv-forge-ablage-'), 'ablage', etappe)) {
+  const file = path.join(env.workspace, 'kontext.json');
+  const context = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
+  fs.writeFileSync(file, `${JSON.stringify({ ...context, etappe, ablage: ablage.replace(/\\/g, '/') }, null, 2)}\n`);
+  return { ...env, ablage };
+}
+
 function writeJsonFile(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, typeof value === 'string' ? value : JSON.stringify(value));
@@ -85,5 +93,5 @@ function runUntilRework(env, findings, review = 'spec-review') {
 }
 
 module.exports = {
-  SCRIPT, SPEC, finding, tempDir, setup, writeJsonFile, writeReviewer, flow, rate, readJsonFile, editDoc, addEntries, runUntilRework,
+  SCRIPT, SPEC, finding, tempDir, setup, withAblage, writeJsonFile, writeReviewer, flow, rate, readJsonFile, editDoc, addEntries, runUntilRework,
 };

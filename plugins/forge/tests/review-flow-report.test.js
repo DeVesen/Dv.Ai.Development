@@ -9,7 +9,13 @@ const { nextAttempt } = require('../scripts/lib/attempts');
 const { spawnSync } = require('node:child_process');
 const { commitFile, makeRepo } = require('./lib/git-repo');
 const PREPARE = path.join(__dirname, '..', 'scripts', 'prepare.js');
-const { SPEC, finding, setup, writeJsonFile, writeReviewer, flow, editDoc, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
+const { parseReviewStatusLine } = require('../scripts/lib/review-status');
+const { SPEC, finding, setup: baseSetup, withAblage, writeJsonFile, writeReviewer, flow, editDoc, addEntries, runUntilRework } = require('./lib/review-flow-fixture');
+
+// Arbeitsbereich mit Spec-Datei und der Ablage, in die report schreibt.
+function setup(spec) {
+  return withAblage(baseSetup(spec));
+}
 
 const RED = (location) => finding({ location, quote: location, category: 'widerspruch' });
 const VERDICT = (location, verdict) => ({ location, verdict, rationale: verdict === 'erledigt' ? 'ok' : 'F fehlt noch' });
@@ -22,8 +28,17 @@ function runReport(env, review = 'spec-review') {
   return flow('report', '--review', review, '--dir', env.workspace, '--doc', env.doc, '--titel', 'Spec-Review', '--artefakt', 'docs/x/spec.md');
 }
 
+// Der Bericht liegt in der Ablage, die Statuszeile nennt die Datei. Rückgabe: die ENDE-Zeile, dann === BERICHT === und der Bericht.
+function shown(result) {
+  assert.equal(result.status, 0, result.stderr);
+  const statusLine = result.stdout.split('\n').find((line) => line.startsWith('STATUSZEILE '));
+  const status = parseReviewStatusLine(statusLine?.slice('STATUSZEILE '.length));
+  assert.ok(status, result.stdout);
+  return `${result.stdout.split('\n')[0]}\n=== BERICHT ===\n${fs.readFileSync(status.bericht, 'utf8')}`;
+}
+
 function report(env, review = 'spec-review') {
-  return runReport(env, review).stdout;
+  return shown(runReport(env, review));
 }
 
 // Ganzer Lauf bis nach der Nachprüfung; `verification` ist das Ergebnis des Nachprüfers.
@@ -121,19 +136,25 @@ test('report_VerifierFailedWithOpenQuestion_Unvollstaendig', () => {
   assert.match(output, /^ENDE unvollständig, ausgefallen: nachprüfer\n/);
 });
 
-test('report_AnyRun_WritesReportTextToClosingFile', () => {
+test('report_AnyRun_WritesTextAndDataToTheAblageAndNamesTheTextInTheStatusLine', () => {
   // Arrange
   const env = setup();
   writeReviewer(env, 'clarity', []);
   flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'clarity');
 
   // Act
-  const output = report(env);
+  const result = runReport(env);
 
   // Assert
-  const written = fs.readFileSync(path.join(env.workspace, 'abschluss', 'bericht.md'), 'utf8');
-  assert.equal(output.split('=== BERICHT ===\n')[1].trimEnd(), written.trimEnd());
-  assert.match(written, /^## Spec-Review · Ergebnis · Demo-Spec\n/);
+  assert.equal(result.status, 0, result.stderr);
+  const lines = result.stdout.trim().split('\n');
+  assert.equal(lines.length, 2);
+  assert.equal(lines[0], 'ENDE sauber nach Runde 1');
+  const status = parseReviewStatusLine(lines[1].replace(/^STATUSZEILE /, ''));
+  assert.deepEqual(status, { ergebnis: '✅ Bereit zum Planen', followup: false, bericht: path.join(env.ablage, 'bericht-review.md').replace(/\\/g, '/') });
+  assert.match(fs.readFileSync(status.bericht, 'utf8'), /^## Spec-Review · Ergebnis · Demo-Spec\n/);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(env.ablage, 'bericht-review.json'), 'utf8')).format, 2);
+  assert.equal(fs.existsSync(path.join(env.workspace, 'abschluss', 'bericht.md')), false);
 });
 
 const QUESTION_BUNDLE = {
@@ -161,7 +182,6 @@ test('report_TwoHintsWithoutRework_ReadyWithTwoHintsAndClosingKeepsBothGroups', 
   assert.match(output, /^ENDE sauber nach Runde 1\n=== BERICHT ===\n## Spec-Review · Ergebnis · Demo-Spec\n\*\*Ergebnis:\*\* ✅ Bereit zum Planen · 2 kleine Hinweise offen\nAblauf: Prüfung aus einem Blickwinkel, keine Überarbeitung, keine Nachprüfung\./);
   assert.match(output, /### Noch offen · kein Hindernis für den Plan\n- 🟡 \*\*AC-01\*\* · aus: Klarheit\n  Folge \(ohne Scout-Beschreibung\)/);
   assert.match(fs.readFileSync(checkedFile(env, 'abschluss', 'scout.md'), 'utf8'), /### 🟡 AC-01[\s\S]*### 🟡 AC-07/);
-  assert.equal(fs.readFileSync(checkedFile(env, 'abschluss', 'bericht.md'), 'utf8'), `${output.split('=== BERICHT ===\n')[1].trimEnd()}\n`);
 });
 
 test('report_ScoutTexts_ShowTitleDescriptionAndRecommendationOfOpenGroup', () => {
@@ -211,8 +231,9 @@ test('report_ReworkResultNoJson_ReportsWithoutChangeSection', () => {
 
   // Assert
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /^ENDE unvollständig, ausgefallen: nacharbeit\n/);
-  assert.doesNotMatch(result.stdout, /### Was sich/);
+  const output = shown(result);
+  assert.match(output, /^ENDE unvollständig, ausgefallen: nacharbeit\n/);
+  assert.doesNotMatch(output, /### Was sich/);
 });
 
 test('report_AllDone_CleanAfterVerificationWithoutOpenSections', () => {
@@ -457,7 +478,7 @@ function followupRun(env, { chosen, open, results, verdicts }) {
   flow('checklist', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
   writeJsonFile(path.join(env.workspace, 'runde-2', 'nachpruefung.json'), { verdicts, findings: [] });
   flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, ...source);
-  return flow('report', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review-Followup (spec-review)', '--artefakt', 'docs/x/spec.md', ...source).stdout;
+  return shown(flow('report', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review-Followup (spec-review)', '--artefakt', 'docs/x/spec.md', ...source));
 }
 
 test('report_FollowupDoneAndOneUnchosen_ShowsChangeChoiceAndKeepsUnchosenOpen', () => {
@@ -528,11 +549,11 @@ test('report_PlanFollowupDoneButUnchosenHindranceSaved_NotReadyAndNoCommitStep',
   const result = flow('report', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review-Followup (plan-review)', '--artefakt', 'docs/x/plan.md', '--quelle', 'nacharbeit');
 
   // Assert
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /^ENDE sauber nach Nachprüfung\n/);
-  assert.match(result.stdout, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
-  assert.match(result.stdout, /### Noch offen · Hindernis\n/);
-  assert.doesNotMatch(result.stdout, /committen|Bereit zur Umsetzung|dv-forge:implementation /);
+  const output = shown(result);
+  assert.match(output, /^ENDE sauber nach Nachprüfung\n/);
+  assert.match(output, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
+  assert.match(output, /### Noch offen · Hindernis\n/);
+  assert.doesNotMatch(output, /committen|Bereit zur Umsetzung|dv-forge:implementation /);
 });
 
 // Runde 1 mit 🔴 AC-04, Nacharbeit, Nachprüfung mit Urteil zu AC-04 und einer neuen 🔴 an `Deckel` (ohne Scout).
@@ -558,7 +579,7 @@ test('report_OnlyNewRedOfVerificationWithoutScout_ListsHindranceAndOffersNoFollo
   assert.match(output, /^ENDE nicht bereit, 1 × 🔴 offen\n/);
   assert.match(output, /### Noch offen · Hindernis\n- 🔴 \*\*Deckel\*\* · aus: Nachprüfung/);
   assert.doesNotMatch(output, /review-followup|Wie es weitergeht/);
-  assert.equal(embeddedData(env).offersFollowup, false);
+  assert.equal(storedData(env).offersFollowup, false);
 });
 
 test('report_NewRedOfVerificationBesideScoutedHindrance_OffersFollowupForTheScoutedOne', () => {
@@ -576,7 +597,7 @@ test('report_NewRedOfVerificationBesideScoutedHindrance_OffersFollowupForTheScou
   const scout = fs.readFileSync(checkedFile(env, 'abschluss', 'scout.md'), 'utf8');
   assert.match(scout, /### 🔴 AC-04/);
   assert.doesNotMatch(scout, /Deckel/);
-  assert.equal(embeddedData(env).offersFollowup, true);
+  assert.equal(storedData(env).offersFollowup, true);
 });
 
 test('report_ScoutFailedWithOpenHindrance_ListsHindranceAndOffersNoFollowup', () => {
@@ -593,7 +614,7 @@ test('report_ScoutFailedWithOpenHindrance_ListsHindranceAndOffersNoFollowup', ()
   assert.match(output, /- Der Scout ist ausgefallen\./);
   assert.doesNotMatch(output, /review-followup|Wie es weitergeht/);
   assert.equal(fs.existsSync(checkedFile(env, 'abschluss', 'scout.md')), false);
-  assert.equal(embeddedData(env).offersFollowup, false);
+  assert.equal(storedData(env).offersFollowup, false);
 });
 
 test('report_ChangedEntryAtYellowPlace_IsNotListedAsChange', () => {
@@ -680,11 +701,11 @@ test('report_ReworkWithBrokenEntries_ListsOnlyValidChangedEntries', () => {
   const result = runReport(env);
 
   // Assert
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /### Was sich in der Spec geändert hat\n- ✅ \*\*AC-04\*\*/);
-  assert.equal(result.stdout.match(/Änderung:/g).length, 1);
-  assert.equal(result.stdout.match(/Beleg: src\/export\.js/g).length, 1);
-  assert.doesNotMatch(result.stdout, /src\/other\.js|AC-07/);
+  const output = shown(result);
+  assert.match(output, /### Was sich in der Spec geändert hat\n- ✅ \*\*AC-04\*\*/);
+  assert.equal(output.match(/Änderung:/g).length, 1);
+  assert.equal(output.match(/Beleg: src\/export\.js/g).length, 1);
+  assert.doesNotMatch(output, /src\/other\.js|AC-07/);
 });
 
 test('report_OldWorkspaceWithoutHinweiseAndReviewers_ReportsWithoutCrash', () => {
@@ -703,7 +724,7 @@ test('report_OldWorkspaceWithoutHinweiseAndReviewers_ReportsWithoutCrash', () =>
 
   // Assert
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /^ENDE sauber nach Runde 1\n=== BERICHT ===\n## Spec-Review · Ergebnis · Demo-Spec\n\*\*Ergebnis:\*\* ✅ Bereit zum Planen · 1 kleiner Hinweis offen\nAblauf: Prüfung aus einem Blickwinkel/);
+  assert.match(shown(result), /^ENDE sauber nach Runde 1\n=== BERICHT ===\n## Spec-Review · Ergebnis · Demo-Spec\n\*\*Ergebnis:\*\* ✅ Bereit zum Planen · 1 kleiner Hinweis offen\nAblauf: Prüfung aus einem Blickwinkel/);
 });
 
 test('buildInput_UnknownStatus_ThrowsInsteadOfReportingReady', () => {
@@ -739,7 +760,7 @@ test('report_PrepareFollowupWithOneGroupChosen_ChosenShownAsChangeAndUnchosenSta
 
   // Act
   const result = flow('report', '--review', 'spec-review', '--dir', workspace, '--doc', env.doc, '--titel', 'Review-Followup (spec-review)', '--artefakt', 'docs/forge/demo/spec.md', ...source);
-  const output = result.stdout;
+  const output = shown(result);
 
   // Assert
   assert.equal(result.status, 0, result.stderr);
@@ -747,20 +768,17 @@ test('report_PrepareFollowupWithOneGroupChosen_ChosenShownAsChangeAndUnchosenSta
   assert.match(output, /### Noch offen[^\n]*\n- 🟡 \*\*Eindeutige Formulierung\*\*/);
 });
 
-test('report_GreenFindingInRoundOne_EmbeddedDataListsGreenEntryButReportTextStaysClean', () => {
+test('report_GreenFindingInRoundOne_StoredDataListsGreenEntryButReportTextStaysClean', () => {
   // Arrange
   const env = setup();
   writeReviewer(env, 'clarity', [finding({ location: 'AC-01', category: 'formulierung', quote: 'Gegeben A, wenn B, dann C.', consequence: 'Das Wort „dann“ steht zweimal' })]);
   flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'clarity');
-  const file = path.join(env.workspace, 'bericht.json');
 
   // Act
-  const embedded = flow('report', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--titel', 'Spec-Review', '--artefakt', 'docs/x/spec.md', '--bericht', file);
+  const data = storedData(env);
   const text = report(env);
 
   // Assert
-  assert.equal(embedded.status, 0, embedded.stderr);
-  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
   assert.deepEqual(data.green.map((entry) => [entry.key, entry.color, entry.title, entry.hasProposal]), [['ac-1', 'green', 'AC-01', false]]);
   assert.match(data.green[0].description, /^Das Wort „dann“ steht zweimal/);
   assert.deepEqual(data.open, []);
@@ -770,20 +788,20 @@ test('report_GreenFindingInRoundOne_EmbeddedDataListsGreenEntryButReportTextStay
 // 🟢 an AC-07 aus der Nachprüfung (Kategorie `formulierung`); Runde 1 hat ein 🔴 an AC-04, das die Nachprüfung als erledigt bestätigt.
 const GREEN_AC07 = (consequence) => finding({ location: 'AC-07', quote: 'Gegeben G, wenn H, dann I.', category: 'formulierung', consequence });
 
-function embeddedData(env, review = 'spec-review') {
-  const file = path.join(env.workspace, 'bericht.json');
-  const result = flow('report', '--review', review, '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review', '--artefakt', 'docs/x/doc.md', '--bericht', file);
+// Bericht-Daten, die der Review in der Ablage ablegt.
+function storedData(env, review = 'spec-review') {
+  const result = flow('report', '--review', review, '--dir', env.workspace, '--doc', env.doc, '--titel', 'Review', '--artefakt', 'docs/x/doc.md');
   assert.equal(result.status, 0, result.stderr);
-  return JSON.parse(fs.readFileSync(file, 'utf8'));
+  return JSON.parse(fs.readFileSync(path.join(env.ablage, 'bericht-review.json'), 'utf8'));
 }
 
-test('report_GreenFindingOnlyInVerification_EmbeddedDataListsItOnceAndNoFollowupReceivesIt', () => {
+test('report_GreenFindingOnlyInVerification_StoredDataListsItOnceAndNoFollowupReceivesIt', () => {
   // Arrange
   const env = setup();
   runWithVerification(env, [RED('AC-04')], [{ location: 'AC-04', status: 'changed', change: CHANGE }], { verdicts: [VERDICT('AC-04', 'erledigt')], findings: [GREEN_AC07('Satz holpert')] });
 
   // Act
-  const data = embeddedData(env);
+  const data = storedData(env);
 
   // Assert
   assert.deepEqual(data.green.map((entry) => [entry.title, entry.color, entry.angles, entry.hasProposal]), [['AC-07', 'green', 'Nachprüfung', false]]);
@@ -792,13 +810,13 @@ test('report_GreenFindingOnlyInVerification_EmbeddedDataListsItOnceAndNoFollowup
   assert.equal(fs.readFileSync(checkedFile(env, 'abschluss', 'aggregate.md'), 'utf8'), '=== REWORK ===\n');
 });
 
-test('report_SameGreenPlaceInRoundOneAndVerification_EmbeddedDataListsItOnce', () => {
+test('report_SameGreenPlaceInRoundOneAndVerification_StoredDataListsItOnce', () => {
   // Arrange
   const env = setup();
   runWithVerification(env, [RED('AC-04'), GREEN_AC07('Satz holpert')], [{ location: 'AC-04', status: 'changed', change: CHANGE }], { verdicts: [VERDICT('AC-04', 'erledigt')], findings: [GREEN_AC07('Satz holpert weiterhin')] });
 
   // Act
-  const data = embeddedData(env);
+  const data = storedData(env);
 
   // Assert
   assert.deepEqual(data.green.map((entry) => [entry.title, entry.color]), [['AC-07', 'green']]);
@@ -806,14 +824,14 @@ test('report_SameGreenPlaceInRoundOneAndVerification_EmbeddedDataListsItOnce', (
   assert.equal(fs.readFileSync(checkedFile(env, 'abschluss', 'aggregate.md'), 'utf8'), '=== REWORK ===\n');
 });
 
-test('report_PlanGreenFindingInRoundOne_EmbeddedDataListsGreenEntryAndNothingOpen', () => {
+test('report_PlanGreenFindingInRoundOne_StoredDataListsGreenEntryAndNothingOpen', () => {
   // Arrange
   const env = setup('# Plan\n\n### Task 1: Eins\nText.\n\n## Entscheidungen\n- Keine Fragen an den Menschen.\n');
   writeReviewer(env, 'coverage', [finding({ location: 'Task 1', quote: 'Text.', category: 'formulierung', consequence: 'Satz holpert' })]);
   flow('rate', '--review', 'plan-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'coverage');
 
   // Act
-  const data = embeddedData(env, 'plan-review');
+  const data = storedData(env, 'plan-review');
 
   // Assert
   assert.deepEqual(data.green.map((entry) => [entry.color, entry.hasProposal]), [['green', false]]);

@@ -183,7 +183,7 @@ test('reviewStand_Cli_PrintsResultPointsQuestionAndAbschluss', () => {
   fs.writeFileSync(spec, '# Spec\n');
   const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Planen\n');
   const review = path.join(path.dirname(abschluss), 'bericht-review.json');
-  fs.writeFileSync(review, JSON.stringify({ open: [{ key: 'y', color: 'yellow', title: 'Gelb' }], green: [], changes: [] }));
+  fs.writeFileSync(review, JSON.stringify({ format: 2, open: [{ key: 'y', color: 'yellow', title: 'Gelb' }], green: [], changes: [] }));
   chain(repo, 'store', '--etappe', 'whiteboarding', '--spec', spec, '--neu', '--datei', abschluss, '--datei', review);
 
   // Act

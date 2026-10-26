@@ -21,12 +21,6 @@ function etappeError(etappe) {
   return ETAPPEN.includes(etappe) ? null : `erlaubt: ${ETAPPEN.join(', ')}; nicht ${etappe}`;
 }
 
-// Meldung für einen ungültigen Wert von `--ablage`, sonst null (auch ohne Option); die einzige Stelle dieser Prüfung für die Skripte.
-function storageError(etappe) {
-  const error = etappe === undefined ? null : etappeError(etappe);
-  return error ? `--ablage ${error}` : null;
-}
-
 function checkedEtappe(etappe) {
   const error = etappeError(etappe);
   if (error) throw new SessionChainError(`Etappe unbekannt, ${error}`);
@@ -112,6 +106,6 @@ function slugByWorktree(dir, worktree) {
 }
 
 module.exports = {
-  SessionChainError, ETAPPEN, etappeError, storageError, checkedEtappe, checkedSlug, slugOfArtifact, chainsRoot, chainDir, readJsonFile, writeJsonFile,
+  SessionChainError, ETAPPEN, etappeError, checkedEtappe, checkedSlug, slugOfArtifact, chainsRoot, chainDir, readJsonFile, writeJsonFile,
   readState, writeState, slugByWorktree, appendEvent, readEvents,
 };

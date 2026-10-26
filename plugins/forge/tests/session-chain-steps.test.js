@@ -27,7 +27,7 @@ function yellow(key, title) {
 // Spec-Review-Etappe mit Abschlussbericht und Bericht-Daten in der Ablage, wie ein Orchestrator mit `--ablage` sie ablegt.
 function specReviewEtappe(repo, spec, result, open) {
   const abschluss = scratch('abschluss.md', `# Abschlussbericht\n**Ergebnis:** ${result}\n`);
-  storeFiles({ dir: repo, slug: 'x', etappe: 'spec-review', files: [abschluss, scratch('bericht-review.json', JSON.stringify({ open, green: [], changes: [] }))], fresh: true });
+  storeFiles({ dir: repo, slug: 'x', etappe: 'spec-review', files: [abschluss, scratch('bericht-review.json', JSON.stringify({ format: 2, open, green: [], changes: [] }))], fresh: true });
   return etappeReport({ ...EMPTY, etappe: 'spec-review', slug: 'x', bericht: abschluss }, repo);
 }
 
@@ -150,7 +150,7 @@ test('processFinal_WhiteboardingWithTwoYellowAndOneGreen_KeepsAllThreeInState', 
   // Arrange
   const { repo, spec } = uncommittedSpec();
   const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Planen\n');
-  const review = scratch('bericht-review.json', JSON.stringify({ open: [yellow('a', 'A'), yellow('b', 'B')], green: [{ key: 'c', color: 'green', title: 'C' }], changes: [] }));
+  const review = scratch('bericht-review.json', JSON.stringify({ format: 2, open: [yellow('a', 'A'), yellow('b', 'B')], green: [{ key: 'c', color: 'green', title: 'C' }], changes: [] }));
   storeFiles({ dir: repo, slug: 'x', etappe: 'whiteboarding', files: [abschluss, review], fresh: true });
   const bericht = etappeReport({ ...EMPTY, etappe: 'whiteboarding', spec, bericht: abschluss }, repo);
 
@@ -187,7 +187,7 @@ test('processFinal_UmsetzungIntegrationPointWithoutTestAsYellow_StartsAbschlussA
   commitFile(worktree, 'src/a.js', 'a\n', 'feat: a');
   setState({ slug: 'x', basis: 'main' }, repo);
   const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen\n');
-  storeFiles({ dir: repo, slug: 'x', etappe: 'umsetzung', files: [scratch('bericht-review.json', JSON.stringify({ open: [yellow('i', 'Integrationspunkt ohne Test')] }))], fresh: true });
+  storeFiles({ dir: repo, slug: 'x', etappe: 'umsetzung', files: [scratch('bericht-review.json', JSON.stringify({ format: 2, open: [yellow('i', 'Integrationspunkt ohne Test')] }))], fresh: true });
   const bericht = etappeReport({ ...EMPTY, etappe: 'umsetzung', slug: 'x', bericht: abschluss, worktree, branch: 'feature/x', pruefung: 'gruen' }, repo);
 
   // Act

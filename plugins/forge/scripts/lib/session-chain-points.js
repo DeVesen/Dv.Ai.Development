@@ -8,6 +8,7 @@ const path = require('node:path');
 const { mergeOpenKeepUnchanged, readPart, keyOf } = require('./orchestrator-report');
 const { REVIEW_FILE, followupNumbers } = require('./session-chain-ablage');
 const { SessionChainError } = require('./session-chain-store');
+const { ReportFormatError } = require('./report-format');
 const { toPosix } = require('./posix');
 
 const ICON = { red: '🔴', yellow: '🟡', green: '🟢' };
@@ -20,6 +21,7 @@ function readChecked(file) {
   try {
     return readPart(file);
   } catch (error) {
+    if (error instanceof ReportFormatError) throw new SessionChainError(error.message, { cause: error });
     throw new SessionChainError(`Bericht-Daten nicht lesbar: ${toPosix(file)}`, { cause: error });
   }
 }

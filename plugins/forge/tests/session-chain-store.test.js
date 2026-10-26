@@ -7,7 +7,7 @@ const path = require('node:path');
 const { makeRepo, addWorktree, repoWithPlan, samePath } = require('./lib/git-repo');
 const { storeDir } = require('../scripts/lib/chain');
 const {
-  SessionChainError, etappeError, storageError, checkedEtappe, slugOfArtifact, chainsRoot, chainDir, readState, writeState, slugByWorktree,
+  SessionChainError, etappeError, checkedEtappe, slugOfArtifact, chainsRoot, chainDir, readState, writeState, slugByWorktree,
 } = require('../scripts/lib/session-chain-store');
 
 test('slugOfArtifact_SpecAndPlanInSameFolder_ShareTheFolderName', () => {
@@ -143,18 +143,3 @@ test('writeState_AfterReadStateOnBrokenFile_LeavesTheFileUnchanged', () => {
   assert.equal(fs.readFileSync(file, 'utf8'), '{ kaputt');
 });
 
-test('storageError_MissingOrKnownEtappe_ReturnsNull', () => {
-  // Act
-  const results = [undefined, 'umsetzung'].map(storageError);
-
-  // Assert
-  assert.deepEqual(results, [null, null]);
-});
-
-test('storageError_UnknownEtappe_ReturnsTheAblageMessage', () => {
-  // Act
-  const message = storageError('review');
-
-  // Assert
-  assert.equal(message, `--ablage ${etappeError('review')}`);
-});

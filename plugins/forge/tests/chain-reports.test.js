@@ -6,7 +6,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { git, commitFile, makeRepo, addWorktree } = require('./lib/git-repo');
-const { SPEC, tempDir, writeReviewer, flow } = require('./lib/review-flow-fixture');
+const { SPEC, tempDir, writeReviewer, withAblage, flow } = require('./lib/review-flow-fixture');
+const { ablageDir } = require('../scripts/lib/session-chain-ablage');
+const { parseReviewStatusLine } = require('../scripts/lib/review-status');
 const { writeEntry } = require('../scripts/lib/chain');
 const { toPosix } = require('../scripts/lib/posix');
 
@@ -20,13 +22,23 @@ function specRun() {
   const workspace = tempDir();
   writeReviewer({ workspace }, 'clarity', []);
   flow('rate', '--review', 'spec-review', '--dir', workspace, '--doc', spec, '--expect', 'clarity');
+  withAblage({ workspace }, 'spec-review', ablageDir(repo, 'x', 'spec-review'));
   return { repo, spec, plan, workspace };
 }
 
-function report(run, extra = []) {
-  const result = flow('report', '--review', 'spec-review', '--dir', run.workspace, '--doc', run.spec, '--titel', 'Spec-Review', '--artefakt', run.spec, ...extra);
+// Der Bericht liegt in der Ablage; die Statuszeile des Reviews nennt die Datei.
+function storedReport(result) {
   assert.equal(result.status, 0, result.stderr);
-  return result.stdout;
+  const statusLine = result.stdout.split('\n').find((line) => line.startsWith('STATUSZEILE '));
+  return { text: fs.readFileSync(parseReviewStatusLine(statusLine.replace(/^STATUSZEILE /, '')).bericht, 'utf8'), stdout: result.stdout };
+}
+
+function runSpecReport(run) {
+  return flow('report', '--review', 'spec-review', '--dir', run.workspace, '--doc', run.spec, '--titel', 'Spec-Review', '--artefakt', run.spec);
+}
+
+function report(run) {
+  return storedReport(runSpecReport(run)).text;
 }
 
 // Wie specRun, dazu ein sauberes Plan-Review ohne Findings zum Plan im selben Ordner (eigener Arbeitsbereich).
@@ -35,13 +47,12 @@ function planRun() {
   const workspace = tempDir('dv-forge-chain-plan-');
   writeReviewer({ workspace }, 'coverage', []);
   flow('rate', '--review', 'plan-review', '--dir', workspace, '--doc', run.plan, '--expect', 'coverage');
+  withAblage({ workspace }, 'plan-review', ablageDir(run.repo, 'x', 'plan-review'));
   return { ...run, workspace };
 }
 
 function planReport(run) {
-  const result = flow('report', '--review', 'plan-review', '--dir', run.workspace, '--doc', run.plan, '--titel', 'Plan-Review', '--artefakt', run.plan);
-  assert.equal(result.status, 0, result.stderr);
-  return result.stdout;
+  return storedReport(flow('report', '--review', 'plan-review', '--dir', run.workspace, '--doc', run.plan, '--titel', 'Plan-Review', '--artefakt', run.plan)).text;
 }
 
 test('specReviewReport_SpecEntryWithWorkitem_NamesNoOrchestratorStepAndEqualsReportWithoutEntry', () => {
@@ -88,20 +99,18 @@ test('specReviewReport_EntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', () =>
   assert.equal(text, baseline);
 });
 
-test('specReviewReport_EmbeddedRunWithEntry_PrintsSameLinesAndWritesNoEntryIntoJson', () => {
+test('specReviewReport_RunWithEntry_PrintsSameLinesAndStoresNoEntryInTheData', () => {
   // Arrange
   const run = specRun();
-  const dir = tempDir('dv-forge-chain-embedded-');
-  const without = flow('report', '--review', 'spec-review', '--dir', run.workspace, '--doc', run.spec, '--titel', 'Spec-Review', '--artefakt', run.spec, '--bericht', path.join(dir, 'a.json'));
+  const without = storedReport(runSpecReport(run)).stdout;
   writeEntry({ stage: 'spec', spec: run.spec, wi: 'AB#7' });
 
   // Act
-  const file = path.join(dir, 'b.json');
-  const withEntry = flow('report', '--review', 'spec-review', '--dir', run.workspace, '--doc', run.spec, '--titel', 'Spec-Review', '--artefakt', run.spec, '--bericht', file);
+  const withEntry = storedReport(runSpecReport(run)).stdout;
 
   // Assert
-  assert.equal(withEntry.stdout.replace(file, 'X'), without.stdout.replace(path.join(dir, 'a.json'), 'X'));
-  const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(withEntry, without);
+  const data = JSON.parse(fs.readFileSync(path.join(ablageDir(run.repo, 'x', 'spec-review'), 'bericht-review.json'), 'utf8'));
   assert.equal(Object.hasOwn(data, 'chain'), false);
   assert.equal(JSON.stringify(data).includes('plan-orchestrator'), false);
 });

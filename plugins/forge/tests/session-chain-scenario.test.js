@@ -410,7 +410,7 @@ test('chain_EntryImplementationWithHalt_RecordsHaltEvent', () => {
 
 // Bericht-Daten eines Reviews, wie sie die Skills ablegen: ein offenes 🟡.
 function yellowReview(title) {
-  return scratch('bericht-review.json', JSON.stringify({ open: [{ key: 'begriff', color: 'yellow', title }], green: [], changes: [] }));
+  return scratch('bericht-review.json', JSON.stringify({ format: 2, open: [{ key: 'begriff', color: 'yellow', title }], green: [], changes: [] }));
 }
 
 test('chain_YellowFromPlanningAfterCleanPlanReview_NoLongerOpen', () => {
@@ -455,7 +455,7 @@ test('chain_WhiteboardingClosedWithThreeOpenPoints_StateAndGrillBriefListThem', 
   fs.writeFileSync(env.spec, VALID_SPEC);
   const abschluss = reportFile(SPEC_READY);
   const review = path.join(path.dirname(abschluss), 'bericht-review.json');
-  fs.writeFileSync(review, JSON.stringify({ open: [{ key: 'a', color: 'yellow', title: 'A' }, { key: 'b', color: 'yellow', title: 'B' }], green: [{ key: 'c', color: 'green', title: 'C' }], changes: [] }));
+  fs.writeFileSync(review, JSON.stringify({ format: 2, open: [{ key: 'a', color: 'yellow', title: 'A' }, { key: 'b', color: 'yellow', title: 'B' }], green: [{ key: 'c', color: 'green', title: 'C' }], changes: [] }));
   succeeded(chain(env.repo, 'store', '--etappe', 'whiteboarding', '--spec', env.spec, '--neu', '--datei', abschluss, '--datei', review));
   const stand = succeeded(chain(env.repo, 'review-stand', '--spec', env.spec));
   const bericht = /^BERICHT=(.+)$/m.exec(succeeded(chain(env.repo, 'etappe-report', '--etappe', 'whiteboarding', '--spec', env.spec, '--bericht', field(stand, 'ABSCHLUSS'))))[1];

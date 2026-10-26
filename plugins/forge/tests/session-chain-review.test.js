@@ -10,7 +10,7 @@ const { storeFiles } = require('../scripts/lib/session-chain-ablage');
 const { SessionChainError } = require('../scripts/lib/session-chain-store');
 const { reviewStand } = require('../scripts/lib/session-chain-review');
 
-const EMPTY_PART = { open: [], green: [], changes: [] };
+const EMPTY_PART = { format: 2, open: [], green: [], changes: [] };
 
 function scratch(name, text) {
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-rs-')), name);
@@ -101,6 +101,14 @@ test('reviewStand_AbschlussOlderThanSpec_ThrowsAsNoReview', () => {
   // Act & Assert
   assert.throws(() => reviewStand(spec), (error) => error instanceof SessionChainError
     && error.message.startsWith('Kein Spec-Review in der Ablage: ') && error.message.endsWith('(Abschlussbericht älter als die Spec)'));
+});
+
+test('reviewStand_AblageInTheFormerFormat_ThrowsNamingTheOldFormat', () => {
+  // Arrange
+  const spec = reviewed('✅ Bereit zum Planen', { 'bericht-review.json': { ...EMPTY_PART, format: 1 } });
+
+  // Act & Assert
+  assert.throws(() => reviewStand(spec), (error) => error instanceof SessionChainError && /^Ablage im alten Format: .+bericht-review\.json$/.test(error.message));
 });
 
 test('reviewStand_SpecMissing_ThrowsSessionChainError', () => {

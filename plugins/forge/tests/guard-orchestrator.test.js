@@ -551,7 +551,7 @@ test('onPrompt_PausedWithLeftoverMustShow_DropsMustShowKeepsProtection', () => {
 
 test('decidePreTool_ImplementationFollowupReportWithReReviewerAnswerNamingSpec_Allows', () => {
   const env = setup();
-  const command = `node "/plugins/forge/scripts/implementation-report.js" followup --workspace "/w" --bericht "/s/f.json" <<'ANTWORT'\nspec.md geprüft\nANTWORT`;
+  const command = `node "/plugins/forge/scripts/implementation-report.js" followup --workspace "/w" <<'ANTWORT'\nspec.md geprüft\nANTWORT`;
   assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
 });
 
@@ -567,13 +567,13 @@ test('decidePreTool_ChainWriteNamingSpec_Allows', () => {
   assert.equal(preTool(env, { tool_name: 'Bash', tool_input: { command } }), null);
 });
 
-test('parseSkillCall_PlanReviewWithAblage_DoesNotTakeTheEtappeAsSpec', () => {
+test('parseSkillCall_PlanReviewWithDebugSwitch_DoesNotTakeTheSwitchAsSpec', () => {
   // Act
-  const call = guard.parseSkillCall('/dv-forge:plan-review docs/plan.md --ablage plan-review', os.tmpdir());
+  const call = guard.parseSkillCall('/dv-forge:plan-review docs/plan.md --debug', os.tmpdir());
 
   // Assert
   assert.equal(call.files[0], 'docs/plan.md');
-  assert.notEqual(call.files[1], 'plan-review');
+  assert.notEqual(call.files[1], '--debug');
 });
 
 test('decidePreTool_DirectoryEntrySessionChainStoreNamingRepo_Allows', () => {
@@ -601,14 +601,14 @@ function freshEnv() {
 
 test('onSkillCall_OrchestratorCallsSpecReview_ProtectsSpec', () => {
   const env = freshEnv();
-  skillCall(env, 'dv-forge:spec-review', 'docs/spec.md --bericht /tmp/b.json');
+  skillCall(env, 'dv-forge:spec-review', 'docs/spec.md');
   const specPath = path.join(env.cwd, 'docs', 'spec.md');
   assert.ok(preTool(env, { tool_name: 'Read', tool_input: { file_path: specPath } }));
 });
 
-test('onSkillCall_ReleaseAfterEmbeddedReview_UnblocksOrchestrator', () => {
+test('onSkillCall_ReleaseAfterReview_UnblocksOrchestrator', () => {
   const env = freshEnv();
-  skillCall(env, 'dv-forge:review-followup', 'docs/spec.md alle --bericht /tmp/b.json');
+  skillCall(env, 'dv-forge:review-followup', 'docs/spec.md alle');
   guard.release(SESSION, env.tmpRoot);
   const specPath = path.join(env.cwd, 'docs', 'spec.md');
   assert.equal(preTool(env, { tool_name: 'Read', tool_input: { file_path: specPath } }), null);

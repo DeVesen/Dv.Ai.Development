@@ -81,9 +81,9 @@ test('pointLine_RedPoint_NamesRedIcon', () => {
 test('readParts_ReviewAndTwoFollowups_ReturnsThemInRoundOrder', () => {
   // Arrange
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-ab-'));
-  fs.writeFileSync(path.join(dir, 'bericht-followup-2.json'), JSON.stringify({ n: 2 }));
-  fs.writeFileSync(path.join(dir, 'bericht-review.json'), JSON.stringify({ n: 0 }));
-  fs.writeFileSync(path.join(dir, 'bericht-followup-1.json'), JSON.stringify({ n: 1 }));
+  fs.writeFileSync(path.join(dir, 'bericht-followup-2.json'), JSON.stringify({ format: 2, n: 2 }));
+  fs.writeFileSync(path.join(dir, 'bericht-review.json'), JSON.stringify({ format: 2, n: 0 }));
+  fs.writeFileSync(path.join(dir, 'bericht-followup-1.json'), JSON.stringify({ format: 2, n: 1 }));
 
   // Act
   const parts = readParts(dir);
@@ -101,6 +101,16 @@ test('readParts_BrokenJson_ThrowsSessionChainError', () => {
 
   // Act & Assert
   assert.throws(() => readParts(dir), (error) => error instanceof SessionChainError && error.message === message);
+});
+
+test('readParts_ReviewDataInTheFormerFormat_ThrowsSessionChainErrorNamingTheOldFormat', () => {
+  // Arrange
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-of-'));
+  const file = path.join(dir, 'bericht-review.json');
+  fs.writeFileSync(file, JSON.stringify({ format: 1, open: [] }));
+
+  // Act & Assert
+  assert.throws(() => readParts(dir), (error) => error instanceof SessionChainError && error.message === `Ablage im alten Format: ${file}`);
 });
 
 test('readParts_MissingFiles_ReturnsEmptyList', () => {
@@ -139,8 +149,8 @@ test('openPoints_SameInputAsMergeReports_DiffersOnlyForUnchangedChosenGroups', (
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-pt-'));
   const review = path.join(dir, 'bericht-review.json');
   const followup = path.join(dir, 'bericht-followup-1.json');
-  fs.writeFileSync(review, JSON.stringify({ open: [{ ...yellow('a', 'Gewählt, nicht geändert'), hasProposal: true }, { ...yellow('b', 'Ohne Vorschlag'), hasProposal: false }], green: [], changes: [] }));
-  fs.writeFileSync(followup, JSON.stringify({ open: [], green: [], changes: [] }));
+  fs.writeFileSync(review, JSON.stringify({ format: 2, open: [{ ...yellow('a', 'Gewählt, nicht geändert'), hasProposal: true }, { ...yellow('b', 'Ohne Vorschlag'), hasProposal: false }], green: [], changes: [] }));
+  fs.writeFileSync(followup, JSON.stringify({ format: 2, open: [], green: [], changes: [] }));
 
   // Act
   const points = openPoints(readParts(dir), 'spec-review');

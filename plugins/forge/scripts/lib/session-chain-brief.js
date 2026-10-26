@@ -10,6 +10,7 @@ const { toPosix } = require('./posix');
 const { SessionChainError, checkedEtappe } = require('./session-chain-store');
 const { goCall } = require('./session-chain-text');
 const { pointLine } = require('./session-chain-points');
+const { maxFollowups } = require('./orchestrator-rules');
 
 const PLUGIN_ROOT = path.resolve(__dirname, '..', '..');
 // Modell der Sonnet-Etappen; die Leit-Session übergibt es wörtlich an das Start-Tool, statt es zu raten.
@@ -28,12 +29,8 @@ function withWi(command, wi) {
   return wi ? `${command} ${wi}` : command;
 }
 
-function ablage(etappe) {
-  return `Ruf den Skill mit den Argumenten der ersten Zeile und zusätzlich \`--ablage ${etappe}\` auf.`;
-}
-
 // Zeile der beiden Nacharbeiten: Kein Skill liefert ihren Bericht, also schreibt ihn die Etappe selbst.
-const REWORK_REPORT = 'Schreib einen kurzen Bericht (geänderte Stellen als Vorher/Nachher, neue W-Einträge) in eine Datei und übergib sie mit `--bericht "<datei>"`.';
+const REWORK_REPORT = 'Schreib einen kurzen Bericht (geänderte Stellen als Vorher/Nachher, neue W-Einträge) in eine Datei und übergib sie mit `--inhalt "<datei>"`.';
 
 // Je Etappe: Modell, Titel, Pflichtwerte, erste Zeile und Auftrag. `v`: slug, wi, basis, spec, plan, worktree, branch, quelle, leit.
 // Fehlt ein Pflichtwert, entsteht kein Brief (sonst stünde `undefined` im Befehl der ersten Zeile).
@@ -43,26 +40,26 @@ const ETAPPEN_BRIEFS = {
     command: () => '/dv-forge:spec-whiteboarding-with-docs',
     auftrag: () => [
       'Eingabe des Whiteboardings ist der Abschnitt „Kontext“ unten.',
-      'Du committest nichts, weder Spec noch Glossar oder ADRs; das macht die Leit-Session. Die Übergabe deines Skills (Review-Befehl, frische Session) gibst du nicht aus.',
-      'Nach der Bestätigung und dem Schreiben der Spec rufst du ohne Rückfrage in dieser Session über das Skill-Werkzeug `dv-forge:spec-review-orchestrator` mit `"<deine Spec>" --ablage whiteboarding --whiteboarding` auf.',
+      'Du committest nichts, weder Spec noch Glossar oder ADRs; das macht die Leit-Session.',
+      'Nach der Bestätigung und dem Schreiben der Spec rufst du ohne Rückfrage in dieser Session über das Skill-Werkzeug `dv-forge:spec-review-orchestrator` mit `"<deine Spec>" --whiteboarding` auf.',
       `Nach jedem Review-Lauf: \`node "${CHAIN_SCRIPT}" review-stand --spec "<deine Spec>"\`. \`FRAGE=nein\`: Etappe abschließen. \`FRAGE=ja\`: am Ende deiner Antwort die Frage „Spec abschließen“ oder „Weiter an der Spec arbeiten“, Status \`needs-user\`.`,
       'Scheitert `review-stand` mit „Kein Spec-Review in der Ablage“: Review erneut aufrufen; scheitert es wieder, Status `needs-user` mit der Fehlermeldung, nicht abschließen.',
       '„Weiter an der Spec arbeiten“: jede Änderung als Vorher/Nachher, erst nach Bestätigung schreiben, danach erneut das Review und `review-stand`. Änderungen der Followup-Runden lösen kein weiteres Review aus.',
-      'Abschließen: Berichtsdatei mit `--spec "<deine Spec>"` und `--bericht "<ABSCHLUSS aus review-stand>"`, dazu `--datei` je geänderter Glossar- oder ADR-Datei.',
+      'Abschließen: Berichtsdatei mit `--spec "<deine Spec>"` und `--inhalt "<ABSCHLUSS aus review-stand>"`, dazu `--datei` je geänderter Glossar- oder ADR-Datei.',
     ],
   },
   grill: {
     modell: 'opus', titel: 'Grill', pflicht: ['spec'],
     command: (v) => `/dv-forge:spec-grilling ${v.spec}`,
     auftrag: () => [
-      'Schreib den Abschlussbericht von spec-grilling (Liste der geänderten Stellen, neue W-Einträge) in eine Datei und übergib sie mit `--bericht "<datei>"`.',
+      'Schreib den Abschlussbericht von spec-grilling (Liste der geänderten Stellen, neue W-Einträge) in eine Datei und übergib sie mit `--inhalt "<datei>"`.',
       'Jede geänderte Glossar- oder ADR-Datei mit `--datei`.',
     ],
   },
   'spec-review': {
     modell: 'sonnet', titel: 'Spec-Review', pflicht: ['spec'],
     command: (v) => withWi(`/dv-forge:spec-review-orchestrator ${v.spec}`, v.wi),
-    auftrag: () => [ablage('spec-review'), 'Der Skill committet die Spec selbst. `--bericht` ist sein Abschlussbericht.'],
+    auftrag: () => ['Der Skill committet die Spec selbst. `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.'],
   },
   'spec-nacharbeit': {
     modell: 'opus', titel: 'Spec-Nacharbeit', pflicht: ['spec', 'quelle'],
@@ -78,16 +75,15 @@ const ETAPPEN_BRIEFS = {
   planning: {
     modell: 'opus', titel: 'Planning', pflicht: ['spec'],
     command: (v) => withWi(`/dv-forge:plan-orchestrator ${v.spec}`, v.wi),
-    auftrag: () => [ablage('planning'), 'Der Skill committet nicht. Berichtsdatei mit `--plan "<plan.md>"`; `--bericht` ist sein Abschlussbericht.'],
+    auftrag: () => ['Der Skill committet nicht. Berichtsdatei mit `--plan "<plan.md>"`; `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.'],
   },
   'plan-review': {
     modell: 'sonnet', titel: 'Plan-Review', pflicht: ['plan', 'spec'],
     command: (v) => `/dv-forge:plan-review ${v.plan} ${v.spec}`,
     auftrag: (v) => [
-      ablage('plan-review'),
-      `Danach \`dv-forge:review-followup\` mit \`${v.plan} alle --ablage plan-review\`, solange die letzte Ausgabe \`FOLLOWUP ja\` meldet, höchstens zwei Runden.`,
-      'Den Plan schreibst du nicht neu. Die Commit-Frage der Skills bleibt; der Mensch beantwortet sie hier.',
-      '`--bericht` ist die `.md`-Datei zur letzten `ABLAGE`-Zeile (gleicher Name, `.md` statt `.json`).',
+      `Danach \`dv-forge:review-followup\` mit \`${v.plan} alle\`, solange die letzte Review-Statuszeile \`FOLLOWUP ja\` meldet, höchstens ${maxFollowups()} Runden.`,
+      'Den Plan schreibst du nicht neu. Du committest nichts; Spec und Plan committet die Leit-Session nach dem GO.',
+      '`--inhalt` ist die `.md`-Datei, die die letzte Review-Statuszeile nach `Bericht:` nennt.',
     ],
   },
   'plan-nacharbeit': {
@@ -105,10 +101,9 @@ const ETAPPEN_BRIEFS = {
     modell: 'opus', titel: 'Umsetzung', pflicht: ['plan', 'spec', 'basis'],
     command: (v) => goCall(v),
     auftrag: () => [
-      ablage('umsetzung'),
       'Einen Showstopper klärst du mit dem Menschen hier.',
       'Geh vor der Berichtsdatei die Akzeptanz-Findings des Reviews aller Farben (🔴, 🟡, 🟢) durch und melde jedes Akzeptanzkriterium ohne beweisenden Test mit `--ac-ohne-test <AC-nn>`, auch wenn das Review es nur als 🟡 führt. Integrationspunkte ohne Test sind davon ausgenommen.',
-      'Berichtsdatei mit `--worktree "<R>"`, `--branch <branch>`, `--pruefung-datei "<pruefung.json des Orchestrators>"` (ohne Prüflauf `--pruefung keine`), `--luecke "<befehl>"` je nicht lauffähigem Build-, Test- oder Lint-Befehl und `--ac-ohne-test <AC-nn>` je Akzeptanzkriterium ohne beweisenden Test; `--bericht` ist sein Abschlussbericht.',
+      'Berichtsdatei mit `--worktree "<R>"`, `--branch <branch>`, `--pruefung-datei "<pruefung.json des Orchestrators>"` (ohne Prüflauf `--pruefung keine`), `--luecke "<befehl>"` je nicht lauffähigem Build-, Test- oder Lint-Befehl und `--ac-ohne-test <AC-nn>` je Akzeptanzkriterium ohne beweisenden Test; `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.',
     ],
   },
   abschluss: {

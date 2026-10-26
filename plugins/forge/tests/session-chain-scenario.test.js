@@ -60,12 +60,12 @@ function reportFile(result) {
 
 // Berichtsdatei der Etappe über etappe-report; `target` ist `--slug x` oder `--spec <spec>`. Rückgabe: Pfad von bericht.md.
 function writeReport(env, etappe, { result, target = ['--slug', 'x'], extra = [] }) {
-  const bericht = result === undefined ? [] : ['--bericht', reportFile(result)];
+  const bericht = result === undefined ? [] : ['--inhalt', reportFile(result)];
   return /^BERICHT=(.+)$/m.exec(succeeded(chain(env.repo, 'etappe-report', '--etappe', etappe, ...target, ...bericht, ...extra)))[1];
 }
 
 function runFinal(env, etappe, bericht, commit, extra = []) {
-  const result = chain(env.repo, 'final', '--etappe', etappe, '--session', nextSession(env, etappe), '--bericht', bericht, '--commit', commit, ...extra);
+  const result = chain(env.repo, 'final', '--etappe', etappe, '--session', nextSession(env, etappe), '--etappenbericht', bericht, '--commit', commit, ...extra);
   return { result, out: result.stdout, weiter: field(result.stdout, 'WEITER'), halt: field(result.stdout, 'HALTEPUNKT') };
 }
 
@@ -459,7 +459,7 @@ test('chain_WhiteboardingClosedWithThreeOpenPoints_StateAndGrillBriefListThem', 
   fs.writeFileSync(review, JSON.stringify({ format: 2, open: [{ key: 'a', color: 'yellow', title: 'A' }, { key: 'b', color: 'yellow', title: 'B' }], green: [{ key: 'c', color: 'green', title: 'C' }], changes: [] }));
   storeFiles({ dir: env.repo, slug: 'x', etappe: 'whiteboarding', files: [abschluss, review], fresh: true });
   const stand = succeeded(chain(env.repo, 'review-stand', '--spec', env.spec));
-  const bericht = /^BERICHT=(.+)$/m.exec(succeeded(chain(env.repo, 'etappe-report', '--etappe', 'whiteboarding', '--spec', env.spec, '--bericht', field(stand, 'ABSCHLUSS'))))[1];
+  const bericht = /^BERICHT=(.+)$/m.exec(succeeded(chain(env.repo, 'etappe-report', '--etappe', 'whiteboarding', '--spec', env.spec, '--inhalt', field(stand, 'ABSCHLUSS'))))[1];
   succeeded(runFinal(env, 'whiteboarding', bericht, 'none', ['--basis', 'main']).result);
   succeeded(chain(env.repo, 'commit', '--anlass', 'whiteboarding', '--slug', 'x', '--message', 'docs: spec x'));
 

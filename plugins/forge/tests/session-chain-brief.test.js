@@ -6,6 +6,8 @@ const { buildBrief, BASE_FILE } = require('../scripts/lib/session-chain-brief');
 const { SessionChainError } = require('../scripts/lib/session-chain-store');
 const { goCall } = require('../scripts/lib/session-chain-text');
 const { readText } = require('./lib/markdown');
+const { maxFollowups } = require('../scripts/lib/orchestrator-rules');
+const { FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION } = require('./lib/former-names');
 
 const VALUES = { slug: 'x', basis: 'dev', spec: 'C:/r/docs/forge/x/spec.md', plan: 'C:/r/docs/forge/x/plan.md' };
 const MODELS = {
@@ -94,12 +96,13 @@ test('buildBrief_AnyEtappe_ContainsValuesAndAllFixedBuildingBlocks', () => {
   // Assert
   for (const part of [
     '- Slug: x', '- Basis-Branch: dev', '- Spec: C:/r/docs/forge/x/spec.md', '- Plan: C:/r/docs/forge/x/plan.md',
-    'nur deine eigenen Dateien, auf Pfade beschränkt', 'Nie alle Änderungen stagen', 'fremde Dateien nicht anfassen', 'Commit-Konvention des Projekts', 'Push nur in der Abschluss-Etappe',
+    'nur deine eigenen Dateien, auf Pfade beschränkt', 'Fremde Dateien fasst du nicht an.', 'Die Git-Verbote stehen in `',
+    'shared/orchestrator-rules.md`, Abschnitt Git-Verbote; Push ist nach dem Ja des Menschen in der Abschluss-Etappe erlaubt.', 'Commit-Konvention des Projekts',
     '`[planning] STATUS=<in-progress|needs-user|final> · ROT=<n> · GELB=<n> · COMMIT=<hash|none> · BERICHT=<pfad|none>`',
     '4. Starte keine weitere Session. Eine Nachricht schickst du nur nach Regel 9; sonst meldest du dich über dein Turn-Ende.',
     'stellst sie am Ende deiner Antwort',
     'Aufräumpflicht: Vor deinem letzten Turn-Ende beendest du alle Hintergrundprozesse',
-    'Die Statuszeile ersetzt die Übergabe-Hinweise deines Skills',
+    'Statuszeile und Ergebnis deines Skills sind deine ganze Ausgabe',
     'scripts/session-chain.js" etappe-report --etappe planning --slug x',
   ]) assert.ok(text.includes(part), part);
 });
@@ -163,22 +166,24 @@ test('buildBrief_Whiteboarding_CarriesTheContextSummaryAndReportsBySpec', () => 
   assert.ok(text.includes('etappe-report --etappe whiteboarding --spec "<deine Spec>"'));
 });
 
-test('buildBrief_PlanReview_RunsFollowupWhileOfferedAtMostTwiceWithoutRewrite', () => {
+test('buildBrief_PlanReview_RunsFollowupWhileOfferedUpToTheRulesFileMaximumWithoutRewriteOrCommit', () => {
   // Act
   const text = brief('plan-review').brief;
+  const auftrag = text.slice(text.indexOf('## Auftrag'), text.indexOf('## Ketten-Regeln'));
 
   // Assert
-  assert.ok(text.includes('solange die letzte Ausgabe `FOLLOWUP ja` meldet, höchstens zwei Runden'));
-  assert.ok(text.includes('Den Plan schreibst du nicht neu.'));
-  assert.ok(text.includes('`--ablage plan-review`'));
+  assert.ok(auftrag.includes(`solange die letzte Review-Statuszeile \`FOLLOWUP ja\` meldet, höchstens ${maxFollowups()} Runden`));
+  assert.ok(auftrag.includes('Den Plan schreibst du nicht neu. Du committest nichts; Spec und Plan committet die Leit-Session nach dem GO.'));
+  assert.equal(auftrag.includes(FORMER_ABLAGE_OPTION), false);
+  assert.equal(auftrag.includes('Commit-Frage'), false);
 });
 
-test('buildBrief_PlanReview_NamesTheMarkdownReportOfTheLastAblageLine', () => {
+test('buildBrief_PlanReview_NamesTheMarkdownReportOfTheLastReviewStatusLine', () => {
   // Act
   const text = brief('plan-review').brief;
 
   // Assert
-  assert.ok(text.includes('`--bericht` ist die `.md`-Datei zur letzten `ABLAGE`-Zeile (gleicher Name, `.md` statt `.json`).'));
+  assert.ok(text.includes('`--inhalt` ist die `.md`-Datei, die die letzte Review-Statuszeile nach `Bericht:` nennt.'));
 });
 
 test('buildBrief_Background_IsLongEnoughForAFreshSession', () => {
@@ -199,15 +204,15 @@ test('buildBrief_WhiteboardingWithoutSlug_NamesWhereTheSlugComesFrom', () => {
   assert.equal(values.trim(), '## Werte\n- Slug: folgt aus der Spec, die diese Etappe schreibt (Ordnername bei `spec.md`)\n- Basis-Branch: dev');
 });
 
-test('buildBrief_GrillAndNacharbeiten_AskForTheFullReportViaBericht', () => {
+test('buildBrief_GrillAndNacharbeiten_AskForTheFullReportViaInhalt', () => {
   // Act
   const texts = ['grill', 'spec-nacharbeit', 'plan-nacharbeit'].map((etappe) => brief(etappe).brief);
 
   // Assert
   for (const text of texts) {
     const auftrag = text.slice(text.indexOf('## Auftrag'), text.indexOf('## Ketten-Regeln'));
-    assert.ok(auftrag.includes('`--bericht "<datei>"`'), auftrag);
-    assert.doesNotMatch(auftrag, /ohne `--bericht`/);
+    assert.ok(auftrag.includes('`--inhalt "<datei>"`'), auftrag);
+    assert.equal(auftrag.includes(FORMER_REPORT_OPTION), false, auftrag);
   }
 });
 
@@ -226,7 +231,7 @@ test('buildBrief_Whiteboarding_ReportsWithTheAbschlussOfTheReview', () => {
   const text = buildBrief({ etappe: 'whiteboarding', values: { basis: 'dev' }, kontext: 'Anliegen: Export' }).brief;
 
   // Assert
-  assert.ok(text.includes('Abschließen: Berichtsdatei mit `--spec "<deine Spec>"` und `--bericht "<ABSCHLUSS aus review-stand>"`, dazu `--datei` je geänderter Glossar- oder ADR-Datei.'));
+  assert.ok(text.includes('Abschließen: Berichtsdatei mit `--spec "<deine Spec>"` und `--inhalt "<ABSCHLUSS aus review-stand>"`, dazu `--datei` je geänderter Glossar- oder ADR-Datei.'));
 });
 
 test('buildBrief_Umsetzung_AsksToEvaluateAcceptanceFindingsOfAllColors', () => {
@@ -269,8 +274,8 @@ test('buildBrief_Whiteboarding_RunsTheSpecReviewInTheSameSessionWithoutCommit', 
   // Assert
   assert.equal(result.modell, 'sonnet');
   for (const part of [
-    'Du committest nichts, weder Spec noch Glossar oder ADRs; das macht die Leit-Session. Die Übergabe deines Skills (Review-Befehl, frische Session) gibst du nicht aus.',
-    'Nach der Bestätigung und dem Schreiben der Spec rufst du ohne Rückfrage in dieser Session über das Skill-Werkzeug `dv-forge:spec-review-orchestrator` mit `"<deine Spec>" --ablage whiteboarding --whiteboarding` auf.',
+    'Du committest nichts, weder Spec noch Glossar oder ADRs; das macht die Leit-Session.',
+    'Nach der Bestätigung und dem Schreiben der Spec rufst du ohne Rückfrage in dieser Session über das Skill-Werkzeug `dv-forge:spec-review-orchestrator` mit `"<deine Spec>" --whiteboarding` auf.',
     'review-stand --spec "<deine Spec>"`. `FRAGE=nein`: Etappe abschließen. `FRAGE=ja`: am Ende deiner Antwort die Frage „Spec abschließen“ oder „Weiter an der Spec arbeiten“, Status `needs-user`.',
     '„Weiter an der Spec arbeiten“: jede Änderung als Vorher/Nachher, erst nach Bestätigung schreiben, danach erneut das Review und `review-stand`. Änderungen der Followup-Runden lösen kein weiteres Review aus.',
   ]) assert.ok(result.brief.includes(part), part);
@@ -320,4 +325,19 @@ test('buildBrief_AnyEtappe_BackgroundAllowsTheFinalMessage', () => {
   // Assert
   assert.ok(text.includes('meldet sich über ihr Turn-Ende, bei final zusätzlich mit einer Nachricht an die Leit-Session.'), text);
   assert.ok(!text.includes('nur über ihr Turn-Ende'), text);
+});
+
+test('buildBrief_EveryEtappe_NamesNeitherFormerOptionNorHandoverAndAsksForNeedsUserOnAMissingPrecondition', () => {
+  for (const etappe of Object.keys(MODELS)) {
+    // Act
+    const text = brief(etappe).brief;
+
+    // Assert
+    assert.equal(text.includes(FORMER_REPORT_OPTION), false, etappe);
+    assert.equal(text.includes(FORMER_ABLAGE_OPTION), false, etappe);
+    assert.equal(text.includes('git add -A'), false, `${etappe}: Die Git-Verbote stehen in der Regeldatei`);
+    assert.ok(text.includes('7. Statuszeile und Ergebnis deines Skills sind deine ganze Ausgabe: kein Übergabe-Hinweis, keine Commit-Frage, keine Empfehlung für einen nächsten Schritt.'), etappe);
+    assert.ok(text.includes('Nach der Statuszeile steht als einzige weitere Zeile die Ursache in einem Satz.'), etappe);
+    assert.ok(text.includes('gemeldet als `Ablage im alten Format: <datei>`'), etappe);
+  }
 });

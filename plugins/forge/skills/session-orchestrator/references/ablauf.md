@@ -13,7 +13,7 @@ Schreib die erste nicht leere Zeile des Turn-Endes wörtlich mit `Write` nach `t
 - `final`: weiter mit „Final prüfen“.
 
 ## Final prüfen
-`<SC> final --etappe <e> --session <id> --bericht "<BERICHT>" --commit <COMMIT>`, bei `whiteboarding` dazu `--basis <B>` und `--wi <WI>`, je nur wenn bekannt. Dann nach `HALTEPUNKT` und `WEITER`:
+`<SC> final --etappe <e> --session <id> --etappenbericht "<BERICHT>" --commit <COMMIT>`, bei `whiteboarding` dazu `--basis <B>` und `--wi <WI>`, je nur wenn bekannt. Dann nach `HALTEPUNKT` und `WEITER`:
 
 | Ausgabe | Tun |
 |---|---|

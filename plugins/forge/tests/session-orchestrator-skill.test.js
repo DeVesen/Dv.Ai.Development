@@ -85,7 +85,8 @@ test('sessionOrchestrator_Body_NeverActsForAStageSession', () => {
   // Assert
   assert.ok(body.includes('Du änderst nie Spec, Plan oder Code, beantwortest keine Frage einer Etappen-Session und führst nie eine Aktion aus, die eine Etappen-Session nicht ausführen durfte'));
   assert.ok(body.includes('Du committest nur über `<SC> commit`.'));
-  assert.ok(body.includes('Kein `git add -A`, kein Push, kein Branch-Wechsel, kein Worktree.'));
+  assert.ok(body.includes('5. Git-Verbote: `<PLUGIN>/shared/orchestrator-rules.md`, Abschnitt Git-Verbote.'));
+  assert.equal(body.includes('git add -A'), false);
 });
 
 test('sessionOrchestrator_Body_StaysUnder500WordsWithPairedQuotes', () => {
@@ -112,7 +113,7 @@ test('sessionOrchestratorFlow_Final_ChecksAgainstGitBeforeAnyNextStage', () => {
   const text = readText(FLOW);
 
   // Assert
-  for (const part of ['`<SC> final --etappe <e> --session <id> --bericht "<BERICHT>" --commit <COMMIT>`', '| `HALTEPUNKT=abweichung` | Block ausgeben. Die Kette hält; nichts starten.',
+  for (const part of ['`<SC> final --etappe <e> --session <id> --etappenbericht "<BERICHT>" --commit <COMMIT>`', '| `HALTEPUNKT=abweichung` | Block ausgeben. Die Kette hält; nichts starten.',
     '| `HALTEPUNKT=showstopper` |', '| `WEITER=doppelt` | Schweigen: dieses `final` ist schon verarbeitet; nichts starten. |', '| `WEITER=<etappe>` | Start dieser Etappe (Regel 3)',
     '| `WEITER=ende` | Block (Schlussbericht) ausgeben.']) {
     assert.ok(text.includes(part), part);

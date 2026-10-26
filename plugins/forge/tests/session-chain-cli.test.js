@@ -9,6 +9,7 @@ const { spawnSync } = require('node:child_process');
 const { git, commitFile, makeRepo, addWorktree, repoWithPlan } = require('./lib/git-repo');
 const { readState, writeState } = require('../scripts/lib/session-chain-store');
 const { storeFiles } = require('../scripts/lib/session-chain-ablage');
+const { FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION } = require('./lib/former-names');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'session-chain.js');
 
@@ -186,7 +187,7 @@ function specReviewReport(repo) {
   const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: review spec x');
   chain(repo, 'set', '--slug', 'x', '--basis', 'main', '--spec', path.join(repo, 'docs/forge/x/spec.md'));
   const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Planen\n');
-  const bericht = /^BERICHT=(.+)$/m.exec(chain(repo, 'etappe-report', '--etappe', 'spec-review', '--slug', 'x', '--bericht', abschluss).stdout)[1];
+  const bericht = /^BERICHT=(.+)$/m.exec(chain(repo, 'etappe-report', '--etappe', 'spec-review', '--slug', 'x', '--inhalt', abschluss).stdout)[1];
   return { commit, bericht };
 }
 
@@ -196,7 +197,7 @@ test('etappeReport_AndFinal_HoldAtSpecHaltepunktAfterSpecReview', () => {
   const { commit, bericht } = specReviewReport(repo);
 
   // Act
-  const result = chain(repo, 'final', '--etappe', 'spec-review', '--session', 'local_s', '--bericht', bericht, '--commit', commit);
+  const result = chain(repo, 'final', '--etappe', 'spec-review', '--session', 'local_s', '--etappenbericht', bericht, '--commit', commit);
 
   // Assert
   assert.equal(result.status, 0, result.stderr);
@@ -208,10 +209,10 @@ test('final_SameFinalTwice_PrintsDoppeltWithoutBlock', () => {
   // Arrange
   const repo = makeRepo();
   const { commit, bericht } = specReviewReport(repo);
-  chain(repo, 'final', '--etappe', 'spec-review', '--session', 'local_s', '--bericht', bericht, '--commit', commit);
+  chain(repo, 'final', '--etappe', 'spec-review', '--session', 'local_s', '--etappenbericht', bericht, '--commit', commit);
 
   // Act
-  const result = chain(repo, 'final', '--etappe', 'spec-review', '--session', 'local_s', '--bericht', bericht, '--commit', commit);
+  const result = chain(repo, 'final', '--etappe', 'spec-review', '--session', 'local_s', '--etappenbericht', bericht, '--commit', commit);
 
   // Assert
   assert.equal(result.status, 0, result.stderr);
@@ -395,4 +396,30 @@ test('brief_GrillWithOpenPointsInState_ListsThemInTheBrief', () => {
   // Assert
   assert.equal(result.status, 0, result.stderr);
   assert.ok(result.stdout.includes('## Offene Punkte aus früheren Etappen\nPrüf sie im Grill mit; sie gelten nicht als beantwortet.\n- 🔴 Lücke · whiteboarding'));
+});
+
+for (const [name, option] of [['FormerReportOption', FORMER_REPORT_OPTION], ['FormerAblageOption', FORMER_ABLAGE_OPTION], ['AnyOtherOption', '--gibtesnicht']]) {
+  test(`cli_${name}_ExitsWithTwoAndSaysUnknownParameter`, () => {
+    // Arrange
+    const repo = makeRepo();
+
+    // Act
+    const result = chain(repo, 'final', '--etappe', 'spec-review', '--session', 'local_s', option, 'x', '--commit', 'none');
+
+    // Assert
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, new RegExp(`^unbekannter Parameter: ${option}\\n`));
+  });
+}
+
+test('cli_OptionWithoutValue_ExitsWithTwoAndNamesTheOption', () => {
+  // Arrange
+  const repo = makeRepo();
+
+  // Act
+  const result = chain(repo, 'review-stand', '--spec');
+
+  // Assert
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /^Wert fehlt: --spec\n/);
 });

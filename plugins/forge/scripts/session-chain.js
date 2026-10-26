@@ -22,17 +22,17 @@ const USAGE = [
   '       node session-chain.js set --slug <slug> [--basis <branch>] [--wi <nr>] [--spec <S>] [--plan <P>] [--worktree <R>]',
   '       node session-chain.js brief --etappe <etappe> --leit <local_…> [--slug <slug>] [--kontext <datei>] [--quelle <datei>] [--basis <branch>] [--wi <nr>] [--erneut]',
   '       node session-chain.js turn --session <id> --etappe <etappe> --turn-datei <datei>',
-  '       node session-chain.js final --etappe <etappe> --session <id> --bericht <datei> --commit <hash|none> [--basis <branch>] [--wi <nr>]',
+  '       node session-chain.js final --etappe <etappe> --session <id> --etappenbericht <datei> --commit <hash|none> [--basis <branch>] [--wi <nr>]',
   '       node session-chain.js halt --slug <slug> --art spec|go',
   '       node session-chain.js answer --slug <slug> --antwort <planning|spec-nacharbeit|go|plan-nacharbeit|weiter|stopp>',
   '       node session-chain.js commit --anlass whiteboarding|spec|go --slug <slug> --message <betreff>',
   '       node session-chain.js schluss --slug <slug> [--stopp]',
   '       node session-chain.js review-stand --spec <S>',
-  '       node session-chain.js etappe-report --etappe <etappe> (--slug <slug> | --spec <S>) [--bericht <datei>] [--entscheidung <text>]... [--datei <pfad>]...',
+  '       node session-chain.js etappe-report --etappe <etappe> (--slug <slug> | --spec <S>) [--inhalt <datei>] [--entscheidung <text>]... [--datei <pfad>]...',
   '              [--tests <text>] [--anhang <datei>]... [--plan <P>] [--worktree <R>] [--branch <name>] [--pruefung gruen|rot|keine | --pruefung-datei <pruefung.json>] [--luecke <befehl>]... [--ac-ohne-test <AC>]...',
   '',
 ].join('\n');
-const VALUE_OPTIONS = ['--slug', '--leit', '--basis', '--wi', '--spec', '--plan', '--worktree', '--etappe', '--kontext', '--quelle', '--session', '--turn-datei', '--bericht',
+const VALUE_OPTIONS = ['--slug', '--leit', '--basis', '--wi', '--spec', '--plan', '--worktree', '--etappe', '--kontext', '--quelle', '--session', '--turn-datei', '--etappenbericht', '--inhalt',
   '--commit', '--art', '--anlass', '--message', '--antwort', '--datei', '--entscheidung', '--tests', '--anhang', '--branch', '--pruefung', '--luecke', '--ac-ohne-test', '--pruefung-datei'];
 const LIST_OPTIONS = ['--datei', '--entscheidung', '--anhang', '--luecke', '--ac-ohne-test'];
 const FLAG_OPTIONS = ['--stopp', '--erneut'];
@@ -48,7 +48,8 @@ function parseOptions(args) {
       values[name.slice(2)] = true;
       continue;
     }
-    if (!VALUE_OPTIONS.includes(name) || index + 1 >= args.length) throw new UsageError(`Unbekanntes oder unvollständiges Argument: ${name}`);
+    if (!VALUE_OPTIONS.includes(name)) throw new UsageError(`unbekannter Parameter: ${name}`);
+    if (index + 1 >= args.length) throw new UsageError(`Wert fehlt: ${name}`);
     index += 1;
     if (LIST_OPTIONS.includes(name)) values[name.slice(2)].push(args[index]);
     else values[name.slice(2)] = args[index];
@@ -108,7 +109,7 @@ function turn(values) {
 
 function final(values) {
   const result = processFinal({
-    etappe: required(values, 'etappe'), session: required(values, 'session'), bericht: required(values, 'bericht'), commit: required(values, 'commit'), basis: values.basis, wi: values.wi,
+    etappe: required(values, 'etappe'), session: required(values, 'session'), bericht: required(values, 'etappenbericht'), commit: required(values, 'commit'), basis: values.basis, wi: values.wi,
   }, process.cwd());
   if (result.weiter !== 'doppelt') {
     appendEvent(process.cwd(), result.slug, {
@@ -180,7 +181,7 @@ function report(values) {
   }
   if (values.pruefung && !CHECKS.includes(values.pruefung)) throw new UsageError(`--pruefung erlaubt: ${CHECKS.join(', ')}`);
   const file = etappeReport({
-    etappe: required(values, 'etappe'), slug: values.slug, spec: values.spec, bericht: values.bericht, entscheidungen: values.entscheidung, dateien: values.datei,
+    etappe: required(values, 'etappe'), slug: values.slug, spec: values.spec, bericht: values.inhalt, entscheidungen: values.entscheidung, dateien: values.datei,
     tests: values.tests, anhang: values.anhang.map((item) => path.resolve(item)), plan: values.plan, worktree: values.worktree, branch: values.branch,
     pruefung: values.pruefung, luecken: values.luecke, acOhneTest: values['ac-ohne-test'],
   }, process.cwd());

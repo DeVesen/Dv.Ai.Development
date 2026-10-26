@@ -7,9 +7,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { toPosix } = require('./posix');
+const { writeJson, writeText } = require('./flow-files');
 const { SessionChainError, checkedEtappe, chainDir } = require('./session-chain-store');
 
-const REVIEW_FILE = 'bericht-review.json';
+const REVIEW_NAME = 'bericht-review';
+const REVIEW_FILE = `${REVIEW_NAME}.json`;
 // Abschlussbericht eines Orchestrators, etwa des Spec-Reviews im Whiteboarding.
 const ABSCHLUSS_FILE = 'abschluss.md';
 const FOLLOWUP_FILE = /^bericht-followup-(\d+)\.json$/;
@@ -41,4 +43,16 @@ function nextFollowupName(target) {
   return `bericht-followup-${used.length === 0 ? 1 : used[used.length - 1] + 1}`;
 }
 
-module.exports = { REVIEW_FILE, ABSCHLUSS_FILE, FOLLOWUP_FILE, ablageDir, storeFiles, followupNumbers, nextFollowupName };
+// Legt Bericht (.md) und Bericht-Daten (.json) eines Reviews in `target` ab: Ein Review beginnt die Ablage seiner Etappe neu und
+// schreibt `bericht-review`, ein Followup legt `bericht-followup-<n>` daneben. Rückgabe: die Pfade beider Dateien.
+function storeReviewReport({ target, followup, data, text }) {
+  if (!followup) fs.rmSync(target, { recursive: true, force: true });
+  const name = followup ? nextFollowupName(target) : REVIEW_NAME;
+  const json = path.join(target, `${name}.json`);
+  const md = path.join(target, `${name}.md`);
+  writeJson(json, data);
+  writeText(md, text);
+  return { json: toPosix(json), md: toPosix(md) };
+}
+
+module.exports = { REVIEW_NAME, REVIEW_FILE, ABSCHLUSS_FILE, FOLLOWUP_FILE, ablageDir, storeFiles, storeReviewReport, followupNumbers, nextFollowupName };

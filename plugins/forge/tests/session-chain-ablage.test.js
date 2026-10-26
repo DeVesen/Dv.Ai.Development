@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { makeRepo, addWorktree } = require('./lib/git-repo');
 const { SessionChainError } = require('../scripts/lib/session-chain-store');
-const { ablageDir, storeFiles, followupNumbers, nextFollowupName } = require('../scripts/lib/session-chain-ablage');
+const { ablageDir, storeFiles, followupNumbers, nextFollowupName, storeReviewReport } = require('../scripts/lib/session-chain-ablage');
 
 function scratchFile(name, text) {
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-ab-')), name);
@@ -78,4 +78,36 @@ test('followupNumbers_RoundsOutOfOrder_ReturnsThemAscending', () => {
 
   // Assert
   assert.deepEqual(numbers, [2, 10]);
+});
+
+test('storeReviewReport_Review_StartsTheAblageAnewAndWritesJsonAndText', () => {
+  // Arrange
+  const target = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-ab-')), 'ablage');
+  storeReviewReport({ target, followup: false, data: { format: 2, status: 'alt' }, text: 'alt' });
+  storeReviewReport({ target, followup: true, data: { format: 2 }, text: 'Runde' });
+
+  // Act
+  const stored = storeReviewReport({ target, followup: false, data: { format: 2, status: 'neu' }, text: '# Bericht' });
+
+  // Assert
+  assert.deepEqual(fs.readdirSync(target).sort(), ['bericht-review.json', 'bericht-review.md']);
+  assert.equal(stored.json, path.join(target, 'bericht-review.json').replace(/\\/g, '/'));
+  assert.equal(stored.md, path.join(target, 'bericht-review.md').replace(/\\/g, '/'));
+  assert.equal(JSON.parse(fs.readFileSync(path.join(target, 'bericht-review.json'), 'utf8')).status, 'neu');
+  assert.equal(fs.readFileSync(path.join(target, 'bericht-review.md'), 'utf8'), '# Bericht\n');
+});
+
+test('storeReviewReport_Followups_AreNumberedBesideTheReview', () => {
+  // Arrange
+  const target = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-ab-')), 'ablage');
+  storeReviewReport({ target, followup: false, data: { format: 2 }, text: 'a' });
+
+  // Act
+  const first = storeReviewReport({ target, followup: true, data: { format: 2 }, text: 'b' });
+  const second = storeReviewReport({ target, followup: true, data: { format: 2 }, text: 'c' });
+
+  // Assert
+  assert.deepEqual(fs.readdirSync(target).filter((name) => name.endsWith('.json')).sort(), ['bericht-followup-1.json', 'bericht-followup-2.json', 'bericht-review.json']);
+  assert.ok(first.md.endsWith('/bericht-followup-1.md'));
+  assert.ok(second.md.endsWith('/bericht-followup-2.md'));
 });

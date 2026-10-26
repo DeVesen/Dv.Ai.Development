@@ -12,7 +12,7 @@ Du richtest nur den Ort der Umsetzung ein. Ob ein Worktree entsteht und wie der 
 
 ## Ablauf
 1. Erstes Wort von `$ARGUMENTS` = Plan-Pfad, optional zweites = Spec-Pfad. Weiterer Text ist Zusatz: nie in eine Kommandozeile. `node "<PLUGIN>/scripts/prepare.js" implementation $ARGUMENTS` mit nur den Pfaden. Exit ungleich 0: Meldung wörtlich ausgeben, Ende. Die Zeilen `<Name>=<Wert>` liefern `P`, `S` und `slug`.
-2. `node "<PLUGIN>/scripts/work.js" start <slug> --spec "<S>" --plan "<P>"`. Exit ungleich 0: Meldung wörtlich ausgeben. Beginnt sie mit `Nicht committet:`, bietest du den Commit an und committest erst nach Ja; dann Schritt 2 wiederholen. Sonst Ende.
+2. `node "<PLUGIN>/scripts/work.js" start <slug> --spec "<S>" --plan "<P>"`. Exit ungleich 0: Meldung wörtlich ausgeben, Ende. Beginnt sie mit `Nicht committet:`, nennt sie die Dateien; du committest nichts und startest nicht.
 3. Nach der Ausgabe handeln:
 
 | Ausgabe | Tun |
@@ -23,12 +23,12 @@ Du richtest nur den Ort der Umsetzung ein. Ob ein Worktree entsteht und wie der 
 | zusätzlich `drift=<datei>` | Plan-Dateien seit der Plan-Basis geändert: Dateien nennen, einmal fragen, ob trotzdem umgesetzt wird. |
 | zusätzlich `workitem-konflikt=<nr>` | Branch nennt ein anderes Workitem als die Spec: nennen, einmal fragen, ob trotzdem umgesetzt wird. |
 
-4. Übergabe als Code-Block: `/dv-forge:implementation <P>`, mit `<P>` relativ zur Projektwurzel. Bei `modus=worktree` folgt unter dem Code-Block die Zeile: `Session in <R> starten.`
+4. Ausgabe: nur das Ergebnis aus Schritt 3 (Ort, Branch, Aktion). Kein Befehl, kein Hinweis auf einen nächsten Schritt.
 
 ## Häufige Fehler
 | Fehler | Richtig |
 |---|---|
 | Branch-Namen selbst wählen | Den Namen liefert `work.js` aus `Branch-Schema`. |
 | Worktree anlegen, obwohl die Einstellung `nein` sagt | Nur `work.js` legt Worktrees an. |
-| Nicht committete Spec oder Plan still mitnehmen | Commit anbieten, erst nach Ja. Sonst fehlen sie im Worktree. |
-| Nach dem Start schon Code schreiben | Umsetzen ist `/dv-forge:implementation`. |
+| Nicht committete Spec oder Plan still mitnehmen | Die Meldung von `work.js` nennen und nicht starten. Sonst fehlen sie im Worktree. |
+| Nach dem Start schon Code schreiben | Umsetzen ist Aufgabe der Umsetzungs-Etappe. |

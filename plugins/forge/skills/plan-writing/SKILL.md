@@ -22,11 +22,7 @@ Du schreibst für einen Umsetzer, der sein Handwerk beherrscht, aber null Kontex
 6. **Offene Fragen** stellst du dem Menschen, eine Frage pro Nachricht, mit Empfehlung und Grund. Dazu gehören echte Architektur-Alternativen; geplant wird genau eine. Offen ist auch jedes AC, das ein Ergebnis fordert, dessen Form die Spec nicht festlegt — diese Form wählst du nicht selbst. Jede Antwort notierst du sofort als W-Eintrag mit Tag `Aussage`. Sagt der Mensch „entscheide du“, gilt deine Empfehlung mit Tag `delegiert`. Du triffst keine Annahme stillschweigend.
 7. **Plan schreiben** nach `references/plan-format.md` und `references/task-rules.md`, mit `**Basis:**` aus `git rev-parse --short HEAD`.
 8. **Selbst-Check:** vor dem Abschluss `node "<PLUGIN>/scripts/plan-tasks.js" lint "<Ziel>"`, jeden Fehler beheben; dann `references/self-check.md`.
-9. **Übergabe:** Plan-Pfad nennen und als nächste Schritte: Spec und Plan committen, dann in einer frischen Session der Befehl:
-   ```
-   /dv-forge:plan-review <pfad/plan.md>
-   ```
-   Du committest nichts selbst.
+9. **Ergebnis:** nur den Plan-Pfad nennen. Kein Befehl, kein Hinweis auf einen nächsten Schritt, keine Commit-Frage. Du committest nichts selbst.
 
 ## Rote Flaggen
 | Gedanke | Stattdessen |

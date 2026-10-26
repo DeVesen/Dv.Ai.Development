@@ -59,7 +59,8 @@ test('startWork_Body_DelegatesDecisionToScript', () => {
   assert.ok(body.includes('prepare.js" implementation $ARGUMENTS'));
   assert.ok(body.includes('work.js" start <slug> --spec "<S>" --plan "<P>"'));
   assert.ok(body.includes('work.js" switch <vorschlag>'));
-  assert.ok(body.includes('/dv-forge:implementation <P>'));
+  assert.ok(body.includes('4. Ausgabe: nur das Ergebnis aus Schritt 3 (Ort, Branch, Aktion). Kein Befehl, kein Hinweis auf einen nächsten Schritt.'));
+  assert.doesNotMatch(body, /\/dv-forge:|Session in <R> starten|Commit anbieten|erst nach Ja/);
 });
 
 test('finishWork_Body_ChecksTestsThenRemoves', () => {

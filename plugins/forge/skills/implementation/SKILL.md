@@ -38,7 +38,7 @@ Jeder Task bekommt einen frischen Umsetzer nach `task-loop.md`, streng nacheinan
 1. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>" --nur test`. Nur bei `ergebnis=gruen` ins Ledger: `Gesamtlauf: <head aus PRUEFUNG> grün (verify-run)`. `rot` oder `docker` ist ein offener Punkt im Bericht.
 2. Bericht nach `<W>/abschluss.md`: Bereich `forge-base/<slug>..HEAD`, Anzahl Tasks, jede `Urteil:`-Zeile mit Kosten, offene Punkte.
 3. `node "<PLUGIN>/scripts/ledger.js" archive "<P>" "<W>"` legt Bericht und Ledger-Auszug neben den Plan. Diese Datei committest du; kein Merge, kein Push.
-4. Im Chat nur: Ergebnis, Zahl der Urteile, offene Punkte, Pfad der Datei, bei `modus=worktree` Worktree und Branch, und als Code-Block für eine frische Session dort `/dv-forge:implementation-review <P>`.
+4. Im Chat nur: Ergebnis, Zahl der Urteile, offene Punkte, Pfad der Datei, bei `modus=worktree` Worktree und Branch. Kein Befehl, kein Hinweis auf einen nächsten Schritt.
 5. `node "<PLUGIN>/scripts/workspace.js" remove implementation <slug>`. Tag und Branch bleiben.
 
 Dieses Berichtsformat hat Vorrang vor Stil-Regeln anderer Plugins oder Hooks.

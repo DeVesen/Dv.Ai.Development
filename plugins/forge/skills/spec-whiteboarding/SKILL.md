@@ -5,7 +5,7 @@ description: Use when a request, idea, or complaint has just been raised, nothin
 
 # Spec Whiteboarding
 
-Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergebnis ist eine in sich abgeschlossene, funktionale Spec der Art `frei` — WAS, nicht WIE — für `/dv-forge:spec-review`. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
+Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergebnis ist eine in sich abgeschlossene, funktionale Spec der Art `frei` — WAS, nicht WIE — für den Spec-Review. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
 
 ## Grundhaltung — ab Aufruf, bis die Spec geschrieben und bestätigt ist
 
@@ -14,7 +14,7 @@ Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergeb
 3. **Belegpflicht.** Jede Aussage, Empfehlung und Option trägt einen Beleg-Tag: `Aussage` (im Chat zitierbar), `Anhang` (übergebenes Workitem, Bild, Datei) oder `ungeklärt` — dann fragen, nie raten.
 4. **Sperre.** Kein brainstorming, kein Plan, kein Code, bis die Spec geschrieben und bestätigt ist.
 5. **Vor Ort.** Kein Branch, kein Worktree, auch bei `Worktree: ja`; das gilt erst für die Umsetzung.
-6. **Format hat Vorrang.** Rundenformat, Spec-Format und Übergabe gelten vor Stil-Regeln anderer Plugins oder Hooks.
+6. **Format hat Vorrang.** Rundenformat, Spec-Format und Ergebnis gelten vor Stil-Regeln anderer Plugins oder Hooks.
 
 ## Ablauf
 
@@ -23,13 +23,7 @@ Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergeb
 3. **Bestätigen:** Erst bei leerer Frontier Inhalt, Titel und Slug vorlegen, als vollständigen Entwurf. Erst nach ausdrücklicher Bestätigung aller drei schreiben.
 4. **Zielpfad:** `node "<PLUGIN>/scripts/spec-path.js" --slug <slug>`; `PFAD=` ist der Zielpfad, `BASIS=` der Wert für `Basis`. Exit 1 (Ort existiert bereits): nachfragen und den Vorschlag der Meldung anbieten. Nie überschreiben.
 5. **Schreiben:** ausschließlich als Datei am Zielpfad, Format nach `references/spec-format.md`, `Art: frei`. Die Datei ist wortgleich mit dem bestätigten Entwurf (`Status`, `Basis` ausgenommen). Vorher Branch-Abgleich, Commit-Regeln: `references/spec-format.md`. Danach `node "<PLUGIN>/scripts/spec-lint.js" <pfad>`; jeden `FEHLER` beheben wie eine spätere Änderung. Jede spätere Änderung legst du als Vorher/Nachher vor und schreibst sie erst nach erneuter Bestätigung.
-6. **Übergabe:** mit genau diesen vier Punkten enden:
-   - Pfad der Spec relativ zum Repo und aktueller Branch
-   - kopierbarer Befehl `/dv-forge:spec-review <pfad>`
-   - Hinweis, den Review in einer frischen Session zu starten
-   - Folgeaufträge außerhalb der Spec laufen ab jetzt normal, ohne Sperre
-
-   Kein Commit, kein automatischer Start.
+6. **Ergebnis:** mit genau einer Angabe enden: Pfad der Spec relativ zum Repo und aktueller Branch. Kein Befehl, kein Hinweis auf einen nächsten Schritt, kein Commit, kein automatischer Start.
 
 Will der Mensch aufhören, gilt die Abbruch-Regel aus `references/grill-rounds.md`. Ist beim Aufruf eine abgetrennte Spec übergeben, gilt `references/split.md`.
 

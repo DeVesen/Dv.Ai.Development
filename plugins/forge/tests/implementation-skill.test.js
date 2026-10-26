@@ -87,7 +87,8 @@ test('skill_Body_BranchRuleAndHandover', () => {
   const { body } = readMarkdown(SKILL);
   assert.ok(body.includes('work.js" switch <vorschlag>'));
   assert.ok(body.includes('cd "<R>"'));
-  assert.ok(body.includes('/dv-forge:implementation-review <P>'));
+  assert.ok(body.includes('Kein Befehl, kein Hinweis auf einen nächsten Schritt.'));
+  assert.doesNotMatch(body, /\/dv-forge:|frische Session/);
   assert.ok(body.includes('workspace.js" remove implementation <slug>'));
   assert.match(body, /kein Merge, kein Push/);
   assert.ok(body.includes('ledger.js" archive "<P>" "<W>"'));

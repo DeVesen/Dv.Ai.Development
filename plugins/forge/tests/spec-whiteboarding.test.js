@@ -109,13 +109,10 @@ test('skill_Body_ConfirmsContentTitleAndSlug', () => {
   assert.match(readMarkdown(SKILL).body, /Inhalt, Titel und Slug/);
 });
 
-test('skill_Body_HandsOverWithoutCommit', () => {
+test('skill_Body_EndsWithPathAndBranchOnly', () => {
   const { body } = readMarkdown(SKILL);
-  assert.ok(body.includes('/dv-forge:spec-review <pfad>'));
-  assert.match(body, /aktueller Branch/);
-  assert.match(body, /Folgeaufträge außerhalb der Spec/);
-  assert.match(body, /frischen Session/);
-  assert.match(body, /Kein Commit, kein automatischer Start/);
+  assert.ok(body.includes('6. **Ergebnis:** mit genau einer Angabe enden: Pfad der Spec relativ zum Repo und aktueller Branch. Kein Befehl, kein Hinweis auf einen nächsten Schritt, kein Commit, kein automatischer Start.'));
+  assert.doesNotMatch(body, /\/dv-forge:|frischen Session|Folgeaufträge außerhalb der Spec/);
 });
 
 test('skill_Body_AbortNeedsSecondInformedRefusal', () => {
@@ -150,7 +147,8 @@ test('grillRounds_Rules_FrameQuestionsUnclearAnswersExcludedOptions', () => {
 test('split_Reference_DetachedSpecsAndResume', () => {
   const text = reference('split.md');
   assert.ok(text.includes('Status: abgetrennt aus <slug des Ursprungs> am <YYYY-MM-DD>, Whiteboarding offen'));
-  assert.ok(text.includes('/dv-forge:spec-whiteboarding <pfad>'));
+  assert.ok(text.includes('4. **Ergebnis ergänzen:** je abgetrenntem Teil den Pfad.'));
+  assert.doesNotMatch(text, /\/dv-forge:/);
   assert.match(text, /Start-Stand/);
 });
 
@@ -170,8 +168,7 @@ test('whiteboarding_BranchStatusBasisAndRepeatedQuestions_AreRuled', () => {
   assert.match(read('SKILL.md'), /auch bei `Worktree: ja`/);
 });
 
-test('specWhiteboarding_Body_HandsOverToAFreshSpecReviewWithoutReviewingItself', () => {
+test('specWhiteboarding_Body_ReviewsNothingItself', () => {
   const { body } = readMarkdown(path.join(SKILL_DIR, 'SKILL.md'));
-  assert.ok(body.includes('kopierbarer Befehl `/dv-forge:spec-review <pfad>`'));
   for (const part of ['spec-review-orchestrator', 'review-stand', 'Spec abschließen']) assert.ok(!body.includes(part), part);
 });

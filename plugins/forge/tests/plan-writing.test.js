@@ -116,14 +116,12 @@ test('skill_Body_LinksAllReferencesThatExist', () => {
   }
 });
 
-test('skill_Body_WritesPlanNextToSpecAndHandsOverToPlanReview', () => {
+test('skill_Body_WritesPlanNextToSpecAndNamesOnlyThePlanPath', () => {
   const { body } = readMarkdown(SKILL);
   assert.ok(body.includes('forge-config.js" get Plan-Ablage'));
   assert.match(body, /nie überschreiben/);
-  assert.ok(body.includes('/dv-forge:plan-review <pfad/plan.md>'));
-  assert.match(body, /frischen Session/);
-  assert.match(body, /Spec und Plan committen/);
-  assert.ok(body.includes('Du committest nichts selbst.'));
+  assert.ok(body.includes('**Ergebnis:** nur den Plan-Pfad nennen. Kein Befehl, kein Hinweis auf einen nächsten Schritt, keine Commit-Frage. Du committest nichts selbst.'));
+  assert.doesNotMatch(body, /\/dv-forge:|frischen Session|Spec und Plan committen/);
   assert.match(body, /Andere Specs oder Pläne suchst du nie/);
   assert.ok(body.includes('get Planungs-Skills'));
 });

@@ -202,3 +202,21 @@ test('ablage_ArtifactOutsideAGitRepo_ExitsWithOne', () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Kein Git-Repo/);
 });
+
+test('ablage_AblageHoldsFilesOfAnEarlierRun_EmptiesItBeforeTheReviewCanFail', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  const target = ablageDir(repo, 'x', 'spec-review');
+  fs.mkdirSync(target, { recursive: true });
+  fs.writeFileSync(path.join(target, 'bericht-review.json'), JSON.stringify({ status: 'sauber', resultLine: '**Ergebnis:** ✅ Bereit zum Planen', offersFollowup: false }));
+  fs.writeFileSync(path.join(target, 'abschluss.md'), '# alt\n');
+
+  // Act
+  const result = run(repo, 'ablage', '--art', 'spec', '--spec', spec);
+  const next = run(repo, 'next', '--review', result.stdout.split('\n')[0].replace('BERICHT-REVIEW=', ''));
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(target), false);
+  assert.match(next.stdout, /^NEXT=ende\nGRUND=kein-bericht/);
+});

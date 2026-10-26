@@ -16,7 +16,7 @@ const { isScriptReviewer } = require('./lib/reviewer-names');
 const { ART_OF_ROLE, FollowupError, latest, loadGroups, rolesFor, slugFor } = require('./followup');
 const { SessionChainError } = require('./lib/session-chain-store');
 const { etappeFor } = require('./lib/etappe-of');
-const { ablageDir } = require('./lib/session-chain-ablage');
+const { ablageDir, clearAblage } = require('./lib/session-chain-ablage');
 
 const USAGE = [
   'Aufruf: node prepare.js spec-review <spec> [quelle] [--only <reviewer,...>] [--whiteboarding] [--debug]',
@@ -475,7 +475,7 @@ function recordAblage(review, values, artifact, switches, fresh) {
   const dir = path.dirname(path.resolve(artifact));
   const etappe = etappeFor({ skill: review, dir, slug: values.slug, whiteboarding: switches.has('--whiteboarding') });
   const ablage = ablageDir(dir, values.slug, etappe);
-  if (fresh) fs.rmSync(ablage, { recursive: true, force: true });
+  if (fresh) clearAblage(ablage);
   writeContext(values.W, { ...readContext(values.W), etappe, ablage: toPosix(ablage), artifact: toPosix(path.resolve(artifact)) });
 }
 

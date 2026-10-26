@@ -20,12 +20,18 @@ function ablageDir(dir, slug, etappe) {
   return path.join(chainDir(dir, slug), 'ablage', checkedEtappe(etappe));
 }
 
+// Die eine Stelle, die die Ablage einer Etappe für einen neuen Lauf leert: Orchestrator (`orchestrator-state.js ablage`, vor dem Review)
+// und prepare.js (neues Review) rufen sie auf; Daten eines früheren Laufs erreichen so keinen Orchestrator, auch wenn das Review scheitert.
+function clearAblage(target) {
+  fs.rmSync(target, { recursive: true, force: true });
+}
+
 // Kopiert `files` in die Ablage der Etappe; `fresh` leert den Ordner vorher (ein neues Review beginnt die Ablage neu).
 function storeFiles({ dir, slug, etappe, files, fresh = false }) {
   const missing = files.find((file) => !fs.existsSync(file));
   if (missing) throw new SessionChainError(`Datei fehlt: ${toPosix(missing)}`);
   const target = ablageDir(dir, slug, etappe);
-  if (fresh) fs.rmSync(target, { recursive: true, force: true });
+  if (fresh) clearAblage(target);
   fs.mkdirSync(target, { recursive: true });
   for (const file of files) fs.copyFileSync(file, path.join(target, path.basename(file)));
   return toPosix(target);
@@ -51,7 +57,7 @@ function nextFollowupName(target) {
 // Legt Bericht (.md) und Bericht-Daten (.json) eines Reviews in `target` ab: Ein Review beginnt die Ablage seiner Etappe neu und
 // schreibt `bericht-review`, ein Followup legt `bericht-followup-<n>` daneben. Rückgabe: die Pfade beider Dateien.
 function storeReviewReport({ target, followup, data, text }) {
-  if (!followup) fs.rmSync(target, { recursive: true, force: true });
+  if (!followup) clearAblage(target);
   const name = followup ? nextFollowupName(target) : REVIEW_NAME;
   const json = path.join(target, `${name}.json`);
   const md = path.join(target, `${name}.md`);
@@ -60,4 +66,4 @@ function storeReviewReport({ target, followup, data, text }) {
   return { json: toPosix(json), md: toPosix(md) };
 }
 
-module.exports = { REVIEW_NAME, REVIEW_FILE, ABSCHLUSS_FILE, FOLLOWUP_FILE, ablageDir, storeFiles, storeReviewReport, followupNumbers, followupName, nextFollowupName };
+module.exports = { REVIEW_NAME, REVIEW_FILE, ABSCHLUSS_FILE, FOLLOWUP_FILE, ablageDir, clearAblage, storeFiles, storeReviewReport, followupNumbers, followupName, nextFollowupName };

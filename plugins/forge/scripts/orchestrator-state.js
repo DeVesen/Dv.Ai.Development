@@ -6,7 +6,7 @@
 //   add   --state <ordner> (--spec <S> | --plan <P>) Artefakt nachtragen oder ersetzen (Plan nach plan-writing, Pfade nach start-work)
 //   check --state <ordner> [--ort]                   Hashes prüfen; Exit 1 mit Diff bei Abweichung. --ort: Toplevel und Branch wie beim Start
 //   next  --review <json> [--followup <json>]...     nächster Schritt aus den Bericht-Daten von Review und Followups
-//   ablage --art spec|plan|implementation (--spec <S> | --plan <P>) [--whiteboarding]  Dateien des Laufs in der Ablage der Etappe
+//   ablage --art spec|plan|implementation (--spec <S> | --plan <P>) [--whiteboarding]  Leert die Ablage der Etappe und nennt die Dateien des Laufs
 // Ausgabe: Zeilen `<NAME>=<Wert>`; bei einer Abweichung danach `=== DIFF ===`. Exit 2 bei falschem Aufruf.
 
 const crypto = require('node:crypto');
@@ -16,7 +16,7 @@ const { spawnSync } = require('node:child_process');
 const { maxFollowups, RulesError } = require('./lib/orchestrator-rules');
 const { REVIEW_OF_ART } = require('./lib/orchestrator-report');
 const { ablageFor } = require('./lib/etappe-of');
-const { REVIEW_FILE, ABSCHLUSS_FILE, followupName } = require('./lib/session-chain-ablage');
+const { REVIEW_FILE, ABSCHLUSS_FILE, followupName, clearAblage } = require('./lib/session-chain-ablage');
 const { SessionChainError } = require('./lib/session-chain-store');
 const { toPosix } = require('./lib/posix');
 
@@ -150,13 +150,15 @@ function next(values) {
   return ['NEXT=weiter', ...lines].join('\n');
 }
 
-// Dateien des Laufs in der Ablage der Etappe, in der das Review des Orchestrators seinen Bericht ablegt: Bericht-Daten des Reviews und
-// je Followup-Runde (bis zum Maximum aus der Regeldatei) und der Abschlussbericht des Orchestrators. Die Namen kennt nur die Ablage.
+// Leert die Ablage der Etappe, in der das Review des Orchestrators seinen Bericht ablegt (Daten eines früheren Laufs), und nennt dann die
+// Dateien des Laufs: Bericht-Daten des Reviews, je Followup-Runde (bis zum Maximum aus der Regeldatei) und der Abschlussbericht.
+// Die Namen kennt nur die Ablage.
 function ablage(values) {
   if (!Object.hasOwn(REVIEW_OF_ART, values.art)) throw new StateError(`--art erlaubt: ${Object.keys(REVIEW_OF_ART).join(', ')}`);
   const flag = values.art === 'spec' ? 'spec' : 'plan';
   if (!values[flag]) throw new StateError(`--art ${values.art} braucht --${flag}`);
   const dir = ablageFor({ skill: REVIEW_OF_ART[values.art], artifact: values[flag], whiteboarding: values.whiteboarding === true });
+  clearAblage(dir);
   const rounds = Array.from({ length: maxFollowups() }, (_, index) => `BERICHT-FOLLOWUP-${index + 1}=${toPosix(path.join(dir, `${followupName(index + 1)}.json`))}`);
   return [`BERICHT-REVIEW=${toPosix(path.join(dir, REVIEW_FILE))}`, ...rounds, `ABSCHLUSS=${toPosix(path.join(dir, ABSCHLUSS_FILE))}`].join('\n');
 }

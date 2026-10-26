@@ -44,41 +44,19 @@ function planReport(run) {
   return result.stdout;
 }
 
-test('specReviewReport_SpecEntryWithWorkitem_NamesPlanOrchestratorWithWorkitem', () => {
+test('specReviewReport_SpecEntryWithWorkitem_NamesNoOrchestratorStepAndEqualsReportWithoutEntry', () => {
   // Arrange
   const run = specRun();
+  const baseline = report(run);
   writeEntry({ stage: 'spec', spec: run.spec, wi: 'AB#7' });
 
   // Act
   const text = report(run);
 
   // Assert
+  assert.equal(text, baseline);
   assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zum Planen/);
-  assert.ok(text.includes(`1. Spec committen.\n2. In einer frischen Session den Plan schreiben:\n   \`/dv-forge:plan-orchestrator ${run.spec} AB#7\``), text);
-  assert.equal(text.includes('plan-writing'), false);
-});
-
-test('specReviewReport_SpecEntryWithoutWorkitem_CommandHasNoNumber', () => {
-  // Arrange
-  const run = specRun();
-  writeEntry({ stage: 'spec', spec: run.spec });
-
-  // Act
-  const text = report(run);
-
-  // Assert
-  assert.ok(text.includes(`\`/dv-forge:plan-orchestrator ${run.spec}\`\n`) || text.endsWith(`\`/dv-forge:plan-orchestrator ${run.spec}\``), text);
-});
-
-test('specReviewReport_NoEntry_NamesPlanWritingAsBefore', () => {
-  // Arrange
-  const run = specRun();
-
-  // Act
-  const text = report(run);
-
-  // Assert
-  assert.ok(text.includes(`\`/dv-forge:plan-writing ${run.spec}\``), text);
+  assert.doesNotMatch(text, /plan-orchestrator|plan-writing|Wie es weitergeht|\/dv-forge:/);
 });
 
 test('specReviewReport_EntryOfStagePlan_EqualsReportWithoutEntry', () => {
@@ -128,24 +106,10 @@ test('specReviewReport_EmbeddedRunWithEntry_PrintsSameLinesAndWritesNoEntryIntoJ
   assert.equal(JSON.stringify(data).includes('plan-orchestrator'), false);
 });
 
-test('planReviewReport_EntryOfStageSpec_EqualsReportWithoutEntry', () => {
+test('planReviewReport_SpecEntryThenPlanEntry_NamesNoOrchestratorStepAndEqualsReportWithoutEntry', () => {
   // Arrange
   const run = planRun();
   const baseline = planReport(run);
-  writeEntry({ stage: 'spec', spec: run.spec, wi: '1' });
-
-  // Act
-  const text = planReport(run);
-
-  // Assert
-  assert.equal(text, baseline);
-  assert.ok(text.includes(`\`/dv-forge:implementation ${run.plan}\``), text);
-  assert.equal(text.includes('implementation-orchestrator'), false);
-});
-
-test('planReviewReport_SpecEntryThenPlanEntry_NamesImplementationOrchestratorWithSpecAndWorkitem', () => {
-  // Arrange
-  const run = planRun();
   writeEntry({ stage: 'spec', spec: run.spec, wi: '1' });
   writeEntry({ stage: 'plan', plan: run.plan, spec: run.spec, wi: '2' });
 
@@ -153,10 +117,11 @@ test('planReviewReport_SpecEntryThenPlanEntry_NamesImplementationOrchestratorWit
   const text = planReport(run);
 
   // Assert
+  assert.equal(text, baseline);
   assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zur Umsetzung/);
-  assert.ok(text.includes(`\`/dv-forge:implementation-orchestrator ${run.plan} ${toPosix(path.resolve(run.spec))} 2\``), text);
-  assert.equal(text.includes(`/dv-forge:implementation ${run.plan}`), false);
+  assert.doesNotMatch(text, /implementation-orchestrator|dv-forge:implementation|Wie es weitergeht|committen/);
 });
+
 
 test('planReviewReport_PlanEntryWhoseSpecWasDeleted_EqualsReportWithoutEntry', () => {
   // Arrange

@@ -264,7 +264,6 @@ test('report_TwoNotDone_NichtBereitWithTwoHindrances', () => {
   assert.match(output, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 2 Hindernisse offen/);
   assert.match(output, /- ⚠️ \*\*AC-04\*\*[\s\S]*Nachprüfung: nicht erledigt\./);
   assert.match(output, /### Noch offen · Hindernis\n- 🔴 \*\*AC-04\*\*[^\n]*\n[^\n]*\n- 🔴 \*\*AC-07\*\*/);
-  assert.match(output, /1\. Die 2 Hindernisse haben keinen Lösungsvorschlag\. Das Dokument selbst anpassen, dann erneut prüfen:/);
 });
 
 test('report_NotDoneVerifierFindingAndScriptFinding_ThreeHindrancesWithPlainAngles', () => {
@@ -497,7 +496,6 @@ test('report_FollowupChosenNotDone_ShowsWarningAndKeepsGroupAsHindranceWithItsSe
   assert.match(output, /- ⚠️ \*\*Eindeutige Formulierung\*\*[\s\S]*Nachprüfung: nicht erledigt\./);
   assert.match(output, /### Noch offen · Hindernis\n- 🔴 \*\*Grenzwert festlegen\*\*[\s\S]*- 🔴 \*\*Eindeutige Formulierung\*\*/);
   assert.match(output, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 2 Hindernisse offen/);
-  assert.match(output, /1\. Die 2 Hindernisse einarbeiten lassen \(oder das Dokument selbst anpassen\):\n   `\/dv-forge:review-followup docs\/x\/spec\.md alle`/);
   assert.match(fs.readFileSync(checkedFile(env, 'abschluss', 'scout.md'), 'utf8'), /### 🔴 AC-04[\s\S]*### 🟡 AC-07/);
 });
 
@@ -516,7 +514,6 @@ test('report_FollowupDoneButUnchosenHindranceSaved_NotReadyAndCountMatchesList',
   assert.match(output, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
   assert.doesNotMatch(output, /Bereit zum Planen|plan-writing|Spec committen/);
   assert.equal(output.match(/^- 🔴 /gm).length, 1);
-  assert.match(output, /### Wie es weitergeht\n1\. Das Hindernis einarbeiten lassen \(oder das Dokument selbst anpassen\):\n   `\/dv-forge:review-followup docs\/x\/spec\.md alle`\n2\. Danach erneut prüfen:\n   `\/dv-forge:spec-review docs\/x\/spec\.md`/);
 });
 
 test('report_PlanFollowupDoneButUnchosenHindranceSaved_NotReadyAndNoCommitStep', () => {
@@ -536,7 +533,6 @@ test('report_PlanFollowupDoneButUnchosenHindranceSaved_NotReadyAndNoCommitStep',
   assert.match(result.stdout, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
   assert.match(result.stdout, /### Noch offen · Hindernis\n/);
   assert.doesNotMatch(result.stdout, /committen|Bereit zur Umsetzung|dv-forge:implementation /);
-  assert.match(result.stdout, /`\/dv-forge:plan-review docs\/x\/plan\.md`/);
 });
 
 // Runde 1 mit 🔴 AC-04, Nacharbeit, Nachprüfung mit Urteil zu AC-04 und einer neuen 🔴 an `Deckel` (ohne Scout).
@@ -550,9 +546,7 @@ function newRedOfVerificationRun(env, verdict) {
   flow('verify', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
 }
 
-const SELF_EDIT_ONE = /### Wie es weitergeht\n1\. Das Hindernis hat keinen Lösungsvorschlag\. Das Dokument selbst anpassen, dann erneut prüfen:\n   `\/dv-forge:spec-review docs\/x\/spec\.md`$/;
-
-test('report_OnlyNewRedOfVerificationWithoutScout_NamesSelfEditAndNoFollowup', () => {
+test('report_OnlyNewRedOfVerificationWithoutScout_ListsHindranceAndOffersNoFollowup', () => {
   // Arrange
   const env = setup();
   newRedOfVerificationRun(env, 'erledigt');
@@ -563,11 +557,11 @@ test('report_OnlyNewRedOfVerificationWithoutScout_NamesSelfEditAndNoFollowup', (
   // Assert
   assert.match(output, /^ENDE nicht bereit, 1 × 🔴 offen\n/);
   assert.match(output, /### Noch offen · Hindernis\n- 🔴 \*\*Deckel\*\* · aus: Nachprüfung/);
-  assert.doesNotMatch(output, /review-followup/);
-  assert.match(output.trimEnd(), SELF_EDIT_ONE);
+  assert.doesNotMatch(output, /review-followup|Wie es weitergeht/);
+  assert.equal(embeddedData(env).offersFollowup, false);
 });
 
-test('report_NewRedOfVerificationBesideScoutedHindrance_NamesFollowupOnlyForTheScoutedOne', () => {
+test('report_NewRedOfVerificationBesideScoutedHindrance_OffersFollowupForTheScoutedOne', () => {
   // Arrange
   const env = setup();
   newRedOfVerificationRun(env, 'nicht erledigt');
@@ -578,13 +572,14 @@ test('report_NewRedOfVerificationBesideScoutedHindrance_NamesFollowupOnlyForTheS
 
   // Assert
   assert.match(output, /^ENDE nicht bereit, 2 × 🔴 offen\n/);
-  assert.match(output, /### Wie es weitergeht\n1\. Das Hindernis mit Lösungsvorschlag einarbeiten lassen:\n   `\/dv-forge:review-followup docs\/x\/spec\.md alle`\n2\. Das übrige Hindernis hat keinen Lösungsvorschlag\. Das Dokument selbst anpassen, dann erneut prüfen:\n   `\/dv-forge:spec-review docs\/x\/spec\.md`/);
+  assert.doesNotMatch(output, /review-followup|Wie es weitergeht/);
   const scout = fs.readFileSync(checkedFile(env, 'abschluss', 'scout.md'), 'utf8');
   assert.match(scout, /### 🔴 AC-04/);
   assert.doesNotMatch(scout, /Deckel/);
+  assert.equal(embeddedData(env).offersFollowup, true);
 });
 
-test('report_ScoutFailedWithOpenHindrance_NamesSelfEditAndNoFollowup', () => {
+test('report_ScoutFailedWithOpenHindrance_ListsHindranceAndOffersNoFollowup', () => {
   // Arrange
   const env = setup();
   runWithVerification(env, [RED('AC-04')], [{ location: 'AC-04', status: 'changed', change: CHANGE }], { verdicts: [VERDICT('AC-04', 'nicht erledigt')], findings: [] });
@@ -596,9 +591,9 @@ test('report_ScoutFailedWithOpenHindrance_NamesSelfEditAndNoFollowup', () => {
   // Assert
   assert.match(output, /^ENDE nicht bereit, 1 × 🔴 offen\n/);
   assert.match(output, /- Der Scout ist ausgefallen\./);
-  assert.doesNotMatch(output, /review-followup/);
-  assert.match(output.trimEnd(), SELF_EDIT_ONE);
+  assert.doesNotMatch(output, /review-followup|Wie es weitergeht/);
   assert.equal(fs.existsSync(checkedFile(env, 'abschluss', 'scout.md')), false);
+  assert.equal(embeddedData(env).offersFollowup, false);
 });
 
 test('report_ChangedEntryAtYellowPlace_IsNotListedAsChange', () => {

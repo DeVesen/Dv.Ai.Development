@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { renderReportText, withoutProposalSentence } = require('../scripts/lib/report-text');
+const { renderReportText, summaryOf, withoutProposalSentence } = require('../scripts/lib/report-text');
 
 function base(overrides = {}) {
   return {
@@ -19,8 +19,11 @@ const CHANGE = {
 const HINT = {
   color: 'yellow', title: 'Antwort bei fremdem Token', angles: 'Klarheit', description: 'Offen ist, ob 401 oder 403 kommt.', recommendation: 'immer 401, weil das Frontend nur danach erneuert.', hasProposal: true,
 };
+const RED_WITHOUT_PROPOSAL = { color: 'red', title: 'Neuer Widerspruch', angles: 'Nachprüfung', description: 'Die Grenze widerspricht dem Ablauf.', recommendation: null, hasProposal: false };
+const RED_WITH_PROPOSAL = { ...RED_WITHOUT_PROPOSAL, title: 'Grenzwert', hasProposal: true };
+const HINT_WITHOUT_PROPOSAL = { ...HINT, recommendation: null, hasProposal: false };
 
-test('renderReportText_ReadyWithOneHint_ShowsAgreedLayout', () => {
+test('renderReportText_ReadyWithOneHint_ShowsAgreedLayoutWithoutNextSteps', () => {
   // Act
   const text = renderReportText(base({
     changes: [CHANGE], decisions: [{ title: 'Token-Format', decision: 'sofort umsetzen, Risiko akzeptiert' }], open: [HINT],
@@ -49,13 +52,6 @@ test('renderReportText_ReadyWithOneHint_ShowsAgreedLayout', () => {
     '',
     '### Hinweise zum Ablauf',
     '- Der Prüfer für Fachbegriffe wurde nicht gestartet, weil keine Profile vorliegen. Diese Prüfung fehlt.',
-    '',
-    '### Wie es weitergeht',
-    '1. Den Hinweis einarbeiten lassen (optional):',
-    '   `/dv-forge:review-followup docs/specs/x.md alle`',
-    '2. Spec committen.',
-    '3. In einer frischen Session den Plan schreiben:',
-    '   `/dv-forge:plan-writing docs/specs/x.md`',
   ].join('\n'));
 });
 
@@ -68,11 +64,6 @@ test('renderReportText_ReadyWithoutAnything_OmitsEmptySectionsAndTopic', () => {
     '## Spec-Review · Ergebnis',
     '**Ergebnis:** ✅ Bereit zum Planen',
     'Ablauf: Prüfung aus einem Blickwinkel, keine Überarbeitung, keine Nachprüfung.',
-    '',
-    '### Wie es weitergeht',
-    '1. Spec committen.',
-    '2. In einer frischen Session den Plan schreiben:',
-    '   `/dv-forge:plan-writing docs/specs/x.md`',
   ].join('\n'));
 });
 
@@ -83,11 +74,10 @@ test('renderReportText_PlanReviewReadyWithTwoHints_UsesPlanWording', () => {
   // Assert
   assert.match(text, /\*\*Ergebnis:\*\* ✅ Bereit zur Umsetzung · 2 kleine Hinweise offen/);
   assert.match(text, /### Noch offen · kein Hindernis für die Umsetzung/);
-  assert.match(text, /1\. Die 2 Hinweise einarbeiten lassen \(optional\):\n   `\/dv-forge:review-followup docs\/p\/plan\.md alle`\n2\. Spec und Plan committen \(ich frage dich danach\)\.\n3\. In einer frischen Session umsetzen:\n   `\/dv-forge:implementation docs\/p\/plan\.md`/);
   assert.equal(text.includes('Was sich'), false);
 });
 
-test('renderReportText_Blocked_ShowsHindrancesAndRerunStep', () => {
+test('renderReportText_Blocked_ShowsHindrancesWithoutRecommendationForUnscoutedOnes', () => {
   // Arrange
   const hindrance = { color: 'red', title: 'Token-Format', angles: 'Widerspruchsfreiheit', description: 'Das Format ist nicht belegt.', recommendation: null, hasProposal: true };
 
@@ -98,10 +88,9 @@ test('renderReportText_Blocked_ShowsHindrancesAndRerunStep', () => {
   assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 2 Hindernisse offen/);
   assert.match(text, /### Noch offen · Hindernis\n- 🔴 \*\*Token-Format\*\* · aus: Widerspruchsfreiheit\n  Das Format ist nicht belegt\.\n- 🔴 \*\*Zweites\*\*/);
   assert.equal(text.includes('Vorschlag (empfohlen)'), false);
-  assert.match(text, /1\. Die 2 Hindernisse einarbeiten lassen \(oder das Dokument selbst anpassen\):\n   `\/dv-forge:review-followup docs\/specs\/x\.md alle`\n2\. Danach erneut prüfen:\n   `\/dv-forge:spec-review docs\/specs\/x\.md`/);
 });
 
-test('renderReportText_QuestionsOpen_SpecAndPlanSteps', () => {
+test('renderReportText_QuestionsOpen_ListsTheQuestionsForSpecAndPlan', () => {
   // Act
   const spec = renderReportText(base({ status: 'Fragen offen', questions: ['**Leere Eingabe** (betrifft: Eingabe)', '**Zweite Frage** (betrifft: Ablauf)'] }));
   const plan = renderReportText(base({ review: 'plan-review', status: 'Fragen offen', artifact: 'docs/p/plan.md', spec: 'docs/p/spec.md', questions: ['Die Spec legt X nicht fest.'] }));
@@ -109,28 +98,16 @@ test('renderReportText_QuestionsOpen_SpecAndPlanSteps', () => {
   // Assert
   assert.match(spec, /\*\*Ergebnis:\*\* ❓ 2 Fragen offen/);
   assert.match(spec, /### Offene Fragen\n- \*\*Leere Eingabe\*\* \(betrifft: Eingabe\)\n- \*\*Zweite Frage\*\*/);
-  assert.match(spec, /1\. Die Fragen beantworten, indem du die Prüfung erneut startest:\n   `\/dv-forge:spec-review docs\/specs\/x\.md`/);
   assert.match(plan, /\*\*Ergebnis:\*\* ❓ 1 Frage offen/);
   assert.match(plan, /### Offene Fragen\n- Die Spec legt X nicht fest\./);
-  assert.match(plan, /1\. Die Spec anpassen\.\n2\. Die Spec prüfen:\n   `\/dv-forge:spec-review docs\/p\/spec\.md`\n3\. Danach den Plan erneut prüfen:\n   `\/dv-forge:plan-review docs\/p\/plan\.md`/);
 });
 
-test('renderReportText_PlanQuestionsWithoutSpecPath_SkipsTheSpecStep', () => {
-  // Act
-  const text = renderReportText(base({ review: 'plan-review', status: 'Fragen offen', artifact: 'docs/p/plan.md', questions: ['Frage?'] }));
-
-  // Assert
-  assert.match(text, /1\. Die Spec anpassen\.\n2\. Danach den Plan erneut prüfen:/);
-  assert.equal(text.includes('null'), false);
-});
-
-test('renderReportText_Incomplete_NamesFailedAndOffersRerun', () => {
+test('renderReportText_Incomplete_NamesWhatFailed', () => {
   // Act
   const text = renderReportText(base({ status: 'unvollständig, ausgefallen: nachprüfer', failedLabels: ['Nachprüfung', 'Klarheit'] }));
 
   // Assert
   assert.match(text, /\*\*Ergebnis:\*\* ⚠️ Unvollständig · Nachprüfung, Klarheit ausgefallen/);
-  assert.match(text, /1\. Den Lauf in einer frischen Session erneut starten:\n   `\/dv-forge:spec-review docs\/specs\/x\.md`/);
 });
 
 test('renderReportText_ChangeVariants_ShowEvidenceChoiceAndVerdict', () => {
@@ -161,134 +138,61 @@ test('renderReportText_Blocks_AreSeparatedByOneBlankLine', () => {
 
   // Assert
   assert.equal(/\n\n\n/.test(text), false);
-  assert.ok(text.split('\n\n').length >= 4);
-});
-
-const RED_WITHOUT_PROPOSAL = { color: 'red', title: 'Neuer Widerspruch', angles: 'Nachprüfung', description: 'Die Grenze widerspricht dem Ablauf.', recommendation: null, hasProposal: false };
-
-test('renderReportText_BlockedWithoutAnyProposal_NamesSelfEditInsteadOfFollowup', () => {
-  // Act
-  const spec = renderReportText(base({ status: 'nicht bereit, 2 × 🔴 offen', openRed: 2, open: [RED_WITHOUT_PROPOSAL, { ...RED_WITHOUT_PROPOSAL, title: 'Zweites' }] }));
-  const plan = renderReportText(base({ review: 'plan-review', artifact: 'docs/p/plan.md', status: 'nicht bereit, 1 × 🔴 offen', openRed: 1, open: [RED_WITHOUT_PROPOSAL] }));
-
-  // Assert
-  assert.equal(spec.includes('review-followup'), false);
-  assert.match(spec, /### Wie es weitergeht\n1\. Die 2 Hindernisse haben keinen Lösungsvorschlag\. Das Dokument selbst anpassen, dann erneut prüfen:\n   `\/dv-forge:spec-review docs\/specs\/x\.md`$/);
-  assert.equal(plan.includes('review-followup'), false);
-  assert.match(plan, /### Wie es weitergeht\n1\. Das Hindernis hat keinen Lösungsvorschlag\. Das Dokument selbst anpassen, dann erneut prüfen:\n   `\/dv-forge:plan-review docs\/p\/plan\.md`$/);
-});
-
-test('renderReportText_BlockedWithSomeProposals_NamesFollowupOnlyForThoseWithProposal', () => {
-  // Arrange
-  const withProposal = { ...RED_WITHOUT_PROPOSAL, title: 'Grenzwert', hasProposal: true };
-
-  // Act
-  const one = renderReportText(base({ status: 'nicht bereit, 2 × 🔴 offen', openRed: 2, open: [withProposal, RED_WITHOUT_PROPOSAL] }));
-  const many = renderReportText(base({ status: 'nicht bereit, 4 × 🔴 offen', openRed: 4, open: [withProposal, withProposal, RED_WITHOUT_PROPOSAL, RED_WITHOUT_PROPOSAL] }));
-
-  // Assert
-  assert.match(one, /### Wie es weitergeht\n1\. Das Hindernis mit Lösungsvorschlag einarbeiten lassen:\n   `\/dv-forge:review-followup docs\/specs\/x\.md alle`\n2\. Das übrige Hindernis hat keinen Lösungsvorschlag\. Das Dokument selbst anpassen, dann erneut prüfen:\n   `\/dv-forge:spec-review docs\/specs\/x\.md`$/);
-  assert.match(many, /1\. Die 2 Hindernisse mit Lösungsvorschlag einarbeiten lassen:\n[^\n]*alle`\n2\. Die 2 übrigen Hindernisse haben keinen Lösungsvorschlag\./);
-});
-
-test('renderReportText_HintsWithoutProposal_NamesOptionalSelfEditInsteadOfFollowup', () => {
-  // Arrange
-  const bare = { ...HINT, recommendation: null, hasProposal: false };
-
-  // Act
-  const none = renderReportText(base({ open: [bare, bare] }));
-  const mixed = renderReportText(base({ open: [HINT, bare] }));
-
-  // Assert
-  assert.equal(none.includes('review-followup'), false);
-  assert.match(none, /### Wie es weitergeht\n1\. Die 2 Hinweise haben keinen Lösungsvorschlag\. Bei Bedarf das Dokument selbst anpassen \(optional\)\.\n2\. Spec committen\./);
-  assert.match(mixed, /### Wie es weitergeht\n1\. Den Hinweis mit Lösungsvorschlag einarbeiten lassen \(optional\):\n   `\/dv-forge:review-followup docs\/specs\/x\.md alle`\n2\. Der übrige Hinweis hat keinen Lösungsvorschlag\. Bei Bedarf das Dokument selbst anpassen \(optional\)\.\n3\. Spec committen\./);
+  assert.ok(text.split('\n\n').length >= 3);
 });
 
 test('renderReportText_CleanStatusWithOpenHindrance_ReportsNotReady', () => {
   // Arrange: Followup, dessen Status nur die gewählten Gruppen zählt; eine nicht gewählte 🔴 bleibt offen.
-  const unchosen = { ...RED_WITHOUT_PROPOSAL, title: 'Grenzwert', hasProposal: true };
-
-  // Act
-  const text = renderReportText(base({ followup: true, title: 'Review-Followup (spec-review)', chosenCount: 1, status: 'sauber nach Nachprüfung', openRed: 1, open: [unchosen] }));
+  const text = renderReportText(base({ followup: true, title: 'Review-Followup (spec-review)', chosenCount: 1, status: 'sauber nach Nachprüfung', openRed: 1, open: [RED_WITH_PROPOSAL] }));
 
   // Assert
   assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
-  assert.match(text, /### Wie es weitergeht\n1\. Das Hindernis einarbeiten lassen \(oder das Dokument selbst anpassen\):\n   `\/dv-forge:review-followup docs\/specs\/x\.md alle`\n2\. Danach erneut prüfen:/);
   assert.equal(text.includes('plan-writing'), false);
 });
 
-const PLAN_CHAIN = { stage: 'plan', slug: 'x', plan: '/repo/docs/forge/x/plan.md', spec: '/repo/docs/forge/x/spec.md', wi: '311404' };
+const KINDS = {
+  ready: {},
+  hints: { open: [HINT, HINT_WITHOUT_PROPOSAL] },
+  blocked: { status: 'nicht bereit, 2 × 🔴 offen', openRed: 2, open: [RED_WITH_PROPOSAL, RED_WITHOUT_PROPOSAL] },
+  questions: { status: 'Fragen offen', questions: ['Frage?'] },
+  incomplete: { status: 'unvollständig, ausgefallen: nachprüfer', failedLabels: ['Nachprüfung'] },
+};
 
-function planBase(overrides = {}) {
-  return base({ review: 'plan-review', title: 'Plan-Review', artifact: '/repo/docs/forge/x/plan.md', spec: '/repo/docs/forge/x/spec.md', ...overrides });
+for (const review of ['spec-review', 'plan-review']) {
+  for (const [kind, overrides] of Object.entries(KINDS)) {
+    test(`renderReportText_${review}_${kind}_NamesNoNextStepNoCommandAndNoCommitHint`, () => {
+      // Act
+      const text = renderReportText(base({ review, artifact: 'docs/p/x.md', spec: 'docs/p/spec.md', ...overrides }));
+
+      // Assert
+      assert.equal(/Wie es weitergeht/.test(text), false);
+      assert.equal(/\/dv-forge:/.test(text), false);
+      assert.equal(/frischen? Session|committen/.test(text), false);
+    });
+  }
 }
 
-test('renderReportText_ReadyPlanFollowupWithPlanEntry_NamesImplementationOrchestratorWithSpecAndWorkitem', () => {
-  // Act
-  const text = renderReportText(planBase({ followup: true, chosenCount: 1, chain: PLAN_CHAIN }));
+const OFFER_CASES = [
+  ['ready', {}, false],
+  ['hints with proposal', { open: [HINT] }, true],
+  ['hints without proposal', { open: [HINT_WITHOUT_PROPOSAL, HINT_WITHOUT_PROPOSAL] }, false],
+  ['blocked, all without proposal', { status: 'nicht bereit, 2 × 🔴 offen', openRed: 2, open: [RED_WITHOUT_PROPOSAL, RED_WITHOUT_PROPOSAL] }, false],
+  ['blocked, one with proposal', { status: 'nicht bereit, 2 × 🔴 offen', openRed: 2, open: [RED_WITH_PROPOSAL, RED_WITHOUT_PROPOSAL] }, true],
+  ['blocked, only the hint has a proposal', { status: 'nicht bereit, 1 × 🔴 offen', openRed: 1, open: [RED_WITHOUT_PROPOSAL, HINT] }, false],
+  ['questions', { status: 'Fragen offen', questions: ['Frage?'], open: [HINT] }, false],
+  ['incomplete', { status: 'unvollständig, ausgefallen: x', failedLabels: ['x'], open: [HINT] }, false],
+];
 
-  // Assert
-  assert.ok(text.endsWith([
-    '### Wie es weitergeht',
-    '1. Spec und Plan committen (ich frage dich danach).',
-    '2. In einer frischen Session umsetzen:',
-    '   `/dv-forge:implementation-orchestrator /repo/docs/forge/x/plan.md /repo/docs/forge/x/spec.md 311404`',
-  ].join('\n')), text);
-  assert.equal(text.includes('/dv-forge:implementation /repo'), false);
-});
+for (const [name, overrides, expected] of OFFER_CASES) {
+  test(`summaryOf_${name.replace(/\W+/g, '_')}_OffersFollowup${expected}`, () => {
+    // Act
+    const summary = summaryOf(base(overrides));
 
-test('renderReportText_ReadyPlanWithPlanEntryWithoutWorkitem_CommandHasNoNumber', () => {
-  // Act
-  const text = renderReportText(planBase({ chain: { ...PLAN_CHAIN, wi: undefined } }));
-
-  // Assert
-  assert.ok(text.endsWith('   `/dv-forge:implementation-orchestrator /repo/docs/forge/x/plan.md /repo/docs/forge/x/spec.md`'), text);
-});
-
-test('renderReportText_PlanHintsWithPlanEntry_HintStepsStayBeforeImplementationOrchestrator', () => {
-  // Arrange
-  const hint = { color: 'yellow', title: 'Reihenfolge', angles: 'Machbarkeit', description: 'Task 2 vor Task 1.', recommendation: 'tauschen, weil Task 2 die Basis ist.', hasProposal: true };
-
-  // Act
-  const text = renderReportText(planBase({ open: [hint], chain: PLAN_CHAIN }));
-
-  // Assert
-  const steps = text.slice(text.indexOf('### Wie es weitergeht'));
-  assert.match(steps, /^### Wie es weitergeht\n1\. Den Hinweis einarbeiten lassen \(optional\):\n {3}`\/dv-forge:review-followup \/repo\/docs\/forge\/x\/plan\.md alle`\n2\. Spec und Plan committen \(ich frage dich danach\)\.\n3\. In einer frischen Session umsetzen:\n {3}`\/dv-forge:implementation-orchestrator /);
-});
-
-test('renderReportText_BlockedPlanWithPlanEntry_EqualsReportWithoutEntry', () => {
-  // Arrange
-  const red = { color: 'red', title: 'Task 3 fehlt', angles: 'Abdeckung', description: 'AC-04 hat keinen Test.', recommendation: null, hasProposal: false };
-  const blocked = { status: 'nicht bereit, 1 × 🔴 offen', openRed: 1, open: [red] };
-
-  // Act & Assert
-  assert.equal(renderReportText(planBase({ ...blocked, chain: PLAN_CHAIN })), renderReportText(planBase(blocked)));
-});
-
-test('renderReportText_PlanEntryWithOtherSpecThanReportOption_CommandNamesSpecOfReportOption', () => {
-  // Arrange
-  const chain = { ...PLAN_CHAIN, spec: '/alt/docs/forge/x/spec.md' };
-
-  // Act
-  const text = renderReportText(planBase({ chain }));
-
-  // Assert
-  assert.ok(text.endsWith('   `/dv-forge:implementation-orchestrator /repo/docs/forge/x/plan.md /repo/docs/forge/x/spec.md 311404`'), text);
-  assert.equal(text.includes('/alt/docs/forge/x/spec.md'), false);
-});
-
-test('renderReportText_ReadySpecWithSpecEntry_OnlyCommandChanges', () => {
-  // Arrange
-  const chain = { stage: 'spec', slug: 'x', spec: 'docs/specs/x.md', wi: 'AB#7' };
-
-  // Act
-  const text = renderReportText(base({ chain }));
-
-  // Assert
-  assert.ok(text.endsWith('1. Spec committen.\n2. In einer frischen Session den Plan schreiben:\n   `/dv-forge:plan-orchestrator docs/specs/x.md AB#7`'), text);
-});
+    // Assert
+    assert.equal(summary.offersFollowup, expected);
+    assert.equal(Object.hasOwn(summary, 'steps'), false);
+  });
+}
 
 test('withoutProposalSentence_CountAndOthers_ChoosesSingularPluralAndRestWording', () => {
   // Act

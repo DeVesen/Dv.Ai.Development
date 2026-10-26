@@ -4,6 +4,7 @@
 // `openRed`: Zahl der offenen Hindernisse; ist sie größer 0, gilt der Bericht auch bei Status `sauber …` als nicht bereit
 // (Followup: der Status zählt nur die gewählten Gruppen). `open[].hasProposal`: die Gruppe hat einen gesicherten
 // Scout-Vorschlag; nur solche Gruppen erreicht `/dv-forge:review-followup <A> alle`.
+// Der Bericht nennt keinen nächsten Schritt; die Session-Kette entscheidet über den Fortgang.
 
 const READY = { 'spec-review': 'Bereit zum Planen', 'plan-review': 'Bereit zur Umsetzung', 'implementation-review': 'Bereit zum Abschließen' };
 const DOCUMENT_IN = { 'spec-review': 'in der Spec', 'plan-review': 'im Plan' };
@@ -67,18 +68,6 @@ function withWorkitem(command, workitem) {
   return workitem ? `${command} ${workitem}` : command;
 }
 
-// `input.chain`: Ketten-Eintrag der eigenen Stufe; mit ihm wechselt nur der Befehl zur nächsten Stufe, Commit-Zeile und Beschriftung bleiben.
-// Vom Eintrag zählt nur das Workitem; die Spec im Befehl kommt aus der Berichtsoption `input.spec`, ersatzweise aus dem Eintrag.
-function closingSteps(input) {
-  const { artifact, chain } = input;
-  if (input.review === 'spec-review') {
-    const plan = chain ? withWorkitem(`/dv-forge:plan-orchestrator ${artifact}`, chain.wi) : `/dv-forge:plan-writing ${artifact}`;
-    return ['Spec committen.', ['In einer frischen Session den Plan schreiben:', plan]];
-  }
-  const implement = chain ? withWorkitem(`/dv-forge:implementation-orchestrator ${artifact} ${input.spec ?? chain.spec}`, chain.wi) : `/dv-forge:implementation ${artifact}`;
-  return ['Spec und Plan committen (ich frage dich danach).', ['In einer frischen Session umsetzen:', implement]];
-}
-
 // Zeilen zu Worktree, Abschluss-Schritt und Push, geteilt vom Einzel-Bericht der Implementierung und vom Orchestrator-Bericht.
 function worktreeLine(worktree) {
   return `Worktree bleibt: ${worktree}`;
@@ -100,10 +89,6 @@ function questionSteps(input) {
     ...(input.spec ? [['Die Spec prüfen:', `/dv-forge:spec-review ${input.spec}`]] : []),
     ['Danach den Plan erneut prüfen:', rerun],
   ];
-}
-
-function followupCommand(input) {
-  return `/dv-forge:review-followup ${input.artifact} alle`;
 }
 
 // Zahl der offenen Gruppen einer Farbe, die einen Scout-Vorschlag haben; fehlt `hasProposal`, gilt: kein Vorschlag.
@@ -157,19 +142,6 @@ const DOCUMENT_TEXTS = {
   selfFixOptional: 'Bei Bedarf das Dokument selbst anpassen (optional).',
 };
 
-function steps(input, kind, open) {
-  const rerun = `/dv-forge:${input.review} ${input.artifact}`;
-  const followup = followupCommand(input);
-  if (kind === 'incomplete') return [['Den Lauf in einer frischen Session erneut starten:', rerun]];
-  if (kind === 'questions') return questionSteps(input);
-  if (kind === 'blocked') return blockedSteps({ openRed: input.openRed, proposed: proposedCount(open, 'red'), followup, rerun, orSelf: DOCUMENT_TEXTS.orSelf, selfFix: DOCUMENT_TEXTS.selfFix });
-  if (kind === 'hints') {
-    const hints = open.filter((entry) => entry.color === 'yellow').length;
-    return hintSteps({ hints, proposed: proposedCount(open, 'yellow'), followup, selfFix: DOCUMENT_TEXTS.selfFixOptional, closing: closingSteps(input) });
-  }
-  return closingSteps(input);
-}
-
 function stepLines(list) {
   return list.flatMap((step, index) => {
     const [text, command] = Array.isArray(step) ? step : [step, null];
@@ -181,12 +153,19 @@ function section(title, lines) {
   return lines.length > 0 ? [[`### ${title}`, ...lines]] : [];
 }
 
-// Art, Ergebnis-Zeile, Ablauf und nächste Schritte; `offersFollowup`: die Schritte nennen `/dv-forge:review-followup`.
+// Ob ein Followup (`review-followup <A> alle`) etwas erreicht: nur offene Hindernisse bzw. Hinweise mit gesichertem Scout-Vorschlag.
+// Fragen, ein Ausfall und ein bereiter Stand bieten keinen Followup an.
+function offersFollowup(kind, open) {
+  if (kind === 'blocked') return proposedCount(open, 'red') > 0;
+  if (kind === 'hints') return proposedCount(open, 'yellow') > 0;
+  return false;
+}
+
+// Art, Ergebnis-Zeile und Ablauf; `offersFollowup`: ein Followup erreicht offene Gruppen mit Scout-Vorschlag.
 function summaryOf(input) {
   const hints = input.open.filter((entry) => entry.color === 'yellow').length;
   const kind = kindOf(input, hints);
-  const list = steps(input, kind, input.open);
-  return { kind, resultLine: resultLine(input, kind, hints), flowLine: flowLine(input), steps: list, offersFollowup: JSON.stringify(list).includes(followupCommand(input)) };
+  return { kind, resultLine: resultLine(input, kind, hints), flowLine: flowLine(input), offersFollowup: offersFollowup(kind, input.open) };
 }
 
 function renderReportText(input) {
@@ -202,11 +181,10 @@ function renderReportText(input) {
     ...section('Noch offen · Hindernis', hindrances.flatMap(openLines)),
     ...section(`Noch offen · kein Hindernis für ${NEXT_FOR[input.review]}`, hintEntries.flatMap(openLines)),
     ...section('Hinweise zum Ablauf', input.notes.map((note) => `- ${note}`)),
-    ['### Wie es weitergeht', ...stepLines(summary.steps)],
   ].map((block) => block.join('\n')).join('\n\n');
 }
 
 module.exports = {
-  renderReportText, summaryOf, resultLine, changeLines, openLines, section, stepLines, viewpointsPhrase, proposedCount, withoutProposalSentence, blockedSteps, hintSteps, questionSteps,
+  renderReportText, summaryOf, offersFollowup, resultLine, changeLines, openLines, section, stepLines, viewpointsPhrase, proposedCount, withoutProposalSentence, blockedSteps, hintSteps, questionSteps,
   withWorkitem, worktreeLine, finishStepFor, pushLine, DOCUMENT_TEXTS,
 };

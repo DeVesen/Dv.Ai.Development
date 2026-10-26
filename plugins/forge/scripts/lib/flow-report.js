@@ -56,9 +56,8 @@ function collect(options) {
 
 // Berichtsdaten, wie sie ein eingebetteter Lauf und die Ablage schreiben.
 function reportData(input, status) {
-  const { steps: _steps, ...summary } = summaryOf(input);
-  const { chain: _chain, ...data } = input;
-  return { summary, data: { format: FORMAT, status, ...summary, ...data } };
+  const summary = summaryOf(input);
+  return { summary, data: { format: FORMAT, status, ...summary, ...input } };
 }
 
 // Eingebetteter Lauf: Die Berichtsdaten gehen als JSON nach `reportFile`; stdout nennt Status, Ergebnis, Followup-Fähigkeit und Datei.

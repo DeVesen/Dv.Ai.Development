@@ -51,7 +51,7 @@ const ETAPPEN_BRIEFS = {
   },
   grill: {
     modell: 'opus', titel: 'Grill', pflicht: ['spec'],
-    command: (v) => `/dv-forge:spec-grilling ${v.spec}`,
+    command: (v) => `/dv-forge:spec-grilling "${v.spec}"`,
     auftrag: () => [
       'Schreib den Abschlussbericht von spec-grilling (Liste der geänderten Stellen, neue W-Einträge) in eine Datei und übergib sie mit `--inhalt "<datei>"`.',
       'Jede geänderte Glossar- oder ADR-Datei mit `--datei`.',
@@ -59,12 +59,12 @@ const ETAPPEN_BRIEFS = {
   },
   'spec-review': {
     modell: 'sonnet', titel: 'Spec-Review', pflicht: ['spec'],
-    command: (v) => withWi(`/dv-forge:spec-review-orchestrator ${v.spec}`, v.wi),
+    command: (v) => withWi(`/dv-forge:spec-review-orchestrator "${v.spec}"`, v.wi),
     auftrag: () => ['Der Skill committet die Spec selbst. `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.'],
   },
   'spec-nacharbeit': {
     modell: 'opus', titel: 'Spec-Nacharbeit', pflicht: ['spec', 'quelle'],
-    command: (v) => `Spec-Nacharbeit ${v.spec}`,
+    command: (v) => `Spec-Nacharbeit "${v.spec}"`,
     auftrag: (v) => [
       `Kein Skill. Lies den Bericht der letzten Review-Etappe: ${v.quelle}.`,
       'Kläre mit dem Menschen die offenen ❓ und die 🔴 ohne Vorschlag, eine Frage nach der anderen.',
@@ -75,16 +75,16 @@ const ETAPPEN_BRIEFS = {
   },
   planning: {
     modell: 'opus', titel: 'Planning', pflicht: ['spec'],
-    command: (v) => withWi(`/dv-forge:plan-orchestrator ${v.spec}`, v.wi),
+    command: (v) => withWi(`/dv-forge:plan-orchestrator "${v.spec}"`, v.wi),
     auftrag: () => ['Der Skill committet nicht. Berichtsdatei mit `--plan "<plan.md>"`; `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.'],
   },
   'plan-review': {
     modell: 'sonnet', titel: 'Plan-Review', pflicht: ['plan', 'spec'],
-    command: (v) => `/dv-forge:plan-review ${v.plan} ${v.spec}`,
+    command: (v) => `/dv-forge:plan-review "${v.plan}" "${v.spec}"`,
     auftrag: (v) => [
       `Vor dem Skill einmal \`node "${STATE_SCRIPT}" ablage --art plan --plan "${v.plan}"\`: Die Zeilen \`BERICHT-REVIEW\` (<BR>) und \`BERICHT-FOLLOWUP-<n>\` (<BFn>) sind die Bericht-Daten des Laufs.`,
       'Alles in einem Turn: Nach der Review-Statuszeile von `plan-review` arbeitest du ohne Turn-Ende weiter.',
-      `Nach \`plan-review\` und nach jeder Runde: \`node "${STATE_SCRIPT}" next --review "<BR>"\`, dazu \`--followup "<BFn>"\` je gelaufener Runde. \`NEXT=followup\`: Runde \`RUNDE\` mit \`dv-forge:review-followup\` und \`${v.plan} alle --spec ${v.spec}\`. Sonst keine weitere Runde; Maximum und Stillstand-Regel stehen in \`${RULES_FILE}\`.`,
+      `Nach \`plan-review\` und nach jeder Runde: \`node "${STATE_SCRIPT}" next --review "<BR>"\`, dazu \`--followup "<BFn>"\` je gelaufener Runde. \`NEXT=followup\`: Runde \`RUNDE\` mit \`dv-forge:review-followup\` und \`"${v.plan}" alle --spec "${v.spec}"\`. Sonst keine weitere Runde; Maximum und Stillstand-Regel stehen in \`${RULES_FILE}\`.`,
       'Endet `plan-review`, `review-followup`, `ablage` oder `next` mit Exit ungleich 0 oder ohne Review-Statuszeile: keine weitere Runde, Status `needs-user` mit der Meldung.',
       'Den Plan schreibst du nicht neu. Du committest nichts; Spec und Plan committet die Leit-Session nach dem GO.',
       `Berichtsdatei mit \`--plan "${v.plan}"\`; \`--inhalt\` ist die \`.md\`-Datei, die die letzte Review-Statuszeile nach \`Bericht:\` nennt.`,
@@ -92,7 +92,7 @@ const ETAPPEN_BRIEFS = {
   },
   'plan-nacharbeit': {
     modell: 'opus', titel: 'Plan-Nacharbeit', pflicht: ['plan', 'spec', 'quelle'],
-    command: (v) => `Plan-Nacharbeit ${v.plan} ${v.spec}`,
+    command: (v) => `Plan-Nacharbeit "${v.plan}" "${v.spec}"`,
     auftrag: (v) => [
       `Kein Skill. Lies den Bericht der letzten Review-Etappe: ${v.quelle}.`,
       'Kläre mit dem Menschen die offenen ❓ und die 🔴 ohne Vorschlag, eine Frage nach der anderen.',

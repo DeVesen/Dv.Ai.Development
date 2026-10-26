@@ -8,9 +8,10 @@ const { pointLine } = require('./session-chain-points');
 const NONE = 'Keine.';
 const CHOICES = { spec: 'Planning · Spec-Nacharbeit · Stopp', go: 'GO · Plan-Nacharbeit · Stopp' };
 // Codewort für den späteren Einstieg je Haltepunkt, an dem gestoppt wurde.
+// Pfade stehen in Anführungszeichen: Die Zeile wird als Befehl getippt oder als `$ARGUMENTS` an prepare.js gereicht, wo die Shell sie zerlegt.
 const RESUME = {
-  spec: (state) => `/dv-forge:session-orchestrator planning ${state.spec}`,
-  go: (state) => `/dv-forge:session-orchestrator implementation ${state.spec} ${state.plan}`,
+  spec: (state) => `/dv-forge:session-orchestrator planning "${state.spec}"`,
+  go: (state) => `/dv-forge:session-orchestrator implementation "${state.spec}" "${state.plan}"`,
 };
 
 function pointLines(points) {
@@ -27,7 +28,7 @@ function recommendationLine({ empfehlung, grund }) {
 
 // Aufruf der Umsetzung, wie ihn der GO-Haltepunkt zeigt und die Umsetzungs-Etappe startet; ohne Workitem ohne Nummer.
 function goCall({ plan, spec, wi, basis }) {
-  return `/dv-forge:implementation-orchestrator ${plan} ${spec}${wi ? ` ${wi}` : ''} --base ${basis}`;
+  return `/dv-forge:implementation-orchestrator "${plan}" "${spec}"${wi ? ` ${wi}` : ''} --base ${basis}`;
 }
 
 // `abbruch`: Zeile `Abbruch: …` des Orchestrator-Berichts, wenn die Followup-Runden trotz 🔴 endeten.

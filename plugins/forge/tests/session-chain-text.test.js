@@ -38,8 +38,8 @@ test('goCall_WithAndWithoutWorkitem_FillsAllValues', () => {
   const [withWi, withoutWi] = [{ ...GO_VALUES, wi: '311021' }, GO_VALUES].map(goCall);
 
   // Assert
-  assert.equal(withWi, '/dv-forge:implementation-orchestrator C:/r/docs/forge/x/plan.md C:/r/docs/forge/x/spec.md 311021 --base dev');
-  assert.equal(withoutWi, '/dv-forge:implementation-orchestrator C:/r/docs/forge/x/plan.md C:/r/docs/forge/x/spec.md --base dev');
+  assert.equal(withWi, '/dv-forge:implementation-orchestrator "C:/r/docs/forge/x/plan.md" "C:/r/docs/forge/x/spec.md" 311021 --base dev');
+  assert.equal(withoutWi, '/dv-forge:implementation-orchestrator "C:/r/docs/forge/x/plan.md" "C:/r/docs/forge/x/spec.md" --base dev');
 });
 
 test('goHalt_AfterPlanReview_ShowsPathsResultYellowAndFilledCall', () => {
@@ -55,7 +55,7 @@ test('goHalt_AfterPlanReview_ShowsPathsResultYellowAndFilledCall', () => {
     '**Empfehlung:** GO',
     '**Offene Punkte:**',
     '- 🟡 Begriff · spec-review',
-    '**Aufruf:** /dv-forge:implementation-orchestrator C:/r/docs/forge/x/plan.md C:/r/docs/forge/x/spec.md 311021 --base dev',
+    '**Aufruf:** /dv-forge:implementation-orchestrator "C:/r/docs/forge/x/plan.md" "C:/r/docs/forge/x/spec.md" 311021 --base dev',
     '**Auswahl:** GO · Plan-Nacharbeit · Stopp',
   ].join('\n'));
 });
@@ -136,7 +136,7 @@ test('finalReport_StoppAtGo_NamesResumeCodewordAndNoWorkitemWithoutNumber', () =
   const text = finalReport(state, { stopp: true });
 
   // Assert
-  assert.ok(text.includes('## Fortsetzen\n/dv-forge:session-orchestrator implementation C:/r/s.md C:/r/p.md'));
+  assert.ok(text.includes('## Fortsetzen\n/dv-forge:session-orchestrator implementation "C:/r/s.md" "C:/r/p.md"'));
   assert.ok(!text.includes('finishing-workitem'));
 });
 
@@ -157,7 +157,7 @@ test('finalReport_StoppAfterAnswerStopp_NamesResumeOfTheAnsweredHaltepunkt', () 
   const text = finalReport(state, { stopp: true });
 
   // Assert
-  assert.ok(text.includes('## Fortsetzen\n/dv-forge:session-orchestrator implementation C:/r/spec.md C:/r/plan.md'), text);
+  assert.ok(text.includes('## Fortsetzen\n/dv-forge:session-orchestrator implementation "C:/r/spec.md" "C:/r/plan.md"'), text);
 });
 
 test('finalReport_FreigabeOtherThanStopp_NoResume', () => {
@@ -202,4 +202,12 @@ test('deviationText_WithFollowingHalt_NamesHaltCommand', () => {
 
   // Assert
   assert.ok(text.endsWith('Bei „weiter“: Haltepunkt spec (`<SC> halt --slug <slug> --art spec`).'));
+});
+
+test('goCall_PathWithSpace_QuotesEveryPath', () => {
+  // Act
+  const call = goCall({ plan: 'C:/r/docs/forge/mein plan/plan.md', spec: 'C:/r/docs/forge/mein plan/spec.md', basis: 'dev' });
+
+  // Assert
+  assert.equal(call, '/dv-forge:implementation-orchestrator "C:/r/docs/forge/mein plan/plan.md" "C:/r/docs/forge/mein plan/spec.md" --base dev');
 });

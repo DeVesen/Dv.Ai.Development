@@ -248,7 +248,7 @@ test('closing_StoppAfterHoldAtGoWithoutFinal_NamesImplementationResume', () => {
 
   // Assert
   const [specPath, planPath] = [spec, plan].map((file) => path.resolve(file).replace(/\\/g, '/'));
-  assert.ok(text.includes(`## Fortsetzen\n/dv-forge:session-orchestrator implementation ${specPath} ${planPath}`));
+  assert.ok(text.includes(`## Fortsetzen\n/dv-forge:session-orchestrator implementation "${specPath}" "${planPath}"`));
 });
 
 test('closing_StoppAtSpecHaltepunkt_NamesResumeCodewordAndMarksState', () => {
@@ -260,7 +260,7 @@ test('closing_StoppAtSpecHaltepunkt_NamesResumeCodewordAndMarksState', () => {
   const text = closing('x', true, repo);
 
   // Assert
-  assert.ok(text.includes('## Fortsetzen\n/dv-forge:session-orchestrator planning C:/r/spec.md'));
+  assert.ok(text.includes('## Fortsetzen\n/dv-forge:session-orchestrator planning "C:/r/spec.md"'));
   assert.equal(readState(repo, 'x').gestoppt, true);
 });
 
@@ -322,7 +322,7 @@ test('processFinal_PlanningWithPlanAndSameSlug_HoldsAtGoWithCall', () => {
   // Assert
   const [specPath, planPath] = [spec, plan].map((file) => path.resolve(file).replace(/\\/g, '/'));
   assert.equal(result.haltepunkt, 'go');
-  assert.ok(result.text.includes(`**Aufruf:** /dv-forge:implementation-orchestrator ${planPath} ${specPath} --base main`));
+  assert.ok(result.text.includes(`**Aufruf:** /dv-forge:implementation-orchestrator "${planPath}" "${specPath}" --base main`));
 });
 
 test('processFinal_SameSessionSameCommitNewReportData_ProcessesAgain', () => {

@@ -387,7 +387,7 @@ test('chain_StoppAtSpecHalt_FinalReportNamesResumeAndEntryAllowsStart', () => {
   const started = chain(env.repo, 'brief', '--etappe', 'plan-review', '--slug', 'x');
 
   // Assert
-  assert.ok(closing.includes(`## Fortsetzen\n/dv-forge:session-orchestrator planning ${env.spec.replace(/\\/g, '/')}`), closing);
+  assert.ok(closing.includes(`## Fortsetzen\n/dv-forge:session-orchestrator planning "${env.spec.replace(/\\/g, '/')}"`), closing);
   assert.equal(field(entry, 'zustand'), 'vorhanden');
   assert.equal(field(entry, 'basis'), 'main');
   assert.equal(started.status, 0, started.stderr);

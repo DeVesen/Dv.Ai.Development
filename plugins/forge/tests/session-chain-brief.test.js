@@ -32,10 +32,10 @@ test('buildBrief_SkillEtappen_StartWithTheSlashCommandOfTheirSkill', () => {
 
   // Assert
   assert.equal(first('whiteboarding'), '/dv-forge:spec-whiteboarding-with-docs');
-  assert.equal(first('grill'), '/dv-forge:spec-grilling C:/r/docs/forge/x/spec.md');
-  assert.equal(first('spec-review'), '/dv-forge:spec-review-orchestrator C:/r/docs/forge/x/spec.md');
-  assert.equal(first('planning'), '/dv-forge:plan-orchestrator C:/r/docs/forge/x/spec.md');
-  assert.equal(first('plan-review'), '/dv-forge:plan-review C:/r/docs/forge/x/plan.md C:/r/docs/forge/x/spec.md');
+  assert.equal(first('grill'), '/dv-forge:spec-grilling "C:/r/docs/forge/x/spec.md"');
+  assert.equal(first('spec-review'), '/dv-forge:spec-review-orchestrator "C:/r/docs/forge/x/spec.md"');
+  assert.equal(first('planning'), '/dv-forge:plan-orchestrator "C:/r/docs/forge/x/spec.md"');
+  assert.equal(first('plan-review'), '/dv-forge:plan-review "C:/r/docs/forge/x/plan.md" "C:/r/docs/forge/x/spec.md"');
   assert.equal(first('abschluss'), '/dv-forge:finish-work');
 });
 
@@ -53,8 +53,8 @@ test('buildBrief_Nacharbeit_StartsWithTaskLineAndNamesTheReviewReport', () => {
   const [spec, plan] = ['spec-nacharbeit', 'plan-nacharbeit'].map((etappe) => brief(etappe).brief);
 
   // Assert
-  assert.equal(spec.split('\n')[0], 'Spec-Nacharbeit C:/r/docs/forge/x/spec.md');
-  assert.equal(plan.split('\n')[0], 'Plan-Nacharbeit C:/r/docs/forge/x/plan.md C:/r/docs/forge/x/spec.md');
+  assert.equal(spec.split('\n')[0], 'Spec-Nacharbeit "C:/r/docs/forge/x/spec.md"');
+  assert.equal(plan.split('\n')[0], 'Plan-Nacharbeit "C:/r/docs/forge/x/plan.md" "C:/r/docs/forge/x/spec.md"');
   assert.ok(spec.includes('Lies den Bericht der letzten Review-Etappe: C:/a/bericht.md.'));
   assert.ok(spec.includes('-- "C:/r/docs/forge/x/spec.md"'));
   assert.ok(plan.includes('Du committest nicht; den Plan committet die Leit-Session nach dem GO.'));
@@ -76,7 +76,7 @@ test('buildBrief_WithWorkitem_NamesTheWorkitem', () => {
   const text = brief('spec-review', { ...VALUES, wi: '311021' }).brief;
 
   // Assert
-  assert.ok(text.startsWith('/dv-forge:spec-review-orchestrator C:/r/docs/forge/x/spec.md 311021'));
+  assert.ok(text.startsWith('/dv-forge:spec-review-orchestrator "C:/r/docs/forge/x/spec.md" 311021'));
   assert.ok(text.includes('- Workitem: 311021'));
 });
 
@@ -175,7 +175,7 @@ test('buildBrief_PlanReview_IteratesViaNextInOneTurnAndReportsPlan', () => {
     'scripts/orchestrator-state.js" ablage --art plan --plan "C:/r/docs/forge/x/plan.md"`',
     'Alles in einem Turn: Nach der Review-Statuszeile von `plan-review` arbeitest du ohne Turn-Ende weiter.',
     'scripts/orchestrator-state.js" next --review "<BR>"`, dazu `--followup "<BFn>"` je gelaufener Runde.',
-    '`NEXT=followup`: Runde `RUNDE` mit `dv-forge:review-followup` und `C:/r/docs/forge/x/plan.md alle --spec C:/r/docs/forge/x/spec.md`.',
+    '`NEXT=followup`: Runde `RUNDE` mit `dv-forge:review-followup` und `"C:/r/docs/forge/x/plan.md" alle --spec "C:/r/docs/forge/x/spec.md"`.',
     'shared/orchestrator-rules.md`',
     'ohne Review-Statuszeile: keine weitere Runde, Status `needs-user` mit der Meldung.',
     'Den Plan schreibst du nicht neu. Du committest nichts; Spec und Plan committet die Leit-Session nach dem GO.',

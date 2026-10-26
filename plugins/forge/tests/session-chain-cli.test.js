@@ -80,7 +80,7 @@ test('brief_SlugWithStateDecisionsAndWorkitem_PrintsModelTitleBackgroundAndBrief
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^MODELL=opus\nTITEL=Planning x\n=== HINTERGRUND ===\n/);
   const text = result.stdout.slice(result.stdout.indexOf('=== BRIEF ===\n') + '=== BRIEF ===\n'.length);
-  assert.ok(text.startsWith(`/dv-forge:plan-orchestrator ${spec.replace(/\\/g, '/')} 311021`));
+  assert.ok(text.startsWith(`/dv-forge:plan-orchestrator "${spec.replace(/\\/g, '/')}" 311021`));
   assert.ok(text.includes('- spec-nacharbeit: 500 statt 404, keine Backend-Änderung'));
 });
 
@@ -275,7 +275,7 @@ test('schluss_Stopp_PrintsFinalReportWithResumeCodeword', () => {
 
   // Assert
   assert.equal(result.status, 0, result.stderr);
-  assert.ok(result.stdout.includes('## Fortsetzen\n/dv-forge:session-orchestrator planning C:/r/spec.md'));
+  assert.ok(result.stdout.includes('## Fortsetzen\n/dv-forge:session-orchestrator planning "C:/r/spec.md"'));
 });
 
 test('schluss_StoppAfterHaltGoWithoutFinal_NamesImplementationResume', () => {
@@ -290,7 +290,7 @@ test('schluss_StoppAfterHaltGoWithoutFinal_NamesImplementationResume', () => {
   // Assert
   const [specPath, planPath] = [spec, plan].map((file) => path.resolve(file).replace(/\\/g, '/'));
   assert.equal(result.status, 0, result.stderr);
-  assert.ok(result.stdout.includes(`## Fortsetzen\n/dv-forge:session-orchestrator implementation ${specPath} ${planPath}`));
+  assert.ok(result.stdout.includes(`## Fortsetzen\n/dv-forge:session-orchestrator implementation "${specPath}" "${planPath}"`));
 });
 
 test('run_UnknownOption_ExitsWithUsage', () => {

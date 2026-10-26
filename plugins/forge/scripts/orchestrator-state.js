@@ -14,7 +14,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { maxFollowups, RulesError } = require('./lib/orchestrator-rules');
-const { REVIEW_OF_ART } = require('./lib/orchestrator-report');
+const { REVIEW_OF_ART, roundsState } = require('./lib/orchestrator-report');
 const { ablageFor } = require('./lib/etappe-of');
 const { REVIEW_FILE, ABSCHLUSS_FILE, followupName, clearAblage } = require('./lib/session-chain-ablage');
 const { SessionChainError } = require('./lib/session-chain-store');
@@ -133,7 +133,9 @@ function readReport(file) {
 
 const RESULT_PREFIX = /^\*\*Ergebnis:\*\*\s*/;
 
-// Nächster Schritt aus dem letzten Lauf von Review oder Followup: `followup` (mit Rundennummer), `weiter` oder `ende` mit Grund.
+// Nächster Schritt aus Review und gelaufenen Followup-Runden: `followup` (mit Rundennummer), `weiter` oder `ende` mit Grund.
+// Eine Runde folgt nur, solange ein 🔴 mit Scout-Vorschlag offen ist (roundsState in lib/orchestrator-report.js); 🟡 lösen keine Runde aus.
+// `ABBRUCH=maximum|stillstand` steht bei `weiter`, wenn die Runden trotz offenem 🔴 enden; der Abschlussbericht nennt denselben Grund.
 // `BEREIT=ja`, wenn die Ergebnis-Zeile mit ✅ beginnt; der Orchestrator entscheidet daraus nur noch, was `weiter` heißt.
 function next(values) {
   const followups = values.followup ?? [];
@@ -144,10 +146,11 @@ function next(values) {
   if (!report) return ['NEXT=ende', 'GRUND=kein-bericht', `BERICHT=${last}`].join('\n');
   const result = String(report.resultLine ?? '').replace(RESULT_PREFIX, '');
   const status = String(report.status ?? '');
-  const lines = [`ERGEBNIS=${result || '-'}`, `BEREIT=${result.startsWith('✅') ? 'ja' : 'nein'}`, `RUNDEN=${followups.length}`];
+  const rounds = roundsState([readReport(values.review), ...followups.map(readReport)], max);
+  const lines = [`ERGEBNIS=${result || '-'}`, `BEREIT=${result.startsWith('✅') ? 'ja' : 'nein'}`, `RUNDEN=${followups.length}`, `ROT=${rounds.openRed}`];
   if (result.startsWith('⚠️') || status.startsWith('unvollständig')) return ['NEXT=ende', 'GRUND=unvollstaendig', ...lines].join('\n');
-  if (report.offersFollowup && followups.length < max) return [`NEXT=followup`, `RUNDE=${followups.length + 1}`, ...lines].join('\n');
-  return ['NEXT=weiter', ...lines].join('\n');
+  if (rounds.weiter) return ['NEXT=followup', `RUNDE=${followups.length + 1}`, ...lines].join('\n');
+  return ['NEXT=weiter', ...(rounds.abbruch ? [`ABBRUCH=${rounds.abbruch}`] : []), ...lines].join('\n');
 }
 
 // Leert die Ablage der Etappe, in der das Review des Orchestrators seinen Bericht ablegt (Daten eines früheren Laufs), und nennt dann die

@@ -9,6 +9,22 @@ const { changeLines, openLines } = require('./report-text');
 const CHANGED_IN = { spec: 'in der Spec', plan: 'im Plan', implementation: 'im Code' };
 const NOTHING_CHANGED = 'Keine Änderung.';
 const NOTHING_OPEN = 'Nichts weiter offen.';
+// Grund, aus dem die Followup-Runden trotz offenem 🔴 endeten; dieselbe Entscheidung wie `ABBRUCH=` von `orchestrator-state.js next`.
+const ABORT_TEXT = {
+  maximum: (it) => `Abbruch: Maximum von ${it.max} Iterationen erreicht, ${it.openRed} × 🔴 offen.`,
+  stillstand: (it) => `Abbruch: Stillstand, dieselbe 🔴-Stelle bleibt nach zwei aufeinanderfolgenden Runden offen (${it.stillstand.join(', ')}).`,
+};
+
+function iterationLines(report) {
+  const it = report.iterations;
+  if (!it) return [];
+  return [`Iterationen: ${it.rounds} von ${it.max}`, ...(it.abbruch ? [ABORT_TEXT[it.abbruch](it)] : [])];
+}
+
+// Nur im Implementierungs-Lauf: ACs, die am Ende ohne beweisenden Test sind; die Session-Kette liest die Zeile als Showstopper.
+function acLines(report) {
+  return (report.acOhneTest ?? []).length > 0 ? [`AC ohne beweisenden Test: ${report.acOhneTest.join(', ')}`] : [];
+}
 
 function labelled(label, lines) {
   return lines.length > 0 ? [`**${label}:**`, ...lines] : [];
@@ -18,6 +34,8 @@ function closingLines(report, facts) {
   return [
     report.resultLine,
     ...report.flowLines,
+    ...iterationLines(report),
+    ...acLines(report),
     ...labelled('Geprüft', report.checked),
     ...labelled('Gefunden', report.found),
     ...labelled('Hinweise zum Ablauf', report.notes.map((note) => `- ${note}`)),

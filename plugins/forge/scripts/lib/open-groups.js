@@ -53,13 +53,14 @@ function openFromRounds({ one, two, answered }) {
   return dedupe([...first, ...second].map(fromRated));
 }
 
-// Followup: nicht gewählte Gruppen, gewählte ohne bestätigte Umsetzung (dann 🔴) und neue Gruppen der Nachprüfung.
+// Followup: nicht gewählte Gruppen, gewählte ohne bestätigte Umsetzung (mit ihrer Stufe: 🟡 bleibt 🟡 und ist kein Hindernis, wie im
+// Implementierungs-Followup) und neue Gruppen der Nachprüfung.
 function openFromFollowup({ saved, chosen, two }) {
   const verdicts = verdictMap(two);
   const unchosen = saved.filter((group) => !chosen.has(group.number)).map(fromSaved);
   const notDone = saved
     .filter((group) => chosen.has(group.number) && (two === null || verdicts.get(placeKey(group.location)) === 'nicht erledigt'))
-    .map((group) => ({ ...fromSaved(group), color: 'red' }));
+    .map(fromSaved);
   const fresh = (two?.groups ?? []).filter((group) => group.color !== 'green').map(fromRated);
   return dedupe([...unchosen, ...notDone, ...fresh]);
 }

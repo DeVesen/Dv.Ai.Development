@@ -51,6 +51,7 @@ function changeLines(change) {
     ...(change.change ? [`  Änderung: ${change.change}`] : []),
     ...(change.evidence ? [`  Beleg: ${change.evidence}`] : []),
     ...(change.choice ? [`  Gewählt: Vorschlag ${change.choice}`] : []),
+    ...(change.reason ? [`  Abweichung: ${change.reason}`] : []),
     `  Nachprüfung: ${verdict}`,
   ];
 }

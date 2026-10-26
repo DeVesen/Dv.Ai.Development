@@ -502,7 +502,7 @@ test('report_FollowupDoneAndOneUnchosen_ShowsChangeChoiceAndKeepsUnchosenOpen', 
   assert.doesNotMatch(scout, /AC-04/);
 });
 
-test('report_FollowupChosenNotDone_ShowsWarningAndKeepsGroupAsHindranceWithItsSeverityHeading', () => {
+test('report_FollowupChosenNotDone_ShowsWarningAndKeepsGroupWithItsSeverity', () => {
   // Arrange
   const env = setup();
   const chosen = [{ nummer: 2, stufe: '🟡', stelle: 'AC-07', vorschlag: 1 }];
@@ -512,12 +512,28 @@ test('report_FollowupChosenNotDone_ShowsWarningAndKeepsGroupAsHindranceWithItsSe
     chosen, open: [{ nummer: 1, stufe: '🔴', stelle: 'AC-04' }], results: [{ location: 'AC-07', status: 'changed', change: 'Der Satz hat jetzt eine Lesart.' }], verdicts: [VERDICT('AC-07', 'nicht erledigt')],
   });
 
-  // Assert
-  assert.match(output, /^ENDE nicht bereit, 1 × 🔴 offen\n/);
+  // Assert: die nicht bestätigte 🟡 bleibt 🟡 (kein Hindernis); das einzige Hindernis ist die nicht gewählte 🔴.
+  assert.match(output, /^ENDE sauber nach Nachprüfung\n/);
   assert.match(output, /- ⚠️ \*\*Eindeutige Formulierung\*\*[\s\S]*Nachprüfung: nicht erledigt\./);
-  assert.match(output, /### Noch offen · Hindernis\n- 🔴 \*\*Grenzwert festlegen\*\*[\s\S]*- 🔴 \*\*Eindeutige Formulierung\*\*/);
-  assert.match(output, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 2 Hindernisse offen/);
+  assert.match(output, /### Noch offen · Hindernis\n- 🔴 \*\*Grenzwert festlegen\*\*/);
+  assert.match(output, /### Noch offen · kein Hindernis für den Plan\n- 🟡 \*\*Eindeutige Formulierung\*\*/);
+  assert.match(output, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
   assert.match(fs.readFileSync(checkedFile(env, 'abschluss', 'scout.md'), 'utf8'), /### 🔴 AC-04[\s\S]*### 🟡 AC-07/);
+});
+
+test('report_FollowupChosenUnchangedWithReason_ShowsDeviationLine', () => {
+  // Arrange
+  const env = setup();
+  const chosen = [{ nummer: 1, stufe: '🔴', stelle: 'AC-04', vorschlag: 1 }];
+
+  // Act
+  const output = followupRun(env, {
+    chosen, open: [], results: [{ location: 'AC-04', status: 'unchanged', reason: 'Der Vorschlag widerspricht der Entscheidung zum Export.' }], verdicts: [VERDICT('AC-04', 'erledigt')],
+  });
+
+  // Assert
+  assert.match(output, /- ✅ \*\*Grenzwert festlegen\*\*[^\n]*\n  Der Grenzwert ist nicht bestimmt\.\n  Gewählt: Vorschlag 1\n  Abweichung: Der Vorschlag widerspricht der Entscheidung zum Export\.\n  Nachprüfung: bestätigt\./);
+  assert.doesNotMatch(output, /### Noch offen · Hindernis/);
 });
 
 test('report_FollowupDoneButUnchosenHindranceSaved_NotReadyAndCountMatchesList', () => {

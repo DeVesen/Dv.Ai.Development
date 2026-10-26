@@ -4,6 +4,10 @@
 // nach dem `final` einer Etappe und Showstopper der Umsetzung.
 
 const RESULT = /^\*\*Ergebnis:\*\*\s*(.+?)\s*$/m;
+// Zeile `Abbruch: …` eines Orchestrator-Abschlussberichts: Die Followup-Runden endeten trotz offenem 🔴 (Maximum oder Stillstand).
+const ABORT = /^Abbruch:\s*(.+?)\s*$/m;
+// Zeile `AC ohne beweisenden Test: AC-02, AC-05` des Implementierungs-Abschlussberichts.
+const AC_LINE = /^AC ohne beweisenden Test:\s*(.+?)\s*$/m;
 const VERDICTS = [['✅', 'bereit'], ['⛔', 'blockiert'], ['❓', 'fragen'], ['⚠️', 'unvollstaendig']];
 const NEXT = {
   whiteboarding: { start: 'grill' },
@@ -24,6 +28,17 @@ const CHOICES = {
 // Text nach `**Ergebnis:**` (erste solche Zeile) oder null.
 function resultOf(text) {
   return RESULT.exec(String(text ?? ''))?.[1] ?? null;
+}
+
+// Text nach `Abbruch:` oder null.
+function abortOf(text) {
+  return ABORT.exec(String(text ?? ''))?.[1] ?? null;
+}
+
+// ACs der Zeile `AC ohne beweisenden Test:` oder [].
+function acsWithoutTestOf(text) {
+  const found = AC_LINE.exec(String(text ?? ''))?.[1];
+  return found ? found.split(',').map((ac) => ac.trim()).filter(Boolean) : [];
 }
 
 function verdictOf(result) {
@@ -59,4 +74,4 @@ function nextStep(etappe, report = {}) {
   return NEXT[etappe];
 }
 
-module.exports = { resultOf, verdictOf, recommendation, showstoppers, nextStep, NEXT };
+module.exports = { resultOf, abortOf, acsWithoutTestOf, verdictOf, recommendation, showstoppers, nextStep, NEXT };

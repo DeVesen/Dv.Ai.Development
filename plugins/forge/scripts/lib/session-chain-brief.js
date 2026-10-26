@@ -10,13 +10,14 @@ const { toPosix } = require('./posix');
 const { SessionChainError, checkedEtappe } = require('./session-chain-store');
 const { goCall } = require('./session-chain-text');
 const { pointLine } = require('./session-chain-points');
-const { maxFollowups } = require('./orchestrator-rules');
 
 const PLUGIN_ROOT = path.resolve(__dirname, '..', '..');
 // Modell der Sonnet-Etappen; die Leit-Session übergibt es wörtlich an das Start-Tool, statt es zu raten.
 const SONNET_MODEL_ID = 'claude-sonnet-5-5';
 const BASE_FILE = path.join(PLUGIN_ROOT, 'shared', 'session-chain', 'base-sub-agent.md');
 const CHAIN_SCRIPT = `${toPosix(PLUGIN_ROOT)}/scripts/session-chain.js`;
+const STATE_SCRIPT = `${toPosix(PLUGIN_ROOT)}/scripts/orchestrator-state.js`;
+const RULES_FILE = `${toPosix(PLUGIN_ROOT)}/shared/orchestrator-rules.md`;
 
 // Kennung der Leit-Session, an die die Etappen-Session ihr `final` schickt, und ihre Zeile `- Leit-Session: <id>` unter `## Werte`.
 // Das eine Format für Brief (erzeugt), CLI `brief --leit` (prüft) und Hook der Etappen-Session (liest). Zeichensatz ohne
@@ -81,9 +82,12 @@ const ETAPPEN_BRIEFS = {
     modell: 'sonnet', titel: 'Plan-Review', pflicht: ['plan', 'spec'],
     command: (v) => `/dv-forge:plan-review ${v.plan} ${v.spec}`,
     auftrag: (v) => [
-      `Danach \`dv-forge:review-followup\` mit \`${v.plan} alle\`, solange die letzte Review-Statuszeile \`FOLLOWUP ja\` meldet, höchstens ${maxFollowups()} Runden.`,
+      `Vor dem Skill einmal \`node "${STATE_SCRIPT}" ablage --art plan --plan "${v.plan}"\`: Die Zeilen \`BERICHT-REVIEW\` (<BR>) und \`BERICHT-FOLLOWUP-<n>\` (<BFn>) sind die Bericht-Daten des Laufs.`,
+      'Alles in einem Turn: Nach der Review-Statuszeile von `plan-review` arbeitest du ohne Turn-Ende weiter.',
+      `Nach \`plan-review\` und nach jeder Runde: \`node "${STATE_SCRIPT}" next --review "<BR>"\`, dazu \`--followup "<BFn>"\` je gelaufener Runde. \`NEXT=followup\`: Runde \`RUNDE\` mit \`dv-forge:review-followup\` und \`${v.plan} alle --spec ${v.spec}\`. Sonst keine weitere Runde; Maximum und Stillstand-Regel stehen in \`${RULES_FILE}\`.`,
+      'Endet `plan-review`, `review-followup`, `ablage` oder `next` mit Exit ungleich 0 oder ohne Review-Statuszeile: keine weitere Runde, Status `needs-user` mit der Meldung.',
       'Den Plan schreibst du nicht neu. Du committest nichts; Spec und Plan committet die Leit-Session nach dem GO.',
-      '`--inhalt` ist die `.md`-Datei, die die letzte Review-Statuszeile nach `Bericht:` nennt.',
+      `Berichtsdatei mit \`--plan "${v.plan}"\`; \`--inhalt\` ist die \`.md\`-Datei, die die letzte Review-Statuszeile nach \`Bericht:\` nennt.`,
     ],
   },
   'plan-nacharbeit': {
@@ -102,8 +106,11 @@ const ETAPPEN_BRIEFS = {
     command: (v) => goCall(v),
     auftrag: () => [
       'Einen Showstopper klärst du mit dem Menschen hier.',
-      'Geh vor der Berichtsdatei die Akzeptanz-Findings des Reviews aller Farben (🔴, 🟡, 🟢) durch und melde jedes Akzeptanzkriterium ohne beweisenden Test mit `--ac-ohne-test <AC-nn>`, auch wenn das Review es nur als 🟡 führt. Integrationspunkte ohne Test sind davon ausgenommen.',
-      'Berichtsdatei mit `--worktree "<R>"`, `--branch <branch>`, `--pruefung-datei "<pruefung.json des Orchestrators>"` (ohne Prüflauf `--pruefung keine`), `--luecke "<befehl>"` je nicht lauffähigem Build-, Test- oder Lint-Befehl und `--ac-ohne-test <AC-nn>` je Akzeptanzkriterium ohne beweisenden Test; `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.',
+      '`COMMIT` der Statuszeile ist der letzte Commit der Umsetzung: `git -C "<R>" rev-parse --short HEAD` nach dem Lauf; ohne Commit `none`.',
+      '`<PR>` ist die Datei `pruefung.json` im Scratchpad dieser Session, die Schritt 6 des Orchestrators schreibt. Lief Schritt 6 nicht, gilt `--pruefung keine`.',
+      '`--luecke "<befehl>"` je Lauf in `<PR>`, dessen Ausgabe zeigt, dass das Werkzeug fehlt (etwa `command not found`, `not recognized`, `ENOENT`); sonst keine `--luecke`.',
+      '`--ac-ohne-test` ergänzt `etappe-report` selbst aus der Zeile `AC ohne beweisenden Test:` des Abschlussberichts; nenne nur zusätzlich ein Akzeptanzkriterium ohne beweisenden Test, das der Bericht nicht nennt, auch wenn das Review es nur als 🟡 führt. Integrationspunkte ohne Test sind davon ausgenommen.',
+      'Berichtsdatei mit `--worktree "<R>"` und `--branch <branch>` (beide Werte aus den Zeilen `R=` und `branch=` von start-work), `--pruefung-datei "<PR>"` (ohne Prüflauf `--pruefung keine`), `--luecke` und `--ac-ohne-test` wie oben; `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.',
     ],
   },
   abschluss: {

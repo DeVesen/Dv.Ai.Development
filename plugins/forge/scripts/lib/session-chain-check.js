@@ -24,8 +24,12 @@ const EXPECTED = {
 };
 // Artefakte, die nach der Etappe committet sein müssen.
 const MUST_BE_COMMITTED = { 'spec-review': ['spec'], 'spec-nacharbeit': ['spec'] };
-// Werte, die die Etappe melden muss, mit der Meldung bei Fehlen; ohne sie stünde im nächsten Haltepunkt `undefined`.
-const REQUIRED = { planning: [['plan', 'Planning meldet keinen Plan (--plan fehlt)']] };
+// Werte, die die Etappe melden muss, mit der Meldung bei Fehlen; ohne sie stünde im nächsten Haltepunkt `undefined`, oder die Umsetzung
+// ohne Branch/Worktree scheiterte erst im Abschluss-Brief. (Die Ergebnis-Zeile der Review-Etappen prüft session-chain-steps.js.)
+const REQUIRED = {
+  planning: [['plan', 'Planning meldet keinen Plan (--plan fehlt)']],
+  umsetzung: [['branch', 'Umsetzung meldet keinen Branch (--branch fehlt)'], ['worktree', 'Umsetzung meldet keinen Worktree (--worktree fehlt)']],
+};
 
 function emptyResult() {
   return { geprueft: [], abweichungen: [] };
@@ -71,16 +75,22 @@ function committedChecks(repo, etappe, values) {
   return result;
 }
 
-// Umsetzung: Branch, Commits seit dem Basis-Branch, Worktree.
+// Umsetzung: Branch, Commits seit dem Basis-Branch, Worktree. Vor Ort ohne eigenen Branch (`branch == basis`, Projekt-Einstellung
+// `Worktree: nein`) gibt es keinen Bereich `basis..branch`; dann belegt nur der gemeldete Commit (commitChecks) die Etappe.
 function implementationChecks(repo, values) {
   const result = emptyResult();
+  if (!values.branch) return result;
   if (!git(repo, ['rev-parse', '--verify', '--quiet', `refs/heads/${values.branch}`]).ok) {
-    result.abweichungen.push(`Branch ${values.branch ?? '-'} existiert nicht`);
+    result.abweichungen.push(`Branch ${values.branch} existiert nicht`);
     return result;
   }
-  const count = Number(git(repo, ['rev-list', '--count', `${values.basis}..${values.branch}`]).out || 0);
-  if (count > 0) result.geprueft.push(`Branch ${values.branch}: ${count} Commits seit ${values.basis}`);
-  else result.abweichungen.push(`Branch ${values.branch} hat keine Commits seit ${values.basis}`);
+  if (values.basis && values.branch === values.basis) {
+    result.geprueft.push(`Branch ${values.branch} ist der Basis-Branch (Umsetzung vor Ort)`);
+  } else {
+    const count = Number(git(repo, ['rev-list', '--count', `${values.basis}..${values.branch}`]).out || 0);
+    if (count > 0) result.geprueft.push(`Branch ${values.branch}: ${count} Commits seit ${values.basis}`);
+    else result.abweichungen.push(`Branch ${values.branch} hat keine Commits seit ${values.basis}`);
+  }
   if (values.worktree && !sameDir(values.worktree, repo)) {
     record(result, worktreeListed(repo, values.worktree), `Worktree ${toPosix(values.worktree)} besteht`, `Worktree ${toPosix(values.worktree)} fehlt`);
   }

@@ -93,3 +93,19 @@ test('readData_SameData_ReturnsTheSameHash', () => {
   assert.equal(hashes[0], hashes[1]);
   assert.match(hashes[0], /^[0-9a-f]{40}$/);
 });
+
+test('etappeReport_AbschlussWithAbortAndAcLine_StoresBoth', () => {
+  // Arrange
+  const { repo } = repoWithPlan();
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ⛔ Noch nicht bereit · 1 Hindernis offen\nIterationen: 2 von 8\nAbbruch: Stillstand, dieselbe 🔴-Stelle bleibt nach zwei aufeinanderfolgenden Runden offen (Fehler melden).\nAC ohne beweisenden Test: AC-02, AC-05\n');
+
+  // Act
+  const file = etappeReport({ ...EMPTY, etappe: 'umsetzung', slug: 'x', bericht: abschluss, acOhneTest: ['AC-05', 'AC-07'], pruefung: 'gruen' }, repo);
+
+  // Assert
+  const { data } = readData(file);
+  assert.equal(data.abbruch, 'Stillstand, dieselbe 🔴-Stelle bleibt nach zwei aufeinanderfolgenden Runden offen (Fehler melden).');
+  assert.deepEqual(data.acOhneTest, ['AC-05', 'AC-07', 'AC-02']);
+  const text = fs.readFileSync(file, 'utf8');
+  for (const ac of ['AC-02', 'AC-05', 'AC-07']) assert.ok(text.includes(`Ohne beweisenden Test: ${ac}`), ac);
+});

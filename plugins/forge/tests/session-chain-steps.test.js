@@ -368,3 +368,62 @@ test('processFinal_AbschlussPushedAndWorktreeRemoved_EndsTheChainWithOriginOfChe
   assert.ok(rest.includes('- abschluss: Testzahlen 12/12'));
   assert.ok(result.text.includes('- 🟡 Hinweis · umsetzung'));
 });
+
+test('processFinal_SpecReviewWithoutResultLine_HoldsAsDeviation', () => {
+  // Arrange
+  const repo = makeRepo();
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: review spec x');
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\nkeine Ergebnis-Zeile\n');
+  storeFiles({ dir: repo, slug: 'x', etappe: 'spec-review', files: [abschluss], fresh: true });
+  const bericht = etappeReport({ ...EMPTY, etappe: 'spec-review', slug: 'x', bericht: abschluss }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'spec-review', session: 'local_s', bericht, commit }, repo);
+
+  // Assert
+  assert.equal(result.haltepunkt, 'abweichung');
+  assert.ok(result.text.includes('- Spec-Review meldet keine Ergebnis-Zeile'));
+  assert.ok(result.text.includes('Bei „weiter“: Haltepunkt spec'));
+});
+
+test('processFinal_DeviationBeforeGrill_NamesGrillAfterWeiter', () => {
+  // Arrange
+  const repo = makeRepo();
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  fs.mkdirSync(path.dirname(spec), { recursive: true });
+  fs.writeFileSync(spec, '# Spec\n');
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: spec x');
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Planen\n');
+  const bericht = etappeReport({ ...EMPTY, etappe: 'whiteboarding', slug: 'x', bericht: abschluss, spec }, repo);
+
+  // Act: Whiteboarding meldet einen Commit, obwohl in der Kette nur die Leit-Session committet → Abweichung.
+  const result = processFinal({ etappe: 'whiteboarding', session: 'local_w', bericht, commit, basis: 'main' }, repo);
+
+  // Assert
+  assert.equal(result.haltepunkt, 'abweichung');
+  assert.ok(result.text.includes('Bei „weiter“: Start der Etappe grill.'));
+  assert.equal(readState(repo, 'x').naechste, 'grill');
+});
+
+test('processFinal_SpecReviewWithRedAndAbort_ListsRedPointAndAbortAtHalt', () => {
+  // Arrange
+  const repo = makeRepo();
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: review spec x');
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ⛔ Noch nicht bereit · 1 Hindernis offen\nIterationen: 8 von 8\nAbbruch: Maximum von 8 Iterationen erreicht, 1 × 🔴 offen.\n');
+  storeFiles({ dir: repo, slug: 'x', etappe: 'spec-review', files: [abschluss, scratch('bericht-review.json', JSON.stringify({ format: 2, open: [{ key: 'ac-04', color: 'red', title: 'Grenzwert festlegen' }], green: [], changes: [] }))], fresh: true });
+  const bericht = etappeReport({ ...EMPTY, etappe: 'spec-review', slug: 'x', bericht: abschluss }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'spec-review', session: 'local_s', bericht, commit }, repo);
+
+  // Assert
+  assert.equal(result.haltepunkt, 'spec');
+  assert.ok(result.text.includes('**Abbruch:** Maximum von 8 Iterationen erreicht, 1 × 🔴 offen.'));
+  assert.ok(result.text.includes('- 🔴 Grenzwert festlegen · spec-review'));
+  assert.ok(result.text.includes('**Empfehlung:** Spec-Nacharbeit'));
+});

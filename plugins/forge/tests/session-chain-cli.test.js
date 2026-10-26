@@ -423,3 +423,29 @@ test('cli_OptionWithoutValue_ExitsWithTwoAndNamesTheOption', () => {
   assert.equal(result.status, 2);
   assert.match(result.stderr, /^Wert fehlt: --spec\n/);
 });
+
+test('brief_NacharbeitWithoutQuelle_TakesTheLastReviewReportFromState', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  writeState(repo, 'x', { basis: 'main', spec: spec.replace(/\\/g, '/'), etappen: [{ etappe: 'spec-review', bericht: 'C:/ablage/spec-review/bericht.md' }], halt: null, freigabe: { halt: 'spec', antwort: 'spec-nacharbeit', zeit: '2026-10-26T10:00:00.000Z' } });
+
+  // Act
+  const result = chain(repo, 'brief', '--etappe', 'spec-nacharbeit', '--slug', 'x');
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(result.stdout.includes('Lies den Bericht der letzten Review-Etappe: C:/ablage/spec-review/bericht.md.'));
+});
+
+test('brief_NacharbeitWithoutQuelleAndWithoutReviewInState_ExitsOneNamingQuelle', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  writeState(repo, 'x', { basis: 'main', spec: spec.replace(/\\/g, '/'), etappen: [], halt: null, freigabe: { halt: 'spec', antwort: 'spec-nacharbeit', zeit: '2026-10-26T10:00:00.000Z' } });
+
+  // Act
+  const result = chain(repo, 'brief', '--etappe', 'spec-nacharbeit', '--slug', 'x');
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /quelle fehlt/);
+});

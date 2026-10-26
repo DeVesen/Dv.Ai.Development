@@ -75,6 +75,15 @@ function entry(args) {
   return withBlock(fieldLines(fields), 'ZUSTAND', state ? adoptedText(state) : '').join('\n');
 }
 
+// Quelle der Nacharbeiten: die Berichtsdatei des letzten `final` einer Review-Etappe aus dem Zustand, wenn die Leit-Session keine nennt.
+const QUELLE_OF = { 'spec-nacharbeit': ['spec-review'], 'plan-nacharbeit': ['planning', 'plan-review'] };
+
+function lastReportOf(state, etappe) {
+  const sources = QUELLE_OF[etappe];
+  if (!sources || !state) return undefined;
+  return [...(state.etappen ?? [])].reverse().find((entry) => sources.includes(entry.etappe))?.bericht;
+}
+
 function brief(values) {
   const leit = required(values, 'leit');
   if (!LEIT_ID.test(leit)) throw new UsageError(`--leit erwartet die Kennung der Leit-Session (local_…), nicht ${leit}`);
@@ -83,7 +92,7 @@ function brief(values) {
   const chain = { ...(state ?? {}), ...(values.slug ? { slug: values.slug } : {}), ...(values.basis ? { basis: values.basis } : {}), ...(values.wi ? { wi: values.wi } : {}) };
   const result = buildBrief({
     etappe: required(values, 'etappe'),
-    values: { slug: chain.slug, wi: chain.wi, basis: chain.basis, spec: chain.spec, plan: chain.plan, worktree: chain.worktree, branch: chain.branch, quelle: values.quelle, leit },
+    values: { slug: chain.slug, wi: chain.wi, basis: chain.basis, spec: chain.spec, plan: chain.plan, worktree: chain.worktree, branch: chain.branch, quelle: values.quelle ?? lastReportOf(state, values.etappe), leit },
     decisions: state?.entscheidungen ?? [],
     points: state?.offen ?? [],
     kontext: values.kontext ? readInput(values.kontext, 'Kontext') : null,

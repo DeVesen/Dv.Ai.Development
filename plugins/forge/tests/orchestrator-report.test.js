@@ -503,3 +503,79 @@ test('orchestratorReport_AbortBeforeReview_ThreeSectionsWithoutReviewDataAndNoSt
   assert.ok(text.includes('**Ergebnis:** ⚠️ Abgebrochen vor dem Review: Plan fehlt: docs/x/plan.md'));
   assert.doesNotMatch(text, NO_NEXT_STEP);
 });
+
+const { maxFollowups: maxRounds } = require('../scripts/lib/orchestrator-rules');
+
+test('orchestratorReport_NoFollowup_NamesZeroIterationsAndNoAbort', () => {
+  // Act
+  const closing = sectionOf(planReport(part()), '# Abschlussbericht');
+
+  // Assert
+  assert.match(closing, new RegExp(`\\nIterationen: 0 von ${maxRounds()}\\n`));
+  assert.doesNotMatch(closing, /Abbruch:/);
+});
+
+test('orchestratorReport_DistinctRedAfterMaximumRounds_NamesAbortMaximumAfterIterations', () => {
+  // Arrange
+  const review = part({ kind: 'blocked', openRed: 1, open: [entry('red', 'task 0')] });
+  const rounds = Array.from({ length: maxRounds() }, (_, index) => part({ followup: true, kind: 'blocked', openRed: 1, open: [entry('red', `task ${index + 1}`)] }));
+
+  // Act
+  const closing = sectionOf(planReportRounds(review, rounds), '# Abschlussbericht');
+
+  // Assert
+  assert.match(closing, new RegExp(`\\nIterationen: ${maxRounds()} von ${maxRounds()}\\nAbbruch: Maximum von ${maxRounds()} Iterationen erreicht, 1 × 🔴 offen\\.\\n`));
+  assert.doesNotMatch(closing, NO_NEXT_STEP);
+});
+
+test('orchestratorReport_SameRedOpenAfterTwoRounds_NamesAbortStillstandWithTitle', () => {
+  // Arrange
+  const review = part({ kind: 'blocked', openRed: 1, open: [entry('red', 'task 2')] });
+  const rounds = [1, 2].map(() => part({ followup: true, kind: 'blocked', openRed: 1, open: [entry('red', 'task 2')] }));
+
+  // Act
+  const closing = sectionOf(planReportRounds(review, rounds), '# Abschlussbericht');
+
+  // Assert
+  assert.match(closing, /\nIterationen: 2 von \d+\nAbbruch: Stillstand, dieselbe 🔴-Stelle bleibt nach zwei aufeinanderfolgenden Runden offen \(Titel task 2\)\.\n/);
+});
+
+test('orchestratorReport_OnlyYellowOpenAfterRound_NoAbortLine', () => {
+  // Arrange
+  const review = part({ kind: 'blocked', openRed: 1, open: [entry('red', 'task 2')] });
+  const round = part({ followup: true, kind: 'hints', changes: [change('task 2', true)], open: [entry('yellow', 'task 5')] });
+
+  // Act
+  const closing = sectionOf(planReportRounds(review, [round]), '# Abschlussbericht');
+
+  // Assert
+  assert.match(closing, /\nIterationen: 1 von \d+\n/);
+  assert.doesNotMatch(closing, /Abbruch:/);
+});
+test('orchestratorReport_ImplementationWithAcWithoutTestStillOpen_NamesTheAcLine', () => {
+  // Arrange
+  const dir = tempDir('dv-forge-orch-');
+  const review = writePart(dir, 'review.json', part({ review: 'implementation-review', kind: 'hints', open: [entry('yellow', 'ac-2')], acOhneTest: ['AC-02'] }));
+
+  // Act
+  const result = run(['--art', 'implementation', '--review', review, '--out', path.join(dir, 'a.md')]);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\nAC ohne beweisenden Test: AC-02\n/);
+});
+
+test('orchestratorReport_AcWithoutTestClosedByFollowup_OmitsTheAcLine', () => {
+  // Arrange
+  const review = part({ review: 'implementation-review', kind: 'hints', open: [entry('yellow', 'ac-2')], acOhneTest: ['AC-02'] });
+  const round = part({ review: 'implementation-review', followup: true, changes: [change('ac-2', true)], open: [] });
+
+  // Act
+  const dir = tempDir('dv-forge-orch-');
+  const args = ['--art', 'implementation', '--review', writePart(dir, 'r.json', review), '--followup', writePart(dir, 'f.json', round), '--out', path.join(dir, 'a.md')];
+  const result = run(args);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(result.stdout, /AC ohne beweisenden Test/);
+});

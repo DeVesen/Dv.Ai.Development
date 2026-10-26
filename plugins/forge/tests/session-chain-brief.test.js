@@ -6,7 +6,6 @@ const { buildBrief, BASE_FILE } = require('../scripts/lib/session-chain-brief');
 const { SessionChainError } = require('../scripts/lib/session-chain-store');
 const { goCall } = require('../scripts/lib/session-chain-text');
 const { readText } = require('./lib/markdown');
-const { maxFollowups } = require('../scripts/lib/orchestrator-rules');
 const { FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION } = require('./lib/former-names');
 
 const VALUES = { slug: 'x', basis: 'dev', spec: 'C:/r/docs/forge/x/spec.md', plan: 'C:/r/docs/forge/x/plan.md' };
@@ -166,14 +165,23 @@ test('buildBrief_Whiteboarding_CarriesTheContextSummaryAndReportsBySpec', () => 
   assert.ok(text.includes('etappe-report --etappe whiteboarding --spec "<deine Spec>"'));
 });
 
-test('buildBrief_PlanReview_RunsFollowupWhileOfferedUpToTheRulesFileMaximumWithoutRewriteOrCommit', () => {
+test('buildBrief_PlanReview_IteratesViaNextInOneTurnAndReportsPlan', () => {
   // Act
   const text = brief('plan-review').brief;
   const auftrag = text.slice(text.indexOf('## Auftrag'), text.indexOf('## Ketten-Regeln'));
 
   // Assert
-  assert.ok(auftrag.includes(`solange die letzte Review-Statuszeile \`FOLLOWUP ja\` meldet, höchstens ${maxFollowups()} Runden`));
-  assert.ok(auftrag.includes('Den Plan schreibst du nicht neu. Du committest nichts; Spec und Plan committet die Leit-Session nach dem GO.'));
+  for (const part of [
+    'scripts/orchestrator-state.js" ablage --art plan --plan "C:/r/docs/forge/x/plan.md"`',
+    'Alles in einem Turn: Nach der Review-Statuszeile von `plan-review` arbeitest du ohne Turn-Ende weiter.',
+    'scripts/orchestrator-state.js" next --review "<BR>"`, dazu `--followup "<BFn>"` je gelaufener Runde.',
+    '`NEXT=followup`: Runde `RUNDE` mit `dv-forge:review-followup` und `C:/r/docs/forge/x/plan.md alle --spec C:/r/docs/forge/x/spec.md`.',
+    'shared/orchestrator-rules.md`',
+    'ohne Review-Statuszeile: keine weitere Runde, Status `needs-user` mit der Meldung.',
+    'Den Plan schreibst du nicht neu. Du committest nichts; Spec und Plan committet die Leit-Session nach dem GO.',
+    'Berichtsdatei mit `--plan "C:/r/docs/forge/x/plan.md"`',
+  ]) assert.ok(auftrag.includes(part), part);
+  assert.equal(auftrag.includes('FOLLOWUP ja'), false, 'die Etappe zählt keine Runden nach der Statuszeile');
   assert.equal(auftrag.includes(FORMER_ABLAGE_OPTION), false);
   assert.equal(auftrag.includes('Commit-Frage'), false);
 });
@@ -234,14 +242,21 @@ test('buildBrief_Whiteboarding_ReportsWithTheAbschlussOfTheReview', () => {
   assert.ok(text.includes('Abschließen: Berichtsdatei mit `--spec "<deine Spec>"` und `--inhalt "<ABSCHLUSS aus review-stand>"`, dazu `--datei` je geänderter Glossar- oder ADR-Datei.'));
 });
 
-test('buildBrief_Umsetzung_AsksToEvaluateAcceptanceFindingsOfAllColors', () => {
+test('buildBrief_Umsetzung_NamesSourcesForCommitPruefungLueckeAndAcOhneTest', () => {
   // Act
   const text = brief('umsetzung').brief;
 
   // Assert
-  assert.ok(text.includes('Akzeptanz-Findings des Reviews aller Farben'));
-  assert.ok(text.includes('auch wenn das Review es nur als 🟡 führt'));
-  assert.ok(text.includes('Integrationspunkte ohne Test sind davon ausgenommen'));
+  for (const part of [
+    '`COMMIT` der Statuszeile ist der letzte Commit der Umsetzung: `git -C "<R>" rev-parse --short HEAD`',
+    '`<PR>` ist die Datei `pruefung.json` im Scratchpad dieser Session',
+    'Lief Schritt 6 nicht, gilt `--pruefung keine`.',
+    '`--luecke "<befehl>"` je Lauf in `<PR>`, dessen Ausgabe zeigt, dass das Werkzeug fehlt',
+    '`--ac-ohne-test` ergänzt `etappe-report` selbst aus der Zeile `AC ohne beweisenden Test:` des Abschlussberichts',
+    'auch wenn das Review es nur als 🟡 führt',
+    'Integrationspunkte ohne Test sind davon ausgenommen',
+    'beide Werte aus den Zeilen `R=` und `branch=` von start-work',
+  ]) assert.ok(text.includes(part), part);
 });
 
 test('buildBrief_WithLeit_NamesTheLeitSessionUnderValues', () => {

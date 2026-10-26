@@ -10,6 +10,8 @@ const fs = require('node:fs');
 const { resultLine } = require('./report-text');
 const { FlowError } = require('./flow-error');
 const { assertCurrentFormat } = require('./report-format');
+const { maxFollowups } = require('./orchestrator-rules');
+const { placeKey } = require('./places');
 
 const REVIEW_OF_ART = { spec: 'spec-review', plan: 'plan-review', implementation: 'implementation-review' };
 const RANK = { red: 0, yellow: 1 };
@@ -68,9 +70,45 @@ function mergeOpenKeepUnchanged(parts) {
   return [...byKey.values()];
 }
 
+// Offene 🔴 eines Teils (Review oder Followup-Runde) mit Schlüssel; `hasProposal` sagt, ob `review-followup <A> alle` die Stelle erreicht.
+function redEntries(part) {
+  return (part?.open ?? []).map((entry, index) => ({ ...entry, key: keyOf(entry, index, 'rot') })).filter((entry) => entry.color === 'red');
+}
+
+// Stillstand: dieselbe 🔴-Stelle ist nach zwei aufeinanderfolgenden Followup-Runden offen. `followups`: gelesene Runden in Reihenfolge.
+function stagnantRed(followups) {
+  if (followups.length < 2) return [];
+  const before = new Set(redEntries(followups.at(-2)).map((entry) => entry.key));
+  return redEntries(followups.at(-1)).filter((entry) => before.has(entry.key));
+}
+
+// Stand der Followup-Runden aus Review und gelaufenen Runden (`parts`: Review, dann Runden in Reihenfolge; fehlende Teile null).
+// Offen zählt wie mergeOpen: die 🔴 der letzten Runde plus jedes frühere 🔴 ohne Scout-Vorschlag. `weiter`: eine weitere Runde erreicht
+// ein offenes 🔴 (Vorschlag vorhanden, kein Stillstand, Maximum nicht erreicht). `abbruch`: Grund, aus dem die Runden trotz 🔴 enden.
+// `orchestrator-state.js next` und der Abschlussbericht lesen beide von hier, damit `ABBRUCH=` und `Abbruch:` nie auseinanderlaufen.
+function roundsState(parts, max = maxFollowups()) {
+  const present = parts.filter(Boolean);
+  const followups = parts.slice(1).filter(Boolean);
+  const open = mergeOpen(present);
+  const listedRed = open.filter((entry) => entry.color === 'red').length;
+  const openRed = Math.max(Number(present.at(-1)?.openRed) || 0, listedRed);
+  const proposed = open.filter((entry) => entry.color === 'red' && entry.hasProposal === true).length;
+  const stillstand = stagnantRed(followups);
+  const abbruch = openRed === 0 ? null : stillstand.length > 0 ? 'stillstand' : followups.length >= max ? 'maximum' : null;
+  return { rounds: followups.length, max, openRed, proposed, abbruch, stillstand: stillstand.map((entry) => entry.title ?? entry.key), weiter: openRed > 0 && proposed > 0 && abbruch === null };
+}
+
 function mergeGreen(parts, open) {
   const openKeys = new Set(open.map((entry) => entry.key));
   return mergeByKey(parts, 'green', 'green').filter((entry) => !openKeys.has(entry.key));
+}
+
+// ACs ohne beweisenden Test aus dem Implementierungs-Review (`acOhneTest` der Bericht-Daten), soweit ihre Stelle am Ende noch offen ist;
+// eine Followup-Runde, die die Stelle als Änderung mit `ok: true` schließt, nimmt das AC aus der Liste. Die Session-Kette liest die Zeile
+// `AC ohne beweisenden Test:` des Abschlussberichts als Showstopper.
+function acsStillOpen(review, open) {
+  const openKeys = new Set(open.map((entry) => entry.key));
+  return (review?.acOhneTest ?? []).filter((ac) => openKeys.has(placeKey(ac)));
 }
 
 function kindOf(state) {
@@ -105,6 +143,8 @@ function mergeReports({ art, reviewFile, followupFiles = [] }) {
   const hints = open.filter((entry) => entry.color === 'yellow').length;
   return {
     ...state, kind, followupRan: followups.length > 0, followupRounds: followups.length,
+    iterations: roundsState(parts),
+    acOhneTest: acsStillOpen(review, open),
     resultLine: review ? resultLine(state, kind, hints) : MISSING_REVIEW,
     flowLines: flowLines(review, followups),
     checked: review?.checked ?? [], found: review?.found ?? [],
@@ -115,4 +155,4 @@ function mergeReports({ art, reviewFile, followupFiles = [] }) {
   };
 }
 
-module.exports = { mergeReports, mergeOpenKeepUnchanged, readPart, keyOf, REVIEW_OF_ART };
+module.exports = { mergeReports, mergeOpenKeepUnchanged, roundsState, stagnantRed, readPart, keyOf, REVIEW_OF_ART };

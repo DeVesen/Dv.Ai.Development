@@ -13,12 +13,12 @@ function rulesFile(text) {
   return file;
 }
 
-test('maxFollowups_ShippedRulesFile_ReturnsTwo', () => {
+test('maxFollowups_ShippedRulesFile_ReturnsEight', () => {
   // Act
   const max = maxFollowups();
 
   // Assert
-  assert.equal(max, 2);
+  assert.equal(max, 8);
 });
 
 test('maxFollowups_OtherNumberInTheLine_IsParsedFromTheFile', () => {

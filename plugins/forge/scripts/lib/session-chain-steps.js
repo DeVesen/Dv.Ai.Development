@@ -44,18 +44,21 @@ function setState(input, cwd) {
   return writeState(cwd, input.slug, state);
 }
 
-function lastResult(state, etappen) {
-  return [...(state.etappen ?? [])].reverse().find((entry) => etappen.includes(entry.etappe))?.ergebnis ?? null;
+// Letztes `final` einer der Etappen `etappen` im Zustand oder null.
+function lastEntry(state, etappen) {
+  return [...(state.etappen ?? [])].reverse().find((entry) => etappen.includes(entry.etappe)) ?? null;
 }
 
-// Block des Haltepunkts `art` (spec | go) aus dem Zustand.
+// Block des Haltepunkts `art` (spec | go) aus dem Zustand; `abbruch` nennt, warum die Followup-Runden der Etappe trotz 🔴 endeten.
 function haltText(state, art) {
   if (art === 'spec') {
-    const result = lastResult(state, ['spec-review']);
-    return specHalt({ result, recommendation: recommendation('spec', result), points: state.offen });
+    const last = lastEntry(state, ['spec-review']);
+    const result = last?.ergebnis ?? null;
+    return specHalt({ result, abbruch: last?.abbruch ?? null, recommendation: recommendation('spec', result), points: state.offen });
   }
-  const result = lastResult(state, PLAN_RESULTS);
-  return goHalt({ spec: state.spec, plan: state.plan, wi: state.wi, basis: state.basis, result, recommendation: recommendation('go', result), points: state.offen });
+  const last = lastEntry(state, PLAN_RESULTS);
+  const result = last?.ergebnis ?? null;
+  return goHalt({ spec: state.spec, plan: state.plan, wi: state.wi, basis: state.basis, result, abbruch: last?.abbruch ?? null, recommendation: recommendation('go', result), points: state.offen });
 }
 
 // Kopiert die Spec beim Start von Grill und Spec-Nacharbeit nach `<Kettenordner>/spec-vor-<etappe>.md` und vermerkt den Pfad in `gestartet`;
@@ -90,7 +93,7 @@ function finalKey(input, etappe, hash) {
 }
 
 function blockFor(next, state, context) {
-  if (next.halt === 'abweichung') return deviationText(context);
+  if (next.halt === 'abweichung') return deviationText({ ...context, danach: next.danach });
   if (next.halt === 'showstopper') return showstopperText({ gruende: next.gruende, session: context.session });
   if (next.halt) return haltText(state, next.halt);
   if (next.ende) return finalReport(state);
@@ -105,18 +108,28 @@ function adoptValues(state, input, data) {
   if (input.wi && !state.wi) state.wi = input.wi;
 }
 
+// Review-Etappen ohne Ergebnis-Zeile halten die Kette: Ohne sie empfähle der Haltepunkt GO (`recommendation('go', null)`), und die Leit-Session
+// wüsste nicht, ob ein 🔴 offen ist.
+const RESULT_REQUIRED = { 'spec-review': 'Spec-Review', planning: 'Planning', 'plan-review': 'Plan-Review' };
+
+function resultDeviations(etappe, data) {
+  return RESULT_REQUIRED[etappe] && !data.ergebnis ? [`${RESULT_REQUIRED[etappe]} meldet keine Ergebnis-Zeile (**Ergebnis:** fehlt im Bericht)`] : [];
+}
+
 function checkedFinal(etappe, state, input, data, cwd) {
   const checked = checkFinal(etappe, toplevel(cwd), {
     commit: input.commit, spec: state.spec, plan: state.plan, dateien: data.dateien ?? [], branch: state.branch, basis: state.basis, worktree: state.worktree,
     specKopie: state.gestartet?.etappe === etappe ? state.gestartet.specKopie : undefined, entscheidungen: data.entscheidungen ?? [], bericht: input.bericht,
   });
-  return { ...checked, abweichungen: [...checked.abweichungen, ...slugDeviations(data)] };
+  return { ...checked, abweichungen: [...checked.abweichungen, ...resultDeviations(etappe, data), ...slugDeviations(data)] };
 }
 
-// Nächster Schritt nach dem `final`: Eine Abweichung hält die Kette, sonst entscheidet die Etappe mit ihrem Bericht.
+// Nächster Schritt nach dem `final`: Eine Abweichung hält die Kette; `danach` nennt, was ohne Abweichung folgte, damit der Block es für
+// die Antwort `weiter` ausweist. Ein Showstopper der Umsetzung bleibt so auch hinter einer Abweichung sichtbar.
 function nextAfterFinal(etappe, data, check) {
-  if (check.abweichungen.length > 0) return { halt: 'abweichung' };
-  return nextStep(etappe, { result: data.ergebnis, pruefung: data.pruefung, luecken: data.luecken ?? [], acOhneTest: data.acOhneTest ?? [] });
+  const normal = nextStep(etappe, { result: data.ergebnis, pruefung: data.pruefung, luecken: data.luecken ?? [], acOhneTest: data.acOhneTest ?? [] });
+  if (check.abweichungen.length > 0) return { halt: 'abweichung', danach: normal };
+  return normal;
 }
 
 // Schreibt das `final` im Zustand fort: offene Punkte, Etappe mit Ergebnis, Entscheidungen, Dateien, aktuelle Etappe und Halt.
@@ -124,14 +137,14 @@ function nextAfterFinal(etappe, data, check) {
 function applyFinal(state, { etappe, input, data, check, schluessel, next, now = new Date() }) {
   state.offen = mergePoints(state.offen, etappe, openPoints(readParts(path.dirname(path.resolve(input.bericht))), etappe));
   state.etappen = [...(state.etappen ?? []), {
-    etappe, session: input.session, ergebnis: data.ergebnis, tests: data.tests, commit: input.commit, geprueft: check.geprueft, bericht: toPosix(path.resolve(input.bericht)), schluessel,
+    etappe, session: input.session, ergebnis: data.ergebnis, abbruch: data.abbruch ?? null, tests: data.tests, commit: input.commit, geprueft: check.geprueft, bericht: toPosix(path.resolve(input.bericht)), schluessel,
     hashes: artifactHashes(state), gestartet: state.gestartet?.etappe === etappe ? state.gestartet.zeit : null, zeit: now.toISOString(),
   }];
   state.entscheidungen = [...(state.entscheidungen ?? []), ...(data.entscheidungen ?? []).map((text) => ({ etappe, text }))];
   state.dateien = [...(state.dateien ?? []), ...(data.dateien ?? []).map((pfad) => ({ etappe, pfad }))];
   state.etappe = etappe;
   state.halt = next.halt ?? null;
-  state.naechste = next.start ?? null;
+  state.naechste = next.start ?? next.danach?.start ?? null;
   state.gestartet = null;
   state.freigabe = null;
   return state;

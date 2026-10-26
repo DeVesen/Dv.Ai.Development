@@ -37,15 +37,15 @@ test('openPoints_FollowupChangesYellowWithOk_YellowIsDone', () => {
   assert.deepEqual(points.map((point) => point.key), ['b']);
 });
 
-test('openPoints_RedAndGreen_KeepsOnlyYellowAndGreenYellowFirst', () => {
+test('openPoints_RedYellowAndGreen_KeepsAllRedFirst', () => {
   // Arrange
-  const review = { open: [{ key: 'r', color: 'red', title: 'Rot' }, yellow('y', 'Gelb')], green: [{ key: 'g', color: 'green', title: 'Grün' }] };
+  const review = { open: [yellow('y', 'Gelb'), { key: 'r', color: 'red', title: 'Rot' }], green: [{ key: 'g', color: 'green', title: 'Grün' }] };
 
   // Act
   const points = openPoints([review], 'plan-review');
 
   // Assert
-  assert.deepEqual(points.map((point) => point.farbe), ['yellow', 'green']);
+  assert.deepEqual(points.map((point) => `${point.farbe} ${point.herkunft}`), ['red plan-review', 'yellow plan-review', 'green plan-review']);
 });
 
 test('openPoints_WhiteboardingWithRedYellowAndGreen_KeepsAllRedFirst', () => {

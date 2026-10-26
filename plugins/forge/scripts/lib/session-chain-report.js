@@ -10,7 +10,7 @@ const crypto = require('node:crypto');
 const { toPosix } = require('./posix');
 const { SessionChainError, checkedEtappe, slugOfArtifact } = require('./session-chain-store');
 const { ablageDir, storeFiles } = require('./session-chain-ablage');
-const { resultOf } = require('./session-chain-decide');
+const { resultOf, abortOf, acsWithoutTestOf } = require('./session-chain-decide');
 
 const REPORT_FILE = 'bericht.md';
 const DATA_FILE = 'bericht.json';
@@ -53,6 +53,8 @@ function etappeReport(input, cwd) {
   const slug = input.slug ?? slugOfArtifact({ spec: input.spec });
   const dir = input.spec ? path.dirname(path.resolve(input.spec)) : cwd;
   const text = reportText(input.bericht);
+  // ACs ohne beweisenden Test: aus dem Aufruf (--ac-ohne-test) und aus der Zeile des Abschlussberichts, je AC einmal.
+  const acOhneTest = [...new Set([...input.acOhneTest, ...acsWithoutTestOf(text)])];
   const target = input.anhang.length > 0 ? storeFiles({ dir, slug, etappe, files: input.anhang }) : toPosix(ablageDir(dir, slug, etappe));
   const dateien = input.dateien.map(absolute);
   const report = [
@@ -60,11 +62,11 @@ function etappeReport(input, cwd) {
     '# Entscheidungen des Menschen', ...list(input.entscheidungen, (entry) => `- ${entry}`), '',
     '# Geänderte Glossar- und ADR-Dateien', ...list(dateien, (file) => `- \`${file}\``), '',
     '# Testzahlen', input.tests ?? NONE,
-    ...checkLines(input),
+    ...checkLines({ ...input, acOhneTest }),
   ].join('\n');
   const data = {
-    etappe, slug, ergebnis: resultOf(text), entscheidungen: input.entscheidungen, dateien, tests: input.tests,
-    pruefung: input.pruefung, luecken: input.luecken, acOhneTest: input.acOhneTest,
+    etappe, slug, ergebnis: resultOf(text), abbruch: abortOf(text), entscheidungen: input.entscheidungen, dateien, tests: input.tests,
+    pruefung: input.pruefung, luecken: input.luecken, acOhneTest,
     ...Object.fromEntries(VALUE_KEYS.map((key) => [key, key === 'branch' ? input[key] : absolute(input[key])])),
   };
   fs.mkdirSync(target, { recursive: true });

@@ -12,6 +12,7 @@ const { ROUND_ONE, ROUND_TWO, readText, readLines, readJson, readAgentJson, writ
 
 const VERDICTS = ['erledigt', 'nicht erledigt'];
 const VERIFIER = 'nachprüfer';
+const COLOR_OF_ICON = { '🔴': 'red', '🟡': 'yellow', '🟢': 'green' };
 const OUTCOME_LABELS = { changed: 'geändert', unchanged: 'nicht geändert', 'human-question': 'frage an den menschen', 'spec-question': 'spec-rückfrage' };
 
 function sourceDir(options) {
@@ -44,7 +45,7 @@ function baseItems(options) {
     return groups.filter((group) => group.color === 'red').flatMap(redItems);
   }
   return parseRework(readLines(path.join(sourceDir(options), 'aggregate.md')))
-    .map((group) => ({ key: placeKey(group.location), label: group.location, source: 'ki', lines: group.findings }));
+    .map((group) => ({ key: placeKey(group.location), label: group.location, source: 'ki', color: COLOR_OF_ICON[group.severity] ?? 'red', lines: group.findings }));
 }
 
 function answeredItems(options, openKeys) {
@@ -142,7 +143,9 @@ function verifyRoundTwo(options) {
   const items = [...rateReviewer(VERIFIER, verifier.findings, places, context), ...scripted];
   const groups = groupRated(items.filter((item) => !item.dropped));
   const verdicts = [...verifier.verdicts.map((verdict) => ({ ...verdict, source: 'ki' })), ...scriptVerdicts(checklist.items, scripted)];
-  const notDone = verifier.verdicts.filter((verdict) => verdict.verdict === 'nicht erledigt').length;
+  // Nur ein nicht erledigter Punkt, der ein Hindernis war (🔴 oder ohne Stufe: Runde 1, beantwortete Frage), bleibt ein Hindernis; 🟡 bleibt 🟡.
+  const hindrances = new Set(aiItems.filter((item) => (item.color ?? 'red') === 'red').map((item) => item.key));
+  const notDone = verifier.verdicts.filter((verdict) => verdict.verdict === 'nicht erledigt' && hindrances.has(placeKey(verdict.location))).length;
   const counts = countColors(groups);
   const openRed = notDone + counts.red;
   writeJson(path.join(dir, 'einstufung.json'), { verdicts, groups, dropped: droppedList(items), openRed, belege: quoteCounts(items) });

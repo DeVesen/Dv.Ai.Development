@@ -3,8 +3,11 @@
 Gemeinsame Regeln von `spec-review-orchestrator`, `plan-orchestrator` und `implementation-orchestrator`. Ihre Skills, die README und der Brief der Session-Kette verweisen auf diese Datei oder lesen den Wert; keine dieser Stellen wiederholt eine Regel.
 
 ## Followup-Runden
-- Maximum Followup-Runden: 2
-- Eine Runde startet nur, wenn die Review-Statuszeile `FOLLOWUP ja` meldet.
+- Maximum Followup-Runden: 8
+- Eine Followup-Runde ist eine Iteration Integration → Re-Review. `orchestrator-state.js next` startet eine Runde nur, solange der letzte Bericht ein offenes 🔴 mit Scout-Vorschlag nennt (`NEXT=followup`); 🟡 und 🟢 lösen keine Runde aus und stehen im Abschlussbericht unter `Was ist noch offen`.
+- Die Runden enden früher bei Stillstand: dieselbe 🔴-Stelle bleibt nach zwei aufeinanderfolgenden Runden offen (`ABBRUCH=stillstand`).
+- Bleibt nach dem Ende der Runden ein 🔴 offen (`ABBRUCH=maximum` oder `ABBRUCH=stillstand`), endet der Lauf sauber mit dem Abschlussbericht; er nennt `Iterationen: <n> von <max>` und `Abbruch: <grund>`. Die Leit-Session hält danach am Haltepunkt.
+- Die Integration setzt den bevorzugten Scout-Vorschlag um. Eine Abweichung davon braucht je Finding eine schriftliche Begründung; sie steht im Bericht als `Abweichung: <Begründung>`.
 
 ## Git-Verbote
 - Du arbeitest im aktuellen Checkout auf dem aktuellen Branch: kein `checkout`, `switch`, `stash`, `rebase`, kein `git worktree`, kein EnterWorktree, kein neuer Branch.
@@ -27,6 +30,7 @@ Gemeinsame Regeln von `spec-review-orchestrator`, `plan-orchestrator` und `imple
 | "Scope ist Pflicht, ich frage nach der Nummer." | Ohne Workitem-Nr. kein Scope und keine Frage. | spec-review-orchestrator |
 | "Den Bericht stelle ich selbst zusammen." | Nur `orchestrator-report.js`, unverändert. | alle drei |
 | "Noch eine Followup-Runde." | Das Maximum aus dem Abschnitt Followup-Runden gilt. | alle drei |
+| "Die 🟡 arbeite ich noch ein, dann ist es sauber." | 🟡 lösen keine Runde aus; sie stehen im Bericht. | alle drei |
 | "Plan bereit, ich committe." | Nie; der Plan bleibt uncommittet. | plan-orchestrator |
 | "Die Spec-Änderung ist harmlos." | Stopp, Diff zeigen, fragen. | plan-orchestrator, implementation-orchestrator |
 | "Alles grün, `finish-work` gleich mit." | Nie; `finish-work` gehört zur Abschluss-Etappe. | implementation-orchestrator |

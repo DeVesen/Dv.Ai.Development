@@ -71,19 +71,56 @@ test('start_InWorktree_ReportsWorktree', () => {
   assert.match(run(tree, 'start', '--state', tmp(), '--spec', spec).stdout, /WORKTREE=ja\nSPEC-IM-CHECKOUT=nein/);
 });
 
-test('next_FollowupOfferedUnderCap_Followup', () => {
+// Offene Gruppe im Format der Bericht-Daten; `hasProposal` sagt, ob `review-followup <A> alle` sie erreicht.
+function openEntry(color, key, hasProposal = true) {
+  return { key, color, title: `Titel ${key}`, description: `Beschreibung ${key}.`, recommendation: null, angles: 'Machbarkeit', hasProposal };
+}
+
+function blocked(open) {
+  return { status: 'nicht bereit', resultLine: '**Ergebnis:** ⛔ Nicht bereit', offersFollowup: true, openRed: open.filter((entry) => entry.color === 'red').length, open };
+}
+
+test('next_OpenRedWithProposal_Followup', () => {
   const dir = tmp();
-  const review = report(path.join(dir, 'br.json'), { status: 'nicht bereit', resultLine: '**Ergebnis:** ⛔ Nicht bereit', offersFollowup: true });
-  assert.equal(run(dir, 'next', '--review', review).stdout, 'NEXT=followup\nRUNDE=1\nERGEBNIS=⛔ Nicht bereit\nBEREIT=nein\nRUNDEN=0\n');
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'ac-04')]));
+  assert.equal(run(dir, 'next', '--review', review).stdout, 'NEXT=followup\nRUNDE=1\nERGEBNIS=⛔ Nicht bereit\nBEREIT=nein\nRUNDEN=0\nROT=1\n');
 });
 
-test('next_MaximumFollowupsDone_WeiterEvenIfOffered', () => {
+test('next_OnlyYellowOpenWithProposal_WeiterWithoutAbbruch', () => {
   const dir = tmp();
-  const offered = { status: 'x', resultLine: '**Ergebnis:** ⛔ Nicht bereit', offersFollowup: true };
-  const files = Array.from({ length: maxFollowups() + 1 }, (_, index) => report(path.join(dir, `bericht-${index}.json`), offered));
-  const result = run(dir, 'next', '--review', files[0], ...files.slice(1).flatMap((file) => ['--followup', file]));
-  assert.match(result.stdout, /^NEXT=weiter\n/);
-  assert.match(result.stdout, new RegExp(`RUNDEN=${maxFollowups()}`));
+  const hints = report(path.join(dir, 'br.json'), { status: 'sauber nach Runde 1', resultLine: '**Ergebnis:** ✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen', offersFollowup: true, openRed: 0, open: [openEntry('yellow', 'task 1')] });
+  assert.equal(run(dir, 'next', '--review', hints).stdout, 'NEXT=weiter\nERGEBNIS=✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen\nBEREIT=ja\nRUNDEN=0\nROT=0\n');
+});
+
+test('next_OpenRedWithoutProposal_WeiterWithoutAbbruch', () => {
+  const dir = tmp();
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'kopf', false)]));
+  assert.equal(run(dir, 'next', '--review', review).stdout, 'NEXT=weiter\nERGEBNIS=⛔ Nicht bereit\nBEREIT=nein\nRUNDEN=0\nROT=1\n');
+});
+
+test('next_SameRedOpenAfterTwoRounds_WeiterWithAbbruchStillstand', () => {
+  const dir = tmp();
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'ac-04')]));
+  const rounds = [1, 2].map((number) => report(path.join(dir, `f${number}.json`), { ...blocked([openEntry('red', 'ac-04')]), followup: true }));
+  const result = run(dir, 'next', '--review', review, '--followup', rounds[0], '--followup', rounds[1]);
+  assert.match(result.stdout, /^NEXT=weiter\nABBRUCH=stillstand\n/);
+  assert.match(result.stdout, /RUNDEN=2\nROT=1\n$/);
+});
+
+test('next_DistinctRedAfterMaximumRounds_WeiterWithAbbruchMaximum', () => {
+  const dir = tmp();
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'ac-00')]));
+  const rounds = Array.from({ length: maxFollowups() }, (_, index) => report(path.join(dir, `f${index + 1}.json`), { ...blocked([openEntry('red', `ac-${index + 1}`)]), followup: true }));
+  const result = run(dir, 'next', '--review', review, ...rounds.flatMap((file) => ['--followup', file]));
+  assert.match(result.stdout, /^NEXT=weiter\nABBRUCH=maximum\n/);
+  assert.match(result.stdout, new RegExp(`RUNDEN=${maxFollowups()}\nROT=1\n$`));
+});
+
+test('next_RedFixedInLastRound_WeiterWithoutAbbruch', () => {
+  const dir = tmp();
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'ac-04')]));
+  const round = report(path.join(dir, 'f1.json'), { status: 'sauber nach Nachprüfung', resultLine: '**Ergebnis:** ✅ Bereit zum Planen', offersFollowup: false, followup: true, openRed: 0, open: [] });
+  assert.equal(run(dir, 'next', '--review', review, '--followup', round).stdout, 'NEXT=weiter\nERGEBNIS=✅ Bereit zum Planen\nBEREIT=ja\nRUNDEN=1\nROT=0\n');
 });
 
 test('next_IncompleteOrMissingReport_Ende', () => {
@@ -96,7 +133,7 @@ test('next_IncompleteOrMissingReport_Ende', () => {
 test('next_Ready_WeiterBereitJa', () => {
   const dir = tmp();
   const ready = report(path.join(dir, 'br.json'), { status: 'sauber', resultLine: '**Ergebnis:** ✅ Bereit zum Abschließen', offersFollowup: false });
-  assert.equal(run(dir, 'next', '--review', ready).stdout, 'NEXT=weiter\nERGEBNIS=✅ Bereit zum Abschließen\nBEREIT=ja\nRUNDEN=0\n');
+  assert.equal(run(dir, 'next', '--review', ready).stdout, 'NEXT=weiter\nERGEBNIS=✅ Bereit zum Abschließen\nBEREIT=ja\nRUNDEN=0\nROT=0\n');
 });
 
 test('cli_BadCall_ExitTwo', () => {

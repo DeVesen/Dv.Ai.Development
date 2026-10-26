@@ -30,10 +30,16 @@ function goCall({ plan, spec, wi, basis }) {
   return `/dv-forge:implementation-orchestrator ${plan} ${spec}${wi ? ` ${wi}` : ''} --base ${basis}`;
 }
 
-function specHalt({ result, recommendation, points }) {
+// `abbruch`: Zeile `Abbruch: …` des Orchestrator-Berichts, wenn die Followup-Runden trotz 🔴 endeten.
+function abortLine(abbruch) {
+  return abbruch ? [`**Abbruch:** ${abbruch}`] : [];
+}
+
+function specHalt({ result, abbruch = null, recommendation, points }) {
   return [
     '# Spec-Haltepunkt',
     `**Ergebnis:** ${result ?? 'keine Ergebnis-Zeile'}`,
+    ...abortLine(abbruch),
     recommendationLine(recommendation),
     '**Offene Punkte:**',
     ...pointLines(points),
@@ -42,12 +48,13 @@ function specHalt({ result, recommendation, points }) {
 }
 
 // Ohne Plan-Review-Ergebnis (`result` null) fehlt die Ergebnis-Zeile.
-function goHalt({ spec, plan, wi, basis, result, recommendation, points }) {
+function goHalt({ spec, plan, wi, basis, result, abbruch = null, recommendation, points }) {
   return [
     '# GO-Haltepunkt',
     `**Spec:** ${spec}`,
     `**Plan:** ${plan}`,
     ...(result ? [`**Ergebnis:** ${result}`] : []),
+    ...abortLine(abbruch),
     recommendationLine(recommendation),
     '**Offene Punkte:**',
     ...pointLines(points),
@@ -69,8 +76,18 @@ function showstopperText({ gruende, session }) {
   return ['# Showstopper der Umsetzung', ...gruende.map((grund) => `- ${grund}`), `Klären in der Umsetzungs-Session: ${sessionLink(session)}`].join('\n');
 }
 
-function deviationText({ etappe, abweichungen, session }) {
-  return [`# Abweichung in der Etappe ${etappe}`, ...abweichungen.map((line) => `- ${line}`), `Die Kette hält. Etappen-Session: ${sessionLink(session)}`].join('\n');
+// Was nach der Antwort `weiter` folgt: Start der Etappe, die ohne Abweichung folgte, ein Haltepunkt (die Leit-Session zeigt ihn mit `halt`),
+// die Showstopper der Umsetzung (kein Start) oder das Ende der Kette.
+function afterDeviationLines(danach) {
+  if (!danach) return [];
+  if (danach.start) return [`Bei „weiter“: Start der Etappe ${danach.start}.`];
+  if (danach.halt === 'showstopper') return ['**Showstopper der Umsetzung:**', ...danach.gruende.map((grund) => `- ${grund}`), 'Bei „weiter“: kein Start; der Mensch klärt die Showstopper in der Umsetzungs-Session.'];
+  if (danach.halt) return [`Bei „weiter“: Haltepunkt ${danach.halt} (\`<SC> halt --slug <slug> --art ${danach.halt}\`).`];
+  return ['Bei „weiter“: Ende der Kette (`<SC> schluss --slug <slug>`).'];
+}
+
+function deviationText({ etappe, abweichungen, session, danach = null }) {
+  return [`# Abweichung in der Etappe ${etappe}`, ...abweichungen.map((line) => `- ${line}`), `Die Kette hält. Etappen-Session: ${sessionLink(session)}`, ...afterDeviationLines(danach)].join('\n');
 }
 
 function adoptedText(state) {

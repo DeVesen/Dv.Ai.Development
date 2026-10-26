@@ -97,10 +97,34 @@ test('checkFinal_UmsetzungBranchWithoutCommits_IsDeviation', () => {
   git(repo, 'branch', 'feature/x');
 
   // Act
-  const result = checkFinal('umsetzung', repo, { commit: 'none', branch: 'feature/x', basis: 'main' });
+  const result = checkFinal('umsetzung', repo, { commit: 'none', branch: 'feature/x', basis: 'main', worktree: repo });
 
   // Assert
   assert.deepEqual(result.abweichungen, ['Branch feature/x hat keine Commits seit main']);
+});
+
+test('checkFinal_UmsetzungOnBaseBranchInPlace_IsCheckedWithoutCommitCount', () => {
+  // Arrange
+  const repo = makeRepo();
+  const commit = commitFile(repo, 'src/a.js', 'a\n', 'feat: a');
+
+  // Act
+  const result = checkFinal('umsetzung', repo, { commit, branch: 'main', basis: 'main', worktree: repo });
+
+  // Assert
+  assert.deepEqual(result.abweichungen, []);
+  assert.ok(result.geprueft.includes('Branch main ist der Basis-Branch (Umsetzung vor Ort)'));
+});
+
+test('checkFinal_UmsetzungWithoutBranchOrWorktree_NamesBoth', () => {
+  // Arrange
+  const repo = makeRepo();
+
+  // Act
+  const result = checkFinal('umsetzung', repo, { commit: 'none', basis: 'main' });
+
+  // Assert
+  assert.deepEqual(result.abweichungen, ['Umsetzung meldet keinen Branch (--branch fehlt)', 'Umsetzung meldet keinen Worktree (--worktree fehlt)']);
 });
 
 test('checkFinal_AbschlussPushedAndWorktreeRemoved_IsChecked', () => {

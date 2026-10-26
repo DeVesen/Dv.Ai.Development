@@ -67,12 +67,20 @@ test('fromSaved_SavedGroup_BuildsOpenGroupWithConsequenceFromFindingLine', () =>
   assert.equal(group.block.split('\n')[0], '### 🟡 AC-07 (clarity)');
 });
 
-test('openFromFollowup_UnchosenNotDoneAndFresh_AreOpenChosenDoneIsNot', () => {
+test('openFromFollowup_UnchosenNotDoneAndFresh_AreOpenChosenDoneIsNotAndYellowKeepsItsColor', () => {
   const groups = [saved(1, '🔴', 'AC-01'), saved(2, '🟡', 'AC-02'), saved(3, '🟡', 'AC-03'), saved(4, '🟡', 'AC-04')];
   const two = { verdicts: [verdict('AC-01', 'erledigt'), verdict('AC-02', 'nicht erledigt')], groups: [rated('ac-9', 'AC-09', 'red')] };
   const open = openFromFollowup({ saved: groups, chosen: new Set([1, 2]), two });
-  assert.deepEqual(open.map((group) => `${group.color}:${group.label}`), ['red:AC-02', 'red:AC-09', 'yellow:AC-03', 'yellow:AC-04']);
-  assert.equal(open[0].scoutKey, '🟡 AC-02');
+  // dedupe sortiert stabil nach Farbe; innerhalb einer Farbe bleibt die Einfügereihenfolge: nicht gewählte (AC-03, AC-04), dann nicht bestätigte (AC-02).
+  assert.deepEqual(open.map((group) => `${group.color}:${group.label}`), ['red:AC-09', 'yellow:AC-03', 'yellow:AC-04', 'yellow:AC-02']);
+  assert.equal(open[3].scoutKey, '🟡 AC-02');
+});
+
+test('openFromFollowup_ChosenRedNotDone_StaysRed', () => {
+  const groups = [saved(1, '🔴', 'AC-01')];
+  const two = { verdicts: [verdict('AC-01', 'nicht erledigt')], groups: [] };
+  const open = openFromFollowup({ saved: groups, chosen: new Set([1]), two });
+  assert.deepEqual(open.map((group) => `${group.color}:${group.label}`), ['red:AC-01']);
 });
 
 test('openFromFollowup_NoVerification_ChosenGroupsStayOpen', () => {

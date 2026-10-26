@@ -170,3 +170,36 @@ test('finalReport_FreigabeOtherThanStopp_NoResume', () => {
   // Assert
   assert.ok(!text.includes('## Fortsetzen'));
 });
+
+test('specHalt_AfterAbortedRounds_ShowsAbortLineAfterResult', () => {
+  // Act
+  const text = specHalt({ result: '⛔ Noch nicht bereit · 1 Hindernis offen', abbruch: 'Maximum von 8 Iterationen erreicht, 1 × 🔴 offen.', recommendation: { empfehlung: 'Spec-Nacharbeit', grund: null }, points: [{ farbe: 'red', titel: 'Grenzwert festlegen', key: 'g', herkunft: 'spec-review' }] });
+
+  // Assert
+  assert.ok(text.includes('**Ergebnis:** ⛔ Noch nicht bereit · 1 Hindernis offen\n**Abbruch:** Maximum von 8 Iterationen erreicht, 1 × 🔴 offen.\n**Empfehlung:** Spec-Nacharbeit'));
+  assert.ok(text.includes('- 🔴 Grenzwert festlegen · spec-review'));
+});
+
+test('deviationText_WithFollowingStage_NamesStartAfterWeiter', () => {
+  // Act
+  const text = deviationText({ etappe: 'whiteboarding', abweichungen: ['x'], session: 'local_s', danach: { start: 'grill' } });
+
+  // Assert
+  assert.ok(text.endsWith('Bei „weiter“: Start der Etappe grill.'));
+});
+
+test('deviationText_WithFollowingShowstopper_ListsReasonsAndNoStart', () => {
+  // Act
+  const text = deviationText({ etappe: 'umsetzung', abweichungen: ['x'], session: 'local_u', danach: { halt: 'showstopper', gruende: ['AC-05 hat keinen beweisenden Test'] } });
+
+  // Assert
+  assert.ok(text.includes('**Showstopper der Umsetzung:**\n- AC-05 hat keinen beweisenden Test\nBei „weiter“: kein Start;'));
+});
+
+test('deviationText_WithFollowingHalt_NamesHaltCommand', () => {
+  // Act
+  const text = deviationText({ etappe: 'spec-review', abweichungen: ['x'], session: 'local_s', danach: { halt: 'spec' } });
+
+  // Assert
+  assert.ok(text.endsWith('Bei „weiter“: Haltepunkt spec (`<SC> halt --slug <slug> --art spec`).'));
+});

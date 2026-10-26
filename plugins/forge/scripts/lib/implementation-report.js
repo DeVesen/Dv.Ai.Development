@@ -19,6 +19,8 @@ const { ablageOf } = require('./report-ablage');
 
 const REVIEW = 'implementation-review';
 const CANONICAL = ['acceptance', 'plan-fidelity', 'design', 'tests', 'risks'];
+// Kategorien des Akzeptanz-Reviewers, die „AC ohne beweisenden Test“ bedeuten (implementation-categories.js: ac-unbelegt 🔴, ac-ohne-test 🟡).
+const AC_WITHOUT_TEST = new Set(['ac-ohne-test', 'ac-unbelegt']);
 const TEST_PATHS = [/(^|[\\/])(tests?|__tests__)[\\/]/i, /[._-](test|spec)s?\./i, /[a-z0-9]Tests?\.[a-z0-9]+$/];
 const DOCUMENT_FILE = /\.(md|markdown|txt|rst|adoc)$/i;
 const ITEM_TEXTS = ['reviewer', 'severity', 'location', 'quote', 'consequence', 'rationale'];
@@ -142,6 +144,11 @@ function notesOf(options, result, open, scout) {
   return [...prepared, ...failed, ...(fallback ? [SCOUT_NOTE] : [])];
 }
 
+// ACs, deren Gruppe ein Akzeptanz-Finding ohne beweisenden Test trägt; Stelle wie in der Gruppe (`AC-<nn>`).
+function acsWithoutTest(result) {
+  return [...new Set(result.groups.filter((group) => group.items.some((item) => item.reviewer === 'acceptance' && AC_WITHOUT_TEST.has(item.category))).map((group) => group.location))];
+}
+
 function reportInput(options, result, open, scout) {
   const files = changedFiles(readText(options.packageFile));
   return {
@@ -150,6 +157,7 @@ function reportInput(options, result, open, scout) {
     fileCount: files.length, testCount: files.filter(isTestFile).length,
     reviewerLines: reviewerLines(result), failedLabels: result.failed.map((name) => reviewerLabel(REVIEW, name)),
     open: open.map((group) => openEntry(group, scout)), green: result.groups.filter((group) => group.severity === 'green').map(greenEntry),
+    acOhneTest: acsWithoutTest(result),
     notes: notesOf(options, result, open, scout),
   };
 }
@@ -164,7 +172,7 @@ function storeReport(options, input, status, text) {
     data: {
       format: REPORT_FORMAT, review: REVIEW, title: 'Implementierungs-Review', followup: false, status, ...summary, offersFollowup: followup,
       plan: input.plan, topic: input.topic, openRed: input.openRed, failedLabels: input.failedLabels,
-      changes: [], decisions: [], questions: [], open: input.open, green: input.green, notes: input.notes,
+      changes: [], decisions: [], questions: [], open: input.open, green: input.green, acOhneTest: input.acOhneTest, notes: input.notes,
     },
   });
   return reviewStatusLine({ resultLine: summary.resultLine, followup, report: stored.md });

@@ -108,16 +108,17 @@ function decisionsOf(ctx) {
   return answeredBundles(ctx).map(({ bundle, entries }) => ({ title: bundle.title, decision: unique(entries.map((entry) => entry.decision)).join('; ') }));
 }
 
+// Gewählte Vorschläge: umgesetzt (`changed`) oder begründet nicht umgesetzt (`unchanged`, Begründung als `reason`); beides beurteilt die Nachprüfung.
 function followupChanges(options, ctx) {
   return ctx.followup.gewaehlt.flatMap((chosen) => {
     const key = placeKey(chosen.stelle);
     const saved = ctx.saved.find((group) => group.number === chosen.nummer);
     const result = ctx.rework.results.find((entry) => typeof entry?.location === 'string' && placeKey(entry.location) === key);
-    if (!saved || result?.status !== 'changed') return [];
+    if (!saved || !['changed', 'unchanged'].includes(result?.status)) return [];
     const texts = described(fromSaved(saved), ctx.index);
     return [{
       key, ok: verdictOk(ctx.verdicts, [key]), title: texts.title, angles: angles(options.review, saved.reviewers), description: texts.description,
-      change: result.change ?? '', evidence: result.evidence ?? null, choice: chosen.vorschlag,
+      change: result.change ?? '', evidence: result.evidence ?? null, choice: chosen.vorschlag, reason: result.status === 'unchanged' ? result.reason ?? '' : null,
     }];
   });
 }

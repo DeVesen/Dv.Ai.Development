@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { resultOf, recommendation, showstoppers, nextStep } = require('../scripts/lib/session-chain-decide');
+const { resultOf, abortOf, acsWithoutTestOf, recommendation, showstoppers, nextStep } = require('../scripts/lib/session-chain-decide');
 
 const READY_REPORT = { result: '✅ Bereit zum Abschließen', pruefung: 'gruen', luecken: [], acOhneTest: [] };
 
@@ -112,4 +112,19 @@ test('showstoppers_ResultNotReady_IsShowstopper', () => {
 
   // Assert
   assert.deepEqual(gruende, ['Ergebnis ist nicht ✅: ⛔ Noch nicht bereit · 1 Hindernis offen']);
+});
+
+test('abortOf_ReportWithAbortLine_ReturnsTextAfterLabel', () => {
+  // Act
+  const text = abortOf('# Abschlussbericht\n**Ergebnis:** ⛔ Noch nicht bereit · 1 Hindernis offen\nIterationen: 8 von 8\nAbbruch: Maximum von 8 Iterationen erreicht, 1 × 🔴 offen.\n');
+
+  // Assert
+  assert.equal(text, 'Maximum von 8 Iterationen erreicht, 1 × 🔴 offen.');
+  assert.equal(abortOf('# Abschlussbericht\n**Ergebnis:** ✅ Bereit\n'), null);
+});
+
+test('acsWithoutTestOf_ReportLine_ReturnsTheAcs', () => {
+  // Act & Assert
+  assert.deepEqual(acsWithoutTestOf('x\nAC ohne beweisenden Test: AC-02, AC-05\ny'), ['AC-02', 'AC-05']);
+  assert.deepEqual(acsWithoutTestOf('kein Treffer'), []);
 });

@@ -1,6 +1,6 @@
 'use strict';
 
-// Offene 🟡 und 🟢 einer Etappe (aus dem Whiteboarding auch 🔴) aus ihren Bericht-Daten (bericht-review.json, dann bericht-followup-<n>.json) und ihre
+// Offene 🔴, 🟡 und 🟢 einer Etappe aus ihren Bericht-Daten (bericht-review.json, dann bericht-followup-<n>.json) und ihre
 // Führung über alle Etappen. Die Regel steht in orchestrator-report.js (mergeOpenKeepUnchanged): Ein Punkt ist erst erledigt,
 // wenn eine spätere Runde ihn als Änderung mit `ok: true` meldet. Dateinamen der Ablage kommen aus session-chain-ablage.js.
 
@@ -13,8 +13,8 @@ const { toPosix } = require('./posix');
 
 const ICON = { red: '🔴', yellow: '🟡', green: '🟢' };
 const RANK = { red: -1, yellow: 0, green: 1 };
-// 🔴 führt die Kette nur aus dem Review im Whiteboarding: Danach entscheidet der Mensch selbst, ob er trotz 🔴 abschließt.
-const RED_FROM = ['whiteboarding'];
+// 🔴 führt die Kette aus jeder Etappe: Ein nach den Followup-Runden offenes 🔴 steht am Haltepunkt und im Schlussbericht mit seiner Herkunft.
+const COLORS = ['red', 'yellow', 'green'];
 
 // Eine fehlende Datei fällt still weg (readPart liefert null); kaputte Bericht-Daten werfen, damit kein offener Punkt unbemerkt verschwindet.
 function readChecked(file) {
@@ -34,8 +34,7 @@ function readParts(ablage) {
 
 // `parts`: Bericht-Daten in Reihenfolge; `herkunft`: Etappe der Punkte.
 function openPoints(parts, herkunft) {
-  const colors = RED_FROM.includes(herkunft) ? ['red', 'yellow', 'green'] : ['yellow', 'green'];
-  return mergeOpenKeepUnchanged(parts).filter((entry) => colors.includes(entry?.color))
+  return mergeOpenKeepUnchanged(parts).filter((entry) => COLORS.includes(entry?.color))
     .map((entry, index) => ({ farbe: entry.color, titel: entry.title, key: keyOf(entry, index, 'punkt'), herkunft }))
     .sort((a, b) => RANK[a.farbe] - RANK[b.farbe]);
 }

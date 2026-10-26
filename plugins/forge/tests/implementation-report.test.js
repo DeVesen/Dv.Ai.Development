@@ -396,3 +396,20 @@ test('implementationReport_RunWithGreenGroup_DataListsGreenEntryAndOpenStaysEmpt
   assert.deepEqual(data.open, []);
   assert.equal(data.kind, 'ready');
 });
+
+test('implementationReport_AcceptanceGroupWithoutProvingTest_StoresAcOhneTestInReportData', () => {
+  // Arrange
+  const AC_GROUP = {
+    location: 'AC-02', severity: 'yellow', reviewers: ['acceptance'],
+    items: [{ reviewer: 'acceptance', severity: 'yellow', category: 'ac-ohne-test', location: 'AC-02', quote: 'q', consequence: 'AC-02 hat keinen Test', rationale: 'r' }],
+  };
+  const env = setup({ groups: [AC_GROUP, RED] });
+
+  // Act
+  const result = runReport(env);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const data = JSON.parse(fs.readFileSync(path.join(env.ablage, 'bericht-review.json'), 'utf8'));
+  assert.deepEqual(data.acOhneTest, ['AC-02']);
+});

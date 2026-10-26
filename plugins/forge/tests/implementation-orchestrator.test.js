@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { readMarkdown, readText, wordCount } = require('./lib/markdown');
-const { FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION } = require('./lib/former-names');
+const { FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION, FORMER_ROUND_WORDINGS } = require('./lib/former-names');
 
 const SKILLS = path.join(__dirname, '..', 'skills');
 const SKILL = path.join(SKILLS, 'implementation-orchestrator', 'SKILL.md');
@@ -108,7 +108,7 @@ test('implementationOrchestrator_Body_ReadsTheRulesFileInsteadOfRepeatingGitBans
 
   // Assert
   assert.ok(body.includes('Lies `<PLUGIN>/shared/orchestrator-rules.md` und befolge es; hier steht nur, was zusätzlich für diesen Orchestrator gilt.'));
-  for (const gone of ['## Rote Flaggen', 'Wünsche des Menschen', 'Dritte Followup-Runde', 'finish-work` gleich mit']) assert.equal(body.includes(gone), false, `${gone} steht in der Regeldatei`);
+  for (const gone of ['## Rote Flaggen', 'Wünsche des Menschen', 'finish-work` gleich mit']) assert.equal(body.includes(gone), false, `${gone} steht in der Regeldatei`);
 });
 
 test('implementationOrchestrator_Body_PassesSkillQuestionsToTheHuman', () => {
@@ -177,7 +177,7 @@ test('implementationOrchestrator_Body_StartsFollowupRoundsOnFollowupJaBeforeBuil
   assert.ok(followup > -1 && followup < ready, 'Reihenfolge followup, weiter');
   assert.ok(body.includes('Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> alle --spec <S>`. Hash-Prüfung.'));
   assert.ok(body.indexOf('Maximum der Regeldatei') < body.indexOf('6. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>"'), 'Build, Test und Lint erst nach den Runden');
-  for (const gone of ['höchstens zwei', 'Nie eine dritte', 'bericht-followup-1.json', 'bericht-followup-2.json']) assert.equal(body.includes(gone), false, `${gone} steht in der Regeldatei oder in der Ablage`);
+  for (const gone of [...FORMER_ROUND_WORDINGS, 'bericht-followup-1.json', 'bericht-followup-2.json']) assert.equal(body.includes(gone), false, `${gone} steht in der Regeldatei oder in der Ablage`);
 });
 
 test('implementationOrchestrator_Body_WritesChainEntryWithWorktreeAndBranchBeforeTheReportWhenStartWorkRan', () => {

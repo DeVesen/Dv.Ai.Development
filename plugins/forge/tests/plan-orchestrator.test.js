@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { readMarkdown, readText, wordCount } = require('./lib/markdown');
-const { FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION } = require('./lib/former-names');
+const { FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION, FORMER_ROUND_WORDINGS } = require('./lib/former-names');
 
 const SKILL = path.join(__dirname, '..', 'skills', 'plan-orchestrator', 'SKILL.md');
 const REPORT_TEXT = path.join(__dirname, '..', 'scripts', 'lib', 'report-text.js');
@@ -137,7 +137,7 @@ test('planOrchestrator_Body_RunsFollowupRoundsUpToTheRulesFileMaximumAndStopsOnA
   // Assert
   assert.ok(body.includes('Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> alle`.'));
   assert.ok(body.includes('mit `--followup "<BFn>"` je gelaufener Runde: `NEXT=followup` → nächste Runde, sonst 5.'));
-  for (const gone of ['höchstens zwei', 'Nie eine dritte', 'bericht-followup-1.json', 'bericht-followup-2.json', 'Dritte Followup-Runde']) assert.equal(body.includes(gone), false, `${gone} steht in der Regeldatei oder in der Ablage`);
+  for (const gone of [...FORMER_ROUND_WORDINGS, 'bericht-followup-1.json', 'bericht-followup-2.json']) assert.equal(body.includes(gone), false, `${gone} steht in der Regeldatei oder in der Ablage`);
 });
 
 test('planOrchestrator_Body_FollowupRoundsNeverCommit', () => {

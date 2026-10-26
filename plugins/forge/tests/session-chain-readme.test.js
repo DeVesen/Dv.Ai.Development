@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const { readText } = require('./lib/markdown');
+const { SUB_SKILLS, START_COMMAND } = require('../scripts/lib/entry-guard');
 
 const README = path.join(__dirname, '..', 'README.md');
 
@@ -27,11 +28,42 @@ test('readme_Ablauf_NamesSessionChainStateAndBaseFile', () => {
   assert.ok(text.includes('Das Whiteboarding prüft seine Spec in derselben Etappen-Session mit dem Spec-Review-Orchestrator; jede Etappe meldet ihr `final` zusätzlich per Nachricht an die Leit-Session.'));
 });
 
-test('readme_Ablage_NamesOptionPlaceAndUnchangedDefault', () => {
+test('readme_Ablage_NamesTheOneDataChannelAndItsPlace', () => {
   // Act
   const text = readText(README);
 
   // Assert
-  assert.ok(text.includes('Mit `--ablage <etappe>` legen die drei Orchestratoren, `plan-review` und `review-followup`'));
-  assert.ok(text.includes('Ohne die Option bleibt alles wie bisher.'));
+  assert.ok(text.includes('Die Ablage ist der eine Datenkanal zwischen Etappe und Leit-Session und immer eingeschaltet'));
+  assert.ok(text.includes('`<git-common-dir>/dv-forge/session-chain/<slug>/ablage/<etappe>/`'));
+});
+
+test('readme_StartCommand_NamesTheOnlyEntryTheDebugSwitchAndTheTools', () => {
+  // Act
+  const text = readText(README);
+
+  // Assert
+  assert.ok(text.includes(`**Startbefehl:** dv-forge betritt man nur über \`${START_COMMAND}\``));
+  assert.ok(text.includes('Zum Debuggen hängt man `--debug` an'));
+  assert.ok(text.includes('`init`, `commit-message`, `domain-modeling` und `merge-conflict-resolution` sind Werkzeuge ohne Etappe und bleiben von Hand aufrufbar.'));
+});
+
+test('readme_SkillTable_MarksEverySubSkillAsInternAndTheOthersNot', () => {
+  // Arrange
+  const rows = readText(README).split('\n').filter((line) => line.startsWith('| `'));
+  const rowOf = (name) => rows.find((line) => line.split('|')[1].split(',').map((cell) => cell.trim()).includes(`\`${name}\``));
+
+  // Assert
+  for (const name of SUB_SKILLS) assert.ok(rowOf(name)?.endsWith('| intern |'), `${name}: ${rowOf(name)}`);
+  assert.ok(rowOf('session-orchestrator').endsWith('| Startbefehl |'));
+  for (const name of ['init', 'commit-message', 'domain-modeling', 'merge-conflict-resolution']) assert.ok(rowOf(name).endsWith('| von Hand |'), name);
+});
+
+test('readme_Orchestrators_EndWithThreeSectionsAndReviewsPrintOnlyTheStatusLine', () => {
+  // Act
+  const text = readText(README);
+
+  // Assert
+  assert.ok(text.includes('Alle drei Orchestratoren enden mit genau einem Abschlussbericht in drei Abschnitten'));
+  assert.ok(text.includes('Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <ablage-datei>'));
+  assert.equal(text.includes('Wie es weitergeht'), false);
 });

@@ -2,11 +2,15 @@
 
 Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe erzeugt ein Dokument (`spec.md`, `plan.md`, Umsetzungsbericht), das parallele Reviewer prüfen, ein Rework-Agent überarbeitet und ein Verifier abschließend gegenprüft.
 
+**Startbefehl:** dv-forge betritt man nur über `/dv-forge:session-orchestrator`, auch mit fertiger Spec oder fertigem Plan mitten in der Kette; die Leit-Session führt durch die Etappen. Alle anderen Skills der Tabelle unten, die als `intern` stehen, sind Unter-Skills der Session-Kette: Ein Hook weist ihren getippten Befehl ab und nennt den Startbefehl. Zum Debuggen hängt man `--debug` an; der Unter-Skill läuft dann ohne Garantie für den Normalweg, mit Slug aus dem Pfad von Spec oder Plan und Etappe aus dem Namen des Skills. Etappen-Sessions rufen ihre Skills über das Skill-Werkzeug ohne `--debug` auf. Die Unter-Skills bleiben im Menü sichtbar, weil das Verbergen auch das Tippen mit `--debug` verhinderte. `init`, `commit-message`, `domain-modeling` und `merge-conflict-resolution` sind Werkzeuge ohne Etappe und bleiben von Hand aufrufbar.
+
+Die Regeln der Orchestratoren (Git-Verbote, Ausgabe, Rote Flaggen) und das Maximum der Followup-Runden stehen in `shared/orchestrator-rules.md`, an keiner anderen Stelle; Skills, Brief und diese README verweisen darauf.
+
 ## Ablauf
 
-1. **Spec:** `spec-whiteboarding` (oder `spec-whiteboarding-with-docs`, verankert im bestehenden System) macht aus einer Anfrage eine `spec.md`. `spec-review` prüft sie. `spec-review-orchestrator` verkettet `spec-review` mit bis zu zwei Followup-Runden (`review-followup`) und committet die Spec einmal im aktuellen Branch.
-2. **Plan:** `plan-writing` macht aus der Spec einen Umsetzungsplan mit exakten Dateien und Test-first-Schritten. `plan-review` prüft ihn. `plan-orchestrator` verkettet beides samt bis zu zwei Followup-Runden in einem Lauf; er committet nicht, der Abschlussbericht nennt den Commit-Stand.
-3. **Umsetzung:** `start-work` bereitet Branch oder Worktree vor, `implementation` setzt den Plan Task für Task um, `implementation-review` prüft das Ergebnis, `finish-work` schließt die Arbeit ab. `implementation-orchestrator` verkettet `start-work`, `implementation` und `implementation-review` samt bis zu zwei Followup-Runden in einem Lauf und endet mit einem Abschlussbericht; `finish-work` empfiehlt er nur, der Worktree bleibt, nichts wird gepusht.
+1. **Spec:** `spec-whiteboarding` (oder `spec-whiteboarding-with-docs`, verankert im bestehenden System) macht aus einer Anfrage eine `spec.md`. `spec-review` prüft sie. `spec-review-orchestrator` verkettet `spec-review` mit den Followup-Runden (`review-followup`) und committet die Spec einmal im aktuellen Branch.
+2. **Plan:** `plan-writing` macht aus der Spec einen Umsetzungsplan mit exakten Dateien und Test-first-Schritten. `plan-review` prüft ihn. `plan-orchestrator` verkettet beides samt den Followup-Runden in einem Lauf; er committet nicht.
+3. **Umsetzung:** `start-work` bereitet Branch oder Worktree vor, `implementation` setzt den Plan Task für Task um, `implementation-review` prüft das Ergebnis, `finish-work` schließt die Arbeit ab. `implementation-orchestrator` verkettet `start-work`, `implementation` und `implementation-review` samt den Followup-Runden in einem Lauf und endet mit einem Abschlussbericht; der Worktree bleibt, `finish-work` ruft nur der Mensch, nichts wird gepusht.
 4. **Session-Kette:** `session-orchestrator` führt Whiteboarding, Grill (`spec-grilling`), Spec-Review, Planning, Plan-Review, Umsetzung und Abschluss je in einer eigenen Etappen-Session. Die Leit-Session startet die Etappen, prüft jedes `final` gegen git, hält am Spec- und am GO-Haltepunkt und führt den Zustand je Slug unter `<git-common-dir>/dv-forge/session-chain/`. Jeder Brief enthält den Inhalt von `shared/session-chain/base-sub-agent.md`: Ketten-Regeln und Gesprächsstil. Das Whiteboarding prüft seine Spec in derselben Etappen-Session mit dem Spec-Review-Orchestrator; jede Etappe meldet ihr `final` zusätzlich per Nachricht an die Leit-Session.
 
 **Spec-Format:** `scripts/spec-lint.js <spec.md>` prüft das Spec-Format ohne KI (Abschnitte, Kopf, lückenlose AC-IDs, Gegeben/wenn/dann, Beleg-Tags, W-Einträge, Abbruch). Whiteboarding und Grill rufen es nach dem Schreiben auf, der Spec-Review nutzt es als Skript-Prüfung (Formfehler 🔴, Kopf und Warnungen 🟡), und die Session-Kette hält bei Formfehlern nach Whiteboarding, Grill und Spec-Nacharbeit.
@@ -17,36 +21,36 @@ Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops. Jede Stufe e
 
 **Golden-Sets:** `evals/` hält je Review einen Fall mit eingebauten Mängeln und den Befunden, die gefunden werden sollen. `scripts/eval-review.js` misst Läufe daraus (Recall, Precision, Belegquote, Stabilität über mehrere Läufe), siehe `evals/README.md`.
 
-**Nacharbeit-Werkzeuge:** `scripts/followup.js next` liefert den nächsten Schritt nach einem Followup, `implementation-report.js followup --artefakt` den Bericht eines einzeln laufenden Implementierungs-Followups. Die Prüfung nach Grill und Spec-Nacharbeit vergleicht die Spec mit der Kopie `spec-vor-<etappe>.md` vom Etappenstart, `spec-commit.js` committet die Spec des Spec-Reviews, und `review-flow.js report` gibt für den Plan-Review die Zeile `COMMIT-PRUEFUNG` aus. Die fünf Implementierungs-Reviewer vergeben nur Kategorien (`scripts/lib/implementation-categories.js`), die Farbe setzt der Code; `implementation-verdict.js` liest das Urteil aus ihrem Bericht. `verify-run.js --basis` hält den Basis-Lauf vor Task 1 fest, `ledger.js check|next|tdd` prüft das Ledger, nennt den nächsten Schritt und weist auf Tests nach dem Produktivcode hin. `spec-lint.js --runde` prüft die Form einer Grill-Runde, die Skript-Prüfung `spec-terms` meldet verworfene Synonyme des Glossars, `spec-path.js` bestimmt den Zielpfad der Spec beim Whiteboarding, und `implementation-checks.js` liefert zusätzlich mechanische Code-Hinweise (verschluckte Fehler, Secret-Muster, sehr große Zuwächse) als 🟡.
+**Nacharbeit-Werkzeuge:** `implementation-report.js followup` legt den Bericht eines Implementierungs-Followups in die Ablage und gibt `ENDE`, `STATUSZEILE` und `BEHALTEN` aus. Die Prüfung nach Grill und Spec-Nacharbeit vergleicht die Spec mit der Kopie `spec-vor-<etappe>.md` vom Etappenstart, `spec-commit.js` committet die Spec des Spec-Reviews, und `review-flow.js report` legt Bericht und Bericht-Daten in die Ablage und gibt `ENDE` und `STATUSZEILE` aus. Die fünf Implementierungs-Reviewer vergeben nur Kategorien (`scripts/lib/implementation-categories.js`), die Farbe setzt der Code; `implementation-verdict.js` liest das Urteil aus ihrem Bericht. `verify-run.js --basis` hält den Basis-Lauf vor Task 1 fest, `ledger.js check|next|tdd` prüft das Ledger, nennt den nächsten Schritt und weist auf Tests nach dem Produktivcode hin. `spec-lint.js --runde` prüft die Form einer Grill-Runde, die Skript-Prüfung `spec-terms` meldet verworfene Synonyme des Glossars, `spec-path.js` bestimmt den Zielpfad der Spec beim Whiteboarding, und `implementation-checks.js` liefert zusätzlich mechanische Code-Hinweise (verschluckte Fehler, Secret-Muster, sehr große Zuwächse) als 🟡.
 
-Alle drei Orchestratoren enden mit genau einem Abschlussbericht in vier Abschnitten (`# Abschlussbericht`, `# Was sich … geändert hat`, `# Was ist noch offen`, `# Wie es weitergeht`). Review und Followup laufen dabei eingebettet (`--bericht <datei>`) ohne eigenen Bericht; `orchestrator-report.js` setzt den Endstand aus ihren Berichtsdaten zusammen. Alleinstehend aufgerufen zeigen Review und Followup ihre Berichte wie bisher.
+Alle drei Orchestratoren enden mit genau einem Abschlussbericht in drei Abschnitten (`# Abschlussbericht`, `# Was sich … geändert hat`, `# Was ist noch offen`); er nennt keinen nächsten Schritt, die Leit-Session entscheidet über den Fortgang. Review und Followup zeigen keinen Bericht, sondern geben als einzige Ausgabe ihre Review-Statuszeile aus: `Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <ablage-datei>`. `orchestrator-report.js` setzt den Endstand aus den Bericht-Daten in der Ablage zusammen; `orchestrator-state.js ablage` nennt die Dateien des Laufs.
 
-Eine Followup-Runde startet, sobald das Review einen Followup anbietet (`FOLLOWUP ja`), unabhängig von ✅, ⛔ oder ❓; nur ⚠️ und ein Abbruch stoppen. Es gibt höchstens zwei Runden je Lauf. 🟢 arbeitet keine Runde ein; sie stehen nur im Abschlussbericht unter „Was ist noch offen“.
+Eine Followup-Runde startet, sobald das Review einen Followup anbietet (`FOLLOWUP ja`), unabhängig von ✅, ⛔ oder ❓; nur ⚠️ und ein Abbruch stoppen. Das Maximum der Runden je Lauf steht in `shared/orchestrator-rules.md`. 🟢 arbeitet keine Runde ein; sie stehen nur im Abschlussbericht unter `Was ist noch offen`.
 
-Jeder Orchestrator vermerkt am Ende einen **Ketten-Eintrag** je Slug (Stufe, Spec, Plan, Workitem, Worktree, Branch) mit `scripts/chain.js`, abgelegt unter `<git-common-dir>/dv-forge/chain/`, gemeinsam für den Haupt-Checkout und alle Worktrees. Ruft der Mensch danach für dasselbe Artefakt `spec-review`, `plan-review`, `implementation-review` oder `review-followup` auf, nennt deren Bericht den Orchestrator-Schritt der nächsten Stufe statt des Einzel-Skills; `finish-work` entfernt den Eintrag. Ohne Eintrag bleiben die Berichte wie bisher.
+Jeder Orchestrator vermerkt am Ende einen **Ketten-Eintrag** je Slug (Stufe, Spec, Plan, Workitem, Worktree, Branch) mit `scripts/chain.js`, abgelegt unter `<git-common-dir>/dv-forge/chain/`, gemeinsam für den Haupt-Checkout und alle Worktrees; `finish-work` entfernt den Eintrag. Berichte nennen ihn nicht als Empfehlung.
 
-Mit `--ablage <etappe>` legen die drei Orchestratoren, `plan-review` und `review-followup` Abschlussbericht und Bericht-Daten zusätzlich unter `<git-common-dir>/dv-forge/session-chain/<slug>/ablage/<etappe>/` ab, gemeinsam für den Haupt-Checkout und alle Worktrees. Ohne die Option bleibt alles wie bisher.
+Die Ablage ist der eine Datenkanal zwischen Etappe und Leit-Session und immer eingeschaltet: Review und Followup legen Bericht und Bericht-Daten unter `<git-common-dir>/dv-forge/session-chain/<slug>/ablage/<etappe>/` ab, die Orchestratoren ihren Abschlussbericht, gemeinsam für den Haupt-Checkout und alle Worktrees. Slug und Etappe legt `prepare.js` fest; ein neues Review beginnt die Ablage seiner Etappe neu. Bericht-Daten im Format der früheren Doppel-Betriebsart liest keine Etappe und migriert niemand: Sie zählen als fehlende Voraussetzung.
 
 ## Skills
 
-| Skill | Wofür |
-|---|---|
-| `init` | dv-forge in einem Projekt einrichten, insbesondere den dv-forge-Abschnitt der Projekt-`CLAUDE.md` |
-| `spec-whiteboarding`, `spec-whiteboarding-with-docs` | Aus Anfrage oder Idee eine Spec erarbeiten |
-| `spec-review`, `plan-review`, `implementation-review` | Review durch parallele Reviewer, ein Rework, eine Verifikation |
-| `review-followup` | Gewählte Scout-Vorschläge aus einem Review umsetzen |
-| `spec-review-orchestrator` | Spec prüfen, bis zu zweimal nacharbeiten und committen in einem Lauf; kein Worktree, kein Branch-Wechsel |
-| `plan-writing` | Spec in Plan überführen |
-| `plan-orchestrator` | Plan schreiben, prüfen und bis zu zweimal nacharbeiten in einem Lauf; kein Commit, die Spec bleibt unverändert |
-| `start-work`, `implementation`, `finish-work` | Arbeit vorbereiten, umsetzen, abschließen |
-| `implementation-orchestrator` | Umsetzen, prüfen und bis zu zweimal nacharbeiten in einem Lauf; Worktree bleibt, `finish-work` manuell, Plan und Spec bleiben unverändert, kein Push |
-| `spec-grilling` | Geschriebene Spec auf Grenzfälle, Widersprüche und Lücken prüfen; W-Einträge gelten als beantwortet |
-| `session-orchestrator` | Session-Kette führen: jede Etappe in eigener Session, Haltepunkte, Prüfung gegen git, Schlussbericht |
-| `domain-modeling` | Unscharfe oder widersprüchliche Fachbegriffe klären, ADRs anstoßen |
-| `merge-conflict-resolution` | Gestoppten Merge oder Rebase auflösen |
-| `commit-message` | Commit-Message im Conventional-Commits-Stil schreiben (Text ausgeben, nicht committen); `init` trägt ihn als `Commit-Konvention` ein |
+| Skill | Wofür | Aufruf |
+|---|---|---|
+| `init` | dv-forge in einem Projekt einrichten, insbesondere den dv-forge-Abschnitt der Projekt-`CLAUDE.md` | von Hand |
+| `spec-whiteboarding`, `spec-whiteboarding-with-docs` | Aus Anfrage oder Idee eine Spec erarbeiten | intern |
+| `spec-review`, `plan-review`, `implementation-review` | Review durch parallele Reviewer, ein Rework, eine Verifikation | intern |
+| `review-followup` | Gewählte Scout-Vorschläge aus einem Review umsetzen | intern |
+| `spec-review-orchestrator` | Spec prüfen, nacharbeiten und committen in einem Lauf; kein Worktree, kein Branch-Wechsel | intern |
+| `plan-writing` | Spec in Plan überführen | intern |
+| `plan-orchestrator` | Plan schreiben, prüfen und nacharbeiten in einem Lauf; kein Commit, die Spec bleibt unverändert | intern |
+| `start-work`, `implementation`, `finish-work` | Arbeit vorbereiten, umsetzen, abschließen | intern |
+| `implementation-orchestrator` | Umsetzen, prüfen und nacharbeiten in einem Lauf; Worktree bleibt, `finish-work` ruft nur der Mensch, Plan und Spec bleiben unverändert, kein Push | intern |
+| `spec-grilling` | Geschriebene Spec auf Grenzfälle, Widersprüche und Lücken prüfen; W-Einträge gelten als beantwortet | intern |
+| `session-orchestrator` | Session-Kette führen: jede Etappe in eigener Session, Haltepunkte, Prüfung gegen git, Schlussbericht | Startbefehl |
+| `domain-modeling` | Unscharfe oder widersprüchliche Fachbegriffe klären, ADRs anstoßen | von Hand |
+| `merge-conflict-resolution` | Gestoppten Merge oder Rebase auflösen | von Hand |
+| `commit-message` | Commit-Message im Conventional-Commits-Stil schreiben (Text ausgeben, nicht committen); `init` trägt ihn als `Commit-Konvention` ein | von Hand |
 
-Das Modell darf alle Skills außer `init` selbst aufrufen, auch aus Sub-Agenten, damit ein Orchestrator Review-, Plan- und Umsetzungsabläufe verketten kann. `init` trägt `disable-model-invocation: true`, weil es einen Dialog mit dem Nutzer führt. Per `/dv-forge:<skill>` startet der Nutzer jeden Skill weiterhin selbst.
+Das Modell darf alle Skills außer `init` selbst aufrufen, auch aus Sub-Agenten, damit ein Orchestrator Review-, Plan- und Umsetzungsabläufe verketten kann. `init` trägt `disable-model-invocation: true`, weil es einen Dialog mit dem Nutzer führt. Der Startbefehl und die Werkzeuge ohne Etappe sind die einzigen Skills, die der Nutzer ohne `--debug` selbst tippt.
 
 ## Agents
 

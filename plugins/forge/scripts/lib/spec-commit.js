@@ -7,7 +7,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { placeOf, readStateFile } = require('../orchestrator-state');
 const { getValue } = require('../forge-config');
-const { toPosix } = require('./posix');
+const { toPosix, realPath } = require('./posix');
 
 class SpecCommitError extends Error {}
 
@@ -37,7 +37,7 @@ function preflight({ spec, state }) {
   const { dir, top } = repoOf(spec);
   const saved = readStateFile(path.resolve(state));
   const place = placeOf(saved, dir);
-  const relativeSpec = toPosix(path.relative(top, path.resolve(spec)));
+  const relativeSpec = toPosix(path.relative(realPath(top), realPath(spec)));
   const before = (saved.vorbestand ?? []).some((line) => toPosix(line.slice(3)) === relativeSpec);
   const where = place.same && !place.here.worktree ? 'ok' : `abweichung ${place.here.worktree ? 'worktree ' : ''}${place.here.toplevel} ${place.here.branch || '(kein Branch)'}`;
   return {

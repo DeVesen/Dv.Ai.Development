@@ -172,6 +172,22 @@ test('preflight_SpecWasDirtyAtStart_ReportsVorbestand', () => {
   assert.match(result.stdout, /^ORT=ok\nSPEC-VORBESTAND=ja\n/);
 });
 
+test('preflight_SpecReachedThroughDirectoryLink_ReportsVorbestand', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  fs.appendFileSync(spec, 'Vorbestand\n');
+  const state = tmp();
+  spawnSync(process.execPath, [STATE_SCRIPT, 'start', '--state', state, '--spec', spec], { cwd: repo, encoding: 'utf8' });
+  const link = path.join(tmp(), 'link');
+  fs.symlinkSync(repo, link, 'junction');
+
+  // Act
+  const result = run(repo, 'preflight', '--spec', path.join(link, 'docs/forge/x/spec.md'), '--state', state);
+
+  // Assert
+  assert.match(result.stdout, /^ORT=ok\nSPEC-VORBESTAND=ja\n/);
+});
+
 test('preflight_OtherBranchThanAtStart_ExitOneWithAbweichung', () => {
   // Arrange
   const { repo, spec, state } = reviewedRepo();

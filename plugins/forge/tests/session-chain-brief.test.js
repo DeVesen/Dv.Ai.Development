@@ -303,3 +303,12 @@ test('buildBrief_PlanningWithOpenPoints_HasNoPointSection', () => {
   // Assert
   assert.ok(!text.includes('## Offene Punkte aus früheren Etappen'));
 });
+
+test('buildBrief_AnyEtappe_BackgroundAllowsTheFinalMessage', () => {
+  // Act
+  const text = brief('planning').hintergrund;
+
+  // Assert
+  assert.ok(text.includes('meldet sich über ihr Turn-Ende, bei final zusätzlich mit einer Nachricht an die Leit-Session.'), text);
+  assert.ok(!text.includes('nur über ihr Turn-Ende'), text);
+});

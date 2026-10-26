@@ -1,7 +1,7 @@
 'use strict';
 
 // Brief einer Etappen-Session: erste Zeile Slash-Befehl des Skills (bei den Nacharbeiten die Auftragszeile), dann Werte,
-// Auftrag, Entscheidungen früherer Etappen, beim Whiteboarding der Kontext, zuletzt der Inhalt von base-sub-agent.md.
+// Auftrag, Entscheidungen früherer Etappen, im Grill die offenen Punkte früherer Etappen, beim Whiteboarding der Kontext, zuletzt der Inhalt von base-sub-agent.md.
 // Werte ohne Inhalt (etwa kein Workitem) fehlen im Brief ganz.
 
 const fs = require('node:fs');
@@ -35,7 +35,7 @@ function ablage(etappe) {
 // Zeile der beiden Nacharbeiten: Kein Skill liefert ihren Bericht, also schreibt ihn die Etappe selbst.
 const REWORK_REPORT = 'Schreib einen kurzen Bericht (geänderte Stellen als Vorher/Nachher, neue W-Einträge) in eine Datei und übergib sie mit `--bericht "<datei>"`.';
 
-// Je Etappe: Modell, Titel, Pflichtwerte, erste Zeile und Auftrag. `v`: slug, wi, basis, spec, plan, worktree, branch, quelle.
+// Je Etappe: Modell, Titel, Pflichtwerte, erste Zeile und Auftrag. `v`: slug, wi, basis, spec, plan, worktree, branch, quelle, leit.
 // Fehlt ein Pflichtwert, entsteht kein Brief (sonst stünde `undefined` im Befehl der ersten Zeile).
 const ETAPPEN_BRIEFS = {
   whiteboarding: {
@@ -165,7 +165,7 @@ function buildBrief({ etappe, values, decisions = [], kontext = null, points = [
     ...(etappe === 'whiteboarding' ? [['## Kontext', String(kontext ?? '').trim()].join('\n')] : []),
     baseRules(etappe, values),
   ];
-  const background = `Etappe ${etappe} der Session-Kette ${values.slug ?? '(Slug folgt aus der Spec)'}. Die Leit-Session führt die Kette, prüft jedes Ergebnis gegen git und holt an Haltepunkten die Entscheidung des Menschen ein. Diese Session bearbeitet nur ihre Etappe und meldet sich nur über ihr Turn-Ende.`;
+  const background = `Etappe ${etappe} der Session-Kette ${values.slug ?? '(Slug folgt aus der Spec)'}. Die Leit-Session führt die Kette, prüft jedes Ergebnis gegen git und holt an Haltepunkten die Entscheidung des Menschen ein. Diese Session bearbeitet nur ihre Etappe und meldet sich über ihr Turn-Ende, bei final zusätzlich mit einer Nachricht an die Leit-Session.`;
   return { modell: etappenBrief.modell, titel: `${etappenBrief.titel} ${values.slug ?? ''}`.trim(), brief: sections.join('\n\n'), hintergrund: background };
 }
 

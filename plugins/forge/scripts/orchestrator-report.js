@@ -9,6 +9,7 @@ const path = require('node:path');
 const { mergeReports } = require('./lib/orchestrator-report');
 const { renderOrchestratorReport, renderAbortReport } = require('./lib/orchestrator-report-text');
 const { FlowError } = require('./lib/flow-error');
+const { maxFollowups } = require('./lib/orchestrator-rules');
 const { writeText } = require('./lib/flow-files');
 
 const REQUIRED = {
@@ -19,7 +20,6 @@ const REQUIRED = {
 const OPTIONAL = ['--followup', '--wi', '--fakten', '--ohne-weiter'];
 // Ein Lauf, der vor dem Review endet, hat weder Review-Daten noch Worktree oder Prüfergebnis: nur Grund und Bericht-Datei sind Pflicht.
 const ABORT_REQUIRED = ['--out', '--abbruch'];
-const MAX_FOLLOWUPS = 2;
 const CHECKS = ['gruen', 'rot', 'keine'];
 const USAGE = [
   'Aufruf: node orchestrator-report.js --art spec --review <json> [--followup <json>]... --out <md> --spec <S> --commit <text> [--wi <nr>] [--fakten <datei>] [--ohne-weiter ja]',
@@ -40,7 +40,8 @@ function parse(args) {
     else values[args[index]] = args[index + 1];
   }
   if (followups) values['--followup'] = followups;
-  if ((followups?.length ?? 0) > MAX_FOLLOWUPS) throw new UsageError(`--followup höchstens ${MAX_FOLLOWUPS} Mal`);
+  const max = maxFollowups();
+  if ((followups?.length ?? 0) > max) throw new UsageError(`--followup höchstens ${max} Mal`);
   if (!REQUIRED[values['--art']]) throw new UsageError(`--art erlaubt: ${Object.keys(REQUIRED).join(', ')}`);
   const aborted = Object.hasOwn(values, '--abbruch');
   const required = aborted ? ABORT_REQUIRED : REQUIRED[values['--art']];

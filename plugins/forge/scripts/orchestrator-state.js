@@ -12,8 +12,8 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { maxFollowups, RulesError } = require('./lib/orchestrator-rules');
 
-const MAX_FOLLOWUPS = 2;
 const STATE_FILE = 'orchestrator-state.json';
 const USAGE = [
   'Aufruf: node orchestrator-state.js start --state <ordner> --spec <S> [--plan <P>]',
@@ -130,7 +130,8 @@ const RESULT_PREFIX = /^\*\*Ergebnis:\*\*\s*/;
 // `BEREIT=ja`, wenn die Ergebnis-Zeile mit ✅ beginnt; der Orchestrator entscheidet daraus nur noch, was `weiter` heißt.
 function next(values) {
   const followups = values.followup ?? [];
-  if (followups.length > MAX_FOLLOWUPS) throw new StateError(`--followup höchstens ${MAX_FOLLOWUPS} Mal`);
+  const max = maxFollowups();
+  if (followups.length > max) throw new StateError(`--followup höchstens ${max} Mal`);
   const last = followups.at(-1) ?? values.review;
   const report = readReport(last);
   if (!report) return ['NEXT=ende', 'GRUND=kein-bericht', `BERICHT=${last}`].join('\n');
@@ -138,7 +139,7 @@ function next(values) {
   const status = String(report.status ?? '');
   const lines = [`ERGEBNIS=${result || '-'}`, `BEREIT=${result.startsWith('✅') ? 'ja' : 'nein'}`, `RUNDEN=${followups.length}`];
   if (result.startsWith('⚠️') || status.startsWith('unvollständig')) return ['NEXT=ende', 'GRUND=unvollstaendig', ...lines].join('\n');
-  if (report.offersFollowup && followups.length < MAX_FOLLOWUPS) return [`NEXT=followup`, `RUNDE=${followups.length + 1}`, ...lines].join('\n');
+  if (report.offersFollowup && followups.length < max) return [`NEXT=followup`, `RUNDE=${followups.length + 1}`, ...lines].join('\n');
   return ['NEXT=weiter', ...lines].join('\n');
 }
 
@@ -179,7 +180,7 @@ function main() {
       process.exit(result.failed ? 1 : 0);
     }
   } catch (error) {
-    if (!(error instanceof StateError)) throw error;
+    if (!(error instanceof StateError) && !(error instanceof RulesError)) throw error;
     process.stderr.write(`${error.message}\n`);
     process.exit(1);
   }

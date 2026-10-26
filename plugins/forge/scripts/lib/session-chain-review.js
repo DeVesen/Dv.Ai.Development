@@ -20,6 +20,7 @@ function staleReason(abschluss, spec) {
 
 // `spec`: Pfad der Spec. `frage` ist false nur bei ✅ ohne jeden offenen Punkt.
 function reviewStand(spec) {
+  if (!fs.existsSync(spec)) throw new SessionChainError(`Spec fehlt: ${toPosix(spec)}`);
   const ablage = ablageDir(path.dirname(path.resolve(spec)), slugOfArtifact({ spec }), 'whiteboarding');
   const abschluss = path.join(ablage, ABSCHLUSS_FILE);
   if (!fs.existsSync(path.join(ablage, REVIEW_FILE)) || !fs.existsSync(abschluss)) throw new SessionChainError(`Kein Spec-Review in der Ablage: ${toPosix(ablage)}`);

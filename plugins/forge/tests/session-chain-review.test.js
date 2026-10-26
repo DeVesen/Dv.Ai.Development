@@ -102,3 +102,11 @@ test('reviewStand_AbschlussOlderThanSpec_ThrowsAsNoReview', () => {
   assert.throws(() => reviewStand(spec), (error) => error instanceof SessionChainError
     && error.message.startsWith('Kein Spec-Review in der Ablage: ') && error.message.endsWith('(Abschlussbericht älter als die Spec)'));
 });
+
+test('reviewStand_SpecMissing_ThrowsSessionChainError', () => {
+  // Arrange
+  const spec = path.join(makeRepo(), 'docs/forge/x/fehlt.md');
+
+  // Act & Assert
+  assert.throws(() => reviewStand(spec), (error) => error instanceof SessionChainError && error.message.startsWith('Spec fehlt: '));
+});

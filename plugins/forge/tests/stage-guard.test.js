@@ -131,6 +131,84 @@ test('onTurnEnd_FinalWithReportAndNoCommit_Allows', () => {
   assert.equal(turnEnd(started(), line({ status: 'final', bericht })), null);
 });
 
+const LEIT = 'local_leit-1';
+// Form wie im Protokoll einer echten Etappen-Session (Whiteboarding 313073): Werkzeug `SendMessage`, Ziel in `input.to`.
+const sent = (to) => ({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'toolu_1', name: 'SendMessage', input: { to, summary: 'final melden', message: '[planning] STATUS=final' } }] } });
+const toolResult = { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_1', content: 'ok' }] } };
+// Form eines Fehlerergebnisses wie in echten Protokollen: `is_error: true` am `tool_result` mit derselben `tool_use_id`.
+const failedResult = { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_1', content: 'Session nicht erreichbar', is_error: true }] } };
+
+function startedWithLeit(etappe = 'planning') {
+  const tmpRoot = tmp();
+  const text = buildBrief({ etappe, values: { slug: 'x', spec: '/r/docs/forge/x/spec.md', wi: '12', leit: LEIT } }).brief;
+  stage.onPrompt({ session_id: SESSION, prompt: text }, tmpRoot);
+  return tmpRoot;
+}
+
+function transcript(entries) {
+  const file = path.join(tmp(), 'transcript.jsonl');
+  fs.writeFileSync(file, entries.map((entry) => JSON.stringify(entry)).join('\n'));
+  return file;
+}
+
+test('onPrompt_BriefWithLeit_StoresLeitInMarker', () => {
+  assert.equal(stage.readMarker(SESSION, startedWithLeit()).leit, LEIT);
+});
+
+test('onTurnEnd_FinalWithoutMessageToLeit_BlocksNamingTheLeit', () => {
+  const { bericht } = writtenReport();
+  const reason = turnEnd(startedWithLeit(), line({ status: 'final', bericht }), { transcript_path: transcript([human('Brief')]) });
+  assert.match(reason, /SendMessage an local_leit-1/);
+});
+
+test('onTurnEnd_FinalAfterMessageToLeit_Allows', () => {
+  const { bericht } = writtenReport();
+  assert.equal(turnEnd(startedWithLeit(), line({ status: 'final', bericht }), { transcript_path: transcript([human('Brief'), sent(LEIT)]) }), null);
+});
+
+test('onTurnEnd_FinalWithMessageBeforeToolResultOfSameTurn_Allows', () => {
+  const { bericht } = writtenReport();
+  assert.equal(turnEnd(startedWithLeit(), line({ status: 'final', bericht }), { transcript_path: transcript([human('Brief'), sent(LEIT), toolResult]) }), null);
+});
+
+test('onTurnEnd_FinalAfterFailedMessageToLeit_Blocks', () => {
+  const { bericht } = writtenReport();
+  const reason = turnEnd(startedWithLeit(), line({ status: 'final', bericht }), { transcript_path: transcript([human('Brief'), sent(LEIT), failedResult]) });
+  assert.match(reason, /SendMessage an local_leit-1/);
+});
+
+test('onTurnEnd_FinalAfterFailedMessageWithNotNotifiedLine_Allows', () => {
+  const { bericht } = writtenReport();
+  const last = `${line({ status: 'final', bericht })}\nLeit-Session nicht benachrichtigt: [Leit-Session](#${LEIT})`;
+  assert.equal(turnEnd(startedWithLeit(), last, { transcript_path: transcript([human('Brief'), sent(LEIT), failedResult]) }), null);
+});
+
+test('onTurnEnd_FinalWithMessageOnlyInEarlierTurn_Blocks', () => {
+  const { bericht } = writtenReport();
+  const reason = turnEnd(startedWithLeit(), line({ status: 'final', bericht }), { transcript_path: transcript([human('Brief'), sent(LEIT), human('Showstopper geklärt')]) });
+  assert.match(reason, /SendMessage an local_leit-1/);
+});
+
+test('onTurnEnd_FinalWithMessageToOtherSession_Blocks', () => {
+  const { bericht } = writtenReport();
+  assert.notEqual(turnEnd(startedWithLeit(), line({ status: 'final', bericht }), { transcript_path: transcript([human('Brief'), sent('local_other')]) }), null);
+});
+
+test('onTurnEnd_FinalWithNotNotifiedLine_Allows', () => {
+  const { bericht } = writtenReport();
+  const last = `${line({ status: 'final', bericht })}\nLeit-Session nicht benachrichtigt: [Leit-Session](#${LEIT})`;
+  assert.equal(turnEnd(startedWithLeit(), last, { transcript_path: transcript([human('Brief')]) }), null);
+});
+
+test('onTurnEnd_NeedsUserWithoutMessage_Allows', () => {
+  assert.equal(turnEnd(startedWithLeit(), line({ status: 'needs-user' }), { transcript_path: transcript([human('Brief')]) }), null);
+});
+
+test('onTurnEnd_FinalWithLeitButWithoutTranscript_FailsOpen', () => {
+  const { bericht } = writtenReport();
+  assert.equal(turnEnd(startedWithLeit(), line({ status: 'final', bericht })), null);
+});
+
 test('onTurnEnd_FinalWithExistingCommit_Allows', () => {
   const { repo, bericht } = writtenReport();
   const hash = commitFile(repo, 'a.txt', 'a', 'add a');

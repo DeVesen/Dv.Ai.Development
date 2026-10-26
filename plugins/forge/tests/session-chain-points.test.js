@@ -48,6 +48,36 @@ test('openPoints_RedAndGreen_KeepsOnlyYellowAndGreenYellowFirst', () => {
   assert.deepEqual(points.map((point) => point.farbe), ['yellow', 'green']);
 });
 
+test('openPoints_WhiteboardingWithRedYellowAndGreen_KeepsAllRedFirst', () => {
+  // Arrange
+  const review = { open: [yellow('y', 'Gelb'), { key: 'r', color: 'red', title: 'Rot' }], green: [{ key: 'g', color: 'green', title: 'Grün' }] };
+
+  // Act
+  const points = openPoints([review], 'whiteboarding');
+
+  // Assert
+  assert.deepEqual(points.map((point) => point.farbe), ['red', 'yellow', 'green']);
+});
+
+test('mergePoints_SpecReviewAfterWhiteboarding_ReplacesWhiteboardingPoints', () => {
+  // Arrange
+  const existing = [{ farbe: 'red', titel: 'Lücke', key: 'l', herkunft: 'whiteboarding' }, { farbe: 'yellow', titel: 'Plan', key: 'p', herkunft: 'planning' }];
+
+  // Act
+  const merged = mergePoints(existing, 'spec-review', [{ farbe: 'yellow', titel: 'Neu', key: 'n', herkunft: 'spec-review' }]);
+
+  // Assert
+  assert.deepEqual(merged.map((point) => point.titel), ['Plan', 'Neu']);
+});
+
+test('pointLine_RedPoint_NamesRedIcon', () => {
+  // Act
+  const line = pointLine({ farbe: 'red', titel: 'Lücke', herkunft: 'whiteboarding' });
+
+  // Assert
+  assert.equal(line, '- 🔴 Lücke · whiteboarding');
+});
+
 test('readParts_ReviewAndTwoFollowups_ReturnsThemInRoundOrder', () => {
   // Arrange
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-ab-'));

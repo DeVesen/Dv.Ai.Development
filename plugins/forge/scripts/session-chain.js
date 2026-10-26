@@ -16,6 +16,7 @@ const { goCall, adoptedText, noStatusHint } = require('./lib/session-chain-text'
 const { briefHashOf } = require('./lib/stage-start-guard');
 const { etappeReport, readInput } = require('./lib/session-chain-report');
 const { setState, copySpecAtStart, holdAt, processFinal, closing, recordCommit } = require('./lib/session-chain-steps');
+const { reviewStand } = require('./lib/session-chain-review');
 
 const USAGE = [
   'Aufruf: node session-chain.js entry [<codewort> <pfade>... [workitem-nr]]',
@@ -28,6 +29,7 @@ const USAGE = [
   '       node session-chain.js commit --anlass spec|go --slug <slug> --message <betreff>',
   '       node session-chain.js schluss --slug <slug> [--stopp]',
   '       node session-chain.js store --etappe <etappe> (--spec <S> | --plan <P>) [--neu] --datei <datei>...',
+  '       node session-chain.js review-stand --spec <S>',
   '       node session-chain.js etappe-report --etappe <etappe> (--slug <slug> | --spec <S>) [--bericht <datei>] [--entscheidung <text>]... [--datei <pfad>]...',
   '              [--tests <text>] [--anhang <datei>]... [--plan <P>] [--worktree <R>] [--branch <name>] [--pruefung gruen|rot|keine | --pruefung-datei <pruefung.json>] [--luecke <befehl>]... [--ac-ohne-test <AC>]...',
   '',
@@ -189,12 +191,18 @@ function report(values) {
   return `BERICHT=${file}`;
 }
 
+// Stand des Reviews im Whiteboarding: daraus entscheidet die Etappe, ob die Abschlussfrage kommt.
+function stand(values) {
+  const result = reviewStand(required(values, 'spec'));
+  return [`ERGEBNIS=${result.ergebnis ?? 'keine'}`, `PUNKTE=${result.punkte}`, `FRAGE=${result.frage ? 'ja' : 'nein'}`, `ABSCHLUSS=${result.abschluss}`].join('\n');
+}
+
 function set(values) {
   const state = setState({ slug: required(values, 'slug'), basis: values.basis, wi: values.wi, spec: values.spec, plan: values.plan, worktree: values.worktree }, process.cwd());
   return `ZUSTAND=${state.slug}`;
 }
 
-const COMMANDS = { set, brief, turn, final, halt, answer, commit, schluss, store, 'etappe-report': report };
+const COMMANDS = { set, brief, turn, final, halt, answer, commit, schluss, store, 'etappe-report': report, 'review-stand': stand };
 
 function run(args) {
   const [command, ...rest] = args;

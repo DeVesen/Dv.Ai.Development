@@ -157,6 +157,26 @@ test('store_FromWorktreeWithFresh_StoresInTheSharedAblage', () => {
   assert.ok(fs.existsSync(path.join(ablageDir(repo, 'x', 'umsetzung'), 'abschluss.md')));
 });
 
+test('reviewStand_Cli_PrintsResultPointsQuestionAndAbschluss', () => {
+  // Arrange
+  const repo = makeRepo();
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  fs.mkdirSync(path.dirname(spec), { recursive: true });
+  fs.writeFileSync(spec, '# Spec\n');
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Planen\n');
+  const review = path.join(path.dirname(abschluss), 'bericht-review.json');
+  fs.writeFileSync(review, JSON.stringify({ open: [{ key: 'y', color: 'yellow', title: 'Gelb' }], green: [], changes: [] }));
+  chain(repo, 'store', '--etappe', 'whiteboarding', '--spec', spec, '--neu', '--datei', abschluss, '--datei', review);
+
+  // Act
+  const result = chain(repo, 'review-stand', '--spec', spec);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  for (const line of ['ERGEBNIS=✅ Bereit zum Planen', 'PUNKTE=1', 'FRAGE=ja']) assert.match(result.stdout, new RegExp(`^${line}$`, 'm'));
+  assert.match(result.stdout, /^ABSCHLUSS=.+\/ablage\/whiteboarding\/abschluss\.md$/m);
+});
+
 // Spec-Review-Etappe mit Berichtsdatei über die CLI; Rückgabe: Commit und Pfad der Berichtsdatei.
 function specReviewReport(repo) {
   const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: review spec x');

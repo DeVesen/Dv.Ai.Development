@@ -58,7 +58,7 @@ test('skill_Frontmatter_ModelInvocableWithArgumentHint', () => {
   assert.equal(fields.name, 'implementation');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<plan.md>');
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md]');
 });
 
 test('skill_Body_ReadsReferencesViaPluginRoot', () => {
@@ -151,4 +151,9 @@ test('taskLoop_BasisLauf_ScriptRunsFirstAndAgentOnlyReadsStoredOutputsOnRot', ()
 test('ledger_Archive_NamesTheTddHintsAsNoticeOnly', () => {
   const text = reference('ledger.md');
   for (const part of ['ledger.js" tdd "<P>" "<W>" --repo "<R>"', '`TDD ok|danach|fehlt-test task <n>`', 'nur ein Hinweis, nie ein Abbruch']) assert.ok(text.includes(part), `${part} fehlt`);
+});
+
+test('implementationSkill_Frontmatter_HintNamesOptionalSpec', () => {
+  const { fields } = readMarkdown(SKILL);
+  assert.equal(fields['argument-hint'], '<plan.md> [spec.md]');
 });

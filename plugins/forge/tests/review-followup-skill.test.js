@@ -16,7 +16,7 @@ test('reviewFollowupSkill_Frontmatter_ModelInvocableWithArgumentHint', () => {
   assert.equal(fields.name, 'review-followup');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <alle|auswahl>');
+  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <alle|auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]');
 });
 
 test('reviewFollowupSkill_Body_StaysUnder500Words', () => {

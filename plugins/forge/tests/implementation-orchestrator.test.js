@@ -198,3 +198,12 @@ test('implementationOrchestrator_Body_AbortBeforeReviewStillGetsReport', () => {
   const { body } = readMarkdown(SKILL);
   assert.ok(body.includes('Lief Schritt 4 nicht: `node "<PLUGIN>/scripts/orchestrator-report.js" --art implementation --abbruch "<Grund>" --out "<AB>" --fakten "<FK>"`.'));
 });
+
+test('implementationOrchestrator_Body_KeepsPruefungFileInStateAndReportsNoRunWithoutIt', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('`<PR>` = `pruefung.json` (schreibt Schritt 6)'));
+  assert.ok(body.includes('`Prüfung: <ergebnis aus <PR>>` oder `Prüfung: keine (Schritt 6 lief nicht)`'));
+});

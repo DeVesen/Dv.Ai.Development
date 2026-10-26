@@ -1,7 +1,7 @@
 ---
 name: implementation
 description: Use when a reviewed dv-forge plan.md should be implemented task by task with a fresh subagent per task, a task review with fix loop after each task and one final review, strictly sequential. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
-argument-hint: <plan.md>
+argument-hint: <plan.md> [spec.md]
 ---
 
 # Umsetzung (Controller)

@@ -59,7 +59,7 @@ test('startWork_Body_DelegatesDecisionToScript', () => {
   assert.ok(body.includes('prepare.js" implementation $ARGUMENTS'));
   assert.ok(body.includes('work.js" start <slug> --spec "<S>" --plan "<P>"'));
   assert.ok(body.includes('work.js" switch <vorschlag>'));
-  assert.ok(body.includes('4. Ausgabe: nur das Ergebnis aus Schritt 3 (Ort, Branch, Aktion). Kein Befehl, kein Hinweis auf einen nächsten Schritt.'));
+  assert.ok(body.includes('4. Ausgabe: das Ergebnis aus Schritt 3 (Ort, Branch, Aktion) und danach unverändert die Zeilen `<Name>=<Wert>` von `work.js` (`R`, `P`, `S`, `modus`, `branch`, `aktion`); der Implementierungs-Orchestrator liest sie. Kein Befehl, kein Hinweis auf einen nächsten Schritt.'));
   assert.doesNotMatch(body, /\/dv-forge:|Session in <R> starten|Commit anbieten|erst nach Ja/);
 });
 
@@ -106,4 +106,9 @@ test('startWork_Body_HandlesEveryOutputKeyOfWorkStart', () => {
   }
   const source = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'work.js'), 'utf8');
   for (const key of ["values['workitem-konflikt']", '{ ...mapped, drift }', "'angehaengt'", "'fortgesetzt'", '`Nicht committet:']) assert.ok(source.includes(key), key);
+});
+
+test('startWorkSkill_Output_PrintsTheNameValueLinesOfWorkJs', () => {
+  const { body } = skill('start-work');
+  assert.ok(body.includes('danach unverändert die Zeilen `<Name>=<Wert>` von `work.js` (`R`, `P`, `S`, `modus`, `branch`, `aktion`); der Implementierungs-Orchestrator liest sie.'));
 });

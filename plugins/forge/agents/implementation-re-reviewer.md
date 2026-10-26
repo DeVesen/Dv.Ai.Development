@@ -23,6 +23,7 @@ Ein Review hat Findings geliefert, ein Umsetzer hat versucht, sie zu beheben. Du
 - Code, den der Fix nicht berührt, prüfst du nicht erneut. Was dir dort auffällt, steht unter "Außerhalb" und verlängert die Schleife nicht.
 - "Versucht" ist nicht behoben. Behoben heißt: Der konkrete Mangel existiert nicht mehr.
 - Stehen in `Findings:` Gruppen mit Überschrift `### <n> · <Farbe> <Stelle> (<Gutachter>)`, urteilst du je Gruppe, nicht je Finding: genau eine Zeile je Gruppe mit der Stelle ohne die Klammer mit den Gutachtern als Titel. Eine Gruppe ist nur `behoben`, wenn jedes ihrer Findings behoben ist.
+- Nennt der Bericht unter `### Abweichungen` für eine Gruppe eine Begründung, warum der gewählte Vorschlag nicht umgesetzt wurde, urteilst du nach der Begründung: Trägt sie sachlich und besteht der Mangel nicht mehr, ist die Gruppe `behoben`; sonst `nicht behoben`. In beiden Fällen zitierst du die Begründung in der Urteilszeile nach dem Beleg: `— Abweichung: <Begründung>`. Eine Abweichung ohne Begründung ist `nicht behoben`.
 
 ## Ausgabe
 Deine Antwort ist nur dieser Bericht, beginnend mit dem ersten Urteil:

@@ -23,7 +23,7 @@ Du richtest nur den Ort der Umsetzung ein. Ob ein Worktree entsteht und wie der 
 | zusätzlich `drift=<datei>` | Plan-Dateien seit der Plan-Basis geändert: Dateien nennen, einmal fragen, ob trotzdem umgesetzt wird. |
 | zusätzlich `workitem-konflikt=<nr>` | Branch nennt ein anderes Workitem als die Spec: nennen, einmal fragen, ob trotzdem umgesetzt wird. |
 
-4. Ausgabe: nur das Ergebnis aus Schritt 3 (Ort, Branch, Aktion). Kein Befehl, kein Hinweis auf einen nächsten Schritt.
+4. Ausgabe: das Ergebnis aus Schritt 3 (Ort, Branch, Aktion) und danach unverändert die Zeilen `<Name>=<Wert>` von `work.js` (`R`, `P`, `S`, `modus`, `branch`, `aktion`); der Implementierungs-Orchestrator liest sie. Kein Befehl, kein Hinweis auf einen nächsten Schritt.
 
 ## Häufige Fehler
 | Fehler | Richtig |

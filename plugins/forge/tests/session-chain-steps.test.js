@@ -427,3 +427,20 @@ test('processFinal_SpecReviewWithRedAndAbort_ListsRedPointAndAbortAtHalt', () =>
   assert.ok(result.text.includes('- 🔴 Grenzwert festlegen · spec-review'));
   assert.ok(result.text.includes('**Empfehlung:** Spec-Nacharbeit'));
 });
+
+test('processFinal_SpecReviewWithAbort_ReturnsAbortForTheEventList', () => {
+  // Arrange
+  const repo = makeRepo();
+  const commit = commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: review spec x');
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ⛔ Noch nicht bereit · 1 Hindernis offen\nIterationen: 8 von 8\nAbbruch: Maximum von 8 Iterationen erreicht, 1 × 🔴 offen.\n');
+  storeFiles({ dir: repo, slug: 'x', etappe: 'spec-review', files: [abschluss], fresh: true });
+  const bericht = etappeReport({ ...EMPTY, etappe: 'spec-review', slug: 'x', bericht: abschluss }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'spec-review', session: 'local_s', bericht, commit }, repo);
+
+  // Assert
+  assert.equal(result.abbruch, 'Maximum von 8 Iterationen erreicht, 1 × 🔴 offen.');
+});

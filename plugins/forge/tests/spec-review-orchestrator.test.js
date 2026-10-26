@@ -56,7 +56,8 @@ test('specReviewOrchestrator_Body_BranchesOnTheLinesTheReviewWrites', () => {
   }
   assert.ok(script.includes('⚠️ Unvollständig'));
   assert.ok(readText(path.join(__dirname, '..', 'scripts', 'orchestrator-state.js')).includes("result.startsWith('⚠️')"), 'next endet bei ⚠️');
-  assert.ok(body.includes('`NEXT=followup`, auch für Hinweise, `⛔` und `❓` → 5, sonst 6.'));
+  assert.ok(body.includes('`NEXT=followup` (offenes 🔴 mit Scout-Vorschlag, Runde `RUNDE`) → 5, sonst 6;'));
+  assert.equal(body.includes('auch für Hinweise'), false, 'Hinweise lösen keine Runde mehr aus');
 });
 
 test('specReviewOrchestrator_Body_TellsPauseFromEndByHeadingAndClosingLine', () => {

@@ -67,3 +67,14 @@ test('readme_Orchestrators_EndWithThreeSectionsAndReviewsPrintOnlyTheStatusLine'
   assert.ok(text.includes('Review abgeschlossen: <ergebnis> · FOLLOWUP <ja|nein> · Bericht: <ablage-datei>'));
   assert.equal(text.includes('Wie es weitergeht'), false);
 });
+
+test('readme_FollowupRounds_DescribeRedOnlyLoopAbortAndHalt', () => {
+  // Act
+  const text = readText(README);
+
+  // Assert
+  for (const part of ['solange der letzte Bericht ein offenes 🔴 mit Scout-Vorschlag nennt', '`ABBRUCH=maximum|stillstand`', '🟡 und 🟢 lösen keine Runde aus', '`Iterationen: <n> von <max>`', 'die Leit-Session zeigt die Zeile am Haltepunkt und führt offene 🔴 mit Herkunft']) {
+    assert.ok(text.includes(part), `${part} fehlt`);
+  }
+  assert.equal(text.includes('unabhängig von ✅, ⛔ oder ❓'), false, 'das alte Followup-Kriterium ist weg');
+});

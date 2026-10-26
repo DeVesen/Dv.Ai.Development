@@ -158,7 +158,7 @@ function finalResult(data, next, check, text, state) {
   for (const point of state.offen ?? []) if (Object.hasOwn(offen, point.farbe)) offen[point.farbe] += 1;
   return {
     slug: data.slug, ergebnis: check.abweichungen.length > 0 ? 'abweichung' : 'ok', weiter: next.start ?? (next.halt ? 'halt' : 'ende'),
-    haltepunkt: next.halt ?? 'keiner', geprueft: check.geprueft, text, dauerMs, offen, abweichungen: check.abweichungen.length,
+    haltepunkt: next.halt ?? 'keiner', geprueft: check.geprueft, text, dauerMs, offen, abweichungen: check.abweichungen.length, abbruch: data.abbruch ?? null,
   };
 }
 

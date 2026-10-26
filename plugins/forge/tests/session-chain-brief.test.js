@@ -356,3 +356,8 @@ test('buildBrief_EveryEtappe_NamesNeitherFormerOptionNorHandoverAndAsksForNeedsU
     assert.ok(text.includes('gemeldet als `Ablage im alten Format: <datei>`'), etappe);
   }
 });
+
+test('buildBrief_StatusLine_DefinesRotAndGelbFromTheResultLine', () => {
+  const text = brief('spec-review').brief;
+  assert.ok(text.includes('ROT und GELB: die Zahlen der Ergebnis-Zeile deines Berichts (`n Hindernis(se) offen` → ROT, `n kleine(r) Hinweis(e) offen` → GELB); fehlt die Angabe, `0`.'));
+});

@@ -1,7 +1,7 @@
 ---
 name: review-followup
 description: Use when chosen scout proposals from a finished dv-forge spec-review, plan-review or implementation-review should be applied by the rework agent or the implementer and then verified once, without a fresh search by the reviewers. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
-argument-hint: <spec.md|plan.md> <alle|auswahl>
+argument-hint: <spec.md|plan.md> <alle|auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]
 ---
 
 # Review-Followup (Orchestrator)

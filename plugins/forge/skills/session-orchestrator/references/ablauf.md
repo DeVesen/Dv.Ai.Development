@@ -13,11 +13,11 @@ Schreib die erste nicht leere Zeile des Turn-Endes wörtlich mit `Write` nach `t
 - `final`: weiter mit „Final prüfen“.
 
 ## Final prüfen
-`<SC> final --etappe <e> --session <id> --etappenbericht "<BERICHT>" --commit <COMMIT>`, bei `whiteboarding` dazu `--basis <B>` und `--wi <WI>`, je nur wenn bekannt. Dann nach `HALTEPUNKT` und `WEITER`:
+`<SC> final --etappe <e> --session <id> --etappenbericht "<BERICHT>" --commit <COMMIT>`; `<BERICHT>` und `<COMMIT>` sind die Werte der Zeilen `BERICHT=` und `COMMIT=` aus der Ausgabe von `<SC> turn`. Bei `whiteboarding` dazu `--basis <B>` und `--wi <WI>`, je nur wenn bekannt. Dann nach `HALTEPUNKT` und `WEITER`:
 
 | Ausgabe | Tun |
 |---|---|
-| `HALTEPUNKT=abweichung` | Block ausgeben. Die Kette hält; nichts starten. Will der Mensch trotzdem weiter: `<SC> answer --slug <slug> --antwort weiter`, dann Start der genannten Etappe. |
+| `HALTEPUNKT=abweichung` | Block ausgeben. Die Kette hält; nichts starten. Will der Mensch trotzdem weiter: `<SC> answer --slug <slug> --antwort weiter`, dann genau das, was die Zeile `Bei „weiter“:` des Blocks nennt: Start der genannten Etappe (Regel 3), `<SC> halt --slug <slug> --art <art>` mit Haltepunkt (Regel 4), kein Start bei Showstoppern, oder `<SC> schluss --slug <slug>`. |
 | `HALTEPUNKT=showstopper` | Block ausgeben. Der Mensch klärt in der Umsetzungs-Session; nichts starten. |
 | `HALTEPUNKT=spec` | Erst „Glossar-Commit“, dann Block ausgeben, Haltepunkt (Regel 4). |
 | `HALTEPUNKT=go` | Block ausgeben, Haltepunkt (Regel 4). |
@@ -36,12 +36,12 @@ Jede Antwort hältst du zuerst fest: `<SC> answer --slug <slug> --antwort <wert>
 
 Am Spec-Haltepunkt:
 - Planning (`planning`): Start der Etappe `planning`.
-- Spec-Nacharbeit (`spec-nacharbeit`): Start der Etappe `spec-nacharbeit` mit `--quelle "<bericht.md der letzten Spec-Review-Etappe>"`.
+- Spec-Nacharbeit (`spec-nacharbeit`): Start der Etappe `spec-nacharbeit`; `brief` nimmt als `--quelle` die Berichtsdatei des letzten Spec-Review-`final` aus dem Zustand, du übergibst `--quelle` nur, wenn du eine andere willst.
 - Stopp (`stopp`): `<SC> schluss --slug <slug> --stopp`, Block ausgeben. Nichts starten, nichts aufräumen. Danach `run-end` wie bei `WEITER=ende`.
 
 Am GO-Haltepunkt:
 - GO (`go`): `<SC> commit --anlass go --slug <slug> --message "<betreff>"`. Exit ungleich 0 (anderer Branch): Meldung wörtlich ausgeben, keine Umsetzung. Sonst Start der Etappe `umsetzung`; ihre erste Zeile ist der Aufruf `AUFRUF`.
-- Plan-Nacharbeit (`plan-nacharbeit`): Start der Etappe `plan-nacharbeit` mit `--quelle "<bericht.md der letzten Planning- oder Plan-Review-Etappe>"`.
+- Plan-Nacharbeit (`plan-nacharbeit`): Start der Etappe `plan-nacharbeit`; `brief` nimmt als `--quelle` die Berichtsdatei des letzten Planning- oder Plan-Review-`final` aus dem Zustand, du übergibst `--quelle` nur, wenn du eine andere willst.
 - Stopp (`stopp`): wie am Spec-Haltepunkt.
 
 ## Neustart einer Etappe

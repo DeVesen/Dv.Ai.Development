@@ -62,7 +62,7 @@ Genau eine je Lauf.
 1. `node "<PLUGIN>/scripts/review-flow.js" checklist <FLAGS>`. Statuszeile `Nachprüfung: <punkte> Punkte, <skript> Skript-Punkte, <bereiche> geänderte Bereiche.` Danach die Skript-Prüfungen des Skills mit `D = <W>/runde-2`.
 2. `NACHPRUEFER ja`: Nachprüfer mit den Eingaben aus dem Skill, dazu `Prüfliste: <W>/runde-2/pruefliste.md` und `Ergebnis: <W>/runde-2/nachpruefung.json`. `NACHPRUEFER nein`: Er startet nicht. Kein Reviewer läuft ein zweites Mal.
 3. `node "<PLUGIN>/scripts/review-flow.js" verify <FLAGS>`. `NACHPRUEFUNG ungültig: <grund>`: nachfordern mit Instanz `nachprüfer`, dann Schritt 3.
-4. `WEITER scout=hinweise`: Scout mit `D = <W>/runde-2` und Instanz `scout-nachpruefung`.
+4. `WEITER scout=<s>`: Ist `s` nicht `keiner`, läuft der Scout mit `D = <W>/runde-2` und Instanz `scout-nachpruefung`; bei `rot-und-gelb` enthält seine Eingabe auch die nicht erledigten und neuen 🔴, damit die nächste Followup-Runde frische Vorschläge bekommt.
 5. Weiter mit „Ende“. Es gibt keine weitere Nacharbeit und keine weitere Runde.
 
 ## Ende

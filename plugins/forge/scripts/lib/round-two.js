@@ -4,7 +4,9 @@ const path = require('node:path');
 const { placeKey, parsePlaces, changedPlaces } = require('./places');
 const { findingProblem } = require('./rules');
 const { openQuestions, wEntriesOf } = require('./questions');
-const { groupRated, countColors, renderGroups } = require('./groups');
+const { groupRated, countColors, renderGroup, REWORK_MARK } = require('./groups');
+const { reworkHeading } = require('../aggregate-findings');
+const { collapse } = require('./places');
 const { rateReviewer, scriptItems, droppedList } = require('./rated-items');
 const { quoteCounts } = require('./quotes');
 const { parseRework } = require('../followup');
@@ -33,8 +35,8 @@ function redItems(group) {
   const ai = group.items.filter((item) => !item.script);
   const script = group.items.filter((item) => item.script);
   return [
-    ...(ai.length > 0 ? [{ key: group.key, label: group.label, source: 'ki', lines: itemLines(ai) }] : []),
-    ...(script.length > 0 ? [{ key: group.key, label: group.label, source: 'skript', lines: itemLines(script) }] : []),
+    ...(ai.length > 0 ? [{ key: group.key, label: group.label, source: 'ki', reviewers: group.reviewers ?? [], lines: itemLines(ai) }] : []),
+    ...(script.length > 0 ? [{ key: group.key, label: group.label, source: 'skript', reviewers: group.reviewers ?? [], lines: itemLines(script) }] : []),
   ];
 }
 
@@ -45,7 +47,7 @@ function baseItems(options) {
     return groups.filter((group) => group.color === 'red').flatMap(redItems);
   }
   return parseRework(readLines(path.join(sourceDir(options), 'aggregate.md')))
-    .map((group) => ({ key: placeKey(group.location), label: group.location, source: 'ki', color: COLOR_OF_ICON[group.severity] ?? 'red', lines: group.findings }));
+    .map((group) => ({ key: placeKey(group.location), label: group.location, source: 'ki', color: COLOR_OF_ICON[group.severity] ?? 'red', reviewers: group.reviewers, lines: group.findings }));
 }
 
 function answeredItems(options, openKeys) {
@@ -149,8 +151,14 @@ function verifyRoundTwo(options) {
   const counts = countColors(groups);
   const openRed = notDone + counts.red;
   writeJson(path.join(dir, 'einstufung.json'), { verdicts, groups, dropped: droppedList(items), openRed, belege: quoteCounts(items) });
-  writeText(path.join(dir, 'scout-eingabe.md'), renderGroups(groups.filter((group) => group.color === 'yellow')));
-  const scout = counts.yellow > 0 ? 'hinweise' : 'keiner';
+  // Scout-Eingabe: nicht erledigte Hindernisse der Prüfliste (als 🔴-Gruppe mit ihren Reviewern) und alle 🔴/🟡 der Nachprüfung; so bekommt
+  // die nächste Followup-Runde einen frischen Vorschlag statt des alten aus sicherung-vorher. Nur 🟡 → `hinweise`, nichts → `keiner`.
+  const notDoneKeys = new Set(verifier.verdicts.filter((verdict) => verdict.verdict === 'nicht erledigt').map((verdict) => placeKey(verdict.location)));
+  const pending = aiItems.filter((item) => (item.color ?? 'red') === 'red' && notDoneKeys.has(item.key));
+  const pendingBlocks = pending.map((item) => [reworkHeading('🔴', collapse(item.label), item.reviewers ?? []), ...item.lines].join('\n'));
+  const scoutGroups = groups.filter((group) => (pending.length > 0 || counts.red > 0 ? group.color !== 'green' : group.color === 'yellow'));
+  writeText(path.join(dir, 'scout-eingabe.md'), [REWORK_MARK, ...pendingBlocks, ...scoutGroups.map(renderGroup)].join('\n\n'));
+  const scout = pending.length > 0 || counts.red > 0 ? 'rot-und-gelb' : counts.yellow > 0 ? 'hinweise' : 'keiner';
   return `NACHPRUEFUNG ok offen=${openRed} hinweise=${counts.yellow}\nWEITER scout=${scout}`;
 }
 

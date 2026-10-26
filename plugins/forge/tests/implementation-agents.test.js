@@ -94,3 +94,17 @@ test('implementation-implementer_Body_ConfiguredTestCommandFirst', () => {
   assert.match(body, /auch kein MCP-Tool mit gleichem Zweck/);
   assert.doesNotMatch(body, /etwa Tests über ein MCP-Tool statt über die Shell/);
 });
+
+test('implementation-implementer_FixRound_FollowsChosenProposalOrExplainsDeviation', () => {
+  const { body } = readAgent('implementation-implementer');
+  for (const part of ['`Gewählt: Vorschlag <n>`', 'setzt du genau diesen Vorschlag um', '`### Abweichungen`', '- **<Stelle>** — <Begründung aus Code, Plan oder Spec>', 'Eine Abweichung ohne diese Zeile gilt im Re-Review als nicht behoben.']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+});
+
+test('implementation-re-reviewer_Body_JudgesDeviationsByTheirReason', () => {
+  const { body } = readAgent('implementation-re-reviewer');
+  for (const part of ['`### Abweichungen`', 'urteilst du nach der Begründung', '`— Abweichung: <Begründung>`', 'Eine Abweichung ohne Begründung ist `nicht behoben`.']) {
+    assert.ok(body.includes(part), `${part} fehlt`);
+  }
+});

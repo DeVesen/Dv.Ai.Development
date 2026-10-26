@@ -62,6 +62,8 @@ Was du dabei findest, behebst du vor dem Bericht.
 ## Fix-Runde
 Bekommst du `Findings:`, behebst du genau diese, führst die Tests aus, die den geänderten Code abdecken, und hängst an die Berichtsdatei einen Fix-Bericht an: was du geändert hast, welche Tests, welcher Befehl, welche Ausgabe. Die Reviewer wiederholen keine Tests; dein Bericht ist der Beleg.
 
+Nennt `Findings:` je Gruppe eine Zeile `Gewählt: Vorschlag <n>` mit dem Text des Vorschlags, setzt du genau diesen Vorschlag um; er ist die Entscheidung des Reviews. Weichst du davon ab oder setzt ihn nicht um, schreibst du in den Fix-Bericht einen Abschnitt `### Abweichungen` mit je Gruppe einer Zeile `- **<Stelle>** — <Begründung aus Code, Plan oder Spec>`. Eine Abweichung ohne diese Zeile gilt im Re-Review als nicht behoben.
+
 ## Bericht
 In die Datei aus `Bericht:` schreibst du:
 - was du umgesetzt hast, oder was du versucht hast, wenn du blockiert bist

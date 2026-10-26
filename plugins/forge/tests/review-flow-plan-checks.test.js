@@ -156,7 +156,7 @@ test('verify_ReworkRemovesOnlyMentionOfAc_ScriptRedAtAcOutsideChecklist', () => 
   const out = verify(env, { verdicts: [{ location: 'Task 1', verdict: 'erledigt', rationale: 'passt' }], findings: [] });
 
   // Assert
-  assert.equal(out, 'NACHPRUEFUNG ok offen=1 hinweise=0\nWEITER scout=keiner\n');
+  assert.equal(out, 'NACHPRUEFUNG ok offen=1 hinweise=0\nWEITER scout=rot-und-gelb\n');
   assert.deepEqual(redLabels(readRound(env, 'runde-2/einstufung.json')), ['AC-05: skript:ac-abdeckung/skript-prüfung']);
   assert.ok(!readRound(env, 'runde-2/pruefliste.json').items.some((item) => item.key === 'AC-05'));
 });

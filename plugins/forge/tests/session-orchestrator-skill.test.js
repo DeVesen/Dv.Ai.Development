@@ -183,3 +183,21 @@ test('sessionOrchestratorFlow_MessageOfStage_CountsAsTurnEndAndWhiteboardingComm
     '## Whiteboarding-Commit\n`<SC> commit --anlass whiteboarding --slug <slug> --message "<betreff>"`: Spec und gemeldete Glossar- und ADR-Dateien des Whiteboardings.',
   ]) assert.ok(text.includes(part), part);
 });
+
+test('sessionOrchestratorFlow_Final_TakesReportAndCommitFromTheTurnLines', () => {
+  const text = readText(FLOW);
+  assert.ok(text.includes('`<BERICHT>` und `<COMMIT>` sind die Werte der Zeilen `BERICHT=` und `COMMIT=` aus der Ausgabe von `<SC> turn`.'));
+});
+
+test('sessionOrchestratorFlow_Deviation_FollowsTheWeiterLineOfTheBlock', () => {
+  const text = readText(FLOW);
+  assert.ok(text.includes('dann genau das, was die Zeile `Bei „weiter“:` des Blocks nennt'));
+  assert.equal(text.includes('dann Start der genannten Etappe. |'), false);
+});
+
+test('sessionOrchestratorFlow_Nacharbeit_LeavesQuelleToBrief', () => {
+  const text = readText(FLOW);
+  assert.ok(text.includes('`brief` nimmt als `--quelle` die Berichtsdatei des letzten Spec-Review-`final` aus dem Zustand'));
+  assert.ok(text.includes('`brief` nimmt als `--quelle` die Berichtsdatei des letzten Planning- oder Plan-Review-`final` aus dem Zustand'));
+  assert.equal(text.includes('<bericht.md der letzten'), false);
+});

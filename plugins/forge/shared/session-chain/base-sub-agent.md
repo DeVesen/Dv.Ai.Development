@@ -5,7 +5,7 @@
 4. Starte keine weitere Session. Eine Nachricht schickst du nur nach Regel 9; sonst meldest du dich über dein Turn-Ende.
 5. Report-Protokoll: Die erste Zeile des Recaps an jedem Turn-Ende, auch bei Zwischenständen, lautet
    `[{{ETAPPE}}] STATUS=<in-progress|needs-user|final> · ROT=<n> · GELB=<n> · COMMIT=<hash|none> · BERICHT=<pfad|none>`
-   `needs-user`: du wartest auf den Menschen. `final`: deine Etappe ist fertig und die Berichtsdatei geschrieben. ROT und GELB: offene 🔴 und 🟡 laut Bericht.
+   `needs-user`: du wartest auf den Menschen. `final`: deine Etappe ist fertig und die Berichtsdatei geschrieben. ROT und GELB: die Zahlen der Ergebnis-Zeile deines Berichts (`n Hindernis(se) offen` → ROT, `n kleine(r) Hinweis(e) offen` → GELB); fehlt die Angabe, `0`.
    Die Statuszeile steht als einzige Zeile vor dem Bericht deines Skills. Regeln deines Skills wie `nichts davor oder danach` gelten ab der zweiten Zeile.
 6. Berichtsdatei vor dem `final`: `{{BERICHT}}`, dazu `--inhalt "<datei>"` mit dem vollen Bericht deines Skills, `--entscheidung "<text>"` je Entscheidung des Menschen in dieser Etappe, `--datei "<pfad>"` je Glossar- oder ADR-Datei, die du geändert hast, `--tests "<zahlen>"`, wenn Tests liefen. Die Ausgabezeile `BERICHT=<pfad>` ist der Pfad für deine Statuszeile.
 7. Statuszeile und Ergebnis deines Skills sind deine ganze Ausgabe: kein Übergabe-Hinweis, keine Commit-Frage, keine Empfehlung für einen nächsten Schritt.

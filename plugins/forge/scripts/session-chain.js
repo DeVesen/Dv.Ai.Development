@@ -123,7 +123,7 @@ function final(values) {
   if (result.weiter !== 'doppelt') {
     appendEvent(process.cwd(), result.slug, {
       typ: 'final', etappe: values.etappe, session: values.session, commit: values.commit, ergebnis: result.ergebnis, weiter: result.weiter,
-      haltepunkt: result.haltepunkt, dauerMs: result.dauerMs ?? null, offen: result.offen ?? null,
+      haltepunkt: result.haltepunkt, dauerMs: result.dauerMs ?? null, offen: result.offen ?? null, abbruch: result.abbruch ?? null,
     });
   }
   const lines = [`SLUG=${result.slug}`, `ERGEBNIS=${result.ergebnis}`, `WEITER=${result.weiter}`, `HALTEPUNKT=${result.haltepunkt}`, ...result.geprueft.map((line) => `GEPRUEFT=${line}`)];

@@ -22,7 +22,7 @@ Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es sta
 1. `node "<PLUGIN>/scripts/review-flow.js" checklist <FLAGS>`. Bei `plan-review` danach die Skript-Prüfungen: `node "<PLUGIN>/scripts/review-flow.js" script-checks <FLAGS> --runde runde-2`.
 2. `NACHPRUEFER ja`: Nachprüfer des Original-Skills mit dessen Eingabezeilen, dazu `Prüfliste: <W>/runde-2/pruefliste.md` und `Ergebnis: <W>/runde-2/nachpruefung.json`. Kein Reviewer läuft.
 3. `node "<PLUGIN>/scripts/review-flow.js" verify <FLAGS>`. `NACHPRUEFUNG ungültig: <grund>`: nachfordern mit Instanz `nachprüfer`, dann Schritt 3.
-4. `WEITER scout=hinweise`: Scout des Original-Skills mit `D = <W>/runde-2` und Instanz `scout-nachpruefung`.
+4. `WEITER scout=<s>`: Ist `s` nicht `keiner`, läuft der Scout des Original-Skills mit `D = <W>/runde-2` und Instanz `scout-nachpruefung` (bei `rot-und-gelb` auch für nicht erledigte und neue 🔴).
 5. `node "<PLUGIN>/scripts/review-flow.js" report <FLAGS> --titel "Review-Followup (<original>)" --artefakt "<artefakt>"`. Die Ausgabe hat zwei Zeilen: `ENDE <status>` ist der Status, `STATUSZEILE <Review-Statuszeile>` die Zeile für den Chat. Bericht und Bericht-Daten liegen in der Ablage der Etappe; `prepare.js` hat sie im Arbeitsbereich festgelegt.
 6. Sicherung: `node "<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"`; die Ausgabe zeigst du nicht.
 

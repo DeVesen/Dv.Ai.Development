@@ -171,7 +171,8 @@ test('verify_ContradictionInSideChangedArea_StaysRed', () => {
   const output = verify(env, { verdicts: [{ location: 'AC-04', verdict: 'erledigt', rationale: 'ok' }], findings: [finding({ location: 'Deckel', quote: 'Höchstens drei Runden.', category: 'widerspruch' })] });
 
   // Assert
-  assert.equal(output, 'NACHPRUEFUNG ok offen=1 hinweise=0\nWEITER scout=keiner\n');
+  assert.equal(output, 'NACHPRUEFUNG ok offen=1 hinweise=0\nWEITER scout=rot-und-gelb\n');
+  assert.match(fs.readFileSync(path.join(env.workspace, 'runde-2', 'scout-eingabe.md'), 'utf8'), /### 🔴 Deckel \(nachprüfer\)/);
 });
 
 test('verify_FindingOutsideChecklist_IsHintForScout', () => {
@@ -204,7 +205,7 @@ test('verify_ScriptReportsAgain_PointNotDoneAndRed', () => {
   const output = verify(env);
 
   // Assert
-  assert.equal(output, 'NACHPRUEFUNG ok offen=1 hinweise=0\nWEITER scout=keiner\n');
+  assert.equal(output, 'NACHPRUEFUNG ok offen=1 hinweise=0\nWEITER scout=rot-und-gelb\n');
   assert.deepEqual(readJsonFile(path.join(env.workspace, 'runde-2', 'einstufung.json')).verdicts, [{ location: 'AC-07', source: 'skript', rationale: 'Skript-Prüfung', verdict: 'nicht erledigt' }]);
 });
 
@@ -261,4 +262,35 @@ test('scriptChecks_RoundTwo_WritesIntoRoundTwoFolder', () => {
   assert.match(output, /^SKRIPT befunde=\d+\n$/);
   assert.ok(fs.existsSync(path.join(env.workspace, 'runde-2', 'skript-pruefung.json')));
   assert.ok(!fs.existsSync(path.join(env.workspace, 'runde-1', 'skript-pruefung.json')));
+});
+
+test('verify_NotDoneRedPoint_GoesToScoutInputWithItsReviewers', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  finishRework(env, [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }]);
+  checklist(env);
+
+  // Act
+  const output = verify(env, { verdicts: [{ location: 'AC-04', verdict: 'nicht erledigt', rationale: 'F fehlt noch' }], findings: [] });
+
+  // Assert
+  assert.equal(output, 'NACHPRUEFUNG ok offen=1 hinweise=0\nWEITER scout=rot-und-gelb\n');
+  const input = fs.readFileSync(path.join(env.workspace, 'runde-2', 'scout-eingabe.md'), 'utf8');
+  assert.match(input, /^=== REWORK ===\n\n### 🔴 AC-04 \(consistency\)\n- \[consistency · widerspruch\]/);
+});
+
+test('verify_AllDoneAndNoFindings_NoScout', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  finishRework(env, [{ location: 'AC-04', status: 'changed', change: 'Wortlaut geschärft.' }]);
+  checklist(env);
+
+  // Act
+  const output = verify(env, { verdicts: [{ location: 'AC-04', verdict: 'erledigt', rationale: 'ok' }], findings: [] });
+
+  // Assert
+  assert.equal(output, 'NACHPRUEFUNG ok offen=0 hinweise=0\nWEITER scout=keiner\n');
+  assert.equal(fs.readFileSync(path.join(env.workspace, 'runde-2', 'scout-eingabe.md'), 'utf8').trim(), '=== REWORK ===');
 });

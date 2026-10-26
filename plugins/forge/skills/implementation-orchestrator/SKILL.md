@@ -16,7 +16,7 @@ Lies `<PLUGIN>/shared/orchestrator-rules.md` und befolge es; hier steht nur, was
 3. Skill-Argumente nur wie im Ablauf.
 4. Ort wählt start-work. Der Worktree bleibt, `finish-work` ruft nur der Mensch.
 5. Hash-Prüfung: `node "<PLUGIN>/scripts/orchestrator-state.js" check --state "<ST>"`. Exit 1 → stopp, den Teil nach `=== DIFF ===` zeigen, fragen. Nicht zurückschreiben, nicht committen, nicht als harmlos einstufen.
-6. Zustand (Pfade, Modus, Branch, `<B>`, Vorbestand) in `state.md` im Scratchpad; `<ST>` = Ordner `zustand` dort. Dort auch, absolut: `<FK>` = `fakten.md`; bis Schritt 2 auch `<AB>` = `abschluss.md`.
+6. Zustand (Pfade, Modus, Branch, `<B>`, Vorbestand) in `state.md` im Scratchpad; `<ST>` = Ordner `zustand` dort. Dort auch, absolut: `<FK>` = `fakten.md`, `<PR>` = `pruefung.json` (schreibt Schritt 6); bis Schritt 2 auch `<AB>` = `abschluss.md`.
 7. Abweichungen, `Urteil:`-Zeilen → Bericht. Blocker = Stopp aus Regel 5, fehlender Skill, Frage nur für den Menschen.
 
 ## Ablauf
@@ -31,7 +31,7 @@ Lies `<PLUGIN>/shared/orchestrator-rules.md` und befolge es; hier steht nur, was
 5. Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> alle --spec <S>`. Hash-Prüfung. Dann `next` erneut, mit `--followup "<BFn>"` je gelaufener Runde: `NEXT=followup` → nächste Runde; `NEXT=weiter` und `BEREIT=ja` → 6; sonst Ende.
 6. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>" --out "<PR>"` mit `<PR>` = `pruefung.json` im Scratchpad. `PRUEFUNG ergebnis=`: `docker` → in `<FK>` `Prüfung: Tests nur ohne Docker rot`; `rot` → Ende. `offen` außer Vorbestand > 0 → in `<FK>` als Abweichung.
 7. Abschlussbericht, auch bei jedem früheren Ende, genau einmal als letzte Ausgabe:
-   1. `<FK>` schreiben, je Angabe eine Zeile: `Feature-Branch: <branch>` (belegt per `git branch --list`, `git worktree list`), Modus, `git log --oneline <B>..<branch>`, Prüfergebnis aus `<PR>`, Urteile, Vorbestand, bei Abweichungen `Abweichungen: …`.
+   1. `<FK>` schreiben, je Angabe eine Zeile: `Feature-Branch: <branch>` (belegt per `git branch --list`, `git worktree list`), Modus, `git log --oneline <B>..<branch>`, `Prüfung: <ergebnis aus <PR>>` oder `Prüfung: keine (Schritt 6 lief nicht)`, Urteile, Vorbestand, bei Abweichungen `Abweichungen: …`.
    2. Lief Schritt 2 (`<R>` und Branch stehen fest): `node "<PLUGIN>/scripts/chain.js" write --stage implementation --plan "<P>" --spec "<S>" --worktree "<R>" --branch <branch>`, dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben. Fehler: Meldung in `Abweichungen: …` von `<FK>`; der Bericht folgt trotzdem.
    3. Lief Schritt 4 nicht: `node "<PLUGIN>/scripts/orchestrator-report.js" --art implementation --abbruch "<Grund>" --out "<AB>" --fakten "<FK>"`. Sonst `node "<PLUGIN>/scripts/orchestrator-report.js" --art implementation --review "<BR>" --out "<AB>" --fakten "<FK>"`, dazu `--followup "<BFn>"` je nur wenn die Runde lief.
    4. `node "<PLUGIN>/scripts/guard-orchestrator.js" show ${CLAUDE_SESSION_ID} --file "<AB>"`.

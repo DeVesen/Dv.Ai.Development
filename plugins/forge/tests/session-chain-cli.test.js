@@ -147,6 +147,20 @@ test('turn_FinalStatusLineWithShellCharactersInText_PrintsActionAndFields', () =
   assert.ok(result.stdout.startsWith('AKTION=final\nETAPPE=grill\nSTATUS=final\nROT=0\nGELB=1\nCOMMIT=none\nBERICHT=C:/b.md'));
 });
 
+test('turn_InProgress_PrintsExactlyTheRunningLine', () => {
+  // Arrange
+  const repo = makeRepo();
+  const turnEnd = scratch('turn.md', '[grill] STATUS=in-progress · ROT=0 · GELB=0 · COMMIT=none · BERICHT=none\nLäuft.\n');
+
+  // Act
+  const result = chain(repo, 'turn', '--session', 'local_t', '--etappe', 'grill', '--turn-datei', turnEnd);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^AKTION=laeuft$/m);
+  assert.equal(result.stdout.split('=== AUSGABE ===\n')[1], 'grill: läuft\n');
+});
+
 test('store_FromWorktreeWithFresh_StoresInTheSharedAblage', () => {
   // Arrange
   const { repo } = repoWithPlan();

@@ -56,6 +56,11 @@ function goHalt({ spec, plan, wi, basis, result, recommendation, points }) {
   ].join('\n');
 }
 
+// Einzige Ausgabe der Leit-Session bei `in-progress`: Die App verlangt nach jedem Turn sichtbaren Text.
+function runningLine(etappe) {
+  return `${etappe}: läuft`;
+}
+
 function noStatusHint({ etappe, session }) {
   return `${etappe}: Die Etappe endet ohne Statuszeile (3 Turn-Enden in Folge) · ${sessionLink(session)}`;
 }
@@ -121,4 +126,4 @@ function finalReport(state, { stopp = false } = {}) {
   ].join('\n');
 }
 
-module.exports = { goCall, specHalt, goHalt, noStatusHint, showstopperText, deviationText, adoptedText, finalReport };
+module.exports = { goCall, specHalt, goHalt, runningLine, noStatusHint, showstopperText, deviationText, adoptedText, finalReport };

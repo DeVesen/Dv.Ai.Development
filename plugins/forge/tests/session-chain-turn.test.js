@@ -55,12 +55,12 @@ test('turnAction_RejectedStatusLine_CountsAsTurnEndWithoutStatus', () => {
   assert.deepEqual(result, { aktion: 'schweigen', ohneStatus: 1 });
 });
 
-test('turnAction_InProgress_StaysSilentAndResetsCount', () => {
+test('turnAction_InProgress_RunningLineAndResetsCount', () => {
   // Act
   const result = turnAction(2, parseStatusLine('[grill] STATUS=in-progress · ROT=0 · GELB=0 · COMMIT=none · BERICHT=none'));
 
   // Assert
-  assert.deepEqual(result, { aktion: 'schweigen', ohneStatus: 0 });
+  assert.deepEqual(result, { aktion: 'laeuft', ohneStatus: 0 });
 });
 
 test('turnAction_NeedsUserAndFinal_ReturnTheirAction', () => {

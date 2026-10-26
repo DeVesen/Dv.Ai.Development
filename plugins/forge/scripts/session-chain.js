@@ -12,7 +12,7 @@ const { EntryError, analyseEntry } = require('./lib/session-chain-entry');
 const { buildBrief, SONNET_MODEL_ID, LEIT_ID } = require('./lib/session-chain-brief');
 const { parseStatusLine, turnAction, readTurns, writeTurns } = require('./lib/session-chain-turn');
 const { commitFor, checkWhiteboardingCommitted } = require('./lib/session-chain-commit');
-const { goCall, adoptedText, noStatusHint } = require('./lib/session-chain-text');
+const { goCall, adoptedText, noStatusHint, runningLine } = require('./lib/session-chain-text');
 const { briefHashOf } = require('./lib/stage-start-guard');
 const { etappeReport, readInput } = require('./lib/session-chain-report');
 const { setState, copySpecAtStart, holdAt, processFinal, closing, recordCommit } = require('./lib/session-chain-steps');
@@ -104,7 +104,8 @@ function turn(values) {
   const { aktion, ohneStatus } = turnAction(readTurns(process.cwd(), session), parsed);
   writeTurns(process.cwd(), session, ohneStatus);
   const lines = [`AKTION=${aktion}`, ...Object.entries(parsed ?? {}).map(([key, value]) => `${key.toUpperCase()}=${value}`)];
-  return withBlock(lines, 'AUSGABE', aktion === 'hinweis' ? noStatusHint({ etappe: required(values, 'etappe'), session }) : '').join('\n');
+  const block = { hinweis: () => noStatusHint({ etappe: required(values, 'etappe'), session }), laeuft: () => runningLine(required(values, 'etappe')) }[aktion];
+  return withBlock(lines, 'AUSGABE', block ? block() : '').join('\n');
 }
 
 function final(values) {

@@ -1,6 +1,6 @@
 'use strict';
 
-// Turn-Ende einer Etappen-Session: Statuszeile lesen und entscheiden, ob die Leit-Session schweigt oder handelt.
+// Turn-Ende einer Etappen-Session: Statuszeile lesen und entscheiden, ob die Leit-Session schweigt, die Zeile `<etappe>: läuft` ausgibt oder handelt.
 // Ein Turn-Ende ohne Statuszeile gilt als `in-progress`; jedes dritte in Folge bekommt einen Hinweis.
 // COMMIT und BERICHT landen in Befehlen der Leit-Session: COMMIT ist nur `none` oder ein Hash, BERICHT nur `none` oder ein
 // Pfad ohne Shell-Zeichen. Eine Zeile mit anderen Werten gilt als keine Statuszeile.
@@ -28,7 +28,7 @@ function turnAction(count, parsed) {
     const next = count + 1;
     return { aktion: next % HINT_AFTER === 0 ? 'hinweis' : 'schweigen', ohneStatus: next };
   }
-  const aktion = { 'in-progress': 'schweigen', 'needs-user': 'needs-user', final: 'final' }[parsed.status];
+  const aktion = { 'in-progress': 'laeuft', 'needs-user': 'needs-user', final: 'final' }[parsed.status];
   return { aktion, ohneStatus: 0 };
 }
 

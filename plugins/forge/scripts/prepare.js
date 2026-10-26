@@ -483,7 +483,9 @@ function prepare(skill, args) {
   if (!Object.hasOwn(PREPARERS, skill)) throw new UsageError(`Unbekannter Skill: ${skill}`);
   const call = parseArgs(skill, args);
   const values = PREPARERS[skill](call);
-  if (skill !== 'implementation') recordAblage(skill === 'review-followup' ? values.original : skill, values, call.positional[0], call.switches, skill !== 'review-followup');
+  const isFollowup = skill === 'review-followup';
+  const review = isFollowup ? values.original : skill;
+  if (skill !== 'implementation') recordAblage(review, values, call.positional[0], call.switches, !isFollowup);
   return render(values);
 }
 

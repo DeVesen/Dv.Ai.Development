@@ -191,9 +191,12 @@ test('resolveFollowup_PlanOrSpecByContent_PicksMatchingRole', () => {
   assert.equal(followup.resolveFollowup(path.join(repo, 'docs/forge/demo/plan.md'), repo).role, 'plan-review');
 });
 
-test('save_ScoutGroupNotInAggregate_TreatedAsNoScout', () => {
+test('save_ScoutGroupNotInAggregate_TreatedAsNoScout', (t) => {
+  const writes = [];
+  t.mock.method(process.stderr, 'write', (text) => { writes.push(String(text)); return true; });
   const env = roundDir({ 'aggregate.md': AGGREGATE, 'scout.md': SCOUT.replace('### 🟡 AC-03', '### 🟡 AC-03 (coverage)') });
   assert.equal(followup.save('plan-review', 'demo', env.dir), 'KEIN SCOUT');
+  assert.match(writes.join(''), /Scout verworfen: Keine Aggregat-Gruppe zu 🟡 AC-03 \(coverage\)/);
   assert.equal(fs.existsSync(env.saved), false);
 });
 

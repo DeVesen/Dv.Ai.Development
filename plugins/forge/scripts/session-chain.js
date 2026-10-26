@@ -11,7 +11,7 @@ const { storeFiles } = require('./lib/session-chain-ablage');
 const { EntryError, analyseEntry } = require('./lib/session-chain-entry');
 const { buildBrief, SONNET_MODEL_ID } = require('./lib/session-chain-brief');
 const { parseStatusLine, turnAction, readTurns, writeTurns } = require('./lib/session-chain-turn');
-const { commitFor } = require('./lib/session-chain-commit');
+const { commitFor, checkWhiteboardingCommitted } = require('./lib/session-chain-commit');
 const { goCall, adoptedText, noStatusHint } = require('./lib/session-chain-text');
 const { briefHashOf } = require('./lib/stage-start-guard');
 const { etappeReport, readInput } = require('./lib/session-chain-report');
@@ -26,7 +26,7 @@ const USAGE = [
   '       node session-chain.js final --etappe <etappe> --session <id> --bericht <datei> --commit <hash|none> [--basis <branch>] [--wi <nr>]',
   '       node session-chain.js halt --slug <slug> --art spec|go',
   '       node session-chain.js answer --slug <slug> --antwort <planning|spec-nacharbeit|go|plan-nacharbeit|weiter|stopp>',
-  '       node session-chain.js commit --anlass spec|go --slug <slug> --message <betreff>',
+  '       node session-chain.js commit --anlass whiteboarding|spec|go --slug <slug> --message <betreff>',
   '       node session-chain.js schluss --slug <slug> [--stopp]',
   '       node session-chain.js store --etappe <etappe> (--spec <S> | --plan <P>) [--neu] --datei <datei>...',
   '       node session-chain.js review-stand --spec <S>',
@@ -78,6 +78,7 @@ function entry(args) {
 
 function brief(values) {
   const state = values.slug ? readState(process.cwd(), values.slug) : null;
+  if (state && values.etappe === 'grill') checkWhiteboardingCommitted(state, process.cwd());
   const chain = { ...(state ?? {}), ...(values.slug ? { slug: values.slug } : {}), ...(values.basis ? { basis: values.basis } : {}), ...(values.wi ? { wi: values.wi } : {}) };
   const result = buildBrief({
     etappe: required(values, 'etappe'),

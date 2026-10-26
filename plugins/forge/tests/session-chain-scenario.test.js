@@ -83,18 +83,19 @@ function appendToSpec(env, line, message) {
   return commitFile(env.repo, 'docs/forge/x/spec.md', `${fs.readFileSync(env.spec, 'utf8')}${line}\n`, message);
 }
 
-// Einstieg ohne Codewort bis zum final des Whiteboardings; `foreignFile` legt einen fremden Commit-Inhalt daneben.
-function runWhiteboarding(env, { foreignFile = null } = {}) {
+// Einstieg ohne Codewort bis zum final des Whiteboardings und dem Whiteboarding-Commit der Leit-Session; das Whiteboarding committet nicht.
+function runWhiteboarding(env) {
   const entry = succeeded(chain(env.repo, 'entry'));
   assert.equal(field(entry, 'etappe'), 'whiteboarding');
   assert.equal(field(entry, 'frage-basis'), 'ja');
   const brief = succeeded(chain(env.repo, 'brief', '--etappe', 'whiteboarding', '--basis', 'main', '--kontext', scratch('kontext.md', 'Anliegen: Export nach CSV\n')));
   assert.equal(field(brief, 'MODELL'), 'sonnet');
-  commitFile(env.repo, 'docs/forge/x/spec.md', VALID_SPEC, 'docs: spec x');
-  if (foreignFile) commitFile(env.repo, foreignFile, 'fremd\n', 'feat: fremde Datei');
-  const commit = git(env.repo, 'rev-parse', 'HEAD');
+  fs.mkdirSync(path.dirname(env.spec), { recursive: true });
+  fs.writeFileSync(env.spec, VALID_SPEC);
   const bericht = writeReport(env, 'whiteboarding', { target: ['--spec', env.spec] });
-  return runFinal(env, 'whiteboarding', bericht, commit, ['--basis', 'main']);
+  const final = runFinal(env, 'whiteboarding', bericht, 'none', ['--basis', 'main']);
+  succeeded(chain(env.repo, 'commit', '--anlass', 'whiteboarding', '--slug', 'x', '--message', 'docs: spec x'));
+  return final;
 }
 
 function runGrill(env) {
@@ -191,7 +192,7 @@ test('chain_GoldenPathFromEntryToEnd_EventsAndStateFollowTheSteps', () => {
   assert.deepEqual([implementation.weiter, implementation.halt], ['abschluss', 'keiner']);
   assert.deepEqual([finish.weiter, finish.halt], ['ende', 'keiner']);
   assert.ok(finish.out.includes('# Schlussbericht der Session-Kette x'));
-  assert.deepEqual(eventKinds(env), ['final:whiteboarding', 'start:grill', 'final:grill', 'start:spec-review', 'final:spec-review', 'antwort', 'start:planning', 'final:planning',
+  assert.deepEqual(eventKinds(env), ['final:whiteboarding', 'commit', 'start:grill', 'final:grill', 'start:spec-review', 'final:spec-review', 'antwort', 'start:planning', 'final:planning',
     'antwort', 'commit', 'start:umsetzung', 'final:umsetzung', 'start:abschluss', 'final:abschluss']);
   const state = readState(env.repo, 'x');
   assert.deepEqual(state.etappen.map((entry) => entry.etappe), ['whiteboarding', 'grill', 'spec-review', 'planning', 'umsetzung', 'abschluss']);
@@ -318,19 +319,54 @@ test('chain_ShowstopperAtImplementation_BriefRefusedUntilGreenFinalOfSameEtappe'
 test('chain_DeviationForeignFileInCommit_HoldsUntilAnswerWeiter', () => {
   // Arrange
   const env = newChain();
-  const whiteboarding = runWhiteboarding(env, { foreignFile: 'src/fremd.js' });
+  runWhiteboarding(env);
+  const grill = runEtappe(env, 'grill', {
+    effect: () => {
+      fs.mkdirSync(path.join(env.repo, 'src'), { recursive: true });
+      fs.writeFileSync(path.join(env.repo, 'src/fremd.js'), 'fremd\n');
+      git(env.repo, 'add', 'src/fremd.js');
+      return { commit: appendToSpec(env, '', 'docs: grill spec x') };
+    },
+  });
 
   // Act
-  const refused = chain(env.repo, 'brief', '--etappe', 'grill', '--slug', 'x');
+  const refused = chain(env.repo, 'brief', '--etappe', 'spec-review', '--slug', 'x');
   const answer = succeeded(chain(env.repo, 'answer', '--slug', 'x', '--antwort', 'weiter'));
-  const started = chain(env.repo, 'brief', '--etappe', 'grill', '--slug', 'x');
+  const started = chain(env.repo, 'brief', '--etappe', 'spec-review', '--slug', 'x');
 
   // Assert
-  assert.equal(whiteboarding.halt, 'abweichung');
-  assert.ok(whiteboarding.out.includes('src/fremd.js außerhalb der erwarteten Dateien'));
+  assert.equal(grill.halt, 'abweichung');
+  assert.ok(grill.out.includes('src/fremd.js außerhalb der erwarteten Dateien'), grill.out);
   assert.equal(refused.status, 1);
   assert.match(refused.stderr, /^Haltepunkt abweichung offen/);
   assert.equal(answer.trim(), 'FREIGABE=abweichung weiter');
+  assert.equal(started.status, 0, started.stderr);
+});
+
+test('chain_GrillBeforeWhiteboardingCommit_RefusedUntilTheLeitSessionCommits', () => {
+  // Arrange
+  const env = newChain();
+  succeeded(chain(env.repo, 'entry'));
+  succeeded(chain(env.repo, 'brief', '--etappe', 'whiteboarding', '--basis', 'main', '--kontext', scratch('kontext.md', 'Anliegen: Export\n')));
+  fs.mkdirSync(path.dirname(env.spec), { recursive: true });
+  fs.writeFileSync(env.spec, VALID_SPEC);
+  fs.writeFileSync(path.join(env.repo, 'CONTEXT.md'), '# Glossar\n');
+  const bericht = writeReport(env, 'whiteboarding', { target: ['--spec', env.spec], extra: ['--datei', path.join(env.repo, 'CONTEXT.md')] });
+  const final = runFinal(env, 'whiteboarding', bericht, 'none', ['--basis', 'main']);
+  const commitsBefore = git(env.repo, 'rev-list', '--count', 'HEAD');
+
+  // Act
+  const refused = chain(env.repo, 'brief', '--etappe', 'grill', '--slug', 'x');
+  const commit = succeeded(chain(env.repo, 'commit', '--anlass', 'whiteboarding', '--slug', 'x', '--message', 'docs: spec x'));
+  const started = chain(env.repo, 'brief', '--etappe', 'grill', '--slug', 'x');
+
+  // Assert
+  assert.equal(final.weiter, 'grill');
+  assert.equal(commitsBefore, '1');
+  assert.equal(refused.status, 1);
+  assert.equal(refused.stderr.trim(), 'Spec aus dem Whiteboarding ist uncommittet: erst `commit --anlass whiteboarding`');
+  assert.match(commit, /^COMMIT=\S+ docs\/forge\/x\/spec\.md CONTEXT\.md$/m);
+  assert.equal(git(env.repo, 'rev-list', '--count', 'HEAD'), '2');
   assert.equal(started.status, 0, started.stderr);
 });
 

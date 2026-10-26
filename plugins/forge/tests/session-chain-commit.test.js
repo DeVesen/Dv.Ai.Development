@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { git, makeRepo, repoWithPlan } = require('./lib/git-repo');
 const { SessionChainError } = require('../scripts/lib/session-chain-store');
-const { commitFor } = require('../scripts/lib/session-chain-commit');
+const { commitFor, checkWhiteboardingCommitted } = require('../scripts/lib/session-chain-commit');
 
 function committedFiles(repo) {
   return git(repo, 'show', '--name-only', '--format=', 'HEAD').split('\n').filter(Boolean);
@@ -92,4 +92,55 @@ test('commitFor_AnyCommit_ContainsOnlyMarkdownFiles', () => {
 
   // Assert
   assert.ok(committedFiles(repo).every((file) => file.endsWith('.md')));
+});
+
+// Repo mit Spec in docs/forge/x, noch ohne Commit.
+function repoWithNewSpec() {
+  const repo = makeRepo();
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  fs.mkdirSync(path.dirname(spec), { recursive: true });
+  fs.writeFileSync(spec, '# Spec\n');
+  return { repo, spec };
+}
+
+test('commitFor_Whiteboarding_CommitsSpecAndItsGlossaryInOneCommit', () => {
+  // Arrange
+  const { repo, spec } = repoWithNewSpec();
+  for (const name of ['CONTEXT.md', 'grill.md', 'fremd.md']) fs.writeFileSync(path.join(repo, name), 'x\n');
+  const state = { spec, dateien: [{ etappe: 'whiteboarding', pfad: path.join(repo, 'CONTEXT.md') }, { etappe: 'grill', pfad: path.join(repo, 'grill.md') }] };
+
+  // Act
+  const result = commitFor('whiteboarding', repo, state, 'docs: spec x');
+
+  // Assert
+  assert.deepEqual(result.commit.dateien, ['docs/forge/x/spec.md', 'CONTEXT.md']);
+  assert.deepEqual(committedFiles(repo).sort(), ['CONTEXT.md', 'docs/forge/x/spec.md']);
+  assert.equal(git(repo, 'rev-list', '--count', 'HEAD'), '2');
+});
+
+test('commitFor_UnknownAnlass_ThrowsNamingAllowedAnlaesse', () => {
+  // Act & Assert
+  assert.throws(() => commitFor('x', makeRepo(), {}, 'm'),
+    (error) => error instanceof SessionChainError && error.message === 'Anlass unbekannt: x (erlaubt: whiteboarding, spec, go)');
+});
+
+test('checkWhiteboardingCommitted_SpecUncommittedAfterWhiteboarding_ThrowsUntilCommitted', () => {
+  // Arrange
+  const { repo, spec } = repoWithNewSpec();
+  const state = { spec, etappen: [{ etappe: 'whiteboarding' }] };
+
+  // Act & Assert
+  assert.throws(() => checkWhiteboardingCommitted(state, repo),
+    (error) => error instanceof SessionChainError && error.message === 'Spec aus dem Whiteboarding ist uncommittet: erst `commit --anlass whiteboarding`');
+  commitFor('whiteboarding', repo, state, 'docs: spec x');
+  assert.doesNotThrow(() => checkWhiteboardingCommitted(state, repo));
+});
+
+test('checkWhiteboardingCommitted_LastEtappeNotWhiteboarding_DoesNotThrow', () => {
+  // Arrange
+  const { repo, spec } = repoWithNewSpec();
+
+  // Act & Assert
+  assert.doesNotThrow(() => checkWhiteboardingCommitted({ spec, etappen: [{ etappe: 'spec-review' }] }, repo));
+  assert.doesNotThrow(() => checkWhiteboardingCommitted({ spec }, repo));
 });

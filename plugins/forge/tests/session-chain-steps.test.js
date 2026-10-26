@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { git, commitFile, makeRepo, addWorktree, repoWithPlan, repoWithRemoteBranch } = require('./lib/git-repo');
+const { VALID_SPEC } = require('./lib/spec-fixtures');
 const { readState, writeState } = require('../scripts/lib/session-chain-store');
 const { storeFiles } = require('../scripts/lib/session-chain-ablage');
 const { etappeReport } = require('../scripts/lib/session-chain-report');
@@ -101,9 +102,19 @@ test('processFinal_SameSessionNewCommit_ProcessesAgain', () => {
   assert.equal(readState(repo, 'x').etappen.length, 2);
 });
 
+// Repo mit Spec in docs/forge/x (Slug x), noch ohne Commit: so liegt sie nach dem Whiteboarding einer Session-Kette.
+function uncommittedSpec() {
+  const repo = makeRepo();
+  const spec = path.join(repo, 'docs/forge/x/spec.md');
+  fs.mkdirSync(path.dirname(spec), { recursive: true });
+  fs.writeFileSync(spec, VALID_SPEC);
+  return { repo, spec };
+}
+
 test('processFinal_Whiteboarding_CreatesStateWithSpecBaseAndStartsGrill', () => {
   // Arrange
-  const { repo, spec } = repoWithPlan();
+  const { repo, spec } = uncommittedSpec();
+  fs.writeFileSync(path.join(repo, 'CONTEXT.md'), '# Glossar\n');
   const bericht = etappeReport({ ...EMPTY, etappe: 'whiteboarding', spec, dateien: [path.join(repo, 'CONTEXT.md')] }, repo);
 
   // Act
@@ -111,10 +122,44 @@ test('processFinal_Whiteboarding_CreatesStateWithSpecBaseAndStartsGrill', () => 
 
   // Assert
   assert.equal(result.weiter, 'grill');
+  assert.ok(result.geprueft.includes('Whiteboarding ohne eigenen Commit'), result.geprueft.join('\n'));
   const state = readState(repo, 'x');
   assert.equal(state.basis, 'main');
   assert.equal(state.spec, spec.replace(/\\/g, '/'));
   assert.equal(state.dateien[0].etappe, 'whiteboarding');
+});
+
+test('processFinal_WhiteboardingWithOwnCommit_HoldsAsDeviation', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  const commit = git(repo, 'rev-parse', '--short', 'HEAD');
+  const bericht = etappeReport({ ...EMPTY, etappe: 'whiteboarding', spec }, repo);
+
+  // Act
+  const result = processFinal({ etappe: 'whiteboarding', session: 'local_w', bericht, commit, basis: 'main' }, repo);
+
+  // Assert
+  assert.equal(result.haltepunkt, 'abweichung');
+  assert.ok(result.text.includes(`Whiteboarding meldet Commit ${commit}; in der Session-Kette committet nur die Leit-Session`), result.text);
+  assert.ok(result.text.includes('docs/forge/x/spec.md ist schon committet; in der Session-Kette committet nur die Leit-Session'), result.text);
+});
+
+// AC-10: Das Review im Whiteboarding legt Abschlussbericht und Bericht-Daten in die Ablage `whiteboarding`; die Berichtsdatei der
+// Etappe liegt im selben Ordner, also liest `processFinal` die offenen Punkte von dort in den Zustand.
+test('processFinal_WhiteboardingWithTwoYellowAndOneGreen_KeepsAllThreeInState', () => {
+  // Arrange
+  const { repo, spec } = uncommittedSpec();
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Planen\n');
+  const review = scratch('bericht-review.json', JSON.stringify({ open: [yellow('a', 'A'), yellow('b', 'B')], green: [{ key: 'c', color: 'green', title: 'C' }], changes: [] }));
+  storeFiles({ dir: repo, slug: 'x', etappe: 'whiteboarding', files: [abschluss, review], fresh: true });
+  const bericht = etappeReport({ ...EMPTY, etappe: 'whiteboarding', spec, bericht: abschluss }, repo);
+
+  // Act
+  processFinal({ etappe: 'whiteboarding', session: 'local_w', bericht, commit: 'none', basis: 'main' }, repo);
+
+  // Assert
+  const offen = readState(repo, 'x').offen.map((point) => `${point.farbe} ${point.titel} ${point.herkunft}`);
+  assert.deepEqual(offen, ['yellow A whiteboarding', 'yellow B whiteboarding', 'green C whiteboarding']);
 });
 
 test('processFinal_UmsetzungReadyButAcWithoutTest_IsShowstopperNamingTheAc', () => {

@@ -151,8 +151,22 @@ function specCopyChecks(repo, values, etappe) {
   return result;
 }
 
+// Whiteboarding in der Session-Kette committet nichts: kein gemeldeter Commit, die Spec ohne Commit und gemeldete Glossar- und
+// ADR-Dateien mit noch uncommitteter Änderung. Den Commit macht danach die Leit-Session (`commit --anlass whiteboarding`).
+function noCommitChecks(repo, values) {
+  const result = emptyResult();
+  const reason = 'in der Session-Kette committet nur die Leit-Session';
+  if (values.commit && values.commit !== 'none') result.abweichungen.push(`Whiteboarding meldet Commit ${values.commit}; ${reason}`);
+  if (values.spec && git(repo, ['log', '--format=%h', '-1', '--', values.spec]).out !== '') result.abweichungen.push(`${relative(repo, values.spec)} ist schon committet; ${reason}`);
+  for (const file of (values.dateien ?? []).filter((entry) => fs.existsSync(entry))) {
+    if (!isDirty(repo, file)) result.abweichungen.push(`${relative(repo, file)} hat keine uncommittete Änderung; ${reason}`);
+  }
+  if (result.abweichungen.length === 0) result.geprueft.push('Whiteboarding ohne eigenen Commit');
+  return result;
+}
+
 const EXTRA = {
-  whiteboarding: specFormatChecks, grill: [specFormatChecks, specCopyChecks], 'spec-nacharbeit': [specFormatChecks, specCopyChecks],
+  whiteboarding: [specFormatChecks, noCommitChecks], grill: [specFormatChecks, specCopyChecks], 'spec-nacharbeit': [specFormatChecks, specCopyChecks],
   umsetzung: implementationChecks, abschluss: finishChecks,
 };
 

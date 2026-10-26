@@ -7,6 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const guard = require('../scripts/guard-orchestrator.js');
+const { renderOrchestratorReport } = require('../scripts/lib/orchestrator-report-text');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'guard-orchestrator.js');
 const SESSION = 'report-session';
@@ -25,7 +26,7 @@ function turnEnd(e, entries, extra = {}) {
   return guard.onTurnEnd({ session_id: SESSION, transcript_path: file, last_assistant_message: '', ...extra }, e.tmpRoot);
 }
 
-const FULL = '# Abschlussbericht\n**Ergebnis:** ok\n\n# Was sich im Plan geändert hat\nnichts\n\n# Was ist noch offen\n- nichts\n\n# Wie es weitergeht\nweiter';
+const FULL = '# Abschlussbericht\n**Ergebnis:** ok\n\n# Was sich im Plan geändert hat\nnichts\n\n# Was ist noch offen\n- nichts';
 
 for (const skill of guard.STAGE_RUNS) {
   test(`onTurnEnd_${skill}WithoutReport_BlocksOnce`, () => {
@@ -58,8 +59,8 @@ test('onTurnEnd_ReportOnlyInLastMessage_Allows', () => {
   assert.equal(turnEnd(e, [human('los'), said('x')], { last_assistant_message: FULL }), null);
 });
 
-test('onTurnEnd_AbortReportWithOneHeadingOfTheFour_Allows', () => {
-  for (const heading of ['# Abschlussbericht', '# Was sich im Spec geändert hat', '# Was ist noch offen', '# Wie es weitergeht']) {
+test('onTurnEnd_AbortReportWithOneHeadingOfTheThree_Allows', () => {
+  for (const heading of ['# Abschlussbericht', '# Was sich im Spec geändert hat', '# Was ist noch offen']) {
     const e = env('spec-review-orchestrator');
     assert.equal(turnEnd(e, [human('los'), said(`${heading}\ntext`)]), null, heading);
   }
@@ -96,6 +97,41 @@ test('onTurnEnd_MustShowPending_LeavesItToTheMustShowCheck', () => {
   const e = env();
   guard.writeMarker(SESSION, { mustShow: { anchors: ['# A'], lines: 1, text: '# A', file: 'x', attempts: 0 } }, e.tmpRoot);
   assert.match(turnEnd(e, [human('los'), said('nichts')]), /Gib den folgenden Text unverändert/);
+});
+
+// Bericht eines Orchestrators, wie orchestrator-report.js ihn schreibt: drei Abschnitte, keiner für einen nächsten Schritt.
+const CLOSING_REPORT = renderOrchestratorReport({
+  art: 'spec', resultLine: '**Ergebnis:** ✅ Bereit zum Planen', flowLines: [], checked: [], found: [], notes: [], changes: [], decisions: [], open: [], questions: [], green: [],
+}, { lines: [] });
+
+test('onTurnEnd_ClosingReportWithoutNextStepsSectionShownInFull_PassesTheMustShowCheck', () => {
+  // Arrange
+  const e = env();
+  const file = path.join(e.cwd, 'abschluss.md');
+  fs.writeFileSync(file, `${CLOSING_REPORT}\n`);
+  guard.show(SESSION, file, e.tmpRoot);
+
+  // Act
+  const reason = turnEnd(e, [human('los'), said(CLOSING_REPORT)]);
+
+  // Assert
+  assert.equal(reason, null);
+  assert.deepEqual(CLOSING_REPORT.split('\n').filter((line) => line.startsWith('# ')), ['# Abschlussbericht', '# Was sich in der Spec geändert hat', '# Was ist noch offen']);
+});
+
+test('onTurnEnd_ShortenedClosingReportMissingASection_IsBlockedAndNamesTheMissingHeading', () => {
+  // Arrange
+  const e = env();
+  const file = path.join(e.cwd, 'abschluss.md');
+  fs.writeFileSync(file, `${CLOSING_REPORT}\n`);
+  guard.show(SESSION, file, e.tmpRoot);
+  const shortened = CLOSING_REPORT.slice(0, CLOSING_REPORT.indexOf('# Was ist noch offen')).trimEnd();
+
+  // Act
+  const reason = turnEnd(e, [human('los'), said(shortened)]);
+
+  // Assert
+  assert.match(reason, /# Was ist noch offen/);
 });
 
 test('onTurnEnd_StopHookActive_DoesNotBlock', () => {

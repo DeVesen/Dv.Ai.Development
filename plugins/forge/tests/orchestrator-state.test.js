@@ -7,6 +7,9 @@ const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { repoWithPlan, git, addWorktree } = require('./lib/git-repo');
+const { writeState } = require('../scripts/lib/session-chain-store');
+const { ablageDir } = require('../scripts/lib/session-chain-ablage');
+const { maxFollowups } = require('../scripts/lib/orchestrator-rules');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'orchestrator-state.js');
 
@@ -74,13 +77,13 @@ test('next_FollowupOfferedUnderCap_Followup', () => {
   assert.equal(run(dir, 'next', '--review', review).stdout, 'NEXT=followup\nRUNDE=1\nERGEBNIS=⛔ Nicht bereit\nBEREIT=nein\nRUNDEN=0\n');
 });
 
-test('next_TwoFollowupsDone_WeiterEvenIfOffered', () => {
+test('next_MaximumFollowupsDone_WeiterEvenIfOffered', () => {
   const dir = tmp();
   const offered = { status: 'x', resultLine: '**Ergebnis:** ⛔ Nicht bereit', offersFollowup: true };
-  const files = ['br', 'bf1', 'bf2'].map((name) => report(path.join(dir, `${name}.json`), offered));
-  const result = run(dir, 'next', '--review', files[0], '--followup', files[1], '--followup', files[2]);
+  const files = Array.from({ length: maxFollowups() + 1 }, (_, index) => report(path.join(dir, `bericht-${index}.json`), offered));
+  const result = run(dir, 'next', '--review', files[0], ...files.slice(1).flatMap((file) => ['--followup', file]));
   assert.match(result.stdout, /^NEXT=weiter\n/);
-  assert.match(result.stdout, /RUNDEN=2/);
+  assert.match(result.stdout, new RegExp(`RUNDEN=${maxFollowups()}`));
 });
 
 test('next_IncompleteOrMissingReport_Ende', () => {
@@ -99,6 +102,7 @@ test('next_Ready_WeiterBereitJa', () => {
 test('cli_BadCall_ExitTwo', () => {
   assert.equal(run(tmp(), 'start', '--state', 'x').status, 2);
   assert.equal(run(tmp(), 'bogus').status, 2);
+  assert.equal(run(tmp(), 'ablage').status, 2);
 });
 
 test('start_ModifiedTrackedFileAsFirstStatusLine_KeepsItsFullPath', () => {
@@ -107,4 +111,94 @@ test('start_ModifiedTrackedFileAsFirstStatusLine_KeepsItsFullPath', () => {
   const result = run(repo, 'start', '--state', tmp(), '--spec', spec);
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^VORBESTAND-DATEI=docs\/forge\/x\/spec\.md$/m);
+});
+
+// Erwartete Ausgabe von `ablage` für die Etappe `etappe` des Slugs `x`: Daten des Reviews, je eine Zeile je mögliche Followup-Runde
+// (Maximum aus der Regeldatei), Abschlussbericht. Die Pfade stehen ab dem Ordner `session-chain/`: Der Temp-Ordner, in dem der
+// Ordner der Kette liegt, kann kurz oder lang geschrieben sein.
+function ablageLines(etappe) {
+  const folder = `x/ablage/${etappe}`;
+  const rounds = Array.from({ length: maxFollowups() }, (_, index) => `BERICHT-FOLLOWUP-${index + 1}=${folder}/bericht-followup-${index + 1}.json`);
+  return [`BERICHT-REVIEW=${folder}/bericht-review.json`, ...rounds, `ABSCHLUSS=${folder}/abschluss.md`, ''].join('\n');
+}
+
+function fromChains(text) {
+  return text.replace(/^([A-Z0-9-]+)=.*?\/dv-forge\/session-chain\//gm, '$1=');
+}
+
+test('ablage_SpecWithoutChainState_NamesTheFilesOfTheSpecReviewEtappe', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+
+  // Act
+  const result = run(repo, 'ablage', '--art', 'spec', '--spec', spec);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fromChains(result.stdout), ablageLines('spec-review'));
+  assert.ok(result.stdout.startsWith(`BERICHT-REVIEW=${ablageDir(repo, 'x', 'spec-review').replace(/\\/g, '/')}/`), result.stdout);
+});
+
+test('ablage_SpecWithWhiteboardingSwitch_NamesTheFilesOfTheWhiteboardingEtappe', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+
+  // Act
+  const result = run(repo, 'ablage', '--art', 'spec', '--spec', spec, '--whiteboarding');
+
+  // Assert
+  assert.equal(fromChains(result.stdout), ablageLines('whiteboarding'));
+});
+
+test('ablage_PlanWithRunningEtappeOfTheChain_NamesTheFilesOfThatEtappe', () => {
+  // Arrange
+  const { repo, plan } = repoWithPlan();
+  writeState(repo, 'x', { slug: 'x', gestartet: { etappe: 'planning', zeit: '2026-10-26T10:00:00.000Z' } });
+
+  // Act
+  const result = run(repo, 'ablage', '--art', 'plan', '--plan', plan);
+
+  // Assert
+  assert.equal(fromChains(result.stdout), ablageLines('planning'));
+});
+
+test('ablage_ImplementationFromWorktree_NamesTheFilesInTheSharedAblage', () => {
+  // Arrange
+  const { repo } = repoWithPlan();
+  const tree = addWorktree(repo, 'feature/x');
+
+  // Act
+  const result = run(tree, 'ablage', '--art', 'implementation', '--plan', path.join(tree, 'docs/forge/x/plan.md'));
+
+  // Assert
+  assert.equal(fromChains(result.stdout), ablageLines('umsetzung'));
+});
+
+test('ablage_ArtWithoutItsArtifactOrUnknownArt_ExitsWithOne', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+
+  // Act
+  const noPlan = run(repo, 'ablage', '--art', 'plan', '--spec', spec);
+  const unknown = run(repo, 'ablage', '--art', 'review', '--spec', spec);
+
+  // Assert
+  assert.equal(noPlan.status, 1);
+  assert.match(noPlan.stderr, /--art plan braucht --plan/);
+  assert.equal(unknown.status, 1);
+  assert.match(unknown.stderr, /--art erlaubt: spec, plan, implementation/);
+});
+
+test('ablage_ArtifactOutsideAGitRepo_ExitsWithOne', () => {
+  // Arrange
+  const dir = tmp();
+  const spec = path.join(dir, 'spec.md');
+  fs.writeFileSync(spec, '# Spec\n');
+
+  // Act
+  const result = run(dir, 'ablage', '--art', 'spec', '--spec', spec);
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Kein Git-Repo/);
 });

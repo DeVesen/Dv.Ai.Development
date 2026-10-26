@@ -152,3 +152,19 @@ test('planReview_WhiteboardingSwitch_IsRejectedAsUnknownParameter', () => {
   assert.equal(result.status, 2);
   assert.match(result.stderr, /^unbekannter Parameter: --whiteboarding$/m);
 });
+
+test('planReview_AblageHoldsFilesOfAnEarlierRun_StartsTheAblageOver', () => {
+  // Arrange
+  const repo = planRepo();
+  const target = ablageDir(repo, 'demo', 'plan-review');
+  fs.mkdirSync(target, { recursive: true });
+  fs.writeFileSync(path.join(target, 'bericht-review.json'), '{}');
+  fs.writeFileSync(path.join(target, 'abschluss.md'), '# alt\n');
+
+  // Act
+  const result = run(repo, 'plan-review', 'docs/forge/demo/plan.md');
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(target), false);
+});

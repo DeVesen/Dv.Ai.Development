@@ -1,7 +1,7 @@
 'use strict';
 
 // Stand des Spec-Reviews im Whiteboarding einer Session-Kette: Ergebnis-Zeile, Zahl der offenen Punkte aller Farben und ob die
-// Abschlussfrage kommt. Gelesen wird die Ablage `whiteboarding`, in die der Spec-Review-Orchestrator mit `--ablage whiteboarding` schreibt.
+// Abschlussfrage kommt. Gelesen wird die Ablage `whiteboarding`, in die der Spec-Review-Orchestrator mit `--whiteboarding` schreibt.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -13,7 +13,7 @@ const { mergeOpenKeepUnchanged } = require('./orchestrator-report');
 const { resultOf } = require('./session-chain-decide');
 
 // Der Orchestrator schreibt den Abschlussbericht nach seinen Followup-Runden, also nach der letzten Spec-Änderung des Laufs.
-// Ist er älter als die Spec, ist er der Stand eines früheren Reviews: Das `store --neu` des neuen Reviews ist gescheitert.
+// Ist er älter als die Spec, ist er der Stand eines früheren Reviews: Das neue Review ist gescheitert.
 function staleReason(abschluss, spec) {
   return fs.statSync(abschluss).mtimeMs < fs.statSync(spec).mtimeMs ? ' (Abschlussbericht älter als die Spec)' : null;
 }

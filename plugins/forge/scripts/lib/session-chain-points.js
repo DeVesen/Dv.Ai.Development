@@ -6,7 +6,7 @@
 
 const path = require('node:path');
 const { mergeOpenKeepUnchanged, readPart, keyOf } = require('./orchestrator-report');
-const { REVIEW_FILE, followupNumbers } = require('./session-chain-ablage');
+const { REVIEW_FILE, followupNumbers, followupName } = require('./session-chain-ablage');
 const { SessionChainError } = require('./session-chain-store');
 const { ReportFormatError } = require('./report-format');
 const { toPosix } = require('./posix');
@@ -28,7 +28,7 @@ function readChecked(file) {
 
 // Teile in Reihenfolge: Review, dann Followups nach Nummer.
 function readParts(ablage) {
-  const names = [REVIEW_FILE, ...followupNumbers(ablage).map((number) => `bericht-followup-${number}.json`)];
+  const names = [REVIEW_FILE, ...followupNumbers(ablage).map((number) => `${followupName(number)}.json`)];
   return names.map((name) => readChecked(path.join(ablage, name))).filter(Boolean);
 }
 

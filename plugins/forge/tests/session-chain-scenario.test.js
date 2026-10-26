@@ -12,6 +12,7 @@ const { spawnSync } = require('node:child_process');
 const { git, commitFile, makeRepo, addWorktree } = require('./lib/git-repo');
 const { VALID_SPEC } = require('./lib/spec-fixtures');
 const { ETAPPEN, readState, readEvents } = require('../scripts/lib/session-chain-store');
+const { storeFiles } = require('../scripts/lib/session-chain-ablage');
 const { ETAPPEN_BRIEFS } = require('../scripts/lib/session-chain-brief');
 const { EXPECTED } = require('../scripts/lib/session-chain-check');
 const { NEXT } = require('../scripts/lib/session-chain-decide');
@@ -456,7 +457,7 @@ test('chain_WhiteboardingClosedWithThreeOpenPoints_StateAndGrillBriefListThem', 
   const abschluss = reportFile(SPEC_READY);
   const review = path.join(path.dirname(abschluss), 'bericht-review.json');
   fs.writeFileSync(review, JSON.stringify({ format: 2, open: [{ key: 'a', color: 'yellow', title: 'A' }, { key: 'b', color: 'yellow', title: 'B' }], green: [{ key: 'c', color: 'green', title: 'C' }], changes: [] }));
-  succeeded(chain(env.repo, 'store', '--etappe', 'whiteboarding', '--spec', env.spec, '--neu', '--datei', abschluss, '--datei', review));
+  storeFiles({ dir: env.repo, slug: 'x', etappe: 'whiteboarding', files: [abschluss, review], fresh: true });
   const stand = succeeded(chain(env.repo, 'review-stand', '--spec', env.spec));
   const bericht = /^BERICHT=(.+)$/m.exec(succeeded(chain(env.repo, 'etappe-report', '--etappe', 'whiteboarding', '--spec', env.spec, '--bericht', field(stand, 'ABSCHLUSS'))))[1];
   succeeded(runFinal(env, 'whiteboarding', bericht, 'none', ['--basis', 'main']).result);

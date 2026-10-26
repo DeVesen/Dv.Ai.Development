@@ -63,94 +63,13 @@ function openLines(entry) {
   ];
 }
 
-// Befehl mit Workitem-Nummer, falls es eine gibt.
-function withWorkitem(command, workitem) {
-  return workitem ? `${command} ${workitem}` : command;
-}
-
-// Zeilen zu Worktree, Abschluss-Schritt und Push, geteilt vom Einzel-Bericht der Implementierung und vom Orchestrator-Bericht.
-function worktreeLine(worktree) {
-  return `Worktree bleibt: ${worktree}`;
-}
-
-function finishStepFor(worktree) {
-  return [`Arbeit abschließen (nur manuell, in ${worktree}):`, '/dv-forge:finish-work'];
-}
-
-function pushLine(branch) {
-  return `Nicht gepusht: \`git push -u origin ${branch}\``;
-}
-
-function questionSteps(input) {
-  const rerun = `/dv-forge:${input.review} ${input.artifact}`;
-  if (input.review === 'spec-review') return [['Die Fragen beantworten, indem du die Prüfung erneut startest:', rerun]];
-  return [
-    'Die Spec anpassen.',
-    ...(input.spec ? [['Die Spec prüfen:', `/dv-forge:spec-review ${input.spec}`]] : []),
-    ['Danach den Plan erneut prüfen:', rerun],
-  ];
+function section(title, lines) {
+  return lines.length > 0 ? [[`### ${title}`, ...lines]] : [];
 }
 
 // Zahl der offenen Gruppen einer Farbe, die einen Scout-Vorschlag haben; fehlt `hasProposal`, gilt: kein Vorschlag.
 function proposedCount(open, color) {
   return open.filter((entry) => entry.color === color && entry.hasProposal).length;
-}
-
-const WITHOUT_PROPOSAL = {
-  hindrance: { article: 'Das', one: 'Hindernis', many: 'Hindernisse' },
-  hint: { article: 'Der', one: 'Hinweis', many: 'Hinweise' },
-};
-
-// Der Satz „… keinen Lösungsvorschlag.“ für `count` offene Einträge ohne Vorschlag; `kind`: `hindrance` | `hint`.
-// `others`: Andere Einträge mit Vorschlag sind schon genannt, diese sind die übrigen.
-function withoutProposalSentence({ count, others, kind }) {
-  const noun = WITHOUT_PROPOSAL[kind];
-  if (count === 1) return `${noun.article} ${others ? 'übrige ' : ''}${noun.one} hat keinen Lösungsvorschlag.`;
-  return `Die ${count} ${others ? 'übrigen ' : ''}${noun.many} haben keinen Lösungsvorschlag.`;
-}
-
-// Schritte für offene Hindernisse, geteilt von allen Abschlussberichten. `alle` (`followup`) erreicht nur die
-// `proposed` Hindernisse mit Vorschlag; die übrigen behebt der Mensch selbst. `orSelf` steht in Klammern
-// hinter dem Einarbeiten-Schritt, `selfFix` leitet den eigenen Schritt vor `rerun` ein.
-function blockedSteps({ openRed, proposed, followup, rerun, orSelf, selfFix }) {
-  const rest = Math.max(0, openRed - proposed);
-  if (rest === 0) {
-    const count = openRed === 1 ? 'Das Hindernis' : `Die ${openRed} Hindernisse`;
-    return [[`${count} einarbeiten lassen (${orSelf}):`, followup], ['Danach erneut prüfen:', rerun]];
-  }
-  if (proposed === 0) return [[`${withoutProposalSentence({ count: rest, others: false, kind: 'hindrance' })} ${selfFix}`, rerun]];
-  const count = proposed === 1 ? 'Das Hindernis' : `Die ${proposed} Hindernisse`;
-  const others = withoutProposalSentence({ count: rest, others: true, kind: 'hindrance' });
-  return [[`${count} mit Lösungsvorschlag einarbeiten lassen:`, followup], [`${others} ${selfFix}`, rerun]];
-}
-
-// Schritte für offene Hinweise, geteilt von allen Abschlussberichten; `closing` sind die abschließenden Schritte.
-function hintSteps({ hints, proposed, followup, selfFix, closing }) {
-  const rest = hints - proposed;
-  const list = [];
-  if (proposed > 0) {
-    const count = proposed === 1 ? 'Den Hinweis' : `Die ${proposed} Hinweise`;
-    list.push([`${count}${rest > 0 ? ' mit Lösungsvorschlag' : ''} einarbeiten lassen (optional):`, followup]);
-  }
-  if (rest > 0) list.push(`${withoutProposalSentence({ count: rest, others: proposed > 0, kind: 'hint' })} ${selfFix}`);
-  return [...list, ...closing];
-}
-
-const DOCUMENT_TEXTS = {
-  orSelf: 'oder das Dokument selbst anpassen',
-  selfFix: 'Das Dokument selbst anpassen, dann erneut prüfen:',
-  selfFixOptional: 'Bei Bedarf das Dokument selbst anpassen (optional).',
-};
-
-function stepLines(list) {
-  return list.flatMap((step, index) => {
-    const [text, command] = Array.isArray(step) ? step : [step, null];
-    return [`${index + 1}. ${text}`, ...(command ? [`   \`${command}\``] : [])];
-  });
-}
-
-function section(title, lines) {
-  return lines.length > 0 ? [[`### ${title}`, ...lines]] : [];
 }
 
 // Ob ein Followup (`review-followup <A> alle`) etwas erreicht: nur offene Hindernisse bzw. Hinweise mit gesichertem Scout-Vorschlag.
@@ -184,7 +103,4 @@ function renderReportText(input) {
   ].map((block) => block.join('\n')).join('\n\n');
 }
 
-module.exports = {
-  renderReportText, summaryOf, offersFollowup, resultLine, changeLines, openLines, section, stepLines, viewpointsPhrase, proposedCount, withoutProposalSentence, blockedSteps, hintSteps, questionSteps,
-  withWorkitem, worktreeLine, finishStepFor, pushLine, DOCUMENT_TEXTS,
-};
+module.exports = { renderReportText, summaryOf, offersFollowup, resultLine, changeLines, openLines, section, viewpointsPhrase };

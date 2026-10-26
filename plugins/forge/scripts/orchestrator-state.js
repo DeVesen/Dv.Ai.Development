@@ -5,7 +5,8 @@
 //   start --state <ordner> --spec <S> [--plan <P>]  Start-Zustand (Toplevel, Branch, HEAD, Worktree, Vorbestand) und Kopien mit Hash
 //   add   --state <ordner> (--spec <S> | --plan <P>) Artefakt nachtragen oder ersetzen (Plan nach plan-writing, Pfade nach start-work)
 //   check --state <ordner> [--ort]                   Hashes prüfen; Exit 1 mit Diff bei Abweichung. --ort: Toplevel und Branch wie beim Start
-//   next  --review <json> [--followup <json>]...     nächster Schritt aus den Bericht-Daten der eingebetteten Läufe
+//   next  --review <json> [--followup <json>]...     nächster Schritt aus den Bericht-Daten von Review und Followups
+//   ablage --art spec|plan|implementation (--spec <S> | --plan <P>) [--whiteboarding]  Dateien des Laufs in der Ablage der Etappe
 // Ausgabe: Zeilen `<NAME>=<Wert>`; bei einer Abweichung danach `=== DIFF ===`. Exit 2 bei falschem Aufruf.
 
 const crypto = require('node:crypto');
@@ -13,6 +14,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { maxFollowups, RulesError } = require('./lib/orchestrator-rules');
+const { REVIEW_OF_ART } = require('./lib/orchestrator-report');
+const { ablageFor } = require('./lib/etappe-of');
+const { REVIEW_FILE, ABSCHLUSS_FILE, followupName } = require('./lib/session-chain-ablage');
+const { SessionChainError } = require('./lib/session-chain-store');
+const { toPosix } = require('./lib/posix');
 
 const STATE_FILE = 'orchestrator-state.json';
 const USAGE = [
@@ -20,6 +26,7 @@ const USAGE = [
   '       node orchestrator-state.js add --state <ordner> (--spec <S> | --plan <P>)',
   '       node orchestrator-state.js check --state <ordner> [--ort]',
   '       node orchestrator-state.js next --review <json> [--followup <json>]...',
+  '       node orchestrator-state.js ablage --art spec|plan|implementation (--spec <S> | --plan <P>) [--whiteboarding]',
   '',
 ].join('\n');
 
@@ -126,7 +133,7 @@ function readReport(file) {
 
 const RESULT_PREFIX = /^\*\*Ergebnis:\*\*\s*/;
 
-// Nächster Schritt aus dem letzten eingebetteten Lauf: `followup` (mit Rundennummer), `weiter` oder `ende` mit Grund.
+// Nächster Schritt aus dem letzten Lauf von Review oder Followup: `followup` (mit Rundennummer), `weiter` oder `ende` mit Grund.
 // `BEREIT=ja`, wenn die Ergebnis-Zeile mit ✅ beginnt; der Orchestrator entscheidet daraus nur noch, was `weiter` heißt.
 function next(values) {
   const followups = values.followup ?? [];
@@ -143,13 +150,25 @@ function next(values) {
   return ['NEXT=weiter', ...lines].join('\n');
 }
 
-const OPTIONS = { '--state': 'state', '--spec': 'spec', '--plan': 'plan', '--review': 'review' };
+// Dateien des Laufs in der Ablage der Etappe, in der das Review des Orchestrators seinen Bericht ablegt: Bericht-Daten des Reviews und
+// je Followup-Runde (bis zum Maximum aus der Regeldatei) und der Abschlussbericht des Orchestrators. Die Namen kennt nur die Ablage.
+function ablage(values) {
+  if (!Object.hasOwn(REVIEW_OF_ART, values.art)) throw new StateError(`--art erlaubt: ${Object.keys(REVIEW_OF_ART).join(', ')}`);
+  const flag = values.art === 'spec' ? 'spec' : 'plan';
+  if (!values[flag]) throw new StateError(`--art ${values.art} braucht --${flag}`);
+  const dir = ablageFor({ skill: REVIEW_OF_ART[values.art], artifact: values[flag], whiteboarding: values.whiteboarding === true });
+  const rounds = Array.from({ length: maxFollowups() }, (_, index) => `BERICHT-FOLLOWUP-${index + 1}=${toPosix(path.join(dir, `${followupName(index + 1)}.json`))}`);
+  return [`BERICHT-REVIEW=${toPosix(path.join(dir, REVIEW_FILE))}`, ...rounds, `ABSCHLUSS=${toPosix(path.join(dir, ABSCHLUSS_FILE))}`].join('\n');
+}
+
+const OPTIONS = { '--state': 'state', '--spec': 'spec', '--plan': 'plan', '--review': 'review', '--art': 'art' };
 
 function parse(args) {
   const values = { followup: [] };
   for (let index = 0; index < args.length; index += 1) {
     const name = args[index];
     if (name === '--ort') { values.ort = true; continue; }
+    if (name === '--whiteboarding') { values.whiteboarding = true; continue; }
     if (name === '--followup' && args[index + 1] !== undefined) { values.followup.push(args[index += 1]); continue; }
     if (!OPTIONS[name] || args[index + 1] === undefined) return null;
     values[OPTIONS[name]] = args[index += 1];
@@ -162,6 +181,7 @@ const COMMANDS = {
   add: { needs: ['state'], run: add },
   check: { needs: ['state'], run: (values) => check(values) },
   next: { needs: ['review'], run: next },
+  ablage: { needs: ['art'], run: ablage },
 };
 
 function main() {
@@ -180,7 +200,7 @@ function main() {
       process.exit(result.failed ? 1 : 0);
     }
   } catch (error) {
-    if (!(error instanceof StateError) && !(error instanceof RulesError)) throw error;
+    if (!(error instanceof StateError) && !(error instanceof RulesError) && !(error instanceof SessionChainError)) throw error;
     process.stderr.write(`${error.message}\n`);
     process.exit(1);
   }

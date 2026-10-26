@@ -1,6 +1,6 @@
 'use strict';
 
-// Führt die Berichtsdaten eines eingebetteten Reviews und seiner Followup-Runden (JSON aus `--bericht`) zum Endstand zusammen.
+// Führt die Bericht-Daten eines Reviews und seiner Followup-Runden (JSON aus der Ablage) zum Endstand zusammen.
 // Schlüssel einer Änderung oder offenen Gruppe ist `key` (placeKey der Stelle): Eine spätere Runde ersetzt den Eintrag der früheren
 // an dessen Platz, neue Einträge kommen ans Ende. Offen bleibt, was die letzte Runde offen meldet, und jede offene Gruppe einer
 // früheren Runde ohne Scout-Vorschlag; die erreicht keine Runde, und ihre Daten kennen sie nicht.
@@ -86,7 +86,7 @@ function flowLines(review, followups) {
   return [review?.flowLine, ...followups.map((part, index) => part.flowLine?.replace(/^Ablauf: /, label(index)))].filter(Boolean);
 }
 
-// `art`: spec | plan | implementation; `reviewFile`; `followupFiles` (optional, höchstens zwei): Dateien aus `--bericht`.
+// `art`: spec | plan | implementation; `reviewFile`; `followupFiles` (optional): Bericht-Daten der Followup-Runden aus der Ablage.
 function mergeReports({ art, reviewFile, followupFiles = [] }) {
   const reviewName = REVIEW_OF_ART[art];
   if (!reviewName) throw new FlowError(`--art erlaubt: ${Object.keys(REVIEW_OF_ART).join(', ')}; nicht ${art}`);

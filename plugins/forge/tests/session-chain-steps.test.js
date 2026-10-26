@@ -24,7 +24,7 @@ function yellow(key, title) {
   return { key, color: 'yellow', title };
 }
 
-// Spec-Review-Etappe mit Abschlussbericht und Bericht-Daten in der Ablage, wie ein Orchestrator mit `--ablage` sie ablegt.
+// Spec-Review-Etappe mit Abschlussbericht und Bericht-Daten in der Ablage, wie ein Orchestrator sie ablegt.
 function specReviewEtappe(repo, spec, result, open) {
   const abschluss = scratch('abschluss.md', `# Abschlussbericht\n**Ergebnis:** ${result}\n`);
   storeFiles({ dir: repo, slug: 'x', etappe: 'spec-review', files: [abschluss, scratch('bericht-review.json', JSON.stringify({ format: 2, open, green: [], changes: [] }))], fresh: true });

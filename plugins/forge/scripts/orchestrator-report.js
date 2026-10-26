@@ -1,31 +1,25 @@
 #!/usr/bin/env node
 'use strict';
 
-// Der eine Abschlussbericht eines Orchestrators aus den Berichtsdaten seines eingebetteten Reviews und Followups.
+// Der eine Abschlussbericht eines Orchestrators aus den Bericht-Daten seines Reviews und Followups in der Ablage.
 // Schreibt den Bericht nach `--out`; stdout `BERICHT <datei>`, `=== BERICHT ===`, Klartext.
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { mergeReports } = require('./lib/orchestrator-report');
+const { mergeReports, REVIEW_OF_ART } = require('./lib/orchestrator-report');
 const { renderOrchestratorReport, renderAbortReport } = require('./lib/orchestrator-report-text');
 const { FlowError } = require('./lib/flow-error');
 const { maxFollowups } = require('./lib/orchestrator-rules');
 const { writeText } = require('./lib/flow-files');
 
-const REQUIRED = {
-  spec: ['--review', '--out', '--spec', '--commit'],
-  plan: ['--review', '--out', '--plan', '--spec', '--stand'],
-  implementation: ['--review', '--out', '--plan', '--spec', '--worktree', '--branch', '--pruefung'],
-};
-const OPTIONAL = ['--followup', '--wi', '--fakten', '--ohne-weiter'];
-// Ein Lauf, der vor dem Review endet, hat weder Review-Daten noch Worktree oder Prüfergebnis: nur Grund und Bericht-Datei sind Pflicht.
+const REQUIRED = ['--review', '--out'];
+const OPTIONAL = ['--followup', '--fakten'];
+// Ein Lauf, der vor dem Review endet, hat keine Review-Daten: nur Grund und Bericht-Datei sind Pflicht.
 const ABORT_REQUIRED = ['--out', '--abbruch'];
-const CHECKS = ['gruen', 'rot', 'keine'];
+const ABORT_OPTIONAL = ['--fakten'];
 const USAGE = [
-  'Aufruf: node orchestrator-report.js --art spec --review <json> [--followup <json>]... --out <md> --spec <S> --commit <text> [--wi <nr>] [--fakten <datei>] [--ohne-weiter ja]',
-  '       node orchestrator-report.js --art plan --review <json> [--followup <json>]... --out <md> --plan <P> --spec <S> --stand <text> [--wi <nr>] [--fakten <datei>]',
-  '       node orchestrator-report.js --art implementation --review <json> [--followup <json>]... --out <md> --plan <P> --spec <S> --worktree <R> --branch <name> --pruefung gruen|rot|keine [--wi <nr>] [--fakten <datei>]',
-  '       node orchestrator-report.js --art spec|plan|implementation --abbruch <grund> --out <md> [--spec <S>] [--plan <P>] [--wi <nr>] [--fakten <datei>]',
+  'Aufruf: node orchestrator-report.js --art spec|plan|implementation --review <json> [--followup <json>]... --out <md> [--fakten <datei>]',
+  '       node orchestrator-report.js --art spec|plan|implementation --abbruch <grund> --out <md> [--fakten <datei>]',
   '',
 ].join('\n');
 
@@ -42,16 +36,14 @@ function parse(args) {
   if (followups) values['--followup'] = followups;
   const max = maxFollowups();
   if ((followups?.length ?? 0) > max) throw new UsageError(`--followup höchstens ${max} Mal`);
-  if (!REQUIRED[values['--art']]) throw new UsageError(`--art erlaubt: ${Object.keys(REQUIRED).join(', ')}`);
+  if (!Object.hasOwn(REVIEW_OF_ART, values['--art'])) throw new UsageError(`--art erlaubt: ${Object.keys(REVIEW_OF_ART).join(', ')}`);
   const aborted = Object.hasOwn(values, '--abbruch');
-  const required = aborted ? ABORT_REQUIRED : REQUIRED[values['--art']];
-  const optional = aborted ? ['--spec', '--plan', '--wi', '--fakten'] : OPTIONAL;
+  const required = aborted ? ABORT_REQUIRED : REQUIRED;
+  const optional = aborted ? ABORT_OPTIONAL : OPTIONAL;
   const unknown = Object.keys(values).filter((name) => name !== '--art' && !required.includes(name) && !optional.includes(name));
-  if (unknown.length > 0) throw new UsageError(`Unbekannt für --art ${values['--art']}: ${unknown.join(', ')}`);
+  if (unknown.length > 0) throw new UsageError(`unbekannter Parameter: ${unknown.join(', ')}`);
   const missing = required.filter((name) => !values[name]);
   if (missing.length > 0) throw new UsageError(`fehlt: ${missing.join(', ')}`);
-  if (values['--pruefung'] && !CHECKS.includes(values['--pruefung'])) throw new UsageError(`--pruefung erlaubt: ${CHECKS.join(', ')}`);
-  if (values['--ohne-weiter'] !== undefined && values['--ohne-weiter'] !== 'ja') throw new UsageError('--ohne-weiter erlaubt: ja');
   return values;
 }
 
@@ -63,20 +55,11 @@ function factLines(file) {
 }
 
 function run(values) {
-  if (values['--abbruch']) {
-    const facts = { spec: values['--spec'], plan: values['--plan'], wi: values['--wi'], lines: factLines(values['--fakten']) };
-    const text = renderAbortReport(values['--art'], values['--abbruch'], facts);
-    const out = path.resolve(values['--out']);
-    writeText(out, text);
-    return [`BERICHT ${out}`, '=== BERICHT ===', text].join('\n');
-  }
-  const report = mergeReports({ art: values['--art'], reviewFile: path.resolve(values['--review']), followupFiles: (values['--followup'] ?? []).map((file) => path.resolve(file)) });
-  const facts = {
-    spec: values['--spec'], plan: values['--plan'], wi: values['--wi'], commit: values['--commit'], stand: values['--stand'],
-    worktree: values['--worktree'], branch: values['--branch'], check: values['--pruefung'], lines: factLines(values['--fakten']), ohneWeiter: values['--ohne-weiter'] === 'ja',
-  };
-  const text = renderOrchestratorReport(report, facts);
+  const facts = { lines: factLines(values['--fakten']) };
   const out = path.resolve(values['--out']);
+  const text = values['--abbruch']
+    ? renderAbortReport(values['--art'], values['--abbruch'], facts)
+    : renderOrchestratorReport(mergeReports({ art: values['--art'], reviewFile: path.resolve(values['--review']), followupFiles: (values['--followup'] ?? []).map((file) => path.resolve(file)) }), facts);
   writeText(out, text);
   return [`BERICHT ${out}`, '=== BERICHT ===', text].join('\n');
 }

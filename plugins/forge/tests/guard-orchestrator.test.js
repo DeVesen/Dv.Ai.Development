@@ -576,10 +576,10 @@ test('parseSkillCall_PlanReviewWithDebugSwitch_DoesNotTakeTheSwitchAsSpec', () =
   assert.notEqual(call.files[1], '--debug');
 });
 
-test('decidePreTool_DirectoryEntrySessionChainStoreNamingRepo_Allows', () => {
+test('decidePreTool_DirectoryEntrySessionChainReviewStandNamingRepo_Allows', () => {
   // Arrange
   const env = setupDirectory();
-  const command = `node "/plugins/forge/scripts/session-chain.js" store --etappe spec-review --spec "${env.repo}/docs/x/spec.md" --neu --datei "/s/abschluss.md"`;
+  const command = `node "/plugins/forge/scripts/session-chain.js" review-stand --spec "${env.repo}/docs/x/spec.md"`;
 
   // Act
   const reason = preTool(env, { tool_name: 'Bash', tool_input: { command } });

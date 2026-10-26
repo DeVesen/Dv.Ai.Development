@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { renderReportText, summaryOf, withoutProposalSentence } = require('../scripts/lib/report-text');
+const { renderReportText, summaryOf } = require('../scripts/lib/report-text');
 
 function base(overrides = {}) {
   return {
@@ -193,29 +193,3 @@ for (const [name, overrides, expected] of OFFER_CASES) {
     assert.equal(Object.hasOwn(summary, 'steps'), false);
   });
 }
-
-test('withoutProposalSentence_CountAndOthers_ChoosesSingularPluralAndRestWording', () => {
-  // Act
-  const sentences = [
-    withoutProposalSentence({ count: 1, others: false, kind: 'hindrance' }),
-    withoutProposalSentence({ count: 2, others: false, kind: 'hindrance' }),
-    withoutProposalSentence({ count: 1, others: true, kind: 'hindrance' }),
-    withoutProposalSentence({ count: 3, others: true, kind: 'hindrance' }),
-    withoutProposalSentence({ count: 1, others: false, kind: 'hint' }),
-    withoutProposalSentence({ count: 2, others: false, kind: 'hint' }),
-    withoutProposalSentence({ count: 1, others: true, kind: 'hint' }),
-    withoutProposalSentence({ count: 2, others: true, kind: 'hint' }),
-  ];
-
-  // Assert
-  assert.deepEqual(sentences, [
-    'Das Hindernis hat keinen Lösungsvorschlag.',
-    'Die 2 Hindernisse haben keinen Lösungsvorschlag.',
-    'Das übrige Hindernis hat keinen Lösungsvorschlag.',
-    'Die 3 übrigen Hindernisse haben keinen Lösungsvorschlag.',
-    'Der Hinweis hat keinen Lösungsvorschlag.',
-    'Die 2 Hinweise haben keinen Lösungsvorschlag.',
-    'Der übrige Hinweis hat keinen Lösungsvorschlag.',
-    'Die 2 übrigen Hinweise haben keinen Lösungsvorschlag.',
-  ]);
-});

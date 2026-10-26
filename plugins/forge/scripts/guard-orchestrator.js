@@ -450,7 +450,7 @@ function storeAfterTurn(sessionId, marker, mustShow, tmpRoot) {
   else writeMarker(sessionId, next, tmpRoot);
 }
 
-const REPORT_HEADINGS = ['# Abschlussbericht', '# Was sich', '# Was ist noch offen', '# Wie es weitergeht'];
+const REPORT_HEADINGS = ['# Abschlussbericht', '# Was sich', '# Was ist noch offen'];
 const REPORT_MISSING_REASON = 'dv-forge: Der Lauf endet ohne Abschlussbericht. Erzeuge ihn mit orchestrator-report.js '
   + '(bei frühem Ende mit --abbruch) und gib ihn aus.';
 

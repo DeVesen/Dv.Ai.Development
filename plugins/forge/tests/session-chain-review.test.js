@@ -90,7 +90,7 @@ test('reviewStand_NoReviewInAblage_Throws', () => {
   assert.throws(() => reviewStand(spec), (error) => error instanceof SessionChainError && error.message.startsWith('Kein Spec-Review in der Ablage: '));
 });
 
-// Scheitert das `store --neu` eines späteren Reviews still, liegt der Abschlussbericht des vorigen Reviews noch in der Ablage;
+// Scheitert ein späteres Review, liegt der Abschlussbericht des vorigen Reviews noch in der Ablage;
 // die Spec wurde danach geändert, ist also jünger.
 test('reviewStand_AbschlussOlderThanSpec_ThrowsAsNoReview', () => {
   // Arrange

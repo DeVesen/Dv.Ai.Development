@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { git, commitFile, makeRepo, samePath } = require('./lib/git-repo');
+const { ablageDir } = require('../scripts/lib/session-chain-ablage');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'prepare.js');
 const PLAN = '# Demo — Umsetzungsplan\n\n**Ziel:** Demo.\n\n---\n\n### Task 1: Eins\n\nText.\n';
@@ -387,6 +388,17 @@ test('reviewFollowup_PlanPreferred_OnlyAffectedReviewersAndSelectionFile', () =>
   assert.ok(selection.includes('### 1 · 🔴 Task 2 (buildability, feasibility)'));
   assert.ok(selection.includes('- [buildability · yellow] Zitat: „a“'));
   assert.ok(selection.includes('Gewählt: Vorschlag 2\nDatei vorher anlegen'));
+});
+
+test('reviewFollowup_AblageHoldsTheReportOfTheReview_KeepsIt', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
+  const target = ablageDir(repo, 'demo', 'plan-review');
+  fs.mkdirSync(target, { recursive: true });
+  fs.writeFileSync(path.join(target, 'bericht-review.json'), '{}');
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'b');
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(fs.existsSync(path.join(target, 'bericht-review.json')));
 });
 
 test('reviewFollowup_PerGroupSelection_WritesOnlyChosenGroup', () => {

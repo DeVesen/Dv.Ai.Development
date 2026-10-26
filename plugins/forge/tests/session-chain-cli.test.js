@@ -8,7 +8,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { git, commitFile, makeRepo, addWorktree, repoWithPlan } = require('./lib/git-repo');
 const { readState, writeState } = require('../scripts/lib/session-chain-store');
-const { ablageDir } = require('../scripts/lib/session-chain-ablage');
+const { storeFiles } = require('../scripts/lib/session-chain-ablage');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'session-chain.js');
 
@@ -161,20 +161,6 @@ test('turn_InProgress_PrintsExactlyTheRunningLine', () => {
   assert.equal(result.stdout.split('=== AUSGABE ===\n')[1], 'grill: läuft\n');
 });
 
-test('store_FromWorktreeWithFresh_StoresInTheSharedAblage', () => {
-  // Arrange
-  const { repo } = repoWithPlan();
-  const worktree = addWorktree(repo, 'feature/x');
-  const report = scratch('abschluss.md', '# Abschlussbericht\n');
-
-  // Act
-  const result = chain(worktree, 'store', '--etappe', 'umsetzung', '--plan', path.join(worktree, 'docs/forge/x/plan.md'), '--neu', '--datei', report);
-
-  // Assert
-  assert.equal(result.status, 0, result.stderr);
-  assert.ok(fs.existsSync(path.join(ablageDir(repo, 'x', 'umsetzung'), 'abschluss.md')));
-});
-
 test('reviewStand_Cli_PrintsResultPointsQuestionAndAbschluss', () => {
   // Arrange
   const repo = makeRepo();
@@ -184,7 +170,7 @@ test('reviewStand_Cli_PrintsResultPointsQuestionAndAbschluss', () => {
   const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Planen\n');
   const review = path.join(path.dirname(abschluss), 'bericht-review.json');
   fs.writeFileSync(review, JSON.stringify({ format: 2, open: [{ key: 'y', color: 'yellow', title: 'Gelb' }], green: [], changes: [] }));
-  chain(repo, 'store', '--etappe', 'whiteboarding', '--spec', spec, '--neu', '--datei', abschluss, '--datei', review);
+  storeFiles({ dir: repo, slug: 'x', etappe: 'whiteboarding', files: [abschluss, review], fresh: true });
 
   // Act
   const result = chain(repo, 'review-stand', '--spec', spec);

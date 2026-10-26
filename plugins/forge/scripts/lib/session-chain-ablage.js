@@ -37,10 +37,15 @@ function followupNumbers(target) {
   return fs.readdirSync(target).map((name) => FOLLOWUP_FILE.exec(name)).filter(Boolean).map((match) => Number(match[1])).sort((a, b) => a - b);
 }
 
+// Name der Bericht-Daten der Followup-Runde `number` (ohne Endung: `.json` Daten, `.md` Bericht).
+function followupName(number) {
+  return `bericht-followup-${number}`;
+}
+
 // Nächster freier Name `bericht-followup-<n>` in der Ablage einer Etappe.
 function nextFollowupName(target) {
   const used = followupNumbers(target);
-  return `bericht-followup-${used.length === 0 ? 1 : used[used.length - 1] + 1}`;
+  return followupName(used.length === 0 ? 1 : used[used.length - 1] + 1);
 }
 
 // Legt Bericht (.md) und Bericht-Daten (.json) eines Reviews in `target` ab: Ein Review beginnt die Ablage seiner Etappe neu und
@@ -55,4 +60,4 @@ function storeReviewReport({ target, followup, data, text }) {
   return { json: toPosix(json), md: toPosix(md) };
 }
 
-module.exports = { REVIEW_NAME, REVIEW_FILE, ABSCHLUSS_FILE, FOLLOWUP_FILE, ablageDir, storeFiles, storeReviewReport, followupNumbers, nextFollowupName };
+module.exports = { REVIEW_NAME, REVIEW_FILE, ABSCHLUSS_FILE, FOLLOWUP_FILE, ablageDir, storeFiles, storeReviewReport, followupNumbers, followupName, nextFollowupName };

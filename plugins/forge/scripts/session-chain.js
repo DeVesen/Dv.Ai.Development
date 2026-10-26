@@ -5,9 +5,8 @@
 // ein Block nach `=== AUSGABE ===`, `=== ZUSTAND ===`, `=== HINTERGRUND ===` oder `=== BRIEF ===`, den der Aufrufer unverändert nutzt.
 
 const path = require('node:path');
-const { SessionChainError, slugOfArtifact, readState, writeState, appendEvent } = require('./lib/session-chain-store');
+const { SessionChainError, readState, writeState, appendEvent } = require('./lib/session-chain-store');
 const { answerHalt, startEtappe, checkGo } = require('./lib/session-chain-gate');
-const { storeFiles } = require('./lib/session-chain-ablage');
 const { EntryError, analyseEntry } = require('./lib/session-chain-entry');
 const { buildBrief, SONNET_MODEL_ID, LEIT_ID } = require('./lib/session-chain-brief');
 const { parseStatusLine, turnAction, readTurns, writeTurns } = require('./lib/session-chain-turn');
@@ -28,7 +27,6 @@ const USAGE = [
   '       node session-chain.js answer --slug <slug> --antwort <planning|spec-nacharbeit|go|plan-nacharbeit|weiter|stopp>',
   '       node session-chain.js commit --anlass whiteboarding|spec|go --slug <slug> --message <betreff>',
   '       node session-chain.js schluss --slug <slug> [--stopp]',
-  '       node session-chain.js store --etappe <etappe> (--spec <S> | --plan <P>) [--neu] --datei <datei>...',
   '       node session-chain.js review-stand --spec <S>',
   '       node session-chain.js etappe-report --etappe <etappe> (--slug <slug> | --spec <S>) [--bericht <datei>] [--entscheidung <text>]... [--datei <pfad>]...',
   '              [--tests <text>] [--anhang <datei>]... [--plan <P>] [--worktree <R>] [--branch <name>] [--pruefung gruen|rot|keine | --pruefung-datei <pruefung.json>] [--luecke <befehl>]... [--ac-ohne-test <AC>]...',
@@ -37,7 +35,7 @@ const USAGE = [
 const VALUE_OPTIONS = ['--slug', '--leit', '--basis', '--wi', '--spec', '--plan', '--worktree', '--etappe', '--kontext', '--quelle', '--session', '--turn-datei', '--bericht',
   '--commit', '--art', '--anlass', '--message', '--antwort', '--datei', '--entscheidung', '--tests', '--anhang', '--branch', '--pruefung', '--luecke', '--ac-ohne-test', '--pruefung-datei'];
 const LIST_OPTIONS = ['--datei', '--entscheidung', '--anhang', '--luecke', '--ac-ohne-test'];
-const FLAG_OPTIONS = ['--neu', '--stopp', '--erneut'];
+const FLAG_OPTIONS = ['--stopp', '--erneut'];
 const CHECKS = ['gruen', 'rot', 'keine'];
 
 class UsageError extends Error {}
@@ -166,13 +164,6 @@ function schluss(values) {
   return ['=== AUSGABE ===', text].join('\n');
 }
 
-function store(values) {
-  const artifact = values.spec ? { spec: values.spec } : { plan: required(values, 'plan') };
-  const dir = path.dirname(path.resolve(values.spec ?? values.plan));
-  if (values.datei.length === 0) throw new UsageError('--datei fehlt');
-  return `ABLAGE=${storeFiles({ dir, slug: slugOfArtifact(artifact), etappe: required(values, 'etappe'), files: values.datei.map((file) => path.resolve(file)), fresh: values.neu === true })}`;
-}
-
 // Prüfergebnis aus der Datei von verify-run.js statt als Angabe der Etappe; `docker` (Tests nur ohne Docker rot) gilt als grün.
 function checkFromFile(file) {
   const { ergebnis } = JSON.parse(readInput(file, 'Prüfergebnis'));
@@ -207,7 +198,7 @@ function set(values) {
   return `ZUSTAND=${state.slug}`;
 }
 
-const COMMANDS = { set, brief, turn, final, halt, answer, commit, schluss, store, 'etappe-report': report, 'review-stand': stand };
+const COMMANDS = { set, brief, turn, final, halt, answer, commit, schluss, 'etappe-report': report, 'review-stand': stand };
 
 function run(args) {
   const [command, ...rest] = args;

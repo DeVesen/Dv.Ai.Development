@@ -469,21 +469,21 @@ function render(values) {
     .join('\n');
 }
 
-// Reviews und Followups schreiben ihren Bericht in die Ablage der Etappe. prepare.js legt Etappe und Ablage im Arbeitsbereich fest
-// (kontext.json), damit kein Skript einen Parameter dafür braucht.
-function recordAblage(review, values, artifact, switches) {
+// `fresh`: ein neues Review (kein Followup) beginnt die Ablage seiner Etappe neu; Reste eines früheren Laufs erreichen so weder den
+// Orchestrator noch die Leit-Session, falls das Review scheitert.
+function recordAblage(review, values, artifact, switches, fresh) {
   const dir = path.dirname(path.resolve(artifact));
   const etappe = etappeFor({ skill: review, dir, slug: values.slug, whiteboarding: switches.has('--whiteboarding') });
-  writeContext(values.W, {
-    ...readContext(values.W), etappe, ablage: toPosix(ablageDir(dir, values.slug, etappe)), artifact: toPosix(path.resolve(artifact)),
-  });
+  const ablage = ablageDir(dir, values.slug, etappe);
+  if (fresh) fs.rmSync(ablage, { recursive: true, force: true });
+  writeContext(values.W, { ...readContext(values.W), etappe, ablage: toPosix(ablage), artifact: toPosix(path.resolve(artifact)) });
 }
 
 function prepare(skill, args) {
   if (!Object.hasOwn(PREPARERS, skill)) throw new UsageError(`Unbekannter Skill: ${skill}`);
   const call = parseArgs(skill, args);
   const values = PREPARERS[skill](call);
-  if (skill !== 'implementation') recordAblage(skill === 'review-followup' ? values.original : skill, values, call.positional[0], call.switches);
+  if (skill !== 'implementation') recordAblage(skill === 'review-followup' ? values.original : skill, values, call.positional[0], call.switches, skill !== 'review-followup');
   return render(values);
 }
 

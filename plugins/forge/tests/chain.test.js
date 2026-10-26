@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { git, commitFile, makeRepo, addWorktree, repoWithPlan } = require('./lib/git-repo');
 const { toPosix } = require('../scripts/lib/posix');
-const { ChainError, writeEntry, readEntry, readEntryFor, removeByWorktree } = require('../scripts/lib/chain');
+const { ChainError, writeEntry, readEntry, removeByWorktree } = require('../scripts/lib/chain');
 
 test('writeEntry_PlanStage_ReadEntryReturnsPlanSpecAndWorkitem', () => {
   // Arrange
@@ -182,29 +182,4 @@ test('readEntry_ArtifactWithSlugOutsideRule_ReturnsNullWhileWriteEntryThrows', (
   assert.equal(readEntry({ stage: 'plan', artifact: plan }), null);
   assert.equal(readEntry({ stage: 'implementation', artifact: plan }), null);
   assert.throws(() => writeEntry({ stage: 'plan', plan, spec }), /Slug ungültig: Änderung Export/);
-});
-
-test('readEntryFor_EmbeddedRun_ReturnsNullEvenWithEntry', () => {
-  // Arrange
-  const { spec, plan } = repoWithPlan();
-  writeEntry({ stage: 'plan', plan, spec });
-
-  // Act
-  const entry = readEntryFor({ embedded: true, stage: 'plan', artifact: plan });
-
-  // Assert
-  assert.equal(entry, null);
-});
-
-test('readEntryFor_StandaloneRun_ReturnsTheEntryOfReadEntry', () => {
-  // Arrange
-  const { spec, plan } = repoWithPlan();
-  writeEntry({ stage: 'plan', plan, spec, wi: '7' });
-
-  // Act
-  const entry = readEntryFor({ embedded: false, stage: 'plan', artifact: plan });
-
-  // Assert
-  assert.deepEqual(entry, readEntry({ stage: 'plan', artifact: plan }));
-  assert.equal(entry.wi, '7');
 });

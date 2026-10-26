@@ -144,7 +144,7 @@ function notesOf(options, result, open, scout) {
 function reportInput(options, result, open, scout) {
   const files = changedFiles(readText(options.packageFile));
   return {
-    plan: options.planArg, chain: options.chain ?? null, topic: topicOf(readText(options.plan)), openRed: open.filter((group) => group.severity === 'red').length,
+    plan: options.planArg, topic: topicOf(readText(options.plan)), openRed: open.filter((group) => group.severity === 'red').length,
     reviewerCount: result.reviewers.length + result.failed.length, range: `${options.range}..HEAD`,
     fileCount: files.length, testCount: files.filter(isTestFile).length,
     reviewerLines: reviewerLines(result), failedLabels: result.failed.map((name) => reviewerLabel(REVIEW, name)),
@@ -157,7 +157,7 @@ function reportInput(options, result, open, scout) {
 // stdout nennt nur Status, Ergebnis, Followup-Fähigkeit und Datei. orchestrator-report.js setzt daraus den Abschlussbericht zusammen.
 // `FOLLOWUP ja`: mindestens eine offene Gruppe hat einen gesicherten Vorschlag, den `review-followup <P> alle` erreicht.
 function embeddedOutput(options, input, status) {
-  const { offersFollowup: _steps, ...summary } = summaryOf(input);
+  const summary = summaryOf(input);
   const followup = input.open.some((entry) => entry.hasProposal);
   writeJson(options.reportFile, {
     format: FORMAT, review: REVIEW, title: 'Implementierungs-Review', followup: false, status, ...summary, offersFollowup: followup,

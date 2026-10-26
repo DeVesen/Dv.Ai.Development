@@ -162,18 +162,19 @@ function withoutStatus(text) {
   return text.replace(/\r\n/g, '\n').split('\n').filter((line) => !line.startsWith('ENDE ')).join('\n');
 }
 
-test('implementationReport_ImplementationEntry_WorktreeLineFinishStepAndPushLine', () => {
+test('implementationReport_ImplementationEntry_EqualsReportWithoutEntryAndNamesNoNextStep', () => {
   // Arrange
   const run = specRun();
+  const baseline = implementationRun(run);
   const worktree = addWorktree(run.repo, 'feature/x');
   writeEntry({ stage: 'implementation', plan: run.plan, spec: run.spec, worktree, branch: 'feature/x' });
-  const shown = worktree.split(path.sep).join('/');
 
   // Act
   const text = implementationRun(run);
 
   // Assert
-  assert.ok(text.includes(`### Wie es weitergeht\nWorktree bleibt: ${shown}\n1. Arbeit abschließen (nur manuell, in ${shown}):\n   \`/dv-forge:finish-work\`\nNicht gepusht: \`git push -u origin feature/x\``), text);
+  assert.equal(withoutStatus(text), withoutStatus(baseline));
+  assert.doesNotMatch(text, /Wie es weitergeht|Worktree bleibt|Nicht gepusht|finish-work/);
 });
 
 test('implementationReport_NoEntryOrWorktreeRemoved_EqualsReportWithoutEntry', () => {

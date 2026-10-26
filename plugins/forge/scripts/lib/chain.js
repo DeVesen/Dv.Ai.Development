@@ -98,11 +98,6 @@ function readEntry({ stage, artifact }) {
   return entry && entry.stage === stage && missingPath(entry) === undefined ? entry : null;
 }
 
-// Ein eingebetteter Lauf (`--bericht`) bleibt von einem Ketten-Eintrag unberührt: Die Regel steht nur hier, für alle Berichtsbauer.
-function readEntryFor({ embedded, stage, artifact }) {
-  return embedded ? null : readEntry({ stage, artifact });
-}
-
 // Entfernt die Einträge der Stufe `implementation` zu diesem Worktree; Rückgabe: Zahl der entfernten Einträge.
 function removeByWorktree(dir, worktree) {
   const store = storeDir(dir);
@@ -116,4 +111,4 @@ function removeByWorktree(dir, worktree) {
   return hits.length;
 }
 
-module.exports = { ChainError, STAGES, storeDir, writeEntry, readEntry, readEntryFor, removeByWorktree };
+module.exports = { ChainError, STAGES, storeDir, writeEntry, readEntry, removeByWorktree };

@@ -84,7 +84,7 @@ test('implementationReport_OneYellowWithValidScout_ReadyAndFilesFiltered', () =>
   assert.match(result.stdout, /- Aufbau: 0 Hindernisse, 1 Hinweis\n- Tests: 0 Hindernisse, 0 Hinweise/);
   assert.match(result.stdout, /- 🟡 \*\*Rundung der Summe\*\* · aus: Aufbau\n  Die Rundung steht an zwei Stellen und kann auseinanderlaufen\.\n  Vorschlag \(empfohlen\): Die Rundung in einer Funktion bündeln/);
   assert.match(result.stdout, /### Hinweise zum Ablauf\n- Ein Hinweis aus der Vorbereitung\./);
-  assert.ok(result.stdout.includes(`/dv-forge:review-followup ${env.plan} alle`));
+  assert.equal(result.stdout.includes('/dv-forge:'), false);
   assert.equal(read(env, 'bericht.md'), `${result.stdout.split('=== BERICHT ===\n')[1].trimEnd()}\n`);
   const aggregate = read(env, 'aggregate.md');
   assert.ok(aggregate.includes('### 🟡 src/round.js (design)'));
@@ -135,13 +135,12 @@ test('implementationReport_ScoutMissingOrInvalid_FallbackTextNoteAndNoScoutFile'
     assert.match(result.stdout, /- 🟡 \*\*src\/round\.js\*\* · aus: Aufbau\n  Die Rundung steht doppelt \(ohne Scout-Beschreibung\)\n/);
     assert.equal(result.stdout.includes('Vorschlag (empfohlen)'), false);
     assert.match(result.stdout, SCOUT_NOTE);
-    assert.match(result.stdout, /1\. Der Hinweis hat keinen Lösungsvorschlag\./);
     assert.equal(result.stdout.includes('/dv-forge:review-followup'), false);
     assert.equal(fs.existsSync(path.join([missing, invalid][index].workspace, 'abschluss', 'scout.md')), false);
   }
 });
 
-test('implementationReport_ScoutValidForSomeGroupsOnly_AllFallbackWithoutFollowupStep', () => {
+test('implementationReport_ScoutValidForSomeGroupsOnly_AllFallbackWithoutScoutFile', () => {
   // Arrange
   const env = setup({ groups: [RED, YELLOW], scout: SCOUT_YELLOW });
 
@@ -153,7 +152,6 @@ test('implementationReport_ScoutValidForSomeGroupsOnly_AllFallbackWithoutFollowu
   assert.match(result.stdout, /^ENDE geprüft, 1 × 🔴 offen\n/);
   assert.match(result.stdout, /- 🔴 \*\*src\/save\.js\*\* · aus: Risiken\n  Fehler wird verschluckt \(ohne Scout-Beschreibung\)\n/);
   assert.match(result.stdout, /- 🟡 \*\*src\/round\.js\*\* · aus: Aufbau\n  Die Rundung steht doppelt \(ohne Scout-Beschreibung\)\n/);
-  assert.match(result.stdout, /1\. Das Hindernis hat keinen Lösungsvorschlag\. Selbst beheben, dann erneut prüfen:/);
   assert.equal(result.stdout.includes('/dv-forge:review-followup'), false);
   assert.match(result.stdout, SCOUT_NOTE);
   assert.equal(fs.existsSync(path.join(env.workspace, 'abschluss', 'scout.md')), false);
@@ -201,7 +199,7 @@ test('implementationReport_NoFindingsNoHintsFile_ReadyWithoutNotes', () => {
   assert.equal(read(env, 'aggregate.md'), '=== REWORK ===\n');
 });
 
-test('implementationReport_Bericht_CarriesHeadingAnchorsForShow', () => {
+test('implementationReport_Bericht_CarriesHeadingAnchorsWithoutNextSection', () => {
   // Arrange
   const env = setup({ groups: [YELLOW], scout: SCOUT_YELLOW });
 
@@ -212,7 +210,7 @@ test('implementationReport_Bericht_CarriesHeadingAnchorsForShow', () => {
   const anchors = anchorsOf(read(env, 'bericht.md'));
   assert.ok(anchors.includes('## Implementierungs-Review · Ergebnis · Bestellsumme berechnen — Plan'));
   assert.ok(anchors.includes('### Was geprüft wurde'));
-  assert.ok(anchors.includes('### Wie es weitergeht'));
+  assert.equal(anchors.includes('### Wie es weitergeht'), false);
 });
 
 test('implementationReport_MissingErgebnis_ExitsOneWithReason', () => {
@@ -328,7 +326,7 @@ test('implementationReport_EmbeddedWithProposal_WritesJsonDataAndPrintsFourLines
   assert.equal(data.open[0].color, 'yellow');
   assert.equal(typeof data.open[0].key, 'string');
   assert.ok(data.checked.some((line) => line.startsWith('- Bereich: ')));
-  assert.match(read(env, 'bericht.md'), /### Wie es weitergeht/);
+  assert.doesNotMatch(read(env, 'bericht.md'), /Wie es weitergeht/);
   assert.match(read(env, 'scout.md'), /^## Scout-Vorschläge/);
 });
 

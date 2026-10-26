@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { renderImplementationReport } = require('../scripts/lib/implementation-report-text');
+const { renderImplementationReport, summaryOf } = require('../scripts/lib/implementation-report-text');
 
 const LINES = [['Abnahmekriterien', 0, 0], ['Treue zum Plan', 0, 0], ['Aufbau', 0, 1], ['Tests', 0, 0], ['Risiken', 0, 0]]
   .map(([name, red, yellow]) => ({ name, red, yellow, failed: false }));
@@ -19,7 +19,7 @@ function base(overrides = {}) {
   };
 }
 
-test('renderImplementationReport_ReadyWithOneHint_ShowsAgreedLayout', () => {
+test('renderImplementationReport_ReadyWithOneHint_ShowsAgreedLayoutWithoutNextSteps', () => {
   // Act
   const text = renderImplementationReport(base({
     open: [HINT], notes: ['Nach dem Umsetzungsbericht (Stand f00ba12) gibt es weitere Commits: 9c8d7e6 Rundung korrigiert. Sie fehlen in den Urteilen der Umsetzung.'],
@@ -50,12 +50,6 @@ test('renderImplementationReport_ReadyWithOneHint_ShowsAgreedLayout', () => {
     '',
     '### Hinweise zum Ablauf',
     '- Nach dem Umsetzungsbericht (Stand f00ba12) gibt es weitere Commits: 9c8d7e6 Rundung korrigiert. Sie fehlen in den Urteilen der Umsetzung.',
-    '',
-    '### Wie es weitergeht',
-    '1. Den Hinweis einarbeiten lassen (optional):',
-    '   `/dv-forge:review-followup docs/forge/x/plan.md alle`',
-    '2. Arbeit abschließen:',
-    '   `/dv-forge:finish-work`',
   ].join('\n'));
 });
 
@@ -68,10 +62,9 @@ test('renderImplementationReport_ReadyWithoutOpenItems_OmitsOpenAndNotesAndTopic
   assert.match(text, /- 1 geänderte Datei, davon 0 Tests/);
   assert.equal(text.includes('Noch offen'), false);
   assert.equal(text.includes('Hinweise zum Ablauf'), false);
-  assert.match(text, /### Wie es weitergeht\n1\. Arbeit abschließen:\n   `\/dv-forge:finish-work`$/);
 });
 
-test('renderImplementationReport_Blocked_ShowsHindrancesAndRerunStep', () => {
+test('renderImplementationReport_Blocked_ShowsHindrances', () => {
   // Arrange
   const lines = LINES.map((line) => (line.name === 'Risiken' ? { ...line, red: 2 } : line));
 
@@ -83,10 +76,9 @@ test('renderImplementationReport_Blocked_ShowsHindrancesAndRerunStep', () => {
   assert.match(text, /- Risiken: 2 Hindernisse, 0 Hinweise/);
   assert.match(text, /### Noch offen · Hindernis\n- 🔴 \*\*Fehler wird verschluckt\*\* · aus: Risiken\n  Ein Fehler bleibt unbemerkt\.\n- 🔴 \*\*Zweites\*\*/);
   assert.equal(text.includes('Vorschlag (empfohlen)'), false);
-  assert.match(text, /1\. Die 2 Hindernisse einarbeiten lassen \(oder selbst beheben\):\n   `\/dv-forge:review-followup docs\/forge\/x\/plan\.md alle`\n2\. Danach erneut prüfen:\n   `\/dv-forge:implementation-review docs\/forge\/x\/plan\.md`/);
 });
 
-test('renderImplementationReport_Incomplete_NamesFailedReviewersAndOffersRerun', () => {
+test('renderImplementationReport_Incomplete_NamesFailedReviewers', () => {
   // Arrange
   const lines = [...LINES.slice(0, 4), { name: 'Risiken', red: 0, yellow: 0, failed: true }];
 
@@ -96,7 +88,6 @@ test('renderImplementationReport_Incomplete_NamesFailedReviewersAndOffersRerun',
   // Assert
   assert.match(text, /\*\*Ergebnis:\*\* ⚠️ Unvollständig · Risiken ausgefallen/);
   assert.match(text, /- Risiken: ausgefallen/);
-  assert.match(text, /1\. Den Lauf in einer frischen Session erneut starten:\n   `\/dv-forge:implementation-review docs\/forge\/x\/plan\.md`/);
 });
 
 test('renderImplementationReport_OneHindranceAndSeveralHints_UsesSingularAndPlural', () => {
@@ -106,58 +97,7 @@ test('renderImplementationReport_OneHindranceAndSeveralHints_UsesSingularAndPlur
 
   // Assert
   assert.match(one, /⛔ Noch nicht bereit · 1 Hindernis offen/);
-  assert.match(one, /1\. Das Hindernis einarbeiten lassen/);
   assert.match(many, /· 2 kleine Hinweise offen/);
-  assert.match(many, /1\. Die 2 Hinweise einarbeiten lassen \(optional\):/);
-});
-
-test('renderImplementationReport_BlockedWithoutProposal_RecommendsOwnFixInsteadOfFollowup', () => {
-  // Act
-  const text = renderImplementationReport(base({ openRed: 1, open: [{ ...HINDRANCE, hasProposal: false }] }));
-
-  // Assert
-  assert.equal(text.includes('review-followup'), false);
-  assert.match(text, /### Wie es weitergeht\n1\. Das Hindernis hat keinen Lösungsvorschlag\. Selbst beheben, dann erneut prüfen:\n   `\/dv-forge:implementation-review docs\/forge\/x\/plan\.md`$/);
-});
-
-test('renderImplementationReport_BlockedPartlyWithProposal_SplitsFollowupAndOwnFix', () => {
-  // Arrange
-  const open = [{ ...HINDRANCE, hasProposal: true }, { ...HINDRANCE, title: 'Zweites', hasProposal: false }, { ...HINDRANCE, title: 'Drittes', hasProposal: false }];
-
-  // Act
-  const text = renderImplementationReport(base({ openRed: 3, open }));
-
-  // Assert
-  assert.match(text, /1\. Das Hindernis mit Lösungsvorschlag einarbeiten lassen:\n   `\/dv-forge:review-followup docs\/forge\/x\/plan\.md alle`\n2\. Die 2 übrigen Hindernisse haben keinen Lösungsvorschlag\. Selbst beheben, dann erneut prüfen:\n   `\/dv-forge:implementation-review docs\/forge\/x\/plan\.md`$/);
-});
-
-test('renderImplementationReport_HintsWithoutProposal_OffersOwnFixAndFinish', () => {
-  // Act
-  const text = renderImplementationReport(base({ open: [{ ...HINT, recommendation: null, hasProposal: false }] }));
-
-  // Assert
-  assert.equal(text.includes('review-followup'), false);
-  assert.match(text, /### Wie es weitergeht\n1\. Der Hinweis hat keinen Lösungsvorschlag\. Bei Bedarf selbst beheben \(optional\)\.\n2\. Arbeit abschließen:\n   `\/dv-forge:finish-work`$/);
-});
-
-test('renderImplementationReport_HintsPartlyWithProposal_SplitsFollowupAndOwnFix', () => {
-  // Act
-  const text = renderImplementationReport(base({ open: [HINT, { ...HINT, title: 'Zweiter', hasProposal: false }] }));
-
-  // Assert
-  assert.match(text, /1\. Den Hinweis mit Lösungsvorschlag einarbeiten lassen \(optional\):\n   `\/dv-forge:review-followup docs\/forge\/x\/plan\.md alle`\n2\. Der übrige Hinweis hat keinen Lösungsvorschlag\. Bei Bedarf selbst beheben \(optional\)\.\n3\. Arbeit abschließen:/);
-});
-
-test('renderImplementationReport_EntryWithoutProposalFlag_TreatsItAsWithoutProposal', () => {
-  // Arrange
-  const { hasProposal, ...hint } = HINT;
-
-  // Act
-  const text = renderImplementationReport(base({ open: [hint] }));
-
-  // Assert
-  assert.equal(text.includes('review-followup'), false);
-  assert.match(text, /1\. Der Hinweis hat keinen Lösungsvorschlag\. Bei Bedarf selbst beheben \(optional\)\./);
 });
 
 test('renderImplementationReport_RedEntryButOpenRedZero_ReportsNotReady', () => {
@@ -167,17 +107,14 @@ test('renderImplementationReport_RedEntryButOpenRedZero_ReportsNotReady', () => 
   // Assert
   assert.equal(text.includes('Bereit zum Abschließen'), false);
   assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 1 Hindernis offen/);
-  assert.match(text, /1\. Das Hindernis einarbeiten lassen \(oder selbst beheben\):\n   `\/dv-forge:review-followup docs\/forge\/x\/plan\.md alle`\n2\. Danach erneut prüfen:/);
 });
 
-test('renderImplementationReport_OpenRedAboveListedEntries_StepsCoverOnlyListedHindrances', () => {
+test('renderImplementationReport_OpenRedAboveListedEntries_ReportsTheReportedCount', () => {
   // Act
   const text = renderImplementationReport(base({ openRed: 2, open: [HINDRANCE] }));
 
   // Assert
   assert.match(text, /\*\*Ergebnis:\*\* ⛔ Noch nicht bereit · 2 Hindernisse offen/);
-  assert.equal(text.includes('übrig'), false);
-  assert.match(text, /### Wie es weitergeht\n1\. Das Hindernis einarbeiten lassen \(oder selbst beheben\):\n   `\/dv-forge:review-followup docs\/forge\/x\/plan\.md alle`\n2\. Danach erneut prüfen:\n   `\/dv-forge:implementation-review docs\/forge\/x\/plan\.md`$/);
 });
 
 test('renderImplementationReport_BlockedWithHint_ShowsFullLayout', () => {
@@ -215,107 +152,33 @@ test('renderImplementationReport_BlockedWithHint_ShowsFullLayout', () => {
     '- 🟡 **Rundung der Summe** · aus: Aufbau',
     '  Die Rundung steht an zwei Stellen und kann auseinanderlaufen.',
     '  Vorschlag (empfohlen): die Rundung in einer Funktion bündeln, weil sonst jede Änderung zweimal nötig ist.',
-    '',
-    '### Wie es weitergeht',
-    '1. Das Hindernis einarbeiten lassen (oder selbst beheben):',
-    '   `/dv-forge:review-followup docs/forge/x/plan.md alle`',
-    '2. Danach erneut prüfen:',
-    '   `/dv-forge:implementation-review docs/forge/x/plan.md`',
   ].join('\n'));
 });
 
-test('renderImplementationReport_Incomplete_ShowsFullLayout', () => {
-  // Arrange
-  const lines = [...LINES.slice(0, 4), { name: 'Risiken', red: 0, yellow: 0, failed: true }];
+const KINDS = {
+  ready: {},
+  hints: { open: [HINT] },
+  blocked: { openRed: 1, open: [HINDRANCE] },
+  incomplete: { failedLabels: ['Risiken'], reviewerLines: [...LINES.slice(0, 4), { name: 'Risiken', red: 0, yellow: 0, failed: true }] },
+};
 
+for (const [kind, overrides] of Object.entries(KINDS)) {
+  test(`renderImplementationReport_${kind}_NamesNoNextStepNoCommandAndNoWorktree`, () => {
+    // Act
+    const text = renderImplementationReport(base(overrides));
+
+    // Assert
+    assert.equal(/Wie es weitergeht|Worktree bleibt|Nicht gepusht/.test(text), false);
+    assert.equal(/\/dv-forge:/.test(text), false);
+    assert.equal(/frischen? Session/.test(text), false);
+  });
+}
+
+test('summaryOf_AnyInput_ReturnsKindResultFlowCheckedAndFoundOnly', () => {
   // Act
-  const text = renderImplementationReport(base({
-    failedLabels: ['Risiken'], reviewerLines: lines, open: [HINT], notes: ['Der Prüfer für Risiken ist ausgefallen. Dieser Blickwinkel fehlt in der Prüfung.'],
-  }));
+  const summary = summaryOf(base({ open: [HINT] }));
 
   // Assert
-  assert.equal(text, [
-    '## Implementierungs-Review · Ergebnis · Bestellsumme berechnen',
-    '**Ergebnis:** ⚠️ Unvollständig · Risiken ausgefallen',
-    'Ablauf: Prüfung aus fünf Blickwinkeln, keine Überarbeitung.',
-    '',
-    '### Was geprüft wurde',
-    '- Bereich: `a1b2c3d..HEAD`',
-    '- 14 geänderte Dateien, davon 6 Tests',
-    '- Blickwinkel: Abnahmekriterien, Treue zum Plan, Aufbau, Tests, Risiken',
-    '',
-    '### Gefunden',
-    '- Abnahmekriterien: 0 Hindernisse, 0 Hinweise',
-    '- Treue zum Plan: 0 Hindernisse, 0 Hinweise',
-    '- Aufbau: 0 Hindernisse, 1 Hinweis',
-    '- Tests: 0 Hindernisse, 0 Hinweise',
-    '- Risiken: ausgefallen',
-    '',
-    '### Noch offen · kein Hindernis für das Abschließen',
-    '- 🟡 **Rundung der Summe** · aus: Aufbau',
-    '  Die Rundung steht an zwei Stellen und kann auseinanderlaufen.',
-    '  Vorschlag (empfohlen): die Rundung in einer Funktion bündeln, weil sonst jede Änderung zweimal nötig ist.',
-    '',
-    '### Hinweise zum Ablauf',
-    '- Der Prüfer für Risiken ist ausgefallen. Dieser Blickwinkel fehlt in der Prüfung.',
-    '',
-    '### Wie es weitergeht',
-    '1. Den Lauf in einer frischen Session erneut starten:',
-    '   `/dv-forge:implementation-review docs/forge/x/plan.md`',
-  ].join('\n'));
-});
-
-test('renderImplementationReport_WithoutNext_EndsBeforeNextSteps', () => {
-  // Act
-  const text = renderImplementationReport(base({ withoutNext: true }));
-
-  // Assert
-  assert.match(text, /### Was geprüft wurde/);
-  assert.equal(text.includes('### Wie es weitergeht'), false);
-});
-
-const WORKTREE_CHAIN = { stage: 'implementation', slug: 'x', worktree: '/repo-wt', branch: 'feature/x' };
-
-test('renderImplementationReport_ReadyWithImplementationEntry_WorktreeLineFinishStepWithPathAndPushLine', () => {
-  // Act
-  const text = renderImplementationReport(base({ chain: WORKTREE_CHAIN }));
-
-  // Assert
-  assert.ok(text.endsWith([
-    '### Wie es weitergeht',
-    'Worktree bleibt: /repo-wt',
-    '1. Arbeit abschließen (nur manuell, in /repo-wt):',
-    '   `/dv-forge:finish-work`',
-    'Nicht gepusht: `git push -u origin feature/x`',
-  ].join('\n')), text);
-});
-
-test('renderImplementationReport_BlockedWithImplementationEntry_BlockedStepsStayBetweenWorktreeAndPushLine', () => {
-  // Arrange
-  const input = base({ openRed: 1, open: [HINDRANCE] });
-
-  // Act
-  const text = renderImplementationReport({ ...input, chain: WORKTREE_CHAIN });
-
-  // Assert
-  const without = renderImplementationReport(input);
-  const steps = without.slice(without.indexOf('### Wie es weitergeht\n') + '### Wie es weitergeht\n'.length);
-  assert.ok(text.endsWith(`### Wie es weitergeht\nWorktree bleibt: /repo-wt\n${steps}\nNicht gepusht: \`git push -u origin feature/x\``), text);
-  assert.equal(text.includes('Arbeit abschließen'), false);
-});
-
-test('renderImplementationReport_HintsWithImplementationEntry_FinishStepNamesWorktreeAfterHintStep', () => {
-  // Act
-  const text = renderImplementationReport(base({ open: [HINT], chain: WORKTREE_CHAIN }));
-
-  // Assert
-  assert.match(text, /2\. Arbeit abschließen \(nur manuell, in \/repo-wt\):\n {3}`\/dv-forge:finish-work`\nNicht gepusht: `git push -u origin feature\/x`$/);
-});
-
-test('renderImplementationReport_EmbeddedWithoutNextAndEntry_HasNoNextSection', () => {
-  // Act
-  const text = renderImplementationReport(base({ withoutNext: true, chain: WORKTREE_CHAIN }));
-
-  // Assert
-  assert.equal(text.includes('Wie es weitergeht'), false);
+  assert.deepEqual(Object.keys(summary).sort(), ['checked', 'flowLine', 'found', 'kind', 'resultLine']);
+  assert.equal(summary.kind, 'hints');
 });

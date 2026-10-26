@@ -54,7 +54,7 @@ test('sessionOrchestrator_Body_WhiteboardingGetsContextSummaryOrOneQuestion', ()
   // Assert
   assert.ok(body.includes('Fasse den Gesprächskontext zusammen (Anliegen, genannte Dateien, getroffene Entscheidungen)'));
   assert.ok(body.includes('Ist der Kontext leer, fragst du einmal nach dem Anliegen'));
-  assert.ok(body.includes('`<SC> brief --etappe whiteboarding --kontext "<kontext.md>" --basis <B>`'));
+  assert.ok(body.includes('`<SC> brief --etappe whiteboarding --kontext "<kontext.md>" --basis <B> --leit <L>`'));
 });
 
 test('sessionOrchestrator_Body_StartsStageItselfOrShowsProposalCard', () => {
@@ -157,4 +157,28 @@ test('sessionOrchestratorFlow_Halt_RecordsAnswerBeforeStart', () => {
   const text = readText(FLOW);
   assert.ok(text.includes('Jede Antwort hältst du zuerst fest: `<SC> answer --slug <slug> --antwort <wert>`.'));
   assert.ok(text.includes('wiederholst du `brief` mit `--erneut`'));
+});
+
+test('sessionOrchestrator_Body_PassesItsOwnIdToEveryBriefAndPrintsRunningLine', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('`<SC> brief --etappe <e> --slug <slug> --leit <L>`'));
+  assert.ok(body.includes('Deine Kennung `<L>` ist `sessionId` aus `mcp__ccd_session_mgmt__get_session` mit `session_id` `self` (Werkzeug vorher per `ToolSearch` laden).'));
+  assert.ok(body.includes('Vor dem ersten Turn-Ende oder der ersten Nachricht einer Etappen-Session liest du `references/ablauf.md`'));
+  assert.ok(body.includes('| „Zwischenstand, kurz kommentieren.“ | `in-progress`: nur die Zeile `<e>: läuft`. |'));
+});
+
+test('sessionOrchestratorFlow_MessageOfStage_CountsAsTurnEndAndWhiteboardingCommitsFirst', () => {
+  // Act
+  const text = readText(FLOW);
+
+  // Assert
+  for (const part of [
+    'Eine Nachricht einer Etappen-Session (`<cross-session-message from="<id>">`) behandelst du wie ihr Turn-Ende: `<id>` aus `from`, ihre erste Zeile ist die Statuszeile. Kommt dasselbe `final` per Turn-Ende und per Nachricht, meldet das zweite `WEITER=doppelt`.',
+    '- `laeuft`: die Zeile nach `=== AUSGABE ===` ausgeben, nichts starten.',
+    '| `WEITER=<etappe>` | Start dieser Etappe (Regel 3), Slug aus `SLUG`. Nach dem `final` von `whiteboarding` erst „Whiteboarding-Commit“. |',
+    '## Whiteboarding-Commit\n`<SC> commit --anlass whiteboarding --slug <slug> --message "<betreff>"`: Spec und gemeldete Glossar- und ADR-Dateien des Whiteboardings.',
+  ]) assert.ok(text.includes(part), part);
 });

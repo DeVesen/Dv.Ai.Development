@@ -24,6 +24,7 @@ test('readme_Ablauf_NamesSessionChainStateAndBaseFile', () => {
   assert.ok(text.includes('4. **Session-Kette:** `session-orchestrator`'));
   assert.ok(text.includes('`<git-common-dir>/dv-forge/session-chain/`'));
   assert.ok(text.includes('`shared/session-chain/base-sub-agent.md`'));
+  assert.ok(text.includes('Das Whiteboarding prüft seine Spec in derselben Etappen-Session mit dem Spec-Review-Orchestrator; jede Etappe meldet ihr `final` zusätzlich per Nachricht an die Leit-Session.'));
 });
 
 test('readme_Ablage_NamesOptionPlaceAndUnchangedDefault', () => {

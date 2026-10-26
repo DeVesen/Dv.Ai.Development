@@ -38,6 +38,15 @@ test('buildBrief_SkillEtappen_StartWithTheSlashCommandOfTheirSkill', () => {
   assert.equal(first('abschluss'), '/dv-forge:finish-work');
 });
 
+test('buildBrief_SpecReviewAfterGrill_StillCommitsTheSpecItselfWithoutWhiteboardingOption', () => {
+  // Act
+  const text = brief('spec-review').brief;
+
+  // Assert
+  assert.ok(text.includes('Der Skill committet die Spec selbst.'));
+  assert.ok(!text.includes('--whiteboarding'));
+});
+
 test('buildBrief_Nacharbeit_StartsWithTaskLineAndNamesTheReviewReport', () => {
   // Act
   const [spec, plan] = ['spec-nacharbeit', 'plan-nacharbeit'].map((etappe) => brief(etappe).brief);

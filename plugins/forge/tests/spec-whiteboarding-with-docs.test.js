@@ -23,6 +23,11 @@ test('withDocs_Body_LoadsBothSkillsViaSkillTool', () => {
   assert.match(body, /Skill-Tool/);
 });
 
+test('withDocs_Body_RunsNoSpecReviewOfItsOwn', () => {
+  const { body } = readMarkdown(SKILL);
+  for (const part of ['spec-review-orchestrator', 'review-stand', 'Spec abschließen']) assert.ok(!body.includes(part), part);
+});
+
 test('withDocs_Body_DefinesPrecedenceRules', () => {
   const { body } = readMarkdown(SKILL);
   assert.match(body, /trotz Sperre erlaubt/);

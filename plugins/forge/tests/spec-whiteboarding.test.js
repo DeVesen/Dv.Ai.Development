@@ -169,3 +169,9 @@ test('whiteboarding_BranchStatusBasisAndRepeatedQuestions_AreRuled', () => {
   assert.match(rounds, /wiederholst du verkürzt/);
   assert.match(read('SKILL.md'), /auch bei `Worktree: ja`/);
 });
+
+test('specWhiteboarding_Body_HandsOverToAFreshSpecReviewWithoutReviewingItself', () => {
+  const { body } = readMarkdown(path.join(SKILL_DIR, 'SKILL.md'));
+  assert.ok(body.includes('kopierbarer Befehl `/dv-forge:spec-review <pfad>`'));
+  for (const part of ['spec-review-orchestrator', 'review-stand', 'Spec abschließen']) assert.ok(!body.includes(part), part);
+});

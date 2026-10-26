@@ -1,6 +1,6 @@
 ---
 name: plan-review
-description: Use when a dv-forge plan.md should run through the review of parallel reviewers against its spec and the code, one rework and one verification round, with a script deciding colors, stops and status.
+description: Use when a dv-forge plan.md should run through the review of parallel reviewers against its spec and the code, one rework and one verification round, with a script deciding colors, stops and status. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 argument-hint: <plan.md> [spec.md] [--only <reviewer,...>] [--debug]
 ---
 

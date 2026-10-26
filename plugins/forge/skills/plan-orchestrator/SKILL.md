@@ -1,6 +1,6 @@
 ---
 name: plan-orchestrator
-description: Use when an approved dv-forge spec.md should become a reviewed plan in one unattended run.
+description: Use when an approved dv-forge spec.md should become a reviewed plan in one unattended run. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 argument-hint: <spec.md> [workitem-nr] [--debug]
 ---
 

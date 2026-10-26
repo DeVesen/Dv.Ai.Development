@@ -1,6 +1,6 @@
 ---
 name: start-work
-description: Use when work on a reviewed dv-forge plan should begin and the place for it is not prepared yet — before creating a branch, a worktree or touching code for that plan.
+description: Use when work on a reviewed dv-forge plan should begin and the place for it is not prepared yet — before creating a branch, a worktree or touching code for that plan. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 argument-hint: <plan.md> [spec.md]
 ---
 

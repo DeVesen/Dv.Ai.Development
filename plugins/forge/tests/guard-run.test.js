@@ -247,7 +247,7 @@ function cli(e, args, input) {
 
 test('cli_PromptThenPretoolThenRunEnd_DeniesThenAllows', () => {
   const e = env();
-  cli(e, ['prompt'], JSON.stringify({ session_id: SESSION, cwd: e.cwd, prompt: '/dv-forge:plan-orchestrator s.md' }));
+  cli(e, ['prompt'], JSON.stringify({ session_id: SESSION, cwd: e.cwd, prompt: '/dv-forge:plan-orchestrator s.md --debug' }));
   const push = JSON.stringify({ session_id: SESSION, cwd: e.cwd, tool_name: 'Bash', tool_input: { command: 'git push' } });
   assert.equal(JSON.parse(cli(e, ['pretool'], push).stdout).hookSpecificOutput.permissionDecision, 'deny');
   assert.equal(cli(e, ['run-end', SESSION]).status, 0);
@@ -256,7 +256,7 @@ test('cli_PromptThenPretoolThenRunEnd_DeniesThenAllows', () => {
 
 test('cli_SessionEnd_RemovesRunMarker', () => {
   const e = env();
-  cli(e, ['prompt'], JSON.stringify({ session_id: SESSION, cwd: e.cwd, prompt: '/dv-forge:plan-orchestrator s.md' }));
+  cli(e, ['prompt'], JSON.stringify({ session_id: SESSION, cwd: e.cwd, prompt: '/dv-forge:plan-orchestrator s.md --debug' }));
   cli(e, ['stop'], JSON.stringify({ session_id: SESSION }));
   assert.equal(fs.existsSync(guard.runMarkerPath(SESSION, e.tmpRoot)), false);
 });

@@ -1,6 +1,6 @@
 ---
 name: implementation-review
-description: Use when a finished dv-forge implementation should be checked once by parallel reviewers against plan, spec and code, with mechanical aggregation and a scout that proposes solutions for every red or yellow finding.
+description: Use when a finished dv-forge implementation should be checked once by parallel reviewers against plan, spec and code, with mechanical aggregation and a scout that proposes solutions for every red or yellow finding. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 argument-hint: <plan.md> [spec.md] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>] [--debug]
 ---
 

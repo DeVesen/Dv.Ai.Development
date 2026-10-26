@@ -28,6 +28,7 @@ const CHAINING = /[;&|`<>\r\n]|\$\(/;
 const HEREDOC_START = /\s<<(?:'([A-Za-z_]\w*)'|([A-Za-z_]\w*))\s*$/;
 const UNQUOTED_EXPANSION = /`|\$\(/;
 const PLUGIN_ROOT = path.resolve(__dirname, '..');
+const { blockedEntry } = require('./lib/entry-guard');
 const IMPLEMENTER = 'dv-forge:implementation-implementer';
 const REVIEW_AGENT = /^dv-forge:(?:(?:spec|plan|implementation)-review-[a-z-]+|(?:spec|plan)-rework)$/;
 const WORKSPACE_SEGMENT = /\/\.forge\//;
@@ -514,7 +515,10 @@ function main() {
   if (event === 'pause') return pauseWithShow(argument, flagValue(rest, '--show'));
   if (event === 'show') return show(argument, flagValue(rest, '--file'));
   const input = readStdinJson();
-  if (event === 'prompt') return onPrompt(input);
+  if (event === 'prompt') {
+    const blocked = blockedEntry(input.prompt);
+    return blocked ? writeBlock(blocked) : onPrompt(input);
+  }
   if (event === 'pretool' && input.tool_name === 'Skill') return onSkillCall(input);
   if (event === 'pretool') return writeDeny(decidePreTool(input));
   if (event === 'turn-end') return writeBlock(onTurnEnd(input));

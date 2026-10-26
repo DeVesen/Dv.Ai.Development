@@ -1,12 +1,12 @@
 ---
 name: spec-grilling
-description: Use when a written dv-forge spec.md should be grilled once more for edge cases, contradictions and gaps before its review, without asking again what its decisions already answer. Auslöser sind Spec grillen, Grenzfälle der Spec prüfen, Lücken und Widersprüche in der Spec finden sowie grill the spec und stress-test a written spec.
+description: Use when a written dv-forge spec.md should be grilled once more for edge cases, contradictions and gaps before its review, without asking again what its decisions already answer. Auslöser sind Spec grillen, Grenzfälle der Spec prüfen, Lücken und Widersprüche in der Spec finden sowie grill the spec und stress-test a written spec. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 argument-hint: <spec.md>
 ---
 
 # Spec grillen
 
-`$ARGUMENTS`: `<S>` Spec. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
+`$ARGUMENTS`: `<S>` Spec, `--debug` ist kein Argument. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
 Du prüfst eine geschriebene Spec nur auf Grenzfälle, Widersprüche und Lücken. Du entwirfst nichts Neues, schreibst keinen Plan und keinen Code.
 
 ## Ablauf

@@ -1,6 +1,6 @@
 ---
 name: spec-review
-description: Use when a finished spec.md should run through the dv-forge review of parallel reviewers, one rework and one verification round, with a script deciding colors, stops and status.
+description: Use when a finished spec.md should run through the dv-forge review of parallel reviewers, one rework and one verification round, with a script deciding colors, stops and status. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 argument-hint: <spec.md> [quelle.md] [--only <reviewer,...>] [--whiteboarding] [--debug]
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: finish-work
-description: Use when a dv-forge implementation is done and reviewed and the work should be closed — before leaving or removing a worktree or calling a feature branch finished.
+description: Use when a dv-forge implementation is done and reviewed and the work should be closed — before leaving or removing a worktree or calling a feature branch finished. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 ---
 
 # Arbeit abschließen

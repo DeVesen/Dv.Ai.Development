@@ -1,6 +1,6 @@
 ---
 name: spec-whiteboarding-with-docs
-description: Use when a request should be grilled into a dv-forge spec.md that is anchored in the existing system — code, git history, glossary, module and feature profiles — while the project glossary is actively challenged and updated alongside.
+description: Use when a request should be grilled into a dv-forge spec.md that is anchored in the existing system — code, git history, glossary, module and feature profiles — while the project glossary is actively challenged and updated alongside. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 ---
 
 # Spec Whiteboarding mit Bestand

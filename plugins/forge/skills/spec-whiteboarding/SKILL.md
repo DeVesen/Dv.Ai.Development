@@ -1,6 +1,6 @@
 ---
 name: spec-whiteboarding
-description: Use when a request, idea, or complaint has just been raised, nothing written down exists yet, and it should become a spec.md for the dv-forge spec review — before brainstorming, planning, or any code. Also use when acceptance criteria for a not-yet-written feature are still vague or missing, or when an idea should be specified with nothing yet to compare it against. Triggers: "lass uns das durchdenken", "Whiteboard", "Spec whiteboarding", "was will ich eigentlich", "erstmal aufschreiben was ich will". Not for the technical design doc, not for the implementation plan, not for a status report on finished work.
+description: Use when a request, idea, or complaint has just been raised, nothing written down exists yet, and it should become a spec.md for the dv-forge spec review — before brainstorming, planning, or any code. Also use when acceptance criteria for a not-yet-written feature are still vague or missing, or when an idea should be specified with nothing yet to compare it against. Triggers: "lass uns das durchdenken", "Whiteboard", "Spec whiteboarding", "was will ich eigentlich", "erstmal aufschreiben was ich will". Not for the technical design doc, not for the implementation plan, not for a status report on finished work. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 ---
 
 # Spec Whiteboarding

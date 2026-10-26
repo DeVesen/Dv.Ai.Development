@@ -1,12 +1,12 @@
 ---
 name: plan-writing
-description: Use when an approved dv-forge spec.md has to become an implementation plan with exact files, interfaces and test-first steps before any code is written.
+description: Use when an approved dv-forge spec.md has to become an implementation plan with exact files, interfaces and test-first steps before any code is written. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 argument-hint: <spec.md> [ziel.md]
 ---
 
 # Plan-Writing
 
-Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`
+Argumente: `$ARGUMENTS` (`--debug` ist kein Argument) · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`
 
 Kündige an: „Ich schreibe mit dv-forge:plan-writing den Umsetzungsplan.“
 

@@ -1,6 +1,6 @@
 ---
 name: implementation-orchestrator
-description: Use when a reviewed dv-forge plan.md and its spec.md should be implemented and reviewed in one unattended run.
+description: Use when a reviewed dv-forge plan.md and its spec.md should be implemented and reviewed in one unattended run. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 argument-hint: <plan.md> <spec.md> [workitem-nr] [--base <branch>] [--debug]
 ---
 

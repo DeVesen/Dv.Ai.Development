@@ -1,6 +1,6 @@
 ---
 name: spec-review-orchestrator
-description: Use when a dv-forge spec.md should be reviewed, followed up and committed in one unattended run on the current branch.
+description: Use when a dv-forge spec.md should be reviewed, followed up and committed in one unattended run on the current branch. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
 argument-hint: <spec.md> [workitem-nr] [--whiteboarding] [--debug]
 ---
 

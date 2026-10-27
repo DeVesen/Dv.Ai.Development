@@ -23,8 +23,9 @@ function read(file) {
 function taskNames(folder) {
   try {
     return fs.readdirSync(path.join(folder, TASKS)).filter((name) => TASK_FILE.test(name)).sort();
-  } catch {
-    return [];
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
   }
 }
 

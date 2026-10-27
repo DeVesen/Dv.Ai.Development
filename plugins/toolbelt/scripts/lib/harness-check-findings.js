@@ -60,6 +60,13 @@ function checkRound(round, number, errors) {
   return counted;
 }
 
+// Nummer der Runde, die auf eine saubere Runde (ab MIN_ROUNDS, ohne offenes 🔴) folgt; null, wenn die saubere Runde die letzte ist.
+function roundAfterClean(open) {
+  const rounds = open.map((count, index) => ({ count, number: index + 1 }));
+  const clean = rounds.find((round) => round.count === 0 && round.number >= MIN_ROUNDS && round.number < rounds.length);
+  return clean ? clean.number + 1 : null;
+}
+
 function checkRounds(text, status) {
   const errors = [];
   const rounds = sectionsMatching(text, /^## Plan-Prüfrunde (\d+)$/);
@@ -68,8 +75,8 @@ function checkRounds(text, status) {
     if (Number(round.match[1]) !== index + 1) errors.push(`PRUEFPROTOKOLL.md: Plan-Prüfrunde ${round.match[1]} steht an Stelle ${index + 1}`);
     return checkRound(round, index + 1, errors);
   });
-  const early = open.findIndex((count, index) => count === 0 && index + 1 >= MIN_ROUNDS && index < open.length - 1);
-  if (early !== -1) errors.push(`PRUEFPROTOKOLL.md: Plan-Prüfrunde ${early + 2} folgt auf eine Runde ohne offenes 🔴`);
+  const unneeded = roundAfterClean(open);
+  if (unneeded !== null) errors.push(`PRUEFPROTOKOLL.md: Plan-Prüfrunde ${unneeded} folgt auf eine Runde ohne offenes 🔴`);
   if (open.length === 0) return errors;
   const last = open.at(-1);
   const expected = last === 0 ? 'abgabefähig' : 'nicht abgabefähig';

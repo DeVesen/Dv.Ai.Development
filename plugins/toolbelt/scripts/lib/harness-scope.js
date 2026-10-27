@@ -5,6 +5,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
+const { HarnessError } = require('./harness-package');
 
 const MANIFEST = /(^|\/)\.claude-plugin\/plugin\.json$/;
 
@@ -62,17 +63,23 @@ function scopeLine(file, { ergebnis, grund }) {
 
 function trackedPluginDirs(repoRoot) {
   const result = spawnSync('git', ['ls-files', '-z'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-  if (result.status !== 0) return [];
+  if (result.error || result.status !== 0) throw new HarnessError(`Die versionierten Dateien in ${repoRoot} lassen sich nicht lesen: ${result.error ? result.error.message : result.stderr.trim()}`);
   return result.stdout.split('\0').filter((file) => MANIFEST.test(file)).map((file) => path.join(repoRoot, path.dirname(path.dirname(file))));
 }
 
+// Fehlt die Liste, gibt es keine installierten Plugins; ist sie vorhanden, aber defekt, bricht die Prüfung ab, damit die Verbotsregel nicht still entfällt.
 function installedPluginDirs(home) {
+  const file = path.join(home, '.claude', 'plugins', 'installed_plugins.json');
+  if (!fs.existsSync(file)) return [];
+  let plugins;
   try {
-    const { plugins = {} } = JSON.parse(fs.readFileSync(path.join(home, '.claude', 'plugins', 'installed_plugins.json'), 'utf8'));
-    return Object.values(plugins).flat().map((entry) => entry.installPath).filter(Boolean);
-  } catch {
-    return [];
+    ({ plugins = {} } = JSON.parse(fs.readFileSync(file, 'utf8')));
+  } catch (error) {
+    throw new HarnessError(`Die Liste der installierten Plugins ${file} ist nicht lesbar: ${error.message}`);
   }
+  const entries = plugins !== null && typeof plugins === 'object' && !Array.isArray(plugins) ? Object.values(plugins) : null;
+  if (!entries || !entries.every(Array.isArray)) throw new HarnessError(`Die Liste der installierten Plugins ${file} hat nicht den erwarteten Aufbau (plugins: Name -> Liste).`);
+  return entries.flat().map((entry) => entry.installPath).filter(Boolean);
 }
 
 function loadScopeContext(repoRoot, home) {

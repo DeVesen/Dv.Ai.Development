@@ -8,8 +8,9 @@ const path = require('node:path');
 function entriesOf(dir) {
   try {
     return fs.readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return [];
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return [];
+    throw error;
   }
 }
 

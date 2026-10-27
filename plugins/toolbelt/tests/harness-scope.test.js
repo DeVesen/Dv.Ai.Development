@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { classifyPath, resolveTarget, scopeLine, loadScopeContext } = require('../scripts/lib/harness-scope');
+const { HarnessError } = require('../scripts/lib/harness-package');
 const { makeRepo, commitFile } = require('./lib/git-repo');
 
 const REPO = path.join(os.tmpdir(), 'scope-repo');
@@ -113,4 +114,27 @@ test('loadScopeContext_NoInstalledList_EmptyInstalledFolders', () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'scope-home-'));
 
   assert.deepEqual(loadScopeContext(makeRepo(), home).installedDirs, []);
+});
+
+function homeWithInstalledList(content) {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'scope-home-'));
+  fs.mkdirSync(path.join(home, '.claude', 'plugins'), { recursive: true });
+  fs.writeFileSync(path.join(home, '.claude', 'plugins', 'installed_plugins.json'), content);
+  return home;
+}
+
+test('loadScopeContext_BrokenInstalledJson_ThrowsHarnessError', () => {
+  assert.throws(() => loadScopeContext(makeRepo(), homeWithInstalledList('{kaputt')), HarnessError);
+});
+
+test('loadScopeContext_InstalledListWithWrongStructure_ThrowsHarnessError', () => {
+  for (const content of ['{"plugins":"x"}', '{"plugins":{"a@m":{"installPath":"C:/x"}}}', '{"plugins":null}']) {
+    assert.throws(() => loadScopeContext(makeRepo(), homeWithInstalledList(content)), HarnessError, content);
+  }
+});
+
+test('loadScopeContext_RepoWithoutGit_ThrowsHarnessError', () => {
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'scope-nogit-'));
+
+  assert.throws(() => loadScopeContext(folder, fs.mkdtempSync(path.join(os.tmpdir(), 'scope-home-'))), HarnessError);
 });

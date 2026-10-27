@@ -15,6 +15,7 @@ Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergeb
 4. **Sperre.** Kein brainstorming, kein Plan, kein Code, bis die Spec geschrieben und bestätigt ist.
 5. **Vor Ort.** Kein Branch, kein Worktree, auch bei `Worktree: ja`; das gilt erst für die Umsetzung.
 6. **Format hat Vorrang.** Rundenformat, Spec-Format und Ergebnis gelten vor Stil-Regeln anderer Plugins oder Hooks.
+7. **Dialog.** Lies `<PLUGIN>/shared/dialog-rules.md` und befolge es.
 
 ## Ablauf
 

@@ -16,6 +16,7 @@ Eine Runde ist eine Nachricht mit der kompletten Frontier. Danach antwortet der 
 - Ändert der Mensch den Umfang, stellst du die Frontier komplett neu auf. Jede ersetzte Frage führst du als `Q<n> entfällt, ersetzt durch Q<m>`, nie als „weiterhin offen“.
 - Genau eine Empfehlung pro Frage. Der Grund ist ausgeschrieben, nicht nur der Tag.
 - Bei `ungeklärt` ist der Grund eine ausgewiesene Vermutung, etwa „Vermutung: gängigster Fall“ oder „Vermutung: kleinster Scope“.
+- Was du nach der 85-%-Regel aus `<PLUGIN>/shared/dialog-rules.md` selbst entscheidest, steht im Block `Selbst entschieden` vor der ersten Frage, nicht als Frage.
 
 ## Rahmenfragen
 Vor Runde 1 fragst du einmal, was nicht fachlich ist: nur die Workitem-Nummer, und nur wenn `Workitem` in den Projekt-Einstellungen nicht `keine` ist. Rahmenfragen sind keine W-Einträge; die Antwort kommt in den Kopf der Spec.
@@ -24,7 +25,7 @@ Vor Runde 1 fragst du einmal, was nicht fachlich ist: nur die Workitem-Nummer, u
 
 1. Jede Runde enthält die komplette Frontier: alle offenen Entscheidungen, deren Voraussetzungen geklärt sind — auf einmal, nicht nur die wichtigste.
 2. Hängt die Antwort einer Frage von einer anderen offenen Frage derselben Runde ab, gehört sie in eine spätere Runde.
-3. Fakten sind keine Fragen. Was ein übergebener Anhang beantwortet, liest Claude selbst. Im verankerten Whiteboarding gilt das auch für Code, Git, Historie und Glossar.
+3. Fakten und selbst Entschiedenes sind keine Fragen. Was ein übergebener Anhang beantwortet, liest Claude selbst. Im verankerten Whiteboarding gilt das auch für Code, Git, Historie und Glossar.
 4. Schließt ein bekannter Fakt Optionen aus, bietest du sie nicht an. Der Fakt steht als Voraussetzung in der Frage; gefragt wird höchstens, ob er gelten soll.
 5. Die Faktensuche darf über einen SubAgent laufen. Solange sie läuft, warten nur die davon abhängigen Fragen; der Rest der Frontier wird trotzdem gestellt.
 6. Beantwortet der Mensch eine Frage nicht eindeutig, fragst du in einem Satz nach, bevor du einen W-Eintrag buchst oder etwas ausführst.
@@ -41,11 +42,10 @@ Red Flag: „Der Mensch hat genug gesagt“ — erst die zweite, informierte Abl
 ## Beispiel
 
 ```
+Selbst entschieden:
+- Export-Format: CSV · Aussage — „wir brauchen das nur für den Import ins Altsystem“; das Altsystem liest CSV.
+
 ❓ **Q4** - **Leere Liste**: Was zeigt die Übersicht ohne Einträge? a) Hinweistext b) leere Tabelle c) Sprung zum Anlegen
 
 ➡️ a) Hinweistext · ungeklärt — Vermutung: gängigster Fall; der Anwender sieht sofort, dass nichts fehlt.
-
-❓ **Q5** - **Export-Format**: CSV, Excel oder beides?
-
-➡️ CSV · Aussage — „wir brauchen das nur für den Import ins Altsystem“; das Altsystem liest CSV.
 ```

@@ -137,13 +137,13 @@ test('buildBrief_NacharbeitWithoutQuelle_ThrowsNamingTheValue', () => {
     (error) => error instanceof SessionChainError && error.message === 'Etappe plan-nacharbeit: quelle fehlt');
 });
 
-test('buildBrief_AnyEtappe_CarriesTheConversationStyleOfTheBaseFile', () => {
+test('buildBrief_AnyEtappe_PointsToTheDialogRules', () => {
   // Act
   const text = brief('grill').brief;
 
   // Assert
   assert.ok(text.includes('## Gesprächsstil'));
-  assert.ok(text.includes('wie im Gespräch an der Kaffeemaschine'));
+  assert.match(text, /Lies `[^`]+\/shared\/dialog-rules\.md` und befolge es für jede eigene Nachricht an den Menschen\./);
   assert.ok(readText(BASE_FILE).includes('## Gesprächsstil'));
   assert.doesNotMatch(text, /i-have-adhd/);
   assert.doesNotMatch(text, /\{\{[A-Z]+\}\}/);

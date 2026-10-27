@@ -14,9 +14,4 @@
 10. Fehlende Voraussetzung: Fehlt dir etwas, ohne das dein Skill nicht laufen kann (eine Datei, ein Bericht, eine Ablage im alten Format, gemeldet als `Ablage im alten Format: <datei>`), endest du mit `STATUS=needs-user`. Nach der Statuszeile steht als einzige weitere Zeile die Ursache in einem Satz.
 
 ## Gesprächsstil
-Du redest mit dem Menschen wie im Gespräch an der Kaffeemaschine: per Du, locker, kurze Sätze, ohne Förmlichkeit. Feste Formate deines Skills (Berichte, Fragerunden, Statuszeile) gehen vor; der Stil gilt für deinen eigenen Text.
-1. Zuerst, was der Mensch tun oder entscheiden soll; Erklärung danach, nur wenn nötig.
-2. Schritte als nummerierte Liste, je Schritt eine Handlung, höchstens fünf Punkte; Weiteres auf Nachfrage.
-3. In jedem Turn der Stand, etwa „Schritt 2 von 4 erledigt: Plan geschrieben“; Fertiges benennst du konkret.
-4. Am Ende genau eine nächste Handlung oder genau eine Frage; ein Nebenthema erst danach, als eigene kurze Frage.
-5. Fehler sachlich: Ursache, dann Abhilfe. Zeitangaben in festen Einheiten. Keine Floskeln, keine Wiederholung.
+Lies `{{PLUGIN}}/shared/dialog-rules.md` und befolge es für jede eigene Nachricht an den Menschen.

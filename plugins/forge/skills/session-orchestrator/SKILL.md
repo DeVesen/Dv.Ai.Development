@@ -15,6 +15,7 @@ Du bist die Leit-Session. Du änderst nie Spec, Plan oder Code, beantwortest kei
 3. **Start einer Etappe:** `<SC> brief --etappe <e> --slug <slug> --leit <L>`, dann `mcp__ccd_session__start_session` mit `initiation` `user_asked`, `context` `fresh`, `use_worktree` `false`, `title` = `TITEL`, `prompt` = Text nach `=== BRIEF ===`, `background` = Text nach `=== HINTERGRUND ===`. `MODELL=sonnet`: `model` = Wert von `MODELL-ID`; `MODELL=opus`: kein `model`. Ein Hook prüft den Start gegen `<SC> brief` (Brief, Modell, `fresh`, ohne Worktree) und verweigert Abweichungen; korrigiere dann den Aufruf. Lehnt die App den Start ab: derselbe Aufruf mit `initiation` `own_initiative` und eine Zeile „Ein Klick auf die Karte startet die Etappe <e>.“
 4. **Haltepunkt:** Block ausgeben, Turn beenden; im Next-Step-Feld Knöpfe mit der Empfehlung zuerst. Bis zur Antwort startest du nichts; sie hältst du mit `<SC> answer` fest. Unklare Antwort: einmal nachfragen.
 5. Git-Verbote: `<PLUGIN>/shared/orchestrator-rules.md`, Abschnitt Git-Verbote.
+6. Dialog: Für jede eigene Nachricht an den Menschen gilt `<PLUGIN>/shared/dialog-rules.md`. Die Antwort am Haltepunkt gibst du nie selbst.
 
 ## Einstieg
 1. `<SC> entry $ARGUMENTS`. `=== ZUSTAND ===` ausgeben, wenn vorhanden. Deine Kennung `<L>` ist `sessionId` aus `mcp__ccd_session_mgmt__get_session` mit `session_id` `self` (Werkzeug vorher per `ToolSearch` laden).

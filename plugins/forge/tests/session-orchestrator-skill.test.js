@@ -114,7 +114,7 @@ test('sessionOrchestratorFlow_Final_ChecksAgainstGitBeforeAnyNextStage', () => {
 
   // Assert
   for (const part of ['`<SC> final --etappe <e> --session <id> --etappenbericht "<BERICHT>" --commit <COMMIT>`', '| `HALTEPUNKT=abweichung` | Block ausgeben. Die Kette hält; nichts starten.',
-    '| `HALTEPUNKT=showstopper` |', '| `WEITER=doppelt` | Schweigen: dieses `final` ist schon verarbeitet; nichts starten. |', '| `WEITER=<etappe>` | Start dieser Etappe (Regel 3)',
+    '| `HALTEPUNKT=showstopper` |', '| `WEITER=doppelt` | Schweigen: dieses `final` ist schon verarbeitet; nichts starten. |', '| `WEITER=<etappe>` | den Text nach `UEBERGANG=` ausgeben, dann Start dieser Etappe (Regel 3)',
     '| `WEITER=ende` | Block (Schlussbericht) ausgeben.']) {
     assert.ok(text.includes(part), part);
   }
@@ -179,7 +179,7 @@ test('sessionOrchestratorFlow_MessageOfStage_CountsAsTurnEndAndWhiteboardingComm
   for (const part of [
     'Eine Nachricht einer Etappen-Session (`<cross-session-message from="<id>">`) behandelst du wie ihr Turn-Ende: `<id>` aus `from`, ihre erste Zeile ist die Statuszeile. Kommt dasselbe `final` per Turn-Ende und per Nachricht, meldet das zweite `WEITER=doppelt`.',
     '- `laeuft`: die Zeile nach `=== AUSGABE ===` ausgeben, nichts starten.',
-    '| `WEITER=<etappe>` | Start dieser Etappe (Regel 3), Slug aus `SLUG`. Nach dem `final` von `whiteboarding` erst „Whiteboarding-Commit“. |',
+    '| `WEITER=<etappe>` | den Text nach `UEBERGANG=` ausgeben, dann Start dieser Etappe (Regel 3), Slug aus `SLUG`. Nach dem `final` von `whiteboarding` erst „Whiteboarding-Commit“. |',
     '## Whiteboarding-Commit\n`<SC> commit --anlass whiteboarding --slug <slug> --message "<betreff>"`: Spec und gemeldete Glossar- und ADR-Dateien des Whiteboardings.',
   ]) assert.ok(text.includes(part), part);
 });
@@ -200,4 +200,12 @@ test('sessionOrchestratorFlow_Nacharbeit_LeavesQuelleToBrief', () => {
   assert.ok(text.includes('`brief` nimmt als `--quelle` die Berichtsdatei des letzten Spec-Review-`final` aus dem Zustand'));
   assert.ok(text.includes('`brief` nimmt als `--quelle` die Berichtsdatei des letzten Planning- oder Plan-Review-`final` aus dem Zustand'));
   assert.equal(text.includes('<bericht.md der letzten'), false);
+});
+
+test('sessionOrchestrator_Ablauf_PrintsTheTransitionLineBeforeTheNextStart', () => {
+  // Act
+  const text = readText(FLOW);
+
+  // Assert
+  assert.ok(text.includes('| `WEITER=<etappe>` | den Text nach `UEBERGANG=` ausgeben, dann Start dieser Etappe (Regel 3)'));
 });

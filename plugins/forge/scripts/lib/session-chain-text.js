@@ -144,4 +144,9 @@ function finalReport(state, { stopp = false } = {}) {
   ].join('\n');
 }
 
-module.exports = { goCall, specHalt, goHalt, runningLine, noStatusHint, showstopperText, deviationText, adoptedText, finalReport };
+// Eine Zeile der Leit-Session vor dem Start der nächsten Etappe: was fertig ist und was jetzt startet.
+function transitionLine(etappe, next) {
+  return `${etappe} fertig, startet ${next}.`;
+}
+
+module.exports = { goCall, specHalt, goHalt, runningLine, noStatusHint, showstopperText, deviationText, adoptedText, finalReport, transitionLine };

@@ -126,7 +126,7 @@ function final(values) {
       haltepunkt: result.haltepunkt, dauerMs: result.dauerMs ?? null, offen: result.offen ?? null, abbruch: result.abbruch ?? null,
     });
   }
-  const lines = [`SLUG=${result.slug}`, `ERGEBNIS=${result.ergebnis}`, `WEITER=${result.weiter}`, `HALTEPUNKT=${result.haltepunkt}`, ...result.geprueft.map((line) => `GEPRUEFT=${line}`)];
+  const lines = [`SLUG=${result.slug}`, `ERGEBNIS=${result.ergebnis}`, `WEITER=${result.weiter}`, `HALTEPUNKT=${result.haltepunkt}`, ...(result.uebergang ? [`UEBERGANG=${result.uebergang}`] : []), ...result.geprueft.map((line) => `GEPRUEFT=${line}`)];
   return withBlock(lines, 'AUSGABE', result.text).join('\n');
 }
 

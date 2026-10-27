@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { goCall, specHalt, goHalt, noStatusHint, showstopperText, deviationText, adoptedText, finalReport } = require('../scripts/lib/session-chain-text');
+const { goCall, specHalt, goHalt, noStatusHint, showstopperText, deviationText, adoptedText, finalReport, transitionLine } = require('../scripts/lib/session-chain-text');
 
 const THREE_YELLOW = ['Begriff', 'Grenzfall', 'Reihenfolge'].map((titel, index) => ({ farbe: 'yellow', titel, key: String(index), herkunft: 'spec-review' }));
 const GO_VALUES = { spec: 'C:/r/docs/forge/x/spec.md', plan: 'C:/r/docs/forge/x/plan.md', basis: 'dev' };
@@ -210,4 +210,12 @@ test('goCall_PathWithSpace_QuotesEveryPath', () => {
 
   // Assert
   assert.equal(call, '/dv-forge:implementation-orchestrator "C:/r/docs/forge/mein plan/plan.md" "C:/r/docs/forge/mein plan/spec.md" --base dev');
+});
+
+test('transitionLine_EtappeAndNext_NamesBothInOneLine', () => {
+  // Act
+  const line = transitionLine('spec-review', 'planning');
+
+  // Assert
+  assert.equal(line, 'spec-review fertig, startet planning.');
 });

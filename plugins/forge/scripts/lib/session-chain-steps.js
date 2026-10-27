@@ -12,7 +12,7 @@ const { toplevel } = require('./session-chain-git');
 const { readParts, openPoints, mergePoints } = require('./session-chain-points');
 const { recommendation, nextStep } = require('./session-chain-decide');
 const { checkFinal } = require('./session-chain-check');
-const { specHalt, goHalt, showstopperText, deviationText, finalReport } = require('./session-chain-text');
+const { specHalt, goHalt, showstopperText, deviationText, finalReport, transitionLine } = require('./session-chain-text');
 const { readData } = require('./session-chain-report');
 const { artifactHashes } = require('./session-chain-gate');
 
@@ -159,6 +159,7 @@ function finalResult(data, next, check, text, state) {
   return {
     slug: data.slug, ergebnis: check.abweichungen.length > 0 ? 'abweichung' : 'ok', weiter: next.start ?? (next.halt ? 'halt' : 'ende'),
     haltepunkt: next.halt ?? 'keiner', geprueft: check.geprueft, text, dauerMs, offen, abweichungen: check.abweichungen.length, abbruch: data.abbruch ?? null,
+    ...(next.start ? { uebergang: transitionLine(entry.etappe, next.start) } : {}),
   };
 }
 

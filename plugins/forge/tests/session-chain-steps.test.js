@@ -122,6 +122,7 @@ test('processFinal_Whiteboarding_CreatesStateWithSpecBaseAndStartsGrill', () => 
 
   // Assert
   assert.equal(result.weiter, 'grill');
+  assert.equal(result.uebergang, 'whiteboarding fertig, startet grill.');
   assert.ok(result.geprueft.includes('Whiteboarding ohne eigenen Commit'), result.geprueft.join('\n'));
   const state = readState(repo, 'x');
   assert.equal(state.basis, 'main');

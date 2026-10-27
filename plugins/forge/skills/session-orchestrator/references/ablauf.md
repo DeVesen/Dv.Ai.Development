@@ -22,7 +22,7 @@ Schreib die erste nicht leere Zeile des Turn-Endes wörtlich mit `Write` nach `t
 | `HALTEPUNKT=spec` | Erst „Glossar-Commit“, dann Block ausgeben, Haltepunkt (Regel 4). |
 | `HALTEPUNKT=go` | Block ausgeben, Haltepunkt (Regel 4). |
 | `WEITER=doppelt` | Schweigen: dieses `final` ist schon verarbeitet; nichts starten. |
-| `WEITER=<etappe>` | Start dieser Etappe (Regel 3), Slug aus `SLUG`. Nach dem `final` von `whiteboarding` erst „Whiteboarding-Commit“. |
+| `WEITER=<etappe>` | den Text nach `UEBERGANG=` ausgeben, dann Start dieser Etappe (Regel 3), Slug aus `SLUG`. Nach dem `final` von `whiteboarding` erst „Whiteboarding-Commit“. |
 | `WEITER=ende` | Block (Schlussbericht) ausgeben. Ende der Kette; danach `node "<PLUGIN>/scripts/guard-orchestrator.js" run-end ${CLAUDE_SESSION_ID}`. |
 
 ## Glossar-Commit

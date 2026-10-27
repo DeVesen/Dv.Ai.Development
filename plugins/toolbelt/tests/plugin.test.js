@@ -25,5 +25,5 @@ test('pluginJson_Metadata_NameAndVersion', () => {
   const meta = readJson(path.join(PLUGIN_ROOT, '.claude-plugin', 'plugin.json'));
 
   assert.equal(meta.name, 'dv-toolbelt');
-  assert.equal(meta.version, '0.1.0');
+  assert.equal(meta.version, '0.2.0');
 });

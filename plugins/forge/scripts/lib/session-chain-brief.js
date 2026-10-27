@@ -33,6 +33,9 @@ function withWi(command, wi) {
 // Zeile der beiden Nacharbeiten: Kein Skill liefert ihren Bericht, also schreibt ihn die Etappe selbst.
 const REWORK_REPORT = 'Schreib einen kurzen Bericht (geänderte Stellen als Vorher/Nachher, neue W-Einträge) in eine Datei und übergib sie mit `--inhalt "<datei>"`.';
 
+// Ende der beiden Nacharbeiten: Nicht das Modell, sondern der Mensch entscheidet, wann `final` kommt.
+const REWORK_CLOSING = 'Sind alle Punkte geklärt, fragst du den Menschen „Nacharbeit abschließen?“ und endest mit `STATUS=needs-user`. Erst nach seinem Ja erledigst du die übrigen Schritte des Auftrags, schreibst die Berichtsdatei und endest mit `STATUS=final`.';
+
 // Je Etappe: Modell, Titel, Pflichtwerte, erste Zeile und Auftrag. `v`: slug, wi, basis, spec, plan, worktree, branch, quelle, leit.
 // Fehlt ein Pflichtwert, entsteht kein Brief (sonst stünde `undefined` im Befehl der ersten Zeile).
 const ETAPPEN_BRIEFS = {
@@ -69,7 +72,8 @@ const ETAPPEN_BRIEFS = {
       `Kein Skill. Lies den Bericht der letzten Review-Etappe: ${v.quelle}.`,
       'Kläre mit dem Menschen die offenen ❓ und die 🔴 ohne Vorschlag, eine Frage nach der anderen.',
       'Jede Änderung der Spec legst du als Vorher/Nachher vor und schreibst sie erst nach Bestätigung. Neue Entscheidungen werden W-Einträge unter `## Entscheidungen`.',
-      `Danach committest du nur die Spec: \`git commit -m "<betreff>" -- "${v.spec}"\`.`,
+      REWORK_CLOSING,
+      `Nach seinem Ja committest du zuerst nur die Spec: \`git commit -m "<betreff>" -- "${v.spec}"\`.`,
       REWORK_REPORT,
     ],
   },
@@ -97,6 +101,7 @@ const ETAPPEN_BRIEFS = {
       `Kein Skill. Lies den Bericht der letzten Review-Etappe: ${v.quelle}.`,
       'Kläre mit dem Menschen die offenen ❓ und die 🔴 ohne Vorschlag, eine Frage nach der anderen.',
       'Jede Änderung des Plans legst du als Vorher/Nachher vor und schreibst sie erst nach Bestätigung. Neue Entscheidungen werden W-Einträge unter `## Entscheidungen`.',
+      REWORK_CLOSING,
       'Du committest nicht; den Plan committet die Leit-Session nach dem GO.',
       REWORK_REPORT,
     ],

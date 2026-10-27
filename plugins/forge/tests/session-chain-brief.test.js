@@ -60,6 +60,17 @@ test('buildBrief_Nacharbeit_StartsWithTaskLineAndNamesTheReviewReport', () => {
   assert.ok(plan.includes('Du committest nicht; den Plan committet die Leit-Session nach dem GO.'));
 });
 
+test('buildBrief_Nacharbeiten_AskForTheClosingQuestionBeforeFinal', () => {
+  // Act
+  const texts = ['spec-nacharbeit', 'plan-nacharbeit'].map((etappe) => brief(etappe).brief);
+
+  // Assert
+  for (const text of texts) {
+    const closing = 'fragst du den Menschen „Nacharbeit abschließen?“ und endest mit `STATUS=needs-user`. Erst nach seinem Ja erledigst du die übrigen Schritte des Auftrags, schreibst die Berichtsdatei und endest mit `STATUS=final`.';
+    assert.equal(text.split(closing).length - 1, 1, text);
+  }
+});
+
 test('buildBrief_Umsetzung_FirstLineIsTheCallOfTheGoHaltepunkt', () => {
   // Arrange
   const values = { ...VALUES, wi: '311021' };

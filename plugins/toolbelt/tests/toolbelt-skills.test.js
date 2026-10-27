@@ -10,11 +10,11 @@ const { validateSkill } = require('../scripts/lib/validate-skill');
 
 const PLUGIN_ROOT = path.join(__dirname, '..');
 const SKILLS_DIR = path.join(PLUGIN_ROOT, 'skills');
-const SKILL_NAMES = ['claude-md-audit', 'prozess-retrospektive', 'writing-skills'];
+const SKILL_NAMES = ['claude-md-audit', 'harness-refactoring', 'prozess-retrospektive', 'writing-skills'];
 // Die Quellen entstehen aus Teilen, damit diese Datei sie nicht selbst enthält: Für alle Dateien außer der README gilt der Wächter-Test aus Plan 1.
 const INSPIRATION_SOURCES = ['super' + 'powers:writing-skills', 'skill-' + 'creator'];
 
-test('plugin_Skills_ExactlyTheThreeNamedOnes', () => {
+test('plugin_Skills_ExactlyTheFourNamedOnes', () => {
   assert.deepEqual(fs.readdirSync(SKILLS_DIR).sort(), SKILL_NAMES);
 });
 
@@ -38,7 +38,7 @@ test('plugin_EverySkill_GermanTextAndGermanPlusEnglishTriggerWords', () => {
   }
 });
 
-test('readme_Content_NamesThreeSkillsAndBothInspirationSources', () => {
+test('readme_Content_NamesFourSkillsAndBothInspirationSources', () => {
   const text = readText(path.join(PLUGIN_ROOT, 'README.md'));
 
   for (const name of SKILL_NAMES) assert.ok(text.includes(`\`${name}\``), name);

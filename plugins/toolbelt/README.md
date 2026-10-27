@@ -9,6 +9,7 @@ Werkzeug-Skills für jedes Projekt. Sie laufen allein, ohne dass ein weiteres Pl
 | `claude-md-audit` | CLAUDE.md prüfen, kürzen und erweitern, mit Backup und Hash-Prüfung geschützter Blöcke |
 | `writing-skills` | Skills schreiben, testen und validieren, mit Validator für den Skill-Kopf |
 | `prozess-retrospektive` | Erfahrungsbericht über den Ablauf einer Session |
+| `harness-refactoring` | Plugin, Skill, Agents oder Hooks prüfen, Rückmeldungen einarbeiten und ein Umsetzungspaket unter `.harness/` schreiben, ohne das Ziel selbst zu ändern |
 
 ## Voraussetzungen
 

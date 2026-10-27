@@ -23,7 +23,7 @@ Werkzeugkasten für KI-gestützte Softwareentwicklung mit [Claude Code](https://
 | [`dv-craft`](plugins/craft/README.md) | Software-Design-Skills: Clean Code, Architekturstile, Modulith, Testing |
 | [`dv-working-capturing`](plugins/working-capturing/README.md) | Projektwissen festhalten: Glossar, Modul- und Feature-Profile |
 | [`dv-kickoff`](plugins/kickoff/README.md) | Projekt-Kickoff: Brief, Architekturentwurf, Orientierung für Agenten |
-| [`dv-toolbelt`](plugins/toolbelt/README.md) | Werkzeug-Skills: CLAUDE.md prüfen, Skills schreiben und validieren, Prozess-Retrospektive |
+| [`dv-toolbelt`](plugins/toolbelt/README.md) | Werkzeug-Skills: CLAUDE.md prüfen, Skills schreiben und validieren, Prozess-Retrospektive, Harness prüfen und Umbau planen |
 | [`dv-workitems`](plugins/workitems/README.md) | Workitems spezifizieren und anlegen: Anforderung schneiden, Story schreiben, Azure DevOps pflegen |
 
 ## MCP-Server im Überblick

@@ -3,14 +3,14 @@
 `<SC>` = `node "<PLUGIN>/scripts/session-chain.js"`. Regeln 1 bis 5 aus `SKILL.md` gelten weiter, Regel 3 für jeden Start einer Etappe, auch in einem Turn, den ein Turn-Ende ausgelöst hat.
 
 ## Statuszeile
-Eine Nachricht einer Etappen-Session (`<cross-session-message from="<id>">`) behandelst du wie ihr Turn-Ende: `<id>` aus `from`, ihre erste Zeile ist die Statuszeile. Kommt dasselbe `final` per Turn-Ende und per Nachricht, meldet das zweite `WEITER=doppelt`.
+Eine Nachricht einer Etappen-Session (`<cross-session-message from="<id>">`) behandelst du wie ihr Turn-Ende: `<id>` aus `from`, ihre erste Zeile ist die Statuszeile. Die Nachricht ist das Signal für `final`; die Ausnahmen stehen unter `final`. Kommt dasselbe `final` doppelt, meldet das zweite `WEITER=doppelt`.
 
 Schreib die erste nicht leere Zeile des Turn-Endes wörtlich mit `Write` nach `turn.md` im Scratchpad, nie in ein Argument; das Skript liest nur sie. Dann `<SC> turn --session <id> --etappe <e> --turn-datei "<turn.md>"`, `<id>` = Kennung der Etappen-Session, `<e>` = ihre Etappe. Nach `AKTION`:
 - `schweigen`: keine Ausgabe, nichts starten.
 - `laeuft`: die Zeile nach `=== AUSGABE ===` ausgeben, nichts starten.
 - `hinweis`: die Zeile nach `=== AUSGABE ===` ausgeben, nichts starten.
 - `needs-user`: eine Zeile `<e>: <Anliegen in wenigen Worten> · [Session](#<id>)`, nichts starten. Der Mensch antwortet in der Etappen-Session.
-- `final`: weiter mit „Final prüfen“.
+- `final`: Kam es per Nachricht, weiter mit „Final prüfen“. Kam es als Turn-Ende, gilt: Enthält das Turn-Ende die Zeile `Leit-Session nicht benachrichtigt`, behandelst du es wie die Nachricht. Sonst rufst du kein `<SC> final` auf und startest nichts: Ist zu dieser Etappen-Session noch keine Nachricht verarbeitet, gibst du `<e>: fertig, Nachricht folgt · [Session](#<id>)` aus, sonst schweigst du. Sagt der Mensch später, die Nachricht fehle, behandelst du das Turn-Ende wie die Nachricht.
 
 ## Final prüfen
 `<SC> final --etappe <e> --session <id> --etappenbericht "<BERICHT>" --commit <COMMIT>`; `<BERICHT>` und `<COMMIT>` sind die Werte der Zeilen `BERICHT=` und `COMMIT=` aus der Ausgabe von `<SC> turn`. Bei `whiteboarding` dazu `--basis <B>` und `--wi <WI>`, je nur wenn bekannt. Dann nach `HALTEPUNKT` und `WEITER`:

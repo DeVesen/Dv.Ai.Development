@@ -177,7 +177,7 @@ test('sessionOrchestratorFlow_MessageOfStage_CountsAsTurnEndAndWhiteboardingComm
 
   // Assert
   for (const part of [
-    'Eine Nachricht einer Etappen-Session (`<cross-session-message from="<id>">`) behandelst du wie ihr Turn-Ende: `<id>` aus `from`, ihre erste Zeile ist die Statuszeile. Kommt dasselbe `final` per Turn-Ende und per Nachricht, meldet das zweite `WEITER=doppelt`.',
+    'Eine Nachricht einer Etappen-Session (`<cross-session-message from="<id>">`) behandelst du wie ihr Turn-Ende: `<id>` aus `from`, ihre erste Zeile ist die Statuszeile. Die Nachricht ist das Signal für `final`; die Ausnahmen stehen unter `final`. Kommt dasselbe `final` doppelt, meldet das zweite `WEITER=doppelt`.',
     '- `laeuft`: die Zeile nach `=== AUSGABE ===` ausgeben, nichts starten.',
     '| `WEITER=<etappe>` | den Text nach `UEBERGANG=` ausgeben, dann Start dieser Etappe (Regel 3), Slug aus `SLUG`. Nach dem `final` von `whiteboarding` erst „Whiteboarding-Commit“. |',
     '## Whiteboarding-Commit\n`<SC> commit --anlass whiteboarding --slug <slug> --message "<betreff>"`: Spec und gemeldete Glossar- und ADR-Dateien des Whiteboardings.',
@@ -208,4 +208,15 @@ test('sessionOrchestrator_Ablauf_PrintsTheTransitionLineBeforeTheNextStart', () 
 
   // Assert
   assert.ok(text.includes('| `WEITER=<etappe>` | den Text nach `UEBERGANG=` ausgeben, dann Start dieser Etappe (Regel 3)'));
+});
+
+test('sessionOrchestrator_Ablauf_UsesTheMessageAsTheOnlyFinalSignal', () => {
+  // Act
+  const text = readText(FLOW);
+
+  // Assert
+  assert.ok(text.includes('Die Nachricht ist das Signal für `final`; die Ausnahmen stehen unter `final`.'));
+  assert.ok(text.includes('Enthält das Turn-Ende die Zeile `Leit-Session nicht benachrichtigt`, behandelst du es wie die Nachricht.'));
+  assert.ok(text.includes('`<e>: fertig, Nachricht folgt · [Session](#<id>)`'));
+  assert.ok(text.includes('Sagt der Mensch später, die Nachricht fehle, behandelst du das Turn-Ende wie die Nachricht.'));
 });

@@ -10,8 +10,8 @@ const { FORMER_REPORT_OPTION, FORMER_ABLAGE_OPTION } = require('./lib/former-nam
 
 const VALUES = { slug: 'x', basis: 'dev', spec: 'C:/r/docs/forge/x/spec.md', plan: 'C:/r/docs/forge/x/plan.md' };
 const MODELS = {
-  whiteboarding: 'sonnet', grill: 'opus', 'spec-review': 'sonnet', 'spec-nacharbeit': 'opus', planning: 'opus',
-  'plan-review': 'sonnet', 'plan-nacharbeit': 'opus', umsetzung: 'opus', abschluss: 'sonnet',
+  whiteboarding: 'sonnet', grill: 'sonnet', 'spec-review': 'sonnet', 'spec-nacharbeit': 'sonnet', planning: 'opus',
+  'plan-review': 'sonnet', 'plan-nacharbeit': 'opus', umsetzung: 'sonnet', abschluss: 'sonnet',
 };
 
 function brief(etappe, values = VALUES, extra = {}) {

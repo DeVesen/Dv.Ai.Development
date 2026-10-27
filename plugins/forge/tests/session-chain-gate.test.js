@@ -93,5 +93,5 @@ test('cli_EventsJsonl_RecordsHaltAnswerCommitAndStart', () => {
   const events = readEvents(repo, 'x');
   assert.deepEqual(events.map((event) => event.typ), ['halt', 'antwort', 'commit', 'start']);
   assert.ok(events.every((event) => /^\d{4}-\d{2}-\d{2}T/.test(event.zeit)));
-  assert.equal(events[3].modell, 'opus');
+  assert.equal(events[3].modell, 'sonnet');
 });

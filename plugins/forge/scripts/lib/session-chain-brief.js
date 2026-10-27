@@ -50,7 +50,7 @@ const ETAPPEN_BRIEFS = {
     ],
   },
   grill: {
-    modell: 'opus', titel: 'Grill', pflicht: ['spec'],
+    modell: 'sonnet', titel: 'Grill', pflicht: ['spec'],
     command: (v) => `/dv-forge:spec-grilling "${v.spec}"`,
     auftrag: () => [
       'Schreib den Abschlussbericht von spec-grilling (Liste der geänderten Stellen, neue W-Einträge) in eine Datei und übergib sie mit `--inhalt "<datei>"`.',
@@ -63,7 +63,7 @@ const ETAPPEN_BRIEFS = {
     auftrag: () => ['Der Skill committet die Spec selbst. `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.'],
   },
   'spec-nacharbeit': {
-    modell: 'opus', titel: 'Spec-Nacharbeit', pflicht: ['spec', 'quelle'],
+    modell: 'sonnet', titel: 'Spec-Nacharbeit', pflicht: ['spec', 'quelle'],
     command: (v) => `Spec-Nacharbeit "${v.spec}"`,
     auftrag: (v) => [
       `Kein Skill. Lies den Bericht der letzten Review-Etappe: ${v.quelle}.`,
@@ -102,7 +102,7 @@ const ETAPPEN_BRIEFS = {
     ],
   },
   umsetzung: {
-    modell: 'opus', titel: 'Umsetzung', pflicht: ['plan', 'spec', 'basis'],
+    modell: 'sonnet', titel: 'Umsetzung', pflicht: ['plan', 'spec', 'basis'],
     command: (v) => goCall(v),
     auftrag: () => [
       'Einen Showstopper klärst du mit dem Menschen hier.',

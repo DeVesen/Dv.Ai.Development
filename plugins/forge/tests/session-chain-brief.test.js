@@ -351,9 +351,21 @@ test('buildBrief_EveryEtappe_NamesNeitherFormerOptionNorHandoverAndAsksForNeedsU
     assert.equal(text.includes(FORMER_REPORT_OPTION), false, etappe);
     assert.equal(text.includes(FORMER_ABLAGE_OPTION), false, etappe);
     assert.equal(text.includes('git add -A'), false, `${etappe}: Die Git-Verbote stehen in der Regeldatei`);
-    assert.ok(text.includes('7. Statuszeile und Ergebnis deines Skills sind deine ganze Ausgabe: kein Übergabe-Hinweis, keine Commit-Frage, keine Empfehlung für einen nächsten Schritt.'), etappe);
+    assert.ok(text.includes('7. Statuszeile und Ergebnis deines Skills sind deine ganze Ausgabe: kein Übergabe-Hinweis, keine Commit-Frage, keine Empfehlung für einen nächsten Schritt. Einzige Ausnahme:'), etappe);
     assert.ok(text.includes('Nach der Statuszeile steht als einzige weitere Zeile die Ursache in einem Satz.'), etappe);
     assert.ok(text.includes('gemeldet als `Ablage im alten Format: <datei>`'), etappe);
+  }
+});
+
+test('buildBrief_EveryEtappe_ClosesFinalWithTheOneFixedHandoverLine', () => {
+  const closing = 'Etappe fertig. Die Leit-Session übernimmt; hier ist nichts mehr zu tun.';
+  for (const etappe of Object.keys(MODELS)) {
+    // Act
+    const text = brief(etappe).brief;
+
+    // Assert
+    assert.equal(text.split(closing).length - 1, 1, etappe);
+    assert.ok(text.includes('Bei `STATUS=final` steht als letzte Zeile deiner Antwort genau `' + closing + '`'), etappe);
   }
 });
 

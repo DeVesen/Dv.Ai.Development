@@ -1,6 +1,6 @@
 # Paketformat
 
-Das Paket liegt im Ordner aus der Zeile `PAKET=`. `harness.js pruefe` prüft jede Regel dieser Datei, die eine Überschrift, ein Feld oder eine Zeilenform nennt. Überschriften und Felder schreibst du genau so, wie sie hier stehen.
+Das Paket liegt im Ordner aus der Zeile `PAKET=`. `harness.js pruefe` prüft die Überschriften und Felder, die das Skript kennt; die übrigen Regeln prüft der Plan-Prüfer beim Lesen. Überschriften und Felder schreibst du genau so, wie sie hier stehen.
 
 ## Teile
 

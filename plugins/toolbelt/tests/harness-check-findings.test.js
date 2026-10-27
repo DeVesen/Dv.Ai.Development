@@ -121,3 +121,21 @@ test('checkProtocol_RoundAfterCleanRound_Error', () => {
 test('checkProtocol_PackageWithoutPlan_OnlyCheckerCountChecked', () => {
   assert.deepEqual(checkProtocol('# Prüfprotokoll\n\n**Prüf-Subagents:** 0\n', false), []);
 });
+
+test('checkProtocol_RoundNumberOutOfOrder_Error', () => {
+  const result = protocolWith('## Plan-Prüfrunde 2', '## Plan-Prüfrunde 3');
+
+  assert.deepEqual(result, ['PRUEFPROTOKOLL.md: Plan-Prüfrunde 3 steht an Stelle 2']);
+});
+
+test('checkProtocol_RoundWithoutAnnotationLine_Error', () => {
+  const result = protocolWith('**Offen 🔴:** 0\n- keine Anmerkungen', '**Offen 🔴:** 0');
+
+  assert.deepEqual(result, ['PRUEFPROTOKOLL.md: Plan-Prüfrunde 2 ohne Anmerkungszeile']);
+});
+
+test('checkProtocol_RoundWithoutOpenField_Error', () => {
+  const result = protocolWith('**Offen 🔴:** 0\n- keine Anmerkungen', '- keine Anmerkungen');
+
+  assert.deepEqual(result, ['PRUEFPROTOKOLL.md: Plan-Prüfrunde 2: Offen 🔴 passt nicht zu 0 offenen 🔴-Anmerkungen']);
+});

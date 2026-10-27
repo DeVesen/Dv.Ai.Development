@@ -63,7 +63,7 @@ function dateOf(now) {
 // Mehrere Ziele ergeben einen Namen; ein Pfad zählt mit seinem letzten Teil.
 function slugOf(names) {
   return names
-    .map((name) => path.basename(name.replace(/[\\/]+$/, '')).toLowerCase().replace(/\.md$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''))
+    .map((name) => name.replace(/[\\/]+$/, '').split(/[\\/]/).pop().toLowerCase().replace(/\.md$/, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''))
     .filter(Boolean)
     .join('-');
 }

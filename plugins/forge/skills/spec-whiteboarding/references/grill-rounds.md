@@ -31,6 +31,12 @@ Vor Runde 1 fragst du einmal, was nicht fachlich ist: nur die Workitem-Nummer, u
 6. Beantwortet der Mensch eine Frage nicht eindeutig, fragst du in einem Satz nach, bevor du einen W-Eintrag buchst oder etwas ausführst.
 7. Nach jeder Antwort: Antworten verbuchen, Frontier neu berechnen, nächste Runde. Die Runden enden erst, wenn die Frontier leer ist — einschließlich aller Zweige der Akzeptanzkriterien.
 
+## Belegregeln
+
+1. **Verhalten belegen:** Eine Frage oder Option, die bestehendes Verhalten voraussetzt (Sortieren, Filtern, Export und Ähnliches), stellst du nur, wenn du das Verhalten an der konkreten Stelle belegt hast: Datei:Zeile, die es für genau dieses Element auslöst. Ein Modul-Import oder eine Fähigkeit des Frameworks belegt nur, was möglich wäre, nicht was es heute gibt. Fehlt der Beleg oder darf dein Skill nicht suchen, lässt du die Frage weg oder fragst „Gibt es das heute?“ mit Tag `ungeklärt`.
+2. **Keine bedingte Empfehlung:** Eine Empfehlung hängt nie an einer ungeprüften Bedingung („falls …, sonst …“). Prüfe die Bedingung vorher und empfiehl eindeutig; lässt sie sich nicht prüfen, ist sie eine eigene Frage; die abhängige Frage folgt in einer späteren Runde.
+3. **Kein neues Verhalten:** Ein Verhalten, das weder im Auftrag (Aussage oder Anhang) noch im Bestand steht und kein Grenzfall des beauftragten Verhaltens ist, führst du nicht als Option ein. Legt der Auftrag es nahe, fragst du, ob es dazugehört, mit der Empfehlung „nicht in diese Story“.
+
 ## Abbruch-Regel
 
 „Reicht jetzt“ ist noch kein Abbruch.

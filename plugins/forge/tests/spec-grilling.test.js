@@ -89,3 +89,14 @@ test('specGrillingFixture_Szenario_HasBothRunsWithPromptsAndExpectations', () =>
     '## Lücke schließen',
   ]) assert.ok(text.includes(part), part);
 });
+
+test('specGrilling_Body_AppliesEvidenceRulesFromGrillRounds', () => {
+  // Act
+  const { body } = readMarkdown(SKILL);
+
+  // Assert
+  assert.ok(body.includes('gelten Rundenformat, Belegregeln und Abbruch-Regel'));
+  assert.ok(body.includes('Jede Frage und Empfehlung folgt den Belegregeln aus `grill-rounds.md`'));
+  assert.ok(body.includes('| „Das Modul ist importiert, also gibt es das Verhalten.“ |'));
+  assert.ok(body.includes('| „Ich empfehle falls … sonst …“ |'));
+});

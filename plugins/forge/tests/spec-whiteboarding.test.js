@@ -172,3 +172,27 @@ test('specWhiteboarding_Body_ReviewsNothingItself', () => {
   const { body } = readMarkdown(path.join(SKILL_DIR, 'SKILL.md'));
   for (const part of ['spec-review-orchestrator', 'review-stand', 'Spec abschließen']) assert.ok(!body.includes(part), part);
 });
+
+test('grillRounds_Belegregeln_SitBetweenFrontierRulesAndAbortRule', () => {
+  const text = reference('grill-rounds.md');
+  const positions = ['## Frontier-Regeln', '## Belegregeln', '## Abbruch-Regel'].map((heading) => text.indexOf(`
+${heading}
+`));
+  positions.forEach((position, index) => assert.ok(position >= 0, `Überschrift ${index} fehlt`));
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+});
+
+test('grillRounds_Belegregeln_RequireEvidenceAtTheConcretePlace', () => {
+  const text = reference('grill-rounds.md');
+  assert.ok(text.includes('stellst du nur, wenn du das Verhalten an der konkreten Stelle belegt hast'));
+  assert.ok(text.includes('Ein Modul-Import oder eine Fähigkeit des Frameworks belegt nur, was möglich wäre, nicht was es heute gibt.'));
+  assert.ok(text.includes('fragst „Gibt es das heute?“ mit Tag `ungeklärt`'));
+});
+
+test('grillRounds_Belegregeln_ForbidConditionalRecommendationAndNewBehavior', () => {
+  const text = reference('grill-rounds.md');
+  assert.ok(text.includes('Eine Empfehlung hängt nie an einer ungeprüften Bedingung („falls …, sonst …“).'));
+  assert.ok(text.includes('Prüfe die Bedingung vorher und empfiehl eindeutig'));
+  assert.ok(text.includes('führst du nicht als Option ein'));
+  assert.ok(text.includes('mit der Empfehlung „nicht in diese Story“'));
+});

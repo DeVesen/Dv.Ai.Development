@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { verifyRun, basisRun, formatVerify, greenSince, isDocOnly } = require('../scripts/lib/verify-run');
+const { verifyRun, basisRun, formatVerify, greenSince, isDocOnly, notStartable, overall } = require('../scripts/lib/verify-run');
 const { makeRepo, commitFile, git } = require('./lib/git-repo');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'verify-run.js');
@@ -201,4 +201,46 @@ test('cli_BasisGreen_PrintsRotNeinAndWritesBasisRotKeine', () => {
 test('cli_BasisWithOtherSelectionOptions_ExitTwo', () => {
   const repo = makeRepo();
   assert.equal(spawnSync(process.execPath, [SCRIPT, '--repo', repo, '--basis', tempOut(), '--nur', 'test'], { encoding: 'utf8' }).status, 2);
+});
+
+const MISSING = 'dv-forge-gibt-es-nicht';
+
+test('verifyRun_CommandNotFound_UmgebungNotRotAndStops', () => {
+  const repo = makeRepo();
+  const result = verifyRun({ repo, config: { Build: `${MISSING} --path x.sln`, Test: OK, Lint: '' }, docker: noDocker });
+  assert.equal(result.ergebnis, 'umgebung');
+  assert.deepEqual(result.laeufe.map((run) => `${run.schluessel}:${run.umgebung}`), ['Build:true']);
+});
+
+test('notStartable_ExitOrMessageOfMissingCommand_TrueOtherwiseFalse', () => {
+  const command = `${MISSING} --path x.sln`;
+  assert.equal(notStartable(command, 127, ''), true);
+  assert.equal(notStartable(command, 9009, ''), true);
+  assert.equal(notStartable(command, 1, `'${MISSING}' is not recognized as an internal or external command,`), true);
+  assert.equal(notStartable(command, 1, `Der Befehl "${MISSING}" ist entweder falsch geschrieben oder\nkonnte nicht gefunden werden.`), true);
+  assert.equal(notStartable(command, 1, `"${MISSING}" wird nicht als interner oder externer Befehl erkannt.`), true);
+  assert.equal(notStartable(command, 1, `/bin/sh: 1: ${MISSING}: not found`), true);
+  assert.equal(notStartable(command, 1, `bash: ${MISSING}: command not found`), true);
+  assert.equal(notStartable(command, 1, '1 failing\nbash: jest: command not found'), false);
+  assert.equal(notStartable(command, 0, `'${MISSING}' is not recognized`), false);
+});
+
+test('overall_RedAndNotStartable_RotWins', () => {
+  const runs = [{ schluessel: 'Build', exit: 1, umgebung: true }, { schluessel: 'Test', exit: 3, umgebung: false }];
+  assert.equal(overall(runs, noDocker), 'rot');
+  assert.equal(overall(runs.slice(0, 1), noDocker), 'umgebung');
+});
+
+test('formatVerify_NotStartable_NamesCommand', () => {
+  const text = formatVerify({ head: 'abcdef1234567890', ergebnis: 'umgebung', offen: [], uebersprungen: [],
+    laeufe: [{ schluessel: 'Build', exit: 1, dauerMs: 10, befehl: 'dv-dotnet-build --path a.sln', ausgabe: 'x', docker: false, umgebung: true }] });
+  assert.equal(text, 'PRUEFUNG ergebnis=umgebung head=abcdef123456 offen=0\nLAUF Build exit=1 dauer=0s umgebung: dv-dotnet-build --path a.sln\nUMGEBUNG Befehl dv-dotnet-build nicht startbar\n=== AUSGABE Build ===\nx');
+});
+
+test('cli_CommandNotFound_PrintsUmgebungAndExitsZero', () => {
+  const repo = configRepo(MISSING);
+  const result = spawnSync(process.execPath, [SCRIPT, '--repo', repo, '--nur', 'test'], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^PRUEFUNG ergebnis=umgebung /);
+  assert.match(result.stdout, new RegExp(`^UMGEBUNG Befehl ${MISSING} nicht startbar$`, 'm'));
 });

@@ -60,3 +60,11 @@ test('testFindings_RedRunRed_DockerOnlyIgnored', () => {
   assert.deepEqual(testFindings(file), []);
   assert.deepEqual(testFindings(path.join(dir, 'fehlt.json')), []);
 });
+
+test('testFindings_CommandNotStartable_YellowNotRed', () => {
+  const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'dv-forge-tl-'));
+  const file = path.join(dir, 'p.json');
+  fs.writeFileSync(file, JSON.stringify({ head: 'abc', ergebnis: 'umgebung', laeufe: [{ schluessel: 'Test', befehl: 'dv-dotnet-test', exit: 1, ausgabe: 'not recognized', docker: false, umgebung: true }] }));
+  const findings = testFindings(file);
+  assert.deepEqual(findings.map((finding) => [finding.severity, finding.consequence]), [['yellow', 'Test ist nicht gelaufen: Befehl nicht startbar auf abc.']]);
+});

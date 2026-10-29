@@ -23,14 +23,16 @@ function parse(args) {
 }
 
 // Ein roter Lauf aus verify-run.js ist 🔴 an der Stelle `Testlauf`, mit der letzten Ausgabezeile als Zitat.
+// Ein nicht startbarer Befehl ist kein Fehler des Codes, aber ein fehlender Beleg: 🟡.
 function testFindings(file) {
   if (!file || !fs.existsSync(file)) return [];
   const result = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const head = String(result.head).slice(0, 12);
   return (result.laeufe ?? []).filter((run) => run.exit !== 0 && !(result.ergebnis === 'docker' && run.docker)).map((run) => ({
     location: 'Testlauf',
     quote: `Quelle: ${run.befehl} → exit ${run.exit}: ${String(run.ausgabe).split('\n').filter(Boolean).at(-1) ?? ''}`,
-    severity: 'red',
-    consequence: `${run.schluessel} ist rot auf ${String(result.head).slice(0, 12)}.`,
+    severity: run.umgebung ? 'yellow' : 'red',
+    consequence: run.umgebung ? `${run.schluessel} ist nicht gelaufen: Befehl nicht startbar auf ${head}.` : `${run.schluessel} ist rot auf ${head}.`,
     rationale: 'Skript-Prüfung verify-run.js',
   }));
 }

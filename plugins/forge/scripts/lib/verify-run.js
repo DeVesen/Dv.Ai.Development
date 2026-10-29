@@ -12,6 +12,10 @@ const DEFAULT_TIMEOUT_MS = 30 * 60 * 1000;
 const FULL_RUN = /^-?\s*Gesamtlauf:\s*(\S+)\s+grün\b/m;
 // Rot nur, weil Docker fehlt: Testcontainers und Docker-Client melden das mit diesen Texten.
 const DOCKER_MARKER = /Testcontainers|Could not find a valid Docker environment|Cannot connect to the Docker daemon|docker(?:\.sock)?:? (?:not found|is not running|daemon)|DockerException/i;
+// Befehl nicht startbar: Exit-Code der Shell (POSIX 127, cmd 9009) oder ihre Meldung zum ersten Wort des Befehls.
+// Node startet cmd mit `/d /s /c`, dann meldet cmd Exit 1 und nur die Meldung bleibt (englisch oder deutsch, auch über zwei Zeilen).
+const NOT_FOUND_EXITS = [127, 9009];
+const NOT_FOUND_TEXT = /is not recognized as an internal or external command|wird nicht als interner oder externer Befehl|konnte nicht gefunden werden|command not found|: not found/;
 // Verhalten statt Doku: Markdown unter diesen Ordnern steuert Skills und Agents.
 const BEHAVIOUR_DIRS = /(?:^|\/)(?:skills|agents|shared|\.claude)\//;
 
@@ -28,12 +32,30 @@ function commandsOf(value) {
   return String(value ?? '').split(' ; ').map((part) => part.trim()).filter(Boolean);
 }
 
+function firstWord(command) {
+  const match = /^\s*(?:"([^"]+)"|(\S+))/.exec(command);
+  return match ? (match[1] ?? match[2]) : '';
+}
+
+function namesWord(line, word) {
+  return line.split(/["'\s:]+/).includes(word);
+}
+
+// Die Shell konnte das erste Wort des Befehls nicht starten. Meldungen zu anderen Wörtern zählen nicht: Dann lief der Befehl.
+function notStartable(command, exit, output) {
+  if (exit === 0) return false;
+  if (NOT_FOUND_EXITS.includes(exit)) return true;
+  const word = firstWord(command);
+  const lines = String(output ?? '').replace(/\r\n/g, '\n').split('\n');
+  return lines.some((line, index) => NOT_FOUND_TEXT.test(line) && (namesWord(line, word) || namesWord(lines[index - 1] ?? '', word)));
+}
+
 function runCommand(command, repo, timeout) {
   const started = Date.now();
   const result = spawnSync(command, { cwd: repo, shell: true, encoding: 'utf8', timeout, maxBuffer: 64 * 1024 * 1024 });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   const exit = result.error?.code === 'ETIMEDOUT' ? 124 : result.status ?? 1;
-  return { befehl: command, exit, dauerMs: Date.now() - started, ausgabe: tail(output), voll: output, docker: DOCKER_MARKER.test(output) };
+  return { befehl: command, exit, dauerMs: Date.now() - started, ausgabe: tail(output), voll: output, docker: DOCKER_MARKER.test(output), umgebung: notStartable(command, exit, output) };
 }
 
 function isDocOnly(file) {
@@ -55,11 +77,13 @@ function dockerAvailable() {
   return spawnSync('docker', ['info'], { encoding: 'utf8', timeout: 20000 }).status === 0;
 }
 
-// Ergebnis über alle Läufe: rot schlägt alles; ein roter Test, der nur an fehlendem Docker liegt, heißt `docker`.
+// Ergebnis über alle Läufe: rot schlägt alles; liegt jeder rote Lauf an einem nicht startbaren Befehl, heißt es `umgebung`;
+// ein roter Test, der nur an fehlendem Docker liegt, heißt `docker`.
 function overall(runs, docker) {
   const red = runs.filter((run) => run.exit !== 0);
   if (runs.length === 0) return 'keine';
   if (red.length === 0) return 'gruen';
+  if (red.every((run) => run.umgebung)) return 'umgebung';
   const onlyDocker = red.every((run) => run.schluessel === 'Test' && run.docker) && !docker();
   return onlyDocker ? 'docker' : 'rot';
 }
@@ -118,10 +142,11 @@ function formatBasis(result) {
 
 function formatVerify(result, out) {
   const head = `PRUEFUNG ergebnis=${result.ergebnis} head=${result.head.slice(0, 12)} offen=${result.offen.length}${out ? ` datei=${out}` : ''}`;
-  const runs = result.laeufe.map((run) => `LAUF ${run.schluessel} exit=${run.exit} dauer=${Math.round(run.dauerMs / 1000)}s${run.docker ? ' docker' : ''}: ${run.befehl}`);
+  const runs = result.laeufe.map((run) => `LAUF ${run.schluessel} exit=${run.exit} dauer=${Math.round(run.dauerMs / 1000)}s${run.docker ? ' docker' : ''}${run.umgebung ? ' umgebung' : ''}: ${run.befehl}`);
+  const missing = result.laeufe.filter((run) => run.umgebung).map((run) => `UMGEBUNG Befehl ${firstWord(run.befehl)} nicht startbar`);
   const skipped = result.uebersprungen.map((entry) => `UEBERSPRUNGEN ${entry.schluessel}: ${entry.grund}`);
   const red = result.laeufe.filter((run) => run.exit !== 0).map((run) => `=== AUSGABE ${run.schluessel} ===\n${run.ausgabe}`);
-  return [head, ...runs, ...skipped, ...red].join('\n');
+  return [head, ...runs, ...missing, ...skipped, ...red].join('\n');
 }
 
 function writeResult(file, result) {
@@ -129,4 +154,4 @@ function writeResult(file, result) {
   fs.writeFileSync(file, `${JSON.stringify(result, null, 2)}\n`);
 }
 
-module.exports = { KEYS, verifyRun, basisRun, formatBasis, formatVerify, writeResult, greenSince, isDocOnly, overall };
+module.exports = { KEYS, verifyRun, basisRun, formatBasis, formatVerify, writeResult, greenSince, isDocOnly, overall, notStartable };

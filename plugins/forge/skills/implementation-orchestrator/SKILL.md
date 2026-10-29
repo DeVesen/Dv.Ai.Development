@@ -29,7 +29,7 @@ Lies `<PLUGIN>/shared/orchestrator-rules.md` und befolge es; hier steht nur, was
    - `NEXT=weiter` und `BEREIT=ja` → 6.
    - Sonst Ende.
 5. Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> alle --spec <S>`. Hash-Prüfung. Dann `next` erneut, mit `--followup "<BFn>"` je gelaufener Runde: `NEXT=followup` → nächste Runde; `NEXT=weiter` und `BEREIT=ja` → 6; sonst Ende.
-6. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>" --out "<PR>"` mit `<PR>` = `pruefung.json` im Scratchpad. `PRUEFUNG ergebnis=`: `docker` → in `<FK>` `Prüfung: Tests nur ohne Docker rot`; `rot` → Ende. `offen` außer Vorbestand > 0 → in `<FK>` als Abweichung.
+6. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>" --out "<PR>"` mit `<PR>` = `pruefung.json` im Scratchpad. `PRUEFUNG ergebnis=`: `docker` → in `<FK>` `Prüfung: Tests nur ohne Docker rot`; `umgebung` → kein Testfehler, in `<FK>` je Zeile `UMGEBUNG` `Prüfung: <Zeile>`, weiter; `rot` → Ende. `offen` außer Vorbestand > 0 → in `<FK>` als Abweichung.
 7. Abschlussbericht, auch bei jedem früheren Ende, genau einmal als letzte Ausgabe:
    1. `<FK>` schreiben, je Angabe eine Zeile: `Feature-Branch: <branch>` (belegt per `git branch --list`, `git worktree list`), Modus, `git log --oneline <B>..<branch>`, `Prüfung: <ergebnis aus <PR>>` oder `Prüfung: keine (Schritt 6 lief nicht)`, Urteile, Vorbestand, bei Abweichungen `Abweichungen: …`.
    2. Lief Schritt 2 (`<R>` und Branch stehen fest): `node "<PLUGIN>/scripts/chain.js" write --stage implementation --plan "<P>" --spec "<S>" --worktree "<R>" --branch <branch>`, dazu `--wi <WI>` nur wenn gegeben; Ausgabe nicht zeigen. Sonst nichts schreiben. Fehler: Meldung in `Abweichungen: …` von `<FK>`; der Bericht folgt trotzdem.

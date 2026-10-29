@@ -98,6 +98,14 @@ test('showstoppers_LintCommandNotRunnable_NamesEnvironmentGapWithCommand', () =>
   assert.deepEqual(gruende, ['Umgebungslücke: npm run lint ist nicht lauffähig']);
 });
 
+test('showstoppers_CheckUmgebung_NamesOnlyTheEnvironmentGapNotARedCheck', () => {
+  // Act
+  const gruende = showstoppers({ ...READY_REPORT, pruefung: 'umgebung', luecken: ['dv-dotnet-build --path a.sln'] });
+
+  // Assert
+  assert.deepEqual(gruende, ['Umgebungslücke: dv-dotnet-build --path a.sln ist nicht lauffähig']);
+});
+
 test('showstoppers_ReadyButAcWithoutTest_NamesTheAc', () => {
   // Act
   const gruende = showstoppers({ ...READY_REPORT, acOhneTest: ['AC-05'] });

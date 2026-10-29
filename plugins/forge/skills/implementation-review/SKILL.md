@@ -13,7 +13,7 @@ Lies `${CLAUDE_PLUGIN_ROOT}/shared/review-loop/loop.md` und folge ihm. Hier steh
 ## Eingaben
 1. `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" implementation-review $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst liefert jede Zeile `<Name>=<Wert>`: `P`, `S`, `R`, `slug`, `B`, `W`, `K`, `N`, `aktiv`, `Test`, je Kontext-Datei eine Zeile `C`, falls die Umsetzung sie abgelegt hat, `Z` und je Warnung eine Zeile `WARN`. Das zweite Argument ohne `--` ist die Spec. Die `WARN`-Zeilen musst du nicht weitergeben; der Bericht enthält die Hinweise.
 2. `N = 0`: Es gibt keine Nacharbeit, der Loop endet nach Review 1. Rolle des Arbeitsbereichs: `review`.
-3. Skript-Prüfungen, einmal vor Review 1: `node "${CLAUDE_PLUGIN_ROOT}/scripts/verify-run.js" --repo "<R>" --nur test --out "<W>/testlauf.json"`, dazu `--seit-gruen "<Z>"`, wenn es `Z` gibt; Exit 1 (rot) ist erwartet. Dann `node "${CLAUDE_PLUGIN_ROOT}/scripts/implementation-checks.js" --plan "<P>" --repo "<R>" --base "<B>" --out "<W>/skript.json" --testlauf "<W>/testlauf.json"`.
+3. Skript-Prüfungen, einmal vor Review 1: `node "${CLAUDE_PLUGIN_ROOT}/scripts/verify-run.js" --repo "<R>" --nur test --out "<W>/testlauf.json"`, dazu `--seit-gruen "<Z>"`, wenn es `Z` gibt; Exit 1 (rot) ist erwartet; `umgebung` (Befehl nicht startbar) wird ein 🟡 statt 🔴. Dann `node "${CLAUDE_PLUGIN_ROOT}/scripts/implementation-checks.js" --plan "<P>" --repo "<R>" --base "<B>" --out "<W>/skript.json" --testlauf "<W>/testlauf.json"`.
 4. An jeden Aggregations-Aufruf aus `loop.md` hängst du `--repo "<R>" --skript "<W>/skript.json"` an.
 
 ## Ablage

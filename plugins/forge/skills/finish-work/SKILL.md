@@ -15,6 +15,7 @@ Du stellst sicher, dass alles committet ist und alle Prüfungen grün sind. Erst
 3. Nach `PRUEFUNG ergebnis=…`:
    - `rot`: Befund mit dem Teil nach `=== AUSGABE` melden, Ende. Nichts aufräumen. Nennt das Ledger den Test unter `Basis rot:`, sagst du das dazu; der Mensch entscheidet.
    - `docker`: Tests sind nur rot, weil Docker fehlt. Melden, Ende; der Mensch entscheidet.
+   - `umgebung`: Ein Befehl war nicht startbar (Zeile `UMGEBUNG`), kein Fehler im Code. Zeile melden, Ende; der Mensch richtet die Umgebung.
    - `keine`: Nichts konfiguriert. Einmal fragen, was laufen soll.
    - `gruen` mit `offen` > 0: Die Läufe haben Dateien erzeugt oder geändert. `git status --porcelain` melden, Ende.
    - `gruen` mit `offen=0`: weiter.

@@ -59,7 +59,7 @@ function recommendation(art, result) {
 function showstoppers({ result, pruefung, luecken = [], acOhneTest = [] }) {
   return [
     ...(verdictOf(result) === 'bereit' ? [] : [`Ergebnis ist nicht ✅: ${result ?? 'keine Ergebnis-Zeile'}`]),
-    ...(pruefung === 'gruen' ? [] : [`Prüfergebnis ist nicht grün: ${pruefung ?? 'keine'}`]),
+    ...(pruefung === 'gruen' || (pruefung === 'umgebung' && luecken.length > 0) ? [] : [`Prüfergebnis ist nicht grün: ${pruefung ?? 'keine'}`]),
     ...luecken.map((befehl) => `Umgebungslücke: ${befehl} ist nicht lauffähig`),
     ...acOhneTest.map((ac) => `${ac} hat keinen beweisenden Test`),
   ];

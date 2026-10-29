@@ -324,6 +324,23 @@ test('etappeReport_PruefungDatei_DockerCountsGreenAndContradictionFails', () => 
   assert.match(contradiction.stderr, /--pruefung rot widerspricht --pruefung-datei \(gruen\)/);
 });
 
+test('etappeReport_PruefungDateiUmgebung_KeepsUmgebungAndAddsNotStartableCommandsAsGaps', () => {
+  // Arrange
+  const { repo } = repoWithPlan();
+  const file = path.join(repo, 'pruefung.json');
+  const laeufe = [{ befehl: 'dv-dotnet-build --path a.sln', exit: 1, umgebung: true }];
+  fs.writeFileSync(file, JSON.stringify({ ergebnis: 'umgebung', laeufe }));
+
+  // Act
+  const result = chain(repo, 'etappe-report', '--etappe', 'umsetzung', '--slug', 'x', '--pruefung-datei', file, '--luecke', 'dv-dotnet-build --path a.sln');
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const data = JSON.parse(fs.readFileSync(/^BERICHT=(.+)$/m.exec(result.stdout)[1].replace(/\.md$/, '.json'), 'utf8'));
+  assert.equal(data.pruefung, 'umgebung');
+  assert.deepEqual(data.luecken, ['dv-dotnet-build --path a.sln']);
+});
+
 test('brief_SonnetEtappe_PrintsFixedModelId', () => {
   // Arrange
   const { repo, spec } = repoWithPlan();

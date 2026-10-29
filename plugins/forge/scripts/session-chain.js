@@ -29,14 +29,14 @@ const USAGE = [
   '       node session-chain.js schluss --slug <slug> [--stopp]',
   '       node session-chain.js review-stand --spec <S>',
   '       node session-chain.js etappe-report --etappe <etappe> (--slug <slug> | --spec <S>) [--inhalt <datei>] [--entscheidung <text>]... [--datei <pfad>]...',
-  '              [--tests <text>] [--anhang <datei>]... [--plan <P>] [--worktree <R>] [--branch <name>] [--pruefung gruen|rot|keine | --pruefung-datei <pruefung.json>] [--luecke <befehl>]... [--ac-ohne-test <AC>]...',
+  '              [--tests <text>] [--anhang <datei>]... [--plan <P>] [--worktree <R>] [--branch <name>] [--pruefung gruen|rot|keine|umgebung | --pruefung-datei <pruefung.json>] [--luecke <befehl>]... [--ac-ohne-test <AC>]...',
   '',
 ].join('\n');
 const VALUE_OPTIONS = ['--slug', '--leit', '--basis', '--wi', '--spec', '--plan', '--worktree', '--etappe', '--kontext', '--quelle', '--session', '--turn-datei', '--etappenbericht', '--inhalt',
   '--commit', '--art', '--anlass', '--message', '--antwort', '--datei', '--entscheidung', '--tests', '--anhang', '--branch', '--pruefung', '--luecke', '--ac-ohne-test', '--pruefung-datei'];
 const LIST_OPTIONS = ['--datei', '--entscheidung', '--anhang', '--luecke', '--ac-ohne-test'];
 const FLAG_OPTIONS = ['--stopp', '--erneut'];
-const CHECKS = ['gruen', 'rot', 'keine'];
+const CHECKS = ['gruen', 'rot', 'keine', 'umgebung'];
 
 class UsageError extends Error {}
 
@@ -175,18 +175,20 @@ function schluss(values) {
 }
 
 // Prüfergebnis aus der Datei von verify-run.js statt als Angabe der Etappe; `docker` (Tests nur ohne Docker rot) gilt als grün.
+// Nicht startbare Befehle (`umgebung`) sind Umgebungslücken, kein roter Code.
 function checkFromFile(file) {
-  const { ergebnis } = JSON.parse(readInput(file, 'Prüfergebnis'));
-  if (!['gruen', 'rot', 'docker', 'keine'].includes(ergebnis)) throw new UsageError(`--pruefung-datei ohne gültiges ergebnis: ${file}`);
-  return ergebnis === 'docker' ? 'gruen' : ergebnis;
+  const { ergebnis, laeufe = [] } = JSON.parse(readInput(file, 'Prüfergebnis'));
+  if (!['gruen', 'rot', 'docker', 'keine', 'umgebung'].includes(ergebnis)) throw new UsageError(`--pruefung-datei ohne gültiges ergebnis: ${file}`);
+  return { pruefung: ergebnis === 'docker' ? 'gruen' : ergebnis, luecken: laeufe.filter((run) => run.umgebung).map((run) => run.befehl) };
 }
 
 function report(values) {
   if (!values.slug && !values.spec) throw new UsageError('--slug oder --spec fehlt');
   if (values['pruefung-datei']) {
-    const fromFile = checkFromFile(values['pruefung-datei']);
+    const { pruefung: fromFile, luecken } = checkFromFile(values['pruefung-datei']);
     if (values.pruefung && values.pruefung !== fromFile) throw new UsageError(`--pruefung ${values.pruefung} widerspricht --pruefung-datei (${fromFile})`);
     values.pruefung = fromFile;
+    values.luecke = [...new Set([...(values.luecke ?? []), ...luecken])];
   }
   if (values.pruefung && !CHECKS.includes(values.pruefung)) throw new UsageError(`--pruefung erlaubt: ${CHECKS.join(', ')}`);
   const file = etappeReport({

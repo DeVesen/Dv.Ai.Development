@@ -73,3 +73,21 @@ test('starters_OnPathInGitBash_AreFoundAndStarted', { skip: BASH ? false : 'kein
   const result = spawnSync(BASH, ['-c', script, '_', bin, ...STARTERS], { encoding: 'utf8' });
   assert.equal(result.stdout, '{"args":["x"]}exit=3\n'.repeat(STARTERS.length), result.stderr);
 });
+
+// Windows: cmd.exe startet weder Shebang noch Datei ohne Endung; je Start-Befehl liegt deshalb `<name>.cmd` daneben.
+for (const starter of STARTERS) {
+  test(`${starter}_CmdStarter_CallsNodeScriptBesideItAndPassesExitCode`, () => {
+    const text = fs.readFileSync(path.join(BIN, `${starter}.cmd`), 'utf8');
+    assert.equal(text, `@node "%~dp0${starter}" %*\r\n@exit /b %ERRORLEVEL%\r\n`);
+  });
+}
+
+test('cmdStarters_OnPathInCmd_AreFoundAndPassArgumentsAndExitCode', { skip: process.platform === 'win32' ? false : 'nur unter Windows' }, () => {
+  const bin = path.join(pluginCopy(true), 'bin');
+  const env = { ...process.env, PATH: `${bin};${path.dirname(process.execPath)};${process.env.PATH}` };
+  for (const starter of STARTERS) {
+    const result = spawnSync(`${starter} --a "b c"`, { shell: true, env, encoding: 'utf8' });
+    assert.equal(result.status, 3, result.stderr);
+    assert.deepEqual(JSON.parse(result.stdout), { args: ['--a', 'b c'] });
+  }
+});

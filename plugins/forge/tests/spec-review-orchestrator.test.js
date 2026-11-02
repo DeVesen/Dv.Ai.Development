@@ -25,7 +25,7 @@ test('specReviewOrchestrator_Body_ChainsReviewThenFollowupWithoutReportParameter
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  const steps = ['`dv-forge:spec-review` mit `<S>`, mit `--whiteboarding` dazu `--whiteboarding`, sonst kein Argument.', '`dv-forge:review-followup` mit `<S> alle`, mit `--whiteboarding` dazu `--whiteboarding`.'];
+  const steps = ['`dv-forge:spec-review` mit `<S>`, mit `--whiteboarding` dazu `--whiteboarding`, sonst kein Argument.', '`dv-forge:review-followup` mit `<S> auto`, mit `--whiteboarding` dazu `--whiteboarding`.'];
   const positions = steps.map((step) => body.indexOf(step));
   for (const [index, step] of steps.entries()) assert.ok(positions[index] !== -1, `${step} fehlt`);
   assert.ok(positions[0] < positions[1]);
@@ -56,7 +56,7 @@ test('specReviewOrchestrator_Body_BranchesOnTheLinesTheReviewWrites', () => {
   }
   assert.ok(script.includes('⚠️ Unvollständig'));
   assert.ok(readText(path.join(__dirname, '..', 'scripts', 'orchestrator-state.js')).includes("result.startsWith('⚠️')"), 'next endet bei ⚠️');
-  assert.ok(body.includes('`NEXT=followup` (offenes 🔴 mit Scout-Vorschlag, Runde `RUNDE`) → 5, sonst 6;'));
+  assert.ok(body.includes('`NEXT=followup` (offenes 🔴 mit Scout-Vorschlag oder vor der ersten Runde 🟡/🟢 ab der Empfehlungs-Schwelle, Runde `RUNDE`) → 5, sonst 6;'));
   assert.equal(body.includes('auch für Hinweise'), false, 'Hinweise lösen keine Runde mehr aus');
 });
 
@@ -68,7 +68,7 @@ test('specReviewOrchestrator_Body_TellsPauseFromEndByHeadingAndClosingLine', () 
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('`### Frage …` = Pause (Regel 2). Danach `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>"`'));
+  assert.ok(body.includes('`### Frage …` = Pause (Regel 2). Danach `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>" --artefakt "<S>" --rolle spec-review`'));
   assert.ok(haltText.includes('### Frage ${number} von ${total}'));
 });
 
@@ -145,7 +145,7 @@ test('specReviewOrchestrator_Body_RunsFollowupRoundsUpToTheRulesFileMaximumAndCo
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<S> alle`'));
+  assert.ok(body.includes('Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<S> auto`'));
   assert.ok(body.includes('`NEXT=ende` → kein Commit, 7; `NEXT=followup` → nächste Runde; sonst 6.'));
   assert.ok(body.indexOf('Maximum der Regeldatei') < body.indexOf('6. Commit, auch bei `⛔` oder `❓`.'));
   for (const gone of [...FORMER_ROUND_WORDINGS, 'bericht-followup-1.json', 'bericht-followup-2.json']) assert.equal(body.includes(gone), false, `${gone} steht in der Regeldatei oder in der Ablage`);

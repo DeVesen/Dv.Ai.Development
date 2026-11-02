@@ -5,7 +5,7 @@
 //   start --state <ordner> --spec <S> [--plan <P>]  Start-Zustand (Toplevel, Branch, HEAD, Worktree, Vorbestand) und Kopien mit Hash
 //   add   --state <ordner> (--spec <S> | --plan <P>) Artefakt nachtragen oder ersetzen (Plan nach plan-writing, Pfade nach start-work)
 //   check --state <ordner> [--ort]                   Hashes prüfen; Exit 1 mit Diff bei Abweichung. --ort: Toplevel und Branch wie beim Start
-//   next  --review <json> [--followup <json>]...     nächster Schritt aus den Bericht-Daten von Review und Followups
+//   next  --review <json> [--followup <json>]... [--artefakt <A> --rolle <r>]  nächster Schritt aus den Bericht-Daten von Review und Followups
 //   ablage --art spec|plan|implementation (--spec <S> | --plan <P>) [--whiteboarding]  Leert die Ablage der Etappe und nennt die Dateien des Laufs
 // Ausgabe: Zeilen `<NAME>=<Wert>`; bei einer Abweichung danach `=== DIFF ===`. Exit 2 bei falschem Aufruf.
 
@@ -19,13 +19,15 @@ const { ablageFor } = require('./lib/etappe-of');
 const { REVIEW_FILE, ABSCHLUSS_FILE, followupName, clearAblage } = require('./lib/session-chain-ablage');
 const { SessionChainError } = require('./lib/session-chain-store');
 const { toPosix } = require('./lib/posix');
+const { ConfigError, readConfig, recommendationThreshold } = require('./forge-config');
+const { FollowupError, ROLES, autoEligible, loadGroups, resolveFollowup } = require('./followup');
 
 const STATE_FILE = 'orchestrator-state.json';
 const USAGE = [
   'Aufruf: node orchestrator-state.js start --state <ordner> --spec <S> [--plan <P>]',
   '       node orchestrator-state.js add --state <ordner> (--spec <S> | --plan <P>)',
   '       node orchestrator-state.js check --state <ordner> [--ort]',
-  '       node orchestrator-state.js next --review <json> [--followup <json>]...',
+  '       node orchestrator-state.js next --review <json> [--followup <json>]... [--artefakt <A> --rolle spec-review|plan-review|review]',
   '       node orchestrator-state.js ablage --art spec|plan|implementation (--spec <S> | --plan <P>) [--whiteboarding]',
   '',
 ].join('\n');
@@ -150,7 +152,32 @@ function next(values) {
   const lines = [`ERGEBNIS=${result || '-'}`, `BEREIT=${result.startsWith('✅') ? 'ja' : 'nein'}`, `RUNDEN=${followups.length}`, `ROT=${rounds.openRed}`];
   if (result.startsWith('⚠️') || status.startsWith('unvollständig')) return ['NEXT=ende', 'GRUND=unvollstaendig', ...lines].join('\n');
   if (rounds.weiter) return ['NEXT=followup', `RUNDE=${followups.length + 1}`, ...lines].join('\n');
+  // Ohne Runde für ein 🔴 startet vor der ersten Runde genau eine für 🟡 und 🟢 ab der Empfehlungs-Schwelle; danach keine weitere dafür.
+  const auto = followups.length === 0 ? autoCount(values.artefakt, values.rolle) : 0;
+  if (auto > 0) return ['NEXT=followup', 'RUNDE=1', `AUTO=${auto}`, ...lines].join('\n');
   return ['NEXT=weiter', ...(rounds.abbruch ? [`ABBRUCH=${rounds.abbruch}`] : []), ...lines].join('\n');
+}
+
+// Gruppen der letzten Sicherung zum Artefakt, die `review-followup <A> auto` erreicht; 0 ohne `--artefakt`, ohne Sicherung oder wenn die
+// letzte Sicherung von einem anderen Review stammt (etwa eine alte Plan-Review-Sicherung im Implementierungslauf). Eine ungültige
+// Empfehlungs-Schwelle startet keine Runde; die Dialog-Skills melden sie über `forge-config.js get`.
+function autoCount(artifact, role) {
+  if (!artifact) return 0;
+  if (!ROLES.includes(role)) throw new StateError(`--artefakt braucht --rolle ${ROLES.join('|')}`);
+  const file = path.resolve(artifact);
+  if (!fs.existsSync(file)) throw new StateError(`Artefakt fehlt: ${artifact}`);
+  const repo = git(path.dirname(file), ['rev-parse', '--show-toplevel']).out;
+  if (!repo) throw new StateError(`Kein Git-Repo: ${toPosix(path.dirname(file))}`);
+  const saved = resolveFollowup(file, repo);
+  if (!saved || saved.role !== role) return 0;
+  let threshold;
+  try {
+    threshold = recommendationThreshold(readConfig(repo).config);
+  } catch (error) {
+    if (error instanceof ConfigError) return 0;
+    throw error;
+  }
+  return loadGroups(saved.dir).filter((group) => autoEligible(group, threshold)).length;
 }
 
 // Leert die Ablage der Etappe, in der das Review des Orchestrators seinen Bericht ablegt (Daten eines früheren Laufs), und nennt dann die
@@ -166,7 +193,7 @@ function ablage(values) {
   return [`BERICHT-REVIEW=${toPosix(path.join(dir, REVIEW_FILE))}`, ...rounds, `ABSCHLUSS=${toPosix(path.join(dir, ABSCHLUSS_FILE))}`].join('\n');
 }
 
-const OPTIONS = { '--state': 'state', '--spec': 'spec', '--plan': 'plan', '--review': 'review', '--art': 'art' };
+const OPTIONS = { '--state': 'state', '--spec': 'spec', '--plan': 'plan', '--review': 'review', '--art': 'art', '--artefakt': 'artefakt', '--rolle': 'rolle' };
 
 function parse(args) {
   const values = { followup: [] };
@@ -205,7 +232,7 @@ function main() {
       process.exit(result.failed ? 1 : 0);
     }
   } catch (error) {
-    if (!(error instanceof StateError) && !(error instanceof RulesError) && !(error instanceof SessionChainError)) throw error;
+    if (![StateError, RulesError, SessionChainError, ConfigError, FollowupError].some((type) => error instanceof type)) throw error;
     process.stderr.write(`${error.message}\n`);
     process.exit(1);
   }

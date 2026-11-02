@@ -88,7 +88,7 @@ const ETAPPEN_BRIEFS = {
     auftrag: (v) => [
       `Vor dem Skill einmal \`node "${STATE_SCRIPT}" ablage --art plan --plan "${v.plan}"\`: Die Zeilen \`BERICHT-REVIEW\` (<BR>) und \`BERICHT-FOLLOWUP-<n>\` (<BFn>) sind die Bericht-Daten des Laufs.`,
       'Alles in einem Turn: Nach der Review-Statuszeile von `plan-review` arbeitest du ohne Turn-Ende weiter.',
-      `Nach \`plan-review\` und nach jeder Runde: \`node "${STATE_SCRIPT}" next --review "<BR>"\`, dazu \`--followup "<BFn>"\` je gelaufener Runde. \`NEXT=followup\`: Runde \`RUNDE\` mit \`dv-forge:review-followup\` und \`"${v.plan}" alle --spec "${v.spec}"\`. Sonst keine weitere Runde; Maximum und Stillstand-Regel stehen in \`${RULES_FILE}\`.`,
+      `Nach \`plan-review\` und nach jeder Runde: \`node "${STATE_SCRIPT}" next --review "<BR>" --artefakt "${v.plan}" --rolle plan-review\`, dazu \`--followup "<BFn>"\` je gelaufener Runde. \`NEXT=followup\`: Runde \`RUNDE\` mit \`dv-forge:review-followup\` und \`"${v.plan}" auto --spec "${v.spec}"\`. Sonst keine weitere Runde; Maximum und Stillstand-Regel stehen in \`${RULES_FILE}\`.`,
       'Endet `plan-review`, `review-followup`, `ablage` oder `next` mit Exit ungleich 0 oder ohne Review-Statuszeile: keine weitere Runde, Status `needs-user` mit der Meldung.',
       'Den Plan schreibst du nicht neu. Du committest nichts; Spec und Plan committet die Leit-Session nach dem GO.',
       `Berichtsdatei mit \`--plan "${v.plan}"\`; \`--inhalt\` ist die \`.md\`-Datei, die die letzte Review-Statuszeile nach \`Bericht:\` nennt.`,

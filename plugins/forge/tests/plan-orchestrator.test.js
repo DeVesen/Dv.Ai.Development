@@ -25,7 +25,7 @@ test('planOrchestrator_Body_ChainsTheThreePlanSkillsInOrderWithoutReportParamete
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  const steps = ['`dv-forge:plan-writing` mit `<S>`', '`dv-forge:plan-review` mit `<P> <S>`.', '`dv-forge:review-followup` mit `<P> alle --spec <S>`.'];
+  const steps = ['`dv-forge:plan-writing` mit `<S>`', '`dv-forge:plan-review` mit `<P> <S>`.', '`dv-forge:review-followup` mit `<P> auto --spec <S>`.'];
   const positions = steps.map((step) => body.indexOf(step));
   for (const [index, step] of steps.entries()) assert.ok(positions[index] !== -1, `${step} fehlt`);
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
@@ -60,7 +60,7 @@ test('planOrchestrator_Body_BranchesOnTheLinesTheReviewWrites', () => {
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Dann `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>"`: `NEXT=followup` → 4, sonst 5.'));
+  assert.ok(body.includes('Dann `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>" --artefakt "<P>" --rolle plan-review`: `NEXT=followup` → 4, sonst 5.'));
   assert.ok(script.includes('⚠️ Unvollständig'));
 });
 
@@ -135,8 +135,8 @@ test('planOrchestrator_Body_RunsFollowupRoundsUpToTheRulesFileMaximumAndStopsOnA
   const { body } = readMarkdown(SKILL);
 
   // Assert
-  assert.ok(body.includes('Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> alle --spec <S>`.'));
-  assert.ok(body.includes('mit `--followup "<BFn>"` je gelaufener Runde: `NEXT=followup` → nächste Runde, sonst 5.'));
+  assert.ok(body.includes('Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> auto --spec <S>`.'));
+  assert.ok(body.includes('mit `--followup "<BFn>"` je gelaufener Runde und `--artefakt "<P>" --rolle plan-review`: `NEXT=followup` → nächste Runde, sonst 5.'));
   for (const gone of [...FORMER_ROUND_WORDINGS, 'bericht-followup-1.json', 'bericht-followup-2.json']) assert.equal(body.includes(gone), false, `${gone} steht in der Regeldatei oder in der Ablage`);
 });
 

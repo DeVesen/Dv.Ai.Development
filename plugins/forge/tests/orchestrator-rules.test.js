@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { readMarkdown, readText } = require('./lib/markdown');
 const { maxFollowups, RulesError, RULES_FILE } = require('../scripts/lib/orchestrator-rules');
 
 function rulesFile(text) {
@@ -51,4 +52,24 @@ test('rulesFile_Sections_NameFollowupGitCommitsOutputAndRedFlags', () => {
   for (const heading of ['## Followup-Runden', '## Git-Verbote', '## Commits', '## Ausgabe', '## Rote Flaggen']) {
     assert.ok(text.includes(`${heading}\n`), `${heading} fehlt`);
   }
+});
+
+test('orchestrators_FollowupRounds_UseAutoAndArtefakt', () => {
+  // Arrange
+  const skills = ['spec-review-orchestrator', 'plan-orchestrator', 'implementation-orchestrator'];
+  const bodies = skills.map((name) => readMarkdown(path.join(__dirname, '..', 'skills', name, 'SKILL.md')).body);
+  const rules = readText(RULES_FILE);
+
+  // Assert
+  for (const body of bodies) {
+    assert.ok(body.includes('--artefakt'), '--artefakt fehlt');
+    assert.ok(body.includes('--rolle'), '--rolle fehlt');
+    assert.ok(!body.includes('alle --spec'), 'alle --spec bleibt');
+    assert.ok(!body.includes('`<S> alle`'), '<S> alle bleibt');
+  }
+  assert.ok(bodies[0].includes('`<S> auto`'));
+  assert.ok(bodies[1].includes('auto --spec <S>'));
+  assert.ok(bodies[2].includes('auto --spec <S>'));
+  assert.ok(rules.includes('`AUTO=<n>`'));
+  assert.ok(rules.includes('Übrige 🟡 und 🟢 lösen keine Runde aus'));
 });

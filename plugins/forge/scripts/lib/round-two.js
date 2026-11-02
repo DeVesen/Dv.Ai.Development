@@ -151,14 +151,13 @@ function verifyRoundTwo(options) {
   const counts = countColors(groups);
   const openRed = notDone + counts.red;
   writeJson(path.join(dir, 'einstufung.json'), { verdicts, groups, dropped: droppedList(items), openRed, belege: quoteCounts(items) });
-  // Scout-Eingabe: nicht erledigte Hindernisse der Prüfliste (als 🔴-Gruppe mit ihren Reviewern) und alle 🔴/🟡 der Nachprüfung; so bekommt
-  // die nächste Followup-Runde einen frischen Vorschlag statt des alten aus sicherung-vorher. Nur 🟡 → `hinweise`, nichts → `keiner`.
+  // Scout-Eingabe: nicht erledigte Hindernisse der Prüfliste (als 🔴-Gruppe mit ihren Reviewern) und alle Gruppen der Nachprüfung, auch 🟢;
+  // so bekommt die nächste Followup-Runde einen frischen Vorschlag statt des alten aus sicherung-vorher. Ohne 🔴 → `hinweise`, nichts → `keiner`.
   const notDoneKeys = new Set(verifier.verdicts.filter((verdict) => verdict.verdict === 'nicht erledigt').map((verdict) => placeKey(verdict.location)));
   const pending = aiItems.filter((item) => (item.color ?? 'red') === 'red' && notDoneKeys.has(item.key));
   const pendingBlocks = pending.map((item) => [reworkHeading('🔴', collapse(item.label), item.reviewers ?? []), ...item.lines].join('\n'));
-  const scoutGroups = groups.filter((group) => (pending.length > 0 || counts.red > 0 ? group.color !== 'green' : group.color === 'yellow'));
-  writeText(path.join(dir, 'scout-eingabe.md'), [REWORK_MARK, ...pendingBlocks, ...scoutGroups.map(renderGroup)].join('\n\n'));
-  const scout = pending.length > 0 || counts.red > 0 ? 'rot-und-gelb' : counts.yellow > 0 ? 'hinweise' : 'keiner';
+  writeText(path.join(dir, 'scout-eingabe.md'), [REWORK_MARK, ...pendingBlocks, ...groups.map(renderGroup)].join('\n\n'));
+  const scout = pending.length > 0 || counts.red > 0 ? 'rot-und-gelb' : counts.yellow > 0 || counts.green > 0 ? 'hinweise' : 'keiner';
   return `NACHPRUEFUNG ok offen=${openRed} hinweise=${counts.yellow}\nWEITER scout=${scout}`;
 }
 

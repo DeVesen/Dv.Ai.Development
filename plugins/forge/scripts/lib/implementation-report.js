@@ -183,11 +183,13 @@ function storeReport(options, input, status, text) {
 function buildReport(options) {
   const result = readResult(options.dir);
   const open = result.groups.filter((group) => group.severity !== 'green');
-  const scout = scoutState(options, open);
+  const green = result.groups.filter((group) => group.severity === 'green');
+  const scout = scoutState(options, [...open, ...green]);
   const input = reportInput(options, result, open, scout);
   const text = renderImplementationReport(input);
   const status = statusOf(result, input.openRed);
-  writeClosing(options, open, scout);
+  // 🟢 mit Scout-Vorschlag kommen in die Sicherung, damit `review-followup <P> auto` sie erreicht; offen sind sie nicht.
+  writeClosing(options, [...open, ...green.filter((group) => scoutedOf(group, scout))], scout);
   appendMetric(path.dirname(options.plan), 'reviews', implementationReviewRecord(options, result, status));
   return [`ENDE ${status}`, `STATUSZEILE ${storeReport(options, input, status, text)}`].join('\n');
 }

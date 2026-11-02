@@ -190,6 +190,21 @@ test('verify_FindingOutsideChecklist_IsHintForScout', () => {
   assert.match(fs.readFileSync(path.join(env.workspace, 'runde-2', 'scout-eingabe.md'), 'utf8'), /### 🟡 AC-07 \(nachprüfer\)/);
 });
 
+test('verify_OnlyGreenAfterRework_ScoutForHintsWithGreenGroup', () => {
+  // Arrange
+  const env = setup();
+  runUntilRework(env, [RED('AC-04')]);
+  finishRework(env, [{ location: 'AC-04', status: 'unchanged', reason: 'Fehllesung' }]);
+  checklist(env);
+
+  // Act
+  const output = verify(env, { verdicts: [{ location: 'AC-04', verdict: 'erledigt', rationale: 'ok' }], findings: [finding({ location: 'AC-07', category: 'formulierung' })] });
+
+  // Assert
+  assert.equal(output, 'NACHPRUEFUNG ok offen=0 hinweise=0\nWEITER scout=hinweise\n');
+  assert.match(fs.readFileSync(path.join(env.workspace, 'runde-2', 'scout-eingabe.md'), 'utf8'), /### 🟢 /);
+});
+
 test('verify_ScriptReportsAgain_PointNotDoneAndRed', () => {
   // Arrange
   const env = setup();

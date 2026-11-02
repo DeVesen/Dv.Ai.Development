@@ -71,11 +71,11 @@ function textsProblem(texts) {
   return recommendation ? `Empfehlung: ${recommendation}` : null;
 }
 
-// Spec und Plan: die Gruppen der Scout-Eingabe. Implementierung: keine Eingabe-Datei, erwartet sind die 🔴/🟡-Gruppen des Aggregats.
+// Spec und Plan: die Gruppen der Scout-Eingabe. Implementierung: keine Eingabe-Datei, erwartet sind alle Gruppen des Aggregats, auch 🟢.
 function expectedIds(dir, review) {
   const input = path.join(dir, 'scout-eingabe.md');
   if (review === 'implementation-review' && !fs.existsSync(input)) {
-    return parseRework(readLines(path.join(dir, 'aggregate.md'))).filter((group) => group.severity !== '🟢').map(groupId);
+    return parseRework(readLines(path.join(dir, 'aggregate.md'))).map(groupId);
   }
   return parseRework(readLines(input)).map(groupId);
 }

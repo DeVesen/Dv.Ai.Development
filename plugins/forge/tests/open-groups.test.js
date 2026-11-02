@@ -87,3 +87,11 @@ test('openFromFollowup_NoVerification_ChosenGroupsStayOpen', () => {
   const open = openFromFollowup({ saved: [saved(1, '🔴', 'AC-01'), saved(2, '🟡', 'AC-02')], chosen: new Set([1]), two: null });
   assert.deepEqual(open.map((group) => group.label), ['AC-01', 'AC-02']);
 });
+
+test('openFromFollowup_SavedGreenChosenOrNot_NeverOpen', () => {
+  const groups = [saved(1, '🟡', 'AC-01'), saved(2, '🟢', 'AC-02')];
+  const two = { verdicts: [verdict('AC-01', 'nicht erledigt')], groups: [] };
+  const open = openFromFollowup({ saved: groups, chosen: new Set([1]), two });
+  assert.equal(open.some((group) => group.color === 'green'), false);
+  assert.deepEqual(open.map((group) => `${group.color}:${group.label}`), ['yellow:AC-01']);
+});

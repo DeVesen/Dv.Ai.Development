@@ -156,8 +156,9 @@ function buildFollowupReport(options) {
   const answer = reviewed.done ? parseAnswer(options.answer) : { verdict: null, clean: false, damages: [], greens: [], judged: new Map(), outside: [] };
   const chosen = followup.gewaehlt.map((entry) => ({ entry, group: saved.find((group) => group.number === entry.nummer) })).filter(({ group }) => group);
   const chosenNumbers = new Set(chosen.map(({ group }) => group.number));
-  const unchosen = saved.filter((group) => !chosenNumbers.has(group.number));
-  const unconfirmed = chosen.map(({ group }) => group).filter((group) => !reviewed.done || !isConfirmed(group, answer));
+  // Gesicherte 🟢 sind nie offen: Sie zählen weder für Status und Bericht noch bleiben sie in der Sicherung (`BEHALTEN`).
+  const unchosen = saved.filter((group) => !chosenNumbers.has(group.number) && group.severity !== '🟢');
+  const unconfirmed = chosen.map(({ group }) => group).filter((group) => group.severity !== '🟢' && (!reviewed.done || !isConfirmed(group, answer)));
   const changes = chosen.map(({ entry, group }) => ({
     key: placeKey(group.location), ok: reviewed.done ? isConfirmed(group, answer) : null, ...described(group, texts), angles: angles(group.reviewers),
     change: null, evidence: null, choice: entry.vorschlag,

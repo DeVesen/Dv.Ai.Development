@@ -25,6 +25,19 @@ test('rate_TwoHintsNoRedNoQuestion_ScoutForHintsWithoutRework', () => {
   assert.equal(result.stdout, 'STATUS red=0 yellow=2 green=0 fragen=0 failed=-\nWEITER scout=hinweise nacharbeit=nein\n');
 });
 
+test('rate_OnlyGreenFinding_ScoutForHintsWithGreenGroup', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'clarity', [finding({ location: 'AC-07', category: 'formulierung' })]);
+
+  // Act
+  const result = rate(env, 'clarity');
+
+  // Assert
+  assert.equal(result.stdout, 'STATUS red=0 yellow=0 green=1 fragen=0 failed=-\nWEITER scout=hinweise nacharbeit=nein\n');
+  assert.match(fs.readFileSync(path.join(env.workspace, 'runde-1', 'scout-eingabe.md'), 'utf8'), /^### 🟢 /m);
+});
+
 test('rate_RedFinding_ScoutForRedAndYellowThenRework', () => {
   // Arrange
   const env = setup();

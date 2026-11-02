@@ -316,3 +316,23 @@ test('save_ScoutGroupWithoutAggregate_ReasonOnStderr', () => {
   assert.equal(result.stdout.trim(), 'KEIN SCOUT');
   assert.match(result.stderr, /Keine Aggregat-Gruppe zu 🟡 AC-04/);
 });
+
+test('parseScout_SicherheitLine_ReadsPercentOrNull', () => {
+  const lines = [
+    '## Scout-Vorschläge', '',
+    '### 🟡 AC-01', 'Sicherheit: 80 %', '1. a', '**Bevorzugt: 1** — x', '',
+    '### 🟡 AC-02', '1. b', '**Bevorzugt: 1** — y', '',
+    '### 🟢 AC-03', 'Sicherheit: 150 %', '1. c', 'Sicherheit: 90 %', '**Bevorzugt: 1** — z',
+  ];
+  const groups = followup.parseScout(lines);
+  assert.deepEqual(groups.map((group) => group.sicherheit), [80, null, null]);
+});
+
+test('autoEligible_RedAlwaysYellowGreenFromThreshold', () => {
+  assert.equal(followup.autoEligible({ severity: '🔴', preferred: 1, sicherheit: null }, 70), true);
+  assert.equal(followup.autoEligible({ severity: '🟡', preferred: 1, sicherheit: 70 }, 70), true);
+  assert.equal(followup.autoEligible({ severity: '🟡', preferred: 1, sicherheit: 69 }, 70), false);
+  assert.equal(followup.autoEligible({ severity: '🟢', preferred: 1, sicherheit: 95 }, 70), true);
+  assert.equal(followup.autoEligible({ severity: '🟢', preferred: 1, sicherheit: null }, 70), false);
+  assert.equal(followup.autoEligible({ severity: '🔴', preferred: null, sicherheit: null }, 70), false);
+});

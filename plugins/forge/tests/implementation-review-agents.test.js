@@ -101,7 +101,7 @@ test('implementation-review-scout_Body_FormatContextProfilesAndNoEdits', () => {
   }
   assert.match(body, /1 bis 3/);
   assert.match(body, /änderst keine Datei/);
-  assert.match(body, /🟢-Gruppen lässt du weg/);
+  assert.ok(body.includes('Du bearbeitest jede Gruppe aus `Findings:`, auch jede 🟢-Gruppe.'));
   assert.doesNotMatch(body, /Spec so ändern/);
   assert.doesNotMatch(body, TYPOGRAPHIC_QUOTES);
 });

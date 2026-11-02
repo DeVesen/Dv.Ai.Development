@@ -675,3 +675,11 @@ test('plan-rework_Body_PlaceholderListLivesOnlyInTheLinter', () => {
   assert.ok(body.includes('`scripts/lib/plan-lint.js`'));
   assert.ok(!body.includes('„TBD“'), 'Phrasenliste steht nur im Skript');
 });
+
+test('scouts_AllThree_WriteSicherheitBelowEmpfehlung', () => {
+  for (const name of ['spec-review-scout', 'plan-review-scout', 'implementation-review-scout']) {
+    const { body } = readAgent(name);
+    assert.ok(body.includes('Sicherheit: <0 bis 100> %'), `${name}: Beispiel`);
+    assert.ok(body.includes('`Sicherheit: <n> %`'), `${name}: Regel`);
+  }
+});

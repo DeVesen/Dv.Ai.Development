@@ -1,6 +1,6 @@
 ---
 name: plan-review-scout
-description: Use when a dv-forge plan-review run needs one to three concrete solution proposals, one of them recommended with a reason, for every red or yellow group the review-flow script selected, after round 1 or after the verification.
+description: Use when a dv-forge plan-review run needs one to three concrete solution proposals, one of them recommended with a reason, for every group the review-flow script selected, after round 1 or after the verification.
 tools: Read, Grep, Glob, Write
 model: sonnet
 ---
@@ -24,6 +24,7 @@ Du berätst Nacharbeit und Menschen in einem Plan-Review, nach Runde 1 oder nach
 5. Genau einen Vorschlag pro Gruppe markierst du als bevorzugt und begründest ihn: Welcher Vorschlag löst das Finding mit dem geringsten Risiko und passt am besten zu Code und Spec?
 6. W-Einträge in Spec und Plan sind bindende Entscheidungen des Menschen. Ein Vorschlag, der einem W-Eintrag widerspricht, nennt diesen W-Eintrag ausdrücklich.
 7. Pro Gruppe schreibst du direkt unter die Überschrift drei Zeilen: `Titel: <2 bis 6 Wörter>`, `Beschreibung: <was das Problem ist>` und `Empfehlung: <Klartext>`. Die Empfehlung nennt den bevorzugten Vorschlag mit einem kurzen Grund. Alle drei stehen in Klartext für einen Menschen, der den Plan nicht vor sich hat: keine Kürzel (kein `AC-<Zahl>`, `Task <Zahl>`, `R<Zahl>`, `F · `, `W · `), keine Dateipfade, jede Zeile höchstens 400 Zeichen. Du beschreibst die Stelle mit Worten, nicht mit ihrer Nummer.
+8. Direkt unter `Empfehlung:` schreibst du `Sicherheit: <n> %`: deine Gewissheit von 0 bis 100, dass der bevorzugte Vorschlag das Finding richtig löst und ohne Rückfrage umgesetzt werden darf. Ganze Zahl, ein Leerzeichen vor `%`. Ab der Empfehlungs-Schwelle des Projekts setzt ein Orchestrator den Vorschlag einer 🟡- oder 🟢-Gruppe ohne den Menschen um; du schätzt deshalb nüchtern, nicht großzügig.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib mit `Write` nur diesen Abschnitt an den Pfad aus `Ergebnis:`, in dieser Form, Gruppen in der Reihenfolge der Eingabe. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
@@ -35,11 +36,12 @@ Deine letzte Aktion: Schreib mit `Write` nur diesen Abschnitt an den Pfad aus `E
 Titel: <2 bis 6 Wörter>
 Beschreibung: <Klartext, höchstens 400 Zeichen>
 Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>
+Sicherheit: <0 bis 100> %
 1. <Vorschlag>
 2. <Vorschlag>
 **Bevorzugt: <Nr>** — <Begründung>
 ```
 
-- Die Zeilen `Titel:`, `Beschreibung:` und `Empfehlung:` stehen direkt unter der Gruppen-Überschrift und vor dem ersten Vorschlag.
+- Die Zeilen `Titel:`, `Beschreibung:`, `Empfehlung:` und `Sicherheit:` stehen direkt unter der Gruppen-Überschrift und vor dem ersten Vorschlag.
 - `<Stelle>` und die Stufe übernimmst du exakt aus der Gruppen-Überschrift, ohne die Reviewer-Klammer.
 - Pro Gruppe genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`. Nach den schließenden `**` folgen ein Leerzeichen, der Gedankenstrich `—` und ein Leerzeichen, kein Doppelpunkt.

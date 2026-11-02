@@ -1,6 +1,6 @@
 'use strict';
 
-// Ton und 85-%-Regel stehen nur in shared/dialog-rules.md; die Dialog-Skills und der Brief jeder Etappe verweisen darauf.
+// Ton und Empfehlungs-Schwelle stehen nur in shared/dialog-rules.md; die Dialog-Skills und der Brief jeder Etappe verweisen darauf.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -19,7 +19,7 @@ test('dialogRules_File_HasToneRuleAndRedFlags', () => {
   const text = readText(RULES);
 
   // Assert
-  for (const heading of ['## Ton\n', '## 85-%-Regel\n', '## Rote Flaggen\n']) assert.ok(text.includes(heading), heading);
+  for (const heading of ['## Ton\n', '## Empfehlungs-Schwelle\n', '## Rote Flaggen\n']) assert.ok(text.includes(heading), heading);
 });
 
 test('dialogRules_Tone_ShortHardFairAndOnlyWithBenefit', () => {
@@ -32,19 +32,22 @@ test('dialogRules_Tone_ShortHardFairAndOnlyWithBenefit', () => {
   }
 });
 
-test('dialogRules_85Percent_DecidesWithEvidenceVisiblyAndNeverReleases', () => {
+test('dialogRules_Threshold_ReadsEmpfehlungsSchwelleAndNeverReleases', () => {
   // Act
   const text = readText(RULES);
 
   // Assert
   for (const part of [
-    'mit mindestens 85 % Gewissheit aus dem Kontext ableiten, den dein Skill als Quelle zulässt, entscheidest du selbst und fragst nicht',
-    'Die 85 % brauchen einen Beleg-Tag außer `ungeklärt`.',
-    'Selbst entschieden:\n   - <Kurztitel>: <Entscheidung> · <Beleg-Tag> — <Grund>',
+    '`<SCHWELLE>` ist die Ausgabe von `node "<PLUGIN>/scripts/forge-config.js" get Empfehlungs-Schwelle`',
+    'ohne Projekt-Einstellung ist sie 70',
+    'mit mindestens `<SCHWELLE>` % Gewissheit sicher, dass deine Empfehlung die richtige Antwort ist',
+    'Die Gewissheit braucht einen Beleg-Tag außer `ungeklärt`.',
+    'Selbst entschieden:\n   - <Kurztitel>: <Entscheidung> · <Beleg-Tag> · <n> % — <Grund>',
     'wird ein W-Eintrag mit diesem Beleg-Tag',
-    'Unter 85 % fragst du, mit genau einer Empfehlung.',
+    'Unter `<SCHWELLE>` % fragst du, mit genau einer Empfehlung.',
     '5. **Nie selbst:** Freigaben bleiben beim Menschen',
   ]) assert.ok(text.includes(part), part);
+  assert.equal(/\b85\b/.test(text), false);
 });
 
 test('dialogSkills_Body_PointToTheDialogRules', () => {

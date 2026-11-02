@@ -29,6 +29,6 @@ Du prüfst eine geschriebene Spec nur auf Grenzfälle, Widersprüche und Lücken
 | „Kleine Korrektur, die schreib ich direkt.“ | Erst Vorher/Nachher, dann Bestätigung. |
 | „Die Spec könnte noch eine Funktion mehr haben.“ | Nur Grenzfälle, Widersprüche, Lücken. |
 | „Die Entscheidung merke ich mir.“ | W-Eintrag unter `## Entscheidungen`. |
-| „Die Spec sagt es fast, ich frag trotzdem.“ | Mit Beleg und mindestens 85 %: `Selbst entschieden`. |
+| „Die Spec sagt es fast, ich frag trotzdem.“ | Mit Beleg und mindestens der Empfehlungs-Schwelle: `Selbst entschieden`. |
 | „Das Modul ist importiert, also gibt es das Verhalten.“ | Ein Import ist kein Beleg. Beleg an der Stelle oder „Gibt es das heute?“. |
 | „Ich empfehle falls … sonst …“ | Bedingung vorher prüfen, dann eindeutig empfehlen. |

@@ -178,3 +178,35 @@ test('getValue_TestWithOldToolchainSpelling_ReturnsTheValueUnresolved', () => {
   commitFile(repo, 'CLAUDE.md', '## dv-forge\n\n- Test: `dv-forge: dotnet-test --path src/App.sln`\n', 'config');
   assert.equal(config.getValue('Test', repo), 'dv-forge: dotnet-test --path src/App.sln');
 });
+
+test('getValue_EmpfehlungsSchwelle_DefaultSeventyAndNormalized', () => {
+  // Arrange
+  const empty = makeRepo();
+  const set = makeRepo();
+  commitFile(set, 'CLAUDE.md', '## dv-forge\n\n- Empfehlungs-Schwelle: 80 %\n', 'config');
+  // Act
+  const fallback = config.getValue('Empfehlungs-Schwelle', empty);
+  const normalized = config.getValue('Empfehlungs-Schwelle', set);
+  // Assert
+  assert.equal(fallback, '70');
+  assert.equal(normalized, '80');
+});
+
+test('recommendationThreshold_OutOfRangeOrText_ThrowsConfigError', () => {
+  // Arrange
+  const of = (value) => () => config.recommendationThreshold({ 'Empfehlungs-Schwelle': value });
+  // Act + Assert
+  for (const bad of ['101', 'hoch', '']) assert.throws(of(bad), config.ConfigError);
+  assert.equal(of('0')(), 0);
+  assert.equal(of('100%')(), 100);
+});
+
+test('initSkill_Keys_NameEmpfehlungsSchwelleWithDefault70', () => {
+  // Arrange
+  const body = fs.readFileSync(path.join(__dirname, '..', 'skills', 'init', 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n');
+  // Act
+  const row = body.split('\n').find((line) => line.startsWith('| `Empfehlungs-Schwelle` |'));
+  // Assert
+  assert.ok(row && row.endsWith('| `70` |'));
+  assert.ok(body.includes('- Empfehlungs-Schwelle: 70'));
+});

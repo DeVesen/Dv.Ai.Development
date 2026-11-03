@@ -134,6 +134,32 @@ test('onTurnEnd_ShortenedClosingReportMissingASection_IsBlockedAndNamesTheMissin
   assert.match(reason, /# Was ist noch offen/);
 });
 
+const agentStarted = (id) => [
+  { type: 'assistant', message: { content: [{ type: 'tool_use', id: `t-${id}`, name: 'Agent', input: { prompt: 'x' } }] } },
+  { type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: `t-${id}`, content: [{ type: 'text', text: `Async agent launched successfully.
+agentId: ${id} (internal ID)` }] }] } },
+];
+const agentReturned = (id) => ({ type: 'user', isMeta: true, message: { content: `<agent-message from="${id}">
+fertig
+</agent-message>` } });
+const nextStep = (input) => ({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'w1', name: 'mcp__ccd_turn__wrap_up', input }] } });
+
+test('onTurnEnd_AgentLaunchedAndNotReturned_Allows', () => {
+  assert.equal(turnEnd(env(), [human('los'), ...agentStarted('a1'), said('Reviewer laufen.')]), null);
+  assert.match(turnEnd(env(), [human('los'), ...agentStarted('a1'), agentReturned('a1'), said('Fertig.')]), /ohne Abschlussbericht/);
+  assert.match(turnEnd(env(), [human('los'), ...agentStarted('a2').map((entry) => ({ ...entry, timestamp: '2000-01-01T00:00:00.000Z' })), said('Fertig.')]), /ohne Abschlussbericht/);
+});
+
+test('onTurnEnd_BlockingQuestionViaNextStepBox_Allows', () => {
+  assert.equal(turnEnd(env(), [human('los'), nextStep({ recap: 'r', ask: 'Weiter mit Planning?', blocked: true }), said('Stand: Review fertig.')]), null);
+  assert.match(turnEnd(env(), [human('los'), nextStep({ recap: 'r', ask: 'Commit?' }), said('Stand: Review fertig.')]), /ohne Abschlussbericht/);
+});
+
+test('onTurnEnd_NeedsUserStatusLine_Allows', () => {
+  assert.equal(turnEnd(env(), [human('los'), said('[planning] STATUS=needs-user · ROT=0 · GELB=0 · COMMIT=none · BERICHT=none')]), null);
+  assert.match(turnEnd(env(), [human('los'), said('[planning] STATUS=in-progress · ROT=0 · GELB=0 · COMMIT=none · BERICHT=none')]), /ohne Abschlussbericht/);
+});
+
 test('onTurnEnd_StopHookActive_DoesNotBlock', () => {
   const e = env();
   assert.equal(turnEnd(e, [human('los'), said('Fertig.')], { stop_hook_active: true }), null);

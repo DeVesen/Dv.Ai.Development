@@ -1,7 +1,7 @@
 ---
 name: review-followup
 description: Use when chosen scout proposals from a finished dv-forge spec-review, plan-review or implementation-review should be applied by the rework agent or the implementer and then verified once, without a fresh search by the reviewers. Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator.
-argument-hint: <spec.md|plan.md> <alle|auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]
+argument-hint: <spec.md|plan.md> <alle|auto|auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]
 ---
 <!--GENERIERT-nicht-editieren:src/forge/skills/review-followup/SKILL.md-->
 
@@ -11,7 +11,7 @@ Argumente: `$ARGUMENTS` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}` · `<SESSION>` =
 
 Du orchestrierst wie in `${CLAUDE_PLUGIN_ROOT}/shared/review-flow/flow.md`, Abschnitt Rolle: Du liest weder Artefakt, Spec noch Code, bewertest nichts und änderst nichts selbst; ein Hook blockt das. Plugin-Dateien liest du mit `Read`, jedes Skript startest du als einzelnen `node`-Aufruf ohne Verkettung. Die Einzelheiten jedes Schritts stehen in `${CLAUDE_PLUGIN_ROOT}/skills/review-followup/references/flow.md`; lies die Datei vor Schritt 1.
 
-Auswahl: `alle` wählt den bevorzugten Vorschlag jeder offenen Gruppe; als Expertenformen gibt es `b`, `<n>` und `<g>:<n|b>,…`. `<n>` und `<g>:<n|b>,…` zählen die Gruppen in der Reihenfolge der gesicherten Abschlussdaten; der Bericht zeigt diese Nummern nicht, darum ist `alle` der Normalfall. Optional `--spec <pfad>` und `--base <ref>` wie beim Original-Review. Bericht und Bericht-Daten liegen in der Ablage der Etappe, die `prepare.js` festlegt; du übergibst dafür nichts.
+Auswahl: `alle` wählt den bevorzugten Vorschlag jeder offenen Gruppe; `auto` wählt ihn für jede 🔴-Gruppe und für jede 🟡- und 🟢-Gruppe, deren Scout-Zeile `Sicherheit:` die Empfehlungs-Schwelle des Projekts erreicht; als Expertenformen gibt es `b`, `<n>` und `<g>:<n|b>,…`. `<n>` und `<g>:<n|b>,…` zählen die Gruppen in der Reihenfolge der gesicherten Abschlussdaten; der Bericht zeigt diese Nummern nicht, darum ist `alle` der Normalfall. Optional `--spec <pfad>` und `--base <ref>` wie beim Original-Review. Bericht und Bericht-Daten liegen in der Ablage der Etappe, die `prepare.js` festlegt; du übergibst dafür nichts.
 
 ## Ablauf
 1. **Eingaben:** `node "${CLAUDE_PLUGIN_ROOT}/scripts/prepare.js" review-followup $ARGUMENTS`. Exit ungleich 0: die Meldung wörtlich ausgeben, Ende. Sonst Zeilen `<Name>=<Wert>` wie beim Original-Review, dazu `original` (die Art des Original-Reviews), `F`, `gruppen`, `offen` (nicht gewählte Gruppen), je Gruppe `WAHL` und bei `original=implementation-review` `FIX_BASE`. Bei Spec und Plan musst du die `WARN`-Zeilen nicht weitergeben (der Bericht enthält die Hinweise); bei `implementation-review` kommt jede `WARN`-Zeile in die Hinweise.

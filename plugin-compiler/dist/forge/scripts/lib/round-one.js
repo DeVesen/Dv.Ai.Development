@@ -15,14 +15,14 @@ function readReviewerResult(dir, name, review) {
   return invalid ? { name, problem: `Ergebnis ungültig: ${invalid}` } : { name, findings: value.findings };
 }
 
+// 🟢 zählen mit: `review-followup <A> auto` setzt auch 🟢 ab der Empfehlungs-Schwelle um und braucht dafür einen Scout-Vorschlag.
 function scoutScope(counts) {
   if (counts.red > 0) return 'rot-und-gelb';
-  return counts.yellow > 0 ? 'hinweise' : 'keiner';
+  return counts.yellow > 0 || counts.green > 0 ? 'hinweise' : 'keiner';
 }
 
 function scoutGroups(groups, scope) {
-  if (scope === 'rot-und-gelb') return groups.filter((group) => group.color !== 'green');
-  return groups.filter((group) => group.color === 'yellow');
+  return scope === 'keiner' ? [] : groups;
 }
 
 function statusLines(counts, questions, failed) {

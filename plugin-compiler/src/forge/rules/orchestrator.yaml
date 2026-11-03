@@ -13,7 +13,7 @@ sections:
     enforced_by: scripts/lib/orchestrator-rules.js
     source: forge/shared/orchestrator-rules.md (Followup-Runden)
   - id: R-302
-    text: Eine Followup-Runde ist eine Iteration Integration → Re-Review. `orchestrator-state.js next` startet eine Runde nur, solange der letzte Bericht ein offenes 🔴 mit Scout-Vorschlag nennt (`NEXT=followup`); 🟡 und 🟢 lösen keine Runde aus und stehen im Abschlussbericht unter `Was ist noch offen`.
+    text: Eine Followup-Runde ist eine Iteration Integration → Re-Review mit `review-followup <A> auto`. `orchestrator-state.js next` startet eine Runde, solange der letzte Bericht ein offenes 🔴 mit Scout-Vorschlag nennt (`NEXT=followup`). Mit `--artefakt` und `--rolle` startet es vor der ersten Runde außerdem genau eine, wenn die Sicherung ein 🟡 oder 🟢 mit Scout-`Sicherheit` ab der Empfehlungs-Schwelle hat (`AUTO=<n>`); die Schwelle liefert `forge-config.js get Empfehlungs-Schwelle`. Übrige 🟡 und 🟢 lösen keine Runde aus und stehen im Abschlussbericht unter `Was ist noch offen`.
     why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
     enforce: script
     enforced_by: scripts/orchestrator-state.js
@@ -107,7 +107,7 @@ sections:
       - Das Maximum aus dem Abschnitt Followup-Runden gilt.
       - alle drei
     - - '"Die 🟡 arbeite ich noch ein, dann ist es sauber."'
-      - 🟡 lösen keine Runde aus; sie stehen im Bericht.
+      - Welche 🟡 eine Runde bekommen, entscheidet `auto` über die Empfehlungs-Schwelle; die übrigen stehen im Bericht.
       - alle drei
     - - '"Plan bereit, ich committe."'
       - Nie; der Plan bleibt uncommittet.

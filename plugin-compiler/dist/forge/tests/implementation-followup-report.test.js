@@ -28,11 +28,10 @@ const CLEAN = ['### Findings', '- **Leere Liste** — behoben — src/a.js:4', '
 const OPEN = ['### Findings', '- **Leere Liste** — nicht behoben — src/a.js:4', '', '### Neue Schäden im Fix-Diff', '- 🟡 `src/a.js:7` — Magische Zahl', '', '### Außerhalb', '- Logging fehlt in src/c.js', '', '### Urteil', '**Fix-Runde:** offen: Leere Liste'].join('\n');
 
 // Arbeitsbereich wie prepare.js ihn für ein Followup anlegt, samt Ablage in kontext.json.
-function workspace(chosen) {
+function workspace(chosen, { aggregate = AGGREGATE, scout = SCOUT, all = [{ nummer: 1, stufe: '🔴', stelle: 'src/a.js:3' }, { nummer: 2, stufe: '🟡', stelle: 'src/b.js:9' }] } = {}) {
   const dir = tempDir('dv-forge-impl-followup-');
-  writeJsonFile(path.join(dir, 'sicherung-vorher', 'aggregate.md'), AGGREGATE);
-  writeJsonFile(path.join(dir, 'sicherung-vorher', 'scout.md'), SCOUT);
-  const all = [{ nummer: 1, stufe: '🔴', stelle: 'src/a.js:3' }, { nummer: 2, stufe: '🟡', stelle: 'src/b.js:9' }];
+  writeJsonFile(path.join(dir, 'sicherung-vorher', 'aggregate.md'), aggregate);
+  writeJsonFile(path.join(dir, 'sicherung-vorher', 'scout.md'), scout);
   writeJsonFile(path.join(dir, 'followup.json'), {
     gewaehlt: all.filter((group) => chosen.includes(group.nummer)).map((group) => ({ ...group, vorschlag: 1 })),
     offen: all.filter((group) => !chosen.includes(group.nummer)),
@@ -111,6 +110,35 @@ test('implementationFollowup_UnchosenGroupLeft_CleanStatusNamesOpenGroups', () =
   // Assert
   assert.match(result.stdout, /^ENDE sauber nach Nach-Review, nicht gewählte Gruppen bleiben offen\nSTATUSZEILE Review abgeschlossen: ✅ Bereit zum Abschließen · 1 kleiner Hinweis offen · FOLLOWUP ja · Bericht: /);
   assert.deepEqual(data.open.map((entry) => entry.title), ['Schleife benennen']);
+});
+
+test('buildFollowupReport_UnchosenGreen_NotOpen', () => {
+  // Arrange
+  const aggregate = [
+    '=== REWORK ===',
+    '### 🔴 src/a.js:3 (risks)',
+    '- [risks · fehlerfall] Zitat: „x“ · Konsequenz: Absturz bei leerer Liste · Begründung: b',
+    '',
+    '### 🟢 src/c.js (tests)',
+    '- [tests · name] Zitat: „z“ · Konsequenz: Name holpert · Begründung: b',
+    '',
+  ].join('\n');
+  const scout = [
+    '## Scout-Vorschläge', '',
+    '### 🔴 src/a.js:3', 'Titel: Leere Liste abfangen', 'Beschreibung: Eine leere Liste bringt die Summe zum Absturz.', 'Empfehlung: Früh zurückkehren, weil es am einfachsten ist.', '1. Früh zurückkehren.', '**Bevorzugt: 1** — klar.', '',
+    '### 🟢 src/c.js', 'Titel: Name holpert', 'Beschreibung: Der Name liest sich holprig.', 'Empfehlung: Umbenennen, weil der Name sonst irritiert.', '1. Umbenennen.', '**Bevorzugt: 1** — klar.', '',
+  ].join('\n');
+  const all = [{ nummer: 1, stufe: '🔴', stelle: 'src/a.js:3' }, { nummer: 2, stufe: '🟢', stelle: 'src/c.js' }];
+  const dir = workspace([1], { aggregate, scout, all });
+
+  // Act
+  const { result, data } = run(dir, CLEAN);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(data.open.filter((entry) => entry.key === 'src/c.js'), []);
+  assert.equal(result.stdout.split('\n')[0].includes('nicht gewählte Gruppen bleiben offen'), false);
+  assert.ok(result.stdout.includes('BEHALTEN keine'), result.stdout);
 });
 
 test('implementationFollowup_WithoutReReview_BlockedAndChangeNotVerified', () => {
@@ -373,3 +401,15 @@ for (const parts of [['--', 'ber', 'icht'], ['--', 'art', 'efakt'], ['--', 'abl'
     assert.equal(fs.existsSync(path.join(dir, 'ablage')), false);
   });
 }
+
+test('implementationFollowup_YellowChosenWithoutReReview_StaysYellow', () => {
+  // Arrange
+  const dir = workspace([2]);
+
+  // Act
+  const { data } = run(dir, '', ['--ohne', 'blockiert']);
+
+  // Assert
+  assert.equal(data.openRed, 1);
+  assert.equal(data.open.find((entry) => entry.title === 'Schleife benennen').color, 'yellow');
+});

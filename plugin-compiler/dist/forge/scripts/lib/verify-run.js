@@ -10,12 +10,15 @@ const KEYS = ['Build', 'Test', 'Lint'];
 const TAIL_LINES = 40;
 const DEFAULT_TIMEOUT_MS = 30 * 60 * 1000;
 const FULL_RUN = /^-?\s*Gesamtlauf:\s*(\S+)\s+grün\b/m;
-// Rot nur, weil Docker fehlt: Testcontainers und Docker-Client melden das mit diesen Texten.
-const DOCKER_MARKER = /Testcontainers|Could not find a valid Docker environment|Cannot connect to the Docker daemon|docker(?:\.sock)?:? (?:not found|is not running|daemon)|DockerException/i;
+// Rot nur, weil Docker fehlt: Docker-Client und Testcontainers (Java, .NET) melden das mit diesen Texten. Das Wort `Testcontainers`
+// allein zählt nicht: Es steht auch in der Ausgabe echter Testfehler einer Suite mit Containern.
+const DOCKER_MARKER = /Could not find a valid Docker environment|Docker is either not running or misconfigured|DockerUnavailableException|Cannot connect to the Docker daemon|docker(?:\.sock)?:? (?:not found|is not running|daemon)|DockerException/i;
 // Befehl nicht startbar: Exit-Code der Shell (POSIX 127, cmd 9009) oder ihre Meldung zum ersten Wort des Befehls.
 // Node startet cmd mit `/d /s /c`, dann meldet cmd Exit 1 und nur die Meldung bleibt (englisch oder deutsch, auch über zwei Zeilen).
 const NOT_FOUND_EXITS = [127, 9009];
 const NOT_FOUND_TEXT = /is not recognized as an internal or external command|wird nicht als interner oder externer Befehl|konnte nicht gefunden werden|command not found|: not found/;
+// Die dv-Toolchain-Skripte melden ein fehlendes Werkzeug selbst (Exit 1, `Nicht gestartet.`): eine Umgebungslücke, kein roter Code.
+const TOOLCHAIN_MISSING = /Node-Pakete fehlen|Angular CLI nicht gefunden|dotnet nicht gefunden/;
 // Verhalten statt Doku: Markdown unter diesen Ordnern steuert Skills und Agents.
 const BEHAVIOUR_DIRS = /(?:^|\/)(?:skills|agents|shared|\.claude)\//;
 
@@ -44,7 +47,7 @@ function namesWord(line, word) {
 // Die Shell konnte das erste Wort des Befehls nicht starten. Meldungen zu anderen Wörtern zählen nicht: Dann lief der Befehl.
 function notStartable(command, exit, output) {
   if (exit === 0) return false;
-  if (NOT_FOUND_EXITS.includes(exit)) return true;
+  if (NOT_FOUND_EXITS.includes(exit) || TOOLCHAIN_MISSING.test(String(output ?? ''))) return true;
   const word = firstWord(command);
   const lines = String(output ?? '').replace(/\r\n/g, '\n').split('\n');
   return lines.some((line, index) => NOT_FOUND_TEXT.test(line) && (namesWord(line, word) || namesWord(lines[index - 1] ?? '', word)));
@@ -88,7 +91,8 @@ function overall(runs, docker) {
   return onlyDocker ? 'docker' : 'rot';
 }
 
-// `config`: { Build, Test, Lint } (Werte aus forge-config.js). Bricht beim ersten roten Lauf ab.
+// `config`: { Build, Test, Lint } (Werte aus forge-config.js). Bricht nach dem ersten roten Schlüssel ab; im Schlüssel `Test` laufen alle
+// Befehle, damit eine rote erste Suite die zweite nicht verdeckt.
 function verifyRun({ repo, config, only = KEYS, report = null, timeout = DEFAULT_TIMEOUT_MS, docker = dockerAvailable }) {
   const runs = [];
   const skipped = [];
@@ -100,43 +104,46 @@ function verifyRun({ repo, config, only = KEYS, report = null, timeout = DEFAULT
     }
     const commands = commandsOf(config[key]);
     if (commands.length === 0) skipped.push({ schluessel: key, grund: 'nicht konfiguriert' });
-    let red = false;
+    const keyRuns = [];
     for (const command of commands) {
       const { voll: _full, ...executed } = runCommand(command, repo, timeout);
       const run = { schluessel: key, ...executed };
       runs.push(run);
-      if (run.exit !== 0) { red = true; break; }
+      keyRuns.push(run);
+      if (run.exit !== 0 && key !== 'Test') break;
     }
-    if (red && !(key === 'Test' && runs.at(-1).docker)) break;
+    const red = keyRuns.filter((run) => run.exit !== 0);
+    if (red.length > 0 && !(key === 'Test' && red.every((run) => run.docker))) break;
   }
   const offen = git(repo, ['status', '--porcelain']).out.split('\n').filter(Boolean);
   return { head: git(repo, ['rev-parse', 'HEAD']).out, ergebnis: overall(runs, docker), laeufe: runs, uebersprungen: skipped, offen };
 }
 
-// Ein Lauf der Test-Befehle: Exit-Code des ersten roten Befehls (sonst 0) und die vollständige Ausgabe aller gelaufenen Befehle.
+// Ein Lauf aller Test-Befehle: Exit-Code des ersten roten Befehls (sonst 0) und die vollständige Ausgabe aller Befehle; `umgebung` listet
+// nicht startbare Befehle, nur wenn es welche gibt. Alle Befehle laufen, damit eine rote erste Suite weder die roten Tests noch eine
+// Umgebungslücke der zweiten verdeckt.
 function testRun(commands, repo, timeout) {
-  const executed = [];
-  for (const command of commands) {
-    const run = runCommand(command, repo, timeout);
-    executed.push(run);
-    if (run.exit !== 0) break;
-  }
-  return { exit: executed.find((run) => run.exit !== 0)?.exit ?? 0, ausgabe: executed.map((run) => run.voll).join('') };
+  const executed = commands.map((command) => runCommand(command, repo, timeout));
+  const missing = executed.filter((run) => run.umgebung).map((run) => run.befehl);
+  return { exit: executed.find((run) => run.exit !== 0)?.exit ?? 0, ausgabe: executed.map((run) => run.voll).join(''), ...(missing.length > 0 ? { umgebung: missing } : {}) };
 }
 
 // Basis-Lauf vor Task 1: `Test` höchstens zweimal, der zweite Lauf nur, wenn der erste rot ist. `beideRot`: erst dann gibt es Tests,
-// die auf dem unveränderten Stand rot sind. Ohne konfigurierten Test: keine Läufe.
+// die auf dem unveränderten Stand rot sind. Ist ein Befehl nicht startbar, endet der Lauf nach dem ersten Mal mit `umgebung`: Die Umsetzung
+// startet dann nicht, statt nach allen Tasks an derselben Lücke zu scheitern. Ohne konfigurierten Test: keine Läufe.
 function basisRun({ repo, config, timeout = DEFAULT_TIMEOUT_MS }) {
   const commands = commandsOf(config.Test);
   const laeufe = [];
   while (commands.length > 0 && laeufe.length < 2) {
     laeufe.push(testRun(commands, repo, timeout));
-    if (laeufe.at(-1).exit === 0) break;
+    if (laeufe.at(-1).exit === 0 || laeufe.at(-1).umgebung) break;
   }
-  return { laeufe, beideRot: laeufe.length === 2 && laeufe.every((run) => run.exit !== 0) };
+  const umgebung = laeufe.at(-1)?.umgebung;
+  return { laeufe, beideRot: laeufe.length === 2 && laeufe.every((run) => run.exit !== 0), ...(umgebung ? { umgebung } : {}) };
 }
 
 function formatBasis(result) {
+  if (result.umgebung) return ['BASIS umgebung', ...result.umgebung.map((befehl) => `UMGEBUNG Befehl ${firstWord(befehl)} nicht startbar`)].join('\n');
   return `BASIS rot=${result.beideRot ? 'ja' : 'nein'}`;
 }
 

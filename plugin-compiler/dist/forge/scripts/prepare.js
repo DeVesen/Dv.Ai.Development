@@ -9,11 +9,11 @@ const { slugOf } = require('./plan-tasks');
 const { resolveTag, TagError } = require('./base-tag');
 const { createWorkspace, readContext, writeContext } = require('./workspace');
 const { writePackage, PackageError } = require('./review-package');
-const { ConfigError, readConfig, branchFor } = require('./forge-config');
+const { ConfigError, readConfig, recommendationThreshold, branchFor } = require('./forge-config');
 const { archivePath } = require('./ledger');
 const { writeAnchors } = require('./plan-anchors');
 const { isScriptReviewer } = require('./lib/reviewer-names');
-const { ART_OF_ROLE, FollowupError, latest, loadGroups, rolesFor, slugFor } = require('./followup');
+const { ART_OF_ROLE, FollowupError, autoEligible, latest, loadGroups, rolesFor, slugFor } = require('./followup');
 const { SessionChainError } = require('./lib/session-chain-store');
 const { etappeFor } = require('./lib/etappe-of');
 const { ablageDir, clearAblage } = require('./lib/session-chain-ablage');
@@ -23,7 +23,7 @@ const USAGE = [
   '       node prepare.js plan-review <plan> [spec] [--only <reviewer,...>] [--debug]',
   '       node prepare.js implementation <plan> [spec] [--debug]',
   '       node prepare.js implementation-review <plan> [spec] [--spec <pfad>] [--context <pfad>]... [--base <ref>] [--only <reviewer,...>] [--debug]',
-  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]   (auswahl: alle | b | <n> | <g>:<n|b>,...)',
+  '       node prepare.js review-followup <spec|plan> <auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]   (auswahl: alle | auto | b | <n> | <g>:<n|b>,...)',
   '',
 ].join('\n');
 const SPEC_LINE = /^\*\*Spec:\*\*\s*(.+?)\s*$/m;
@@ -340,10 +340,14 @@ function prepareImplementationReview({ positional, flags }) {
   return values;
 }
 
-const SELECTION = /^(?:alle|b|\d+|\d+:(?:\d+|b)(?:,\d+:(?:\d+|b))*)$/;
+const SELECTION = /^(?:alle|auto|b|\d+|\d+:(?:\d+|b)(?:,\d+:(?:\d+|b))*)$/;
 
-function selectionPairs(text, groups) {
-  if (!text.includes(':')) return groups.map((group) => [String(group.number), text === 'alle' ? 'b' : text]);
+// `auto`: der bevorzugte Vorschlag jeder Gruppe, die autoEligible (followup.js) bei der Empfehlungs-Schwelle des Projekts erreicht.
+// `alle`, `b` und `<n>` lassen gesicherte 🟢 aus: Der Bericht zeigt sie nicht, nur `auto` oder eine genannte Nummer erreicht sie.
+function selectionPairs(text, groups, threshold) {
+  if (text === 'auto') return groups.filter((group) => autoEligible(group, threshold)).map((group) => [String(group.number), 'b']);
+  const visible = groups.filter((group) => group.severity !== '🟢');
+  if (!text.includes(':')) return visible.map((group) => [String(group.number), text === 'alle' ? 'b' : text]);
   return text.split(',').map((part) => part.split(':'));
 }
 
@@ -359,11 +363,14 @@ function chooseProposal(group, wanted) {
   return choice;
 }
 
-function parseSelection(text, groups) {
-  if (!SELECTION.test(text)) throw new UsageError(`Auswahl ungültig: ${text} (erlaubt: alle, b, <n>, <g>:<n|b>,...)`);
+function parseSelection(text, groups, threshold) {
+  if (!SELECTION.test(text)) throw new UsageError(`Auswahl ungültig: ${text} (erlaubt: alle, auto, b, <n>, <g>:<n|b>,...)`);
   if (groups.length === 0) throw new PrepareError('Die Sicherung enthält keine Scout-Gruppen.');
+  const pairs = selectionPairs(text, groups, threshold);
+  if (pairs.length === 0 && text === 'auto') throw new PrepareError(`Keine Gruppe erreicht die Empfehlungs-Schwelle von ${threshold} %; nichts umzusetzen.`);
+  if (pairs.length === 0) throw new PrepareError('Die Sicherung enthält nur 🟢-Gruppen; nur auto oder <g>:<n|b> erreicht sie.');
   const seen = new Set();
-  return selectionPairs(text, groups).map(([number, wanted]) => {
+  return pairs.map(([number, wanted]) => {
     const group = groups[Number(number) - 1];
     if (!group) throw new PrepareError(`Gruppe ${number} gibt es nicht (1-${groups.length}).`);
     if (seen.has(group.number)) throw new PrepareError(`Gruppe ${group.number} doppelt gewählt.`);
@@ -418,7 +425,8 @@ function prepareReviewFollowup({ positional, flags }) {
   const saved = latest(root, slug, roles);
   if (!saved) throw new PrepareError(`Keine Scout-Vorschläge gesichert für ${slug}. Zuerst das Review laufen lassen.`);
   const groups = loadGroups(saved.dir);
-  const chosen = parseSelection(positional[1], groups);
+  const threshold = positional[1] === 'auto' ? recommendationThreshold(readConfig(root).config) : null;
+  const chosen = parseSelection(positional[1], groups, threshold);
   // Skript-Prüfungen stehen als Pseudo-Reviewer in den Gruppen, sind aber kein Wert für --only.
   const affected = [...new Set(chosen.flatMap(({ group }) => group.reviewers))].filter((name) => !isScriptReviewer(name));
   const art = ART_OF_ROLE[saved.role];
@@ -435,7 +443,8 @@ function prepareReviewFollowup({ positional, flags }) {
   if (affected.length === 0) values.aktiv = '';
   values.F = selection;
   values.gruppen = chosenNumbers.join(',');
-  values.offen = groups.filter((group) => !chosenNumbers.includes(group.number)).map((group) => group.number).join(',');
+  // Gesicherte 🟢 sind nie offen; sie zählen für den Status `nicht gewählte Gruppen bleiben offen` nicht mit.
+  values.offen = groups.filter((group) => !chosenNumbers.includes(group.number) && group.severity !== '🟢').map((group) => group.number).join(',');
   values.WAHL = chosen.map(({ group, choice }) => `${group.number} · ${group.severity} ${group.location} · Vorschlag ${choice}`);
   if (art === 'implementation-review') values.FIX_BASE = headCommit(values.R);
   return values;

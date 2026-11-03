@@ -19,6 +19,7 @@ const REWORK_HEADING = /^### (🔴|🟡|🟢) (.+) \(([^()]*)\)\s*$/u;
 const PROPOSAL = /^\d+\.\s+(.*)$/;
 const PREFERRED_LINE = /^\*\*Bevorzugt:/;
 const PREFERRED = /^\*\*Bevorzugt: (\d+)\*\*/;
+const CONFIDENCE_LINE = /^Sicherheit: (\d{1,3}) %$/;
 const FENCE = /^\s*(```|~~~)/;
 
 class FollowupError extends Error {}
@@ -145,11 +146,14 @@ function parseScout(lines) {
   for (const line of scoutSection(lines)) {
     const heading = inFence ? null : GROUP_HEADING.exec(line);
     if (heading) {
-      current = { severity: heading[1], location: heading[2], proposals: [], preferred: null, preferredCount: 0 };
+      current = { severity: heading[1], location: heading[2], proposals: [], preferred: null, preferredCount: 0, sicherheit: null };
       groups.push(current);
       continue;
     }
     if (!current) continue;
+    // `Sicherheit: <n> %` vor dem ersten Vorschlag; fehlt sie oder ist sie keine Zahl von 0 bis 100, bleibt sie null.
+    const confidence = inFence || current.proposals.length > 0 ? null : CONFIDENCE_LINE.exec(line);
+    if (confidence && Number(confidence[1]) <= 100) current.sicherheit = Number(confidence[1]);
     const opensOrClosesFence = FENCE.test(line);
     const proposal = inFence || opensOrClosesFence ? null : PROPOSAL.exec(line);
     const preferredLine = !inFence && PREFERRED_LINE.test(line);
@@ -246,8 +250,15 @@ function main() {
   }
 }
 
+// `review-followup <A> auto`: der bevorzugte Vorschlag jeder 🔴-Gruppe, dazu jeder 🟡- und 🟢-Gruppe mit Sicherheit ab der Schwelle.
+// Ohne Sicherheit gilt eine 🟡- oder 🟢-Gruppe als unter der Schwelle; sie bleibt beim Menschen. Die einzige Stelle dieser Regel.
+function autoEligible(group, threshold) {
+  if (!group.preferred) return false;
+  return group.severity === '🔴' || (group.sicherheit !== null && group.sicherheit >= threshold);
+}
+
 module.exports = {
-  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, FollowupError, ROLES, SLUG, ART_OF_ROLE, followupDir, save, drop, keep, scoutBlocks, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework,
+  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, CONFIDENCE_LINE, FollowupError, ROLES, SLUG, ART_OF_ROLE, followupDir, save, drop, keep, scoutBlocks, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework, autoEligible,
 };
 
 if (require.main === module) main();

@@ -26,6 +26,7 @@ const DEFAULTS = {
   Lint: '',
   Suche: '',
   'Commit-Konvention': '',
+  'Empfehlungs-Schwelle': '70',
 };
 
 class ConfigError extends Error {}
@@ -86,9 +87,22 @@ function readConfig(cwd = process.cwd()) {
   return { root: toPosix(root), main: toPosix(main), config, configured: Object.keys(found), source };
 }
 
+const THRESHOLD_KEY = 'Empfehlungs-Schwelle';
+const THRESHOLD = /^(\d{1,3})\s*%?$/;
+
+// Empfehlungs-Schwelle als ganze Zahl von 0 bis 100 (`70`, `70 %` oder `70%`); die einzige Stelle dieser Regel.
+function recommendationThreshold(config) {
+  const raw = String(config[THRESHOLD_KEY] ?? '').trim();
+  const match = THRESHOLD.exec(raw);
+  const value = match ? Number(match[1]) : NaN;
+  if (!(value >= 0 && value <= 100)) throw new ConfigError(`${THRESHOLD_KEY} ungültig: ${raw} (erlaubt: 0 bis 100)`);
+  return value;
+}
+
 function getValue(key, cwd = process.cwd()) {
   if (!Object.hasOwn(DEFAULTS, key)) throw new ConfigError(`Unbekannter Schlüssel: ${key}`);
-  return readConfig(cwd).config[key];
+  const { config } = readConfig(cwd);
+  return key === THRESHOLD_KEY ? String(recommendationThreshold(config)) : config[key];
 }
 
 function workitemOf(specPath) {
@@ -181,4 +195,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, workitemOf, workitemPattern, branchWorkitem, branchFor, branchCandidates };
+module.exports = { ConfigError, DEFAULTS, parseSection, readConfig, getValue, show, recommendationThreshold, workitemOf, workitemPattern, branchWorkitem, branchFor, branchCandidates };

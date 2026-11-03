@@ -182,6 +182,21 @@ function processFinal(input, cwd) {
   return finalResult(data, next, check, blockFor(next, state, { etappe, abweichungen: check.abweichungen, session: input.session }), state);
 }
 
+// Vorab-Prüfung in der Etappen-Session: dieselbe Prüfung wie `processFinal`, ohne Zustand oder Ereignis zu schreiben. Liefert getrennt
+// die Abweichungen und die Showstopper, an denen die Leit-Session dieses `final` hielte; die Etappe behebt sie, bevor sie `final` meldet.
+// Getrennt, weil der Mensch eine Abweichung bestätigen kann, einen Showstopper nicht. Den gemeldeten Commit prüft erst `final`:
+// `etappe-report` bekommt ihn nicht übergeben.
+function previewFinal(bericht, cwd) {
+  const { data } = readData(bericht);
+  const etappe = checkedEtappe(data.etappe);
+  const state = structuredClone(readState(cwd, data.slug) ?? emptyState(data.slug));
+  adoptValues(state, {}, data);
+  const check = checkedFinal(etappe, state, { bericht }, data, cwd);
+  const next = nextAfterFinal(etappe, data, check);
+  const stopper = next.halt === 'showstopper' ? next : next.danach;
+  return { abweichungen: check.abweichungen, showstopper: stopper?.halt === 'showstopper' ? stopper.gruende : [] };
+}
+
 // Schlussbericht; `stopp` hält den Zustand als gestoppt fest und nennt das Codewort für den späteren Einstieg.
 function closing(slug, stopp, cwd) {
   const state = stateOf(cwd, slug);
@@ -195,4 +210,4 @@ function recordCommit(slug, commit, anlass, cwd) {
   return writeState(cwd, slug, { ...state, commits: [...(state.commits ?? []), { etappe: 'leit-session', anlass, ...commit }] });
 }
 
-module.exports = { setState, copySpecAtStart, haltText, holdAt, processFinal, closing, recordCommit };
+module.exports = { setState, copySpecAtStart, haltText, holdAt, processFinal, previewFinal, closing, recordCommit };

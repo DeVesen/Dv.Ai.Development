@@ -55,14 +55,16 @@ function openFromRounds({ one, two, answered }) {
 
 // Followup: nicht gewählte Gruppen, gewählte ohne bestätigte Umsetzung (mit ihrer Stufe: 🟡 bleibt 🟡 und ist kein Hindernis, wie im
 // Implementierungs-Followup) und neue Gruppen der Nachprüfung.
+// Gesicherte 🟢 sind nie offen: Sie stehen nur in der Sicherung, damit `review-followup <A> auto` sie erreicht.
 function openFromFollowup({ saved, chosen, two }) {
   const verdicts = verdictMap(two);
-  const unchosen = saved.filter((group) => !chosen.has(group.number)).map(fromSaved);
-  const notDone = saved
+  const rated = saved.filter((group) => group.severity !== '🟢');
+  const unchosen = rated.filter((group) => !chosen.has(group.number)).map(fromSaved);
+  const notDone = rated
     .filter((group) => chosen.has(group.number) && (two === null || verdicts.get(placeKey(group.location)) === 'nicht erledigt'))
     .map(fromSaved);
   const fresh = (two?.groups ?? []).filter((group) => group.color !== 'green').map(fromRated);
   return dedupe([...unchosen, ...notDone, ...fresh]);
 }
 
-module.exports = { answeredKeys, verdictMap, fromSaved, openFromRounds, openFromFollowup };
+module.exports = { answeredKeys, verdictMap, fromRated, fromSaved, openFromRounds, openFromFollowup };

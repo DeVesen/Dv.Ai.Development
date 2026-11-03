@@ -16,7 +16,7 @@ test('reviewFollowupSkill_Frontmatter_ModelInvocableWithArgumentHint', () => {
   assert.equal(fields.name, 'review-followup');
   assert.match(fields.description, /^Use when/);
   assert.equal(fields['disable-model-invocation'], undefined);
-  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <alle|auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]');
+  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <alle|auto|auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]');
 });
 
 test('reviewFollowupSkill_Body_StaysUnder500Words', () => {
@@ -117,4 +117,9 @@ test('reviewFollowupFlow_ImplementationWithoutReReview_ContinuesAtReportDataStep
   assert.ok(blocked?.includes('weiter mit Schritt 3 von „Nachprüfung · Implementierung“ (`--ohne blockiert`)'));
   assert.ok(unchanged?.includes('weiter mit Schritt 3 dieses Abschnitts (`--ohne keine-aenderung`)'));
   assert.equal(text.includes('weiter mit dem Bericht'), false);
+});
+
+test('reviewFollowupFlow_ReworkAgent_RunsOnSonnet', () => {
+  const text = readText(FLOW);
+  assert.ok(text.includes('Der Agent-Aufruf trägt `model: sonnet`'));
 });

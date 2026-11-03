@@ -47,44 +47,45 @@ sections:
     why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
     enforce: text
     source: forge/shared/dialog-rules.md (Ton)
-- heading: 85-%-Regel
+- heading: Empfehlungs-Schwelle
+  lead: '`<SCHWELLE>` ist die Ausgabe von `node "<PLUGIN>/scripts/forge-config.js" get Empfehlungs-Schwelle`, einmal je Session gelesen; ohne Projekt-Einstellung ist sie 70. `<PLUGIN>` ist der Ordner über `shared/`, in dem diese Datei liegt. Endet der Aufruf mit Exit ungleich 0, nennst du seine Meldung in einer Zeile und stellst jede offene Entscheidung als Frage.'
   style: numbered
   rules:
   - id: R-409
-    text: '**Selbst entscheiden:** Lässt sich eine Antwort mit mindestens 85 % Gewissheit aus dem Kontext ableiten, den dein Skill als Quelle zulässt, entscheidest du selbst und fragst nicht, auch nicht als Bestätigung.'
+    text: '**Empfehlung übernehmen:** Bist du dir mit mindestens `<SCHWELLE>` % Gewissheit sicher, dass deine Empfehlung die richtige Antwort ist, und stützt sie sich auf den Kontext, den dein Skill als Quelle zulässt, übernimmst du sie und fragst nicht, auch nicht als Bestätigung.'
     why: Eine Frage stellst du nur mit konkretem Nutzen (Ton, Regel 3 Mehrwert).
     enforce: text
-    source: forge/shared/dialog-rules.md (85-%-Regel)
+    source: forge/shared/dialog-rules.md (Empfehlungs-Schwelle)
   - id: R-410
-    text: '**Nur mit Beleg:** Die 85 % brauchen einen Beleg-Tag außer `ungeklärt`. Eine Vermutung bleibt eine Frage, auch wenn sie naheliegt.'
+    text: '**Nur mit Beleg:** Die Gewissheit braucht einen Beleg-Tag außer `ungeklärt`. Eine Vermutung bleibt eine Frage, auch wenn sie naheliegt.'
     why: Eine Vermutung bleibt eine Frage, auch wenn sie naheliegt.
     enforce: text
-    source: forge/shared/dialog-rules.md (85-%-Regel)
+    source: forge/shared/dialog-rules.md (Empfehlungs-Schwelle)
   - id: R-411
-    text: '**Sichtbar:** Selbst Entschiedenes steht vor den Fragen der Runde, eine Zeile je Punkt:
+    text: '**Sichtbar:** Übernommenes steht vor den Fragen der Runde, eine Zeile je Punkt, mit deiner Gewissheit in Prozent:
 
       ```
 
       Selbst entschieden:
 
-      - <Kurztitel>: <Entscheidung> · <Beleg-Tag> — <Grund>
+      - <Kurztitel>: <Entscheidung> · <Beleg-Tag> · <n> % — <Grund>
 
       ```
 
       Widerspricht der Mensch in seiner nächsten Antwort nicht, ist der Punkt beantwortet und wird ein W-Eintrag mit diesem Beleg-Tag. Widerspricht er, ist der Punkt eine Frage der nächsten Runde.'
     why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
     enforce: text
-    source: forge/shared/dialog-rules.md (85-%-Regel)
+    source: forge/shared/dialog-rules.md (Empfehlungs-Schwelle)
   - id: R-412
-    text: '**Sonst fragen:** Unter 85 % fragst du, mit genau einer Empfehlung.'
+    text: '**Sonst fragen:** Unter `<SCHWELLE>` % fragst du, mit genau einer Empfehlung.'
     why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
     enforce: text
-    source: forge/shared/dialog-rules.md (85-%-Regel)
+    source: forge/shared/dialog-rules.md (Empfehlungs-Schwelle)
   - id: R-413
     text: '**Nie selbst:** Freigaben bleiben beim Menschen: Bestätigung von Entwurf, Titel und Slug, das Schreiben jeder Änderung, Commit, Push, Haltepunkt und Abbruch.'
     why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
     enforce: text
-    source: forge/shared/dialog-rules.md (85-%-Regel)
+    source: forge/shared/dialog-rules.md (Empfehlungs-Schwelle)
 - heading: Rote Flaggen
   style: table
   table:
@@ -94,7 +95,7 @@ sections:
     separator: '|---|---|'
     rows:
     - - „Zur Sicherheit frag ich trotzdem.“
-      - 'Mit Beleg und mindestens 85 %: selbst entscheiden, unter `Selbst entschieden`.'
+      - 'Mit Beleg und mindestens `<SCHWELLE>` %: Empfehlung übernehmen, unter `Selbst entschieden`.'
     - - „Liegt nahe, das entscheide ich still.“
       - Ohne Beleg-Tag ist es eine Frage; mit Beleg steht es sichtbar unter `Selbst entschieden`.
     - - „Ein Absatz Hintergrund hilft.“

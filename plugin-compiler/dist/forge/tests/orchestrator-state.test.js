@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { repoWithPlan, git, addWorktree } = require('./lib/git-repo');
+const { repoWithPlan, git, addWorktree, makeRepo, commitFile } = require('./lib/git-repo');
 const { writeState } = require('../scripts/lib/session-chain-store');
 const { ablageDir } = require('../scripts/lib/session-chain-ablage');
 const { maxFollowups } = require('../scripts/lib/orchestrator-rules');
@@ -90,6 +90,58 @@ test('next_OnlyYellowOpenWithProposal_WeiterWithoutAbbruch', () => {
   const dir = tmp();
   const hints = report(path.join(dir, 'br.json'), { status: 'sauber nach Runde 1', resultLine: '**Ergebnis:** ✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen', offersFollowup: true, openRed: 0, open: [openEntry('yellow', 'task 1')] });
   assert.equal(run(dir, 'next', '--review', hints).stdout, 'NEXT=weiter\nERGEBNIS=✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen\nBEREIT=ja\nRUNDEN=0\nROT=0\n');
+});
+
+// Repo mit committeter Spec und ungetrackter Sicherung des Spec-Reviews; `sicherheit` ist die Sicherheit des Scouts in Prozent.
+function repoWithSavedSpecReview(sicherheit) {
+  const repo = makeRepo();
+  commitFile(repo, 'docs/forge/demo/spec.md', '# Spec\n\nText.\n', 'spec');
+  const dir = path.join(repo, '.forge', 'followup', 'spec-review', 'demo');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'aggregate.md'), '=== REWORK ===\n### 🟡 AC-03 (clarity)\n- [clarity · yellow] Zitat: „a“ · Konsequenz: k · Begründung: b\n');
+  fs.writeFileSync(path.join(dir, 'scout.md'), `## Scout-Vorschläge\n\n### 🟡 AC-03\nSicherheit: ${sicherheit} %\n1. Vorschlag\n**Bevorzugt: 1** — klar.\n`);
+  fs.writeFileSync(path.join(dir, 'meta.json'), '{"rolle":"spec-review","savedAt":"2026-11-02T10:00:00.000Z"}');
+  return { repo, spec: path.join(repo, 'docs', 'forge', 'demo', 'spec.md') };
+}
+
+function yellowHints(dir) {
+  return report(path.join(dir, 'br.json'), { status: 'sauber nach Runde 1', resultLine: '**Ergebnis:** ✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen', offersFollowup: true, openRed: 0, open: [openEntry('yellow', 'task 1')] });
+}
+
+test('next_EligibleYellowBeforeFirstRound_FollowupWithAuto', () => {
+  const dir = tmp();
+  const { spec } = repoWithSavedSpecReview(80);
+  const result = run(dir, 'next', '--review', yellowHints(dir), '--artefakt', spec, '--rolle', 'spec-review');
+  assert.equal(result.stdout, 'NEXT=followup\nRUNDE=1\nAUTO=1\nERGEBNIS=✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen\nBEREIT=ja\nRUNDEN=0\nROT=0\n');
+});
+
+test('next_YellowBelowThreshold_Weiter', () => {
+  const dir = tmp();
+  const { spec } = repoWithSavedSpecReview(50);
+  const result = run(dir, 'next', '--review', yellowHints(dir), '--artefakt', spec, '--rolle', 'spec-review');
+  assert.match(result.stdout, /^NEXT=weiter\n/);
+});
+
+test('next_EligibleYellowAfterARound_WeiterWithoutSecondAutoRound', () => {
+  const dir = tmp();
+  const { spec } = repoWithSavedSpecReview(80);
+  const hints = yellowHints(dir);
+  const result = run(dir, 'next', '--review', hints, '--followup', hints, '--artefakt', spec, '--rolle', 'spec-review');
+  assert.match(result.stdout, /^NEXT=weiter\n/);
+});
+
+test('next_SavedForOtherRole_Weiter', () => {
+  const dir = tmp();
+  const { spec } = repoWithSavedSpecReview(80);
+  const result = run(dir, 'next', '--review', yellowHints(dir), '--artefakt', spec, '--rolle', 'review');
+  assert.match(result.stdout, /^NEXT=weiter\n/);
+});
+
+test('next_ArtefaktMissing_ExitOne', () => {
+  const dir = tmp();
+  const result = run(dir, 'next', '--review', yellowHints(dir), '--artefakt', path.join(dir, 'fehlt.md'), '--rolle', 'spec-review');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Artefakt fehlt: /);
 });
 
 test('next_OpenRedWithoutProposal_WeiterWithoutAbbruch', () => {

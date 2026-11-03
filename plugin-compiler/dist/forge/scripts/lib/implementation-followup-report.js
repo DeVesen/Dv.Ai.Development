@@ -69,11 +69,13 @@ function isConfirmed(group, answer) {
   return judged === undefined ? answer.clean : judged === 'behoben';
 }
 
-// Farbe einer gewählten, nicht bestätigten Gruppe: Mit eigenem Gruppenurteil bleibt ihre Stufe (🟡 ist kein Hindernis);
-// ohne Nach-Review oder ohne eigenes Urteil zählt sie als Hindernis.
+// Farbe einer gewählten, nicht bestätigten Gruppe: Ein 🔴 bleibt Hindernis. Ohne Nach-Review (`blockiert`, `keine Änderung`) hat der
+// Umsetzer nichts geändert; ein 🟡 bleibt 🟡, sonst startete es als 🔴 eine weitere Runde mit derselben Eingabe. Mit Nach-Review bleibt
+// ein 🟡 nur mit eigenem Gruppenurteil 🟡; ohne Urteil ist die Änderung ungeprüft und zählt als Hindernis.
 function unconfirmedColor(group, reviewed, answer) {
-  const ownVerdict = reviewed.done && answer.verdict !== null && groupVerdict(group, answer) !== undefined;
-  return ownVerdict && group.severity !== '🔴' ? 'yellow' : 'red';
+  if (group.severity === '🔴') return 'red';
+  if (!reviewed.done) return 'yellow';
+  return answer.verdict !== null && groupVerdict(group, answer) !== undefined ? 'yellow' : 'red';
 }
 
 function angles(reviewers) {
@@ -156,8 +158,9 @@ function buildFollowupReport(options) {
   const answer = reviewed.done ? parseAnswer(options.answer) : { verdict: null, clean: false, damages: [], greens: [], judged: new Map(), outside: [] };
   const chosen = followup.gewaehlt.map((entry) => ({ entry, group: saved.find((group) => group.number === entry.nummer) })).filter(({ group }) => group);
   const chosenNumbers = new Set(chosen.map(({ group }) => group.number));
-  const unchosen = saved.filter((group) => !chosenNumbers.has(group.number));
-  const unconfirmed = chosen.map(({ group }) => group).filter((group) => !reviewed.done || !isConfirmed(group, answer));
+  // Gesicherte 🟢 sind nie offen: Sie zählen weder für Status und Bericht noch bleiben sie in der Sicherung (`BEHALTEN`).
+  const unchosen = saved.filter((group) => !chosenNumbers.has(group.number) && group.severity !== '🟢');
+  const unconfirmed = chosen.map(({ group }) => group).filter((group) => group.severity !== '🟢' && (!reviewed.done || !isConfirmed(group, answer)));
   const changes = chosen.map(({ entry, group }) => ({
     key: placeKey(group.location), ok: reviewed.done ? isConfirmed(group, answer) : null, ...described(group, texts), angles: angles(group.reviewers),
     change: null, evidence: null, choice: entry.vorschlag,

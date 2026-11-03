@@ -7,8 +7,6 @@
 // Probe-Lauf: Ein getippter Plugin-Befehl kommt unverändert an, mit Präfix als `/dv-forge:<name> <args>`, ohne als `/<name> <args>`.
 // Die Liste der Unter-Skills steht nur hier; `init`, `commit-message`, `domain-modeling`, `merge-conflict-resolution` und der Startbefehl fehlen mit Absicht.
 
-const { briefOf } = require('./stage-guard');
-
 const START_COMMAND = '/dv-forge:session-orchestrator';
 const DEBUG_SWITCH = '--debug';
 const SUB_SKILLS = [
@@ -25,10 +23,11 @@ function subSkillOf(prompt) {
   return SUB_SKILLS.includes(name) ? name : null;
 }
 
-// Begründung der Abweisung oder null, wenn der Prompt passieren darf.
+// Begründung der Abweisung oder null, wenn der Prompt passieren darf. `stage-guard` erst hier laden: Es zieht die Module der Session-Kette
+// nach, und guard-orchestrator.js lädt entry-guard bei jedem Werkzeug-Aufruf (PreToolUse), wo es sie nie braucht.
 function blockedEntry(prompt) {
   const name = subSkillOf(prompt);
-  if (!name || briefOf(prompt)) return null;
+  if (!name || require('./stage-guard').briefOf(prompt)) return null;
   if (String(prompt).trim().split(/\s+/).includes(DEBUG_SWITCH)) return null;
   return `dv-forge: /dv-forge:${name} ist ein interner Unter-Skill. Starte dv-forge mit ${START_COMMAND}. Zum Debuggen hängst du ${DEBUG_SWITCH} an.`;
 }

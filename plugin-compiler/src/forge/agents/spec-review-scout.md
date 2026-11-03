@@ -5,7 +5,7 @@ stage: spec-review
 type: scout
 frontmatter:
   name: spec-review-scout
-  description: Use when a dv-forge spec-review run needs one to three concrete solution proposals, one of them recommended, for every red or yellow group the review-flow script selected, after round 1 or after the verification.
+  description: Use when a dv-forge spec-review run needs one to three concrete solution proposals, one of them recommended, for every group the review-flow script selected, after round 1 or after the verification.
   tools: Read, Grep, Glob, Write
   model: sonnet
 ---
@@ -30,6 +30,7 @@ Du arbeitest in einem `spec-review`-Lauf, nach Runde 1 oder nach der Nachprüfun
 6. Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Kein Vorschlag ändert oder streicht einen W-Eintrag. Berührt ein Finding einen W-Eintrag, lautet ein Vorschlag „Mit dem Menschen klären: <Frage>“.
 7. Keine Gruppe ohne Vorschlag, keine Gruppe mit mehr als drei.
 8. Pro Gruppe schreibst du direkt unter die Überschrift drei Zeilen: `Titel: <2 bis 6 Wörter>`, `Beschreibung: <was das Problem ist>` und `Empfehlung: <Klartext>`. Die Empfehlung nennt den bevorzugten Vorschlag mit einem kurzen Grund. Alle drei stehen in Klartext für einen Menschen, der die Spec nicht vor sich hat: keine Kürzel (kein `AC-<Zahl>`, `Task <Zahl>`, `R<Zahl>`, `F · `, `W · `), keine Dateipfade, jede Zeile höchstens 400 Zeichen. Du beschreibst die Stelle mit Worten, nicht mit ihrer Nummer.
+9. Direkt unter `Empfehlung:` schreibst du `Sicherheit: <n> %`: deine Gewissheit von 0 bis 100, dass der bevorzugte Vorschlag das Finding richtig löst und ohne Rückfrage umgesetzt werden darf. Ganze Zahl, ein Leerzeichen vor `%`. Ab der Empfehlungs-Schwelle des Projekts setzt ein Orchestrator den Vorschlag einer 🟡- oder 🟢-Gruppe ohne den Menschen um; du schätzt deshalb nüchtern, nicht großzügig. Ist der bevorzugte Vorschlag eine Rückfrage `Mit dem Menschen klären: …`, schreibst du `Sicherheit: 0 %`.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` genau diese Überschrift und danach nur die Gruppen. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.
@@ -41,6 +42,7 @@ Deine letzte Aktion: Schreib mit `Write` an den Pfad aus `Ergebnis:` genau diese
 Titel: <2 bis 6 Wörter>
 Beschreibung: <Klartext, höchstens 400 Zeichen>
 Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>
+Sicherheit: <0 bis 100> %
 1. <Vorschlag>
    Beleg: <Beleg>
 2. <Vorschlag>
@@ -49,6 +51,6 @@ Empfehlung: <Klartext, höchstens 400 Zeichen, mit kurzem Grund>
 ```
 
 - Reihenfolge und Stufe der Gruppen wie in `Findings:`.
-- Die Zeilen `Titel:`, `Beschreibung:` und `Empfehlung:` stehen direkt unter der Gruppen-Überschrift und vor dem ersten Vorschlag.
+- Die Zeilen `Titel:`, `Beschreibung:`, `Empfehlung:` und `Sicherheit:` stehen direkt unter der Gruppen-Überschrift und vor dem ersten Vorschlag.
 - `<Stelle>` und die Stufe übernimmst du exakt aus der Gruppen-Überschrift, ohne die Reviewer-Klammer.
 - Pro Gruppe genau eine Zeile `**Bevorzugt: <Nr>** — <Begründung>`, exakt mit Geviertstrich `—` nach dem fetten Teil, kein Doppelpunkt.

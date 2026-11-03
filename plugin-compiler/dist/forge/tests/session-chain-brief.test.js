@@ -185,8 +185,8 @@ test('buildBrief_PlanReview_IteratesViaNextInOneTurnAndReportsPlan', () => {
   for (const part of [
     'scripts/orchestrator-state.js" ablage --art plan --plan "C:/r/docs/forge/x/plan.md"`',
     'Alles in einem Turn: Nach der Review-Statuszeile von `plan-review` arbeitest du ohne Turn-Ende weiter.',
-    'scripts/orchestrator-state.js" next --review "<BR>"`, dazu `--followup "<BFn>"` je gelaufener Runde.',
-    '`NEXT=followup`: Runde `RUNDE` mit `dv-forge:review-followup` und `"C:/r/docs/forge/x/plan.md" alle --spec "C:/r/docs/forge/x/spec.md"`.',
+    'scripts/orchestrator-state.js" next --review "<BR>" --artefakt "C:/r/docs/forge/x/plan.md" --rolle plan-review`, dazu `--followup "<BFn>"` je gelaufener Runde.',
+    '`NEXT=followup`: Runde `RUNDE` mit `dv-forge:review-followup` und `"C:/r/docs/forge/x/plan.md" auto --spec "C:/r/docs/forge/x/spec.md"`.',
     'shared/orchestrator-rules.md`',
     'ohne Review-Statuszeile: keine weitere Runde, Status `needs-user` mit der Meldung.',
     'Den Plan schreibst du nicht neu. Du committest nichts; Spec und Plan committet die Leit-Session nach dem GO.',

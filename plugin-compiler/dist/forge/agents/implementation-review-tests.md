@@ -21,7 +21,7 @@ Du prüfst die Tests der Umsetzung und führst die Suite einmal aus. Du liest Pl
 
 ## Prüfauftrag
 1. Befehl für die komplette Suite: der aus `Test:`; ist er leer, der aus dem Plan (Global Constraints oder die Lauf-Schritte der Tasks). Du führst ihn genau so aus, auch kein MCP-Tool mit gleichem Zweck.
-   Mit `Testlauf:` lief die Suite schon per Skript; du führst sie nicht erneut aus und nimmst Exit-Code und Ausgabe aus der Datei. Eine rote Suite meldet das Skript selbst an `Testlauf`; du meldest nur die roten Tests einzeln an ihrer Testdatei. Nennt die Datei keinen Lauf für `Test`, gilt Schritt 2.
+   Mit `Testlauf:` lief die Suite schon per Skript; du führst sie nicht erneut aus und nimmst Exit-Code und Ausgabe aus der Datei. Eine rote Suite meldet das Skript selbst an `Testlauf`; du meldest nur die roten Tests einzeln an ihrer Testdatei. Ausnahme: Ist `ergebnis` der Datei `umgebung` oder `docker`, oder scheitert ein roter Test außerhalb des Pakets an der Infrastruktur (Zeitüberschreitung, abgebrochene Verbindung zu Datenbank oder Container, Fixture- oder Container-Start), meldest du dafür kein `test-rot`, sondern genau ein `test-umgebung` an der Stelle `Testlauf`, mit einer Fehlermeldung als Zitat und den betroffenen Tests in `consequence`. Nennt die Datei keinen Lauf für `Test`, gilt Schritt 2.
 2. Ohne `Testlauf:`: Führ die komplette Suite genau einmal aus. Ausnahme: Nennt `Zurückgestellt:` im Abschnitt Stand eine Zeile `Gesamtlauf:` mit `grün` und zeigt `git diff --name-only <commit> HEAD` seitdem nur Doku (`.md`), läuft die Suite nicht erneut; du lässt nur die Testdateien aus dem Paket laufen und nennst den Gesamtlauf in `summary`.
    - Ein roter Test im Paket ist `test-rot` an der Stelle seiner Testdatei.
    - Ein roter Test außerhalb des Pakets läuft einmal einzeln nach. Ist er einzeln auch rot, ist er `test-rot` an seiner Testdatei; sonst `test-flaky` mit `consequence` `flaky im Gesamtlauf`.
@@ -48,6 +48,7 @@ Jedes Finding bekommt genau eine Kategorie und keine Farbe; die Farbe leitet ein
 - `suite-nicht-ausfuehrbar` — Die Suite lässt sich nicht ausführen.
 - `test-ohne-assertion` — Ein Test behauptet nichts.
 - `testlauf-rauschen` — Warnungen oder Rauschen in der Ausgabe des Testlaufs.
+- `test-umgebung` — Rote Tests außerhalb des Pakets scheitern an Infrastruktur (Zeitüberschreitung, Datenbank, Container), nicht am Code; ein Finding für alle.
 - `test-schwach` — Ein Test prüft nur Mocks statt echtes Verhalten.
 - `test-randfall-fehlt` — Für einen Rand- oder Fehlerfall, den Code oder ein AC beschreibt, fehlt ein Test.
 - `test-flaky` — Ein roter Test außerhalb des Pakets ist einzeln grün.

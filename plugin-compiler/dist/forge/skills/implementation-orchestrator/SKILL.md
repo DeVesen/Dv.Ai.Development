@@ -25,11 +25,11 @@ Lies `<PLUGIN>/shared/orchestrator-rules.md` und befolge es; hier steht nur, was
 1. `<P0>`/`<S0>` fehlt oder `git branch --show-current` leer → stopp. `<B>` = `--base`, sonst aktueller Branch; ≠ aktueller Branch → stopp, fragen. Vorbestand = `git status --porcelain` außer `<P0>`, `<S0>`; nennen.
 2. `dv-forge:start-work` mit `<P0> <S0>`. `P`, `S`, `R`, Modus, Branch aus den Zeilen `<Name>=<Wert>`; fehlt `P`/`S`: Eingabepfad in `<R>`. Dann `node "<PLUGIN>/scripts/orchestrator-state.js" start --state "<ST>" --spec "<S>" --plan "<P>"` und `node "<PLUGIN>/scripts/orchestrator-state.js" ablage --art implementation --plan "<P>"`, Exit 1 → stopp: `<BR>` = `BERICHT-REVIEW`, `<BFn>` = `BERICHT-FOLLOWUP-<n>`, `<AB>` = `ABSCHLUSS`.
 3. `dv-forge:implementation` mit `<P> <S>`; `fortgesetzt` ist erwartet. Hash-Prüfung.
-4. `dv-forge:implementation-review` mit `<P> <S>`. Hash-Prüfung. Dann `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>"`:
+4. `dv-forge:implementation-review` mit `<P> <S>`. Hash-Prüfung. Dann `node "<PLUGIN>/scripts/orchestrator-state.js" next --review "<BR>" --artefakt "<P>" --rolle review`:
    - `NEXT=followup` → 5.
    - `NEXT=weiter` und `BEREIT=ja` → 6.
    - Sonst Ende.
-5. Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> alle --spec <S>`. Hash-Prüfung. Dann `next` erneut, mit `--followup "<BFn>"` je gelaufener Runde: `NEXT=followup` → nächste Runde; `NEXT=weiter` und `BEREIT=ja` → 6; sonst Ende.
+5. Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> auto --spec <S>`. Hash-Prüfung. Dann `next` erneut, mit `--followup "<BFn>"` je gelaufener Runde und `--artefakt "<P>" --rolle review`: `NEXT=followup` → nächste Runde; `NEXT=weiter` und `BEREIT=ja` → 6; sonst Ende.
 6. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>" --out "<PR>"` mit `<PR>` = `pruefung.json` im Scratchpad. `PRUEFUNG ergebnis=`: `docker` → in `<FK>` `Prüfung: Tests nur ohne Docker rot`; `umgebung` → kein Testfehler, in `<FK>` je Zeile `UMGEBUNG` `Prüfung: <Zeile>`, weiter; `rot` → Ende. `offen` außer Vorbestand > 0 → in `<FK>` als Abweichung.
 7. Abschlussbericht, auch bei jedem früheren Ende, genau einmal als letzte Ausgabe:
    1. `<FK>` schreiben, je Angabe eine Zeile: `Feature-Branch: <branch>` (belegt per `git branch --list`, `git worktree list`), Modus, `git log --oneline <B>..<branch>`, `Prüfung: <ergebnis aus <PR>>` oder `Prüfung: keine (Schritt 6 lief nicht)`, Urteile, Vorbestand, bei Abweichungen `Abweichungen: …`.

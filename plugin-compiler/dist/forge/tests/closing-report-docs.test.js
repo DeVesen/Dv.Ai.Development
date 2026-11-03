@@ -79,7 +79,7 @@ test('reviewFollowupSkill_HintAcceptsAlleAndTheBodyStaysShort', () => {
   const { fields, body } = readMarkdown(FOLLOWUP_SKILL);
 
   // Assert
-  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <alle|auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]');
+  assert.equal(fields['argument-hint'], '<spec.md|plan.md> <alle|auto|auswahl> [--spec <pfad>] [--base <ref>] [--whiteboarding] [--debug]');
   assert.ok(wordCount(body) < 500);
 });
 

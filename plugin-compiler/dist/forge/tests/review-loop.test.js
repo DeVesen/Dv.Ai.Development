@@ -26,7 +26,7 @@ test('loop_BuildingBlocks_AllNamed', () => {
 
 test('loop_Closing_ScoutWritesFileAndSaveRunsBeforeCleanup', () => {
   const text = readText(path.join(SHARED, 'loop.md'));
-  assert.match(text, /`red` > 0 oder `yellow` > 0/);
+  assert.match(text, /`red` > 0, `yellow` > 0 oder `green` > 0/);
   for (const part of ['Findings: <D>/aggregate.md', 'Ergebnis: <D>/scout.md', '<PLUGIN>/scripts/followup.js" save <rolle> <slug> "<W>/abschluss"']) {
     assert.ok(text.includes(part), `${part} fehlt`);
   }

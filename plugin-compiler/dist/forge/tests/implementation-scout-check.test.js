@@ -13,13 +13,20 @@ const AGGREGATE = [
   'STATUS clean=false red=1 yellow=1 green=1 failed=-', '=== REPORT ===', 'Tabelle', '=== REWORK ===',
   '### 🔴 src/a.js (risks)', FINDING, '', '### 🟡 src/b.js (design)', FINDING, '', '### 🟢 src/c.js (tests)', FINDING, '',
 ].join('\n');
-const SCOUT = [
+const SCOUT_RED_YELLOW = [
   '## Scout-Vorschläge', '',
   '### 🔴 src/a.js', 'Titel: Fehler wird verschluckt', 'Beschreibung: Ein Fehler beim Speichern bleibt unbemerkt.', 'Empfehlung: Den Fehler melden, weil Nutzer sonst Datenverlust nicht sehen.',
   '1. Fehler melden.', '**Bevorzugt: 1** — klar.', '',
   '### 🟡 src/b.js', 'Titel: Doppelte Rundung', 'Beschreibung: Die Rundung steht an zwei Stellen.', 'Empfehlung: Die Rundung bündeln, weil Änderungen sonst doppelt nötig sind.',
   '1. Bündeln.', '**Bevorzugt: 1** — einfach.', '',
 ].join('\n');
+
+const GREEN_GROUP = [
+  '### 🟢 src/c.js', 'Titel: Name holpert', 'Beschreibung: Der Name der Funktion liest sich holprig.', 'Empfehlung: Die Funktion umbenennen, weil der Name sonst irritiert.',
+  '1. Umbenennen.', '**Bevorzugt: 1** — klar.', '',
+].join('\n');
+
+const SCOUT = `${SCOUT_RED_YELLOW}${GREEN_GROUP}`;
 
 function check(scout, review = 'implementation-review') {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-impl-scout-'));
@@ -29,7 +36,12 @@ function check(scout, review = 'implementation-review') {
   return spawnSync(process.execPath, [SCRIPT, 'scout-check', ...args, '--dir', dir], { encoding: 'utf8' }).stdout;
 }
 
-test('scoutCheck_ImplementationReviewCompleteScoutWithoutGreenGroup_Ok', () => {
+test('scoutCheck_ImplementationReviewCompleteScoutWithGreenGroup_Ok', () => {
+  assert.equal(check(SCOUT), 'SCOUT ok\n');
+});
+
+test('checkScout_GreenGroupInAggregate_IsExpected', () => {
+  assert.equal(check(SCOUT_RED_YELLOW), 'SCOUT ungültig: 🟢 src/c.js: Gruppe fehlt\n');
   assert.equal(check(SCOUT), 'SCOUT ok\n');
 });
 

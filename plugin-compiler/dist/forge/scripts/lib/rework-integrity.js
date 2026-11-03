@@ -116,7 +116,12 @@ function specProblem(savedHash, currentHash) {
 
 // Zahl der W-Einträge außerhalb von Code-Blöcken.
 function wEntryCount(text) {
-  return scan(text).filter((item) => !item.inFence && W_ENTRY.test(item.line)).length;
+  return wEntryTitles(text).length;
 }
 
-module.exports = { integrityProblem, specProblem, wEntryCount };
+// Titel der W-Einträge außerhalb von Code-Blöcken, in Reihenfolge.
+function wEntryTitles(text) {
+  return scan(text).filter((item) => !item.inFence && W_ENTRY.test(item.line)).map((item) => entryTitle(item.line));
+}
+
+module.exports = { integrityProblem, specProblem, wEntryCount, wEntryTitles };

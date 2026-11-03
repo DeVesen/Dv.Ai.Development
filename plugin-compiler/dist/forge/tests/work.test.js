@@ -253,6 +253,28 @@ test('removeDirectory_VeryLongPath_DeletesTree', () => {
   assert.equal(fs.existsSync(root), false);
 });
 
+test('remove_WorktreeWithIgnoredNodeModulesLink_RemovesFolderAndKeepsLinkTarget', () => {
+  const repo = worktreeRepo();
+  commitFile(repo, '.gitignore', '.wt/\nnode_modules\n', 'ignore node_modules');
+  const dir = values(run(repo, 'start', 'demo')).R;
+  const target = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'dv-forge-ziel-'));
+  fs.writeFileSync(path.join(target, 'paket.txt'), 'bleibt\n');
+  fs.symlinkSync(target, path.join(dir, 'node_modules'), 'junction');
+  const result = run(repo, 'remove', dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(dir), false);
+  assert.equal(fs.readFileSync(path.join(target, 'paket.txt'), 'utf8'), 'bleibt\n');
+});
+
+test('removeWorktree_GitReportsModifiedFiles_KeepsTheDirectory', () => {
+  const { removeWorktree } = require('../scripts/work');
+  const repo = worktreeRepo();
+  const dir = values(run(repo, 'start', 'demo')).R;
+  fs.writeFileSync(path.join(dir, 'offen.txt'), 'x\n');
+  assert.throws(() => removeWorktree({ haupt: repo, R: dir }), /offene Änderungen/);
+  assert.equal(fs.existsSync(path.join(dir, 'offen.txt')), true);
+});
+
 test('remove_LockedWorktree_KeepsItInsteadOfForcingDeletion', () => {
   const repo = worktreeRepo();
   const dir = values(run(repo, 'start', 'demo')).R;

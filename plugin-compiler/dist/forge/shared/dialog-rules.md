@@ -14,22 +14,23 @@ Per Du, locker, wie im Gespräch an der Kaffeemaschine, ohne Förmlichkeit.
 7. Am Ende genau eine nächste Handlung oder genau eine Frage; ein Nebenthema erst danach, als eigene kurze Frage.
 8. Fehler sachlich: Ursache, dann Abhilfe. Zeitangaben in festen Einheiten.
 
-## 85-%-Regel
-1. **Selbst entscheiden:** Lässt sich eine Antwort mit mindestens 85 % Gewissheit aus dem Kontext ableiten, den dein Skill als Quelle zulässt, entscheidest du selbst und fragst nicht, auch nicht als Bestätigung.
-2. **Nur mit Beleg:** Die 85 % brauchen einen Beleg-Tag außer `ungeklärt`. Eine Vermutung bleibt eine Frage, auch wenn sie naheliegt.
-3. **Sichtbar:** Selbst Entschiedenes steht vor den Fragen der Runde, eine Zeile je Punkt:
+## Empfehlungs-Schwelle
+`<SCHWELLE>` ist die Ausgabe von `node "<PLUGIN>/scripts/forge-config.js" get Empfehlungs-Schwelle`, einmal je Session gelesen; ohne Projekt-Einstellung ist sie 70. `<PLUGIN>` ist der Ordner über `shared/`, in dem diese Datei liegt. Endet der Aufruf mit Exit ungleich 0, nennst du seine Meldung in einer Zeile und stellst jede offene Entscheidung als Frage.
+1. **Empfehlung übernehmen:** Bist du dir mit mindestens `<SCHWELLE>` % Gewissheit sicher, dass deine Empfehlung die richtige Antwort ist, und stützt sie sich auf den Kontext, den dein Skill als Quelle zulässt, übernimmst du sie und fragst nicht, auch nicht als Bestätigung.
+2. **Nur mit Beleg:** Die Gewissheit braucht einen Beleg-Tag außer `ungeklärt`. Eine Vermutung bleibt eine Frage, auch wenn sie naheliegt.
+3. **Sichtbar:** Übernommenes steht vor den Fragen der Runde, eine Zeile je Punkt, mit deiner Gewissheit in Prozent:
    ```
    Selbst entschieden:
-   - <Kurztitel>: <Entscheidung> · <Beleg-Tag> — <Grund>
+   - <Kurztitel>: <Entscheidung> · <Beleg-Tag> · <n> % — <Grund>
    ```
    Widerspricht der Mensch in seiner nächsten Antwort nicht, ist der Punkt beantwortet und wird ein W-Eintrag mit diesem Beleg-Tag. Widerspricht er, ist der Punkt eine Frage der nächsten Runde.
-4. **Sonst fragen:** Unter 85 % fragst du, mit genau einer Empfehlung.
+4. **Sonst fragen:** Unter `<SCHWELLE>` % fragst du, mit genau einer Empfehlung.
 5. **Nie selbst:** Freigaben bleiben beim Menschen: Bestätigung von Entwurf, Titel und Slug, das Schreiben jeder Änderung, Commit, Push, Haltepunkt und Abbruch.
 
 ## Rote Flaggen
 | Gedanke | Richtig |
 |---|---|
-| „Zur Sicherheit frag ich trotzdem.“ | Mit Beleg und mindestens 85 %: selbst entscheiden, unter `Selbst entschieden`. |
+| „Zur Sicherheit frag ich trotzdem.“ | Mit Beleg und mindestens `<SCHWELLE>` %: Empfehlung übernehmen, unter `Selbst entschieden`. |
 | „Liegt nahe, das entscheide ich still.“ | Ohne Beleg-Tag ist es eine Frage; mit Beleg steht es sichtbar unter `Selbst entschieden`. |
 | „Ein Absatz Hintergrund hilft.“ | Kern zuerst; Hintergrund nur auf Nachfrage. |
 | „Klingt gut, ich stimme zu.“ | Erst prüfen; eine Schwäche mit Grund nennen. |

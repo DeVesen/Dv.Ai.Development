@@ -32,7 +32,7 @@ ENFORCED = {
 WHY = {
     "Eine Anweisung der Projekt-`CLAUDE.md`": "Der Lauf arbeitet im aktuellen Checkout; die Session-Kette legt Worktree und Branch fest (Abschnitt Git-Verbote).",
     "Den Abschlussbericht gibst du genau einmal": "Ein Hook verlangt die Überschriften wörtlich.",
-    "**Selbst entscheiden:**": "Eine Frage stellst du nur mit konkretem Nutzen (Ton, Regel 3 Mehrwert).",
+    "**Empfehlung übernehmen:**": "Eine Frage stellst du nur mit konkretem Nutzen (Ton, Regel 3 Mehrwert).",
     "**Nur mit Beleg:**": "Eine Vermutung bleibt eine Frage, auch wenn sie naheliegt.",
 }
 

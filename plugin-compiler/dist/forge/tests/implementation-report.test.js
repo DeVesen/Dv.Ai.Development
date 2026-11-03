@@ -29,6 +29,10 @@ const SCOUT_YELLOW = [
   '### 🟡 src/round.js', 'Titel: Rundung der Summe', 'Beschreibung: Die Rundung steht an zwei Stellen und kann auseinanderlaufen.',
   'Empfehlung: Die Rundung in einer Funktion bündeln, weil sonst jede Änderung zweimal nötig ist.', '1. Rundung bündeln.', '**Bevorzugt: 1** — einfach.', '',
 ];
+const SCOUT_GREEN = [
+  '### 🟢 src/ok.js', 'Titel: Name holpert', 'Beschreibung: Der Name der Funktion liest sich holprig.',
+  'Empfehlung: Die Funktion umbenennen, weil der Name sonst irritiert.', '1. Umbenennen.', '**Bevorzugt: 1** — klar.', '',
+];
 const SCOUT_RED = [
   '### 🔴 src/save.js', 'Titel: Fehler wird verschluckt', 'Beschreibung: Ein Fehler beim Speichern bleibt unbemerkt.',
   'Empfehlung: Den Fehler melden, weil Nutzer sonst Datenverlust nicht sehen.', '1. Fehler melden.', '**Bevorzugt: 1** — klar.', '',
@@ -84,7 +88,7 @@ function read(env, ...parts) {
 
 test('implementationReport_OneYellowWithValidScout_ReadyAndFilesFiltered', () => {
   // Arrange
-  const env = setup({ groups: [YELLOW, GREEN], scout: SCOUT_YELLOW, hints: ['Ein Hinweis aus der Vorbereitung.'] });
+  const env = setup({ groups: [YELLOW, GREEN], scout: [...SCOUT_YELLOW, ...SCOUT_GREEN], hints: ['Ein Hinweis aus der Vorbereitung.'] });
 
   // Act
   const result = report(env);
@@ -100,8 +104,27 @@ test('implementationReport_OneYellowWithValidScout_ReadyAndFilesFiltered', () =>
   assert.equal(fs.existsSync(path.join(env.workspace, 'abschluss', 'bericht.md')), false);
   const aggregate = read(env, 'aggregate.md');
   assert.ok(aggregate.includes('### 🟡 src/round.js (design)'));
-  assert.equal(aggregate.includes('src/ok.js'), false);
+  assert.equal(aggregate.includes('src/ok.js'), true);
   assert.match(read(env, 'scout.md'), /^## Scout-Vorschläge\n\n### 🟡 src\/round\.js/);
+});
+
+test('buildReport_GreenWithScout_InClosingButNotOpen', () => {
+  // Arrange
+  const scoutGreen = [
+    '### 🟢 src/ok.js', 'Titel: Name holpert', 'Beschreibung: Der Name der Funktion liest sich holprig.',
+    'Empfehlung: Die Funktion umbenennen, weil der Name sonst irritiert.', '1. Umbenennen.', '**Bevorzugt: 1** — klar.', '',
+  ];
+  const env = setup({ groups: [RED, GREEN], scout: [...SCOUT_RED, ...scoutGreen] });
+
+  // Act
+  const result = report(env);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(read(env, 'aggregate.md').includes('src/ok.js'));
+  assert.ok(read(env, 'scout.md').includes('src/ok.js'));
+  const data = JSON.parse(fs.readFileSync(result.statusLine.bericht.replace(/\.md$/, '.json'), 'utf8'));
+  assert.deepEqual(data.open.filter((entry) => entry.color === 'green'), []);
 });
 
 test('implementationReport_RedFinding_GeprueftWithHindranceAndSaveKeepsScoutBlocks', () => {

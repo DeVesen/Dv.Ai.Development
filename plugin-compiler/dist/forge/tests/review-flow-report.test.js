@@ -353,6 +353,24 @@ test('report_GreenFinding_NotShownAndNotInClosing', () => {
   assert.equal(fs.existsSync(checkedFile(env, 'abschluss', 'scout.md')), false);
 });
 
+test('report_GreenFindingWithScout_InClosingButNotShown', () => {
+  // Arrange
+  const env = setup();
+  writeReviewer(env, 'clarity', [finding({ location: 'AC-01', category: 'formulierung', consequence: 'Satz holpert' })]);
+  flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'clarity');
+  fs.writeFileSync(checkedFile(env, 'runde-1', 'scout.md'), [
+    '## Scout-Vorschläge', '', '### 🟢 AC-01', 'Titel: Satz glätten', 'Beschreibung: Der Satz holpert.', 'Empfehlung: Umformulieren, weil es besser liest.', 'Sicherheit: 90 %', '1. Satz glätten.', '**Bevorzugt: 1** — klar.', '',
+  ].join('\n'));
+
+  // Act
+  const output = report(env);
+
+  // Assert
+  assert.doesNotMatch(output, /Satz holpert/);
+  assert.match(fs.readFileSync(checkedFile(env, 'abschluss', 'aggregate.md'), 'utf8'), /### 🟢 AC-01/);
+  assert.match(fs.readFileSync(checkedFile(env, 'abschluss', 'scout.md'), 'utf8'), /### 🟢 AC-01/);
+});
+
 test('report_ScoutFailed_NotedWithoutChangingStatus', () => {
   // Arrange
   const env = setup();

@@ -4,11 +4,14 @@
 // Abweichung (`abweichungen`); eine Abweichung hält die Kette. Pfade in Meldungen sind relativ zur Checkout-Wurzel.
 
 const fs = require('node:fs');
+const path = require('node:path');
 const { toPosix } = require('./posix');
 const { git, isDirty, sameDir, worktreeListed, relative } = require('./session-chain-git');
 const { SessionChainError } = require('./session-chain-store');
 const { lintSpec } = require('./spec-lint');
-const { integrityProblem, wEntryCount } = require('./rework-integrity');
+const { integrityProblem, wEntryCount, wEntryTitles } = require('./rework-integrity');
+// Löscht einen Ordner samt Links, Links nur als Link und mit langen Pfaden (work.js removeDirectory); für die Meldung zum Worktree-Rest.
+const WORK_SCRIPT = toPosix(path.resolve(__dirname, '..', 'work.js'));
 
 // Dateien, die ein Commit der Etappe enthalten darf; null = beliebig (Code der Umsetzung).
 const EXPECTED = {
@@ -87,8 +90,10 @@ function implementationChecks(repo, values) {
   if (values.basis && values.branch === values.basis) {
     result.geprueft.push(`Branch ${values.branch} ist der Basis-Branch (Umsetzung vor Ort)`);
   } else {
-    const count = Number(git(repo, ['rev-list', '--count', `${values.basis}..${values.branch}`]).out || 0);
-    if (count > 0) result.geprueft.push(`Branch ${values.branch}: ${count} Commits seit ${values.basis}`);
+    const counted = git(repo, ['rev-list', '--count', `${values.basis}..${values.branch}`]);
+    const count = Number(counted.out || 0);
+    if (!counted.ok) result.abweichungen.push(`Commits seit ${values.basis} auf ${values.branch} nicht zählbar: ${counted.err.split('\n')[0]}`);
+    else if (count > 0) result.geprueft.push(`Branch ${values.branch}: ${count} Commits seit ${values.basis}`);
     else result.abweichungen.push(`Branch ${values.branch} hat keine Commits seit ${values.basis}`);
   }
   if (values.worktree && !sameDir(values.worktree, repo)) {
@@ -108,8 +113,13 @@ function finishChecks(repo, values) {
     record(result, ahead === 0, `Branch ${values.branch} hat keinen Vorsprung vor ${upstream.out}`, `Branch ${values.branch} hat ${ahead} Commits Vorsprung vor ${upstream.out}`);
   }
   if (values.worktree && !sameDir(values.worktree, repo)) {
-    const gone = !worktreeListed(repo, values.worktree) && !fs.existsSync(values.worktree);
-    record(result, gone, `Worktree ${toPosix(values.worktree)} ist entfernt`, `Worktree ${toPosix(values.worktree)} besteht noch`);
+    const where = toPosix(values.worktree);
+    const listed = worktreeListed(repo, values.worktree);
+    if (!listed && fs.existsSync(values.worktree)) {
+      result.abweichungen.push(`Ordner ${where} besteht noch, git kennt den Worktree nicht mehr (Rest wie eine node_modules-Junction); löschen mit node -e "require('${WORK_SCRIPT}').removeDirectory(process.argv[1])" "${where}", das Links nur als Link entfernt`);
+    } else {
+      record(result, !listed, `Worktree ${where} ist entfernt`, `Worktree ${where} besteht noch`);
+    }
   }
   return result;
 }
@@ -154,7 +164,8 @@ function specCopyChecks(repo, values, etappe) {
   const problems = [integrityProblem(before, after, 'spec-review')].filter(Boolean);
   const decisions = (values.entscheidungen ?? []).length;
   const added = wEntryCount(after) - wEntryCount(before);
-  if (etappe === 'grill' && added !== decisions) problems.push(`${added} neue W-Einträge, aber ${decisions} Entscheidungen gemeldet`);
+  const newTitles = wEntryTitles(after).filter((title) => !wEntryTitles(before).includes(title));
+  if (etappe === 'grill' && added !== decisions) problems.push(`${added} neue W-Einträge, aber ${decisions} Entscheidungen gemeldet; neu: ${newTitles.join(', ') || '–'} (je Entscheidung des Menschen ein --entscheidung)`);
   if (etappe === 'grill' && decisions === 0 && values.bericht && reportSaysNoChange(values.bericht) && before !== after) problems.push('Bericht sagt „Keine Änderung.“, die Spec ist aber geändert');
   result.geprueft.push(`Spec gegen ${etappe}-Start ${file}: ${problems.length === 0 ? 'W-Einträge, AC-Folge und Kopf unverändert' : 'Abweichung'}`);
   result.abweichungen.push(...problems.map((problem) => `Spec ${file} seit ${etappe}-Start: ${problem}`));

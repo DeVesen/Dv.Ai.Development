@@ -9,7 +9,7 @@ Meldet `attempt` für `nacharbeit` oder `nachprüfer` `AUSGEFALLEN`, geht es sta
 
 ### Spec und Plan
 1. `node "<PLUGIN>/scripts/review-flow.js" snapshot --dir "<W>" --doc "<DOC>"`. Die Zeile `EINTRAG R<n>` nennt die Kennung der Einträge.
-2. Nacharbeiter des Original-Skills mit dessen Eingabezeilen, dazu `Eintrag: R<n>`, `Vorschläge: <F>` und `Ergebnis: <W>/nacharbeit/rework.json`.
+2. Nacharbeiter des Original-Skills mit dessen Eingabezeilen, dazu `Eintrag: R<n>`, `Vorschläge: <F>` und `Ergebnis: <W>/nacharbeit/rework.json`. Der Agent-Aufruf trägt `model: sonnet`: Im Followup setzt der Nacharbeiter nur gewählte Vorschläge um und entscheidet nichts neu; Opus aus seinem Frontmatter gilt für die Nacharbeit nach Runde 1 des Reviews.
 3. `node "<PLUGIN>/scripts/review-flow.js" rework-check <FLAGS>`. `NACHARBEIT ungültig: <grund>`: nachfordern mit Instanz `nacharbeit`, dann Schritt 3.
 
 ### Implementierung

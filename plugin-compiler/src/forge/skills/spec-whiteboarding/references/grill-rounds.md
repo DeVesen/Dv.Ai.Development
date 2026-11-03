@@ -20,7 +20,7 @@ Eine Runde ist eine Nachricht mit der kompletten Frontier. Danach antwortet der 
 - Ändert der Mensch den Umfang, stellst du die Frontier komplett neu auf. Jede ersetzte Frage führst du als `Q<n> entfällt, ersetzt durch Q<m>`, nie als „weiterhin offen“.
 - Genau eine Empfehlung pro Frage. Der Grund ist ausgeschrieben, nicht nur der Tag.
 - Bei `ungeklärt` ist der Grund eine ausgewiesene Vermutung, etwa „Vermutung: gängigster Fall“ oder „Vermutung: kleinster Scope“.
-- Was du nach der 85-%-Regel aus `<PLUGIN>/shared/dialog-rules.md` selbst entscheidest, steht im Block `Selbst entschieden` vor der ersten Frage, nicht als Frage.
+- Was du nach der Empfehlungs-Schwelle aus `<PLUGIN>/shared/dialog-rules.md` übernimmst, steht im Block `Selbst entschieden` vor der ersten Frage, nicht als Frage.
 
 ## Rahmenfragen
 Vor Runde 1 fragst du einmal, was nicht fachlich ist: nur die Workitem-Nummer, und nur wenn `Workitem` in den Projekt-Einstellungen nicht `keine` ist. Rahmenfragen sind keine W-Einträge; die Antwort kommt in den Kopf der Spec.
@@ -53,7 +53,7 @@ Red Flag: „Der Mensch hat genug gesagt“ — erst die zweite, informierte Abl
 
 ```
 Selbst entschieden:
-- Export-Format: CSV · Aussage — „wir brauchen das nur für den Import ins Altsystem“; das Altsystem liest CSV.
+- Export-Format: CSV · Aussage · 95 % — „wir brauchen das nur für den Import ins Altsystem“; das Altsystem liest CSV.
 
 ❓ **Q4** - **Leere Liste**: Was zeigt die Übersicht ohne Einträge? a) Hinweistext b) leere Tabelle c) Sprung zum Anlegen
 

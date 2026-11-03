@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { loadGroups } = require('../followup');
 const { scoutBlocks } = require('./scout-check');
-const { openFromRounds, openFromFollowup, answeredKeys } = require('./open-groups');
+const { openFromRounds, openFromFollowup, answeredKeys, fromRated } = require('./open-groups');
 const { ROUND_ONE, ROUND_TWO, CLOSING, readJson, readLines, readAgentJson } = require('./flow-files');
 const { writeSavedClosing } = require('./saved-closing');
 
@@ -45,10 +45,19 @@ function writeClosingFiles(workspace, aggregateBlocks, scouted) {
   return dir;
 }
 
-function writeClosing(options, open) {
-  const blocks = scoutBlocksOf(options);
-  const scouted = open.map((group) => blocks.get(group.scoutKey)).filter(Boolean);
-  writeClosingFiles(options.workspace, open.map((group) => group.block), scouted);
+// 🟢 der Runden dieses Laufs (im Followup nur der Nachprüfung); je Stelle eine Gruppe.
+function greenGroupsOf(options, data) {
+  const rounds = isFollowup(options) ? [data.two] : [data.one, data.two];
+  const green = rounds.flatMap((round) => round?.groups ?? []).filter((group) => group.color === 'green').map(fromRated);
+  return [...new Map(green.map((group) => [group.scoutKey, group])).values()];
 }
 
-module.exports = { openGroupsOf, writeClosing, writeClosingFiles };
+// Offene Gruppen kommen immer in die Sicherung, 🟢 nur mit Scout-Block: Ohne Vorschlag erreicht sie kein Followup.
+function writeClosing(options, open, green = []) {
+  const blocks = scoutBlocksOf(options);
+  const groups = [...open, ...green.filter((group) => blocks.has(group.scoutKey))];
+  const scouted = groups.map((group) => blocks.get(group.scoutKey)).filter(Boolean);
+  writeClosingFiles(options.workspace, groups.map((group) => group.block), scouted);
+}
+
+module.exports = { openGroupsOf, greenGroupsOf, writeClosing, writeClosingFiles };

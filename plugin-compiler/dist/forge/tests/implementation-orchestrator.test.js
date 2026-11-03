@@ -41,7 +41,7 @@ test('implementationOrchestrator_Body_ChainsTheFourSkillsInOrderWithoutReportPar
     '`dv-forge:start-work` mit `<P0> <S0>`',
     '`dv-forge:implementation` mit `<P> <S>`',
     '`dv-forge:implementation-review` mit `<P> <S>`.',
-    '`dv-forge:review-followup` mit `<P> alle --spec <S>`.',
+    '`dv-forge:review-followup` mit `<P> auto --spec <S>`.',
   ];
   const positions = steps.map((step) => body.indexOf(step));
   for (const [index, step] of steps.entries()) assert.ok(positions[index] !== -1, `${step} fehlt`);
@@ -175,7 +175,7 @@ test('implementationOrchestrator_Body_StartsFollowupRoundsOnFollowupJaBeforeBuil
   const followup = body.indexOf('- `NEXT=followup` → 5.');
   const ready = body.indexOf('- `NEXT=weiter` und `BEREIT=ja` → 6.');
   assert.ok(followup > -1 && followup < ready, 'Reihenfolge followup, weiter');
-  assert.ok(body.includes('Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> alle --spec <S>`. Hash-Prüfung.'));
+  assert.ok(body.includes('Followup-Runden bis zum Maximum der Regeldatei. Runde `RUNDE`: `dv-forge:review-followup` mit `<P> auto --spec <S>`. Hash-Prüfung.'));
   assert.ok(body.indexOf('Maximum der Regeldatei') < body.indexOf('6. `node "<PLUGIN>/scripts/verify-run.js" --repo "<R>"'), 'Build, Test und Lint erst nach den Runden');
   for (const gone of [...FORMER_ROUND_WORDINGS, 'bericht-followup-1.json', 'bericht-followup-2.json']) assert.equal(body.includes(gone), false, `${gone} steht in der Regeldatei oder in der Ablage`);
 });

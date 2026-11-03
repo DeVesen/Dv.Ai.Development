@@ -621,12 +621,65 @@ test('reviewFollowup_OneChosen_ListsTheOtherAsOpenInFollowupJson', () => {
   });
 });
 
+const AUTO_AGGREGATE = [
+  '=== REWORK ===',
+  '### 🔴 Task 2 (buildability)', '- [buildability · yellow] Zitat: „a“ · Konsequenz: k1 · Begründung: b1', '',
+  '### 🟡 AC-03 (coverage)', '- [coverage · yellow] Zitat: „c“ · Konsequenz: k3 · Begründung: b3', '',
+  '### 🟢 AC-05 (coverage)', '- [coverage · green] Zitat: „d“ · Konsequenz: k5 · Begründung: b5', '',
+].join('\n');
+const AUTO_SCOUT = [
+  '## Scout-Vorschläge', '',
+  '### 🔴 Task 2', '1. Anker ändern', '**Bevorzugt: 1** — Grund', '',
+  '### 🟡 AC-03', 'Sicherheit: 80 %', '1. Schritt ergänzen', '**Bevorzugt: 1** — Grund', '',
+  '### 🟢 AC-05', 'Sicherheit: 60 %', '1. Text anpassen', '**Bevorzugt: 1** — Grund', '',
+].join('\n');
+const YELLOW_ONLY_AGGREGATE = [
+  '=== REWORK ===',
+  '### 🟡 AC-03 (coverage)', '- [coverage · yellow] Zitat: „c“ · Konsequenz: k3 · Begründung: b3', '',
+].join('\n');
+const YELLOW_ONLY_SCOUT = ['## Scout-Vorschläge', '', '### 🟡 AC-03', 'Sicherheit: 40 %', '1. Schritt ergänzen', '**Bevorzugt: 1** — Grund', ''].join('\n');
+
+test('reviewFollowup_Auto_RedAlwaysYellowAndGreenFromThreshold', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', AUTO_AGGREGATE, AUTO_SCOUT);
+  const defaults = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'auto'));
+  assert.equal(defaults.gruppen, '1,2');
+  assert.equal(defaults.offen, '');
+  fs.writeFileSync(path.join(repo, 'CLAUDE.md'), '## dv-forge\n- Empfehlungs-Schwelle: 50\n');
+  const lowered = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'auto'));
+  assert.equal(lowered.gruppen, '1,2,3');
+});
+
+test('reviewFollowup_AutoNothingEligible_ExitsOneNamingThreshold', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', YELLOW_ONLY_AGGREGATE, YELLOW_ONLY_SCOUT);
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'auto');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Keine Gruppe erreicht die Empfehlungs-Schwelle von 70 %/);
+});
+
+test('reviewFollowup_AlleWithSavedGreen_SkipsTheGreenGroup', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', AUTO_AGGREGATE, AUTO_SCOUT);
+  const out = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'alle'));
+  assert.equal(out.gruppen, '1,2');
+});
+
+test('reviewFollowup_AutoInvalidThreshold_ExitsOne', () => {
+  const repo = planRepo();
+  saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', AUTO_AGGREGATE, AUTO_SCOUT);
+  fs.writeFileSync(path.join(repo, 'CLAUDE.md'), '## dv-forge\n- Empfehlungs-Schwelle: hoch\n');
+  const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'auto');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Empfehlungs-Schwelle ungültig: hoch/);
+});
+
 test('reviewFollowup_BadSelectionText_MentionsAlleInMessage', () => {
   const repo = planRepo();
   saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z');
   const result = run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'x');
   assert.equal(result.status, 2);
-  assert.match(result.stderr, /erlaubt: alle, b, <n>/);
+  assert.match(result.stderr, /erlaubt: alle, auto, b, <n>/);
 });
 
 test('implementation_FirstArgumentNotAFile_NamesExpectedAndGivenArguments', () => {

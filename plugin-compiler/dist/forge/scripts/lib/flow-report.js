@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { openQuestions } = require('./questions');
 const { failedInstances } = require('./attempts');
-const { openGroupsOf, writeClosing } = require('./closing');
+const { openGroupsOf, greenGroupsOf, writeClosing } = require('./closing');
 const { buildInput } = require('./report-data');
 const { renderReportText, summaryOf } = require('./report-text');
 const { ROUND_ONE, ROUND_TWO, FOLLOWUP, FlowError, readText, readJson } = require('./flow-files');
@@ -66,7 +66,7 @@ function report(options) {
   const input = buildInput(options, data, status, open);
   const text = renderReportText(input);
   const summary = summaryOf(input);
-  writeClosing(options, open);
+  writeClosing(options, open, greenGroupsOf(options, data));
   appendMetric(path.dirname(path.resolve(options.doc)), 'reviews', flowReviewRecord(options, data, status));
   const stored = storeReport(options, { format: REPORT_FORMAT, status, ...summary, ...input }, text);
   const line = reviewStatusLine({ resultLine: summary.resultLine, followup: summary.offersFollowup, report: stored.md });

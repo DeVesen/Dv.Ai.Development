@@ -239,9 +239,23 @@ function removeDirectory(dir) {
 
 // Erst git; scheitert es an der Umgebung (zu lange Pfade, gesperrte Datei), räumt ein zweiter Weg das Verzeichnis weg.
 // Der Eintrag wird erst gelöst, wenn das Verzeichnis weg ist: nie abgemeldet mit Restdateien.
+// Meldet git Erfolg, kann auf Windows ein Ordner mit Links liegen bleiben (etwa eine node_modules-Junction): removeDirectory löscht
+// den Rest, Links nur als Link. Meldet git offene Änderungen (englische Meldung oder die deutsche aus po/de.po), löscht der zweite Weg nie:
+// Das wäre Datenverlust.
 function removeWorktree(state) {
   const removed = git(state.haupt, ['worktree', 'remove', state.R]);
-  if (removed.ok) return;
+  if (removed.ok) {
+    try {
+      if (fs.existsSync(state.R)) removeDirectory(state.R);
+    } catch (error) {
+      throw new WorkError(`Worktree-Rest konnte nicht entfernt werden: ${toPosix(state.R)} (${error.message})`);
+    }
+    if (fs.existsSync(state.R)) throw new WorkError(`Worktree-Rest konnte nicht entfernt werden: ${toPosix(state.R)}`);
+    return;
+  }
+  if (/contains modified or untracked files|enthält geänderte oder nicht versionierte Dateien/.test(removed.err)) {
+    throw new WorkError(`Worktree hat offene Änderungen: ${removed.err}. Er bleibt bestehen.`);
+  }
   if (worktrees(state.haupt).some((entry) => entry.dir === state.R && entry.locked)) {
     throw new WorkError(`Worktree ist gesperrt: ${removed.err}`);
   }
@@ -324,4 +338,4 @@ function openFiles(cwd = process.cwd()) {
   return splitByBaseline(root, currentBranch(root));
 }
 
-module.exports = { WorkError, start, switchBranch, check, remove, removeDirectory, isLinkedWorktree, openFiles };
+module.exports = { WorkError, start, switchBranch, check, remove, removeDirectory, removeWorktree, isLinkedWorktree, openFiles };

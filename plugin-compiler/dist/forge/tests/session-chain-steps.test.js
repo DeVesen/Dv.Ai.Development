@@ -10,7 +10,7 @@ const { VALID_SPEC } = require('./lib/spec-fixtures');
 const { readState, writeState } = require('../scripts/lib/session-chain-store');
 const { storeFiles } = require('../scripts/lib/session-chain-ablage');
 const { etappeReport } = require('../scripts/lib/session-chain-report');
-const { setState, haltText, holdAt, processFinal, closing, recordCommit } = require('../scripts/lib/session-chain-steps');
+const { setState, haltText, holdAt, processFinal, previewFinal, closing, recordCommit } = require('../scripts/lib/session-chain-steps');
 
 const EMPTY = { entscheidungen: [], dateien: [], anhang: [], luecken: [], acOhneTest: [] };
 
@@ -308,6 +308,37 @@ test('processFinal_PlanningWithoutPlan_HoldsAsDeviationWithoutGoText', () => {
   assert.equal(result.haltepunkt, 'abweichung');
   assert.ok(result.text.includes('- Planning meldet keinen Plan (--plan fehlt)'));
   assert.doesNotMatch(result.text, /undefined|GO-Haltepunkt/);
+});
+
+test('previewFinal_PlanningWithoutPlan_ReturnsTheDeviationAndLeavesStateUnchanged', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zur Umsetzung\n');
+  const bericht = etappeReport({ ...EMPTY, etappe: 'planning', slug: 'x', bericht: abschluss }, repo);
+  const before = readState(repo, 'x');
+
+  // Act
+  const result = previewFinal(bericht, repo);
+
+  // Assert
+  assert.deepEqual(result, { abweichungen: ['Planning meldet keinen Plan (--plan fehlt)'], showstopper: [] });
+  assert.deepEqual(readState(repo, 'x'), before);
+});
+
+test('previewFinal_UmsetzungWithPruefungKeine_ReturnsTheShowstopper', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  setState({ slug: 'x', basis: 'main', spec }, repo);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zum Abschließen\n');
+  const bericht = etappeReport({ ...EMPTY, etappe: 'umsetzung', slug: 'x', bericht: abschluss, branch: 'main', worktree: repo, pruefung: 'keine' }, repo);
+
+  // Act
+  const result = previewFinal(bericht, repo);
+
+  // Assert
+  assert.deepEqual(result.abweichungen, []);
+  assert.ok(result.showstopper.includes('Prüfergebnis ist nicht grün: keine'));
 });
 
 test('processFinal_PlanningWithPlanAndSameSlug_HoldsAtGoWithCall', () => {

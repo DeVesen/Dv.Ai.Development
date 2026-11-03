@@ -466,3 +466,27 @@ test('brief_NacharbeitWithoutQuelleAndWithoutReviewInState_ExitsOneNamingQuelle'
   assert.equal(result.status, 1);
   assert.match(result.stderr, /quelle fehlt/);
 });
+
+// Punkt 14: etappe-report prüft vorab wie `final`, ohne den Zustand zu ändern, und nennt jede Abweichung; die Etappe behebt sie vor `final`.
+test('etappeReport_PlanningWithoutPlan_NamesTheDeviationBeforeFinal', () => {
+  // Arrange
+  const repo = makeRepo();
+  commitFile(repo, 'docs/forge/x/spec.md', '# Spec\n', 'docs: spec x');
+  chain(repo, 'set', '--slug', 'x', '--basis', 'main', '--spec', path.join(repo, 'docs/forge/x/spec.md'));
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zur Umsetzung\n');
+
+  // Act
+  const result = chain(repo, 'etappe-report', '--etappe', 'planning', '--slug', 'x', '--inhalt', abschluss);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  const lines = result.stdout.trim().split('\n');
+  assert.match(lines[0], /^BERICHT=.+/);
+  assert.equal(lines[1], 'VORAB=abweichung');
+  assert.ok(lines.includes('ABWEICHUNG=Planning meldet keinen Plan (--plan fehlt)'), result.stdout);
+});
+
+test('baseSubAgent_ReportRule_AsksToFixThePreviewBeforeFinal', () => {
+  const text = require('node:fs').readFileSync(path.join(__dirname, '..', 'shared', 'session-chain', 'base-sub-agent.md'), 'utf8');
+  assert.ok(text.includes('Zeilen `ABWEICHUNG=` oder `SHOWSTOPPER=` danach nennen, woran die Leit-Session dein `final` halten würde'));
+});

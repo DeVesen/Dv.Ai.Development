@@ -14,7 +14,7 @@ const { commitFor, checkWhiteboardingCommitted } = require('./lib/session-chain-
 const { goCall, adoptedText, noStatusHint, runningLine } = require('./lib/session-chain-text');
 const { briefHashOf } = require('./lib/stage-start-guard');
 const { etappeReport, readInput } = require('./lib/session-chain-report');
-const { setState, copySpecAtStart, holdAt, processFinal, closing, recordCommit } = require('./lib/session-chain-steps');
+const { setState, copySpecAtStart, holdAt, processFinal, previewFinal, closing, recordCommit } = require('./lib/session-chain-steps');
 const { reviewStand } = require('./lib/session-chain-review');
 
 const USAGE = [
@@ -196,7 +196,20 @@ function report(values) {
     tests: values.tests, anhang: values.anhang.map((item) => path.resolve(item)), plan: values.plan, worktree: values.worktree, branch: values.branch,
     pruefung: values.pruefung, luecken: values.luecke, acOhneTest: values['ac-ohne-test'],
   }, process.cwd());
-  return `BERICHT=${file}`;
+  return [`BERICHT=${file}`, ...previewLines(file)].join('\n');
+}
+
+// Vorab-Prüfung (Punkt 14): dieselbe Prüfung wie `final` der Leit-Session, ohne Zustand oder Ereignis zu schreiben. Die Etappe behebt,
+// was in ihrer Hand liegt, bevor sie `final` meldet; so hält die Kette seltener an einer Abweichung. Ein Fehler der Vorab-Prüfung
+// verhindert die Berichtsdatei nie, er steht nur als `VORAB=nicht-moeglich` in der Ausgabe.
+function previewLines(file) {
+  try {
+    const { abweichungen, showstopper } = previewFinal(file, process.cwd());
+    if (abweichungen.length === 0 && showstopper.length === 0) return ['VORAB=ok'];
+    return ['VORAB=abweichung', ...abweichungen.map((text) => `ABWEICHUNG=${text}`), ...showstopper.map((text) => `SHOWSTOPPER=${text}`)];
+  } catch (error) {
+    return [`VORAB=nicht-moeglich ${String(error.message).split('\n')[0]}`];
+  }
 }
 
 // Stand des Reviews im Whiteboarding: daraus entscheidet die Etappe, ob die Abschlussfrage kommt.

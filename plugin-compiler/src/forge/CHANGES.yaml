@@ -93,6 +93,13 @@ changes:
       - agents/spec-rework.md
       - tests/review-flow-round-one.test.js
       - tests/agents.test.js
+  - befund: "14"
+    titel: Vorab-Prüfung vor dem final (previewFinal aus fix/forge-handover-stability verdrahtet)
+    warum: Die Funktion war exportiert und getestet, aber kein Skript rief sie auf. Die Etappe sieht jetzt vor ihrem final, woran die Leit-Session halten würde.
+    dateien:
+      - scripts/session-chain.js
+      - shared/session-chain/base-sub-agent.md
+      - tests/session-chain-cli.test.js
   - befund: "V"
     titel: Version 0.35.0 für die Befunde 2 bis 12, B und C
     dateien:
@@ -118,12 +125,13 @@ stand:
   scripts/lib/rework-input.js: 0dea3a08c04d6371
   scripts/lib/scout-check.js: d922de3e712ab771
   scripts/orchestrator-state.js: 40e9233c9cb04b02
+  scripts/session-chain.js: ca21cead7df6b6f8
   shared/dialog-rules.md: a286ed205bac9eb9
   shared/orchestrator-rules.md: 3a7970d139b2a192
   shared/review-loop/finding-format.md: b72ed671bf5696e4
   shared/review-loop/loop.md: a1460fd119fd751a
   shared/review-loop/severity-rules.md: 7e251cf0b2e7f9e8
-  shared/session-chain/base-sub-agent.md: 96d329ffbeba1a10
+  shared/session-chain/base-sub-agent.md: d4e454618dd1bd4b
   skills/commit-message/SKILL.md: 9e5a2880f739b5bd
   skills/plan-writing/SKILL.md: 51ed956505dc69d4
   skills/plan-writing/references/plan-format.md: 7274a96aa8cbed81
@@ -143,5 +151,6 @@ stand:
   tests/review-flow-round-one.test.js: 2544c22a244a929c
   tests/review-loop.test.js: 325559138b4b26b9
   tests/scout-texts.test.js: 33617a8518df7bdf
+  tests/session-chain-cli.test.js: fceb056fd947b158
   tests/skill.test.js: 0edf3859a6267d61
   tests/spec-whiteboarding.test.js: 427dbe5115e5cfc9

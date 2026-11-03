@@ -2,7 +2,7 @@
 
 Ziel: das aus `plugin-compiler/src` erzeugte `dv-forge` 0.35.0 und den angular-Prototyp aus `plugin-compiler/dist/` lokal installieren und ausprobieren. Alle Befehle laufen im Repo-Wurzelordner `Dv.Ai.Development` auf dem Branch `exp/plugin-compiler`.
 
-**Grundlage:** dv-forge 0.34.0 aus `master` (mit Empfehlungs-Schwelle) plus `fix/forge-handover-stability` (7b4faac). Darauf liegen die Befunde 2 bis 12, B und C; die Liste steht in `src/forge/CHANGES.yaml`.
+**Grundlage:** dv-forge 0.34.0 aus `master` (mit Empfehlungs-Schwelle) plus `fix/forge-handover-stability` (7b4faac). Darauf liegen die Befunde 2 bis 12, 14, B und C; die Liste steht in `src/forge/CHANGES.yaml`.
 
 ## 0. Bauen und prüfen
 
@@ -16,19 +16,19 @@ Erwartet, in dieser Reihenfolge:
 ```text
 == 1/4 build (enthält den Abgleich dist/forge ↔ plugins/forge mit Änderungsprotokoll)
 build: 370 Dateien nach dist/ geschrieben.
-  dv-forge: 68 Quellen, 24 Partials, 26 Regeln als Daten, 277 Assets; 304 Dateien wortgleich zum Bestand, 45 laut Änderungsprotokoll geändert.
+  dv-forge: 68 Quellen, 24 Partials, 26 Regeln als Daten, 277 Assets; 302 Dateien wortgleich zum Bestand, 47 laut Änderungsprotokoll geändert.
   angular: 5 Etappen, 27 geteilte Regeln, 3 eigene.
-  35 Warnungen.
+  13 Warnungen.
 == 2/4 dist/ unverändert gegenüber git
 dist/ entspricht dem eingecheckten Stand.
 == 3/4 claude plugin validate --strict
 √ Validation passed        (Marketplace, angular, forge)
 == 4/4 forge-Testsuite gegen dist/forge
-# tests 2201 / # pass 2200 / # fail 0 / # skipped 1
+# tests 2203 / # pass 2202 / # fail 0 / # skipped 1
 smoke: ok
 ```
 
-Die Warnungen sind offene Begründungen (`TODO(…)`, bei forge die 22 Regeln aus Befund 8) und die drei Implementierungs-Reviewer mit Bash (Befund 7, bewusst so gelassen).
+Die 13 Warnungen sind offene Begründungen der angular-Prototyp-Regeln (`TODO(…)`) und die drei Implementierungs-Reviewer mit Bash (Befund 7, bewusst so gelassen). Alle 26 forge-Regeln haben eine bestätigte Begründung (Befund 8).
 
 ## 1. Installieren
 
@@ -52,6 +52,7 @@ Danach Claude Code neu starten. Prüfen: 19 `/dv-forge:…`-Skills, 28 `dv-forge
 | C | Spec-Review, bei dem ein 🔴 neues Verhalten ohne Beleg verlangt und der Scout ≥ Schwelle sicher ist | Die Spec-Nacharbeit fragt **nicht** mehr, sondern setzt den Vorschlag um. In der Spec steht `- **R<n> · <Stelle>** — geändert — Empfehlung übernommen (Sicherheit <n> %) — …`. Unter der Schwelle kommt wie bisher eine Frage. |
 | 5 | `cat` der installierten `skills/session-orchestrator/SKILL.md` | `argument-hint: '[grill|…] [pfade] [workitem-nr]'` in Anführungszeichen: gültiges YAML. |
 | 6 | Implementierungs-Review | Der Test-Reviewer darf die Suite ausführen, aber keine Datei bearbeiten (`disallowedTools: Edit, MultiEdit, NotebookEdit`). |
+| 14 | Eine Etappe der Session-Kette kurz vor ihrem `final` | `etappe-report` gibt nach `BERICHT=` die Zeile `VORAB=ok` oder `VORAB=abweichung` mit `ABWEICHUNG=…`/`SHOWSTOPPER=…` aus. Die Etappe behebt, was in ihrer Hand liegt, und schreibt die Berichtsdatei erneut; die Leit-Session hält dadurch seltener. |
 | 3 | Whiteboarding mit Commit auf Wunsch | Der Commit läuft als `git add -- <spec>` und direkt danach `git commit -m "…" -- <spec>`; das klappt jetzt auch für eine neue Spec. |
 
 Am schnellsten siehst du B mit deiner Schwelle: in der Projekt-`CLAUDE.md` unter `## dv-forge` die Zeile `- Empfehlungs-Schwelle: 95` setzen. Dann bleiben fast alle 🔴 bei dir.
@@ -88,6 +89,6 @@ rm -rf docs/forge/2026-11-03-aufgabenliste
 
 ## Was verifiziert ist und was nicht
 
-- **Verifiziert:** Build mit allen Prüfungen. Abgleich: 304 Dateien wortgleich zum Bestand, jede der 45 übrigen steht im Änderungsprotokoll mit abgenommenem Fingerabdruck. Die forge-Testsuite gegen `dist/forge` ist grün (2200 bestanden; 14 Tests mehr als auf der Grundlage, alle für die Befunde). `claude plugin validate --strict` für Marketplace und beide Plugins.
+- **Verifiziert:** Build mit allen Prüfungen. Abgleich: 302 Dateien wortgleich zum Bestand, jede der 47 übrigen steht im Änderungsprotokoll mit abgenommenem Fingerabdruck. Die forge-Testsuite gegen `dist/forge` ist grün (2202 bestanden; 16 Tests mehr als auf der Grundlage, alle für die Befunde). `claude plugin validate --strict` für Marketplace und beide Plugins.
 - **Nicht verifiziert:** Installation und Aufrufe in einer interaktiven Session, insbesondere wie Scouts die `Sicherheit` in echten Läufen schätzen. Davon hängt ab, wie oft B und C greifen.
 - **Bewusste Abweichungen ohne Befund-Nummer:** `author` in `plugin.json`, `description` in `hooks.json`, die Kopfzeile je Markdown-Datei.

@@ -2,7 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { parseRework, parseScout, scoutBlocks, SCOUT_HEADING, GROUP_HEADING, PROPOSAL } = require('../followup');
+const { parseRework, parseScout, scoutBlocks, SCOUT_HEADING, GROUP_HEADING, PROPOSAL, CONFIDENCE_LINE } = require('../followup');
 const { readLines } = require('./flow-files');
 const { plainProblem } = require('./plain-text');
 
@@ -37,7 +37,7 @@ function scoutTexts(lines) {
   for (const line of start === -1 ? [] : lines.slice(start + 1)) {
     const heading = GROUP_HEADING.exec(line);
     if (heading) {
-      current = { severity: heading[1], location: heading[2], title: null, description: null, recommendation: null };
+      current = { severity: heading[1], location: heading[2], title: null, description: null, recommendation: null, sicherheit: null };
       groups.push(current);
       proposalSeen = false;
     } else if (current) {
@@ -48,6 +48,8 @@ function scoutTexts(lines) {
       if (description && current.description === null) current.description = description[1].trim();
       const recommendation = proposalSeen ? null : RECOMMENDATION_LINE.exec(line);
       if (recommendation && current.recommendation === null) current.recommendation = recommendation[1].trim();
+      const confidence = proposalSeen ? null : CONFIDENCE_LINE.exec(line);
+      if (confidence && current.sicherheit === null && Number(confidence[1]) <= 100) current.sicherheit = Number(confidence[1]);
     }
   }
   return groups;

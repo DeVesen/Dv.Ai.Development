@@ -89,7 +89,8 @@ function described(group, texts) {
 }
 
 function openOf(group, texts, color) {
-  return { key: placeKey(group.location), color, ...described(group, texts), angles: angles(group.reviewers), hasProposal: true };
+  const sicherheit = texts.get(`${group.severity} ${group.location}`)?.sicherheit ?? null;
+  return { key: placeKey(group.location), color, ...described(group, texts), angles: angles(group.reviewers), hasProposal: true, sicherheit };
 }
 
 function damageEntry([, icon, text]) {

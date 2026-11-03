@@ -579,3 +579,21 @@ test('orchestratorReport_AcWithoutTestClosedByFollowup_OmitsTheAcLine', () => {
   assert.equal(result.status, 0, result.stderr);
   assert.doesNotMatch(result.stdout, /AC ohne beweisenden Test/);
 });
+
+// Entscheidung B: Ein 🔴 mit Vorschlag startet nur dann eine weitere Runde, wenn die Scout-Sicherheit die Schwelle erreicht.
+// Darunter bleibt es beim Menschen: keine Runde, Abbruchgrund `unter-schwelle`. Bericht-Daten ohne Feld `sicherheit` verhalten sich wie bisher.
+test('roundsState_RedBelowThreshold_NoRoundAndAbortUnterSchwelle', () => {
+  const { roundsState: state } = require('../scripts/lib/orchestrator-report');
+  const review = (entry) => ({ openRed: 1, open: [{ key: 'ac-04', color: 'red', title: 'Grenzwert festlegen', hasProposal: true, ...entry }] });
+  const low = state([review({ sicherheit: 50 })], 8, 70);
+  assert.equal(low.weiter, false);
+  assert.equal(low.abbruch, 'unter-schwelle');
+  assert.deepEqual(low.unsicher, ['Grenzwert festlegen']);
+  const high = state([review({ sicherheit: 70 })], 8, 70);
+  assert.equal(high.weiter, true);
+  assert.equal(high.abbruch, null);
+  const older = state([review({})], 8, 70);
+  assert.equal(older.weiter, true, 'ohne Feld sicherheit gilt das frühere Verhalten');
+  const unknownThreshold = state([review({ sicherheit: 10 })], 8, null);
+  assert.equal(unknownThreshold.weiter, true, 'ohne lesbare Schwelle gilt das frühere Verhalten');
+});

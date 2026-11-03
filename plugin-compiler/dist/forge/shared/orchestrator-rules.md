@@ -5,7 +5,7 @@ Gemeinsame Regeln von `spec-review-orchestrator`, `plan-orchestrator` und `imple
 
 ## Followup-Runden
 - Maximum Followup-Runden: 8
-- Eine Followup-Runde ist eine Iteration Integration → Re-Review mit `review-followup <A> auto`. `orchestrator-state.js next` startet eine Runde, solange der letzte Bericht ein offenes 🔴 mit Scout-Vorschlag nennt (`NEXT=followup`). Mit `--artefakt` und `--rolle` startet es vor der ersten Runde außerdem genau eine, wenn die Sicherung ein 🟡 oder 🟢 mit Scout-`Sicherheit` ab der Empfehlungs-Schwelle hat (`AUTO=<n>`); die Schwelle liefert `forge-config.js get Empfehlungs-Schwelle`. Übrige 🟡 und 🟢 lösen keine Runde aus und stehen im Abschlussbericht unter `Was ist noch offen`.
+- Eine Followup-Runde ist eine Iteration Integration → Re-Review mit `review-followup <A> auto`. `orchestrator-state.js next` startet eine Runde, solange der letzte Bericht ein offenes 🔴 mit Scout-Vorschlag und Scout-`Sicherheit` ab der Empfehlungs-Schwelle nennt (`NEXT=followup`); ein 🔴 darunter bleibt beim Menschen und steht mit `ABBRUCH=unter-schwelle` im Abschlussbericht. Mit `--artefakt` und `--rolle` startet es vor der ersten Runde außerdem genau eine, wenn die Sicherung ein 🟡 oder 🟢 mit Scout-`Sicherheit` ab der Empfehlungs-Schwelle hat (`AUTO=<n>`); die Schwelle liefert `forge-config.js get Empfehlungs-Schwelle`. Übrige 🟡 und 🟢 lösen keine Runde aus und stehen im Abschlussbericht unter `Was ist noch offen`.
 - Die Runden enden früher bei Stillstand: dieselbe 🔴-Stelle bleibt nach zwei aufeinanderfolgenden Runden offen (`ABBRUCH=stillstand`).
 - Bleibt nach dem Ende der Runden ein 🔴 offen (`ABBRUCH=maximum` oder `ABBRUCH=stillstand`), endet der Lauf sauber mit dem Abschlussbericht; er nennt `Iterationen: <n> von <max>` und `Abbruch: <grund>`. Die Leit-Session hält danach am Haltepunkt.
 - Die Integration setzt den bevorzugten Scout-Vorschlag um. Eine Abweichung davon braucht je Finding eine schriftliche Begründung; sie steht im Bericht als `Abweichung: <Begründung>`.
@@ -31,7 +31,7 @@ Gemeinsame Regeln von `spec-review-orchestrator`, `plan-orchestrator` und `imple
 | "Scope ist Pflicht, ich frage nach der Nummer." | Ohne Workitem-Nr. kein Scope und keine Frage. | spec-review-orchestrator |
 | "Den Bericht stelle ich selbst zusammen." | Nur `orchestrator-report.js`, unverändert. | alle drei |
 | "Noch eine Followup-Runde." | Das Maximum aus dem Abschnitt Followup-Runden gilt. | alle drei |
-| "Die 🟡 arbeite ich noch ein, dann ist es sauber." | Welche 🟡 eine Runde bekommen, entscheidet `auto` über die Empfehlungs-Schwelle; die übrigen stehen im Bericht. | alle drei |
+| "Die 🟡 arbeite ich noch ein, dann ist es sauber." | Welche 🔴, 🟡 und 🟢 eine Runde bekommen, entscheidet `auto` über die Empfehlungs-Schwelle; die übrigen stehen im Bericht. | alle drei |
 | "Plan bereit, ich committe." | Nie; der Plan bleibt uncommittet. | plan-orchestrator |
 | "Die Spec-Änderung ist harmlos." | Stopp, Diff zeigen, fragen. | plan-orchestrator, implementation-orchestrator |
 | "Alles grün, `finish-work` gleich mit." | Nie; `finish-work` gehört zur Abschluss-Etappe. | implementation-orchestrator |

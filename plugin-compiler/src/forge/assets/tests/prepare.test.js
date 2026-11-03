@@ -629,7 +629,7 @@ const AUTO_AGGREGATE = [
 ].join('\n');
 const AUTO_SCOUT = [
   '## Scout-Vorschläge', '',
-  '### 🔴 Task 2', '1. Anker ändern', '**Bevorzugt: 1** — Grund', '',
+  '### 🔴 Task 2', 'Sicherheit: 75 %', '1. Anker ändern', '**Bevorzugt: 1** — Grund', '',
   '### 🟡 AC-03', 'Sicherheit: 80 %', '1. Schritt ergänzen', '**Bevorzugt: 1** — Grund', '',
   '### 🟢 AC-05', 'Sicherheit: 60 %', '1. Text anpassen', '**Bevorzugt: 1** — Grund', '',
 ].join('\n');
@@ -639,7 +639,7 @@ const YELLOW_ONLY_AGGREGATE = [
 ].join('\n');
 const YELLOW_ONLY_SCOUT = ['## Scout-Vorschläge', '', '### 🟡 AC-03', 'Sicherheit: 40 %', '1. Schritt ergänzen', '**Bevorzugt: 1** — Grund', ''].join('\n');
 
-test('reviewFollowup_Auto_RedAlwaysYellowAndGreenFromThreshold', () => {
+test('reviewFollowup_Auto_EveryColorFromThreshold', () => {
   const repo = planRepo();
   saveFollowup(repo, 'plan-review', '2026-09-28T10:00:00.000Z', AUTO_AGGREGATE, AUTO_SCOUT);
   const defaults = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'auto'));
@@ -648,6 +648,11 @@ test('reviewFollowup_Auto_RedAlwaysYellowAndGreenFromThreshold', () => {
   fs.writeFileSync(path.join(repo, 'CLAUDE.md'), '## dv-forge\n- Empfehlungs-Schwelle: 50\n');
   const lowered = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'auto'));
   assert.equal(lowered.gruppen, '1,2,3');
+  // Entscheidung B: Über der Sicherheit des 🔴 (75 %) bleibt es beim Menschen.
+  fs.writeFileSync(path.join(repo, 'CLAUDE.md'), '## dv-forge\n- Empfehlungs-Schwelle: 78\n');
+  const raised = values(run(repo, 'review-followup', 'docs/forge/demo/plan.md', 'auto'));
+  assert.equal(raised.gruppen, '2');
+  assert.equal(raised.offen, '1');
 });
 
 test('reviewFollowup_AutoNothingEligible_ExitsOneNamingThreshold', () => {

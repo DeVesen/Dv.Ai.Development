@@ -328,8 +328,11 @@ test('parseScout_SicherheitLine_ReadsPercentOrNull', () => {
   assert.deepEqual(groups.map((group) => group.sicherheit), [80, null, null]);
 });
 
-test('autoEligible_RedAlwaysYellowGreenFromThreshold', () => {
-  assert.equal(followup.autoEligible({ severity: '🔴', preferred: 1, sicherheit: null }, 70), true);
+// Entscheidung B: Auch ein 🔴 braucht eine Scout-Sicherheit ab der Schwelle; darunter oder ohne Angabe bleibt es beim Menschen.
+test('autoEligible_EveryColorFromThreshold', () => {
+  assert.equal(followup.autoEligible({ severity: '🔴', preferred: 1, sicherheit: null }, 70), false);
+  assert.equal(followup.autoEligible({ severity: '🔴', preferred: 1, sicherheit: 69 }, 70), false);
+  assert.equal(followup.autoEligible({ severity: '🔴', preferred: 1, sicherheit: 70 }, 70), true);
   assert.equal(followup.autoEligible({ severity: '🟡', preferred: 1, sicherheit: 70 }, 70), true);
   assert.equal(followup.autoEligible({ severity: '🟡', preferred: 1, sicherheit: 69 }, 70), false);
   assert.equal(followup.autoEligible({ severity: '🟢', preferred: 1, sicherheit: 95 }, 70), true);

@@ -12,6 +12,7 @@ const { FlowError } = require('./flow-error');
 const { assertCurrentFormat } = require('./report-format');
 const { maxFollowups } = require('./orchestrator-rules');
 const { placeKey } = require('./places');
+const { readConfig, recommendationThreshold } = require('../forge-config');
 
 const REVIEW_OF_ART = { spec: 'spec-review', plan: 'plan-review', implementation: 'implementation-review' };
 const RANK = { red: 0, yellow: 1 };
@@ -44,7 +45,26 @@ function mergeByKey(parts, field, name) {
   return [...byKey.values()];
 }
 
-// `parts`: Review, dann die gelieferten Followup-Runden in Reihenfolge.
+// Empfehlungs-Schwelle des Projekts im aktuellen Checkout, oder null ohne lesbare Einstellung; dann gilt das frühere Verhalten.
+function thresholdHere(cwd = process.cwd()) {
+  try {
+    return recommendationThreshold(readConfig(cwd).config);
+  } catch {
+    return null;
+  }
+}
+
+// Eine Followup-Runde (`review-followup <A> auto`) erreicht eine offene Gruppe nur mit Scout-Vorschlag und, seit Entscheidung B, mit
+// Scout-Sicherheit ab der Schwelle, auch bei 🔴. Bericht-Daten ohne Feld `sicherheit` (frühere Läufe) und eine unbekannte Schwelle
+// gelten wie bisher als erreichbar. Dieselbe Regel wie `autoEligible` in followup.js, auf die Bericht-Daten angewendet.
+function reachable(entry, threshold) {
+  if (!entry.hasProposal) return false;
+  if (threshold === null || threshold === undefined || !Object.hasOwn(entry, 'sicherheit')) return true;
+  return entry.sicherheit !== null && entry.sicherheit >= threshold;
+}
+
+// `parts`: Review, dann die gelieferten Followup-Runden in Reihenfolge. Was eine Runde bearbeitet hat, entscheidet ihr Bericht, nicht die
+// Schwelle: Nicht gewählte gesicherte Gruppen meldet der Followup selbst weiter als offen (open-groups.js).
 function mergeOpen(parts) {
   let open = parts[0]?.open ?? [];
   for (const part of parts.slice(1)) {
@@ -86,16 +106,23 @@ function stagnantRed(followups) {
 // Offen zählt wie mergeOpen: die 🔴 der letzten Runde plus jedes frühere 🔴 ohne Scout-Vorschlag. `weiter`: eine weitere Runde erreicht
 // ein offenes 🔴 (Vorschlag vorhanden, kein Stillstand, Maximum nicht erreicht). `abbruch`: Grund, aus dem die Runden trotz 🔴 enden.
 // `orchestrator-state.js next` und der Abschlussbericht lesen beide von hier, damit `ABBRUCH=` und `Abbruch:` nie auseinanderlaufen.
-function roundsState(parts, max = maxFollowups()) {
+function roundsState(parts, max = maxFollowups(), threshold = thresholdHere()) {
   const present = parts.filter(Boolean);
   const followups = parts.slice(1).filter(Boolean);
   const open = mergeOpen(present);
   const listedRed = open.filter((entry) => entry.color === 'red').length;
   const openRed = Math.max(Number(present.at(-1)?.openRed) || 0, listedRed);
-  const proposed = open.filter((entry) => entry.color === 'red' && entry.hasProposal === true).length;
+  const red = open.filter((entry) => entry.color === 'red');
+  const proposed = red.filter((entry) => reachable(entry, threshold)).length;
+  // 🔴 mit Vorschlag, aber Scout-Sicherheit unter der Schwelle: Sie bleiben beim Menschen und lösen keine Runde aus (Entscheidung B).
+  const unsicher = red.filter((entry) => entry.hasProposal === true && !reachable(entry, threshold));
   const stillstand = stagnantRed(followups);
-  const abbruch = openRed === 0 ? null : stillstand.length > 0 ? 'stillstand' : followups.length >= max ? 'maximum' : null;
-  return { rounds: followups.length, max, openRed, proposed, abbruch, stillstand: stillstand.map((entry) => entry.title ?? entry.key), weiter: openRed > 0 && proposed > 0 && abbruch === null };
+  const abbruch = openRed === 0 ? null : stillstand.length > 0 ? 'stillstand' : followups.length >= max ? 'maximum'
+    : proposed === 0 && unsicher.length > 0 ? 'unter-schwelle' : null;
+  return {
+    rounds: followups.length, max, openRed, proposed, abbruch, stillstand: stillstand.map((entry) => entry.title ?? entry.key),
+    unsicher: unsicher.map((entry) => entry.title ?? entry.key), weiter: openRed > 0 && proposed > 0 && abbruch === null,
+  };
 }
 
 function mergeGreen(parts, open) {
@@ -133,6 +160,7 @@ function mergeReports({ art, reviewFile, followupFiles = [] }) {
   const followups = read.filter(Boolean);
   const parts = [review, ...followups];
   const final = parts[parts.length - 1];
+  const threshold = thresholdHere();
   const open = mergeOpen(parts);
   const listedRed = open.filter((entry) => entry.color === 'red').length;
   const state = {
@@ -143,7 +171,7 @@ function mergeReports({ art, reviewFile, followupFiles = [] }) {
   const hints = open.filter((entry) => entry.color === 'yellow').length;
   return {
     ...state, kind, followupRan: followups.length > 0, followupRounds: followups.length,
-    iterations: roundsState(parts),
+    iterations: roundsState(parts, maxFollowups(), threshold),
     acOhneTest: acsStillOpen(review, open),
     resultLine: review ? resultLine(state, kind, hints) : MISSING_REVIEW,
     flowLines: flowLines(review, followups),

@@ -120,8 +120,8 @@ function openEntry(group, scout) {
   const scouted = scoutedOf(group, scout);
   const angles = anglesOf(group);
   if (scouted) {
-    const { title, description, recommendation } = scouted.texts;
-    return { key: placeKey(group.location), color: group.severity, title, description, recommendation, angles, hasProposal: true };
+    const { title, description, recommendation, sicherheit = null } = scouted.texts;
+    return { key: placeKey(group.location), color: group.severity, title, description, recommendation, angles, hasProposal: true, sicherheit };
   }
   return { key: placeKey(group.location), color: group.severity, title: group.location, description: fallbackDescription(group.items[0].consequence), recommendation: null, angles, hasProposal: false };
 }

@@ -64,3 +64,24 @@ changes:
     titel: NEVER in Kleinschreibung
     dateien:
       - skills/commit-message/SKILL.md
+  - befund: "B"
+    titel: Auch ein 🔴 wird erst ab der Empfehlungs-Schwelle automatisch umgesetzt
+    warum: "Entscheidung des Menschen: jedes Finding, egal welche Farbe, nach demselben Verfahren; ein unsicheres 🔴 bleibt beim Menschen statt blind umgesetzt zu werden."
+    dateien:
+      - scripts/followup.js
+      - scripts/orchestrator-state.js
+      - scripts/lib/orchestrator-report.js
+      - scripts/lib/orchestrator-report-text.js
+      - scripts/lib/scout-check.js
+      - scripts/lib/report-data.js
+      - scripts/lib/implementation-report.js
+      - scripts/lib/implementation-followup-report.js
+      - agents/spec-review-scout.md
+      - agents/plan-review-scout.md
+      - agents/implementation-review-scout.md
+      - skills/review-followup/SKILL.md
+      - shared/orchestrator-rules.md
+      - tests/followup.test.js
+      - tests/prepare.test.js
+      - tests/scout-texts.test.js
+      - tests/orchestrator-report.test.js

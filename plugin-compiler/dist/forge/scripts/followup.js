@@ -250,11 +250,11 @@ function main() {
   }
 }
 
-// `review-followup <A> auto`: der bevorzugte Vorschlag jeder 🔴-Gruppe, dazu jeder 🟡- und 🟢-Gruppe mit Sicherheit ab der Schwelle.
-// Ohne Sicherheit gilt eine 🟡- oder 🟢-Gruppe als unter der Schwelle; sie bleibt beim Menschen. Die einzige Stelle dieser Regel.
+// `review-followup <A> auto`: der bevorzugte Vorschlag jeder Gruppe, 🔴 wie 🟡 und 🟢, deren Scout-Sicherheit die Schwelle erreicht.
+// Ohne Sicherheit gilt eine Gruppe als unter der Schwelle; sie bleibt beim Menschen, auch ein 🔴 (Entscheidung B). Die einzige Stelle dieser Regel.
 function autoEligible(group, threshold) {
   if (!group.preferred) return false;
-  return group.severity === '🔴' || (group.sicherheit !== null && group.sicherheit >= threshold);
+  return group.sicherheit !== null && group.sicherheit >= threshold;
 }
 
 module.exports = {

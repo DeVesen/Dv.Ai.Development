@@ -167,7 +167,7 @@ function openRedOf(data, ctx, open) {
 
 // Gleiche Dateien und Schlüssel wie writeClosing: Nur Gruppen mit Scout-Block landen in abschluss/scout.md und damit bei `alle`.
 function openEntry(options, ctx, group) {
-  return { key: group.key, color: group.color, ...described(group, ctx.index), angles: angles(options.review, group.reviewers), hasProposal: ctx.index.has(group.scoutKey) };
+  return { key: group.key, color: group.color, ...described(group, ctx.index), angles: angles(options.review, group.reviewers), hasProposal: ctx.index.has(group.scoutKey), sicherheit: ctx.index.get(group.scoutKey)?.sicherheit ?? null };
 }
 
 // 🟢 aus Runde 1 und Nachprüfung, je Stelle einmal; sie erscheinen nur im Abschlussbericht eines Orchestrators, nie im Einzel-Bericht.

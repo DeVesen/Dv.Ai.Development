@@ -16,8 +16,8 @@ const WITHOUT_TEXTS = WITH_TEXTS.filter((line) => !/^(Titel|Beschreibung|Empfehl
 
 test('scoutTexts_GroupsWithTexts_ReturnsTitleDescriptionAndRecommendationPerGroup', () => {
   assert.deepEqual(scoutTexts(WITH_TEXTS), [
-    { severity: '🔴', location: 'AC-04', title: 'Eingabe bei leerem Feld', description: 'Offen ist, was bei leerer Eingabe gilt.', recommendation: 'Fehler melden, weil das früh auffällt.' },
-    { severity: '🟡', location: 'AC-07', title: 'Eindeutige Formulierung', description: 'Der Satz hat zwei Lesarten.', recommendation: 'Eine Lesart festlegen, weil Tests sonst streiten.' },
+    { severity: '🔴', location: 'AC-04', title: 'Eingabe bei leerem Feld', description: 'Offen ist, was bei leerer Eingabe gilt.', recommendation: 'Fehler melden, weil das früh auffällt.', sicherheit: null },
+    { severity: '🟡', location: 'AC-07', title: 'Eindeutige Formulierung', description: 'Der Satz hat zwei Lesarten.', recommendation: 'Eine Lesart festlegen, weil Tests sonst streiten.', sicherheit: null },
   ]);
 });
 
@@ -48,4 +48,10 @@ test('scoutBlocks_TwoGroups_ReturnsLinesPerGroupHeading', () => {
 
 test('scoutBlocks_NoScoutSection_ReturnsEmptyMap', () => {
   assert.equal(scoutBlocks(['nichts']).size, 0);
+});
+
+// Entscheidung B: Die Sicherheit des Scouts gelangt in die Bericht-Daten; nur die Zeile vor dem ersten Vorschlag zählt.
+test('scoutTexts_ConfidenceLine_IsReadBeforeTheFirstProposal', () => {
+  const lines = ['## Scout-Vorschläge', '', '### 🔴 AC-04', 'Empfehlung: x', 'Sicherheit: 82 %', '1. Text', 'Sicherheit: 10 %', '**Bevorzugt: 1** — x'];
+  assert.equal(scoutTexts(lines)[0].sicherheit, 82);
 });

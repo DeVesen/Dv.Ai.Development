@@ -136,8 +136,9 @@ function readReport(file) {
 const RESULT_PREFIX = /^\*\*Ergebnis:\*\*\s*/;
 
 // Nächster Schritt aus Review und gelaufenen Followup-Runden: `followup` (mit Rundennummer), `weiter` oder `ende` mit Grund.
-// Eine Runde folgt nur, solange ein 🔴 mit Scout-Vorschlag offen ist (roundsState in lib/orchestrator-report.js); 🟡 lösen keine Runde aus.
-// `ABBRUCH=maximum|stillstand` steht bei `weiter`, wenn die Runden trotz offenem 🔴 enden; der Abschlussbericht nennt denselben Grund.
+// Eine Runde folgt nur, solange ein 🔴 mit Scout-Vorschlag und Sicherheit ab der Empfehlungs-Schwelle offen ist (roundsState in
+// lib/orchestrator-report.js). `ABBRUCH=maximum|stillstand|unter-schwelle` steht bei `weiter`, wenn die Runden trotz offenem 🔴 enden;
+// der Abschlussbericht nennt denselben Grund.
 // `BEREIT=ja`, wenn die Ergebnis-Zeile mit ✅ beginnt; der Orchestrator entscheidet daraus nur noch, was `weiter` heißt.
 function next(values) {
   const followups = values.followup ?? [];

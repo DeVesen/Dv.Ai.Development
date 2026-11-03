@@ -13,6 +13,7 @@ const NOTHING_OPEN = 'Nichts weiter offen.';
 const ABORT_TEXT = {
   maximum: (it) => `Abbruch: Maximum von ${it.max} Iterationen erreicht, ${it.openRed} × 🔴 offen.`,
   stillstand: (it) => `Abbruch: Stillstand, dieselbe 🔴-Stelle bleibt nach zwei aufeinanderfolgenden Runden offen (${it.stillstand.join(', ')}).`,
+  'unter-schwelle': (it) => `Abbruch: Unter der Empfehlungs-Schwelle, ${it.unsicher.length} × 🔴 mit Vorschlag bleiben beim Menschen (${it.unsicher.join(', ')}).`,
 };
 
 function iterationLines(report) {

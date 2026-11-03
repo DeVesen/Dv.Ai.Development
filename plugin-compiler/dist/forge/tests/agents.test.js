@@ -683,3 +683,14 @@ test('scouts_AllThree_WriteSicherheitBelowEmpfehlung', () => {
     assert.ok(body.includes('`Sicherheit: <n> %`'), `${name}: Regel`);
   }
 });
+
+// Befund 10: Der Spec-Nachprüfer nutzt dieselben Kategorien wie die Spec-Reviewer; vorher nannte sein `detail` auch Randfälle,
+// die die Spec-Reviewer ausdrücklich nie melden.
+test('specVerifier_Categories_MatchTheSpecReviewers', () => {
+  const list = (name) => {
+    const text = require('node:fs').readFileSync(path.join(__dirname, '..', 'agents', `${name}.md`), 'utf8');
+    return text.split('\n').filter((line) => /^- `(widerspruch|fehlendes-verhalten|unerfuellbar|detail|formulierung)` — /.test(line));
+  };
+  assert.deepEqual(list('spec-review-verifier'), list('spec-review-clarity'));
+  assert.equal(list('spec-review-verifier').length, 5);
+});

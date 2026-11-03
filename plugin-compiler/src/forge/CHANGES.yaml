@@ -3,4 +3,64 @@
 # den Befunden stehen, die sie ändern; eine gelistete Datei, die nicht (mehr) abweicht, ist ebenfalls ein Fehler.
 # Befund-Nummern wie in der Entscheidungsliste (1 bis 12, B, C).
 basis: dv-forge 0.34.0 plus fix/forge-handover-stability (7b4faac)
-changes: []
+changes:
+  - befund: "2"
+    titel: Reviewer vergeben Kategorien, die Farbe setzt das Skript
+    warum: severity-rules.md und finding-format.md sagten das Gegenteil von Agents und rules.js; der Code gilt.
+    dateien:
+      - shared/review-loop/severity-rules.md
+      - shared/review-loop/finding-format.md
+      - tests/review-loop.test.js
+  - befund: "3"
+    titel: Eine Commit-Form mit Pfaden, git add und commit direkt nacheinander
+    warum: git commit -- <pfad> allein scheitert an neuen Dateien; Spec, Plan und Umsetzer schrieben drei verschiedene Formen vor.
+    dateien:
+      - skills/spec-whiteboarding/references/spec-format.md
+      - skills/plan-writing/references/plan-format.md
+      - shared/session-chain/base-sub-agent.md
+      - agents/implementation-implementer.md
+      - scripts/guard-orchestrator.js
+      - tests/commit-rule.test.js
+      - tests/spec-whiteboarding.test.js
+  - befund: "4"
+    titel: Fragen in Runden auch im Plan-Writing; Ton-Regel 7 nimmt die Fragerunden aus
+    warum: "Entscheidung des Menschen: eine Runde mit allen offenen Fragen lässt sich mit „wie empfohlen“, Einzelkorrektur oder Freitext beantworten."
+    dateien:
+      - shared/dialog-rules.md
+      - skills/plan-writing/SKILL.md
+      - tests/plan-writing.test.js
+      - tests/dialog-rules.test.js
+  - befund: "5"
+    titel: Frontmatter ist gültiges YAML; der Compiler quotet Werte, die sonst ungültig wären
+    warum: "argument-hint: [grill|…] [pfade] und eine description mit „Triggers: …“ lehnt ein YAML-Parser ab."
+    dateien:
+      - skills/session-orchestrator/SKILL.md
+      - skills/spec-whiteboarding/SKILL.md
+      - tests/lib/markdown.js
+      - tests/skill.test.js
+  - befund: "6"
+    titel: Test-Reviewer darf keine Dateien bearbeiten
+    warum: Ohne tools-Zeile erbte er auch Edit. Eine tools-Liste schlösse Tool-Aufrufe als Testbefehl aus, deshalb disallowedTools.
+    dateien:
+      - agents/implementation-review-tests.md
+      - tests/implementation-review-agents.test.js
+  - befund: "9"
+    titel: Überschrift von loop.md ohne den vermiedenen Begriff Review-Loop
+    dateien:
+      - shared/review-loop/loop.md
+      - tests/review-loop.test.js
+  - befund: "10"
+    titel: Spec-Nachprüfer nutzt die Kategorien der Spec-Reviewer
+    warum: Sein detail nannte Randfälle, die die Spec-Reviewer nie melden; unerfuellbar und fehlendes-verhalten wichen ab.
+    dateien:
+      - agents/spec-review-verifier.md
+      - tests/agents.test.js
+  - befund: "11"
+    titel: Regel 12 des Plan-Formats nennt den Tag Planer der E-Einträge
+    dateien:
+      - skills/plan-writing/references/plan-format.md
+      - tests/plan-writing.test.js
+  - befund: "12"
+    titel: NEVER in Kleinschreibung
+    dateien:
+      - skills/commit-message/SKILL.md

@@ -68,7 +68,7 @@ test('loop_ProgressCheck_NamesNoConcreteScript', () => {
 test('severityRules_TwoYellow_NoLongerEscalate', () => {
   const text = readText(path.join(SHARED, 'severity-rules.md'));
   assert.ok(!text.includes('hochgestuft'));
-  assert.ok(text.includes('3. Stufe der Gruppe = höchste Stufe ihrer Einzel-Findings. Zwei 🟡 an einer Stelle bleiben 🟡.'));
+  assert.ok(text.includes('3. Farbe der Gruppe = höchste Farbe ihrer Einzel-Findings. Zwei 🟡 an einer Stelle bleiben 🟡.'));
   assert.ok(text.includes('4. Sortierung 🔴 → 🟡 → 🟢.'));
 });
 
@@ -81,4 +81,27 @@ test('findingFormat_Generic_LocationKeysIncludeTask', () => {
   const text = readText(path.join(SHARED, 'finding-format.md'));
   assert.ok(text.includes('`Task <n>`'));
   assert.ok(!text.includes('<completeness|consistency'));
+});
+
+// Befund 2: Reviewer vergeben Kategorien, die Farbe setzt der Code (rules.js, implementation-categories.js); die geteilten Dateien sagen dasselbe.
+test('severityRules_ReviewersGiveCategories_ScriptsSetTheColor', () => {
+  const text = readText(path.join(SHARED, 'severity-rules.md'));
+  assert.ok(text.includes('Reviewer vergeben eine Kategorie, keine Farbe.'));
+  assert.ok(text.includes('scripts/lib/rules.js') && text.includes('scripts/lib/implementation-categories.js'));
+  assert.ok(!text.includes('Reviewer stufen nach Konsequenz ein'));
+  assert.ok(!/Stufe/.test(text), 'Farbe statt Stufe (Glossar)');
+});
+
+test('findingFormat_Example_UsesCategoryNotSeverity', () => {
+  const text = readText(path.join(SHARED, 'finding-format.md'));
+  assert.ok(text.includes('"category": "widerspruch"'));
+  assert.ok(!text.includes('"severity": "red"'));
+  assert.match(text, /ein Feld `severity` oder `color` macht das Ergebnis ungültig/);
+});
+
+// Befund 9: Das Glossar verlangt „Review-Schleife“ statt „Review-Loop“; der Ordnername review-loop/ bleibt, Skripte verweisen auf den Pfad.
+test('loop_Title_UsesNoAvoidedTerm', () => {
+  const text = readText(path.join(SHARED, 'loop.md'));
+  assert.ok(text.includes('\n# Review-Ablauf der Umsetzung\n'));
+  assert.ok(!/^# Review-Loop$/m.test(text));
 });

@@ -1,7 +1,7 @@
 ---
 name: session-orchestrator
 description: Use when an idea, a spec or a plan should run as a session chain in which every stage works in its own session and one lead session starts the stages, checks their results against git and holds at fixed points for the human. Auslöser sind Session-Kette starten, Kette über Sessions, jede Etappe in eigener Session sowie start a session chain und run each stage in its own session.
-argument-hint: [grill|spec-review|planning|plan-review|implementation|finish] [pfade] [workitem-nr]
+argument-hint: '[grill|spec-review|planning|plan-review|implementation|finish] [pfade] [workitem-nr]'
 ---
 <!--GENERIERT-nicht-editieren:src/forge/skills/session-orchestrator/SKILL.md-->
 

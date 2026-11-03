@@ -106,3 +106,10 @@ test('dialogRules_Scenario_RedWithoutSkillGreenWithSkillAndRoundLint', () => {
     'ein Block `Selbst entschieden:` vor der ersten Frage', '`node plugins/forge/scripts/spec-lint.js --runde <RUNDE>`', '## Lücke schließen',
   ]) assert.ok(text.includes(part), part);
 });
+
+// Entscheidung des Menschen (Befund 4): In Whiteboarding, Grill und Plan-Writing stehen alle offenen Fragen einer Runde zusammen;
+// er antwortet mit „wie empfohlen“, korrigiert einzelne Punkte oder schreibt frei.
+test('dialogRules_ToneSeven_ExemptsTheQuestionRounds', () => {
+  const text = readText(RULES);
+  assert.ok(text.includes('7. Am Ende genau eine nächste Handlung oder genau eine Frage; ein Nebenthema erst danach, als eigene kurze Frage. Ausnahme sind die Fragerunden von Whiteboarding, Grill und Plan-Writing; dort stehen alle offenen Fragen einer Runde zusammen.'));
+});

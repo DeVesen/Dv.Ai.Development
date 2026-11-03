@@ -385,8 +385,8 @@ function decideImplementerGit(input) {
   if (input.agent_type !== IMPLEMENTER || !SHELL_TOOLS.has(input.tool_name)) return null;
   const forbidden = forbiddenIn(input.tool_input?.command, { agent: true });
   if (!forbidden) return null;
-  return `dv-forge: Der Umsetzer darf ${forbidden} nicht ausführen. Committe mit git add <genau deine Dateien> `
-    + `und git commit -m "<betreff>"; Push, Merge und Rebase sind Sache des Menschen. Geblockt: ${blockedAction(input)}.`;
+  return `dv-forge: Der Umsetzer darf ${forbidden} nicht ausführen. Committe mit git add -- <genau deine Dateien> `
+    + `und direkt danach git commit -m "<betreff>" -- <dieselben Dateien>; Push, Merge und Rebase sind Sache des Menschen. Geblockt: ${blockedAction(input)}.`;
 }
 
 // Im Review-Lauf wartet der nächste Schritt auf jeden Agent; ein Agent im Hintergrund würde übergangen.

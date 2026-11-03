@@ -1,5 +1,5 @@
 <!--GENERIERT-nicht-editieren:src/forge/shared/review-loop/loop.md-->
-# Review-Loop
+# Review-Ablauf der Umsetzung
 
 Ablauf des Implementierungs-Reviews; Spec- und Plan-Review folgen `shared/review-flow/flow.md`. Das Implementierungs-Review läuft eine Runde (`N = 0`); die Iterationen Integration → Re-Review führt der Orchestrator als Followup-Runden nach `shared/orchestrator-rules.md`, nicht dieser Loop. Die Abschnitte „Rolle“ und „Hintergrund oder Vordergrund“ gelten für beide Abläufe. `<PLUGIN>` und `<SESSION>` nennt dir der aufrufende Skill. Er legt außerdem fest:
 

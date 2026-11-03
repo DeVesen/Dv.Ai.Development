@@ -339,8 +339,19 @@ def render_frontmatter(c: Component) -> str:
             lines.append(f"{key}: >")
             lines += [f"  {row}" for row in value["folded"]]
         else:
-            lines.append(f"{key}: {value}")
+            lines.append(f"{key}: {yaml_scalar(key, value)}")
     return "\n".join(lines) + "\n---\n"
+
+
+def yaml_scalar(key: str, value: str) -> str:
+    """Wert unverändert, wenn er als YAML genau sich selbst ergibt; sonst in einfachen Anführungszeichen (Befund 5).
+    Claude Code liest die Frontmatter als YAML; `argument-hint: [a|b] [c]` oder `Triggers: "…"` in einer description sind sonst ungültig."""
+    try:
+        if value in ("true", "false") or yaml.safe_load(f"{key}: {value}") == {key: value}:
+            return value
+    except yaml.YAMLError:
+        pass
+    return "'" + value.replace("'", "''") + "'"
 
 
 def render_rule_doc(s: Source, env: jinja2.Environment) -> str:
@@ -415,12 +426,12 @@ def lint_plugin(cp: ComponentPlugin, report: Report) -> None:
                 report.error(where, len(lines), f"SKILL.md hat {len(lines)} Zeilen, erlaubt sind unter {SKILL_MAX_LINES}")
             fm, _ = split_frontmatter(content)
             if (fm or {}).pop("__invalid_yaml__", False):
-                report.warn(where, 2, "Frontmatter ist kein gültiges YAML (etwa argument-hint mit [ … ] am Anfang); Claude Code liest sie womöglich nicht")
+                report.error(where, 2, "Frontmatter ist kein gültiges YAML; Claude Code liest sie womöglich nicht")
             lint_identity(where, fm or {}, report)
         if path.startswith("agents/"):
             fm, _ = split_frontmatter(content)
             lint_identity(where, fm or {}, report)
-            if "tools" not in (fm or {}) and "review" in path:
+            if "tools" not in (fm or {}) and "review" in path and "Edit" not in str((fm or {}).get("disallowedTools", "")):
                 report.warn(where, 2, "Reviewer ohne tools-Zeile erbt alle Werkzeuge, auch Edit und Bash")
             tools = {t.strip() for t in str((fm or {}).get("tools", "")).split(",")}
             if tools & {"Edit", "MultiEdit", "Bash"} and "review" in path and not path.endswith("-rework.md"):

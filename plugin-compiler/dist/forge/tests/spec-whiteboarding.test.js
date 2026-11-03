@@ -160,7 +160,7 @@ test('whiteboarding_BranchStatusBasisAndRepeatedQuestions_AreRuled', () => {
   const read = (...parts) => require('node:fs').readFileSync(path.join(__dirname, '..', 'skills', 'spec-whiteboarding', ...parts), 'utf8');
   const format = read('references', 'spec-format.md');
   assert.match(format, /git branch --show-current/);
-  assert.match(format, /git commit -m <Nachricht> -- <Spec-Pfad>/);
+  assert.ok(format.includes('`git add -- <pfade>` und direkt danach `git commit -m "<betreff>" -- <pfade>` mit denselben Pfaden'));
   assert.match(format, /`Status` und `Basis` sind von der Regel/);
   const rounds = read('references', 'grill-rounds.md');
   assert.match(rounds, /entfällt, ersetzt durch Q<m>/);

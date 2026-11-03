@@ -102,3 +102,12 @@ test('skill_Body_StaysUnder500WordsWithPairedQuotes', () => {
   assert.ok(wordCount(body) < 500);
   assert.equal((body.match(/„/g) || []).length, (body.match(/“/g) || []).length);
 });
+
+// Befund 5: Werte, die als YAML ungültig wären, stehen in einfachen Anführungszeichen; die Testhilfe liest sie unverändert zurück.
+test('frontmatter_QuotedValues_ReadBackUnchanged', () => {
+  const { readMarkdown: read } = require('./lib/markdown');
+  const so = read(require('node:path').join(__dirname, '..', 'skills', 'session-orchestrator', 'SKILL.md'));
+  require('node:assert/strict').equal(so.fields['argument-hint'], '[grill|spec-review|planning|plan-review|implementation|finish] [pfade] [workitem-nr]');
+  const raw = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'skills', 'session-orchestrator', 'SKILL.md'), 'utf8');
+  require('node:assert/strict').match(raw, /^argument-hint: '\[grill\|/m);
+});

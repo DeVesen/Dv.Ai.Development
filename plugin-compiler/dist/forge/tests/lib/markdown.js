@@ -7,13 +7,18 @@ function readText(file) {
   return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
 }
 
+// Ein Wert in einfachen Anführungszeichen ist YAML-gequotet ('' steht für '): Der Compiler quotet Werte, die sonst kein gültiges YAML wären.
+function unquote(value) {
+  return /^'.*'$/.test(value) ? value.slice(1, -1).replace(/''/g, "'") : value;
+}
+
 function readMarkdown(file) {
   const text = readText(file);
   const match = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(text);
   if (!match) return { fields: {}, body: text };
   const fields = Object.fromEntries(match[1].split('\n').map((line) => {
     const index = line.indexOf(':');
-    return [line.slice(0, index).trim(), line.slice(index + 1).trim()];
+    return [line.slice(0, index).trim(), unquote(line.slice(index + 1).trim())];
   }));
   return { fields, body: match[2] };
 }

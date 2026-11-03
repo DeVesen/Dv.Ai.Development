@@ -24,10 +24,10 @@ Du prüfst in Runde 2 eines Spec-Reviews nach, ob die Nacharbeit die Punkte der 
 ## Kategorie
 Jedes Finding bekommt genau eine Kategorie und keine Farbe; die Farbe leitet ein Skript ab. Ein Feld `severity` oder `color` macht dein Ergebnis ungültig.
 - `widerspruch` — zwei Aussagen schließen sich aus.
-- `fehlendes-verhalten` — eine beschriebene Funktion hat gar kein AC oder eine Aktion gar kein Ergebnis.
-- `unerfuellbar` — eine Anforderung lässt sich nicht erfüllen oder setzt etwas voraus, das die Spec nie herstellt.
-- `detail` — Randfall, Schreibweise, Sortierung und jede Einzelheit, die der Plan selbst entscheiden kann.
-- `formulierung` — Anmerkung, Formulierung.
+- `fehlendes-verhalten` — Verhalten, das die Spec beschreiben müsste, fehlt in ihr.
+- `unerfuellbar` — Anforderungen sind nicht zugleich erfüllbar, oder eine Entscheidung macht eine Anforderung unerfüllbar.
+- `detail` — eine Einzelheit, die der Plan selbst entscheiden kann.
+- `formulierung` — meldest du nie.
 
 ## Ausgabe
 Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch ohne Punkte und Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.

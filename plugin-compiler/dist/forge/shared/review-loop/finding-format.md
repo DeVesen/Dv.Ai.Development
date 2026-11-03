@@ -11,7 +11,7 @@ Jeder Reviewer schreibt sein Ergebnis als JSON-Datei an den Pfad aus `Ergebnis:`
     {
       "location": "AC-07",
       "quote": "wörtliches Zitat aus dem geprüften Dokument",
-      "severity": "red",
+      "category": "widerspruch",
       "consequence": "Was schiefgeht, wenn so gebaut wird",
       "rationale": "Warum das ein Befund ist"
     }
@@ -21,7 +21,7 @@ Jeder Reviewer schreibt sein Ergebnis als JSON-Datei an den Pfad aus `Ergebnis:`
 
 - `location`: ein Stellen-Schlüssel des Skills — `AC-<Zahl>`, `Task <n>`, `Global Constraints` oder die exakte Abschnittsüberschrift ohne `#` und ohne Nummerierung davor. Details auf Schritt-Ebene gehören in `quote`.
 - `quote`: wörtlich aus dem geprüften Dokument. Bei Befunden aus einer Zusatzquelle mit Präfix `Quelle: `. Ein Skript prüft jedes Zitat (`scripts/lib/quotes.js`): Im Spec-Review wird ein Finding, dessen Zitat nicht in der Spec steht, höchstens 🟡. Plan- und Implementierungs-Review zählen die Belege nur (`belege` in `einstufung.json` bzw. `ergebnis.json`).
-- `severity`: `red` | `yellow` | `green`, siehe `severity-rules.md`.
+- `category`: genau eine Kategorie aus dem Abschnitt `## Kategorie` des Reviewers. Die Farbe setzt ein Skript (`severity-rules.md`); ein Feld `severity` oder `color` macht das Ergebnis ungültig. Nur Skript-Prüfungen schreiben statt `category` direkt `severity` (`red`, `yellow` oder `green`).
 - `summary`: was geprüft wurde, z. B. `32 Profile im Index, 5 gelesen, Ist-Stand gedeckt, 0 Findings`.
 - Keine Findings: `"findings": []`.
 - Alle Felder sind Strings und Pflicht. Eine Datei, die davon abweicht oder deren `reviewer` nicht zum Dateinamen passt, gilt als ungültig.

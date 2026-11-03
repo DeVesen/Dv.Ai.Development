@@ -7,6 +7,8 @@ frontmatter:
   name: implementation-review-tests
   description: Use when the dv-forge implementation-review orchestrator needs the test suite run once and the tests of the reviewed range checked for real assertions, real behaviour and edge cases.
   model: sonnet
+  # Befund 6: keine tools-Liste, weil der Testbefehl auch ein Tool-Aufruf sein darf (plan-format Regel 10); Datei-Editoren sind gesperrt.
+  disallowedTools: Edit, MultiEdit, NotebookEdit
 ---
 
 # Implementierungs-Review: Tests

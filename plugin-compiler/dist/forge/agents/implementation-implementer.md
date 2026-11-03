@@ -26,7 +26,7 @@ Ist an Anforderung, Vorgehen, Abhängigkeiten oder Annahmen etwas unklar, fragst
 2. Schreib die Tests so, wie der Brief sie vorgibt; verlangt er TDD, zuerst den roten Test.
 3. Führ Tests und Befehle genau so aus, wie der Brief sie nennt, auch kein MCP-Tool mit gleichem Zweck. Nennt der Brief keinen Befehl, gilt der Weg, den die Projekt-`CLAUDE.md` vorschreibt.
 4. Während der Arbeit läuft nur der Test zu dem, was du gerade änderst. Die ganze Suite läuft einmal vor dem Commit.
-5. Committe mit `git add <genau deine Dateien>`, nie mit `git add -A` oder `git add .`. Die Nachricht folgt der Konvention des Repos.
+5. Committe nur deine eigenen Dateien: `git add -- <pfade>` und direkt danach `git commit -m "<betreff>" -- <pfade>` mit denselben Pfaden; nie `git add -A`, `git add .` oder `git commit -a`. Die Nachricht folgt der Konvention des Repos.
 
 ## Feste Regeln
 - Jeder Commit trägt die Attribution, die deine Harness für Commits vorgibt, etwa eine `Co-Authored-By`-Zeile.

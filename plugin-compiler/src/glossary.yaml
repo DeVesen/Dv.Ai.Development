@@ -68,11 +68,12 @@ terms:
     avoid_context: [Kette (allein für den Vermerk)]
     source: CONTEXT.md
   - term: Followup-Runde
-    definition: Ein `review-followup`-Lauf innerhalb einer Review-Schleife oder eines Orchestrator-Laufs; höchstens zwei je Lauf.
+    # Befund 1: CONTEXT.md sagte „höchstens zwei“, die Regeldatei und der Code sagen 8. Die Zahl steht nur noch in der Regeldatei.
+    definition: Ein `review-followup`-Lauf innerhalb einer Review-Schleife oder eines Orchestrator-Laufs; je Lauf höchstens so viele, wie `shared/orchestrator-rules.md` unter Maximum Followup-Runden festlegt.
     avoid: [zweiter Followup, Nachrunde]
     source: CONTEXT.md
   - term: Review-Schleife
-    definition: 'Ablauf einer Review-Etappe (Spec-Review, Plan-Review): ein Review, danach so viele Followup-Runden, wie das Review anbietet, höchstens zwei, bis zum Ende der Etappe.'
+    definition: 'Ablauf einer Review-Etappe (Spec-Review, Plan-Review): ein Review, danach so viele Followup-Runden, wie das Review anbietet, höchstens bis zum Maximum aus `shared/orchestrator-rules.md`, bis zum Ende der Etappe.'
     avoid: [Zwischenebene, Review-Loop, Review-Lauf]
     source: CONTEXT.md
   - term: Session-Kette

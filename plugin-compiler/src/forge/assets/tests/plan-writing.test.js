@@ -128,7 +128,9 @@ test('skill_Body_WritesPlanNextToSpecAndNamesOnlyThePlanPath', () => {
 
 test('skill_Body_AsksHumanAndRecordsWEntries', () => {
   const { body } = readMarkdown(SKILL);
-  assert.match(body, /eine Frage pro Nachricht/);
+  // Entscheidung des Menschen: Fragen in Runden statt einzeln (Befund 4).
+  assert.match(body, /in Runden im Format von `<PLUGIN>\/skills\/spec-whiteboarding\/references\/grill-rounds\.md`/);
+  assert.doesNotMatch(body, /eine Frage pro Nachricht/);
   assert.ok(body.includes('W-Eintrag'));
   assert.ok(body.includes('`delegiert`'));
   assert.match(body, /keine Annahme stillschweigend/);
@@ -203,4 +205,10 @@ test('selfCheck_PlaceholdersAndFormat_PointToLintInsteadOfRepeatingChecks', () =
   const text = readText(path.join(SKILL_DIR, 'references', 'self-check.md'));
   assert.match(text, /`plan-tasks\.js lint` sucht die festen Phrasen/);
   assert.match(text, /prüft `plan-tasks\.js lint`/);
+});
+
+// Befund 11: Der Tag der E-Einträge steht nicht nur im Muster, sondern auch in der Regel.
+test('planFormat_Rule12_NamesTheTagOfEEntries', () => {
+  const text = require('node:fs').readFileSync(path.join(__dirname, '..', 'skills', 'plan-writing', 'references', 'plan-format.md'), 'utf8');
+  assert.ok(text.includes('steht als E-Eintrag mit Tag `Planer` und Grund;'));
 });

@@ -28,6 +28,8 @@ for (const [reviewer, expected] of Object.entries(REVIEWERS)) {
     const { fields } = readAgent(name);
     assert.equal(fields.name, name);
     assert.equal(fields.tools, expected.tools);
+    // Befund 6: Ohne tools-Liste (Testbefehl darf ein Tool-Aufruf sein) sperrt der Test-Reviewer die Datei-Editoren.
+    if (expected.tools === undefined) assert.equal(fields.disallowedTools, 'Edit, MultiEdit, NotebookEdit');
     assert.equal(fields.model, 'sonnet');
     assert.match(fields.description, /^Use when/);
   });

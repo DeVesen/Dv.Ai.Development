@@ -27,7 +27,7 @@ Write commit messages terse and exact. Conventional Commits format. No fluff. Wh
 - Bullets `-` not `*`
 - Reference issues/PRs at end: `Closes #42`, `Refs #17`
 
-**What NEVER goes in:**
+**What never goes in:**
 - "This commit does X", "I", "we", "now", "currently" — the diff says what
 - "As requested by..." — use Co-authored-by trailer
 - "Generated with Claude Code" or any AI attribution — unless the user's own rule requires an `Assisted-by`/AI-attribution trailer, then add it as a trailer

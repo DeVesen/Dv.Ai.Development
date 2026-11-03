@@ -49,7 +49,7 @@ Die Zeilen unter dem Titel sind Metadaten, kein fachlicher Inhalt, und tragen ke
 
 ## Branch und Commit
 - Zu Beginn der Session `git branch --show-current` merken. Vor dem Schreiben und vor jedem Commit erneut; weicht er ab, meldest du es und fragst, bevor du schreibst oder committest. Eine Parallelsession im selben Checkout kann den Branch wechseln oder deine Dateien mitcommitten.
-- Commit nur auf Wunsch, in einem Schritt mit Pfad: `git commit -m <Nachricht> -- <Spec-Pfad>`. Nie stagen und committen getrennt.
+- Commit nur auf Wunsch, nur mit dem Pfad der Spec: <<= partial('commit-mit-pfaden') >>; nie `git add -A`, `git add .` oder `git commit -a`.
 
 ## Nur nach echtem Abbruch
 

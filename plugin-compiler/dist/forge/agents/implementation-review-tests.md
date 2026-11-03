@@ -2,6 +2,7 @@
 name: implementation-review-tests
 description: Use when the dv-forge implementation-review orchestrator needs the test suite run once and the tests of the reviewed range checked for real assertions, real behaviour and edge cases.
 model: sonnet
+disallowedTools: Edit, MultiEdit, NotebookEdit
 ---
 <!--GENERIERT-nicht-editieren:src/forge/agents/implementation-review-tests.md-->
 

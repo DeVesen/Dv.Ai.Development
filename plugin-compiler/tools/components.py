@@ -58,6 +58,8 @@ class ComponentPlugin:
     assets: dict = field(default_factory=dict)         # Pfad im Plugin -> Quelldatei
     files: dict = field(default_factory=dict)          # Pfad im Plugin -> Inhalt (str oder bytes)
     used_partials: set = field(default_factory=set)
+    changelog: Source | None = None
+    differing: set = field(default_factory=set)
     graph: dict = field(default_factory=dict)          # Komponente -> erwähnte Komponenten
 
     @property
@@ -107,6 +109,8 @@ def load_plugin(manifest: Source, report: Report) -> ComponentPlugin:
     cp = ComponentPlugin(manifest, root)
     for path in sorted(root.rglob("*.md")):
         relp = path.relative_to(root).as_posix()
+        if relp.startswith("assets/"):
+            continue  # Code, Tests und Golden-Sets: Assets, keine Prosa-Quellen
         if relp.startswith("partials/"):
             cp.partials[path.stem] = (path, path.read_text(encoding="utf-8"))
         elif (c := load_component(path, root, report)):
@@ -449,32 +453,63 @@ def normalized(path: str, content, ignore: list = ()) -> bytes:
     return content.encode("utf-8")
 
 
-def check_equivalence(cp: ComponentPlugin, report: Report) -> int:
-    """Vergleicht die Ausgabe mit dem Bestand (equivalent_to). Kopfzeile und description in hooks.json zählen nicht."""
+def load_changelog(cp: ComponentPlugin, report: Report) -> dict:
+    """Datei im Plugin -> Liste (Befund, Zeile) aus dem Änderungsprotokoll."""
+    rel_path = cp.manifest.data.get("changelog")
+    if not rel_path:
+        return {}
+    src = load_yaml(ROOT / rel_path, report)
+    if not src or not validate_schema(src, "changelog", report):
+        report.stop_if_errors(f"Änderungsprotokoll ({cp.name})")
+    cp.changelog = src
+    allowed: dict = {}
+    for i, change in enumerate(src.data["changes"]):
+        for j, f in enumerate(change["dateien"]):
+            allowed.setdefault(f, []).append((change["befund"], src.name, line_of(change["dateien"], j)))
+    return allowed
+
+
+def check_equivalence(cp: ComponentPlugin, report: Report) -> tuple[int, int]:
+    """Vergleicht die Ausgabe mit dem Bestand (equivalent_to). Kopfzeile und description in hooks.json zählen nicht.
+    Eine Abweichung ist nur erlaubt, wenn die Datei im Änderungsprotokoll steht; eine gelistete Datei muss auch abweichen."""
     ref = cp.manifest.data.get("equivalent_to")
     if not ref:
-        return 0
+        return 0, 0
+    allowed = load_changelog(cp, report)
     base = (ROOT / ref).resolve()
     existing = {p.relative_to(base).as_posix(): p for p in base.rglob("*") if p.is_file()}
+    ignore = cp.manifest.data.get("equivalence_ignore", [])
+    differing: set = set()
+
+    def deviation(path: str, line: int, message: str) -> None:
+        differing.add(path)
+        if path not in allowed:
+            report.error(f"{cp.dir}/{path}", line, f"Abgleich: {message}; nicht im Änderungsprotokoll")
+
     for path in sorted(set(existing) - set(cp.files)):
-        report.error(f"{cp.dir}/{path}", 1, f"Äquivalenz: fehlt in der Ausgabe, steht aber in {ref}")
+        deviation(path, 1, f"fehlt in der Ausgabe, steht aber in {ref}")
     for path in sorted(set(cp.files) - set(existing)):
-        report.error(f"{cp.dir}/{path}", 1, f"Äquivalenz: neu in der Ausgabe, fehlt in {ref}")
-    compared = 0
+        deviation(path, 1, f"neu in der Ausgabe, fehlt in {ref}")
+    same = 0
     for path in sorted(set(cp.files) & set(existing)):
-        ignore = cp.manifest.data.get("equivalence_ignore", [])
         mine, theirs = normalized(path, cp.files[path], ignore), existing[path].read_bytes()
         if path == "hooks/hooks.json" or any(i.startswith(path + "#") for i in ignore):
             theirs = normalized(path, theirs.decode("utf-8"), ignore)
-        compared += 1
-        if mine != theirs:
-            a, b = mine.decode("utf-8", "replace").split("\n"), theirs.decode("utf-8", "replace").split("\n")
-            n = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
-            got = a[n] if n < len(a) else "<Dateiende>"
-            want = b[n] if n < len(b) else "<Dateiende>"
-            report.error(f"{cp.dir}/{path}", n + 1, f"Äquivalenz: weicht ab. erzeugt {got[:80]!r}, Bestand {want[:80]!r}")
-    report.stop_if_errors(f"Äquivalenz ({cp.name})")
-    return compared
+        if mine == theirs:
+            same += 1
+            continue
+        a, b = mine.decode("utf-8", "replace").split("\n"), theirs.decode("utf-8", "replace").split("\n")
+        n = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
+        got = a[n] if n < len(a) else "<Dateiende>"
+        want = b[n] if n < len(b) else "<Dateiende>"
+        deviation(path, n + 1, f"weicht ab. erzeugt {got[:80]!r}, Bestand {want[:80]!r}")
+    for path, entries in sorted(allowed.items()):
+        if path not in differing:
+            befund, file, line = entries[0]
+            report.error(file, line, f"Befund {befund}: {path} steht im Änderungsprotokoll, weicht aber nicht vom Bestand ab")
+    cp.differing = differing
+    report.stop_if_errors(f"Abgleich mit dem Bestand ({cp.name})")
+    return same, len(differing)
 
 
 def graph_report(cp: ComponentPlugin) -> str:

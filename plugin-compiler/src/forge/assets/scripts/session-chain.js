@@ -1,0 +1,238 @@
+#!/usr/bin/env node
+'use strict';
+
+// Werkzeug der Leit-Session und der Etappen-Sessions einer Session-Kette. Ausgabe: Zeilen `<NAME>=<Wert>`, danach bei Bedarf
+// ein Block nach `=== AUSGABE ===`, `=== ZUSTAND ===`, `=== HINTERGRUND ===` oder `=== BRIEF ===`, den der Aufrufer unverändert nutzt.
+
+const path = require('node:path');
+const { SessionChainError, readState, writeState, appendEvent } = require('./lib/session-chain-store');
+const { answerHalt, startEtappe, checkGo } = require('./lib/session-chain-gate');
+const { EntryError, analyseEntry } = require('./lib/session-chain-entry');
+const { buildBrief, SONNET_MODEL_ID, LEIT_ID } = require('./lib/session-chain-brief');
+const { parseStatusLine, turnAction, readTurns, writeTurns } = require('./lib/session-chain-turn');
+const { commitFor, checkWhiteboardingCommitted } = require('./lib/session-chain-commit');
+const { goCall, adoptedText, noStatusHint, runningLine } = require('./lib/session-chain-text');
+const { briefHashOf } = require('./lib/stage-start-guard');
+const { etappeReport, readInput } = require('./lib/session-chain-report');
+const { setState, copySpecAtStart, holdAt, processFinal, closing, recordCommit } = require('./lib/session-chain-steps');
+const { reviewStand } = require('./lib/session-chain-review');
+
+const USAGE = [
+  'Aufruf: node session-chain.js entry [<codewort> <pfade>... [workitem-nr]]',
+  '       node session-chain.js set --slug <slug> [--basis <branch>] [--wi <nr>] [--spec <S>] [--plan <P>] [--worktree <R>]',
+  '       node session-chain.js brief --etappe <etappe> --leit <local_…> [--slug <slug>] [--kontext <datei>] [--quelle <datei>] [--basis <branch>] [--wi <nr>] [--erneut]',
+  '       node session-chain.js turn --session <id> --etappe <etappe> --turn-datei <datei>',
+  '       node session-chain.js final --etappe <etappe> --session <id> --etappenbericht <datei> --commit <hash|none> [--basis <branch>] [--wi <nr>]',
+  '       node session-chain.js halt --slug <slug> --art spec|go',
+  '       node session-chain.js answer --slug <slug> --antwort <planning|spec-nacharbeit|go|plan-nacharbeit|weiter|stopp>',
+  '       node session-chain.js commit --anlass whiteboarding|spec|go --slug <slug> --message <betreff>',
+  '       node session-chain.js schluss --slug <slug> [--stopp]',
+  '       node session-chain.js review-stand --spec <S>',
+  '       node session-chain.js etappe-report --etappe <etappe> (--slug <slug> | --spec <S>) [--inhalt <datei>] [--entscheidung <text>]... [--datei <pfad>]...',
+  '              [--tests <text>] [--anhang <datei>]... [--plan <P>] [--worktree <R>] [--branch <name>] [--pruefung gruen|rot|keine|umgebung | --pruefung-datei <pruefung.json>] [--luecke <befehl>]... [--ac-ohne-test <AC>]...',
+  '',
+].join('\n');
+const VALUE_OPTIONS = ['--slug', '--leit', '--basis', '--wi', '--spec', '--plan', '--worktree', '--etappe', '--kontext', '--quelle', '--session', '--turn-datei', '--etappenbericht', '--inhalt',
+  '--commit', '--art', '--anlass', '--message', '--antwort', '--datei', '--entscheidung', '--tests', '--anhang', '--branch', '--pruefung', '--luecke', '--ac-ohne-test', '--pruefung-datei'];
+const LIST_OPTIONS = ['--datei', '--entscheidung', '--anhang', '--luecke', '--ac-ohne-test'];
+const FLAG_OPTIONS = ['--stopp', '--erneut'];
+const CHECKS = ['gruen', 'rot', 'keine', 'umgebung'];
+
+class UsageError extends Error {}
+
+function parseOptions(args) {
+  const values = Object.fromEntries(LIST_OPTIONS.map((name) => [name.slice(2), []]));
+  for (let index = 0; index < args.length; index += 1) {
+    const name = args[index];
+    if (FLAG_OPTIONS.includes(name)) {
+      values[name.slice(2)] = true;
+      continue;
+    }
+    if (!VALUE_OPTIONS.includes(name)) throw new UsageError(`unbekannter Parameter: ${name}`);
+    if (index + 1 >= args.length) throw new UsageError(`Wert fehlt: ${name}`);
+    index += 1;
+    if (LIST_OPTIONS.includes(name)) values[name.slice(2)].push(args[index]);
+    else values[name.slice(2)] = args[index];
+  }
+  return values;
+}
+
+function required(values, name) {
+  if (!values[name]) throw new UsageError(`--${name} fehlt`);
+  return values[name];
+}
+
+function fieldLines(fields) {
+  return Object.entries(fields).filter(([, value]) => value !== undefined).map(([key, value]) => `${key}=${value}`);
+}
+
+function withBlock(lines, marker, text) {
+  return text ? [...lines, `=== ${marker} ===`, text] : lines;
+}
+
+function entry(args) {
+  const { fields, state } = analyseEntry(args, process.cwd());
+  return withBlock(fieldLines(fields), 'ZUSTAND', state ? adoptedText(state) : '').join('\n');
+}
+
+// Quelle der Nacharbeiten: die Berichtsdatei des letzten `final` einer Review-Etappe aus dem Zustand, wenn die Leit-Session keine nennt.
+const QUELLE_OF = { 'spec-nacharbeit': ['spec-review'], 'plan-nacharbeit': ['planning', 'plan-review'] };
+
+function lastReportOf(state, etappe) {
+  const sources = QUELLE_OF[etappe];
+  if (!sources || !state) return undefined;
+  return [...(state.etappen ?? [])].reverse().find((entry) => sources.includes(entry.etappe))?.bericht;
+}
+
+function brief(values) {
+  const leit = required(values, 'leit');
+  if (!LEIT_ID.test(leit)) throw new UsageError(`--leit erwartet die Kennung der Leit-Session (local_…), nicht ${leit}`);
+  const state = values.slug ? readState(process.cwd(), values.slug) : null;
+  if (state && values.etappe === 'grill') checkWhiteboardingCommitted(state, process.cwd());
+  const chain = { ...(state ?? {}), ...(values.slug ? { slug: values.slug } : {}), ...(values.basis ? { basis: values.basis } : {}), ...(values.wi ? { wi: values.wi } : {}) };
+  const result = buildBrief({
+    etappe: required(values, 'etappe'),
+    values: { slug: chain.slug, wi: chain.wi, basis: chain.basis, spec: chain.spec, plan: chain.plan, worktree: chain.worktree, branch: chain.branch, quelle: values.quelle ?? lastReportOf(state, values.etappe), leit },
+    decisions: state?.entscheidungen ?? [],
+    points: state?.offen ?? [],
+    kontext: values.kontext ? readInput(values.kontext, 'Kontext') : null,
+  });
+  // Erst nach dem gebauten Brief: Ein fehlender Pflichtwert hinterlässt keinen gestarteten Zustand.
+  if (state) {
+    writeState(process.cwd(), state.slug, copySpecAtStart(startEtappe(state, values.etappe, { erneut: values.erneut === true, briefHash: briefHashOf(result.brief), modell: result.modell }), values.etappe, process.cwd()));
+    appendEvent(process.cwd(), state.slug, { typ: 'start', etappe: values.etappe, modell: result.modell, erneut: values.erneut === true });
+  }
+  return [`MODELL=${result.modell}`, ...(result.modell === 'sonnet' ? [`MODELL-ID=${SONNET_MODEL_ID}`] : []), `TITEL=${result.titel}`, '=== HINTERGRUND ===', result.hintergrund, '=== BRIEF ===', result.brief].join('\n');
+}
+
+// Das Turn-Ende einer Etappen-Session kommt als Datei: sein Text stammt aus einer fremden Session und gehört nie auf die Kommandozeile.
+function turn(values) {
+  const session = required(values, 'session');
+  const parsed = parseStatusLine(readInput(required(values, 'turn-datei'), 'Turn-Ende'));
+  const { aktion, ohneStatus } = turnAction(readTurns(process.cwd(), session), parsed);
+  writeTurns(process.cwd(), session, ohneStatus);
+  const lines = [`AKTION=${aktion}`, ...Object.entries(parsed ?? {}).map(([key, value]) => `${key.toUpperCase()}=${value}`)];
+  const block = { hinweis: () => noStatusHint({ etappe: required(values, 'etappe'), session }), laeuft: () => runningLine(required(values, 'etappe')) }[aktion];
+  return withBlock(lines, 'AUSGABE', block ? block() : '').join('\n');
+}
+
+function final(values) {
+  const result = processFinal({
+    etappe: required(values, 'etappe'), session: required(values, 'session'), bericht: required(values, 'etappenbericht'), commit: required(values, 'commit'), basis: values.basis, wi: values.wi,
+  }, process.cwd());
+  if (result.weiter !== 'doppelt') {
+    appendEvent(process.cwd(), result.slug, {
+      typ: 'final', etappe: values.etappe, session: values.session, commit: values.commit, ergebnis: result.ergebnis, weiter: result.weiter,
+      haltepunkt: result.haltepunkt, dauerMs: result.dauerMs ?? null, offen: result.offen ?? null, abbruch: result.abbruch ?? null,
+    });
+  }
+  const lines = [`SLUG=${result.slug}`, `ERGEBNIS=${result.ergebnis}`, `WEITER=${result.weiter}`, `HALTEPUNKT=${result.haltepunkt}`, ...(result.uebergang ? [`UEBERGANG=${result.uebergang}`] : []), ...result.geprueft.map((line) => `GEPRUEFT=${line}`)];
+  return withBlock(lines, 'AUSGABE', result.text).join('\n');
+}
+
+function stateOf(slug) {
+  const state = readState(process.cwd(), slug);
+  if (!state) throw new SessionChainError(`Kein Zustand für ${slug}`);
+  return state;
+}
+
+function halt(values) {
+  const art = required(values, 'art');
+  if (!['spec', 'go'].includes(art)) throw new UsageError('--art erlaubt: spec, go');
+  const text = holdAt(required(values, 'slug'), art, process.cwd());
+  appendEvent(process.cwd(), values.slug, { typ: 'halt', art });
+  return ['=== AUSGABE ===', text].join('\n');
+}
+
+function commit(values) {
+  const slug = required(values, 'slug');
+  const anlass = required(values, 'anlass');
+  const state = stateOf(slug);
+  if (anlass === 'go') checkGo(state);
+  const result = commitFor(anlass, process.cwd(), state, required(values, 'message'));
+  if (result.commit) recordCommit(slug, result.commit, anlass, process.cwd());
+  appendEvent(process.cwd(), slug, { typ: 'commit', anlass, commit: result.commit?.hash ?? null });
+  return [
+    result.commit ? `COMMIT=${result.commit.hash} ${result.commit.dateien.join(' ')}` : 'COMMIT=keiner',
+    ...result.nichtCommittet.map((file) => `NICHT-COMMITTET=${file} (keine Markdown-Datei)`),
+    ...(anlass === 'go' ? [`AUFRUF=${goCall(state)}`] : []),
+  ].join('\n');
+}
+
+// Antwort des Menschen am Haltepunkt; erst danach startet `brief` die gewählte Etappe.
+function answer(values) {
+  const slug = required(values, 'slug');
+  const state = answerHalt(stateOf(slug), required(values, 'antwort'));
+  writeState(process.cwd(), slug, state);
+  appendEvent(process.cwd(), slug, { typ: 'antwort', halt: state.freigabe.halt, antwort: state.freigabe.antwort });
+  return `FREIGABE=${state.freigabe.halt} ${state.freigabe.antwort}`;
+}
+
+function schluss(values) {
+  const text = closing(required(values, 'slug'), values.stopp === true, process.cwd());
+  appendEvent(process.cwd(), values.slug, { typ: 'schluss', stopp: values.stopp === true });
+  return ['=== AUSGABE ===', text].join('\n');
+}
+
+// Prüfergebnis aus der Datei von verify-run.js statt als Angabe der Etappe; `docker` (Tests nur ohne Docker rot) gilt als grün.
+// Nicht startbare Befehle (`umgebung`) sind Umgebungslücken, kein roter Code.
+function checkFromFile(file) {
+  const { ergebnis, laeufe = [] } = JSON.parse(readInput(file, 'Prüfergebnis'));
+  if (!['gruen', 'rot', 'docker', 'keine', 'umgebung'].includes(ergebnis)) throw new UsageError(`--pruefung-datei ohne gültiges ergebnis: ${file}`);
+  return { pruefung: ergebnis === 'docker' ? 'gruen' : ergebnis, luecken: laeufe.filter((run) => run.umgebung).map((run) => run.befehl) };
+}
+
+function report(values) {
+  if (!values.slug && !values.spec) throw new UsageError('--slug oder --spec fehlt');
+  if (values['pruefung-datei']) {
+    const { pruefung: fromFile, luecken } = checkFromFile(values['pruefung-datei']);
+    if (values.pruefung && values.pruefung !== fromFile) throw new UsageError(`--pruefung ${values.pruefung} widerspricht --pruefung-datei (${fromFile})`);
+    values.pruefung = fromFile;
+    values.luecke = [...new Set([...(values.luecke ?? []), ...luecken])];
+  }
+  if (values.pruefung && !CHECKS.includes(values.pruefung)) throw new UsageError(`--pruefung erlaubt: ${CHECKS.join(', ')}`);
+  const file = etappeReport({
+    etappe: required(values, 'etappe'), slug: values.slug, spec: values.spec, bericht: values.inhalt, entscheidungen: values.entscheidung, dateien: values.datei,
+    tests: values.tests, anhang: values.anhang.map((item) => path.resolve(item)), plan: values.plan, worktree: values.worktree, branch: values.branch,
+    pruefung: values.pruefung, luecken: values.luecke, acOhneTest: values['ac-ohne-test'],
+  }, process.cwd());
+  return `BERICHT=${file}`;
+}
+
+// Stand des Reviews im Whiteboarding: daraus entscheidet die Etappe, ob die Abschlussfrage kommt.
+function stand(values) {
+  const result = reviewStand(required(values, 'spec'));
+  return [`ERGEBNIS=${result.ergebnis ?? 'keine'}`, `PUNKTE=${result.punkte}`, `FRAGE=${result.frage ? 'ja' : 'nein'}`, `ABSCHLUSS=${result.abschluss}`].join('\n');
+}
+
+function set(values) {
+  const state = setState({ slug: required(values, 'slug'), basis: values.basis, wi: values.wi, spec: values.spec, plan: values.plan, worktree: values.worktree }, process.cwd());
+  return `ZUSTAND=${state.slug}`;
+}
+
+const COMMANDS = { set, brief, turn, final, halt, answer, commit, schluss, 'etappe-report': report, 'review-stand': stand };
+
+function run(args) {
+  const [command, ...rest] = args;
+  if (command === 'entry') return entry(rest);
+  if (!Object.hasOwn(COMMANDS, command)) throw new UsageError(`Unbekannter Befehl: ${command ?? '-'}`);
+  return COMMANDS[command](parseOptions(rest));
+}
+
+function main() {
+  try {
+    process.stdout.write(`${run(process.argv.slice(2))}\n`);
+  } catch (error) {
+    if (error instanceof UsageError) {
+      process.stderr.write(`${error.message}\n${USAGE}`);
+      process.exit(2);
+    }
+    if (!(error instanceof SessionChainError) && !(error instanceof EntryError)) throw error;
+    process.stderr.write(`${error.message}\n`);
+    process.exit(1);
+  }
+}
+
+if (require.main === module) main();
+
+module.exports = { run, UsageError };

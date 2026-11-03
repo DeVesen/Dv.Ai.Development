@@ -1,0 +1,264 @@
+#!/usr/bin/env node
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const { toPosix } = require('./lib/posix');
+const { scanPlan, slugOf } = require('./plan-tasks');
+const { REWORK_MARK, reworkHeading } = require('./aggregate-findings');
+const { writeSavedClosing } = require('./lib/saved-closing');
+
+const ROLES = ['spec-review', 'plan-review', 'review'];
+const ART_OF_ROLE = { 'spec-review': 'spec-review', 'plan-review': 'plan-review', review: 'implementation-review' };
+const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const USAGE = 'Aufruf: node followup.js save <spec-review|plan-review|review> <slug> <dir> | drop <spec-review|plan-review|review> <slug> | keep <spec-review|plan-review|review> <slug> <nummern>\n';
+const SCOUT_HEADING = /^## Scout-Vorschläge\s*$/;
+const GROUP_HEADING = /^### (🔴|🟡|🟢) (.+?)\s*$/u;
+const REWORK_HEADING = /^### (🔴|🟡|🟢) (.+) \(([^()]*)\)\s*$/u;
+const PROPOSAL = /^\d+\.\s+(.*)$/;
+const PREFERRED_LINE = /^\*\*Bevorzugt:/;
+const PREFERRED = /^\*\*Bevorzugt: (\d+)\*\*/;
+const CONFIDENCE_LINE = /^Sicherheit: (\d{1,3}) %$/;
+const FENCE = /^\s*(```|~~~)/;
+
+class FollowupError extends Error {}
+
+function repoRoot(cwd) {
+  const result = spawnSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' });
+  if (result.status !== 0) throw new FollowupError(`Kein Git-Repo: ${toPosix(cwd)}`);
+  return path.resolve(result.stdout.trim());
+}
+
+function followupDir(repo, role, slug) {
+  return path.join(repo, '.forge', 'followup', role, slug);
+}
+
+function readLines(file) {
+  return fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n').split('\n');
+}
+
+function scoutSection(lines) {
+  const start = lines.findIndex((line) => SCOUT_HEADING.test(line));
+  return start === -1 ? [] : lines.slice(start);
+}
+
+// Zeilen jeder Scout-Gruppe, von ihrer Überschrift bis vor die nächste; Schlüssel `<icon> <stelle>`.
+// Eine Überschrift in einem Code-Block ist keine Gruppe, wie in parseScout.
+function scoutBlocks(lines) {
+  const blocks = new Map();
+  let current = null;
+  let inFence = false;
+  for (const line of scoutSection(lines).slice(1)) {
+    const heading = inFence ? null : GROUP_HEADING.exec(line);
+    if (FENCE.test(line)) inFence = !inFence;
+    if (heading) {
+      current = [line];
+      blocks.set(`${heading[1]} ${heading[2]}`, current);
+    } else if (current) {
+      current.push(line);
+    }
+  }
+  return blocks;
+}
+
+function numberedScout(lines) {
+  let number = 0;
+  let inFence = false;
+  return scoutSection(lines).map((line) => {
+    const heading = inFence ? null : GROUP_HEADING.exec(line);
+    if (FENCE.test(line)) inFence = !inFence;
+    if (!heading) return line;
+    number += 1;
+    return `### ${number} · ${heading[1]} ${heading[2]}`;
+  }).join('\n').trimEnd();
+}
+
+function save(role, slug, dir) {
+  const target = followupDir(repoRoot(dir), role, slug);
+  const scoutFile = path.join(dir, 'scout.md');
+  const scout = fs.existsSync(scoutFile) ? readLines(scoutFile) : [];
+  const aggregateFile = path.join(dir, 'aggregate.md');
+  if (scoutSection(scout).length > 0 && !fs.existsSync(aggregateFile)) throw new FollowupError(`aggregate.md fehlt: ${toPosix(aggregateFile)}`);
+  // Eine Scout-Gruppe ohne passende Aggregat-Gruppe macht die Sicherung unbrauchbar: wie kein Scout, der Loop startet ihn neu.
+  // Der Grund geht nach stderr, damit ein verworfener Scout nicht still verschwindet.
+  const problem = scoutSection(scout).length === 0 ? null : aggregateProblem(readLines(aggregateFile), scout);
+  if (scoutSection(scout).length === 0 || problem) {
+    if (problem) process.stderr.write(`dv-forge followup: Scout verworfen: ${problem}\n`);
+    fs.rmSync(target, { recursive: true, force: true });
+    return 'KEIN SCOUT';
+  }
+  fs.rmSync(target, { recursive: true, force: true });
+  fs.mkdirSync(target, { recursive: true });
+  fs.copyFileSync(aggregateFile, path.join(target, 'aggregate.md'));
+  fs.copyFileSync(scoutFile, path.join(target, 'scout.md'));
+  fs.writeFileSync(path.join(target, 'meta.json'), `${JSON.stringify({ rolle: role, savedAt: new Date().toISOString() })}\n`);
+  return numberedScout(scout);
+}
+
+function drop(role, slug, cwd = process.cwd()) {
+  fs.rmSync(followupDir(repoRoot(cwd), role, slug), { recursive: true, force: true });
+}
+
+// Behält in der Sicherung nur die Gruppen mit den genannten Nummern (Nummern der aktuellen Sicherung); keine passende Gruppe: Sicherung weg.
+function keep(role, slug, numbers, cwd = process.cwd()) {
+  const dir = followupDir(repoRoot(cwd), role, slug);
+  if (!fs.existsSync(path.join(dir, 'meta.json'))) throw new FollowupError(`Keine Sicherung für ${slug}`);
+  const wanted = String(numbers).split(',').map((part) => part.trim()).filter(Boolean).map(Number);
+  if (wanted.length === 0 || wanted.some((number) => !Number.isInteger(number) || number < 1)) throw new FollowupError(`Ungültige Gruppennummern: ${numbers}`);
+  const kept = loadGroups(dir).filter((group) => wanted.includes(group.number));
+  if (kept.length === 0) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    return;
+  }
+  const blocks = scoutBlocks(readLines(path.join(dir, 'scout.md')));
+  const aggregate = kept.map((group) => [reworkHeading(group.severity, group.location, group.reviewers), ...group.findings].join('\n'));
+  const scout = kept.map((group) => blocks.get(`${group.severity} ${group.location}`));
+  writeSavedClosing(dir, aggregate, scout);
+}
+
+function latest(repo, slug, roles) {
+  const found = roles
+    .map((role) => ({ role, dir: followupDir(repo, role, slug) }))
+    .filter(({ dir }) => fs.existsSync(path.join(dir, 'meta.json')))
+    .map((entry) => ({ ...entry, savedAt: String(JSON.parse(fs.readFileSync(path.join(entry.dir, 'meta.json'), 'utf8')).savedAt ?? '') }))
+    .sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+  return found[0] ?? null;
+}
+
+function appendToProposal(group, line) {
+  const last = group.proposals.length - 1;
+  group.proposals[last] = `${group.proposals[last]}\n${line}`;
+}
+
+// `preferredCount` zählt jede Zeile mit `**Bevorzugt:` außerhalb von Code-Fences, auch ohne gültige Nummer.
+// `preferred` bleibt die Nummer der letzten Zeile mit gültiger Nummer.
+function markPreferred(group, line) {
+  const number = PREFERRED.exec(line);
+  group.preferredCount += 1;
+  if (number) group.preferred = Number(number[1]);
+}
+
+function parseScout(lines) {
+  const groups = [];
+  let current = null;
+  let inFence = false;
+  for (const line of scoutSection(lines)) {
+    const heading = inFence ? null : GROUP_HEADING.exec(line);
+    if (heading) {
+      current = { severity: heading[1], location: heading[2], proposals: [], preferred: null, preferredCount: 0, sicherheit: null };
+      groups.push(current);
+      continue;
+    }
+    if (!current) continue;
+    // `Sicherheit: <n> %` vor dem ersten Vorschlag; fehlt sie oder ist sie keine Zahl von 0 bis 100, bleibt sie null.
+    const confidence = inFence || current.proposals.length > 0 ? null : CONFIDENCE_LINE.exec(line);
+    if (confidence && Number(confidence[1]) <= 100) current.sicherheit = Number(confidence[1]);
+    const opensOrClosesFence = FENCE.test(line);
+    const proposal = inFence || opensOrClosesFence ? null : PROPOSAL.exec(line);
+    const preferredLine = !inFence && PREFERRED_LINE.test(line);
+    if (proposal) current.proposals.push(proposal[1]);
+    else if (preferredLine) markPreferred(current, line);
+    else if (current.proposals.length > 0 && current.preferredCount === 0) appendToProposal(current, line);
+    if (opensOrClosesFence) inFence = !inFence;
+  }
+  for (const group of groups) group.proposals = group.proposals.map((text) => text.trimEnd());
+  return groups;
+}
+
+function parseRework(lines) {
+  const start = lines.indexOf(REWORK_MARK);
+  const groups = [];
+  for (const line of start === -1 ? [] : lines.slice(start + 1)) {
+    const heading = REWORK_HEADING.exec(line);
+    if (heading) {
+      const reviewers = heading[3].replace(/\s*·\s*hochgestuft$/, '').split(',').map((name) => name.trim()).filter(Boolean);
+      groups.push({ severity: heading[1], location: heading[2], reviewers, findings: [] });
+    } else if (groups.length > 0 && line.startsWith('- [')) {
+      groups[groups.length - 1].findings.push(line);
+    }
+  }
+  return groups;
+}
+
+// Zwei Scout-Gruppen mit derselben Stufe und Stelle lassen sich keiner Aggregat-Gruppe eindeutig zuordnen.
+function groupsOf(aggregateLines, scoutLines) {
+  const rework = parseRework(aggregateLines);
+  const scouted = parseScout(scoutLines);
+  const keys = scouted.map((group) => `${group.severity} ${group.location}`);
+  const doubled = keys.find((key, index) => keys.indexOf(key) !== index);
+  if (doubled) throw new FollowupError(`Scout-Gruppe doppelt: ${doubled}`);
+  return scouted.map((group, index) => {
+    const match = rework.find((item) => item.severity === group.severity && item.location === group.location);
+    if (!match) throw new FollowupError(`Keine Aggregat-Gruppe zu ${group.severity} ${group.location}`);
+    return { number: index + 1, ...group, reviewers: match.reviewers, findings: match.findings };
+  });
+}
+
+// Grund, warum Scout und Aggregat nicht zusammenpassen, sonst null.
+function aggregateProblem(aggregateLines, scoutLines) {
+  try {
+    groupsOf(aggregateLines, scoutLines);
+    return null;
+  } catch (error) {
+    if (error instanceof FollowupError) return error.message;
+    throw error;
+  }
+}
+
+function loadGroups(saveDir) {
+  return groupsOf(readLines(path.join(saveDir, 'aggregate.md')), readLines(path.join(saveDir, 'scout.md')));
+}
+
+// Ein Plan hat Task-Überschriften, eine Spec nicht; Spec und Plan im selben Ordner teilen den Slug.
+function rolesFor(artifactPath) {
+  return scanPlan(readLines(artifactPath)).tasks.length > 0 ? ['plan-review', 'review'] : ['spec-review'];
+}
+
+function slugFor(artifactPath, roles) {
+  if (roles[0] !== 'spec-review') return slugOf(artifactPath);
+  const absolute = path.resolve(artifactPath);
+  const name = path.basename(absolute);
+  return name.toLowerCase() === 'spec.md' ? path.basename(path.dirname(absolute)) : path.basename(name, path.extname(name));
+}
+
+function resolveFollowup(artifactPath, repo) {
+  const roles = rolesFor(artifactPath);
+  return latest(repo, slugFor(artifactPath, roles), roles);
+}
+
+function isValidCall(action, args) {
+  const [role, slug] = args;
+  if (!ROLES.includes(role) || !SLUG.test(slug ?? '')) return false;
+  return (action === 'save' && args.length === 3) || (action === 'drop' && args.length === 2) || (action === 'keep' && args.length === 3);
+}
+
+function main() {
+  const [action, ...args] = process.argv.slice(2);
+  if (!isValidCall(action, args)) {
+    process.stderr.write(USAGE);
+    process.exit(2);
+  }
+  try {
+    if (action === 'save') process.stdout.write(`${save(...args)}\n`);
+    else if (action === 'keep') keep(...args);
+    else drop(...args);
+  } catch (error) {
+    if (!(error instanceof FollowupError)) throw error;
+    process.stderr.write(`${error.message}\n`);
+    process.exit(1);
+  }
+}
+
+// `review-followup <A> auto`: der bevorzugte Vorschlag jeder 🔴-Gruppe, dazu jeder 🟡- und 🟢-Gruppe mit Sicherheit ab der Schwelle.
+// Ohne Sicherheit gilt eine 🟡- oder 🟢-Gruppe als unter der Schwelle; sie bleibt beim Menschen. Die einzige Stelle dieser Regel.
+function autoEligible(group, threshold) {
+  if (!group.preferred) return false;
+  return group.severity === '🔴' || (group.sicherheit !== null && group.sicherheit >= threshold);
+}
+
+module.exports = {
+  SCOUT_HEADING, GROUP_HEADING, PROPOSAL, CONFIDENCE_LINE, FollowupError, ROLES, SLUG, ART_OF_ROLE, followupDir, save, drop, keep, scoutBlocks, latest, loadGroups, rolesFor, slugFor, resolveFollowup, parseScout, parseRework, autoEligible,
+};
+
+if (require.main === module) main();

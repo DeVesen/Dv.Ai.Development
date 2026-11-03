@@ -1,0 +1,311 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const { repoWithPlan, git, addWorktree, makeRepo, commitFile } = require('./lib/git-repo');
+const { writeState } = require('../scripts/lib/session-chain-store');
+const { ablageDir } = require('../scripts/lib/session-chain-ablage');
+const { maxFollowups } = require('../scripts/lib/orchestrator-rules');
+
+const SCRIPT = path.join(__dirname, '..', 'scripts', 'orchestrator-state.js');
+
+function run(cwd, ...args) {
+  return spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8' });
+}
+
+function tmp() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-ostate-'));
+}
+
+function report(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data));
+  return file;
+}
+
+test('start_RecordsLocationAndPreexistingFiles', () => {
+  const { repo, spec } = repoWithPlan();
+  fs.writeFileSync(path.join(repo, 'offen.txt'), 'x');
+  const result = run(repo, 'start', '--state', tmp(), '--spec', spec);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^TOPLEVEL=.+\nBRANCH=main\nHEAD=[0-9a-f]+\nWORKTREE=nein\nSPEC-IM-CHECKOUT=ja\nVORBESTAND=1\nVORBESTAND-DATEI=offen.txt\n$/);
+});
+
+test('start_DetachedHeadOrMissingSpec_ExitOne', () => {
+  const { repo, spec } = repoWithPlan();
+  assert.equal(run(repo, 'start', '--state', tmp(), '--spec', path.join(repo, 'fehlt.md')).status, 1);
+  git(repo, 'checkout', '--quiet', '--detach');
+  const detached = run(repo, 'start', '--state', tmp(), '--spec', spec);
+  assert.equal(detached.status, 1);
+  assert.match(detached.stderr, /detached HEAD/);
+});
+
+test('check_ChangedSpec_ExitOneWithDiff', () => {
+  const { repo, spec, plan } = repoWithPlan();
+  const state = tmp();
+  run(repo, 'start', '--state', state, '--spec', spec);
+  run(repo, 'add', '--state', state, '--plan', plan);
+  assert.equal(run(repo, 'check', '--state', state).stdout, 'HASH-SPEC=ok\nHASH-PLAN=ok\n');
+  fs.appendFileSync(spec, 'neue Zeile\n');
+  const changed = run(repo, 'check', '--state', state);
+  assert.equal(changed.status, 1);
+  assert.match(changed.stdout, /^HASH-SPEC=abweichung\nHASH-PLAN=ok\n=== DIFF ===\n[\s\S]*\+neue Zeile/);
+});
+
+test('check_Ort_OtherBranchIsDeviation', () => {
+  const { repo, spec } = repoWithPlan();
+  const state = tmp();
+  run(repo, 'start', '--state', state, '--spec', spec);
+  git(repo, 'switch', '--quiet', '-c', 'anders');
+  const result = run(repo, 'check', '--state', state, '--ort');
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /ORT=abweichung .+ anders/);
+});
+
+test('start_InWorktree_ReportsWorktree', () => {
+  const { repo, spec } = repoWithPlan();
+  const tree = addWorktree(repo, 'feature/x');
+  assert.match(run(tree, 'start', '--state', tmp(), '--spec', spec).stdout, /WORKTREE=ja\nSPEC-IM-CHECKOUT=nein/);
+});
+
+// Offene Gruppe im Format der Bericht-Daten; `hasProposal` sagt, ob `review-followup <A> alle` sie erreicht.
+function openEntry(color, key, hasProposal = true) {
+  return { key, color, title: `Titel ${key}`, description: `Beschreibung ${key}.`, recommendation: null, angles: 'Machbarkeit', hasProposal };
+}
+
+function blocked(open) {
+  return { status: 'nicht bereit', resultLine: '**Ergebnis:** ⛔ Nicht bereit', offersFollowup: true, openRed: open.filter((entry) => entry.color === 'red').length, open };
+}
+
+test('next_OpenRedWithProposal_Followup', () => {
+  const dir = tmp();
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'ac-04')]));
+  assert.equal(run(dir, 'next', '--review', review).stdout, 'NEXT=followup\nRUNDE=1\nERGEBNIS=⛔ Nicht bereit\nBEREIT=nein\nRUNDEN=0\nROT=1\n');
+});
+
+test('next_OnlyYellowOpenWithProposal_WeiterWithoutAbbruch', () => {
+  const dir = tmp();
+  const hints = report(path.join(dir, 'br.json'), { status: 'sauber nach Runde 1', resultLine: '**Ergebnis:** ✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen', offersFollowup: true, openRed: 0, open: [openEntry('yellow', 'task 1')] });
+  assert.equal(run(dir, 'next', '--review', hints).stdout, 'NEXT=weiter\nERGEBNIS=✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen\nBEREIT=ja\nRUNDEN=0\nROT=0\n');
+});
+
+// Repo mit committeter Spec und ungetrackter Sicherung des Spec-Reviews; `sicherheit` ist die Sicherheit des Scouts in Prozent.
+function repoWithSavedSpecReview(sicherheit) {
+  const repo = makeRepo();
+  commitFile(repo, 'docs/forge/demo/spec.md', '# Spec\n\nText.\n', 'spec');
+  const dir = path.join(repo, '.forge', 'followup', 'spec-review', 'demo');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'aggregate.md'), '=== REWORK ===\n### 🟡 AC-03 (clarity)\n- [clarity · yellow] Zitat: „a“ · Konsequenz: k · Begründung: b\n');
+  fs.writeFileSync(path.join(dir, 'scout.md'), `## Scout-Vorschläge\n\n### 🟡 AC-03\nSicherheit: ${sicherheit} %\n1. Vorschlag\n**Bevorzugt: 1** — klar.\n`);
+  fs.writeFileSync(path.join(dir, 'meta.json'), '{"rolle":"spec-review","savedAt":"2026-11-02T10:00:00.000Z"}');
+  return { repo, spec: path.join(repo, 'docs', 'forge', 'demo', 'spec.md') };
+}
+
+function yellowHints(dir) {
+  return report(path.join(dir, 'br.json'), { status: 'sauber nach Runde 1', resultLine: '**Ergebnis:** ✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen', offersFollowup: true, openRed: 0, open: [openEntry('yellow', 'task 1')] });
+}
+
+test('next_EligibleYellowBeforeFirstRound_FollowupWithAuto', () => {
+  const dir = tmp();
+  const { spec } = repoWithSavedSpecReview(80);
+  const result = run(dir, 'next', '--review', yellowHints(dir), '--artefakt', spec, '--rolle', 'spec-review');
+  assert.equal(result.stdout, 'NEXT=followup\nRUNDE=1\nAUTO=1\nERGEBNIS=✅ Bereit zur Umsetzung · 1 kleiner Hinweis offen\nBEREIT=ja\nRUNDEN=0\nROT=0\n');
+});
+
+test('next_YellowBelowThreshold_Weiter', () => {
+  const dir = tmp();
+  const { spec } = repoWithSavedSpecReview(50);
+  const result = run(dir, 'next', '--review', yellowHints(dir), '--artefakt', spec, '--rolle', 'spec-review');
+  assert.match(result.stdout, /^NEXT=weiter\n/);
+});
+
+test('next_EligibleYellowAfterARound_WeiterWithoutSecondAutoRound', () => {
+  const dir = tmp();
+  const { spec } = repoWithSavedSpecReview(80);
+  const hints = yellowHints(dir);
+  const result = run(dir, 'next', '--review', hints, '--followup', hints, '--artefakt', spec, '--rolle', 'spec-review');
+  assert.match(result.stdout, /^NEXT=weiter\n/);
+});
+
+test('next_SavedForOtherRole_Weiter', () => {
+  const dir = tmp();
+  const { spec } = repoWithSavedSpecReview(80);
+  const result = run(dir, 'next', '--review', yellowHints(dir), '--artefakt', spec, '--rolle', 'review');
+  assert.match(result.stdout, /^NEXT=weiter\n/);
+});
+
+test('next_ArtefaktMissing_ExitOne', () => {
+  const dir = tmp();
+  const result = run(dir, 'next', '--review', yellowHints(dir), '--artefakt', path.join(dir, 'fehlt.md'), '--rolle', 'spec-review');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Artefakt fehlt: /);
+});
+
+test('next_OpenRedWithoutProposal_WeiterWithoutAbbruch', () => {
+  const dir = tmp();
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'kopf', false)]));
+  assert.equal(run(dir, 'next', '--review', review).stdout, 'NEXT=weiter\nERGEBNIS=⛔ Nicht bereit\nBEREIT=nein\nRUNDEN=0\nROT=1\n');
+});
+
+test('next_SameRedOpenAfterTwoRounds_WeiterWithAbbruchStillstand', () => {
+  const dir = tmp();
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'ac-04')]));
+  const rounds = [1, 2].map((number) => report(path.join(dir, `f${number}.json`), { ...blocked([openEntry('red', 'ac-04')]), followup: true }));
+  const result = run(dir, 'next', '--review', review, '--followup', rounds[0], '--followup', rounds[1]);
+  assert.match(result.stdout, /^NEXT=weiter\nABBRUCH=stillstand\n/);
+  assert.match(result.stdout, /RUNDEN=2\nROT=1\n$/);
+});
+
+test('next_DistinctRedAfterMaximumRounds_WeiterWithAbbruchMaximum', () => {
+  const dir = tmp();
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'ac-00')]));
+  const rounds = Array.from({ length: maxFollowups() }, (_, index) => report(path.join(dir, `f${index + 1}.json`), { ...blocked([openEntry('red', `ac-${index + 1}`)]), followup: true }));
+  const result = run(dir, 'next', '--review', review, ...rounds.flatMap((file) => ['--followup', file]));
+  assert.match(result.stdout, /^NEXT=weiter\nABBRUCH=maximum\n/);
+  assert.match(result.stdout, new RegExp(`RUNDEN=${maxFollowups()}\nROT=1\n$`));
+});
+
+test('next_RedFixedInLastRound_WeiterWithoutAbbruch', () => {
+  const dir = tmp();
+  const review = report(path.join(dir, 'br.json'), blocked([openEntry('red', 'ac-04')]));
+  const round = report(path.join(dir, 'f1.json'), { status: 'sauber nach Nachprüfung', resultLine: '**Ergebnis:** ✅ Bereit zum Planen', offersFollowup: false, followup: true, openRed: 0, open: [] });
+  assert.equal(run(dir, 'next', '--review', review, '--followup', round).stdout, 'NEXT=weiter\nERGEBNIS=✅ Bereit zum Planen\nBEREIT=ja\nRUNDEN=1\nROT=0\n');
+});
+
+test('next_IncompleteOrMissingReport_Ende', () => {
+  const dir = tmp();
+  const incomplete = report(path.join(dir, 'br.json'), { status: 'unvollständig, ausgefallen: x', resultLine: '**Ergebnis:** ⚠️ Unvollständig', offersFollowup: true });
+  assert.match(run(dir, 'next', '--review', incomplete).stdout, /^NEXT=ende\nGRUND=unvollstaendig/);
+  assert.match(run(dir, 'next', '--review', path.join(dir, 'fehlt.json')).stdout, /^NEXT=ende\nGRUND=kein-bericht/);
+});
+
+test('next_Ready_WeiterBereitJa', () => {
+  const dir = tmp();
+  const ready = report(path.join(dir, 'br.json'), { status: 'sauber', resultLine: '**Ergebnis:** ✅ Bereit zum Abschließen', offersFollowup: false });
+  assert.equal(run(dir, 'next', '--review', ready).stdout, 'NEXT=weiter\nERGEBNIS=✅ Bereit zum Abschließen\nBEREIT=ja\nRUNDEN=0\nROT=0\n');
+});
+
+test('cli_BadCall_ExitTwo', () => {
+  assert.equal(run(tmp(), 'start', '--state', 'x').status, 2);
+  assert.equal(run(tmp(), 'bogus').status, 2);
+  assert.equal(run(tmp(), 'ablage').status, 2);
+});
+
+test('start_ModifiedTrackedFileAsFirstStatusLine_KeepsItsFullPath', () => {
+  const { repo, spec } = repoWithPlan();
+  fs.appendFileSync(spec, 'Vorbestand\n');
+  const result = run(repo, 'start', '--state', tmp(), '--spec', spec);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^VORBESTAND-DATEI=docs\/forge\/x\/spec\.md$/m);
+});
+
+// Erwartete Ausgabe von `ablage` für die Etappe `etappe` des Slugs `x`: Daten des Reviews, je eine Zeile je mögliche Followup-Runde
+// (Maximum aus der Regeldatei), Abschlussbericht. Die Pfade stehen ab dem Ordner `session-chain/`: Der Temp-Ordner, in dem der
+// Ordner der Kette liegt, kann kurz oder lang geschrieben sein.
+function ablageLines(etappe) {
+  const folder = `x/ablage/${etappe}`;
+  const rounds = Array.from({ length: maxFollowups() }, (_, index) => `BERICHT-FOLLOWUP-${index + 1}=${folder}/bericht-followup-${index + 1}.json`);
+  return [`BERICHT-REVIEW=${folder}/bericht-review.json`, ...rounds, `ABSCHLUSS=${folder}/abschluss.md`, ''].join('\n');
+}
+
+function fromChains(text) {
+  return text.replace(/^([A-Z0-9-]+)=.*?\/dv-forge\/session-chain\//gm, '$1=');
+}
+
+test('ablage_SpecWithoutChainState_NamesTheFilesOfTheSpecReviewEtappe', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+
+  // Act
+  const result = run(repo, 'ablage', '--art', 'spec', '--spec', spec);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fromChains(result.stdout), ablageLines('spec-review'));
+  assert.ok(result.stdout.startsWith(`BERICHT-REVIEW=${ablageDir(repo, 'x', 'spec-review').replace(/\\/g, '/')}/`), result.stdout);
+});
+
+test('ablage_SpecWithWhiteboardingSwitch_NamesTheFilesOfTheWhiteboardingEtappe', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+
+  // Act
+  const result = run(repo, 'ablage', '--art', 'spec', '--spec', spec, '--whiteboarding');
+
+  // Assert
+  assert.equal(fromChains(result.stdout), ablageLines('whiteboarding'));
+});
+
+test('ablage_PlanWithRunningEtappeOfTheChain_NamesTheFilesOfThatEtappe', () => {
+  // Arrange
+  const { repo, plan } = repoWithPlan();
+  writeState(repo, 'x', { slug: 'x', gestartet: { etappe: 'planning', zeit: '2026-10-26T10:00:00.000Z' } });
+
+  // Act
+  const result = run(repo, 'ablage', '--art', 'plan', '--plan', plan);
+
+  // Assert
+  assert.equal(fromChains(result.stdout), ablageLines('planning'));
+});
+
+test('ablage_ImplementationFromWorktree_NamesTheFilesInTheSharedAblage', () => {
+  // Arrange
+  const { repo } = repoWithPlan();
+  const tree = addWorktree(repo, 'feature/x');
+
+  // Act
+  const result = run(tree, 'ablage', '--art', 'implementation', '--plan', path.join(tree, 'docs/forge/x/plan.md'));
+
+  // Assert
+  assert.equal(fromChains(result.stdout), ablageLines('umsetzung'));
+});
+
+test('ablage_ArtWithoutItsArtifactOrUnknownArt_ExitsWithOne', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+
+  // Act
+  const noPlan = run(repo, 'ablage', '--art', 'plan', '--spec', spec);
+  const unknown = run(repo, 'ablage', '--art', 'review', '--spec', spec);
+
+  // Assert
+  assert.equal(noPlan.status, 1);
+  assert.match(noPlan.stderr, /--art plan braucht --plan/);
+  assert.equal(unknown.status, 1);
+  assert.match(unknown.stderr, /--art erlaubt: spec, plan, implementation/);
+});
+
+test('ablage_ArtifactOutsideAGitRepo_ExitsWithOne', () => {
+  // Arrange
+  const dir = tmp();
+  const spec = path.join(dir, 'spec.md');
+  fs.writeFileSync(spec, '# Spec\n');
+
+  // Act
+  const result = run(dir, 'ablage', '--art', 'spec', '--spec', spec);
+
+  // Assert
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Kein Git-Repo/);
+});
+
+test('ablage_AblageHoldsFilesOfAnEarlierRun_EmptiesItBeforeTheReviewCanFail', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  const target = ablageDir(repo, 'x', 'spec-review');
+  fs.mkdirSync(target, { recursive: true });
+  fs.writeFileSync(path.join(target, 'bericht-review.json'), JSON.stringify({ status: 'sauber', resultLine: '**Ergebnis:** ✅ Bereit zum Planen', offersFollowup: false }));
+  fs.writeFileSync(path.join(target, 'abschluss.md'), '# alt\n');
+
+  // Act
+  const result = run(repo, 'ablage', '--art', 'spec', '--spec', spec);
+  const next = run(repo, 'next', '--review', result.stdout.split('\n')[0].replace('BERICHT-REVIEW=', ''));
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(target), false);
+  assert.match(next.stdout, /^NEXT=ende\nGRUND=kein-bericht/);
+});

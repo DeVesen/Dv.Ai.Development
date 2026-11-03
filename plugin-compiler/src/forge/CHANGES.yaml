@@ -1,0 +1,6 @@
+# Änderungsprotokoll: Abweichungen des erzeugten dv-forge vom Bestand plugins/forge.
+# Der Build vergleicht jede Datei mit dem Bestand. Eine abweichende, neue oder fehlende Datei muss hier unter genau
+# den Befunden stehen, die sie ändern; eine gelistete Datei, die nicht (mehr) abweicht, ist ebenfalls ein Fehler.
+# Befund-Nummern wie in der Entscheidungsliste (1 bis 12, B, C).
+basis: dv-forge 0.34.0 plus fix/forge-handover-stability (7b4faac)
+changes: []

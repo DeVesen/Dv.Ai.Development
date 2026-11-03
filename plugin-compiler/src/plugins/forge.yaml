@@ -6,16 +6,17 @@ version: 0.34.0
 description: Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops
 source: src/forge
 equivalent_to: ../plugins/forge
+# Jede Abweichung vom Bestand steht mit Befund-Nummer im Änderungsprotokoll; sonst bricht der Build ab.
+changelog: src/forge/CHANGES.yaml
 author: DeVesen
 # Bewusste Abweichungen vom Bestand, die die Äquivalenzprüfung zulässt (Datei#Schlüssel in JSON).
 equivalence_ignore:
   - .claude-plugin/plugin.json#author   # claude plugin validate --strict verlangt author; der Bestand hat keinen
 assets:
-  # Code ist keine Prosa: Skripte, Tests und Golden-Sets kommen unverändert aus dem bestehenden Plugin.
-  # TODO(plugins/forge): Bei einer echten Migration zieht dieser Code nach src/forge/assets um.
-  - {from: ../plugins/forge/scripts, to: scripts}
-  - {from: ../plugins/forge/tests, to: tests}
-  - {from: ../plugins/forge/evals, to: evals}
+  # Code ist keine Prosa: Skripte, Tests und Golden-Sets liegen als Assets unter src/forge/assets und werden unverändert kopiert.
+  - {from: src/forge/assets/scripts, to: scripts}
+  - {from: src/forge/assets/tests, to: tests}
+  - {from: src/forge/assets/evals, to: evals}
 hooks:
   UserPromptSubmit:
     - commands: [guard-orchestrator.js prompt, stage-guard.js prompt]

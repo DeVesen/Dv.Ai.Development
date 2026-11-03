@@ -564,12 +564,14 @@ def main() -> int:
     report.stop_if_errors("Laden (Komponenten)")
     files: dict = {}
     entries: list = []
-    compared = 0
+    compared = changed = 0
     for cp in comp_plugins:
         components.check_plugin(cp, m.rules, m.avoid, report)
         files.update(components.render_plugin(cp, env))
         components.lint_plugin(cp, report)
-        compared += components.check_equivalence(cp, report)
+        same, diff = components.check_equivalence(cp, report)
+        compared += same
+        changed += diff
         entries.append({"name": cp.name, "source": f"./{cp.dir}", "description": cp.manifest.data["description"],
                         "version": cp.manifest.data["version"]})
 
@@ -595,7 +597,7 @@ def main() -> int:
     print(f"build: {len(files)} Dateien nach {rel(DIST)}/ geschrieben.")
     for cp in comp_plugins:
         print(f"  {cp.name}: {len(cp.components)} Quellen, {len(cp.partials)} Partials, {comp_rules} Regeln als Daten, "
-              f"{len(cp.assets)} Assets; {compared} Dateien wortgleich zum Bestand (ohne Kopfzeile).")
+              f"{len(cp.assets)} Assets; {compared} Dateien wortgleich zum Bestand, {changed} laut Änderungsprotokoll geändert.")
     for p in plugins:
         print(f"  {p['name']}: {len(p['phases'])} Etappen, {len(shared)} geteilte Regeln, {p['rule_count_plugin']} eigene.")
     print(f"  {len(report.warnings)} Warnungen.")

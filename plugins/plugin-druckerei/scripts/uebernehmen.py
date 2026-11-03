@@ -31,6 +31,14 @@ SHORT_HOOK = re.compile(r'^node "\$\{CLAUDE_PLUGIN_ROOT\}/scripts/([a-z][a-z0-9-
 FOLD_MARKS = (">", ">-", "|", "|-")
 
 
+JUNK_DIRS = {"__pycache__", "node_modules", ".pytest_cache"}
+
+
+def junk(rel: Path) -> bool:
+    """Erzeugte Dateien gehören nicht in die Quellen: Python-Cache, node_modules, .DS_Store."""
+    return bool(JUNK_DIRS & set(rel.parts)) or rel.name in (".DS_Store",) or rel.suffix == ".pyc"
+
+
 def kind_of(rel: str) -> str | None:
     """Art der Quelle oder None für Assets (Markdown unter tests/ bleibt Asset)."""
     parts = rel.split("/")
@@ -163,7 +171,7 @@ def run(root: Path, plugin: Path, force: bool) -> int:
     docs: dict = {}
     assets: list = []
     hooks = None
-    for f in sorted(p for p in plugin.rglob("*") if p.is_file()):
+    for f in sorted(p for p in plugin.rglob("*") if p.is_file() and not junk(p.relative_to(plugin))):
         rel = f.relative_to(plugin).as_posix()
         if rel == ".claude-plugin/plugin.json":
             continue
@@ -257,7 +265,7 @@ def run(root: Path, plugin: Path, force: bool) -> int:
     print(f"  {len(docs)} Quellen, {len(names)} Partials aus {sum(len(v) for v in shared.values())} Vorkommen, {len(assets)} Assets, "
           f"Hooks {'als Daten' if hooks else 'unverändert als Asset' if (plugin / 'hooks/hooks.json').exists() else 'keine'}, "
           f"{raw_count} Frontmatter in Rohform, {sum(1 for d in docs.values() if d['jinja'])} Dateien ohne Bausteine (Jinja-Zeichen im Text)")
-    env = {**os.environ, "DRUCKEREI_PROJEKT": str(root)}
+    env = {**os.environ, "DRUCKEREI_PROJEKT": str(root), "PYTHONDONTWRITEBYTECODE": "1"}
     with tempfile.TemporaryDirectory(prefix="druckerei-") as tmp:
         env["DRUCKEREI_AUSGABE"] = str(Path(tmp) / "dist")
         result = subprocess.run([sys.executable, str(HERE / "build.py")], cwd=root, env=env, capture_output=True, text=True)

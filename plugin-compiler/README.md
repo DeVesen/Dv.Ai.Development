@@ -27,14 +27,13 @@ src/
     assets/                                   Skripte, Tests, Golden-Sets (unverändert kopiert)
     CHANGES.yaml                              Änderungsprotokoll: Abweichungen vom Bestand je Befund, mit abgenommenem Stand
 tools/
-  build.py, common.py, components.py          Compiler
-  schemas/*.json                              JSON-Schema je Dateiart
   migrate/import_forge.py, import_rules.py    einmalige Migration plugins/forge → src/forge (nur mit --force erneut)
-  smoke.sh                                    build, git diff, validate --strict, forge-Testsuite
+  smoke.sh                                    Try-Deploy der Druckerei und Vergleich mit dem eingecheckten dist/
+druckerei.yaml                                 macht den Ordner zum Projekt der Plugin-Druckerei
 dist/                                          Ausgabe (eingecheckt)
 reports/forge-graph.md                         Aufrufgraph Leit-Session → Etappen → Skills → Sub-Agents (erzeugt)
 ```
 
-Bauen: `python3 tools/build.py`. Eine gewollte Änderung an einer schon geänderten Datei nimmst du mit `python3 tools/build.py --accept` ab. Abnahme: `tools/smoke.sh`. Test-Deploy: `TEST.md`. Fehlerdemos: `DEMO-BREAK.md`. Bestandsaufnahme und Befunde: `INVENTORY.md`.
+Der Compiler selbst ist seit dem Plugin **dv-plugin-druckerei** (`plugins/plugin-druckerei`) allgemein; dieser Ordner ist sein erstes Projekt. Prüfen: `druckerei pruefen` (Try-Deploy). Ausliefern mit neuer Version: `druckerei deploy --stufe patch|minor|major --plugin <name>`. Eine gewollte Änderung an einer schon geänderten Datei nimmst du mit `druckerei abnehmen` ab. Abnahme: `tools/smoke.sh`. Test-Deploy: `TEST.md`. Fehlerdemos: `DEMO-BREAK.md`. Bestandsaufnahme und Befunde: `INVENTORY.md`.
 
 Konventionen: Prototyp-Quellen nutzen `[[Begriff]]` und `[R-020]`; forge-Bodies nutzen eigene Jinja-Begrenzer (`<<= … >>`, `<% … %>`, `<# … #>`), weil der forge-Text `{{PLUGIN}}` wörtlich enthält. Offene Punkte stehen als `TODO(<Quelldatei>)`.

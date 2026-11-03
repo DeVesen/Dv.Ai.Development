@@ -6,25 +6,25 @@ Ziel: das aus `plugin-compiler/src` erzeugte `dv-forge` 0.35.0 und den angular-P
 
 ## 0. Bauen und prüfen
 
+Das Projekt wird mit der Plugin-Druckerei gedruckt (`plugins/plugin-druckerei`, Befehl `druckerei`).
+
 ```bash
-pip install -r plugin-compiler/requirements.txt   # pyyaml, jinja2, jsonschema
+pip install pyyaml jinja2 jsonschema
 plugin-compiler/tools/smoke.sh
 ```
 
 Erwartet, in dieser Reihenfolge:
 
 ```text
-== 1/4 build (enthält den Abgleich dist/forge ↔ plugins/forge mit Änderungsprotokoll)
-build: 370 Dateien nach dist/ geschrieben.
+== 1/2 Try-Deploy
+Drucken und Prüfen: ok (13 Warnungen)
   dv-forge: 68 Quellen, 24 Partials, 26 Regeln als Daten, 277 Assets; 302 Dateien wortgleich zum Bestand, 47 laut Änderungsprotokoll geändert.
   angular: 5 Etappen, 27 geteilte Regeln, 3 eigene.
-  13 Warnungen.
-== 2/4 dist/ unverändert gegenüber git
-dist/ entspricht dem eingecheckten Stand.
-== 3/4 claude plugin validate --strict
-√ Validation passed        (Marketplace, angular, forge)
-== 4/4 forge-Testsuite gegen dist/forge
-# tests 2203 / # pass 2202 / # fail 0 / # skipped 1
+TÜV (claude plugin validate):  Marketplace, angular, forge bestanden
+Probeläufe (Tests):  forge: 2202 bestanden, 0 fehlgeschlagen, 1 übersprungen
+Gegenüber dist/: 0 Dateien geändert, 0 neu, 0 entfernt.
+TRY-DEPLOY ok.
+== 2/2 dist/ vollständig in git
 smoke: ok
 ```
 

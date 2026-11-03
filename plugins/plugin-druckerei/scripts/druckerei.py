@@ -76,7 +76,7 @@ def project_of(args) -> Path:
 
 
 def run_build(root: Path, out: Path | None = None, accept: bool = False) -> tuple[int, str]:
-    env = {**os.environ, "DRUCKEREI_PROJEKT": str(root)}
+    env = {**os.environ, "DRUCKEREI_PROJEKT": str(root), "PYTHONDONTWRITEBYTECODE": "1"}
     env.pop("DRUCKEREI_AUSGABE", None)
     if out:
         env["DRUCKEREI_AUSGABE"] = str(out)

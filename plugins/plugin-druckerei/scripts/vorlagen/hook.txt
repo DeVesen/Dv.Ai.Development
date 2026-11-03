@@ -1,7 +1,7 @@
 # Sensor: Eintrag unter hooks: im Bestellschein (src/plugins/<plugin>.yaml). Das Skript liegt als Asset unter scripts/.
 hooks:
-  PreToolUse:                    # Ereignis: PreToolUse, PostToolUse, UserPromptSubmit, Stop, SessionStart, SessionEnd, SubagentStop
+  PreToolUse:                    # Pflicht. Ereignis: PreToolUse, PostToolUse, UserPromptSubmit, Stop, SessionStart, SessionEnd, SubagentStop
     - matcher: Bash              # freiwillig. Für welche Werkzeuge
-      commands:
+      commands:                  # Pflicht. mindestens ein Befehl, Kurz- oder Rohform (siehe druckerei vorlage plugin)
         - wache.js pretool       # node "${CLAUDE_PLUGIN_ROOT}/scripts/wache.js" pretool; Exit 2 blockiert und zeigt stderr
 # Durchsetzung einer Regel: dieselbe Regel bekommt enforce: hook und enforced_by: scripts/wache.js

@@ -135,7 +135,7 @@ def load_plugin(manifest: Source, report: Report) -> ComponentPlugin:
         if not base.is_dir():
             report.error(manifest.name, line_of(manifest.data["assets"], i), f"Asset-Quelle {asset['from']} fehlt")
             continue
-        for f in sorted(p for p in base.rglob("*") if p.is_file()):
+        for f in sorted(p for p in base.rglob("*") if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"):
             relp = f.relative_to(base).as_posix()
             cp.assets[relp if asset["to"] == "." else f"{asset['to']}/{relp}"] = f
     return cp
@@ -240,7 +240,9 @@ def check_plugin(cp: ComponentPlugin, rules: dict, terms_avoid: dict, report: Re
     env = jinja_env()
     env.globals["partial"] = lambda name: render_partial(cp, env, name)
     for c in cp.components:
-        for i, row in enumerate(c.body.split("\n")):
+        # Text in <% raw %> … <% endraw %> ist wortgleicher Inhalt, etwa eine Anleitung, die die Baustein-Syntax erklärt.
+        scan = re.sub(r"<% raw %>.*?<% endraw %>", lambda m: "\n" * m.group(0).count("\n"), c.body, flags=re.S)
+        for i, row in enumerate(scan.split("\n")):
             for name in PARTIAL_RE.findall(row):
                 if name not in cp.partials:
                     report.error(c.src.name, c.body_line + i, f"Partial „{name}“ nicht gefunden (partials/{name}.md)")
@@ -573,7 +575,8 @@ def check_equivalence(cp: ComponentPlugin, report: Report) -> tuple[int, int]:
         return 0, 0
     allowed = load_changelog(cp, report)
     base = (ROOT / ref).resolve()
-    existing = {p.relative_to(base).as_posix(): p for p in base.rglob("*") if p.is_file()}
+    existing = {p.relative_to(base).as_posix(): p for p in base.rglob("*")
+                if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc" and p.name != ".DS_Store"}
     ignore = cp.manifest.data.get("equivalence_ignore", [])
     differing: set = set()
 
@@ -609,7 +612,8 @@ def check_equivalence(cp: ComponentPlugin, report: Report) -> tuple[int, int]:
     return same, len(differing)
 
 
-STAND_MARK = "# --- Abgenommener Stand je geänderter Datei (sha256, erzeugt mit tools/build.py --accept) ---"
+STAND_PREFIX = "# --- Abgenommener Stand"  # Erkennung am Anfang: ältere Protokolle tragen einen anderen Wortlaut dahinter
+STAND_MARK = STAND_PREFIX + " je geänderter Datei (sha256, erzeugt mit druckerei abnehmen) ---"
 ACCEPT = "--accept" in sys.argv
 
 
@@ -626,16 +630,16 @@ def check_fingerprints(cp: ComponentPlugin, paths: set, ignore, report: Report) 
     current = {p: fingerprint(p, cp.files[p], ignore) for p in sorted(paths) if p in cp.files}
     if ACCEPT:
         text = cp.changelog.path.read_text(encoding="utf-8")
-        text = text.split(STAND_MARK)[0].rstrip("\n") + "\n\n" + STAND_MARK + "\nstand:\n"
+        text = text.split(STAND_PREFIX)[0].rstrip("\n") + "\n\n" + STAND_MARK + "\nstand:\n"
         text += "".join(f"  {p}: {h}\n" for p, h in current.items())
         cp.changelog.path.write_text(text, encoding="utf-8")
         return
     for p, h in current.items():
         if stand.get(p) != h:
             report.error(f"{cp.dir}/{p}", 1, f"Abgleich: weicht vom abgenommenen Stand im Änderungsprotokoll ab ({stand.get(p) or 'kein Stand'} → {h}); "
-                                              "Änderung prüfen, dann python3 tools/build.py --accept")
+                                              "Änderung prüfen, dann druckerei abnehmen")
     for p in sorted(set(stand) - set(current)):
-        report.error(cp.changelog.name, 1, f"stand: {p} ist nicht mehr geändert; python3 tools/build.py --accept")
+        report.error(cp.changelog.name, 1, f"stand: {p} ist nicht mehr geändert; druckerei abnehmen")
 
 
 def graph_report(cp: ComponentPlugin) -> str:
@@ -645,7 +649,7 @@ def graph_report(cp: ComponentPlugin) -> str:
         fm = fm_of(c)
         if c.src.data["kind"] in ("skill", "agent"):
             kinds[fm["name"]] = (c.src.data["kind"], c.src.data.get("role") or c.src.data.get("type"), c.src.data.get("stage", ""))
-    lines = [f"<!-- {HEADER} Erzeugt von tools/build.py aus src/forge. -->", "", f"# {cp.name}: Aufrufgraph", "",
+    lines = [f"<!-- {HEADER} Erzeugt von der Plugin-Druckerei aus {cp.manifest.data['source']}. -->", "", f"# {cp.name}: Aufrufgraph", "",
              f"Kanten entstehen aus den Verweisen `{cp.manifest.data.get('verweis_praefix', cp.name)}:<name>` im Text und aus `etappen.yaml`. "
              "Der Build bricht ab, wenn ein Verweis auf keinen Skill oder Agent zeigt.", "", "```mermaid", "flowchart LR"]
     def node(n):

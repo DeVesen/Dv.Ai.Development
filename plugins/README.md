@@ -12,6 +12,7 @@ Claude-Code-Plugins dieses Repositories. Ein Plugin bündelt **Skills** (Wissen 
 | [`dv-craft`](craft/README.md) | 1.0.1 | Software-Design-Skills: Clean Code, Architekturstile, Modulith, Testing |
 | [`dv-working-capturing`](working-capturing/README.md) | 1.0.0 | Projektwissen festhalten: Glossar, Modul- und Feature-Profile |
 | [`dv-kickoff`](kickoff/README.md) | 0.2.0 | Projekt-Kickoff: Brief, Architekturentwurf, Orientierung für Agenten |
+| [`dv-plugin-druckerei`](plugin-druckerei/README.md) | 0.1.0 | Plugins aus Quellen drucken: Bausteine einordnen und ausfüllen, Try-Deploy und Deploy mit Version |
 | [`dv-toolbelt`](toolbelt/README.md) | 0.1.0 | Werkzeug-Skills: CLAUDE.md prüfen, Skills schreiben und validieren, Prozess-Retrospektive, Harness prüfen und Umbau planen |
 | [`dv-workitems`](workitems/README.md) | 0.1.0 | Workitems spezifizieren und anlegen: Anforderung schneiden, Story schreiben, Azure DevOps pflegen |
 

@@ -19,7 +19,9 @@ function runPython(script, args, options = {}) {
   const python = findPython();
   if (!python) return { status: null, missing: true, stdout: '', stderr: 'Python 3.10 oder neuer nicht gefunden (python3, python oder py -3).' };
   const [cmd, pre] = python;
-  return spawnSync(cmd, [...pre, script, ...args], { encoding: 'utf8', ...options });
+  // Kein __pycache__ in Plugin- und Projektordnern: Er landete sonst im Abgleich und in Übernahmen.
+  const env = { ...process.env, PYTHONDONTWRITEBYTECODE: '1', ...(options.env ?? {}) };
+  return spawnSync(cmd, [...pre, script, ...args], { encoding: 'utf8', ...options, env });
 }
 
 module.exports = { findPython, runPython };

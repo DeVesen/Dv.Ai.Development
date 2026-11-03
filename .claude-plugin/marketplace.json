@@ -25,6 +25,10 @@
       "source": "./plugins/kickoff"
     },
     {
+      "name": "dv-plugin-druckerei",
+      "source": "./plugins/plugin-druckerei"
+    },
+    {
       "name": "dv-toolbelt",
       "source": "./plugins/toolbelt"
     },

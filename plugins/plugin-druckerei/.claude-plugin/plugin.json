@@ -1,0 +1,8 @@
+{
+  "name": "dv-plugin-druckerei",
+  "version": "0.1.0",
+  "description": "Plugins aus Quellen drucken: Bausteine einordnen und ausfüllen, Try-Deploy und Deploy mit Version",
+  "author": {
+    "name": "DeVesen"
+  }
+}

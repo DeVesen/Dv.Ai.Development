@@ -24,9 +24,9 @@ echo "dist/ entspricht dem eingecheckten Stand."
 
 echo "== 3/4 claude plugin validate --strict"
 if command -v claude >/dev/null 2>&1; then
-  claude plugin validate --strict dist | grep -E '^(√|×) '
+  claude plugin validate --strict dist | grep -E '^(√|×) Validation'
   for plugin in dist/*/; do
-    claude plugin validate --strict "$plugin" | grep -E '^(√|×) '
+    claude plugin validate --strict "$plugin" | grep -E '^(√|×) Validation'
   done
 else
   echo "HINWEIS: claude CLI nicht verfügbar, Validierung übersprungen." >&2

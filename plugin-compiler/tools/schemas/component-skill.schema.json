@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "component-skill",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "source",
+    "role",
+    "model_invocation",
+    "frontmatter"
+  ],
+  "properties": {
+    "kind": {
+      "const": "skill"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "role": {
+      "enum": [
+        "startbefehl",
+        "intern",
+        "werkzeug"
+      ]
+    },
+    "model_invocation": {
+      "enum": [
+        "allowed",
+        "disabled"
+      ]
+    },
+    "frontmatter": {
+      "type": "object",
+      "required": [
+        "name",
+        "description"
+      ],
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "folded"
+            ],
+            "properties": {
+              "folded": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        ]
+      },
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]{1,64}$"
+        }
+      },
+      "not": {
+        "required": [
+          "disable-model-invocation"
+        ]
+      }
+    }
+  }
+}

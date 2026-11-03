@@ -1,0 +1,27 @@
+{
+  "description": "GENERIERT - nicht editieren. Gates aus plugin-compiler/src (Regeln mit enforce: hook).",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/gate-grill.sh\""
+          },
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/gate-spec-review.sh\""
+          },
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/gate-plan.sh\""
+          },
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/gate-plan-review.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

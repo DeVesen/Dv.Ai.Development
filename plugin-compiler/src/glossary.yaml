@@ -2,9 +2,10 @@
 # `avoid` listet Wörter, die im Quelltext und in der Ausgabe nicht vorkommen dürfen (wie CONTEXT.md „Nicht verwenden“).
 terms:
   - term: Etappe
-    definition: Ein Schritt des Ablaufs mit eigenem Eingang, eigenem Artefakt und eigenem Gate (Spec, Grill, Spec-Review, Plan, Plan-Review).
+    definition: 'Ein Schritt der Session-Kette mit eigener Session und festem Modell: Whiteboarding, Grill, Spec-Review, Spec-Nacharbeit, Planning, Plan-Review, Plan-Nacharbeit, Umsetzung, Abschluss. Nicht die Stufe eines Ketten-Eintrags (`spec`, `plan`, `implementation`).'
     avoid: [Phase, Phasen]
-    source: CONTEXT.md (Etappe)
+    avoid_context: [Stufe (für Kettenschritte)]
+    source: "CONTEXT.md. TODO(CONTEXT.md): Der angular-Prototyp nutzt Etappe für seine fünf Schritte ohne Session-Kette."
   - term: Spec
     definition: Funktionale Beschreibung eines Vorhabens als `spec.md`, WAS statt WIE, mit festen Abschnitten von Kopf bis `## Entscheidungen`.
     source: forge/skills/spec-whiteboarding/references/spec-format.md
@@ -37,7 +38,6 @@ terms:
     source: forge/skills/spec-whiteboarding/references/grill-rounds.md (Abbruch-Regel)
   - term: Reviewer
     definition: Sub-Agent, der ein Artefakt in frischem Kontext prüft und Findings meldet, ohne es zu ändern.
-    avoid: [Review-Loop]
     source: forge/shared/review-flow/flow.md; forge/agents/spec-review-*.md
   - term: Finding
     definition: Befund eines Reviewers an genau einer Stelle, mit wörtlichem Zitat, Kategorie, Konsequenz und Begründung.
@@ -60,3 +60,56 @@ terms:
   - term: Planungs-Skill
     definition: Skill, dessen Kernregeln das Plan-Writing unter Global Constraints übernimmt; in dv-forge aus `forge-config.js get Planungs-Skills`, hier aus dem Profil des Plugins.
     source: forge/skills/plan-writing/references/context-reading.md (Planungs-Skills)
+
+  # --- Begriffe von dv-forge, wörtlich aus CONTEXT.md (Repo-Wurzel). avoid wird mechanisch geprüft,
+  # avoid_context braucht Urteil (Bedeutung hängt vom Satz ab) und wird nur dokumentiert.
+  - term: Ketten-Eintrag
+    definition: Vermerk je Slug, welcher Orchestrator zuletzt Spec, Plan oder Umsetzung erzeugt oder geprüft hat, mit dessen Werten (Spec, Plan, Workitem, Worktree, Branch). Spätere Berichte zu diesem Slug empfehlen daraus den nächsten Orchestrator-Schritt.
+    avoid_context: [Kette (allein für den Vermerk)]
+    source: CONTEXT.md
+  - term: Followup-Runde
+    definition: Ein `review-followup`-Lauf innerhalb einer Review-Schleife oder eines Orchestrator-Laufs; höchstens zwei je Lauf.
+    avoid: [zweiter Followup, Nachrunde]
+    source: CONTEXT.md
+  - term: Review-Schleife
+    definition: 'Ablauf einer Review-Etappe (Spec-Review, Plan-Review): ein Review, danach so viele Followup-Runden, wie das Review anbietet, höchstens zwei, bis zum Ende der Etappe.'
+    avoid: [Zwischenebene, Review-Loop, Review-Lauf]
+    source: CONTEXT.md
+  - term: Session-Kette
+    definition: Lauf von der Idee bis zum gepushten Feature-Branch, in dem jede Etappe in einer eigenen Session läuft und eine Leit-Session sie verbindet.
+    avoid: [Orchestrator-Kette]
+    avoid_context: [Kette (allein)]
+    source: CONTEXT.md
+  - term: Ketten-Stand
+    definition: 'Einziger dauerhafter Stand einer Session-Kette je Slug: Etappen mit Ergebnis, Hashes und Commits, offene Punkte, Haltepunkt und Freigabe, Ablage der Etappen-Fakten. Die Leit-Session schreibt ihn; er löst den Ketten-Eintrag ab.'
+    avoid: [Session-Kette-Stand]
+    avoid_context: [Kette (allein), Zustand]
+    source: CONTEXT.md
+  - term: Etappen-Session
+    definition: Session, in der genau eine Etappe läuft; sie meldet sich über ihr Turn-Ende bei der Leit-Session, ein `final` zusätzlich per Nachricht an die Leit-Session.
+    avoid: [Kind-Session, Stufen-Session]
+    source: CONTEXT.md
+  - term: Leit-Session
+    definition: 'Session, die eine Session-Kette führt: Etappen-Sessions anstoßen, ihre Ergebnisse gegen git prüfen, an Haltepunkten die Entscheidung des Menschen einholen.'
+    avoid: [Haupt-Session, Orchestrator-Session]
+    source: CONTEXT.md
+  - term: Einstieg
+    definition: Etappe, mit der eine Session-Kette beginnt, gewählt per Codewort beim Aufruf; ohne Codewort ist es das Whiteboarding.
+    avoid: [Einstiegspunkt]
+    source: CONTEXT.md
+  - term: Startbefehl
+    definition: Der Befehl `/dv-forge:session-orchestrator`, mit dem ein Mensch dv-forge betritt; der einzige Befehl für die Kette, auch mit fertiger Spec oder fertigem Plan.
+    avoid_context: [Einstieg (für den Befehl)]
+    source: CONTEXT.md
+  - term: Unter-Skill
+    definition: Skill, den nur eine Etappe oder die Leit-Session startet. Von Hand getippt wird er ohne Debug-Schalter abgelehnt. Werkzeuge ohne Etappe (`init`, `commit-message`, `domain-modeling`, `merge-conflict-resolution`) sind keine Unter-Skills.
+    avoid: [interner Skill, Stufen-Skill]
+    source: CONTEXT.md
+  - term: Debug-Schalter
+    definition: Argument `--debug`, mit dem ein Mensch einen Unter-Skill von Hand startet; der Lauf entspricht dem Normallauf, ohne Garantie für den Normalweg.
+    avoid: [Notausgang-Flag]
+    source: CONTEXT.md
+  - term: Haltepunkt
+    definition: Fest eingeplante Stelle der Session-Kette, an der die Leit-Session wartet, bis der Mensch entscheidet, wie es weitergeht.
+    avoid_context: [Gate (für die Entscheidung des Menschen), Pause]
+    source: CONTEXT.md

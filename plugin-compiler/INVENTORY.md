@@ -92,3 +92,35 @@ Als **geteilter Kern** im Prototyp eignet sich daher der forge-Workflow selbst (
 | Geteilte Prosa (`dialog-rules`, `review-flow/flow`, `review-loop/*`) | 5 | |
 | **Summe Markdown** | **34** | **1731** |
 | dazu Skripte (prepare, review-flow, aggregate, spec-lint, plan-tasks, …) | > 40 | |
+
+## 6. Befunde aus der Komplettmigration von dv-forge
+
+Der Compiler prüft jetzt den ganzen forge-Text. Was er im Bestand findet, meldet er als Warnung, weil die Ausgabe wortgleich bleiben muss:
+
+| # | Befund | Fundstelle |
+|---|---|---|
+| m1 | **Frontmatter ist kein gültiges YAML:** `argument-hint: [grill\|spec-review\|…] [pfade] [workitem-nr]` beginnt mit `[` und wird als Liste gelesen, danach folgt Text. Ein strenger YAML-Parser lehnt die Frontmatter ab. | `skills/session-orchestrator/SKILL.md`, `skills/spec-whiteboarding/SKILL.md` |
+| m2 | **Reviewer ohne `tools`-Zeile** erbt alle Werkzeuge, auch Edit und Bash. | `agents/implementation-review-tests.md` |
+| m3 | **Reviewer mit Bash** (für Tests und `git diff`) sind nicht read-only. | `agents/implementation-{final,re,task}-reviewer.md` |
+| m4 | **Kein `author`** in `plugin.json`; `claude plugin validate --strict` scheitert daran schon beim Bestand. Die erzeugte Fassung ergänzt ihn als deklarierte Abweichung. | `.claude-plugin/plugin.json` |
+| m5 | **„Review-Loop“** steht im Text, obwohl das Glossar „Review-Schleife“ verlangt. | `shared/review-loop/loop.md`, Zeile 1 des Bodys |
+| m6 | **„NEVER“ in Großbuchstaben** ohne Begründung in derselben Zeile. | `skills/commit-message/SKILL.md` |
+| m7 | **26 Regeln der Regeldateien ohne Begründung:** Von 26 Regeln in `orchestrator-rules.md` und `dialog-rules.md` nennen nur 4 einen Grund. | `src/forge/rules/*.yaml` (`why: TODO(…)`) |
+| m8 | **Doppelte Absätze:** 22 Blöcke stehen in 83 Vorkommen wortgleich in mehreren Dateien, jetzt je einmal in `src/forge/partials/`. Die fast gleichen Varianten (`## Ziel`, `## Kategorie`, `fehlendes-verhalten`) bleiben getrennt; sie unterscheiden sich wirklich (INVENTORY a3, a6). | 17 Agents, 4 Skills |
+
+Gegen die Anforderungen des Prototyps verstößt forge bewusst an zwei Stellen, und der Compiler setzt dort forges Regel durch, nicht die des Prototyps:
+- **`disable-model-invocation`** steht nur bei `init`. Die Orchestratoren rufen Unter-Skills über das Skill-Werkzeug auf. Mit `true` überall bräche die Session-Kette. Im Manifest steht deshalb je Skill ausdrücklich `model_invocation: allowed|disabled`.
+- **Reviewer schreiben ihr Ergebnis selbst** (`tools: Read, Write`) als JSON-Datei, die Skripte auswerten. Read-only-Reviewer wie im Prototyp hätten keinen Weg für das Ergebnis.
+
+## 7. Vergleich bisheriger Aufbau und neues Schema (dv-forge)
+
+| | Bestand `plugins/forge` | `src/forge` + Manifest |
+|---|---|---|
+| Prosa-Dateien | 70 Markdown-Dateien (Skills, References, Agents, Shared, README) | 68 Quellen + 22 Partials + 2 Regel-YAML + `etappen.yaml` |
+| Wortgleiche Blöcke | 83 Vorkommen von 22 Blöcken | je 1 |
+| Regeln der Orchestratoren und Dialog-Regeln | Markdown-Listen | 26 Regeln mit ID, Begründung, Durchsetzung (`text`, `script`, `hook` + Skript) |
+| Etappen der Session-Kette | nur im Code (`session-chain-*.js`) | `etappen.yaml`, beim Build gegen den Code geprüft |
+| Hooks | `hooks.json` von Hand | Daten im Manifest; jedes Skript wird auf Existenz geprüft |
+| Verweise `dv-forge:<name>`, `scripts/…`, `shared/…`, `references/…` | ungeprüft | jeder Verweis aufgelöst, sonst Abbruch mit Datei und Zeile |
+| Code (Skripte, Tests, Evals) | 276 Dateien | unverändert als Assets |
+| Nachweis | eigene Testsuite | Äquivalenz 348/348 Dateien + dieselbe Testsuite gegen `dist/forge` grün |

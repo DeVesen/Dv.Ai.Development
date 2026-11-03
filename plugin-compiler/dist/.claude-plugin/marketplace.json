@@ -1,0 +1,23 @@
+{
+  "name": "dv-plugin-compiler-demo",
+  "owner": {
+    "name": "DeVesen"
+  },
+  "metadata": {
+    "description": "GENERIERT - nicht editieren. Prototyp aus plugin-compiler/src: dv-forge vollständig, angular aus dem gemeinsamen Kern."
+  },
+  "plugins": [
+    {
+      "name": "angular",
+      "source": "./angular",
+      "description": "Spezifizieren und Planen für Angular-Projekte, gemeinsamer Kern plus Angular-Toolchain-Regeln (Prototyp aus plugin-compiler).",
+      "version": "0.1.0"
+    },
+    {
+      "name": "dv-forge",
+      "source": "./forge",
+      "description": "Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops",
+      "version": "0.33.0"
+    }
+  ]
+}

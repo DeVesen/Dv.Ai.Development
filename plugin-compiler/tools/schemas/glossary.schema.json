@@ -37,6 +37,13 @@
               "type": "string",
               "minLength": 1
             }
+          },
+          "avoid_context": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
           }
         }
       }

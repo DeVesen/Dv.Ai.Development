@@ -1,0 +1,195 @@
+'use strict';
+
+// Baut den Abschlussbericht des Implementierungs-Reviews und die gefilterte Sicherung (abschluss/) aus dem Arbeitsbereich.
+
+const path = require('node:path');
+const { reworkHeading, reworkLine, SEVERITY_ICON } = require('../aggregate-findings');
+const { reviewerLabel } = require('./reviewer-names');
+const { topicOf, fallbackDescription } = require('./halt-text');
+const { scoutTexts, scoutBlocks, checkScout } = require('./scout-check');
+const { renderImplementationReport, summaryOf } = require('./implementation-report-text');
+const { placeKey } = require('./places');
+const { writeClosingFiles } = require('./closing');
+const { FlowError, readText, readLines, readJson } = require('./flow-files');
+const { appendMetric, implementationReviewRecord } = require('./metrics');
+const { storeReviewReport } = require('./session-chain-ablage');
+const { reviewStatusLine } = require('./review-status');
+const { REPORT_FORMAT } = require('./report-format');
+const { ablageOf } = require('./report-ablage');
+
+const REVIEW = 'implementation-review';
+const CANONICAL = ['acceptance', 'plan-fidelity', 'design', 'tests', 'risks'];
+// Kategorien des Akzeptanz-Reviewers, die „AC ohne beweisenden Test“ bedeuten (implementation-categories.js: ac-unbelegt 🔴, ac-ohne-test 🟡).
+const AC_WITHOUT_TEST = new Set(['ac-ohne-test', 'ac-unbelegt']);
+const TEST_PATHS = [/(^|[\\/])(tests?|__tests__)[\\/]/i, /[._-](test|spec)s?\./i, /[a-z0-9]Tests?\.[a-z0-9]+$/];
+const DOCUMENT_FILE = /\.(md|markdown|txt|rst|adoc)$/i;
+const ITEM_TEXTS = ['reviewer', 'severity', 'location', 'quote', 'consequence', 'rationale'];
+const SCOUT_NOTE = 'Der Scout hat keine gültigen Vorschläge geliefert; Beschreibungen stammen aus den Prüfergebnissen.';
+
+function orderOf(name) {
+  const index = CANONICAL.indexOf(name);
+  return index === -1 ? CANONICAL.length : index;
+}
+
+function isTextList(list) {
+  return Array.isArray(list) && list.every((entry) => typeof entry === 'string');
+}
+
+function isItem(item) {
+  return ITEM_TEXTS.every((key) => typeof item?.[key] === 'string');
+}
+
+function isGroup(group) {
+  return typeof group?.location === 'string' && Object.hasOwn(SEVERITY_ICON, group.severity) && isTextList(group.reviewers)
+    && Array.isArray(group.items) && group.items.length > 0 && group.items.every(isItem);
+}
+
+// ergebnis.json schreibt aggregate-findings.js; eine andere Form bricht wie eine fehlende Datei mit Exit 1 ab.
+function readResult(dir) {
+  const file = path.join(dir, 'ergebnis.json');
+  const result = readJson(file);
+  const lists = isTextList(result?.reviewers) && isTextList(result.failed) && Array.isArray(result.groups);
+  if (!lists || !result.groups.every(isGroup)) throw new FlowError(`ungültiges Ergebnis: ${file}`);
+  return result;
+}
+
+// Status und Zahl der Hindernisse stammen aus derselben Liste offener Gruppen wie der Bericht.
+function statusOf(result, openRed) {
+  if (result.failed.length > 0) return `unvollständig nach Review 1, ausgefallen: ${result.failed.join(', ')}`;
+  return openRed === 0 ? 'sauber nach Review 1' : `geprüft, ${openRed} × 🔴 offen`;
+}
+
+function changedFiles(packageText) {
+  const lines = packageText.replace(/\r\n/g, '\n').split('\n');
+  const start = lines.indexOf('## Dateien');
+  const end = lines.indexOf('## Diff');
+  if (start === -1) return [];
+  return lines.slice(start + 1, end === -1 ? undefined : end).filter((line) => line.includes(' | ')).map((line) => line.split(' | ')[0].trim());
+}
+
+// Näherung nach Pfad-Muster; `latest.js` endet zwar auf "test", ist aber kein Test; Dokumente zählen nie.
+function isTestFile(file) {
+  return !DOCUMENT_FILE.test(file) && TEST_PATHS.some((pattern) => pattern.test(file));
+}
+
+// Produktivcode: weder Test noch Dokument.
+function isProductionFile(file) {
+  return !DOCUMENT_FILE.test(file) && !isTestFile(file);
+}
+
+function reviewerLines(result) {
+  const items = result.groups.flatMap((group) => group.items);
+  const count = (name, severity) => items.filter((item) => item.reviewer === name && item.severity === severity).length;
+  const label = (name) => reviewerLabel(REVIEW, name);
+  const delivered = result.reviewers.map((name) => ({ order: orderOf(name), name: label(name), red: count(name, 'red'), yellow: count(name, 'yellow'), failed: false }));
+  const failed = result.failed.map((name) => ({ order: orderOf(name), name: label(name), red: 0, yellow: 0, failed: true }));
+  return [...delivered, ...failed].sort((a, b) => a.order - b.order).map(({ order, ...line }) => line);
+}
+
+function scoutKey(group) {
+  return `${SEVERITY_ICON[group.severity]} ${group.location}`;
+}
+
+// Nur bei offenen Gruppen wird der Scout gelesen; gültig ist er nur als Ganzes (`SCOUT ok`), sonst gilt er als fehlend.
+function scoutState(options, open) {
+  const empty = { valid: false, texts: new Map(), blocks: new Map() };
+  if (open.length === 0 || checkScout(options.dir, REVIEW) !== 'SCOUT ok') return empty;
+  const lines = readLines(path.join(options.dir, 'scout.md'));
+  return { valid: true, texts: new Map(scoutTexts(lines).map((entry) => [`${entry.severity} ${entry.location}`, entry])), blocks: scoutBlocks(lines) };
+}
+
+// Ein Scout-Eintrag zählt nur mit Text und Block: dieselbe Bedingung entscheidet über Beschreibung, `hasProposal`, abschluss/scout.md und den Scout-Hinweis.
+function scoutedOf(group, scout) {
+  const key = scoutKey(group);
+  return scout.texts.has(key) && scout.blocks.has(key) ? { texts: scout.texts.get(key), block: scout.blocks.get(key) } : null;
+}
+
+function anglesOf(group) {
+  return group.reviewers.map((name) => reviewerLabel(REVIEW, name)).join(', ');
+}
+
+// 🟢 stehen nur im Abschlussbericht eines Orchestrators; sie haben nie einen Vorschlag.
+function greenEntry(group) {
+  return {
+    key: placeKey(group.location), color: 'green', title: group.location, description: fallbackDescription(group.items[0].consequence),
+    recommendation: null, angles: anglesOf(group), hasProposal: false,
+  };
+}
+
+function openEntry(group, scout) {
+  const scouted = scoutedOf(group, scout);
+  const angles = anglesOf(group);
+  if (scouted) {
+    const { title, description, recommendation } = scouted.texts;
+    return { key: placeKey(group.location), color: group.severity, title, description, recommendation, angles, hasProposal: true };
+  }
+  return { key: placeKey(group.location), color: group.severity, title: group.location, description: fallbackDescription(group.items[0].consequence), recommendation: null, angles, hasProposal: false };
+}
+
+function aggregateBlock(group) {
+  return [reworkHeading(SEVERITY_ICON[group.severity], group.location, group.reviewers), ...group.items.map((item) => reworkLine(item.reviewer, item.severity, item))].join('\n');
+}
+
+function writeClosing(options, open, scout) {
+  const scouted = open.map((group) => scoutedOf(group, scout)).filter(Boolean).map(({ block }) => block);
+  writeClosingFiles(options.workspace, open.map(aggregateBlock), scouted);
+}
+
+function notesOf(options, result, open, scout) {
+  const file = path.join(options.workspace, 'hinweise.json');
+  const prepared = readJson(file, []);
+  if (!isTextList(prepared)) throw new FlowError(`keine Liste von Texten: ${file}`);
+  const failed = result.failed.map((name) => `Der Prüfer für ${reviewerLabel(REVIEW, name)} ist ausgefallen. Dieser Blickwinkel fehlt in der Prüfung.`);
+  const fallback = open.some((group) => !scoutedOf(group, scout));
+  return [...prepared, ...failed, ...(fallback ? [SCOUT_NOTE] : [])];
+}
+
+// ACs, deren Gruppe ein Akzeptanz-Finding ohne beweisenden Test trägt; Stelle wie in der Gruppe (`AC-<nn>`).
+function acsWithoutTest(result) {
+  return [...new Set(result.groups.filter((group) => group.items.some((item) => item.reviewer === 'acceptance' && AC_WITHOUT_TEST.has(item.category))).map((group) => group.location))];
+}
+
+function reportInput(options, result, open, scout) {
+  const files = changedFiles(readText(options.packageFile));
+  return {
+    plan: options.planArg, topic: topicOf(readText(options.plan)), openRed: open.filter((group) => group.severity === 'red').length,
+    reviewerCount: result.reviewers.length + result.failed.length, range: `${options.range}..HEAD`,
+    fileCount: files.length, testCount: files.filter(isTestFile).length,
+    reviewerLines: reviewerLines(result), failedLabels: result.failed.map((name) => reviewerLabel(REVIEW, name)),
+    open: open.map((group) => openEntry(group, scout)), green: result.groups.filter((group) => group.severity === 'green').map(greenEntry),
+    acOhneTest: acsWithoutTest(result),
+    notes: notesOf(options, result, open, scout),
+  };
+}
+
+// Bericht (.md) und Bericht-Daten (.json) gehen in die Ablage der Etappe aus dem Arbeitsbereich; rückgegeben wird die Review-Statuszeile.
+// `FOLLOWUP ja`: mindestens eine offene Gruppe hat einen gesicherten Vorschlag, den `review-followup <P> alle` erreicht.
+function storeReport(options, input, status, text) {
+  const summary = summaryOf(input);
+  const followup = input.open.some((entry) => entry.hasProposal);
+  const stored = storeReviewReport({
+    target: ablageOf(options.workspace), followup: false, text,
+    data: {
+      format: REPORT_FORMAT, review: REVIEW, title: 'Implementierungs-Review', followup: false, status, ...summary, offersFollowup: followup,
+      plan: input.plan, topic: input.topic, openRed: input.openRed, failedLabels: input.failedLabels,
+      changes: [], decisions: [], questions: [], open: input.open, green: input.green, acOhneTest: input.acOhneTest, notes: input.notes,
+    },
+  });
+  return reviewStatusLine({ resultLine: summary.resultLine, followup, report: stored.md });
+}
+
+// `options`: dir (Rundenordner), workspace (W), plan (lesbare Plan-Datei), planArg (Pfad für die Befehle), range (Basis), packageFile.
+// Ausgabe: `ENDE <status>` und `STATUSZEILE <Review-Statuszeile>`.
+function buildReport(options) {
+  const result = readResult(options.dir);
+  const open = result.groups.filter((group) => group.severity !== 'green');
+  const scout = scoutState(options, open);
+  const input = reportInput(options, result, open, scout);
+  const text = renderImplementationReport(input);
+  const status = statusOf(result, input.openRed);
+  writeClosing(options, open, scout);
+  appendMetric(path.dirname(options.plan), 'reviews', implementationReviewRecord(options, result, status));
+  return [`ENDE ${status}`, `STATUSZEILE ${storeReport(options, input, status, text)}`].join('\n');
+}
+
+module.exports = { buildReport, changedFiles, isTestFile, isProductionFile };

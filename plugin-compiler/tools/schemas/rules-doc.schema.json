@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "rules-doc",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "doc",
+    "title",
+    "intro",
+    "sections"
+  ],
+  "properties": {
+    "doc": {
+      "type": "string",
+      "pattern": "^shared/[a-z0-9/-]+\\.md$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intro": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "heading",
+          "style"
+        ],
+        "properties": {
+          "heading": {
+            "type": "string",
+            "minLength": 1
+          },
+          "lead": {
+            "type": "string",
+            "minLength": 1
+          },
+          "style": {
+            "enum": [
+              "bullets",
+              "numbered",
+              "table"
+            ]
+          },
+          "rules": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "text",
+                "why",
+                "enforce",
+                "source"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^R-[0-9]{3}$"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "why": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "enforce": {
+                  "enum": [
+                    "text",
+                    "hook",
+                    "script"
+                  ]
+                },
+                "enforced_by": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "table": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "columns",
+              "separator",
+              "rows"
+            ],
+            "properties": {
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "separator": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rows": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,3 @@
+# Die Repo-.gitignore schließt jeden Ordner dist/ aus; die Ausgabe des Compilers wird aber eingecheckt,
+# damit smoke.sh sie mit git diff gegen den Build prüfen kann.
+!dist/

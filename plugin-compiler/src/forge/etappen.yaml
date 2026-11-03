@@ -1,0 +1,78 @@
+# Etappen der Session-Kette. Der Build gleicht jede Angabe mit dem Code ab:
+#   Reihenfolge   scripts/lib/session-chain-store.js   (ETAPPEN)
+#   modell, titel, pflicht, skill   scripts/lib/session-chain-brief.js (ETAPPEN_BRIEFS)
+#   weiter        scripts/lib/session-chain-decide.js  (NEXT)
+# Weicht der Code ab, bricht der Build mit Datei und Zeile ab.
+# Die Leit-Session startet jede Etappe über session-chain.js brief in einer eigenen Session.
+gestartet_von: session-orchestrator
+etappen:
+  - id: whiteboarding
+    titel: Whiteboarding
+    modell: sonnet
+    pflicht: []
+    skill: spec-whiteboarding-with-docs
+    weiter: {start: grill}
+    artefakt: spec
+  - id: grill
+    titel: Grill
+    modell: sonnet
+    pflicht: [spec]
+    skill: spec-grilling
+    weiter: {start: spec-review}
+    artefakt: spec
+  - id: spec-review
+    titel: Spec-Review
+    modell: sonnet
+    pflicht: [spec]
+    skill: spec-review-orchestrator
+    weiter: {halt: spec}
+    artefakt: spec
+  - id: spec-nacharbeit
+    titel: Spec-Nacharbeit
+    modell: sonnet
+    pflicht: [spec, quelle]
+    skill: null   # „Kein Skill“: der Brief selbst ist der Auftrag
+    weiter: {start: spec-review}
+    artefakt: spec
+  - id: planning
+    titel: Planning
+    modell: opus
+    pflicht: [spec]
+    skill: plan-orchestrator
+    weiter: {halt: go}
+    artefakt: plan
+  - id: plan-review
+    titel: Plan-Review
+    modell: sonnet
+    pflicht: [plan, spec]
+    skill: plan-review
+    weiter: {halt: go}
+    artefakt: plan
+  - id: plan-nacharbeit
+    titel: Plan-Nacharbeit
+    modell: opus
+    pflicht: [plan, spec, quelle]
+    skill: null
+    weiter: {start: plan-review}
+    artefakt: plan
+  - id: umsetzung
+    titel: Umsetzung
+    modell: sonnet
+    pflicht: [plan, spec, basis]
+    skill: implementation-orchestrator
+    weiter: {start: abschluss}
+    artefakt: umsetzungsbericht
+  - id: abschluss
+    titel: Abschluss
+    modell: sonnet
+    pflicht: [worktree]
+    skill: finish-work
+    weiter: {ende: true}
+    artefakt: branch
+haltepunkte:
+  - id: spec
+    nach: spec-review
+    wahl: {bereit: planning, nacharbeit: spec-nacharbeit}
+  - id: go
+    nach: [planning, plan-review]
+    wahl: {bereit: umsetzung, nacharbeit: plan-nacharbeit}

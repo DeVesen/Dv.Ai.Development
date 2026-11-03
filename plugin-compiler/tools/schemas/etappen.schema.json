@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "etappen",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "etappen",
+    "haltepunkte",
+    "gestartet_von"
+  ],
+  "properties": {
+    "etappen": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "titel",
+          "modell",
+          "pflicht",
+          "skill",
+          "weiter",
+          "artefakt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "titel": {
+            "type": "string",
+            "minLength": 1
+          },
+          "modell": {
+            "enum": [
+              "sonnet",
+              "opus"
+            ]
+          },
+          "pflicht": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          },
+          "skill": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weiter": {
+            "type": "object",
+            "minProperties": 1,
+            "maxProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+              "start": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "halt": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "ende": {
+                "const": true
+              }
+            }
+          },
+          "artefakt": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          }
+        }
+      }
+    },
+    "haltepunkte": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "nach",
+          "wahl"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "nach": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]*$"
+                }
+              }
+            ]
+          },
+          "wahl": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            }
+          }
+        }
+      }
+    },
+    "gestartet_von": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+# {{ doc.title }}
+
+{{ doc.intro }}
+{% for s in doc.sections %}
+
+## {{ s.heading }}
+{% if s.lead is defined %}
+{{ s.lead }}
+{% endif %}
+{% if s.style == "table" %}
+| {{ s.table.columns | join(" | ") }} |
+{{ s.table.separator }}
+{% for row in s.table.rows %}
+| {{ row | join(" | ") }} |
+{% endfor %}
+{% else %}
+{% for r in s.rules %}
+{% set lines = r.text.split("\n") %}
+{{ ("%d. " % loop.index) if s.style == "numbered" else "- " }}{{ lines[0] }}
+{% for cont in lines[1:] %}
+   {{ cont }}
+{% endfor %}
+{% endfor %}
+{% endif %}
+{% endfor %}

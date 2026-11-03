@@ -1,6 +1,6 @@
 # Lokaler Test-Deploy
 
-Ziel: die erzeugten Plugins `forge` und `angular` aus `plugin-compiler/dist/` lokal installieren und je Etappe einmal aufrufen. Alle Befehle laufen in einer Claude-Code-Session im Repo-Wurzelordner `Dv.Ai.Development`, auf dem Branch `exp/plugin-compiler`.
+Ziel: das vollständig aus `plugin-compiler/src` erzeugte `dv-forge` und den angular-Prototyp aus `plugin-compiler/dist/` lokal installieren und ausprobieren. Alle Befehle laufen im Repo-Wurzelordner `Dv.Ai.Development` auf dem Branch `exp/plugin-compiler`.
 
 ## 0. Bauen und prüfen
 
@@ -9,111 +9,89 @@ pip install -r plugin-compiler/requirements.txt   # pyyaml, jinja2, jsonschema
 plugin-compiler/tools/smoke.sh
 ```
 
-Erwartet: `build: 41 Dateien nach dist/ geschrieben; 2 Plugins, 27 geteilte Regeln, 5 plugin-spezifische, 11 Warnungen.`, danach `dist/ entspricht dem eingecheckten Stand.`, zweimal bzw. dreimal `√ Validation passed` und `smoke: ok`. Die 11 Warnungen sind die Regeln, deren Begründung in der Quelle fehlt (`TODO(…)`).
+Erwartet, in dieser Reihenfolge:
+
+```text
+== 1/4 build (enthält die Äquivalenzprüfung dist/forge ↔ plugins/forge)
+build: 369 Dateien nach dist/ geschrieben.
+  dv-forge: 68 Quellen, 22 Partials, 26 Regeln als Daten, 276 Assets; 348 Dateien wortgleich zum Bestand (ohne Kopfzeile).
+  angular: 5 Etappen, 27 geteilte Regeln, 3 eigene.
+  40 Warnungen.
+== 2/4 dist/ unverändert gegenüber git
+dist/ entspricht dem eingecheckten Stand.
+== 3/4 claude plugin validate --strict
+√ Validation passed        (Marketplace, angular, forge)
+== 4/4 forge-Testsuite gegen dist/forge
+# tests 2143 / # pass 2142 / # fail 0 / # skipped 1
+smoke: ok
+```
+
+Die 40 Warnungen sind Befunde im Bestand, kein Fehler des Builds: offene Begründungen bei Regeln, zwei ungültige YAML-Frontmatter, Reviewer mit Bash usw. Die Liste steht in INVENTORY.md, Abschnitt 6.
 
 ## 1. Installieren
 
+Das erzeugte Plugin heißt wie das bestehende `dv-forge`, weil Skripte, Hooks und Texte den Namen fest enthalten (`/dv-forge:…`, `<git-common-dir>/dv-forge/…`). Zwei aktive Plugins mit demselben Namen kollidieren. Deshalb zuerst das bestehende abschalten:
+
 ```text
+/plugin uninstall dv-forge@dv-ai-development
 /plugin marketplace add ./plugin-compiler/dist
-/plugin install forge@dv-plugin-compiler-demo
+/plugin install dv-forge@dv-plugin-compiler-demo
 /plugin install angular@dv-plugin-compiler-demo
 ```
 
-Danach Claude Code neu starten (oder `/reload-plugins`, falls vorhanden), damit Hooks und Agents geladen werden.
+Danach Claude Code neu starten, damit Hooks und Agents geladen werden.
 
-Prüfen: `/help` bzw. die Skill-Liste zeigt `/forge:spec`, `/forge:grill`, `/forge:spec-review`, `/forge:plan`, `/forge:plan-review`, `/forge:ablauf` und dieselben sechs für `/angular:`. `/agents` zeigt `forge:spec-review`, `forge:plan-review`, `angular:spec-review`, `angular:plan-review`.
+Prüfen:
+- Die Skill-Liste zeigt dieselben 19 `/dv-forge:…`-Skills wie bisher.
+- `/agents` zeigt 28 `dv-forge:…`-Agents.
+- Jede erzeugte Datei trägt nach dem Frontmatter die Zeile `<!--GENERIERT-nicht-editieren:src/forge/…-->`, z. B. `~/.claude/plugins/…/dv-forge/skills/spec-review/SKILL.md`.
 
-Hinweis: Das bestehende `dv-forge` und `dv-angular` aus dem Marketplace `dv-ai-development` stören nicht; ihre Befehle heißen `/dv-forge:…` und `/dv-angular:…`.
+## 2. dv-forge: Schritt für Schritt
 
-## 2. Testmaterial
+Erwartung überall: dasselbe Verhalten wie das bisherige dv-forge 0.33.0. Die Äquivalenzprüfung belegt, dass jeder Text wortgleich ist.
 
-Die forge-Golden-Sets liefern Specs und Pläne mit eingebauten, dokumentierten Mängeln (`plugins/forge/evals/*.json`):
+| # | Aufruf | Erwartung |
+|---|---|---|
+| 1 | `/dv-forge:init` in einem Testprojekt | Prüft Stolperfallen (`setup-check.js`), fragt die Schlüssel einzeln ab und schreibt `## dv-forge` in die Projekt-`CLAUDE.md`. Der Skill ist der einzige mit `disable-model-invocation: true`. |
+| 2 | `/dv-forge:spec-review docs/x/spec.md` ohne `--debug` | Der Hook `stage-guard.js` / `guard-orchestrator.js prompt` lehnt den getippten Unter-Skill ab und nennt den Startbefehl `/dv-forge:session-orchestrator`. |
+| 3 | `/dv-forge:spec-review docs/forge/2026-11-03-aufgabenliste/spec.md --debug` (Fixture unten) | Fünf Spec-Reviewer starten parallel (`dv-forge:spec-review-*`), danach Nacharbeit, Nachprüfer und Scout. Letzte Zeile: `Review abgeschlossen: … · FOLLOWUP … · Bericht: …`. Laut `plugins/forge/evals/spec-review-flawed.json` mindestens 🔴 an AC-01/AC-04 (Widerspruch), 🔴 an „Export“ (fehlendes Verhalten), 🟡 an AC-03 und AC-05. |
+| 4 | `/dv-forge:session-orchestrator` mit einer kleinen Idee, z. B. „Aufgabenliste als CSV exportieren“ | Die Leit-Session startet die Etappe Whiteboarding in einer eigenen Session (Modell Sonnet). Danach folgen Grill und Spec-Review, dann der Haltepunkt `spec` mit der Wahl Planning oder Spec-Nacharbeit. Danach Planning (Opus) und der Haltepunkt `go`. Ablauf und Modelle stehen in `src/forge/etappen.yaml`; der Build gleicht sie mit dem Code ab. |
+| 5 | Am Haltepunkt `go` „GO“ | Umsetzung über `implementation-orchestrator` (Implementer, Task-Reviewer, Implementierungs-Review), danach Abschluss mit `finish-work`. Gepusht wird erst nach deinem Ja. |
+
+Testmaterial für Schritt 3:
 
 ```bash
-mkdir -p docs/forge/2026-11-03-aufgabenliste docs/forge/2026-11-03-bestellung docs/forge/2026-11-03-bestellung-review
-cp plugins/forge/tests/fixtures/flawed-spec.md        docs/forge/2026-11-03-aufgabenliste/spec.md
-cp plugins/forge/tests/fixtures/plan-review/spec.md   docs/forge/2026-11-03-bestellung/spec.md
-cp plugins/forge/tests/fixtures/plan-review/spec.md   docs/forge/2026-11-03-bestellung-review/spec.md
-cp plugins/forge/tests/fixtures/plan-review/plan.md   docs/forge/2026-11-03-bestellung-review/plan.md
+mkdir -p docs/forge/2026-11-03-aufgabenliste
+cp plugins/forge/tests/fixtures/flawed-spec.md docs/forge/2026-11-03-aufgabenliste/spec.md
 ```
 
-Diese Dateien nach dem Test wieder löschen; sie gehören nicht in den Branch.
+Hinweis zu Schritt 4: Die Session-Kette startet Etappen über `mcp__ccd_session__start_session`. Das gibt es nur in der Claude-Desktop-App mit Sessions; in der reinen CLI bleibt Schritt 3 der Weg.
 
-## 3. Je Etappe ein Aufruf
-
-### Übersicht
+## 3. angular (Prototyp aus dem gemeinsamen Kern)
 
 | Aufruf | Erwartung |
 |---|---|
-| `/forge:ablauf` | Tabelle mit 5 Etappen, Befehl, Eingang, Artefakt, Gate; Profil `generic`. |
-| `/angular:ablauf` | Dieselbe Tabelle; Profil `angular` mit Planungs-Skills `dv-angular:toolchain`, `dv-angular:angular-testing`, `dv-angular:angular-project-layout`. |
-
-### Spec
-
-`/forge:spec Ich will die Aufgabenliste als CSV exportieren können.`
-
-Erwartet:
-- Zuerst höchstens die Rahmenfrage nach der Workitem-Nummer (nur wenn das Projekt Workitem-Nummern nutzt).
-- Dann eine Grill-Runde mit allen offenen Fragen auf einmal, je Frage `❓ **Q<n>** - **<Titel>**: …` und `➡️ <Empfehlung> · <Beleg-Tag> — <Grund>`; gibt es etwas selbst zu entscheiden, steht davor ein Block `Selbst entschieden:`.
-- Kein Blick in Code oder Git, kein Plan, kein Auswahldialog.
-- Erst bei leerer Frontier ein vollständiger Entwurf mit Titel und Slug; geschrieben wird erst nach deinem „ja“, nach `docs/forge/<datum>-<slug>/spec.md`.
-- Ende: genau Pfad und Branch, kein Commit, kein nächster Schritt.
-- forge: Ton per Du, kurz (R-101). angular: dieselbe Etappe ohne R-101 im Skill (`dist/angular/skills/spec/SKILL.md` vergleichen).
-- Kein Hook, denn die Etappe hat kein Pflichtartefakt.
-
-### Grill
-
-1. Gate: `/forge:grill docs/forge/gibt-es-nicht/spec.md`
-   Erwartet: Der Prompt wird blockiert, bevor Claude antwortet. Meldung `forge gate-grill: Pflichtartefakte fehlen. - spec.md nicht gefunden: …` plus `R-050 Pflichtartefakte vor dem Start: …`.
-2. `/forge:grill` ohne Argument → blockiert mit `Pfad zu spec.md fehlt. Aufruf: /forge:grill <spec.md>`.
-3. Normal: `/forge:grill docs/forge/2026-11-03-aufgabenliste/spec.md`
-   Erwartet: Fragen nur zu Grenzfällen, Widersprüchen und Lücken (z. B. AC-01 anonym gegen AC-04 Konto, Export ohne AC); jede Änderung als Abschnitt/Vorher/Nachher mit Bestätigung; Ende mit Liste der Änderungen und neuen W-Einträge oder „Keine Änderung.“.
-
-### Spec-Review
-
-`/forge:spec-review docs/forge/2026-11-03-aufgabenliste/spec.md` (hat der Grill die Spec geändert, vorher die Fixture neu kopieren, damit die erwarteten Befunde passen)
-
-Erwartet:
-- Ein Sub-Agent `forge:spec-review` läuft (nur `Read`), die Haupt-Session liest die Spec nicht selbst.
-- Neue Datei `docs/forge/2026-11-03-aufgabenliste/spec-review.md` mit `Verdict: NEEDS_CHANGES` und Befunden sortiert 🔴 → 🟡 → 🟢.
-- Laut `plugins/forge/evals/spec-review-flawed.json` mindestens: 🔴 `widerspruch` an AC-01/AC-04, 🔴 `fehlendes-verhalten` an „Export“, 🟡 an AC-03 („funktioniert korrekt“), 🟡 an AC-05 (Klasse und Tabelle). Optional: Ticket-Verweis AB#1234, ungekoppeltes Gerät.
-- Letzte Chat-Zeile genau `Review abgeschlossen: NEEDS_CHANGES · Bericht: <pfad>`.
-
-### Plan
-
-1. Gate: `/forge:plan docs/forge/2026-11-03-bestellung/spec.md` (dort gibt es noch kein `spec-review.md`)
-   Erwartet: blockiert, `spec-review.md nicht gefunden: …/2026-11-03-bestellung/spec-review.md`.
-2. `/forge:spec-review docs/forge/2026-11-03-bestellung/spec.md`, dann `/forge:plan docs/forge/2026-11-03-bestellung/spec.md`.
-   Erwartet: Fragen einzeln (eine pro Nachricht), Plan mit `## Global Constraints`, `### Task <n>: …` lückenlos, je Task `**ACs:**`, Test-first-Schritte mit vollständigem Code; forge: Zeile `> Umsetzung mit /dv-forge:implementation …` unter dem Titel (R-102). Ende: nur der Plan-Pfad.
-3. Unterschied angular: `/angular:plan …` lädt die Planungs-Skills aus dem Profil (nur wenn `dv-angular` installiert ist, sonst „nicht verfügbar“ unter Global Constraints) und schreibt Verifikationen als `dv-angular-test --root <Workspace> …` (R-201); bei mehreren `angular.json` fragt er nach dem Workspace (R-202). Die Fixture ist ein Node-Projekt; für einen echten Angular-Test eine Spec in einem Angular-Repo verwenden.
-
-### Plan-Review
-
-1. Gate: `/forge:plan-review docs/forge/2026-11-03-aufgabenliste/plan.md` → blockiert, `plan.md nicht gefunden: …`.
-2. `/forge:plan-review docs/forge/2026-11-03-bestellung-review/plan.md` (Fixture-Plan mit eingebauten Mängeln, Spec im selben Ordner).
-
-Erwartet:
-- Sub-Agent `forge:plan-review` (nur `Read, Grep, Glob`), Datei `plan-review.md` neben dem Plan, `Verdict: NEEDS_CHANGES`.
-- Laut `plugins/forge/evals/plan-review-flawed.json` mindestens: 🔴 `umsetzer-steckt-fest` an Task 1/Task 3a (Rückwärts-Abhängigkeit, Nummer 3a), 🔴 an Task 2 (Platzhalter „Passende Fehlerbehandlung ergänzen“), 🔴 `ac-fehlt-im-plan` an AC-04.
-- Hinweis: Die Fixture liegt unter `plugins/forge/tests/fixtures/plan-review/repo`; der Reviewer bekommt die Repo-Wurzel und muss dort suchen. Für ein sauberes Ergebnis die Fixture in ein eigenes Git-Repo kopieren.
-- angular: `/angular:plan-review …` meldet zusätzlich Verstöße gegen R-201 und R-203 als `umsetzer-steckt-fest` (Abschnitt „Zusatzregeln von angular“ im Agent).
+| `/angular:ablauf` | Tabelle mit 5 Etappen (Spec, Grill, Spec-Review, Plan, Plan-Review), Befehl, Eingang, Artefakt, Gate; Profil `angular` mit drei Planungs-Skills aus dv-angular. |
+| `/angular:grill docs/forge/gibt-es-nicht/spec.md` | Der Hook `gate-grill.sh` blockiert mit Exit 2: `spec.md nicht gefunden: …` plus Regel R-050 und ihre Begründung. |
+| `/angular:spec-review docs/forge/2026-11-03-aufgabenliste/spec.md` | Ein Reviewer `angular:spec-review` (nur `Read`) läuft. Daneben entsteht `spec-review.md` mit `Verdict: NEEDS_CHANGES` und Befunden nach Severity. |
+| `/angular:plan …/spec.md` ohne `spec-review.md` daneben | blockiert: `spec-review.md nicht gefunden`. |
+| `/angular:plan …` mit Bericht | Plan mit `## Global Constraints`; Verifikationen als `dv-angular-test --root <Workspace> …` (R-201). |
 
 ## 4. Aufräumen
 
 ```text
-/plugin uninstall forge@dv-plugin-compiler-demo
+/plugin uninstall dv-forge@dv-plugin-compiler-demo
 /plugin uninstall angular@dv-plugin-compiler-demo
 /plugin marketplace remove dv-plugin-compiler-demo
+/plugin install dv-forge@dv-ai-development
 ```
 
 ```bash
-rm -rf docs/forge/2026-11-03-aufgabenliste docs/forge/2026-11-03-bestellung docs/forge/2026-11-03-bestellung-review
+rm -rf docs/forge/2026-11-03-aufgabenliste
 ```
 
-## Bekannte Grenzen (nicht verifiziert)
+## Was verifiziert ist und was nicht
 
-- Die Aufrufe oben habe ich nicht in einer interaktiven Session ausgeführt; verifiziert sind Build, Lint, `claude plugin validate --strict` und die Gate-Skripte mit nachgestellten Hook-Eingaben (Exit 0/2).
-- Dass `UserPromptSubmit` den getippten Slash-Befehl im Feld `prompt` liefert, stütze ich auf `plugins/forge/scripts/stage-guard.js`, das genau so arbeitet; in dieser Umgebung nicht live geprüft.
-- `disable-model-invocation: true` steht wie verlangt in jedem Etappen-Skill. Folge: Kein Orchestrator und kein Modell kann die Skills verketten; jede Etappe tippt der Mensch. forge setzt das bewusst nur bei `init` (INVENTORY a15).
-- Gate-Skripte sind POSIX-`sh`; unter Windows ohne Git-Bash laufen sie nicht (dv-angular liefert dafür `.cmd`-Dateien). Pfade mit Leerzeichen im ersten Argument werden zerlegt.
-- `plugin.json` trägt keine Kopfzeile „GENERIERT“, weil JSON keine Kommentare kennt und `--strict` unbekannte Felder anmahnt; `hooks.json` und `marketplace.json` tragen sie im Feld `description`.
+- **Verifiziert:** Build mit allen Prüfungen. Äquivalenz: alle 348 Dateien des bestehenden forge entstehen wortgleich. Die forge-Testsuite gegen `dist/forge` (2142 grün, 1 übersprungen, wie im Original). `claude plugin validate --strict` für Marketplace und beide Plugins. Die Gate-Skripte des angular-Prototyps mit nachgestellten Hook-Eingaben.
+- **Nicht verifiziert:** Installation und Aufrufe in einer interaktiven Session; die Session-Kette über die Desktop-App.
+- **Bewusste Abweichungen vom Bestand:** `author` in `plugin.json` (für `--strict`), `description` in `hooks.json` und die Kopfzeile je Markdown-Datei. Die Äquivalenzprüfung lässt genau diese drei zu, sonst nichts.

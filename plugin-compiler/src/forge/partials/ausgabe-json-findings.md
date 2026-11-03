@@ -1,0 +1,3 @@
+<# Wortgleich in: agents/implementation-review-acceptance.md, agents/implementation-review-design.md, agents/implementation-review-plan-fidelity.md, agents/implementation-review-risks.md, agents/implementation-review-tests.md, agents/plan-review-architecture.md, agents/plan-review-buildability.md, agents/plan-review-coverage.md, agents/plan-review-feasibility.md, agents/plan-review-risks.md, agents/spec-review-clarity.md, agents/spec-review-completeness.md, agents/spec-review-consistency.md, agents/spec-review-feasibility.md, agents/spec-review-profiles.md -#>
+## Ausgabe
+Deine letzte Aktion: Schreib dein Ergebnis mit `Write` als JSON an den Pfad aus `Ergebnis:`, auch bei null Findings. Danach antwortest du nur mit `Ergebnis geschrieben: <pfad>`.

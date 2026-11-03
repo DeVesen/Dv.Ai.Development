@@ -21,144 +21,8 @@ import jinja2
 import jsonschema
 import yaml
 
-ROOT = Path(__file__).resolve().parent.parent  # plugin-compiler/
-SRC = ROOT / "src"
-DIST = ROOT / "dist"
-SCHEMAS = ROOT / "tools" / "schemas"
-MARKETPLACE = "dv-plugin-compiler-demo"
-OWNER = "DeVesen"
-HEADER = "GENERIERT - nicht editieren."
-ICON = {"red": "🔴", "yellow": "🟡", "green": "🟢"}
-SEVERITY_ORDER = {"red": 0, "yellow": 1, "green": 2}
-TERM_RE = re.compile(r"\[\[([^\]|]+)(?:\|([^\]]+))?\]\]")
-RULE_REF_RE = re.compile(r"\[(R-\d{3})\]")
-SKILL_MAX_LINES = 500
-NAME_MAX = 64
-DESCRIPTION_MAX = 1024
-
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Fehler mit Ort
-
-
-@dataclass
-class Problem:
-    file: str
-    line: int
-    message: str
-
-    def __str__(self) -> str:
-        return f"{self.file}:{self.line}: {self.message}"
-
-
-@dataclass
-class Report:
-    errors: list[Problem] = field(default_factory=list)
-    warnings: list[Problem] = field(default_factory=list)
-
-    def error(self, file: str, line: int, message: str) -> None:
-        self.errors.append(Problem(file, line, message))
-
-    def warn(self, file: str, line: int, message: str) -> None:
-        self.warnings.append(Problem(file, line, message))
-
-    def stop_if_errors(self, stage: str) -> None:
-        if not self.errors:
-            return
-        print(f"build: {len(self.errors)} Fehler in Stufe „{stage}“, Abbruch.", file=sys.stderr)
-        for p in sorted(self.errors, key=lambda p: (p.file, p.line, p.message)):
-            print(f"FEHLER {p}", file=sys.stderr)
-        sys.exit(1)
-
-
-def rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
-
-# ---------------------------------------------------------------------------------------------------------------------
-# YAML mit Zeilennummern
-
-
-class LDict(dict):
-    """dict, das die Zeile jedes Schlüssels kennt (1-basiert)."""
-
-    line = 0
-    lines: dict
-
-
-class LList(list):
-    line = 0
-    lines: list
-
-
-class LineLoader(yaml.SafeLoader):
-    pass
-
-
-def _construct_mapping(loader: LineLoader, node: yaml.MappingNode) -> LDict:
-    loader.flatten_mapping(node)
-    result = LDict()
-    result.line = node.start_mark.line + 1
-    result.lines = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=True)
-        result[key] = loader.construct_object(value_node, deep=True)
-        # Blockskalare (| und >) beginnen in der Zeile nach dem Schlüssel.
-        block = isinstance(value_node, yaml.ScalarNode) and value_node.style in ("|", ">")
-        result.lines[key] = value_node.start_mark.line + 1 + (1 if block else 0)
-    return result
-
-
-def _construct_sequence(loader: LineLoader, node: yaml.SequenceNode) -> LList:
-    result = LList(loader.construct_object(child, deep=True) for child in node.value)
-    result.line = node.start_mark.line + 1
-    result.lines = [child.start_mark.line + 1 for child in node.value]
-    return result
-
-
-LineLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_mapping)
-LineLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_SEQUENCE_TAG, _construct_sequence)
-
-
-def line_of(container, key) -> int:
-    """Zeile eines Schlüssels oder Index in einem geladenen Container, sonst die Zeile des Containers."""
-    if isinstance(container, LDict) and key in container.lines:
-        return container.lines[key]
-    if isinstance(container, LList) and isinstance(key, int) and key < len(container.lines):
-        return container.lines[key]
-    return getattr(container, "line", 1) or 1
-
-
-def locate(doc, path) -> int:
-    """Zeile zu einem jsonschema-Pfad (Folge von Schlüsseln und Indizes)."""
-    node, line = doc, getattr(doc, "line", 1) or 1
-    for part in path:
-        line = line_of(node, part)
-        try:
-            node = node[part]
-        except (KeyError, IndexError, TypeError):
-            break
-    return line
-
-
-@dataclass
-class Source:
-    path: Path
-    data: object
-
-    @property
-    def name(self) -> str:
-        return rel(self.path)
-
-
-def load_yaml(path: Path, report: Report) -> Source | None:
-    try:
-        with path.open(encoding="utf-8") as f:
-            return Source(path, yaml.load(f, Loader=LineLoader))  # noqa: S506 - eigener SafeLoader
-    except yaml.YAMLError as exc:
-        mark = getattr(exc, "problem_mark", None)
-        report.error(rel(path), (mark.line + 1) if mark else 1, f"YAML ungültig: {getattr(exc, 'problem', exc)}")
-        return None
+from common import *  # noqa: F401,F403
+from common import LDict, LList, Report, Source  # noqa: F401
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -171,7 +35,8 @@ class Model:
     artifacts_src: Source | None = None
     rule_files: list[Source] = field(default_factory=list)
     phase_files: list[Source] = field(default_factory=list)
-    plugin_files: list[Source] = field(default_factory=list)
+    plugin_files: list[Source] = field(default_factory=list)      # Etappen-Plugins (Prototyp)
+    component_files: list[Source] = field(default_factory=list)   # Komponenten-Plugins (source: src/<plugin>)
     partials: dict = field(default_factory=dict)  # name -> (Path, text)
     templates: set = field(default_factory=set)
     # nach der Prüfung befüllt
@@ -190,7 +55,9 @@ def load(report: Report) -> Model:
     m.artifacts_src = load_yaml(SRC / "artifacts.yaml", report)
     m.rule_files = [s for p in sorted((SRC / "rules").glob("*.yaml")) if (s := load_yaml(p, report))]
     m.phase_files = [s for p in sorted((SRC / "phases").glob("*.yaml")) if (s := load_yaml(p, report))]
-    m.plugin_files = [s for p in sorted((SRC / "plugins").glob("*.yaml")) if (s := load_yaml(p, report))]
+    manifests = [s for p in sorted((SRC / "plugins").glob("*.yaml")) if (s := load_yaml(p, report))]
+    m.plugin_files = [s for s in manifests if not (isinstance(s.data, dict) and "source" in s.data)]
+    m.component_files = [s for s in manifests if isinstance(s.data, dict) and "source" in s.data]
     for p in sorted((SRC / "partials").glob("*.md")):
         m.partials[p.stem] = (p, p.read_text(encoding="utf-8"))
     m.templates = {p.relative_to(SRC / "templates").as_posix() for p in (SRC / "templates").rglob("*.j2")}
@@ -199,20 +66,6 @@ def load(report: Report) -> Model:
 
 # ---------------------------------------------------------------------------------------------------------------------
 # 2. Prüfen
-
-
-def validate_schema(src: Source, schema_name: str, report: Report) -> bool:
-    schema = json.loads((SCHEMAS / f"{schema_name}.schema.json").read_text(encoding="utf-8"))
-    validator = jsonschema.Draft202012Validator(schema)
-    ok = True
-    for err in sorted(validator.iter_errors(src.data), key=lambda e: list(map(str, e.absolute_path))):
-        # Bei oneOf die konkreteste Unterursache melden.
-        best = jsonschema.exceptions.best_match([err]) if err.context else err
-        path = list(best.absolute_path)
-        where = "/".join(map(str, path)) or "(Wurzel)"
-        report.error(src.name, locate(src.data, path), f"Schema {schema_name}: {where}: {best.message}")
-        ok = False
-    return ok
 
 
 def iter_texts(node, file: str, line: int = 1):
@@ -237,18 +90,6 @@ PROSE_KEYS_SKIPPED = {"id", "source", "from", "file", "location", "description",
                       "avoid", "inherit"}
 
 
-def check_terms(text: str, file: str, line: int, m: Model, report: Report) -> None:
-    for i, row in enumerate(text.split("\n")):
-        for match in TERM_RE.finditer(row):
-            term = match.group(1).strip()
-            if term not in m.terms:
-                report.error(file, line + i, f"Fachbegriff „{term}“ steht nicht im Glossar (src/glossary.yaml)")
-        stripped = TERM_RE.sub(lambda mt: mt.group(1), row)
-        for word, owner in m.avoid.items():
-            if re.search(rf"(?<![\w-]){re.escape(word)}(?![\w-])", stripped):
-                report.error(file, line + i, f"„{word}“ ist laut Glossar zu vermeiden; Begriff: „{owner}“")
-
-
 def check(m: Model, report: Report) -> None:
     # Schema pro Datei
     sources = []
@@ -259,6 +100,7 @@ def check(m: Model, report: Report) -> None:
     sources += [(s, "rules") for s in m.rule_files]
     sources += [(s, "phase") for s in m.phase_files]
     sources += [(s, "plugin") for s in m.plugin_files]
+    sources += [(s, "plugin-components") for s in m.component_files]
     valid = [src for src, schema in sources if validate_schema(src, schema, report)]
     report.stop_if_errors("Schema")
     del valid
@@ -447,18 +289,13 @@ def check(m: Model, report: Report) -> None:
         used.update(t.strip() for t, _ in TERM_RE.findall(text))
     used.update(a["term"] for a in m.artifacts.values())
     for term, (t, src, container, idx, line) in terms_store.items():
-        if term not in used:
+        if term not in used and not t["source"].startswith("CONTEXT.md"):
             report.warn(src.name, line, f"Begriff „{term}“ wird nirgends als [[{term}]] verwendet")
     report.stop_if_errors("Glossar")
 
 
 # ---------------------------------------------------------------------------------------------------------------------
 # 3. Auflösen
-
-
-def plain(text: str) -> str:
-    """[[Begriff|Form]] -> Form, [[Begriff]] -> Begriff; Zeilenumbrüche aus Folded-Blöcken glätten."""
-    return TERM_RE.sub(lambda mt: (mt.group(2) or mt.group(1)).strip(), text).strip()
 
 
 def resolve_rule(r: dict, plugin_rule: bool) -> dict:
@@ -614,55 +451,12 @@ def render_all(plugins: list, m: Model, env: jinja2.Environment) -> dict:
         files[f"{base}/README.md"] = env.get_template("readme.md.j2").render(
             plugin=plugin, phases=plugin["phases"], header=HEADER, marketplace=MARKETPLACE,
             rule_count_core=plugin["rule_count_core"], rule_count_plugin=plugin["rule_count_plugin"])
-    files[".claude-plugin/marketplace.json"] = json.dumps({
-        "name": MARKETPLACE,
-        "owner": {"name": OWNER},
-        "metadata": {"description": f"{HEADER} Prototyp aus plugin-compiler/src: forge und angular aus einer Quelle der Wahrheit."},
-        "plugins": [{"name": p["name"], "source": f"./{p['name']}", "description": p["description"], "version": p["version"]}
-                    for p in plugins],
-    }, ensure_ascii=False, indent=2) + "\n"
     # Mehrfache Leerzeilen glätten, damit die Ausgabe stabil und lesbar bleibt.
     return {path: (re.sub(r"\n{3,}", "\n\n", text) if path.endswith(".md") else text) for path, text in files.items()}
 
 
 # ---------------------------------------------------------------------------------------------------------------------
 # 5. Linten
-
-
-CAPS_RE = re.compile(r"\b(ALWAYS|NEVER|MUST|IMMER|NIEMALS|NIE)\b")
-REASON_RE = re.compile(r"(Warum:|weil|because|damit|denn|sonst|Grund)", re.IGNORECASE)
-PRONOUN_RE = re.compile(r"\b(I|me|my|we|our|you|your)\b", re.IGNORECASE)
-LINK_RE = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
-
-
-def split_frontmatter(text: str):
-    if not text.startswith("---\n"):
-        return None, text
-    end = text.find("\n---\n", 4)
-    if end < 0:
-        return None, text
-    return yaml.safe_load(text[4:end]), text[end + 5:]
-
-
-def lint_identity(path: str, fm: dict, report: Report) -> None:
-    name, desc = str(fm.get("name", "")), str(fm.get("description", ""))
-    if not name or len(name) > NAME_MAX:
-        report.error(path, 2, f"name „{name}“ fehlt oder ist länger als {NAME_MAX} Zeichen")
-    if not re.fullmatch(r"[a-z0-9-]+", name):
-        report.error(path, 2, f"name „{name}“: nur Kleinbuchstaben, Ziffern und Bindestriche")
-    if re.search(r"claude|anthropic", name, re.IGNORECASE):
-        report.error(path, 2, f"name „{name}“ enthält „claude“ oder „anthropic“")
-    if not desc or len(desc) > DESCRIPTION_MAX:
-        report.error(path, 3, f"description fehlt oder ist länger als {DESCRIPTION_MAX} Zeichen ({len(desc)})")
-    if "Use when" not in desc:
-        report.error(path, 3, "description enthält kein „Use when …“")
-    if desc.startswith("Use "):
-        report.error(path, 3, "description beginnt mit „Use …“; erst eine Aussage in dritter Person, dann „Use when …“")
-    if PRONOUN_RE.search(desc):
-        report.error(path, 3, f"description nicht in dritter Person: „{PRONOUN_RE.search(desc).group(0)}“")
-    first = desc.split()[0] if desc.split() else ""
-    if first and not first.endswith("s"):
-        report.error(path, 3, f"description: erstes Verb „{first}“ ist nicht dritte Person Singular")
 
 
 def lint(files: dict, plugins: list, m: Model, report: Report) -> None:
@@ -732,34 +526,79 @@ def lint(files: dict, plugins: list, m: Model, report: Report) -> None:
 # 6. Schreiben
 
 
+def marketplace(entries: list) -> str:
+    return json.dumps({
+        "name": MARKETPLACE,
+        "owner": {"name": OWNER},
+        "metadata": {"description": f"{HEADER} Prototyp aus plugin-compiler/src: dv-forge vollständig, angular aus dem gemeinsamen Kern."},
+        "plugins": entries,
+    }, ensure_ascii=False, indent=2) + "\n"
+
+
 def write(files: dict) -> None:
     if DIST.exists():
         shutil.rmtree(DIST)
-    for path, text in sorted(files.items()):
+    for path, content in sorted(files.items()):
         target = DIST / path
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(text, encoding="utf-8", newline="\n")
+        if isinstance(content, bytes):
+            target.write_bytes(content)
+        else:
+            target.write_text(content, encoding="utf-8", newline="\n")
         if path.endswith(".sh"):
             target.chmod(0o755)
 
 
 def main() -> int:
+    import components
+
     report = Report()
     m = load(report)
     report.stop_if_errors("Laden")
     check(m, report)
     env = jinja2.Environment(loader=jinja2.FileSystemLoader(SRC / "templates"), undefined=jinja2.StrictUndefined,
                              keep_trailing_newline=True, trim_blocks=True, lstrip_blocks=True, autoescape=False)
+
+    # Komponenten-Plugins (dv-forge): laden, prüfen, rendern, Äquivalenz zum Bestand
+    comp_plugins = [components.load_plugin(s, report) for s in m.component_files]
+    report.stop_if_errors("Laden (Komponenten)")
+    files: dict = {}
+    entries: list = []
+    compared = 0
+    for cp in comp_plugins:
+        components.check_plugin(cp, m.rules, m.avoid, report)
+        files.update(components.render_plugin(cp, env))
+        components.lint_plugin(cp, report)
+        compared += components.check_equivalence(cp, report)
+        entries.append({"name": cp.name, "source": f"./{cp.dir}", "description": cp.manifest.data["description"],
+                        "version": cp.manifest.data["version"]})
+
+    # Etappen-Plugins (Prototyp, angular)
     plugins = resolve(m, env)
-    files = render_all(plugins, m, env)
-    lint(files, plugins, m, report)
+    phase_files = render_all(plugins, m, env)
+    lint(phase_files, plugins, m, report)
+    files.update(phase_files)
+    entries += [{"name": p["name"], "source": f"./{p['name']}", "description": p["description"], "version": p["version"]}
+                for p in plugins]
+    files[".claude-plugin/marketplace.json"] = marketplace(sorted(entries, key=lambda e: e["name"]))
     write(files)
+
+    reports = ROOT / "reports"
+    reports.mkdir(exist_ok=True)
+    for cp in comp_plugins:
+        (reports / f"{cp.dir}-graph.md").write_text(components.graph_report(cp), encoding="utf-8")
+
     for w in sorted(report.warnings, key=lambda p: (p.file, p.line)):
         print(f"WARNUNG {w}")
     shared = {r["id"] for p in plugins for ph in p["phases"] for r in ph["rules"] if not r["plugin"]}
-    print(f"build: {len(files)} Dateien nach {rel(DIST)}/ geschrieben; {len(plugins)} Plugins, "
-          f"{len(shared)} geteilte Regeln, {sum(p['rule_count_plugin'] for p in plugins)} plugin-spezifische, "
-          f"{len(report.warnings)} Warnungen.")
+    comp_rules = sum(len(sec.get("rules", [])) for cp in comp_plugins for s in cp.rule_docs for sec in s.data["sections"])
+    print(f"build: {len(files)} Dateien nach {rel(DIST)}/ geschrieben.")
+    for cp in comp_plugins:
+        print(f"  {cp.name}: {len(cp.components)} Quellen, {len(cp.partials)} Partials, {comp_rules} Regeln als Daten, "
+              f"{len(cp.assets)} Assets; {compared} Dateien wortgleich zum Bestand (ohne Kopfzeile).")
+    for p in plugins:
+        print(f"  {p['name']}: {len(p['phases'])} Etappen, {len(shared)} geteilte Regeln, {p['rule_count_plugin']} eigene.")
+    print(f"  {len(report.warnings)} Warnungen.")
     return 0
 
 

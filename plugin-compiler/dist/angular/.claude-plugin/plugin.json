@@ -1,0 +1,8 @@
+{
+  "name": "angular",
+  "version": "0.1.0",
+  "description": "Spezifizieren und Planen für Angular-Projekte, gemeinsamer Kern plus Angular-Toolchain-Regeln (Prototyp aus plugin-compiler).",
+  "author": {
+    "name": "DeVesen"
+  }
+}

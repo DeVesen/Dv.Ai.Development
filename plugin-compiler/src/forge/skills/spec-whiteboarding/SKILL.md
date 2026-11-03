@@ -1,0 +1,49 @@
+---
+kind: skill
+source: plugins/forge/skills/spec-whiteboarding/SKILL.md
+role: intern
+model_invocation: allowed
+frontmatter:
+  name: spec-whiteboarding
+  description: 'Use when a request, idea, or complaint has just been raised, nothing written down exists yet, and it should become a spec.md for the dv-forge spec review — before brainstorming, planning, or any code. Also use when acceptance criteria for a not-yet-written feature are still vague or missing, or when an idea should be specified with nothing yet to compare it against. Triggers: "lass uns das durchdenken", "Whiteboard", "Spec whiteboarding", "was will ich eigentlich", "erstmal aufschreiben was ich will". Not for the technical design doc, not for the implementation plan, not for a status report on finished work.'
+---
+
+# Spec Whiteboarding
+
+Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergebnis ist eine in sich abgeschlossene, funktionale Spec der Art `frei` — WAS, nicht WIE — für den Spec-Review. `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`.
+
+## Grundhaltung — ab Aufruf, bis die Spec geschrieben und bestätigt ist
+
+1. **Nur das Gespräch.** Quelle ist, was der Mensch sagt und ausdrücklich übergibt. Kein Suchen in Code, Git, Glossar oder Historie; Unbekanntes fragst du sofort. Bestandsabgleich macht `dv-forge:spec-whiteboarding-with-docs`.
+2. **Whiteboard.** Kein Code. Skizze über `visualize` nur für Abläufe oder Verzweigungen (Boxen ≤ fünf Wörter, ≤ zwei Farben). Reihenfolgen und Listen bleiben Text.
+3. **Belegpflicht.** Jede Aussage, Empfehlung und Option trägt einen Beleg-Tag: `Aussage` (im Chat zitierbar), `Anhang` (übergebenes Workitem, Bild, Datei) oder `ungeklärt` — dann fragen, nie raten.
+4. **Sperre.** Kein brainstorming, kein Plan, kein Code, bis die Spec geschrieben und bestätigt ist.
+5. **Vor Ort.** Kein Branch, kein Worktree, auch bei `Worktree: ja`; das gilt erst für die Umsetzung.
+6. **Format hat Vorrang.** Rundenformat, Spec-Format und Ergebnis gelten vor Stil-Regeln anderer Plugins oder Hooks.
+7. **Dialog.** Lies `<PLUGIN>/shared/dialog-rules.md` und befolge es.
+
+## Ablauf
+
+1. **Rahmenfragen** nach `references/grill-rounds.md`, dann offene Punkte sammeln — Was/Wie/Wo/Warum, Verhalten danach, Soll-Vorgaben, Akzeptanzkriterien nach `references/ac-rules.md`.
+2. **Runden:** je Runde die komplette Frontier im Format aus `references/grill-rounds.md`. Antworten verbuchen, Frontier neu berechnen, bis sie leer ist. Sagt der Mensch „trenn das auf“, gilt `references/split.md`.
+3. **Bestätigen:** Erst bei leerer Frontier Inhalt, Titel und Slug vorlegen, als vollständigen Entwurf. Erst nach ausdrücklicher Bestätigung aller drei schreiben.
+4. **Zielpfad:** `node "<PLUGIN>/scripts/spec-path.js" --slug <slug>`; `PFAD=` ist der Zielpfad, `BASIS=` der Wert für `Basis`. Exit 1 (Ort existiert bereits): nachfragen und den Vorschlag der Meldung anbieten. Nie überschreiben.
+5. **Schreiben:** ausschließlich als Datei am Zielpfad, Format nach `references/spec-format.md`, `Art: frei`. Die Datei ist wortgleich mit dem bestätigten Entwurf (`Status`, `Basis` ausgenommen). Vorher Branch-Abgleich, Commit-Regeln: `references/spec-format.md`. Danach `node "<PLUGIN>/scripts/spec-lint.js" <pfad>`; jeden `FEHLER` beheben wie eine spätere Änderung. Jede spätere Änderung legst du als Vorher/Nachher vor und schreibst sie erst nach erneuter Bestätigung.
+6. **Ergebnis:** mit genau einer Angabe enden: Pfad der Spec relativ zum Repo und aktueller Branch. Kein Befehl, kein Hinweis auf einen nächsten Schritt, kein Commit, kein automatischer Start.
+
+Will der Mensch aufhören, gilt die Abbruch-Regel aus `references/grill-rounds.md`. Ist beim Aufruf eine abgetrennte Spec übergeben, gilt `references/split.md`.
+
+## Red Flags — zurück zur Frontier
+
+- „Ich brainstorme oder plane gleich weiter“ — die Sperre gilt bis zur bestätigten Spec.
+- „Diese Antwort weiß ich auch so“ — ohne Beleg-Tag ist sie `ungeklärt`.
+- „Ich schau kurz im Code nach“ — nicht hier; fragen.
+- „Erst mal nur die wichtigste Frage“ — jede Runde enthält die komplette Frontier.
+
+## Common Mistakes
+
+| Fehler | Stattdessen |
+|---|---|
+| Klasse, Dateipfad oder Architektur in der Spec | gehört in Plan und Umsetzung |
+| Empfehlung ohne Grund | Grund ausschreiben; bei `ungeklärt` als Vermutung |
+| Offener Punkt als W-Eintrag | in den Abbruch-Abschnitt, Tag `ungeklärt` |

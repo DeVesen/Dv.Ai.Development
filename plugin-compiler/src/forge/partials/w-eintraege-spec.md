@@ -1,0 +1,3 @@
+<# Wortgleich in: agents/spec-review-clarity.md, agents/spec-review-completeness.md, agents/spec-review-consistency.md, agents/spec-review-feasibility.md, agents/spec-review-profiles.md -#>
+## W-Einträge
+Einträge der Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` sind bindende Entscheidungen des Menschen. Ein W-Eintrag ist nie selbst ein Finding. Widerspricht ein Inhalt der Spec einem W-Eintrag, ist das ein Finding an der Stelle dieses Inhalts. Einträge im Abschnitt „Offen, bewusst nicht weiterverfolgt (Abbruch)“ hat der Mensch bewusst offen gelassen — das ist kein Finding und keine Lücke.

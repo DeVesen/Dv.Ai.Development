@@ -12,6 +12,7 @@ const { parseStatusLine } = require('./session-chain-turn');
 const { BASE_FILE, LEIT_LABEL, LEIT_ID_PATTERN } = require('./session-chain-brief');
 const { readData, REPORT_FILE } = require('./session-chain-report');
 const { readEntries, textOf, isToolResultEntry } = require('./transcript');
+const { appendEvent } = require('./session-chain-store');
 
 const BRIEF_LINE = /^Etappe `([a-z-]+)` einer Session-Kette, geführt von einer Leit-Session\.[ \t]*$/m;
 const SLUG_LINE = /^- Slug: (\S+)[ \t]*$/m;
@@ -124,9 +125,43 @@ function commitProblem(status, cwd) {
   return commitExists(status.commit, cwd) ? null : `COMMIT=${status.commit} ist kein Commit in diesem Repository. Nimm den Hash aus git rev-parse HEAD oder COMMIT=none.`;
 }
 
+// Ergebnis der Vorab-Prüfung von etappe-report in den Bericht-Daten (`vorab`, `vorabShowstopper`): An ihm hielte die Leit-Session dieses
+// `final`. Abweichungen kann der Mensch bestätigen (`vorabBestaetigt`), dann geht das `final` durch und die Leit-Session zeigt sie erneut;
+// einen Showstopper nicht: Am Showstopper-Haltepunkt gibt es keine Antwort, die Kette stünde.
+function vorabProblem(status) {
+  let data;
+  try {
+    ({ data } = readData(status.bericht));
+  } catch {
+    return null;
+  }
+  const stoppers = Array.isArray(data.vorabShowstopper) ? data.vorabShowstopper : [];
+  if (stoppers.length > 0) {
+    return `etappe-report meldet ${stoppers.length} Showstopper, an denen die Leit-Session dieses final hält: ${stoppers.join(' · ')}. `
+      + 'Kläre sie mit dem Menschen (STATUS=needs-user) und schreib die Berichtsdatei neu, wenn sie behoben sind; ein Showstopper lässt sich nicht bestätigen.';
+  }
+  const open = Array.isArray(data.vorab) ? data.vorab : [];
+  if (open.length === 0 || data.vorabBestaetigt) return null;
+  return `etappe-report meldet ${open.length} Abweichung(en), an denen die Leit-Session dieses final hält: ${open.join(' · ')}. `
+    + 'Behebe sie und schreib die Berichtsdatei neu. Was du nicht beheben kannst, klärst du mit dem Menschen (STATUS=needs-user); '
+    + 'will er trotzdem abschließen, schreibst du die Berichtsdatei mit --vorab-bestaetigt "<seine Worte>" neu.';
+}
+
 function finalProblem(status, marker, cwd) {
   if (status.status !== 'final') return null;
-  return reportProblem(status, marker) ?? commitProblem(status, cwd);
+  return reportProblem(status, marker) ?? commitProblem(status, cwd) ?? vorabProblem(status);
+}
+
+// Vor der Nachricht an die Leit-Session (PreToolUse auf SendMessage): Eine Nachricht mit `STATUS=final` geht nur raus, wenn dieses `final`
+// auch am Turn-Ende durchginge. Sonst verarbeitete die Leit-Session ein `final`, das sie hält, und der Hook am Turn-Ende käme zu spät.
+function onSendMessage(input, tmpRoot) {
+  if (input.tool_name !== 'SendMessage') return null;
+  const marker = readMarker(input.session_id, tmpRoot);
+  if (!marker) return null;
+  const status = parseStatusLine(input.tool_input?.message);
+  if (status?.status !== 'final') return null;
+  const problem = finalProblem(status, marker, input.cwd);
+  return problem ? `dv-forge: Nachricht mit final zurückgehalten. ${problem}` : null;
 }
 
 // Kennungen der Werkzeug-Aufrufe, deren Ergebnis ein Fehler ist (`is_error: true` am `tool_result`).
@@ -166,6 +201,7 @@ function onTurnEnd(input, tmpRoot) {
   const status = parseStatusLine(text);
   const problem = statusProblem(marker.etappe, status) ?? finalProblem(status, marker, input.cwd) ?? messageProblem(status, marker, input, text);
   if (!problem || blocks >= MAX_BLOCKS) {
+    if (problem) logPassThrough(input, marker, problem);
     writeMarker(input.session_id, { ...marker, blocks: 0 }, tmpRoot);
     return null;
   }
@@ -173,4 +209,15 @@ function onTurnEnd(input, tmpRoot) {
   return `dv-forge: ${problem}`;
 }
 
-module.exports = { markerPath, readMarker, clearMarker, briefOf, onPrompt, onTurnEnd, statusTemplate };
+// Nach MAX_BLOCKS Blocks lässt der Hook das Problem durch (fail-open). Die Ereignisliste der Kette hält es fest, damit Durchlässe
+// auswertbar bleiben; ohne Slug oder Checkout gibt es keine Liste.
+function logPassThrough(input, marker, problem) {
+  if (!marker.slug || !input.cwd) return;
+  try {
+    appendEvent(input.cwd, marker.slug, { typ: 'durchlass', etappe: marker.etappe, grund: problem });
+  } catch (error) {
+    process.stderr.write(`dv-forge stage-guard: Durchlass nicht protokolliert: ${error.message}\n`);
+  }
+}
+
+module.exports = { markerPath, readMarker, clearMarker, briefOf, onPrompt, onTurnEnd, onSendMessage, statusTemplate };

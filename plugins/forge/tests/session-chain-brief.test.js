@@ -261,12 +261,41 @@ test('buildBrief_Umsetzung_NamesSourcesForCommitPruefungLueckeAndAcOhneTest', ()
   for (const part of [
     '`COMMIT` der Statuszeile ist der letzte Commit der Umsetzung: `git -C "<R>" rev-parse --short HEAD`',
     '`<PR>` ist die Datei `pruefung.json` im Scratchpad dieser Session',
-    'Lief Schritt 6 nicht, gilt `--pruefung keine`.',
+    'Lief Schritt 6 nicht, holst du den Prüflauf nach: ',
+    '`--pruefung keine` gibt es in der Umsetzung nicht.',
     '`--luecke "<befehl>"` je Lauf in `<PR>`, dessen Ausgabe zeigt, dass das Werkzeug fehlt',
     '`--ac-ohne-test` ergänzt `etappe-report` selbst aus der Zeile `AC ohne beweisenden Test:` des Abschlussberichts',
     'auch wenn das Review es nur als 🟡 führt',
     'Integrationspunkte ohne Test sind davon ausgenommen',
     'beide Werte aus den Zeilen `R=` und `branch=` von start-work',
+  ]) assert.ok(text.includes(part), part);
+});
+
+test('buildBrief_Umsetzung_RequiresARealCheckRunWithoutPruefungKeine', () => {
+  // Act
+  const text = brief('umsetzung').brief;
+
+  // Assert
+  assert.match(text, /scripts\/verify-run\.js" --repo "<R>" --out "<PR>"/);
+  assert.ok(!text.includes('(ohne Prüflauf'));
+  assert.ok(text.includes('nie rekursiv'));
+  assert.ok(text.includes('im Hintergrund starten'));
+});
+
+test('baseSubAgent_Rule6_NamesVorabAndConfirmation', () => {
+  // Act
+  const text = readText(BASE_FILE);
+
+  // Assert
+  for (const part of [
+    'VORAB=abweichung',
+    'VORAB=showstopper',
+    'VORAB=bestaetigt',
+    'ABWEICHUNG=<text>',
+    'SHOWSTOPPER=<text>',
+    'Bei `VORAB=abweichung` meldest du kein `final`',
+    '--vorab-bestaetigt "<seine Worte>"',
+    'bestätigen lässt er sich nicht',
   ]) assert.ok(text.includes(part), part);
 });
 

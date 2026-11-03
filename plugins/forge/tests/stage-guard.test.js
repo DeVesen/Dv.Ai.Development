@@ -10,6 +10,7 @@ const stage = require('../scripts/lib/stage-guard');
 const { buildBrief } = require('../scripts/lib/session-chain-brief');
 const { parseStatusLine } = require('../scripts/lib/session-chain-turn');
 const { etappeReport } = require('../scripts/lib/session-chain-report');
+const { readEvents } = require('../scripts/lib/session-chain-store');
 const { makeRepo, commitFile } = require('./lib/git-repo');
 
 const SCRIPT = path.join(__dirname, '..', 'scripts', 'stage-guard.js');
@@ -302,4 +303,46 @@ test('cli_BrokenMarkerFile_FailsOpen', () => {
   fs.writeFileSync(stage.markerPath(SESSION, tmpRoot), '{kaputt');
   const result = cli(tmpRoot, 'turn-end', JSON.stringify({ session_id: SESSION, last_assistant_message: 'x' }));
   assert.equal(result.stdout, '');
+});
+
+function withVorab(bericht, extra) {
+  const file = bericht.replace(/bericht\.md$/, 'bericht.json');
+  fs.writeFileSync(file, JSON.stringify({ ...JSON.parse(fs.readFileSync(file, 'utf8')), ...extra }));
+}
+
+test('onTurnEnd_FinalWithOpenVorab_BlocksNamingTheDeviation', () => {
+  const { bericht } = writtenReport();
+  withVorab(bericht, { vorab: ['Planning meldet keinen Plan (--plan fehlt)'], vorabShowstopper: [] });
+  assert.match(turnEnd(started(), line({ status: 'final', bericht })), /Planning meldet keinen Plan \(--plan fehlt\)/);
+});
+
+test('onTurnEnd_FinalWithConfirmedVorab_Allows', () => {
+  const { bericht } = writtenReport();
+  withVorab(bericht, { vorab: ['Planning meldet keinen Plan (--plan fehlt)'], vorabShowstopper: [], vorabBestaetigt: 'Mensch: weiter' });
+  assert.equal(turnEnd(started(), line({ status: 'final', bericht })), null);
+});
+
+test('onTurnEnd_FinalWithShowstopperDespiteConfirmation_Blocks', () => {
+  const { bericht } = writtenReport();
+  withVorab(bericht, { vorab: [], vorabShowstopper: ['Prüfergebnis ist nicht grün: keine'], vorabBestaetigt: 'Mensch: weiter' });
+  assert.match(turnEnd(started(), line({ status: 'final', bericht })), /Showstopper[\s\S]*nicht bestätigen/);
+});
+
+test('onTurnEnd_PassThroughAfterTwoBlocks_LogsDurchlassEvent', () => {
+  const tmpRoot = started();
+  const repo = makeRepo();
+  turnEnd(tmpRoot, 'x', { cwd: repo });
+  turnEnd(tmpRoot, 'x', { cwd: repo, stop_hook_active: true });
+  const third = turnEnd(tmpRoot, 'x', { cwd: repo, stop_hook_active: true });
+  assert.equal(third, null);
+  assert.deepEqual(readEvents(repo, 'x').map((event) => `${event.typ}:${event.etappe}`), ['durchlass:planning']);
+});
+
+test('onSendMessage_FinalWithOpenVorab_DeniesAndCleanFinalPasses', () => {
+  const tmpRoot = started();
+  const { bericht } = writtenReport();
+  const send = () => stage.onSendMessage({ session_id: SESSION, tool_name: 'SendMessage', tool_input: { to: 'local_leit-1', summary: 's', message: line({ status: 'final', bericht }) } }, tmpRoot);
+  assert.equal(send(), null);
+  withVorab(bericht, { vorab: ['Planning meldet keinen Plan (--plan fehlt)'], vorabShowstopper: [] });
+  assert.match(send(), /^dv-forge: Nachricht mit final zurückgehalten\. [\s\S]*--plan fehlt/);
 });

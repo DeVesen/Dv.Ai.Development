@@ -2,7 +2,7 @@
 'use strict';
 
 const fs = require('node:fs');
-const { onPrompt, onTurnEnd, clearMarker } = require('./lib/stage-guard');
+const { onPrompt, onTurnEnd, onSendMessage, clearMarker } = require('./lib/stage-guard');
 
 function readStdinJson() {
   const raw = fs.readFileSync(0, 'utf8');
@@ -14,6 +14,11 @@ function main() {
   const input = readStdinJson();
   if (event === 'prompt') return onPrompt(input);
   if (event === 'stop') return clearMarker(input.session_id);
+  if (event === 'pretool') {
+    const reason = onSendMessage(input);
+    if (reason) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason } }));
+    return;
+  }
   if (event === 'turn-end') {
     const reason = onTurnEnd(input);
     if (reason) process.stdout.write(JSON.stringify({ decision: 'block', reason }));

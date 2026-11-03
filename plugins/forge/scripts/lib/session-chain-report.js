@@ -68,6 +68,7 @@ function etappeReport(input, cwd) {
     etappe, slug, ergebnis: resultOf(text), abbruch: abortOf(text), entscheidungen: input.entscheidungen, dateien, tests: input.tests,
     pruefung: input.pruefung, luecken: input.luecken, acOhneTest,
     ...Object.fromEntries(VALUE_KEYS.map((key) => [key, key === 'branch' ? input[key] : absolute(input[key])])),
+    ...(input.vorabBestaetigt ? { vorabBestaetigt: input.vorabBestaetigt } : {}),
   };
   fs.mkdirSync(target, { recursive: true });
   fs.writeFileSync(path.join(target, REPORT_FILE), `${report}\n`);
@@ -86,4 +87,12 @@ function readData(bericht) {
   }
 }
 
-module.exports = { etappeReport, readInput, readData, REPORT_FILE, DATA_FILE };
+// Ergebnis der Vorab-Prüfung (`{ abweichungen, showstopper }`) in die Bericht-Daten neben `bericht`; der Hook der Etappen-Session liest es
+// beim `final` und vor der Nachricht an die Leit-Session.
+function recordVorab(bericht, { abweichungen, showstopper }) {
+  const file = path.join(path.dirname(path.resolve(bericht)), DATA_FILE);
+  const data = JSON.parse(readInput(file, 'Bericht-Daten'));
+  fs.writeFileSync(file, `${JSON.stringify({ ...data, vorab: abweichungen, vorabShowstopper: showstopper }, null, 2)}\n`);
+}
+
+module.exports = { etappeReport, readInput, readData, recordVorab, REPORT_FILE, DATA_FILE };

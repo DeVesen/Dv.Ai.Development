@@ -466,3 +466,36 @@ test('brief_NacharbeitWithoutQuelleAndWithoutReviewInState_ExitsOneNamingQuelle'
   assert.equal(result.status, 1);
   assert.match(result.stderr, /quelle fehlt/);
 });
+
+test('etappeReport_PlanningWithoutPlan_PrintsVorabAbweichungAndStoresIt', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  chain(repo, 'set', '--slug', 'x', '--basis', 'main', '--spec', spec);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zur Umsetzung\n');
+
+  // Act
+  const result = chain(repo, 'etappe-report', '--etappe', 'planning', '--slug', 'x', '--inhalt', abschluss);
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\nVORAB=abweichung\nABWEICHUNG=Planning meldet keinen Plan \(--plan fehlt\)$/m);
+  const data = JSON.parse(fs.readFileSync(path.join(path.dirname(/^BERICHT=(.+)$/m.exec(result.stdout)[1]), 'bericht.json'), 'utf8'));
+  assert.deepEqual(data.vorab, ['Planning meldet keinen Plan (--plan fehlt)']);
+  assert.deepEqual(data.vorabShowstopper, []);
+});
+
+test('etappeReport_DeviationConfirmedByHuman_PrintsVorabBestaetigtAndStoresTheConfirmation', () => {
+  // Arrange
+  const { repo, spec } = repoWithPlan();
+  chain(repo, 'set', '--slug', 'x', '--basis', 'main', '--spec', spec);
+  const abschluss = scratch('abschluss.md', '# Abschlussbericht\n**Ergebnis:** ✅ Bereit zur Umsetzung\n');
+
+  // Act
+  const result = chain(repo, 'etappe-report', '--etappe', 'planning', '--slug', 'x', '--inhalt', abschluss, '--vorab-bestaetigt', 'Mensch: weiter ohne Plan-Pfad');
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /\nVORAB=bestaetigt\nABWEICHUNG=Planning meldet keinen Plan \(--plan fehlt\)$/m);
+  const data = JSON.parse(fs.readFileSync(path.join(path.dirname(/^BERICHT=(.+)$/m.exec(result.stdout)[1]), 'bericht.json'), 'utf8'));
+  assert.equal(data.vorabBestaetigt, 'Mensch: weiter ohne Plan-Pfad');
+});

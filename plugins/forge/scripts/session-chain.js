@@ -13,8 +13,8 @@ const { parseStatusLine, turnAction, readTurns, writeTurns } = require('./lib/se
 const { commitFor, checkWhiteboardingCommitted } = require('./lib/session-chain-commit');
 const { goCall, adoptedText, noStatusHint, runningLine } = require('./lib/session-chain-text');
 const { briefHashOf } = require('./lib/stage-start-guard');
-const { etappeReport, readInput } = require('./lib/session-chain-report');
-const { setState, copySpecAtStart, holdAt, processFinal, closing, recordCommit } = require('./lib/session-chain-steps');
+const { etappeReport, readInput, recordVorab } = require('./lib/session-chain-report');
+const { setState, copySpecAtStart, holdAt, processFinal, previewFinal, closing, recordCommit } = require('./lib/session-chain-steps');
 const { reviewStand } = require('./lib/session-chain-review');
 
 const USAGE = [
@@ -30,10 +30,11 @@ const USAGE = [
   '       node session-chain.js review-stand --spec <S>',
   '       node session-chain.js etappe-report --etappe <etappe> (--slug <slug> | --spec <S>) [--inhalt <datei>] [--entscheidung <text>]... [--datei <pfad>]...',
   '              [--tests <text>] [--anhang <datei>]... [--plan <P>] [--worktree <R>] [--branch <name>] [--pruefung gruen|rot|keine|umgebung | --pruefung-datei <pruefung.json>] [--luecke <befehl>]... [--ac-ohne-test <AC>]...',
+  '              [--vorab-bestaetigt <worte des menschen>]',
   '',
 ].join('\n');
 const VALUE_OPTIONS = ['--slug', '--leit', '--basis', '--wi', '--spec', '--plan', '--worktree', '--etappe', '--kontext', '--quelle', '--session', '--turn-datei', '--etappenbericht', '--inhalt',
-  '--commit', '--art', '--anlass', '--message', '--antwort', '--datei', '--entscheidung', '--tests', '--anhang', '--branch', '--pruefung', '--luecke', '--ac-ohne-test', '--pruefung-datei'];
+  '--commit', '--art', '--anlass', '--message', '--antwort', '--datei', '--entscheidung', '--tests', '--anhang', '--branch', '--pruefung', '--luecke', '--ac-ohne-test', '--pruefung-datei', '--vorab-bestaetigt'];
 const LIST_OPTIONS = ['--datei', '--entscheidung', '--anhang', '--luecke', '--ac-ohne-test'];
 const FLAG_OPTIONS = ['--stopp', '--erneut'];
 const CHECKS = ['gruen', 'rot', 'keine', 'umgebung'];
@@ -194,9 +195,25 @@ function report(values) {
   const file = etappeReport({
     etappe: required(values, 'etappe'), slug: values.slug, spec: values.spec, bericht: values.inhalt, entscheidungen: values.entscheidung, dateien: values.datei,
     tests: values.tests, anhang: values.anhang.map((item) => path.resolve(item)), plan: values.plan, worktree: values.worktree, branch: values.branch,
-    pruefung: values.pruefung, luecken: values.luecke, acOhneTest: values['ac-ohne-test'],
+    pruefung: values.pruefung, luecken: values.luecke, acOhneTest: values['ac-ohne-test'], vorabBestaetigt: values['vorab-bestaetigt'],
   }, process.cwd());
-  return `BERICHT=${file}`;
+  return [`BERICHT=${file}`, ...vorabCheck(file, Boolean(values['vorab-bestaetigt']))].join('\n');
+}
+
+// Vorab-Prüfung der Etappe: dieselbe Prüfung wie `final` der Leit-Session (previewFinal), ohne Zustand zu schreiben. Das Ergebnis steht in
+// den Bericht-Daten (`vorab`, `vorabShowstopper`); der Hook der Etappen-Session hält damit ein `final`, das die Leit-Session halten würde.
+// `VORAB=`: `showstopper` vor `abweichung` vor `bestaetigt` (Abweichungen vom Menschen bestätigt) vor `ok`. Ist die Prüfung hier nicht
+// möglich, bleibt die Datei ohne Ergebnis und die Zeile nennt den Grund; dann prüft wie bisher nur die Leit-Session.
+function vorabCheck(file, confirmed) {
+  let found;
+  try {
+    found = previewFinal(file, process.cwd());
+    recordVorab(file, found);
+  } catch (error) {
+    return [`VORAB=nicht-pruefbar ${error.message}`];
+  }
+  const state = found.showstopper.length > 0 ? 'showstopper' : found.abweichungen.length === 0 ? 'ok' : confirmed ? 'bestaetigt' : 'abweichung';
+  return [`VORAB=${state}`, ...found.abweichungen.map((line) => `ABWEICHUNG=${line}`), ...found.showstopper.map((line) => `SHOWSTOPPER=${line}`)];
 }
 
 // Stand des Reviews im Whiteboarding: daraus entscheidet die Etappe, ob die Abschlussfrage kommt.

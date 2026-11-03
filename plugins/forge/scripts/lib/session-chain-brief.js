@@ -18,6 +18,7 @@ const BASE_FILE = path.join(PLUGIN_ROOT, 'shared', 'session-chain', 'base-sub-ag
 const CHAIN_SCRIPT = `${toPosix(PLUGIN_ROOT)}/scripts/session-chain.js`;
 const STATE_SCRIPT = `${toPosix(PLUGIN_ROOT)}/scripts/orchestrator-state.js`;
 const RULES_FILE = `${toPosix(PLUGIN_ROOT)}/shared/orchestrator-rules.md`;
+const VERIFY_SCRIPT = `${toPosix(PLUGIN_ROOT)}/scripts/verify-run.js`;
 
 // Kennung der Leit-Session, an die die Etappen-Session ihr `final` schickt, und ihre Zeile `- Leit-Session: <id>` unter `## Werte`.
 // Das eine Format für Brief (erzeugt), CLI `brief --leit` (prüft) und Hook der Etappen-Session (liest). Zeichensatz ohne
@@ -112,10 +113,10 @@ const ETAPPEN_BRIEFS = {
     auftrag: () => [
       'Einen Showstopper klärst du mit dem Menschen hier.',
       '`COMMIT` der Statuszeile ist der letzte Commit der Umsetzung: `git -C "<R>" rev-parse --short HEAD` nach dem Lauf; ohne Commit `none`.',
-      '`<PR>` ist die Datei `pruefung.json` im Scratchpad dieser Session, die Schritt 6 des Orchestrators schreibt. Lief Schritt 6 nicht, gilt `--pruefung keine`.',
+      `\`<PR>\` ist die Datei \`pruefung.json\` im Scratchpad dieser Session, die Schritt 6 des Orchestrators schreibt. Lief Schritt 6 nicht, holst du den Prüflauf nach: \`node "${VERIFY_SCRIPT}" --repo "<R>" --out "<PR>"\`. Fehlt dem Worktree ein \`node_modules\`-Ordner des Haupt-Checkouts, legst du davor einen Link darauf an (\`node -e "require('fs').symlinkSync(process.argv[1], process.argv[2], 'junction')" "<ziel>" "<link>"\`) und löst ihn danach nur als Link (\`node -e "require('fs').unlinkSync(process.argv[1])" "<link>"\`), nie rekursiv. Der Lauf kann länger als zehn Minuten dauern: im Hintergrund starten und auf sein Ende warten, nicht pollen. Meldet er \`UMGEBUNG\` mit \`Node-Pakete fehlen\`, fehlt der Link auf \`node_modules\`: erst ihn anlegen. Meldet er \`UMGEBUNG\`, weil ein \`dv-\`-Befehl nicht startbar ist, fehlt das Werkzeug im PATH: Das klärst du mit dem Menschen (\`STATUS=needs-user\`). \`--pruefung keine\` gibt es in der Umsetzung nicht.`,
       '`--luecke "<befehl>"` je Lauf in `<PR>`, dessen Ausgabe zeigt, dass das Werkzeug fehlt (etwa `command not found`, `not recognized`, `ENOENT`); sonst keine `--luecke`.',
       '`--ac-ohne-test` ergänzt `etappe-report` selbst aus der Zeile `AC ohne beweisenden Test:` des Abschlussberichts; nenne nur zusätzlich ein Akzeptanzkriterium ohne beweisenden Test, das der Bericht nicht nennt, auch wenn das Review es nur als 🟡 führt. Integrationspunkte ohne Test sind davon ausgenommen.',
-      'Berichtsdatei mit `--worktree "<R>"` und `--branch <branch>` (beide Werte aus den Zeilen `R=` und `branch=` von start-work), `--pruefung-datei "<PR>"` (ohne Prüflauf `--pruefung keine`), `--luecke` und `--ac-ohne-test` wie oben; `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.',
+      'Berichtsdatei mit `--worktree "<R>"` und `--branch <branch>` (beide Werte aus den Zeilen `R=` und `branch=` von start-work), `--pruefung-datei "<PR>"`, `--luecke` und `--ac-ohne-test` wie oben; `--inhalt` ist sein Abschlussbericht: die Datei der Zeile `BERICHT <datei>` aus der Ausgabe des Orchestrators.',
     ],
   },
   abschluss: {

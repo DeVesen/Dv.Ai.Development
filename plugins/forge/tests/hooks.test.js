@@ -24,3 +24,8 @@ test('hooksJson_SessionEndAndSubagentStop_KeepTheirGuardCommands', () => {
   assert.equal(commandOf('SessionEnd')[0], 'node "${CLAUDE_PLUGIN_ROOT}/scripts/guard-orchestrator.js" stop');
   assert.equal(commandOf('SubagentStop')[0], 'node "${CLAUDE_PLUGIN_ROOT}/scripts/result-check.js"');
 });
+
+test('hooksJson_PreToolUse_RunsStageGuardOnSendMessage', () => {
+  const entry = hooks.PreToolUse.find((item) => item.matcher === 'SendMessage');
+  assert.deepEqual(entry.hooks.map((hook) => hook.command), ['node "${CLAUDE_PLUGIN_ROOT}/scripts/stage-guard.js" pretool']);
+});

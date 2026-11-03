@@ -1,4 +1,6 @@
-# Entwurf: Begründungen für die Regeln von dv-forge (Befund 8)
+# Begründungen für die Regeln von dv-forge (Befund 8, bestätigt)
+
+**Übernommen am 2026-11-03:** Der Mensch hat alle Vorschläge bestätigt. Sie stehen jetzt im Feld `why` von `src/forge/rules/orchestrator.yaml` und `src/forge/rules/dialog.yaml`; diese Datei bleibt nur als Protokoll der Entscheidung.
 
 Für jede Regel aus `shared/orchestrator-rules.md` und `shared/dialog-rules.md`, bei der die Quelle keinen Grund nennt, steht hier ein Vorschlag. Nach deiner Freigabe wandern die Begründungen in das Feld `why` von `src/forge/rules/*.yaml`. Der Text der Regeldateien selbst bleibt unverändert, damit die Skills nicht länger werden.
 

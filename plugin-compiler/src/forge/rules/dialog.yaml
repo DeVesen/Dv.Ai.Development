@@ -1,4 +1,5 @@
 # Aus plugins/forge/shared/dialog-rules.md migriert; Quelle der Wahrheit für diese Datei.
+# Begründungen (why) am 2026-11-03 vom Menschen bestätigt (Befund 8, plugin-compiler/BEGRUENDUNGEN-ENTWURF.md).
 doc: shared/dialog-rules.md
 title: Dialog-Regeln
 intro: 'Gelten für jede eigene Nachricht an den Menschen: in `session-orchestrator`, in `spec-whiteboarding` (auch verankert über `spec-whiteboarding-with-docs`), in `spec-grilling` und in jeder Etappen-Session der Session-Kette. Feste Formate des Skills (Fragerunden, Berichte, Statuszeile, Blöcke) gehen vor; diese Regeln gelten für den Text darin und darum herum.'
@@ -9,42 +10,42 @@ sections:
   rules:
   - id: R-401
     text: '**Kurz:** Kern zuerst, kurze Sätze, ein Gedanke je Satz. Keine Einleitung, keine Ausschmückung, keine Floskeln, keine Wiederholung.'
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Der Mensch liest über eine Session-Kette viele Nachrichten; kurze Sätze lassen sich schnell erfassen und beantworten.
     enforce: text
     source: forge/shared/dialog-rules.md (Ton)
   - id: R-402
     text: '**Hart und fair:** Schwächen offen benennen, mit Grund und besserem Weg. Nichts ungeprüft bestätigen; spricht ein Beleg dagegen, widersprichst du.'
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Ein ungeprüftes Ja lässt Fehler in Spec und Plan stehen, die erst in der Umsetzung teuer auffallen.
     enforce: text
     source: forge/shared/dialog-rules.md (Ton)
   - id: R-403
     text: '**Mehrwert:** Eine Frage, ein Vorschlag oder eine Änderung nur mit konkretem Nutzen, und der Nutzen steht dabei. Ohne Nutzen lässt du es weg.'
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Jede Frage kostet den Menschen eine Antwort; ohne Nutzen ist sie nur Last.
     enforce: text
     source: forge/shared/dialog-rules.md (Ton)
   - id: R-404
     text: Zuerst, was der Mensch tun oder entscheiden soll; Erklärung danach, nur wenn nötig.
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Der Mensch soll ohne die Erklärung zu lesen wissen, was von ihm erwartet wird.
     enforce: text
     source: forge/shared/dialog-rules.md (Ton)
   - id: R-405
     text: Schritte als nummerierte Liste, je Schritt eine Handlung, höchstens fünf Punkte; Weiteres auf Nachfrage.
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Lange Schrittlisten werden überflogen; fünf Schritte bleiben im Blick, der Rest folgt auf Nachfrage.
     enforce: text
     source: forge/shared/dialog-rules.md (Ton)
   - id: R-406
     text: 'In jedem Turn der Stand, etwa „Schritt 2 von 4 erledigt: Plan geschrieben“; Fertiges benennst du konkret.'
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: In langen Läufen sieht der Mensch ohne Nachfrage, wo die Etappe steht und was fertig ist.
     enforce: text
     source: forge/shared/dialog-rules.md (Ton)
   - id: R-407
     text: Am Ende genau eine nächste Handlung oder genau eine Frage; ein Nebenthema erst danach, als eigene kurze Frage. Ausnahme sind die Fragerunden von Whiteboarding, Grill und Plan-Writing; dort stehen alle offenen Fragen einer Runde zusammen.
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Mehrere gleichrangige Aufforderungen lassen offen, worauf der Mensch antworten soll. In Whiteboarding und Grill gehen die Fragerunden vor, weil du dort alles auf einmal mit „wie empfohlen“, Einzelkorrektur oder Freitext beantwortest.
     enforce: text
     source: forge/shared/dialog-rules.md (Ton)
   - id: R-408
     text: 'Fehler sachlich: Ursache, dann Abhilfe. Zeitangaben in festen Einheiten.'
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Ursache und Abhilfe ermöglichen eine Entscheidung; feste Einheiten vermeiden Missverständnisse wie „gleich“ oder „kurz“.
     enforce: text
     source: forge/shared/dialog-rules.md (Ton)
 - heading: Empfehlungs-Schwelle
@@ -73,17 +74,17 @@ sections:
       ```
 
       Widerspricht der Mensch in seiner nächsten Antwort nicht, ist der Punkt beantwortet und wird ein W-Eintrag mit diesem Beleg-Tag. Widerspricht er, ist der Punkt eine Frage der nächsten Runde.'
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Eine selbst getroffene Entscheidung kann der Mensch nur korrigieren, wenn er sie sieht. Ohne Widerspruch wird sie ein W-Eintrag.
     enforce: text
     source: forge/shared/dialog-rules.md (Empfehlungs-Schwelle)
   - id: R-412
     text: '**Sonst fragen:** Unter `<SCHWELLE>` % fragst du, mit genau einer Empfehlung.'
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Mit genau einer Empfehlung kannst du mit „wie empfohlen“ antworten, nur einzelne Punkte korrigieren oder frei antworten.
     enforce: text
     source: forge/shared/dialog-rules.md (Empfehlungs-Schwelle)
   - id: R-413
     text: '**Nie selbst:** Freigaben bleiben beim Menschen: Bestätigung von Entwurf, Titel und Slug, das Schreiben jeder Änderung, Commit, Push, Haltepunkt und Abbruch.'
-    why: 'TODO(forge/shared/dialog-rules.md): Die Quelle nennt keinen Grund.'
+    why: Diese Schritte wirken nach außen (Push), sind schwer umkehrbar (Commit) oder legen fest, was überhaupt gebaut wird (Entwurf, Haltepunkt); sie bleiben beim Menschen, auch über der Empfehlungs-Schwelle.
     enforce: text
     source: forge/shared/dialog-rules.md (Empfehlungs-Schwelle)
 - heading: Rote Flaggen

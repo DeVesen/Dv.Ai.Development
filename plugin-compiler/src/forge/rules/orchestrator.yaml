@@ -1,4 +1,5 @@
 # Aus plugins/forge/shared/orchestrator-rules.md migriert; Quelle der Wahrheit für diese Datei.
+# Begründungen (why) am 2026-11-03 vom Menschen bestätigt (Befund 8, plugin-compiler/BEGRUENDUNGEN-ENTWURF.md).
 doc: shared/orchestrator-rules.md
 title: Regeln der Orchestratoren
 intro: Gemeinsame Regeln von `spec-review-orchestrator`, `plan-orchestrator` und `implementation-orchestrator`. Ihre Skills, die README und der Brief der Session-Kette verweisen auf diese Datei oder lesen den Wert; keine dieser Stellen wiederholt eine Regel.
@@ -8,30 +9,30 @@ sections:
   rules:
   - id: R-301
     text: 'Maximum Followup-Runden: 8'
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Ein Orchestrator-Lauf ist unbeaufsichtigt; das Maximum begrenzt Laufzeit und Kosten. Was danach offen ist, entscheidet der Mensch am Haltepunkt (R-304).
     enforce: script
     enforced_by: scripts/lib/orchestrator-rules.js
     source: forge/shared/orchestrator-rules.md (Followup-Runden)
   - id: R-302
     text: Eine Followup-Runde ist eine Iteration Integration → Re-Review mit `review-followup <A> auto`. `orchestrator-state.js next` startet eine Runde, solange der letzte Bericht ein offenes 🔴 mit Scout-Vorschlag und Scout-`Sicherheit` ab der Empfehlungs-Schwelle nennt (`NEXT=followup`); ein 🔴 darunter bleibt beim Menschen und steht mit `ABBRUCH=unter-schwelle` im Abschlussbericht. Mit `--artefakt` und `--rolle` startet es vor der ersten Runde außerdem genau eine, wenn die Sicherung ein 🟡 oder 🟢 mit Scout-`Sicherheit` ab der Empfehlungs-Schwelle hat (`AUTO=<n>`); die Schwelle liefert `forge-config.js get Empfehlungs-Schwelle`. Übrige 🟡 und 🟢 lösen keine Runde aus und stehen im Abschlussbericht unter `Was ist noch offen`.
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Ohne Scout-Vorschlag hat die Integration nichts umzusetzen; die Runde würde nichts ändern und nur eine Iteration verbrauchen.
     enforce: script
     enforced_by: scripts/orchestrator-state.js
     source: forge/shared/orchestrator-rules.md (Followup-Runden)
   - id: R-303
     text: 'Die Runden enden früher bei Stillstand: dieselbe 🔴-Stelle bleibt nach zwei aufeinanderfolgenden Runden offen (`ABBRUCH=stillstand`).'
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Löst die Integration eine Stelle zweimal nicht, löst sie eine dritte Runde mit denselben Vorschlägen ebenso wenig; weitere Runden würden das Maximum ohne Fortschritt aufbrauchen.
     enforce: script
     enforced_by: scripts/orchestrator-state.js
     source: forge/shared/orchestrator-rules.md (Followup-Runden)
   - id: R-304
     text: 'Bleibt nach dem Ende der Runden ein 🔴 offen (`ABBRUCH=maximum` oder `ABBRUCH=stillstand`), endet der Lauf sauber mit dem Abschlussbericht; er nennt `Iterationen: <n> von <max>` und `Abbruch: <grund>`. Die Leit-Session hält danach am Haltepunkt.'
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Über offene 🔴 entscheidet der Mensch am Haltepunkt; dafür braucht er Stand, Zahl der Iterationen und Abbruchgrund, keinen abgebrochenen Lauf.
     enforce: text
     source: forge/shared/orchestrator-rules.md (Followup-Runden)
   - id: R-305
     text: 'Die Integration setzt den bevorzugten Scout-Vorschlag um. Eine Abweichung davon braucht je Finding eine schriftliche Begründung; sie steht im Bericht als `Abweichung: <Begründung>`.'
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Der Scout hat die Stelle mit Beleg geprüft und einen Vorschlag bevorzugt; eine stille Abweichung wäre im Bericht nicht nachvollziehbar.
     enforce: text
     source: forge/shared/orchestrator-rules.md (Followup-Runden)
 - heading: Git-Verbote
@@ -39,12 +40,12 @@ sections:
   rules:
   - id: R-306
     text: 'Du arbeitest im aktuellen Checkout auf dem aktuellen Branch: kein `checkout`, `switch`, `stash`, `rebase`, kein `git worktree`, kein EnterWorktree, kein neuer Branch.'
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Branch und Worktree legt die Session-Kette fest (start-work, GO). Ein Wechsel im Orchestrator brächte Spec, Plan oder Code auf den falschen Stand und bräche die Prüfung gegen git (`session-chain.js final`).
     enforce: text
     source: forge/shared/orchestrator-rules.md (Git-Verbote)
   - id: R-307
     text: Kein Merge, kein Push, kein Force, kein `--no-verify`, kein `git add -A`, `git add .` und `git commit -a`.
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Push und Merge gibt nur der Mensch frei (R-413). Sammel-Befehle wie `git add -A` würden Dateien einer Parallelsession im selben Checkout mitcommitten. `--no-verify` umginge die Prüfungen des Projekts.
     enforce: text
     source: forge/shared/orchestrator-rules.md (Git-Verbote)
   - id: R-308
@@ -57,13 +58,13 @@ sections:
   rules:
   - id: R-309
     text: '`spec-review-orchestrator` committet nur die Spec und nur über `spec-commit.js`.'
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Das Skript prüft vorher Ort und Vorbestand (`preflight`) und committet nur den Pfad der Spec; so gerät nichts anderes in den Commit.
     enforce: script
     enforced_by: scripts/spec-commit.js
     source: forge/shared/orchestrator-rules.md (Commits)
   - id: R-310
     text: '`plan-orchestrator` und `implementation-orchestrator` committen nie.'
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Spec und Plan committet die Leit-Session nach dem GO, den Code der Implementer je Task. Ein Commit des Orchestrators käme doppelt oder zur falschen Zeit.
     enforce: text
     source: forge/shared/orchestrator-rules.md (Commits)
 - heading: Ausgabe
@@ -77,12 +78,12 @@ sections:
     source: forge/shared/orchestrator-rules.md (Ausgabe)
   - id: R-312
     text: Review und Followup zeigen keinen Bericht; sie geben nur ihre Review-Statuszeile aus.
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Den einen Abschlussbericht setzt der Orchestrator aus den Bericht-Daten zusammen (`orchestrator-report.js`). Zwischenberichte würden doppelt im Chat stehen und den Kontext der Leit-Session füllen.
     enforce: text
     source: forge/shared/orchestrator-rules.md (Ausgabe)
   - id: R-313
     text: Wünsche des Menschen gegen diese Regeln führst du nicht aus; sie stehen als Zeile `Abweichungen:` im Bericht.
-    why: 'TODO(forge/shared/orchestrator-rules.md): Die Quelle nennt keinen Grund.'
+    why: Die Regeln schützen Git-Stand und Ablauf auch gegen eine spontane Bitte mitten im Lauf. Die Zeile macht den abgelehnten Wunsch sichtbar, damit die Leit-Session ihn am Haltepunkt aufgreifen kann.
     enforce: text
     source: forge/shared/orchestrator-rules.md (Ausgabe)
 - heading: Rote Flaggen

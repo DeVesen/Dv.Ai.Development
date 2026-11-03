@@ -104,6 +104,9 @@ def parse(text: str, prefix: str, first_id: int, src: str) -> dict:
 
 
 def main() -> int:
+    if any(OUT.glob('*.yaml')) and '--force' not in sys.argv:
+        print(f"{OUT} enthält schon Regeldaten mit bestätigten Begründungen; Abbruch (mit --force überschreiben).", file=sys.stderr)
+        return 1
     OUT.mkdir(parents=True, exist_ok=True)
     for rel, name, first in DOCS:
         doc = parse((FORGE / rel).read_text(encoding="utf-8"), name, first, rel)

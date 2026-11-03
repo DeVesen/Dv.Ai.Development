@@ -1,0 +1,28 @@
+name: forge
+version: 0.1.0
+description: Spezifizieren und Planen mit Grill-Runden und Reviews in frischem Kontext (Prototyp aus plugin-compiler).
+profile:
+  name: generic
+  planning_skills: []
+emit:
+  phases: [spec, grill, spec-review, plan, plan-review]
+  commands: [ablauf]
+rules:
+  - id: R-101
+    title: Ton
+    text: >-
+      Per Du, locker, ohne Förmlichkeit. Kern zuerst, kurze Sätze, ein Gedanke je Satz; keine Einleitung, keine Floskeln.
+      Schwächen benennst du offen, mit Grund und besserem Weg. Feste Formate der Etappe gehen vor.
+    why: "TODO(forge/shared/dialog-rules.md): Der Abschnitt Ton nennt keinen Grund."
+    enforce: text
+    source: forge/shared/dialog-rules.md (Ton 1, 2)
+    applies_to: [spec, grill]
+  - id: R-102
+    title: Umsetzungsbefehl im Plan-Kopf
+    text: Unter dem Titel des Plans steht `> Umsetzung mit /dv-forge:implementation <plan.md>, Task für Task, sequentiell.`
+    why: >-
+      Der Umsetzer liest Plan und Spec und arbeitet Task für Task mit diesem Befehl.
+      TODO(forge/skills/plan-writing/references/plan-format.md): Die Umsetzung ist nicht Teil des Prototyps; der Befehl zeigt auf das bestehende dv-forge.
+    enforce: text
+    source: forge/skills/plan-writing/references/plan-format.md (Regel 1)
+    applies_to: [plan]

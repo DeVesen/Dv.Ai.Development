@@ -1,0 +1,49 @@
+# Gemeinsamer Kern: Grill-Mechanik (Whiteboarding und Grill teilen sie in forge über grill-rounds.md).
+rules:
+  - id: R-020
+    title: Komplette Frontier
+    text: >-
+      Jede [[Grill-Runde]] enthält die komplette [[Frontier]] auf einmal, nicht nur die wichtigste Frage.
+      Hängt eine Antwort von einer anderen offenen Frage derselben Runde ab, gehört sie in eine spätere Runde.
+      Die Runden enden erst, wenn die Frontier leer ist, einschließlich aller Zweige der Akzeptanzkriterien.
+    why: "TODO(forge/skills/spec-whiteboarding/references/grill-rounds.md): Die Quelle begründet nur die Verschiebung abhängiger Fragen, nicht die komplette Frontier."
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/grill-rounds.md (Frontier-Regeln 1, 2, 7)
+
+  - id: R-021
+    title: Verhalten belegen
+    text: >-
+      Eine Frage oder Option, die bestehendes Verhalten voraussetzt (Sortieren, Filtern, Export und Ähnliches), stellst
+      du nur mit Beleg an der konkreten Stelle (Datei:Zeile). Fehlt der Beleg oder darfst du nicht suchen, lässt du sie
+      weg oder fragst „Gibt es das heute?“ mit Tag `ungeklärt`.
+    why: Ein Modul-Import oder eine Fähigkeit des Frameworks belegt nur, was möglich wäre, nicht was es heute gibt.
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/grill-rounds.md (Belegregeln 1)
+
+  - id: R-022
+    title: Keine bedingte Empfehlung
+    text: >-
+      Eine Empfehlung hängt nie an einer ungeprüften Bedingung („falls …, sonst …“). Du prüfst die Bedingung vorher
+      und empfiehlst eindeutig; lässt sie sich nicht prüfen, ist sie eine eigene Frage, die abhängige folgt später.
+    why: "TODO(forge/skills/spec-whiteboarding/references/grill-rounds.md): Belegregel 2 nennt keinen Grund."
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/grill-rounds.md (Belegregeln 2)
+
+  - id: R-023
+    title: Kein neues Verhalten
+    text: >-
+      Ein Verhalten, das weder im Auftrag noch im Bestand steht und kein Grenzfall des beauftragten Verhaltens ist,
+      führst du nicht als Option ein. Legt der Auftrag es nahe, fragst du, ob es dazugehört, mit der Empfehlung „nicht in diese Story“.
+    why: "TODO(forge/skills/spec-whiteboarding/references/grill-rounds.md): Belegregel 3 nennt keinen Grund."
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/grill-rounds.md (Belegregeln 3); forge/skills/spec-grilling/SKILL.md (Rote Flaggen)
+
+  - id: R-024
+    title: Abbruch erst nach zweiter Ablehnung
+    text: >-
+      „Reicht jetzt“ ist noch kein [[Abbruch]]. Du nennst die offenen Zweige und bietest genau einmal eine verdichtete
+      Abschlussrunde an; erst die zweite, informierte Ablehnung ist ein Abbruch. Offene Punkte stehen dann im
+      Abbruch-Abschnitt mit Tag `ungeklärt`, nie als W-Eintrag.
+    why: "TODO(forge/skills/spec-whiteboarding/references/grill-rounds.md): Die Abbruch-Regel nennt keinen Grund."
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/grill-rounds.md (Abbruch-Regel); forge/skills/spec-whiteboarding/references/spec-format.md (Nur nach echtem Abbruch)

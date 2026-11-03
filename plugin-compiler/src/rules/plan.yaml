@@ -1,0 +1,53 @@
+# Gemeinsamer Kern: Plan-Writing.
+rules:
+  - id: R-040
+    title: Test zuerst
+    text: >-
+      Jeder [[Task]] beginnt mit einem fehlschlagenden Test, danach Test rot laufen lassen, minimal implementieren,
+      Test grün laufen lassen, committen. Ein AC ohne Code-Änderung bekommt einen Absicherungstest, der sofort grün ist;
+      rot ist dann ein Befund, kein Grund, Code zu ändern.
+    why: Der [[Umsetzer]] beherrscht sein Handwerk, aber seinem Testentwurf darfst du nicht vertrauen.
+    enforce: text
+    source: forge/skills/plan-writing/SKILL.md (Leitbild); forge/skills/plan-writing/references/task-rules.md (Schrittgröße); forge/skills/plan-writing/references/plan-format.md
+
+  - id: R-041
+    title: Vollständiger Code statt Platzhalter
+    text: >-
+      Jeder Code-Schritt enthält den vollständigen Code in einem Code-Block. Keine Platzhalter, kein „Tests für das Obige schreiben“
+      ohne Testcode, keine Verweise auf andere Tasks statt Code.
+    why: Der Umsetzer hat null Kontext und liest Tasks womöglich außer der Reihe.
+    enforce: text
+    source: forge/skills/plan-writing/references/task-rules.md (Verbotene Platzhalter); forge/skills/plan-writing/SKILL.md (Rote Flaggen)
+
+  - id: R-042
+    title: Jedes AC in einem Task
+    text: >-
+      Jeder Task nennt unter `**ACs:**` die AC-IDs, die er umsetzt; jedes AC der Spec steht in mindestens einem Task.
+      Jede Soll-Vorgabe der Spec steht mit ihrem Wert unter `## Global Constraints`.
+    why: Ein AC ohne Task wird nicht gebaut; `ac-fehlt-im-plan` ist im Plan-Review 🔴.
+    enforce: text
+    source: forge/skills/plan-writing/references/plan-format.md (Regeln 2, 4); forge/agents/plan-review-coverage.md; forge/scripts/lib/rules.js
+
+  - id: R-043
+    title: Keine fremden Specs und Pläne
+    text: Andere Specs oder Pläne liest du nie, auch nicht zur selben Workitem-Nummer.
+    why: Sie lenken einen Neuanlauf.
+    enforce: text
+    source: forge/skills/plan-writing/SKILL.md (Schritt 4, Rote Flaggen)
+
+  - id: R-044
+    title: Fragen statt Annahmen
+    text: >-
+      Offene Fragen stellst du dem Menschen, eine Frage pro Nachricht, mit Empfehlung und Grund. Jede Antwort notierst du
+      sofort als W-Eintrag mit Tag `Aussage`; sagt der Mensch „entscheide du“, gilt deine Empfehlung mit Tag `delegiert`.
+      Legt die Spec die Form eines AC-Ergebnisses nicht fest, wählst du sie nicht selbst.
+    why: Du triffst keine Annahme stillschweigend, und W-Einträge im Plan sind bindend wie in der Spec.
+    enforce: text
+    source: forge/skills/plan-writing/SKILL.md (Schritt 6); forge/skills/plan-writing/references/plan-format.md (Regel 12)
+
+  - id: R-045
+    title: Stabiler Anker
+    text: Jede `Modify`-Zeile trägt nach `·` einen stabilen Anker (Symbol oder eindeutige Zeichenfolge); die Zeilenangabe dient nur der Orientierung.
+    why: Der Anker bleibt gültig, wenn ein früherer Task dieselbe Datei ändert.
+    enforce: text
+    source: forge/skills/plan-writing/references/plan-format.md (Regel 6)

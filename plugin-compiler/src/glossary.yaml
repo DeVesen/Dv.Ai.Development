@@ -1,0 +1,62 @@
+# Ein Begriff, eine Definition. Fachbegriffe in Quelltexten stehen als [[Begriff]] oder [[Begriff|Anzeigeform]].
+# `avoid` listet Wörter, die im Quelltext und in der Ausgabe nicht vorkommen dürfen (wie CONTEXT.md „Nicht verwenden“).
+terms:
+  - term: Etappe
+    definition: Ein Schritt des Ablaufs mit eigenem Eingang, eigenem Artefakt und eigenem Gate (Spec, Grill, Spec-Review, Plan, Plan-Review).
+    avoid: [Phase, Phasen]
+    source: CONTEXT.md (Etappe)
+  - term: Spec
+    definition: Funktionale Beschreibung eines Vorhabens als `spec.md`, WAS statt WIE, mit festen Abschnitten von Kopf bis `## Entscheidungen`.
+    source: forge/skills/spec-whiteboarding/references/spec-format.md
+  - term: Plan
+    definition: Umsetzungsplan `plan.md` aus einer Spec mit exakten Dateien, Interfaces und Test-first-Schritten je Task.
+    source: forge/skills/plan-writing/references/plan-format.md
+  - term: Task
+    definition: "Kleinste Einheit des Plans mit eigenem Testzyklus, die einen eigenen Review wert ist; Überschrift `### Task <n>: <Komponente>`."
+    source: forge/skills/plan-writing/references/task-rules.md
+  - term: Umsetzer
+    definition: Wer den Plan Task für Task umsetzt; beherrscht sein Handwerk, hat aber null Kontext zu Projekt, Werkzeugen und Fachgebiet.
+    source: forge/skills/plan-writing/SKILL.md (Leitbild)
+  - term: Akzeptanzkriterium
+    definition: Prüfbare Aussage der Spec in der Form `- **AC-<NN>** Gegeben …, wenn …, dann …`; kurz AC.
+    source: forge/skills/spec-whiteboarding/references/ac-rules.md
+  - term: W-Eintrag
+    definition: Bindende Entscheidung des Menschen unter `## Entscheidungen`, Form `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>`.
+    source: forge/skills/spec-whiteboarding/references/spec-format.md (Regel 2)
+  - term: Beleg-Tag
+    definition: Herkunft einer Zeile oder Empfehlung, `Aussage`, `Anhang`, `Historie`, `Git` oder `ungeklärt`; eine Spec der Art `frei` kennt nur `Aussage`, `Anhang` und `ungeklärt`, der Plan zusätzlich `delegiert`.
+    source: forge/skills/spec-whiteboarding/references/spec-format.md (Regel 5); forge/skills/plan-writing/references/plan-format.md (Regel 12)
+  - term: Frontier
+    definition: Alle offenen Entscheidungen, deren Voraussetzungen geklärt sind.
+    source: forge/skills/spec-whiteboarding/references/grill-rounds.md (Frontier-Regeln 1)
+  - term: Grill-Runde
+    definition: Eine Nachricht mit der kompletten Frontier, auf die der Mensch frei in Text antwortet.
+    source: forge/skills/spec-whiteboarding/references/grill-rounds.md
+  - term: Abbruch
+    definition: Ende der Grill-Runden durch die zweite, informierte Ablehnung des Menschen; offene Punkte stehen dann im Abbruch-Abschnitt der Spec.
+    source: forge/skills/spec-whiteboarding/references/grill-rounds.md (Abbruch-Regel)
+  - term: Reviewer
+    definition: Sub-Agent, der ein Artefakt in frischem Kontext prüft und Findings meldet, ohne es zu ändern.
+    avoid: [Review-Loop]
+    source: forge/shared/review-flow/flow.md; forge/agents/spec-review-*.md
+  - term: Finding
+    definition: Befund eines Reviewers an genau einer Stelle, mit wörtlichem Zitat, Kategorie, Konsequenz und Begründung.
+    source: forge/shared/review-loop/finding-format.md
+  - term: Severity
+    definition: Schweregrad eines Findings, 🔴 red blockt, 🟡 yellow ist eine echte Schwäche ohne zwingend falschen Bau, 🟢 green ist eine Anmerkung.
+    source: forge/shared/review-loop/severity-rules.md
+  - term: Verdict
+    definition: "Gesamturteil eines Reviews: `APPROVE`, wenn kein 🔴 offen ist, sonst `NEEDS_CHANGES`. TODO(forge/shared/review-loop/severity-rules.md): forge kennt nur „sauber“ (`clean=true`); die Namen APPROVE und NEEDS_CHANGES stammen aus dem Auftrag."
+    source: forge/shared/review-loop/severity-rules.md (Sauber)
+  - term: Gate
+    definition: Mechanische Prüfung beim Start einer Etappe, ob ihre Pflichtartefakte vorliegen; kein Haltepunkt und keine Entscheidung des Menschen.
+    source: "Auftrag; abgegrenzt von CONTEXT.md (Haltepunkt, „Nicht verwenden: Gate“)"
+  - term: Pflichtartefakt
+    definition: Datei, die eine Etappe als Eingang braucht und die eine Vorgänger-Etappe erzeugt.
+    source: Auftrag; forge/skills/plan-writing/SKILL.md (Schritt 1)
+  - term: Global Constraints
+    definition: Abschnitt des Plans mit jeder projektweiten Vorgabe der Spec, wörtlich, und den Kernregeln der Planungs-Skills; jeder Task erbt ihn.
+    source: forge/skills/plan-writing/references/plan-format.md (Regel 2)
+  - term: Planungs-Skill
+    definition: Skill, dessen Kernregeln das Plan-Writing unter Global Constraints übernimmt; in dv-forge aus `forge-config.js get Planungs-Skills`, hier aus dem Profil des Plugins.
+    source: forge/skills/plan-writing/references/context-reading.md (Planungs-Skills)

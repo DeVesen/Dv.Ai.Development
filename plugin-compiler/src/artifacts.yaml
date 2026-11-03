@@ -1,0 +1,22 @@
+# Artefakte der Etappen. Alle liegen im selben Ordner wie die Spec (<spec-ordner>).
+artifacts:
+  - id: spec
+    file: spec.md
+    term: Spec
+    location: docs/forge/<datum>-<slug>/spec.md
+    source: forge/skills/spec-whiteboarding/references/spec-format.md (Default von Spec-Ablage)
+  - id: spec-review-report
+    file: spec-review.md
+    term: Verdict
+    location: <spec-ordner>/spec-review.md
+    source: "TODO(forge/shared/review-flow/flow.md): forge legt Bericht und Bericht-Daten in die Ablage unter <git-common-dir>/dv-forge/session-chain/<slug>/ablage/; der Prototyp legt den Bericht neben die Spec."
+  - id: plan
+    file: plan.md
+    term: Plan
+    location: <spec-ordner>/plan.md
+    source: forge/skills/plan-writing/references/plan-format.md (Default plan.md im Ordner der Spec)
+  - id: plan-review-report
+    file: plan-review.md
+    term: Verdict
+    location: <spec-ordner>/plan-review.md
+    source: "TODO(forge/shared/review-flow/flow.md): wie spec-review-report, Ablage statt Spec-Ordner."

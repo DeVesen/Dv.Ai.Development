@@ -1,0 +1,42 @@
+name: angular
+version: 0.1.0
+description: Spezifizieren und Planen für Angular-Projekte, gemeinsamer Kern plus Angular-Toolchain-Regeln (Prototyp aus plugin-compiler).
+profile:
+  name: angular
+  # Planungs-Skills aus dem bestehenden dv-angular; TODO(angular/README.md): Auswahl nicht abgestimmt.
+  planning_skills: [dv-angular:toolchain, dv-angular:angular-testing, dv-angular:angular-project-layout]
+emit:
+  phases: [spec, grill, spec-review, plan, plan-review]
+  commands: [ablauf]
+rules:
+  - id: R-201
+    title: Angular-Toolchain
+    text: >-
+      Jede Verifikation nutzt `dv-angular-build`, `dv-angular-test` oder `dv-angular-lint` mit `--root <Workspace>` im
+      Bash-Tool; Argumente nach `--` gehen an `ng`, z. B. `dv-angular-test --root <Workspace> -- --include src/app/x.spec.ts`.
+      Nicht `ng build|test|lint`, nicht `npm test`, nicht `build_angular_project` oder `test_angular_project` von dev-mcp.
+    why: >-
+      Die Befehle liefern Status, Zusammenfassung und Fehler und legen das Volllog in eine Datei, die nie in den Kontext
+      geladen wird; der Hook von dv-angular lehnt die anderen Wege ab.
+    enforce: text
+    source: angular/skills/toolchain/SKILL.md; angular/scripts/toolchain-guard.js; forge/skills/plan-writing/references/plan-format.md (Regel 10)
+    applies_to: [plan, plan-review]
+  - id: R-202
+    title: Workspace-Wahl
+    text: >-
+      `<Workspace>` ist der Ordner mit der `angular.json`. Gibt es im Repo genau einen, nimmst du ihn; gibt es mehrere,
+      fragst du, welcher gemeint ist, und startest nichts.
+    why: "TODO(angular/skills/toolchain/SKILL.md): Die Quelle nennt keinen Grund."
+    enforce: text
+    source: angular/skills/toolchain/SKILL.md (Ohne genannten Pfad)
+    applies_to: [plan]
+  - id: R-203
+    title: Verhaltenstests sind Spezifikation
+    text: >-
+      Integrationsnahe Tests (Smart-Component mit Service und gemocktem HTTP, Routing, mehrstufige Abläufe) beschreiben
+      gewünschtes Verhalten. Schlägt einer nach einer Änderung fehl, gilt das als Regression oder bewusste
+      Verhaltensänderung; der Plan schreibt die Erwartung nicht ohne Bestätigung des Menschen um.
+    why: "TODO(angular/skills/angular-testing/references/policy.md): Die Quelle nennt keinen Grund; forge sagt dasselbe für Absicherungstests (INVENTORY a16)."
+    enforce: text
+    source: angular/skills/angular-testing/references/policy.md
+    applies_to: [plan, plan-review]

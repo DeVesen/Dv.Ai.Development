@@ -1,0 +1,40 @@
+# Gemeinsamer Kern: Belege, Fragen, Freigaben, Ende einer Etappe.
+rules:
+  - id: R-001
+    title: Belegpflicht
+    text: Jede Aussage, Empfehlung und Option trägt einen [[Beleg-Tag]]. Bei `ungeklärt` fragst du, statt zu raten.
+    why: Eine Vermutung bleibt eine Frage, auch wenn sie naheliegt; eine eigene Entscheidung braucht einen Beleg-Tag außer `ungeklärt`.
+    enforce: text
+    source: forge/skills/spec-whiteboarding/SKILL.md (Grundhaltung 3); forge/shared/dialog-rules.md (85-%-Regel 2)
+
+  - id: R-002
+    title: 85-%-Regel
+    text: >-
+      Lässt sich eine Antwort mit mindestens 85 % Gewissheit und einem Beleg-Tag außer `ungeklärt` aus den
+      zugelassenen Quellen ableiten, entscheidest du selbst und fragst nicht, auch nicht als Bestätigung.
+      Selbst Entschiedenes steht im Block `Selbst entschieden` vor den Fragen der Runde, eine Zeile je Punkt.
+      Unter 85 % fragst du, mit genau einer Empfehlung.
+    why: >-
+      Eine Frage stellst du nur mit konkretem Nutzen. Widerspricht der Mensch einem selbst entschiedenen Punkt
+      in seiner nächsten Antwort nicht, wird er ein [[W-Eintrag]]; widerspricht er, wird er eine Frage der nächsten Runde.
+    enforce: text
+    source: forge/shared/dialog-rules.md (85-%-Regel 1, 3, 4; Ton 3)
+
+  - id: R-003
+    title: Freigaben beim Menschen
+    text: >-
+      Freigaben bleiben beim Menschen, die Bestätigung von Entwurf, Titel und Slug, das Schreiben jeder Änderung,
+      Commit und Abbruch. Eine Änderung legst du je Stelle als Abschnitt, Vorher und Nachher vor und schreibst sie
+      erst nach ausdrücklicher Bestätigung genau dieser Änderung.
+    why: "TODO(forge/shared/dialog-rules.md): Die Quelle legt die Freigaben fest (85-%-Regel 5), nennt aber keinen Grund."
+    enforce: text
+    source: forge/shared/dialog-rules.md (85-%-Regel 5); forge/skills/spec-grilling/SKILL.md (Schritt 4)
+
+  - id: R-004
+    title: Ende ohne nächsten Schritt
+    text: >-
+      Am Ende steht nur das Ergebnis der Etappe, wie ihr Ablauf es nennt. Kein Befehl, kein Hinweis auf einen
+      nächsten Schritt, kein Commit, kein automatischer Start.
+    why: Über den Fortgang entscheidet nicht die Etappe; in dv-forge entscheidet ihn die Leit-Session mit dem Menschen.
+    enforce: text
+    source: forge/skills/spec-whiteboarding/SKILL.md (Schritt 6); forge/skills/plan-writing/SKILL.md (Schritt 9); forge/README.md (Abschlussbericht)

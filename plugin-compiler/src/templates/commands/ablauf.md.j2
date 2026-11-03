@@ -1,0 +1,14 @@
+---
+{{ frontmatter }}---
+<!-- {{ header }} Quelle: plugin-compiler/src/plugins/{{ plugin.name }}.yaml (emit.commands) -->
+
+# Ablauf von {{ plugin.name }}
+
+Gib diese Übersicht unverändert aus und sonst nichts.
+
+| # | Etappe | Befehl | Eingang | Artefakt | Gate |
+|---|---|---|---|---|---|
+{% for p in phases %}| {{ loop.index }} | {{ p.title }} | `/{{ plugin.name }}:{{ p.id }} {{ p.argument_hint }}` | {% if p.inputs %}{% for a in p.inputs %}`{{ a.file }}`{% if not loop.last %}, {% endif %}{% endfor %}{% else %}Gespräch{% endif %} | `{{ p.gate.artifact.file }}` | {{ p.gate.criteria }}{% if p.hook %} Hook blockt ohne Pflichtartefakt.{% endif %} |
+{% endfor %}
+
+Profil: `{{ plugin.profile.name }}`{% if plugin.profile.planning_skills %}, Planungs-Skills: {% for s in plugin.profile.planning_skills %}`{{ s }}`{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}.

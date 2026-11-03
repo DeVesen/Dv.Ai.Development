@@ -1,0 +1,89 @@
+id: plan-review
+title: Plan-Review
+after: [plan]
+description: >-
+  Runs a fresh-context reviewer over a plan.md against its spec and the code and records its verdict APPROVE or
+  NEEDS_CHANGES with a severity-rated finding list next to the plan. Use when a plan is written and should be checked before implementation.
+argument_hint: "<plan.md>"
+role: >-
+  Du orchestrierst, sonst nichts. Du liest weder Plan noch Spec, bewertest keine Findings und änderst nichts.
+  Der [[Reviewer]] prüft, du legst sein Ergebnis unverändert ab.
+source: forge/skills/plan-review/SKILL.md; forge/shared/review-flow/flow.md
+inputs: [plan, spec]
+primary_input: plan
+outputs: [plan-review-report]
+gate:
+  artifact: plan-review-report
+  criteria: Bericht mit Verdict und Befundliste neben dem Plan abgelegt; Verdict APPROVE nur ohne offenes 🔴.
+rules: [R-050, R-030, R-031, R-032, R-033, R-034, R-014, R-004]
+partials: []
+required:
+  - >-
+    **Eingang:** Fehlt der Plan oder die Spec im selben Ordner, meldest du „<Artefakt> nicht gefunden: <pfad>“ und endest. [R-050]
+  - >-
+    **Review:** Starte den Agent `{{agent}}` über das Agent-Werkzeug als frische Instanz im Vordergrund, mit genau den
+    Eingabezeilen aus dem Abschnitt Reviewer; `Repo:` ist die Ausgabe von `git rev-parse --show-toplevel`. [R-030]
+  - >-
+    **Ablegen:** Schreib die Antwort des Reviewers unverändert nach `{{report}}` im Ordner des Plans, darüber die Zeile
+    `# {{title}}: <plan-pfad>`.
+    TODO(forge/skills/plan-review/SKILL.md): forge startet fünf Reviewer parallel plus Skript-Prüfungen, eine Nacharbeit und einen Nachprüfer; der Prototyp bündelt die Prüfaufträge in einem Reviewer.
+  - >-
+    **Ende:** Im Chat steht als letzte Handlung genau die Zeile
+    `Review abgeschlossen: <APPROVE|NEEDS_CHANGES> · Bericht: <pfad>`, nichts davor oder danach. [R-004]
+review:
+  agent: plan-review
+  subject: plan
+  model: sonnet
+  tools: [Read, Grep, Glob]
+  input_lines:
+    - "`Plan:` absoluter Pfad zur `plan.md`"
+    - "`Spec:` absoluter Pfad zur `spec.md`"
+    - "`Repo:` absoluter Pfad zur Projektwurzel"
+  checks:
+    - from: forge/agents/plan-review-coverage.md (Prüfauftrag 1, 2, 3)
+      text: >-
+        Jedes AC, das ein Task unter `**ACs:**` nennt, setzt dieser Task vollständig um; zerlege es in seine
+        Teilaussagen und hake jede ab. Belegt kein Test das AC, auch wenn ein Befehl es prüft, ist das
+        `ac-fehlt-im-plan`. Jede Soll-Vorgabe der Spec steht mit ihrem Wert unter `## Global Constraints`, sonst je
+        Soll-Vorgabe ein `ac-fehlt-im-plan` an `Global Constraints`.
+    - from: forge/agents/plan-review-feasibility.md (Prüfauftrag 1, 2, 3, 4)
+      text: >-
+        Alles, was ein Task braucht, produziert ein früherer Task oder existiert im Repo; dieselbe Funktion heißt in
+        allen Tasks gleich und hat dieselbe Signatur; externe Voraussetzungen sind hergestellt oder im Repo belegt.
+        Sonst `umsetzer-steckt-fest`. Hebt ein späterer Task auf, was ein früherer gebaut hat, ist das `widerspruch`.
+    - from: forge/agents/plan-review-architecture.md (Prüfauftrag 1, 2, 3, 4)
+      text: >-
+        Kein Task verstößt gegen eine Regel der Projekt-`CLAUDE.md`; neue Dateien passen zu Mustern und Namen im Repo;
+        jede Datei hat genau eine Verantwortung; vorhandene Logik wird wiederverwendet statt kopiert.
+        TODO(forge/agents/plan-review-architecture.md): Die Quelle legt für diese Punkte keine Kategorie fest.
+    - from: forge/agents/plan-review-risks.md (Prüfauftrag 1, 2, 3)
+      text: >-
+        Fehler, Timeout und unerwartete Antworten an Schnittstellen sind im Code des Plans behandelt; Eingabevalidierung,
+        Injection, Geheimnisse und Berechtigungen sind bedacht; keine ungeprüfte Annahme über eine Schnittstelle.
+        TODO(forge/agents/plan-review-risks.md): Die Quelle legt für diese Punkte keine Kategorie fest.
+    - from: forge/agents/plan-review-buildability.md (Prüfauftrag 1, 2, 3, 6)
+      text: >-
+        Kein Platzhalter statt Code, jeder Code-Schritt mit vollständigem Code-Block, jeder Befehl ausführbar und laut
+        Projekt-`CLAUDE.md` erlaubt; sonst `umsetzer-steckt-fest`. Fremd-Code und Doku-Zitate passen zur installierten
+        Version, sonst `detail`.
+  not_mine: >-
+    Formulierung, Stilvorlieben und „wäre schön“. R-Einträge im Plan begründen frühere Korrekturen; ein begründetes
+    „nicht geändert“ meldest du nur neu, wenn die Begründung sachlich falsch ist.
+  categories:
+    inherit: spec-review
+    set:
+      fehlendes-verhalten: {severity: red, meaning: "eine Funktion, die der Plan baut, hat gar keinen Test oder eine Aktion gar kein Ergebnis."}
+      unerfuellbar: {severity: red, meaning: "ein Schritt lässt sich nicht erfüllen oder setzt etwas voraus, das kein Task herstellt."}
+      detail: {severity: yellow, meaning: "Randfall, Schreibweise, Sortierung und jede Einzelheit, die der Umsetzer selbst entscheiden kann."}
+      ac-fehlt-im-plan: {severity: red, meaning: ein AC der Spec fehlt im Plan oder ist nur teilweise umgesetzt.}
+      umsetzer-steckt-fest: {severity: red, meaning: "ein Umsetzer bliebe stecken, müsste raten oder dürfte einen Schritt nicht ausführen."}
+examples:
+  - title: Bericht mit Verdict
+    source: "abgeleitet aus forge/shared/review-loop/finding-format.md (Felder) und forge/scripts/lib/rules.js (Kategorie → Farbe)"
+    body: |
+      ```
+      Verdict: APPROVE
+      Geprüft: 4 Tasks, 6 ACs, 3 Dateien im Repo gelesen, 1 Finding
+
+      - 🟡 yellow · detail · Task 2 — „Modify: `src/orders/order-service.js:12-20`“ — Konsequenz: Ohne Anker bricht die Stelle, wenn Task 1 die Datei ändert. — Begründung: Zeilen allein sind kein stabiler Anker.
+      ```

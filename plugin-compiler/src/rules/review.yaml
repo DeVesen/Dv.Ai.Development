@@ -1,0 +1,40 @@
+# Gemeinsamer Kern: Reviewer, Findings, Verdict.
+rules:
+  - id: R-030
+    title: Frischer Kontext
+    text: >-
+      Der [[Reviewer]] läuft als frische Instanz. Er liest nur die Dateien aus seinem Auftrag, keinen Chatverlauf
+      und keine Findings früherer Runden, und er ändert keine Datei.
+    why: "TODO(forge/shared/review-flow/flow.md): forge schreibt die frische Instanz vor (Runde 1, Schritt 1), nennt aber keinen Grund."
+    enforce: text
+    source: forge/shared/review-flow/flow.md (Runde 1); forge/shared/review-loop/loop.md (Runde r, Schritt 1); forge/agents/spec-review-*.md
+
+  - id: R-031
+    title: Nur Wesentliches
+    text: >-
+      Der Reviewer meldet nur, was bei der Umsetzung zu falschem Bau oder zum Steckenbleiben führt.
+      Formulierung, Stilvorlieben und „wäre schön“ sind keine Findings.
+    why: 🔴 heißt, ein Planer oder Implementierer würde etwas Falsches bauen oder müsste raten; nur das blockt.
+    enforce: text
+    source: forge/agents/plan-review-coverage.md (Kalibrierung); forge/shared/review-loop/severity-rules.md
+
+  - id: R-032
+    title: Wörtliches Zitat
+    text: "Jedes [[Finding]] zitiert seine Stelle wörtlich aus dem geprüften Dokument; Zitate aus einer Zusatzquelle beginnen mit `Quelle: `."
+    why: Ein erfundener Beleg soll keine Nacharbeit erzwingen; im Spec-Review wird ein Finding, dessen Zitat nicht in der Spec steht, höchstens 🟡.
+    enforce: text
+    source: forge/shared/review-loop/finding-format.md; forge/scripts/lib/rules.js (rateFinding)
+
+  - id: R-033
+    title: Kategorie bestimmt die Severity
+    text: Jedes Finding bekommt genau eine Kategorie; die [[Severity]] folgt fest aus der Tabelle der Kategorien.
+    why: "TODO(forge/scripts/lib/implementation-categories.js): forge vergibt die Farbe per Code aus der Kategorie, nennt aber keinen Grund. Siehe INVENTORY a1: severity-rules.md sagt das Gegenteil."
+    enforce: text
+    source: forge/scripts/lib/rules.js (CATEGORIES); forge/agents/spec-review-clarity.md (Kategorie)
+
+  - id: R-034
+    title: Verdict
+    text: Das [[Verdict]] ist `APPROVE`, wenn kein 🔴 offen ist, sonst `NEEDS_CHANGES`. 🟡 und 🟢 ändern das Verdict nicht.
+    why: Sauber heißt in dv-forge kein 🔴; nur ein offenes 🔴 löst eine Followup-Runde aus, 🟡 und 🟢 stehen nur im Bericht.
+    enforce: text
+    source: forge/shared/review-loop/severity-rules.md (Sauber); forge/shared/orchestrator-rules.md (Followup-Runden)

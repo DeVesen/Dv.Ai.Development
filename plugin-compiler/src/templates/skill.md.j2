@@ -1,0 +1,55 @@
+---
+{{ frontmatter }}---
+<!-- {{ header }} Quelle: plugin-compiler/src/phases/{{ phase.id }}.yaml -->
+
+# {{ phase.title }}
+
+`$ARGUMENTS`: `{{ phase.argument_hint }}` · `<PLUGIN>` = `${CLAUDE_PLUGIN_ROOT}`
+
+{{ phase.role }}
+
+## Eingang und Artefakt
+
+{% if phase.inputs %}- Eingang: {% for a in phase.inputs %}`{{ a.file }}`{% if not loop.last %}, {% endif %}{% endfor %}{% if phase.primary_input %}; das erste Argument ist der Pfad zu `{{ phase.primary_input.file }}`, alle anderen Artefakte liegen im selben Ordner{% endif %}.
+{% else %}- Eingang: das Gespräch; kein Artefakt.
+{% endif %}
+- Artefakt: `{{ phase.gate.artifact.location }}`
+- Gate: {{ phase.gate.criteria }}
+{% if phase.hook %}- Hook: `scripts/gate-{{ phase.id }}.sh` blockiert `/{{ plugin.name }}:{{ phase.id }}` mit Exit-Code 2, wenn ein Pflichtartefakt fehlt ({{ phase.hook_rules | join(', ') }}).
+{% endif %}
+
+## Ablauf
+
+{% for step in phase.required %}{{ loop.index }}. {{ step }}
+{% endfor %}
+{% if phase.format %}
+
+## Format
+
+{{ phase.format }}
+{% endif %}
+{% if phase.review %}
+
+## Reviewer
+
+Agent `{{ plugin.name }}:{{ phase.review.agent }}`, Eingabezeilen:
+
+{% for line in phase.review.input_lines %}- {{ line }}
+{% endfor %}
+{% endif %}
+{% for p in phase.partials %}
+
+{{ p }}
+{% endfor %}
+
+## Regeln
+
+{% for r in phase.rules %}- **{{ r.id }} · {{ r.title }}.** {{ r.text }} *Warum:* {{ r.why }}{% if r.plugin %} *(nur {{ plugin.name }})*{% endif %}
+
+{% endfor %}
+{% if phase.examples %}
+
+## Beispiele
+
+Beispiele stehen in [references/beispiele.md](references/beispiele.md); sie sind keine Pflicht.
+{% endif %}

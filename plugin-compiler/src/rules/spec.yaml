@@ -1,0 +1,50 @@
+# Gemeinsamer Kern: Inhalt und Form der Spec.
+rules:
+  - id: R-010
+    title: WAS statt WIE
+    text: Die [[Spec]] beschreibt beobachtbares Verhalten, keine Klassen, Dateipfade, Tabellen, Architektur oder technischen Schritte.
+    why: Solche Details gehören in Plan und Umsetzung; der Plan entscheidet sie.
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/spec-format.md (Regel 4); forge/skills/spec-whiteboarding/SKILL.md (Common Mistakes)
+
+  - id: R-011
+    title: Prüfbare Akzeptanzkriterien
+    text: >-
+      Jedes [[Akzeptanzkriterium]] hat die Form `- **AC-<NN>** Gegeben <Vorbedingung>, wenn <Aktion>, dann <beobachtbares Ergebnis>.`
+      Verboten sind „funktioniert korrekt“, „ist möglich“, „sollte“, „idealerweise“ und Maßwörter ohne Maß wie „schnell“.
+      Jedes beschriebene Verhalten hat mindestens ein AC.
+    why: Ein AC ist nur prüfbar, wenn zwei Personen unabhängig voneinander zum selben Urteil „erfüllt“ oder „nicht erfüllt“ kommen.
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/ac-rules.md
+
+  - id: R-012
+    title: Lückenlose AC-IDs
+    text: AC-IDs sind zweistellig und lückenlos ab `AC-01`, in der Reihenfolge des Auftretens.
+    why: Plan und Reviewer verweisen auf ACs nur über ihre ID; jedes AC der Spec muss im Plan unter `**ACs:**` eines Tasks stehen.
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/spec-format.md (Regel 1); forge/skills/plan-writing/references/plan-format.md (Regel 4)
+
+  - id: R-013
+    title: In sich abgeschlossen
+    text: >-
+      Die Spec enthält keine Links und keine Verweise auf Dateien, Tickets oder andere Dokumente; Inhalte aus
+      Anhängen stehen zusammengefasst darin. Ausnahme ist nur der Kopf.
+    why: Die Reviewer lesen nur die Spec, keine anderen Dateien und keinen Chatverlauf.
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/spec-format.md (Regel 3); forge/agents/spec-review-clarity.md
+
+  - id: R-014
+    title: W-Einträge sind bindend
+    text: >-
+      Jede Entscheidung des Menschen steht als `- **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>` unter `## Entscheidungen`.
+      Ein [[W-Eintrag]] ist beantwortet und bindend; du fragst nicht erneut danach, auch nicht anders formuliert oder als Bestätigung.
+    why: W-Einträge sind die bindenden Entscheidungen des Menschen; ein W-Eintrag ist deshalb nie selbst ein [[Finding]].
+    enforce: text
+    source: forge/skills/spec-whiteboarding/references/spec-format.md (Regel 2); forge/skills/spec-grilling/SKILL.md (Schritt 2); forge/agents/*-review-*.md (W-Einträge)
+
+  - id: R-015
+    title: Nie überschreiben
+    text: Existiert das Ziel-Artefakt schon, fragst du nach und überschreibst es nicht.
+    why: "TODO(forge/skills/spec-whiteboarding/SKILL.md, forge/skills/plan-writing/SKILL.md): Beide sagen „nie überschreiben“, keiner nennt den Grund."
+    enforce: text
+    source: forge/skills/spec-whiteboarding/SKILL.md (Schritt 4); forge/skills/plan-writing/SKILL.md (Schritt 3)

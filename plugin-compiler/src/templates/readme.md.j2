@@ -1,0 +1,19 @@
+<!-- {{ header }} Quelle: plugin-compiler/src/plugins/{{ plugin.name }}.yaml -->
+
+# {{ plugin.name }}
+
+{{ plugin.description }}
+
+Version {{ plugin.version }}, Profil `{{ plugin.profile.name }}`. Erzeugt von `plugin-compiler/tools/build.py`; Änderungen gehören in `plugin-compiler/src/`.
+
+| Etappe | Skill | Reviewer | Gate-Hook |
+|---|---|---|---|
+{% for p in phases %}| {{ p.title }} | `/{{ plugin.name }}:{{ p.id }}` | {% if p.review %}`{{ plugin.name }}:{{ p.review.agent }}`{% else %}–{% endif %} | {% if p.hook %}`scripts/gate-{{ p.id }}.sh`{% else %}–{% endif %} |
+{% endfor %}
+
+```text
+/plugin marketplace add ./plugin-compiler/dist
+/plugin install {{ plugin.name }}@{{ marketplace }}
+```
+
+Regeln: {{ rule_count_core }} aus dem gemeinsamen Kern, {{ rule_count_plugin }} nur in {{ plugin.name }}.

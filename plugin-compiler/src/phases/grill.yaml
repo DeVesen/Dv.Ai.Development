@@ -1,0 +1,48 @@
+id: grill
+title: Grill
+after: [spec]
+description: >-
+  Grills a written spec.md once more for edge cases, contradictions and gaps, without asking again what its
+  decisions already answer. Use when a spec exists and should be stress-tested before its review.
+argument_hint: "<spec.md>"
+role: >-
+  Du prüfst eine geschriebene [[Spec]] nur auf Grenzfälle, Widersprüche und Lücken. Du entwirfst nichts Neues,
+  schreibst keinen Plan und keinen Code.
+source: forge/skills/spec-grilling/SKILL.md
+inputs: [spec]
+primary_input: spec
+outputs: [spec]
+gate:
+  artifact: spec
+  criteria: Frontier leer; jede Änderung nach Bestätigung geschrieben; jede neue Entscheidung steht als W-Eintrag in der Spec.
+rules: [R-050, R-001, R-002, R-003, R-004, R-014, R-020, R-021, R-022, R-023, R-024]
+partials: [grill-mechanik]
+required:
+  - >-
+    **Lesen:** Fehlt die Spec, meldest du „Spec nicht gefunden: <pfad>“ und endest. [R-050] Die Rahmenfrage entfällt.
+  - >-
+    **Beantwortet:** Jeder [[W-Eintrag]] unter `## Entscheidungen` ist beantwortet. [R-014]
+  - >-
+    **Frontier:** nur Grenzfälle (leere, doppelte oder fehlende Werte, Abbruch, Fehlerpfad, gleichzeitige Aktionen),
+    Widersprüche zwischen Abschnitten, Akzeptanzkriterien und W-Einträgen, und Lücken (Vorgabe ohne
+    Akzeptanzkriterium, Akzeptanzkriterium ohne Vorgabe, Begriff ohne Bedeutung). Zeilen mit Tag `ungeklärt`
+    gehören dazu, der Abbruch-Abschnitt nicht. Nummern ab Q1, je Runde die komplette Frontier. [R-020] [R-021]
+  - >-
+    **Änderung:** Ändert eine Antwort die Spec, legst du je Stelle Abschnitt, Vorher und Nachher wörtlich vor und
+    schreibst erst nach Bestätigung; der Kopf bleibt unverändert. [R-003]
+  - >-
+    **Entscheidung:** Jede neue Entscheidung steht im selben bestätigten Schreibschritt als
+    `- **W · <Kurztitel>** · Aussage — <Antwort>` unter `## Entscheidungen`; eine selbst entschiedene trägt ihren Beleg-Tag. [R-002]
+  - >-
+    **Ende:** Liste der geänderten Stellen und der neuen W-Einträge, oder „Keine Änderung.“ [R-004]
+examples:
+  - title: Rote Flaggen beim Grillen
+    source: forge/skills/spec-grilling/SKILL.md (Rote Flaggen)
+    body: |
+      | Gedanke | Richtig |
+      |---|---|
+      | „Zur Sicherheit frag ich das Format nochmal.“ | Ein W-Eintrag ist beantwortet. |
+      | „Kleine Korrektur, die schreib ich direkt.“ | Erst Vorher/Nachher, dann Bestätigung. |
+      | „Die Spec könnte noch eine Funktion mehr haben.“ | Nur Grenzfälle, Widersprüche, Lücken. |
+      | „Das Modul ist importiert, also gibt es das Verhalten.“ | Ein Import ist kein Beleg. Beleg an der Stelle oder „Gibt es das heute?“. |
+      | „Ich empfehle falls … sonst …“ | Bedingung vorher prüfen, dann eindeutig empfehlen. |

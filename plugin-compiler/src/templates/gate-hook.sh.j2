@@ -1,0 +1,63 @@
+#!/usr/bin/env sh
+# {{ header }} Quelle: plugin-compiler/src/phases/{{ phase.id }}.yaml, Regeln {{ phase.hook_rules | join(', ') }}
+#
+# Gate der Etappe {{ phase.id }} (UserPromptSubmit): Startet der Mensch /{{ plugin.name }}:{{ phase.id }}, prüft das Skript,
+# ob die Pflichtartefakte vorliegen. Fehlt eines, blockiert es den Aufruf mit Exit-Code 2.
+# Ein Fehler im Hook selbst blockiert nie (Exit 0), wie in dv-forge und dv-angular.
+
+input=$(cat)
+
+field() {
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$input" | jq -r --arg k "$1" '.[$k] // ""'
+  elif command -v python3 >/dev/null 2>&1; then
+    printf '%s' "$input" | python3 -c 'import json,sys; print(json.load(sys.stdin).get(sys.argv[1]) or "")' "$1"
+  elif command -v node >/dev/null 2>&1; then
+    printf '%s' "$input" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s)[process.argv[1]];console.log(v==null?"":v)})' "$1"
+  else
+    echo "{{ plugin.name }} gate-{{ phase.id }}: weder jq noch python3 noch node gefunden, Gate übersprungen" >&2
+    exit 0
+  fi
+}
+
+prompt=$(field prompt | sed -n '1{s/^[[:space:]]*//;p;}') || exit 0
+command='/{{ plugin.name }}:{{ phase.id }}'
+case "$prompt" in
+  "$command"|"$command "*) ;;
+  *) exit 0 ;;
+esac
+
+cwd=$(field cwd) || exit 0
+[ -n "$cwd" ] || cwd=$(pwd)
+args=${prompt#"$command"}
+set -f
+# shellcheck disable=SC2086
+set -- $args
+set +f
+
+if [ $# -eq 0 ]; then
+  echo "{{ plugin.name }} gate-{{ phase.id }} ({{ phase.hook_rules | join(', ') }}): Pfad zu {{ phase.primary_input.file }} fehlt. Aufruf: $command <{{ phase.primary_input.file }}>" >&2
+  exit 2
+fi
+
+case "$1" in
+  /*) first=$1 ;;
+  *) first="$cwd/$1" ;;
+esac
+dir=$(dirname "$first")
+missing=""
+[ -f "$first" ] || missing="$missing
+  - {{ phase.primary_input.file }} nicht gefunden: $first"
+{% for a in phase.required_siblings %}[ -f "$dir/{{ a.file }}" ] || missing="$missing
+  - {{ a.file }} nicht gefunden: $dir/{{ a.file }}"
+{% endfor %}
+
+if [ -n "$missing" ]; then
+  {
+    echo "{{ plugin.name }} gate-{{ phase.id }}: Pflichtartefakte fehlen.$missing"
+{% for r in phase.hook_rule_objs %}    echo "{{ r.id }} {{ r.title }}: {{ r.why_sh }}"
+{% endfor %}
+  } >&2
+  exit 2
+fi
+exit 0

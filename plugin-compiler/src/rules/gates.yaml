@@ -1,0 +1,12 @@
+# Gemeinsamer Kern: Gate. enforce: hook erzeugt scripts/gate-<etappe>.sh und den Eintrag in hooks/hooks.json.
+rules:
+  - id: R-050
+    title: Pflichtartefakte vor dem Start
+    text: >-
+      Eine [[Etappe]] startet nur, wenn ihre [[Pflichtartefakt|Pflichtartefakte]] vorliegen; das prüft ihr [[Gate]].
+      Fehlt eines, meldest du „<Artefakt> nicht gefunden: <pfad>“ und endest.
+    why: >-
+      Jede Etappe arbeitet auf dem Artefakt ihrer Vorgänger; Grill und Plan-Writing enden in dv-forge bei fehlender
+      Spec mit „Spec nicht gefunden“.
+    enforce: hook
+    source: forge/skills/spec-grilling/SKILL.md (Schritt 1); forge/skills/plan-writing/SKILL.md (Schritt 1)

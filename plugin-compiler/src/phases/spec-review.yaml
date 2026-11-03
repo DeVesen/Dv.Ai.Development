@@ -1,0 +1,81 @@
+id: spec-review
+title: Spec-Review
+after: [grill]
+description: >-
+  Runs a fresh-context reviewer over a finished spec.md and records its verdict APPROVE or NEEDS_CHANGES with a
+  severity-rated finding list next to the spec. Use when a grilled spec should be checked before planning.
+argument_hint: "<spec.md>"
+role: >-
+  Du orchestrierst, sonst nichts. Du liest die Spec nicht, bewertest keine Findings und änderst nichts an der Spec.
+  Der [[Reviewer]] prüft, du legst sein Ergebnis unverändert ab.
+source: forge/skills/spec-review/SKILL.md; forge/shared/review-flow/flow.md; forge/shared/review-loop/loop.md (Rolle)
+inputs: [spec]
+primary_input: spec
+outputs: [spec-review-report]
+gate:
+  artifact: spec-review-report
+  criteria: Bericht mit Verdict und Befundliste neben der Spec abgelegt; Verdict APPROVE nur ohne offenes 🔴.
+rules: [R-050, R-030, R-031, R-032, R-033, R-034, R-014, R-004]
+partials: []
+required:
+  - >-
+    **Eingang:** Fehlt die Spec, meldest du „Spec nicht gefunden: <pfad>“ und endest. [R-050]
+  - >-
+    **Review:** Starte den Agent `{{agent}}` über das Agent-Werkzeug als frische Instanz im Vordergrund, mit genau den
+    Eingabezeilen aus dem Abschnitt Reviewer. Keine weiteren Inhalte, keine Findings früherer Läufe. [R-030]
+  - >-
+    **Ablegen:** Schreib die Antwort des Reviewers unverändert nach `{{report}}` im Ordner der Spec, darüber die Zeile
+    `# {{title}}: <spec-pfad>`. Gibt es die Datei schon, ersetzt sie den Bericht des vorigen Laufs.
+    TODO(forge/shared/review-flow/flow.md): forge hat Runde 1, eine Nacharbeit, Nachprüfung und Scout; der Prototyp hat nur Runde 1.
+  - >-
+    **Ende:** Im Chat steht als letzte Handlung genau die Zeile
+    `Review abgeschlossen: <APPROVE|NEEDS_CHANGES> · Bericht: <pfad>`, nichts davor oder danach. [R-004]
+    TODO(forge/README.md): Die forge-Statuszeile enthält zusätzlich `FOLLOWUP <ja|nein>`; Followup gibt es im Prototyp nicht.
+review:
+  agent: spec-review
+  subject: spec
+  model: sonnet
+  tools: [Read]
+  input_lines:
+    - "`Spec:` absoluter Pfad zur `spec.md`"
+  checks:
+    - from: forge/agents/spec-review-completeness.md (Prüfauftrag 1, 2)
+      text: >-
+        Zu jeder Funktion und jedem Verhalten der Spec gibt es mindestens ein AC; sonst `fehlendes-verhalten` an der
+        Abschnittsüberschrift der Funktion. Ein AC ohne beobachtbares Ergebnis ist `fehlendes-verhalten`, eines mit
+        Ergebnis ohne Maß `detail`.
+    - from: forge/agents/spec-review-consistency.md (Prüfauftrag 1, 3)
+      text: >-
+        Widersprechen sich zwei Aussagen, auch eine im Abschnitt `## Entscheidungen`, meldest du `widerspruch` an der
+        späteren Stelle; im Zitat stehen beide Stellen, getrennt durch ` ↔ `. Ist ein Verweis die einzige Beschreibung
+        einer Funktion, ist das `fehlendes-verhalten`.
+    - from: forge/agents/spec-review-feasibility.md (Prüfauftrag 1, 2, 3)
+      text: >-
+        Nicht zugleich erfüllbare Anforderungen sind `unerfuellbar` an der späteren Stelle. Macht eine Entscheidung
+        eine Anforderung unerfüllbar, meldest du `unerfuellbar` an der Anforderung, nie am Eintrag. Eine Voraussetzung,
+        die die Spec nennt, aber nirgends herstellt, ist `detail`.
+    - from: forge/agents/spec-review-clarity.md (Prüfauftrag 1, 2, 3)
+      text: >-
+        Ein AC mit zwei Lesarten ist `detail`, beide Lesarten stehen in der Begründung. WIE statt WAS (Namen von
+        Klassen, Dateien, Tabellen, Frameworks, technische Schritte) ist `detail`. Ein uneinheitlich geschriebener
+        Begriff ist `detail`.
+  not_mine: >-
+    Stil und Formulierung. Einträge im Abschnitt „Offen, bewusst nicht weiterverfolgt (Abbruch)“ hat der Mensch bewusst
+    offen gelassen; das ist kein Finding und keine Lücke.
+  categories:
+    widerspruch: {severity: red, meaning: zwei Aussagen schließen sich aus.}
+    fehlendes-verhalten: {severity: red, meaning: "Verhalten, das die Spec beschreiben müsste, fehlt in ihr."}
+    unerfuellbar: {severity: red, meaning: "Anforderungen sind nicht zugleich erfüllbar, oder eine Entscheidung macht eine Anforderung unerfüllbar."}
+    detail: {severity: yellow, meaning: "eine Einzelheit, die der Plan selbst entscheiden kann."}
+    formulierung: {severity: green, meaning: Anmerkung oder Formulierung; meldest du nie.}
+examples:
+  - title: Bericht mit Verdict
+    source: "abgeleitet aus forge/shared/review-loop/finding-format.md (Felder) und forge/scripts/lib/rules.js (Kategorie → Farbe)"
+    body: |
+      ```
+      Verdict: NEEDS_CHANGES
+      Geprüft: 7 ACs, 3 Abschnitte, 2 Findings
+
+      - 🔴 red · widerspruch · AC-05 — „dann ist Exportieren deaktiviert“ ↔ „Exportieren bleibt immer aktiv“ — Konsequenz: Der Plan muss raten, welches Verhalten gilt. — Begründung: Beide Aussagen schließen sich aus.
+      - 🟡 yellow · detail · AC-02 — „dann lädt die Liste schnell“ — Konsequenz: Kein Maß für „schnell“. — Begründung: Ergebnis ohne Maß.
+      ```

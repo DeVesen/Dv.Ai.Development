@@ -1,0 +1,87 @@
+id: spec
+title: Spec
+after: []
+description: >-
+  Turns a request, idea or complaint into a confirmed spec.md through grill rounds until no open point is left,
+  before any planning or code. Use when nothing is written down yet and acceptance criteria are vague or missing.
+argument_hint: "[anliegen]"
+role: >-
+  Mensch und Claude grillen ein Vorhaben, bis kein offener Punkt übrig ist. Ergebnis ist eine in sich abgeschlossene,
+  funktionale [[Spec]] der Art `frei`, WAS statt WIE. Quelle ist nur, was der Mensch sagt und ausdrücklich übergibt;
+  kein Suchen in Code, Git oder Historie, kein Plan und kein Code, bis die Spec geschrieben und bestätigt ist.
+source: forge/skills/spec-whiteboarding/SKILL.md
+inputs: []
+outputs: [spec]
+gate:
+  artifact: spec
+  criteria: Frontier leer; Inhalt, Titel und Slug ausdrücklich bestätigt; Datei am Zielpfad wortgleich mit dem Entwurf geschrieben.
+rules: [R-001, R-002, R-003, R-004, R-010, R-011, R-012, R-013, R-014, R-015, R-020, R-021, R-022, R-023, R-024]
+partials: [grill-mechanik]
+required:
+  - >-
+    **Rahmenfrage:** Vor Runde 1 fragst du einmal nur nach der Workitem-Nummer, und nur wenn das Projekt
+    Workitem-Nummern nutzt. Rahmenfragen sind keine W-Einträge; die Antwort kommt in den Kopf der Spec.
+  - >-
+    **Offene Punkte sammeln:** Was, Wie, Wo, Warum, Verhalten danach, Soll-Vorgaben, Akzeptanzkriterien. [R-011]
+  - >-
+    **Runden:** je Runde die komplette [[Frontier]] im Format der Grill-Mechanik unten. Antworten verbuchen,
+    Frontier neu berechnen, bis sie leer ist. [R-020]
+  - >-
+    **Bestätigen:** Erst bei leerer Frontier Inhalt, Titel und Slug als vollständigen Entwurf vorlegen.
+    Erst nach ausdrücklicher Bestätigung aller drei schreiben. [R-003]
+  - >-
+    **Zielpfad:** `docs/forge/<datum>-<slug>/spec.md`. Existiert der Ort bereits, fragst du nach. [R-015]
+    TODO(forge/skills/spec-whiteboarding/SKILL.md): forge bestimmt den Pfad mit `spec-path.js` aus der Projekt-Einstellung `Spec-Ablage`.
+  - >-
+    **Schreiben:** ausschließlich als Datei am Zielpfad, im Format unten, `Art: frei`. Die Datei ist wortgleich
+    mit dem bestätigten Entwurf, ausgenommen `Status` und `Basis`. Jede spätere Änderung legst du als Vorher/Nachher vor. [R-003]
+  - >-
+    **Ergebnis:** genau eine Angabe, der Pfad der Spec relativ zum Repo und der aktuelle Branch. [R-004]
+format: |
+  ```markdown
+  # <Titel>
+
+  Status: bestätigt am <YYYY-MM-DD>
+  Art: frei
+  Workitem: <Nummer>
+  Basis: <Commit-Kurzhash>
+
+  ## Was, wie, wo, warum
+  <fachlich, kein Code>
+
+  ## Theoretisches Verhalten nach Umsetzung
+  <was Anwender oder System danach tut>
+
+  ## Soll-Vorgaben
+  <Randbedingungen>
+
+  ## Akzeptanzkriterien
+  - **AC-01** Gegeben <Vorbedingung>, wenn <Aktion>, dann <beobachtbares Ergebnis>. · <Beleg-Tag>
+
+  ## Entscheidungen
+  - **W · <Kurztitel>** · <Beleg-Tag> — <Antwort>
+  ```
+
+  - Jede inhaltliche Zeile trägt genau einen [[Beleg-Tag]] am Zeilenende nach ` · `; die Kopfzeilen tragen keinen.
+  - `Workitem` entfällt, wenn das Projekt keine Workitem-Nummern nutzt. `Basis` ist `git rev-parse --short HEAD` beim Schreiben.
+  - Nach echtem [[Abbruch]] lautet der Status `Status: Abbruch am <YYYY-MM-DD>, <k> Punkte offen`, und nach `## Entscheidungen`
+    folgt `## Offen, bewusst nicht weiterverfolgt (Abbruch)` mit `- **<Kurztitel>** · ungeklärt — <was offen ist>`.
+examples:
+  - title: Akzeptanzkriterien, schwach und prüfbar
+    source: forge/skills/spec-whiteboarding/references/ac-rules.md (Beispiele)
+    body: |
+      | Schwach | Prüfbar |
+      |---|---|
+      | Der Export funktioniert korrekt. | **AC-03** Gegeben eine Liste mit 3 Einträgen, wenn der Anwender „Exportieren“ wählt, dann erhält er eine CSV-Datei mit einer Kopfzeile und 3 Datenzeilen. |
+      | Leere Listen werden „sinnvoll“ behandelt. | **AC-04** Gegeben eine Liste ohne Einträge, wenn der Anwender die Liste öffnet, dann ist „Exportieren“ deaktiviert und ein Hinweis nennt den Grund. |
+  - title: Eine Grill-Runde
+    source: forge/skills/spec-whiteboarding/references/grill-rounds.md (Beispiel)
+    body: |
+      ```
+      Selbst entschieden:
+      - Export-Format: CSV · Aussage — „wir brauchen das nur für den Import ins Altsystem“; das Altsystem liest CSV.
+
+      ❓ **Q4** - **Leere Liste**: Was zeigt die Übersicht ohne Einträge? a) Hinweistext b) leere Tabelle c) Sprung zum Anlegen
+
+      ➡️ a) Hinweistext · ungeklärt — Vermutung: gängigster Fall; der Anwender sieht sofort, dass nichts fehlt.
+      ```

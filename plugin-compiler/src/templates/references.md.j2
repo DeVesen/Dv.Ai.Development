@@ -1,0 +1,11 @@
+<!-- {{ header }} Quelle: plugin-compiler/src/phases/{{ phase.id }}.yaml (examples) -->
+
+# Beispiele: {{ phase.title }}
+
+{% for ex in phase.examples %}
+## {{ ex.title }}
+
+Quelle: {{ ex.source }}
+
+{{ ex.body }}
+{% endfor %}

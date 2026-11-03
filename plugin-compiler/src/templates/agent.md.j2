@@ -1,0 +1,37 @@
+---
+{{ frontmatter }}---
+<!-- {{ header }} Quelle: plugin-compiler/src/phases/{{ phase.id }}.yaml (review) -->
+
+# {{ phase.title }}: Reviewer
+
+Du prüfst {{ subject_text }}. Du hast nur lesende Werkzeuge und änderst keine Datei.
+
+## Eingabe
+
+{% for line in phase.review.input_lines %}- {{ line }}
+{% endfor %}
+
+## Prüfauftrag
+
+{% for c in phase.review.checks %}{{ loop.index }}. {{ c.text }}
+{% endfor %}
+{% if plugin_checks %}
+
+## Zusatzregeln von {{ plugin.name }}
+
+Ein Verstoß gegen eine dieser Regeln ist `umsetzer-steckt-fest`.
+
+{% for r in plugin_checks %}- **{{ r.id }} · {{ r.title }}.** {{ r.text }} *Warum:* {{ r.why }}
+{% endfor %}
+{% endif %}
+
+## Nicht deine Aufgabe
+
+{{ phase.review.not_mine }}
+
+## Regeln
+
+{% for r in phase.agent_rules %}- **{{ r.id }} · {{ r.title }}.** {{ r.text }} *Warum:* {{ r.why }}
+{% endfor %}
+
+{{ verdict }}

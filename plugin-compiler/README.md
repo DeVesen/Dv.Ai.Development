@@ -2,7 +2,7 @@
 
 Erzeugt Claude-Code-Plugins aus einer Quelle der Wahrheit:
 
-- **dv-forge, vollständig:** Session-Orchestrator, alle Orchestratoren und Skills, alle 28 Sub-Agents, die geteilten Regeln, Hooks und Skripte. Die Prosa ist wortgleich zum Bestand; das belegt die Stufe „Äquivalenz“ im Build und die forge-Testsuite gegen `dist/forge`.
+- **dv-forge 0.35.0, vollständig:** Session-Orchestrator, alle Orchestratoren und Skills, alle 28 Sub-Agents, die geteilten Regeln, Hooks, Skripte, Tests und Golden-Sets. Grundlage ist dv-forge 0.34.0 plus `fix/forge-handover-stability`. Jede Abweichung davon steht mit Befund-Nummer in `src/forge/CHANGES.yaml`; der Build gleicht jede Datei mit `plugins/forge` ab, und die forge-Testsuite läuft gegen `dist/forge`.
 - **angular, Prototyp:** fünf Etappen (Spec bis Plan-Review) aus dem gemeinsamen Kern plus drei Angular-Regeln.
 
 Bestehende Plugins unter `plugins/` bleiben unverändert.
@@ -24,6 +24,8 @@ src/
     partials/*.md                             22 wortgleiche Blöcke, eingesetzt mit <<= partial('name') >>
     rules/orchestrator.yaml, dialog.yaml      26 Regeln als Daten (R-3xx, R-4xx)
     etappen.yaml                              Session-Kette, beim Build gegen den Code abgeglichen
+    assets/                                   Skripte, Tests, Golden-Sets (unverändert kopiert)
+    CHANGES.yaml                              Änderungsprotokoll: Abweichungen vom Bestand je Befund, mit abgenommenem Stand
 tools/
   build.py, common.py, components.py          Compiler
   schemas/*.json                              JSON-Schema je Dateiart
@@ -33,6 +35,6 @@ dist/                                          Ausgabe (eingecheckt)
 reports/forge-graph.md                         Aufrufgraph Leit-Session → Etappen → Skills → Sub-Agents (erzeugt)
 ```
 
-Bauen: `python3 tools/build.py`. Abnahme: `tools/smoke.sh`. Test-Deploy: `TEST.md`. Fehlerdemos: `DEMO-BREAK.md`. Bestandsaufnahme und Befunde: `INVENTORY.md`.
+Bauen: `python3 tools/build.py`. Eine gewollte Änderung an einer schon geänderten Datei nimmst du mit `python3 tools/build.py --accept` ab. Abnahme: `tools/smoke.sh`. Test-Deploy: `TEST.md`. Fehlerdemos: `DEMO-BREAK.md`. Bestandsaufnahme und Befunde: `INVENTORY.md`.
 
 Konventionen: Prototyp-Quellen nutzen `[[Begriff]]` und `[R-020]`; forge-Bodies nutzen eigene Jinja-Begrenzer (`<<= … >>`, `<% … %>`, `<# … #>`), weil der forge-Text `{{PLUGIN}}` wörtlich enthält. Offene Punkte stehen als `TODO(<Quelldatei>)`.

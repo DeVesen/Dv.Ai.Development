@@ -10,8 +10,10 @@ Anders als die Etappen-Plugins des Prototyps bleibt die Prosa hier wortgleich zu
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -518,9 +520,39 @@ def check_equivalence(cp: ComponentPlugin, report: Report) -> tuple[int, int]:
         if path not in differing:
             befund, file, line = entries[0]
             report.error(file, line, f"Befund {befund}: {path} steht im Änderungsprotokoll, weicht aber nicht vom Bestand ab")
+    check_fingerprints(cp, differing & set(allowed), ignore, report)
     cp.differing = differing
     report.stop_if_errors(f"Abgleich mit dem Bestand ({cp.name})")
     return same, len(differing)
+
+
+STAND_MARK = "# --- Abgenommener Stand je geänderter Datei (sha256, erzeugt mit tools/build.py --accept) ---"
+ACCEPT = "--accept" in sys.argv
+
+
+def fingerprint(path: str, content, ignore) -> str:
+    return hashlib.sha256(normalized(path, content, ignore)).hexdigest()[:16]
+
+
+def check_fingerprints(cp: ComponentPlugin, paths: set, ignore, report: Report) -> None:
+    """Jede geänderte Datei muss dem abgenommenen Stand entsprechen. Sonst fiele eine zweite, ungewollte Änderung in einer Datei,
+    die schon im Protokoll steht, nicht auf. `--accept` übernimmt den aktuellen Stand bewusst ins Protokoll."""
+    if not cp.changelog:
+        return
+    stand = cp.changelog.data.get("stand") or {}
+    current = {p: fingerprint(p, cp.files[p], ignore) for p in sorted(paths) if p in cp.files}
+    if ACCEPT:
+        text = cp.changelog.path.read_text(encoding="utf-8")
+        text = text.split(STAND_MARK)[0].rstrip("\n") + "\n\n" + STAND_MARK + "\nstand:\n"
+        text += "".join(f"  {p}: {h}\n" for p, h in current.items())
+        cp.changelog.path.write_text(text, encoding="utf-8")
+        return
+    for p, h in current.items():
+        if stand.get(p) != h:
+            report.error(f"{cp.dir}/{p}", 1, f"Abgleich: weicht vom abgenommenen Stand im Änderungsprotokoll ab ({stand.get(p) or 'kein Stand'} → {h}); "
+                                              "Änderung prüfen, dann python3 tools/build.py --accept")
+    for p in sorted(set(stand) - set(current)):
+        report.error(cp.changelog.name, 1, f"stand: {p} ist nicht mehr geändert; python3 tools/build.py --accept")
 
 
 def graph_report(cp: ComponentPlugin) -> str:

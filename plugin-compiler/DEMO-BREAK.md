@@ -60,14 +60,15 @@ Echte Läufe in einer Kopie (`plugins/` daneben verlinkt). Jede Prüfung bricht 
 | A | `src/forge/etappen.yaml`: Etappe `planning` `modell: sonnet` statt `opus` | `FEHLER src/forge/etappen.yaml:39: planning.modell = 'sonnet', session-chain-brief.js sagt 'opus'` |
 | B | `src/forge/skills/spec-review/SKILL.md`: Tippfehler `dv-forge:spec-review-clarty` | `FEHLER src/forge/skills/spec-review/SKILL.md:30: Verweis dv-forge:spec-review-clarty: weder Skill noch Agent` |
 | C | `src/forge/partials/w-eintraege-plan.md` gelöscht | fünf Fehler, je Plan-Reviewer einer, z. B. `FEHLER src/forge/agents/plan-review-coverage.md:34: Partial „w-eintraege-plan“ nicht gefunden` |
-| D | `src/plugins/forge.yaml`: Hook-Skript `agent-chek.js` | `FEHLER src/plugins/forge.yaml:32: Hook SubagentStop: scripts/agent-chek.js gibt es nicht` |
-| E | `src/forge/partials/w-eintraege-spec.md`: „bindende“ gestrichen | fünf Äquivalenz-Fehler, z. B. `FEHLER forge/agents/spec-review-clarity.md:28: Äquivalenz: weicht ab. erzeugt '… sind Entsche', Bestand '… sind bindend'` |
+| D | `src/plugins/forge.yaml`: Hook-Skript `agent-chek.js` | `FEHLER src/plugins/forge.yaml:33: Hook SubagentStop: scripts/agent-chek.js gibt es nicht` |
+| E | `src/forge/partials/w-eintraege-spec.md`: „bindende“ gestrichen | fünf Fehler, z. B. `FEHLER forge/agents/spec-review-clarity.md:28: Abgleich: weicht ab. erzeugt '… sind Entsche', Bestand '… sind bindend'; nicht im Änderungsprotokoll` |
 | F | `src/forge/rules/dialog.yaml`: zweimal `R-401` | `FEHLER src/forge/rules/dialog.yaml:15: Regel „R-401“ doppelt (zuerst in src/forge/rules/dialog.yaml:10)` |
-| G | `src/forge/rules/orchestrator.yaml`: `Maximum Followup-Runden: 2` | `FEHLER forge/shared/orchestrator-rules.md:6: Äquivalenz: weicht ab. erzeugt '- Maximum Followup-Runden: 2', Bestand '- Maximum Followup-Runden: 8'` |
+| G | `src/forge/rules/orchestrator.yaml`: `Maximum Followup-Runden: 2` (die Datei steht wegen Befund B schon im Protokoll) | `FEHLER forge/shared/orchestrator-rules.md:1: Abgleich: weicht vom abgenommenen Stand im Änderungsprotokoll ab (3a7970d139b2a192 → 9081db8d58091642); Änderung prüfen, dann python3 tools/build.py --accept` |
+| H | `src/forge/CHANGES.yaml`: `skills/init/SKILL.md` unter Befund 12 eingetragen, ohne dass sich die Datei ändert | `FEHLER src/forge/CHANGES.yaml:67: Befund 12: skills/init/SKILL.md steht im Änderungsprotokoll, weicht aber nicht vom Bestand ab` |
 
 Fall E zeigt den Nutzen der Partials: Ein Absatz, der vorher in fünf Agents von Hand gleich gehalten werden musste, steht einmal in `partials/` und wirkt auf alle fünf.
 
-Fall E und G zeigen außerdem die Grenze der Migrationsphase: Solange `equivalent_to: ../plugins/forge` im Manifest steht, ist jede inhaltliche Änderung ein Fehler. So ist belegt, dass die Migration nichts verändert. Für echte Weiterentwicklung entfernt man die Zeile, und `src/forge` ist allein maßgeblich.
+Fall E, G und H zeigen den **Abgleich mit dem Bestand**: Jede Datei, die vom bisherigen `plugins/forge` abweicht, muss in `src/forge/CHANGES.yaml` unter einer Befund-Nummer stehen. Zusätzlich hält das Protokoll je geänderter Datei einen Fingerabdruck des abgenommenen Stands. Damit fällt auch eine zweite, ungewollte Änderung in einer Datei auf, die schon im Protokoll steht (Fall G). Eine gewollte Änderung übernimmt man bewusst mit `python3 tools/build.py --accept`.
 
 Nachstellen:
 

@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."   # plugin-compiler/
 
-echo "== 1/4 build (enthält die Äquivalenzprüfung dist/forge ↔ plugins/forge)"
+echo "== 1/4 build (enthält den Abgleich dist/forge ↔ plugins/forge mit Änderungsprotokoll)"
 python3 tools/build.py | grep -v '^WARNUNG'
 
 echo "== 2/4 dist/ unverändert gegenüber git"

@@ -2,7 +2,7 @@
 # Regeln, Etappen und Hooks als Daten, Code als Assets.
 name: dv-forge
 dir: forge
-version: 0.34.0
+version: 0.35.0
 description: Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops
 source: src/forge
 equivalent_to: ../plugins/forge

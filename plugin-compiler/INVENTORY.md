@@ -124,3 +124,27 @@ Gegen die Anforderungen des Prototyps verstößt forge bewusst an zwei Stellen, 
 | Verweise `dv-forge:<name>`, `scripts/…`, `shared/…`, `references/…` | ungeprüft | jeder Verweis aufgelöst, sonst Abbruch mit Datei und Zeile |
 | Code (Skripte, Tests, Evals) | 276 Dateien | unverändert als Assets |
 | Nachweis | eigene Testsuite | Äquivalenz 348/348 Dateien + dieselbe Testsuite gegen `dist/forge` grün |
+
+## 8. Umgesetzt (dv-forge 0.35.0 aus `src/forge`)
+
+Grundlage: dv-forge 0.34.0 (Empfehlungs-Schwelle) plus `fix/forge-handover-stability`. Jede Änderung steht mit Dateien in `src/forge/CHANGES.yaml`.
+
+| Befund | Umsetzung |
+|---|---|
+| 1 | Glossar: keine Zahl mehr für die Followup-Runden, Verweis auf `orchestrator-rules.md` (8). Nur `src/glossary.yaml`; `CONTEXT.md` unverändert. |
+| 2 | `severity-rules.md`, `finding-format.md`: Reviewer vergeben eine Kategorie, die Farbe setzt das Skript; „Farbe“ statt „Stufe“. |
+| 3 | Eine Commit-Form: `git add -- <pfade>` und direkt danach `git commit -m … -- <pfade>` (Partial `commit-mit-pfaden`); auch in der Hook-Meldung für den Umsetzer. |
+| 4 | Fragerunden in Wellen bleiben; das Plan-Writing fragt jetzt auch in Runden; Ton-Regel 7 nimmt die Fragerunden aus. |
+| 5 | Frontmatter ist gültiges YAML; der Compiler quotet Werte, die sonst ungültig wären; ungültige Frontmatter ist jetzt ein Build-Fehler. |
+| 6 | Test-Reviewer: `disallowedTools: Edit, MultiEdit, NotebookEdit` statt einer tools-Liste, weil der Testbefehl auch ein Tool-Aufruf sein darf. |
+| 7 | Bewusst so gelassen (Implementierungs-Reviewer brauchen Bash). |
+| 8 | Entwurf in `BEGRUENDUNGEN-ENTWURF.md`, wartet auf deine Durchsicht. |
+| 9 | `loop.md`: Überschrift „Review-Ablauf der Umsetzung“. |
+| 10 | Spec-Nachprüfer nutzt die Kategorien der Spec-Reviewer (Partial `kategorien-spec-liste`). |
+| 11 | Plan-Format Regel 12 nennt den Tag `Planer`. |
+| 12 | „never“ statt „NEVER“ in `commit-message`. |
+| B | `review-followup auto` und `orchestrator-state next`: auch ein 🔴 erst ab der Scout-Sicherheit ≥ Schwelle; darunter bleibt es offen, Abbruchgrund `unter-schwelle`. Die Scout-Sicherheit steht dafür in den Bericht-Daten. |
+| C | Spec-Nacharbeit übernimmt den bevorzugten Vorschlag ab der Schwelle ohne Rückfrage (Zeile `**Übernehmen:**` in ihrer Eingabe). Die Plan-Nacharbeit bleibt unverändert: Sie fragt nur bei Widersprüchen der Spec, und die Spec ändert sie nicht. |
+
+Nicht umgesetzt, weil nicht freigegeben: Punkt 14 (`previewFinal` aus dem Handover-Fix verdrahten).
+

@@ -93,3 +93,55 @@ changes:
       - agents/spec-rework.md
       - tests/review-flow-round-one.test.js
       - tests/agents.test.js
+  - befund: "V"
+    titel: Version 0.35.0 für die Befunde 2 bis 12, B und C
+    dateien:
+      - .claude-plugin/plugin.json
+
+# --- Abgenommener Stand je geänderter Datei (sha256, erzeugt mit tools/build.py --accept) ---
+stand:
+  .claude-plugin/plugin.json: 0587526e25fc6eae
+  agents/implementation-implementer.md: 8df76e55a892de50
+  agents/implementation-review-scout.md: ea52c2ec31a3bdb5
+  agents/implementation-review-tests.md: c122c2243fdc99e2
+  agents/plan-review-scout.md: 6d54b98ab87db472
+  agents/spec-review-scout.md: b7099eb12bdc466c
+  agents/spec-review-verifier.md: 8121e8b69018444b
+  agents/spec-rework.md: 8c8863488b8fb4a9
+  scripts/followup.js: 71af5fa3f1b50ce2
+  scripts/guard-orchestrator.js: a6eb2c41dea37d59
+  scripts/lib/implementation-followup-report.js: 8a6a22ab405933a4
+  scripts/lib/implementation-report.js: 3e90257cf6144a0d
+  scripts/lib/orchestrator-report-text.js: ffeed9a2766f2153
+  scripts/lib/orchestrator-report.js: 501cc9449521a794
+  scripts/lib/report-data.js: 6c2400b51f3077d4
+  scripts/lib/rework-input.js: 0dea3a08c04d6371
+  scripts/lib/scout-check.js: d922de3e712ab771
+  scripts/orchestrator-state.js: 40e9233c9cb04b02
+  shared/dialog-rules.md: a286ed205bac9eb9
+  shared/orchestrator-rules.md: 3a7970d139b2a192
+  shared/review-loop/finding-format.md: b72ed671bf5696e4
+  shared/review-loop/loop.md: a1460fd119fd751a
+  shared/review-loop/severity-rules.md: 7e251cf0b2e7f9e8
+  shared/session-chain/base-sub-agent.md: 96d329ffbeba1a10
+  skills/commit-message/SKILL.md: 9e5a2880f739b5bd
+  skills/plan-writing/SKILL.md: 51ed956505dc69d4
+  skills/plan-writing/references/plan-format.md: 7274a96aa8cbed81
+  skills/review-followup/SKILL.md: 10c6b9a070df0853
+  skills/session-orchestrator/SKILL.md: fcb084575b063503
+  skills/spec-whiteboarding/SKILL.md: e6215bf6307c7544
+  skills/spec-whiteboarding/references/spec-format.md: c76326fe0273ca61
+  tests/agents.test.js: 12c0733a32355602
+  tests/commit-rule.test.js: 98b76e7455e68d4a
+  tests/dialog-rules.test.js: 2efa8bf3acfdb153
+  tests/followup.test.js: fd318d64b351fa2a
+  tests/implementation-review-agents.test.js: a3afc682671ddbaa
+  tests/lib/markdown.js: dfd5d6e23a0238d2
+  tests/orchestrator-report.test.js: 0d37f94fcdba3d83
+  tests/plan-writing.test.js: 16078b785550db51
+  tests/prepare.test.js: 2ab940b5d1ab0fb2
+  tests/review-flow-round-one.test.js: 2544c22a244a929c
+  tests/review-loop.test.js: 325559138b4b26b9
+  tests/scout-texts.test.js: 33617a8518df7bdf
+  tests/skill.test.js: 0edf3859a6267d61
+  tests/spec-whiteboarding.test.js: 427dbe5115e5cfc9

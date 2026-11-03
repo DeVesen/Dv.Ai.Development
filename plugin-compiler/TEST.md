@@ -1,6 +1,8 @@
 # Lokaler Test-Deploy
 
-Ziel: das vollständig aus `plugin-compiler/src` erzeugte `dv-forge` und den angular-Prototyp aus `plugin-compiler/dist/` lokal installieren und ausprobieren. Alle Befehle laufen im Repo-Wurzelordner `Dv.Ai.Development` auf dem Branch `exp/plugin-compiler`.
+Ziel: das aus `plugin-compiler/src` erzeugte `dv-forge` 0.35.0 und den angular-Prototyp aus `plugin-compiler/dist/` lokal installieren und ausprobieren. Alle Befehle laufen im Repo-Wurzelordner `Dv.Ai.Development` auf dem Branch `exp/plugin-compiler`.
+
+**Grundlage:** dv-forge 0.34.0 aus `master` (mit Empfehlungs-Schwelle) plus `fix/forge-handover-stability` (7b4faac). Darauf liegen die Befunde 2 bis 12, B und C; die Liste steht in `src/forge/CHANGES.yaml`.
 
 ## 0. Bauen und prüfen
 
@@ -12,25 +14,25 @@ plugin-compiler/tools/smoke.sh
 Erwartet, in dieser Reihenfolge:
 
 ```text
-== 1/4 build (enthält die Äquivalenzprüfung dist/forge ↔ plugins/forge)
-build: 369 Dateien nach dist/ geschrieben.
-  dv-forge: 68 Quellen, 22 Partials, 26 Regeln als Daten, 276 Assets; 348 Dateien wortgleich zum Bestand (ohne Kopfzeile).
+== 1/4 build (enthält den Abgleich dist/forge ↔ plugins/forge mit Änderungsprotokoll)
+build: 370 Dateien nach dist/ geschrieben.
+  dv-forge: 68 Quellen, 24 Partials, 26 Regeln als Daten, 277 Assets; 304 Dateien wortgleich zum Bestand, 45 laut Änderungsprotokoll geändert.
   angular: 5 Etappen, 27 geteilte Regeln, 3 eigene.
-  40 Warnungen.
+  35 Warnungen.
 == 2/4 dist/ unverändert gegenüber git
 dist/ entspricht dem eingecheckten Stand.
 == 3/4 claude plugin validate --strict
 √ Validation passed        (Marketplace, angular, forge)
 == 4/4 forge-Testsuite gegen dist/forge
-# tests 2143 / # pass 2142 / # fail 0 / # skipped 1
+# tests 2201 / # pass 2200 / # fail 0 / # skipped 1
 smoke: ok
 ```
 
-Die 40 Warnungen sind Befunde im Bestand, kein Fehler des Builds: offene Begründungen bei Regeln, zwei ungültige YAML-Frontmatter, Reviewer mit Bash usw. Die Liste steht in INVENTORY.md, Abschnitt 6.
+Die Warnungen sind offene Begründungen (`TODO(…)`, bei forge die 22 Regeln aus Befund 8) und die drei Implementierungs-Reviewer mit Bash (Befund 7, bewusst so gelassen).
 
 ## 1. Installieren
 
-Das erzeugte Plugin heißt wie das bestehende `dv-forge`, weil Skripte, Hooks und Texte den Namen fest enthalten (`/dv-forge:…`, `<git-common-dir>/dv-forge/…`). Zwei aktive Plugins mit demselben Namen kollidieren. Deshalb zuerst das bestehende abschalten:
+Das erzeugte Plugin heißt wie das bestehende `dv-forge`, weil Skripte, Hooks und Texte den Namen fest enthalten. Deshalb zuerst das bestehende abschalten:
 
 ```text
 /plugin uninstall dv-forge@dv-ai-development
@@ -39,43 +41,37 @@ Das erzeugte Plugin heißt wie das bestehende `dv-forge`, weil Skripte, Hooks un
 /plugin install angular@dv-plugin-compiler-demo
 ```
 
-Danach Claude Code neu starten, damit Hooks und Agents geladen werden.
+Danach Claude Code neu starten. Prüfen: 19 `/dv-forge:…`-Skills, 28 `dv-forge:…`-Agents, Version 0.35.0 in `/plugin`.
 
-Prüfen:
-- Die Skill-Liste zeigt dieselben 19 `/dv-forge:…`-Skills wie bisher.
-- `/agents` zeigt 28 `dv-forge:…`-Agents.
-- Jede erzeugte Datei trägt nach dem Frontmatter die Zeile `<!--GENERIERT-nicht-editieren:src/forge/…-->`, z. B. `~/.claude/plugins/…/dv-forge/skills/spec-review/SKILL.md`.
+## 2. Was sich gegenüber dv-forge 0.34.0 ändert und wie du es siehst
 
-## 2. dv-forge: Schritt für Schritt
-
-Erwartung überall: dasselbe Verhalten wie das bisherige dv-forge 0.33.0. Die Äquivalenzprüfung belegt, dass jeder Text wortgleich ist.
-
-| # | Aufruf | Erwartung |
+| Befund | Aufruf | Erwartung |
 |---|---|---|
-| 1 | `/dv-forge:init` in einem Testprojekt | Prüft Stolperfallen (`setup-check.js`), fragt die Schlüssel einzeln ab und schreibt `## dv-forge` in die Projekt-`CLAUDE.md`. Der Skill ist der einzige mit `disable-model-invocation: true`. |
-| 2 | `/dv-forge:spec-review docs/x/spec.md` ohne `--debug` | Der Hook `stage-guard.js` / `guard-orchestrator.js prompt` lehnt den getippten Unter-Skill ab und nennt den Startbefehl `/dv-forge:session-orchestrator`. |
-| 3 | `/dv-forge:spec-review docs/forge/2026-11-03-aufgabenliste/spec.md --debug` (Fixture unten) | Fünf Spec-Reviewer starten parallel (`dv-forge:spec-review-*`), danach Nacharbeit, Nachprüfer und Scout. Letzte Zeile: `Review abgeschlossen: … · FOLLOWUP … · Bericht: …`. Laut `plugins/forge/evals/spec-review-flawed.json` mindestens 🔴 an AC-01/AC-04 (Widerspruch), 🔴 an „Export“ (fehlendes Verhalten), 🟡 an AC-03 und AC-05. |
-| 4 | `/dv-forge:session-orchestrator` mit einer kleinen Idee, z. B. „Aufgabenliste als CSV exportieren“ | Die Leit-Session startet die Etappe Whiteboarding in einer eigenen Session (Modell Sonnet). Danach folgen Grill und Spec-Review, dann der Haltepunkt `spec` mit der Wahl Planning oder Spec-Nacharbeit. Danach Planning (Opus) und der Haltepunkt `go`. Ablauf und Modelle stehen in `src/forge/etappen.yaml`; der Build gleicht sie mit dem Code ab. |
-| 5 | Am Haltepunkt `go` „GO“ | Umsetzung über `implementation-orchestrator` (Implementer, Task-Reviewer, Implementierungs-Review), danach Abschluss mit `finish-work`. Gepusht wird erst nach deinem Ja. |
+| 4 | Planning-Etappe mit einer Spec, die Fragen offenlässt | Das Plan-Writing stellt alle offenen Fragen **einer Runde zusammen** im Format `❓ **Q<n>** - …` / `➡️ <Empfehlung> · <Beleg-Tag> — <Grund>`, nicht mehr eine pro Nachricht. Du kannst „alles wie empfohlen“ antworten. |
+| B | Spec- oder Plan-Review, bei dem ein Scout ein 🔴 mit `Sicherheit:` unter deiner Schwelle (Standard 70 %) bewertet | Der Orchestrator setzt dieses 🔴 **nicht** automatisch um. Der Abschlussbericht nennt `Abbruch: Unter der Empfehlungs-Schwelle, 1 × 🔴 mit Vorschlag bleiben beim Menschen (<Titel>)`; die Leit-Session hält am Haltepunkt. Ein 🔴 ab der Schwelle läuft wie bisher automatisch. |
+| C | Spec-Review, bei dem ein 🔴 neues Verhalten ohne Beleg verlangt und der Scout ≥ Schwelle sicher ist | Die Spec-Nacharbeit fragt **nicht** mehr, sondern setzt den Vorschlag um. In der Spec steht `- **R<n> · <Stelle>** — geändert — Empfehlung übernommen (Sicherheit <n> %) — …`. Unter der Schwelle kommt wie bisher eine Frage. |
+| 5 | `cat` der installierten `skills/session-orchestrator/SKILL.md` | `argument-hint: '[grill|…] [pfade] [workitem-nr]'` in Anführungszeichen: gültiges YAML. |
+| 6 | Implementierungs-Review | Der Test-Reviewer darf die Suite ausführen, aber keine Datei bearbeiten (`disallowedTools: Edit, MultiEdit, NotebookEdit`). |
+| 3 | Whiteboarding mit Commit auf Wunsch | Der Commit läuft als `git add -- <spec>` und direkt danach `git commit -m "…" -- <spec>`; das klappt jetzt auch für eine neue Spec. |
 
-Testmaterial für Schritt 3:
+Am schnellsten siehst du B mit deiner Schwelle: in der Projekt-`CLAUDE.md` unter `## dv-forge` die Zeile `- Empfehlungs-Schwelle: 95` setzen. Dann bleiben fast alle 🔴 bei dir.
+
+Testmaterial mit bekannten Mängeln (Erwartung je Befund in `plugins/forge/evals/spec-review-flawed.json`):
 
 ```bash
 mkdir -p docs/forge/2026-11-03-aufgabenliste
 cp plugins/forge/tests/fixtures/flawed-spec.md docs/forge/2026-11-03-aufgabenliste/spec.md
 ```
 
-Hinweis zu Schritt 4: Die Session-Kette startet Etappen über `mcp__ccd_session__start_session`. Das gibt es nur in der Claude-Desktop-App mit Sessions; in der reinen CLI bleibt Schritt 3 der Weg.
+`/dv-forge:spec-review docs/forge/2026-11-03-aufgabenliste/spec.md --debug` läuft ohne Session-Kette. Die volle Kette startest du mit `/dv-forge:session-orchestrator`; sie braucht die Claude-Desktop-App mit Sessions.
 
 ## 3. angular (Prototyp aus dem gemeinsamen Kern)
 
 | Aufruf | Erwartung |
 |---|---|
-| `/angular:ablauf` | Tabelle mit 5 Etappen (Spec, Grill, Spec-Review, Plan, Plan-Review), Befehl, Eingang, Artefakt, Gate; Profil `angular` mit drei Planungs-Skills aus dv-angular. |
-| `/angular:grill docs/forge/gibt-es-nicht/spec.md` | Der Hook `gate-grill.sh` blockiert mit Exit 2: `spec.md nicht gefunden: …` plus Regel R-050 und ihre Begründung. |
-| `/angular:spec-review docs/forge/2026-11-03-aufgabenliste/spec.md` | Ein Reviewer `angular:spec-review` (nur `Read`) läuft. Daneben entsteht `spec-review.md` mit `Verdict: NEEDS_CHANGES` und Befunden nach Severity. |
-| `/angular:plan …/spec.md` ohne `spec-review.md` daneben | blockiert: `spec-review.md nicht gefunden`. |
-| `/angular:plan …` mit Bericht | Plan mit `## Global Constraints`; Verifikationen als `dv-angular-test --root <Workspace> …` (R-201). |
+| `/angular:ablauf` | Tabelle mit 5 Etappen; Profil `angular` mit drei Planungs-Skills aus dv-angular. |
+| `/angular:grill docs/forge/gibt-es-nicht/spec.md` | Der Hook `gate-grill.sh` blockiert mit Exit 2: `spec.md nicht gefunden: …` plus Regel R-050. |
+| `/angular:spec-review <spec.md>` | Reviewer `angular:spec-review` (nur `Read`), daneben `spec-review.md` mit Verdict. |
 
 ## 4. Aufräumen
 
@@ -92,6 +88,6 @@ rm -rf docs/forge/2026-11-03-aufgabenliste
 
 ## Was verifiziert ist und was nicht
 
-- **Verifiziert:** Build mit allen Prüfungen. Äquivalenz: alle 348 Dateien des bestehenden forge entstehen wortgleich. Die forge-Testsuite gegen `dist/forge` (2142 grün, 1 übersprungen, wie im Original). `claude plugin validate --strict` für Marketplace und beide Plugins. Die Gate-Skripte des angular-Prototyps mit nachgestellten Hook-Eingaben.
-- **Nicht verifiziert:** Installation und Aufrufe in einer interaktiven Session; die Session-Kette über die Desktop-App.
-- **Bewusste Abweichungen vom Bestand:** `author` in `plugin.json` (für `--strict`), `description` in `hooks.json` und die Kopfzeile je Markdown-Datei. Die Äquivalenzprüfung lässt genau diese drei zu, sonst nichts.
+- **Verifiziert:** Build mit allen Prüfungen. Abgleich: 304 Dateien wortgleich zum Bestand, jede der 45 übrigen steht im Änderungsprotokoll mit abgenommenem Fingerabdruck. Die forge-Testsuite gegen `dist/forge` ist grün (2200 bestanden; 14 Tests mehr als auf der Grundlage, alle für die Befunde). `claude plugin validate --strict` für Marketplace und beide Plugins.
+- **Nicht verifiziert:** Installation und Aufrufe in einer interaktiven Session, insbesondere wie Scouts die `Sicherheit` in echten Läufen schätzen. Davon hängt ab, wie oft B und C greifen.
+- **Bewusste Abweichungen ohne Befund-Nummer:** `author` in `plugin.json`, `description` in `hooks.json`, die Kopfzeile je Markdown-Datei.

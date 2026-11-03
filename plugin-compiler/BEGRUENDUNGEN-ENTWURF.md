@@ -9,6 +9,8 @@ Für jede Regel aus `shared/orchestrator-rules.md` und `shared/dialog-rules.md`,
 
 Die Dialog-Regeln R-409 bis R-413 beziehen sich schon auf die **Empfehlungs-Schwelle** (Standard 70 %) aus dem Branch `harness/forge-empfehlungs-schwelle`, nicht mehr auf 85 %.
 
+**Stand 0.35.0:** R-302 nennt jetzt auch die Schwelle für 🔴 (Entscheidung B), R-407 nimmt die Fragerunden aus (Befund 4); die Vorschläge unten passen weiterhin.
+
 So antwortest du: „alles ok“, oder je Nummer eine Korrektur, z. B. „R-405: streichen“ oder „R-401: Grund ist …“.
 
 ## Orchestrator-Regeln

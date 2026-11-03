@@ -1,0 +1,7 @@
+# Wörterbuch (src/glossary.yaml): ein Begriff, eine Definition. Datei anlegen, wenn sie fehlt: terms: mit mindestens einem Eintrag.
+terms:
+  - term: Haltepunkt             # Pflicht
+    definition: Stelle, an der der Ablauf wartet, bis der Mensch entscheidet.   # Pflicht, ein Satz
+    avoid: [Pause]               # freiwillig. Wörter, die nie stehen dürfen (der Druck meldet jede Stelle)
+    avoid_context: [Gate (für die Entscheidung)]   # freiwillig. hängt vom Satz ab; nur dokumentiert
+    source: Woher die Definition stammt   # Pflicht

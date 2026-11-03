@@ -1,0 +1,4 @@
+# Projekt der Plugin-Druckerei (dv-plugin-druckerei). Quellen in src/, Ausgabe in dist/.
+marketplace: dv-plugin-compiler-demo
+owner: DeVesen
+beschreibung: "Prototyp aus plugin-compiler/src: dv-forge vollständig, angular aus dem gemeinsamen Kern."

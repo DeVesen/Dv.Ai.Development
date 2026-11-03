@@ -1,0 +1,10 @@
+# Bestellschein des Plugins <name>: was gedruckt wird, in welcher Version, mit welchen Sensoren.
+# Ausfüllhilfe zu jedem Feld: druckerei vorlage plugin
+name: <name>
+dir: <ordner>
+version: 0.1.0
+description: <beschreibung>
+author: <owner>
+source: src/<ordner>
+lint: streng
+assets: []

@@ -1,0 +1,13 @@
+#!/usr/bin/env node
+'use strict';
+
+// Start-Befehl der Plugin-Druckerei: reicht alle Argumente an scripts/druckerei.py weiter.
+const path = require('node:path');
+const { runPython } = require('../scripts/python.js');
+
+const result = runPython(path.join(__dirname, '..', 'scripts', 'druckerei.py'), process.argv.slice(2), { stdio: 'inherit' });
+if (result.missing) {
+  process.stderr.write(`druckerei: ${result.stderr}\n`);
+  process.exit(1);
+}
+process.exit(result.status ?? 1);

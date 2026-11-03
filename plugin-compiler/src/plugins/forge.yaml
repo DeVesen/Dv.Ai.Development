@@ -5,6 +5,9 @@ dir: forge
 version: 0.35.0
 description: Spezifizieren, Planen und Umsetzen mit orchestrierten Review-Loops
 source: src/forge
+# forge-Besonderheiten, die früher im Compiler-Code standen:
+intern_zusatz: "Gilt als intern und ist Teil der Session-Kette; Start nur über /dv-forge:session-orchestrator."
+etappen_abgleich: session-chain
 equivalent_to: ../plugins/forge
 # Jede Abweichung vom Bestand steht mit Befund-Nummer im Änderungsprotokoll; sonst bricht der Build ab.
 changelog: src/forge/CHANGES.yaml

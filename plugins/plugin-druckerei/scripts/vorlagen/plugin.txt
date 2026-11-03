@@ -1,0 +1,21 @@
+# Bestellschein (src/plugins/<plugin>.yaml) für ein Plugin aus Komponenten.
+name: dv-beispiel                # Pflicht. Name des Plugins, Kleinbuchstaben und Bindestriche, ohne claude/anthropic
+dir: beispiel                    # Pflicht. Ordner in dist/ und unter src/
+version: 0.1.0                   # Pflicht. Nur hier pflegen; druckerei deploy erhöht sie
+description: Ein Satz, was das Plugin kann.   # Pflicht
+source: src/beispiel             # Pflicht. Ordner mit Skills, Agents, Partials, Regeln dieses Plugins
+author: DeVesen                  # freiwillig; claude plugin validate --strict mahnt ihn sonst an
+lint: streng                     # streng = Stilfragen sind Fehler; bestand = Warnungen (nur für frisch übernommene Plugins)
+verweis_praefix: dv-beispiel     # freiwillig. Präfix in Verweisen <präfix>:<skill-oder-agent>; Standard: name
+intern_zusatz: "Gilt als intern; Start nur über /dv-beispiel:start."   # freiwillig. Wird an die description jedes Skills mit role: intern gehängt
+assets:                          # Code, Tests, Golden-Sets: unverändert kopiert
+  - {from: src/beispiel/assets/scripts, to: scripts}
+hooks:                           # freiwillig. Sensoren; Ereignis → Liste von Einträgen
+  PreToolUse:
+    - matcher: Edit|Write        # freiwillig. Für welche Werkzeuge
+      commands:
+        - wache.js pre           # Kurzform: node "${CLAUDE_PLUGIN_ROOT}/scripts/wache.js" pre
+        - {command: "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/wache.sh\"", timeout: 10}   # Rohform, wortgleich
+# Nur bei einer Übernahme aus einem bestehenden Plugin:
+# equivalent_to: ../plugins/beispiel   # Bestand, gegen den jede Datei verglichen wird
+# changelog: src/beispiel/CHANGES.yaml  # jede Abweichung vom Bestand steht dort

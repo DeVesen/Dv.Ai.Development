@@ -1,0 +1,15 @@
+---
+kind: agent                      # Pflicht
+source: Woher der Inhalt stammt  # Pflicht
+type: reviewer                   # freiwillig. z. B. reviewer, scout, rework, verifier
+stage: review                    # freiwillig. zu welcher Etappe der Agent gehört
+frontmatter:
+  name: mein-pruefer             # Pflicht. = Dateiname
+  description: Use when the review needs X checked with a fresh context.   # Pflicht, mit "Use when"
+  tools: Read, Grep, Glob, Write # wenn möglich setzen: ein Prüfer ohne Edit; ohne Zeile erbt er alle Werkzeuge
+  model: sonnet                  # Pflicht
+---
+
+# Prüfer: Mein Thema
+
+Du prüfst … Du liest nur die Dateien aus deinem Auftrag. Am Ende schreibst du dein Ergebnis nach `Ergebnis:`.

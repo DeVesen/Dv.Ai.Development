@@ -1,0 +1,22 @@
+# Etappe (src/phases/<id>.yaml) im Etappen-Modell: daraus druckt die Druckerei einen Skill, bei Reviews einen Agent,
+# und für Regeln mit enforce: hook ein Gate-Skript, das ohne Pflichtartefakt blockiert.
+id: plan                         # Pflicht. = Dateiname
+title: Plan                      # Pflicht
+after: [spec-review]             # Pflicht. Vorgänger; keine Kreise
+description: >-                  # Pflicht. Dritte Person, mit "Use when …", höchstens 1024 Zeichen
+  Turns a reviewed spec into a plan. Use when the review is done and the plan is missing.
+argument_hint: "<spec.md>"       # Pflicht
+role: Was diese Etappe tut und was nicht, in zwei Sätzen.   # Pflicht
+source: Woher der Ablauf stammt  # Pflicht
+inputs: [spec]                   # Pflicht. Artefakte aus src/artifacts.yaml, die ein Vorgänger erzeugt
+primary_input: spec              # Pflicht, wenn inputs nicht leer: erstes Argument
+outputs: [plan]                  # Pflicht, mindestens eins
+gate:                            # Pflicht
+  artifact: plan                 # muss in outputs stehen
+  criteria: Woran man prüft, dass die Etappe fertig ist.
+rules: [R-001, R-050]            # Pflicht. IDs aus src/rules/; [R-xxx] im Ablauf muss hier stehen
+partials: []                     # Textbausteine aus src/partials/
+required:                        # Pflicht. Die Schritte; Pflichttext steht im Skill
+  - "**Lesen:** … (→ R-050)"
+examples:                        # freiwillig. Beispiele wandern auf ein Beiblatt, nie in den Skill
+  - {title: Beispiel, source: Herkunft, body: "…"}

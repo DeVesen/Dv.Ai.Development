@@ -1,0 +1,7 @@
+---
+kind: reference                  # Pflicht. Liegt unter skills/<skill>/references/, eine Ebene tief
+source: Woher der Inhalt stammt  # Pflicht
+---
+# Beispiele zu Mein Skill
+
+Beiblatt: wird nur bei Bedarf gelesen und verweist nicht auf weitere Beiblätter.

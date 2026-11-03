@@ -1,0 +1,7 @@
+---
+kind: command                    # Pflicht. Liegt unter commands/<name>.md
+source: Woher der Inhalt stammt  # Pflicht
+frontmatter:
+  description: Zeigt den Ablauf des Plugins.   # freiwillig, aber empfohlen
+---
+Gib die Übersicht aus und sonst nichts.

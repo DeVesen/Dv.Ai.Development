@@ -1,0 +1,14 @@
+# Etappen einer Kette (src/<plugin>/etappen.yaml): welche Skills eine Leit-Instanz in welcher Folge startet.
+gestartet_von: start             # Pflicht. Skill, der die Kette führt
+etappen:
+  - id: entwurf                  # Pflicht
+    titel: Entwurf               # Pflicht
+    modell: sonnet               # Pflicht. sonnet oder opus
+    pflicht: []                  # Pflicht. Werte, ohne die die Etappe nicht startet
+    skill: entwurf               # Pflicht. Skill oder null (kein Skill, nur Auftrag)
+    weiter: {start: pruefung}    # Pflicht. genau eines: start: <etappe> | halt: <haltepunkt> | ende: true
+    artefakt: entwurf            # Pflicht. was die Etappe abliefert
+haltepunkte:
+  - id: freigabe                 # Pflicht
+    nach: pruefung               # Pflicht. Etappe oder Liste
+    wahl: {bereit: umsetzung, nacharbeit: entwurf}   # Pflicht. Antwort → Etappe

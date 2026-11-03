@@ -1,0 +1,12 @@
+# Regel. Im gemeinsamen Kern: Liste rules: in src/rules/<thema>.yaml.
+# Nur für ein Plugin: Liste rules: im Bestellschein, dann zusätzlich applies_to.
+rules:
+  - id: R-060                    # Pflicht. R- und drei Ziffern, im ganzen Projekt eindeutig
+    title: Kurzer Name           # Pflicht
+    text: >-                     # Pflicht. Eine prüfbare Aussage: was gilt, nicht wie man sich fühlt
+      Jede Änderung legst du als Vorher und Nachher vor und schreibst sie erst nach ausdrücklicher Bestätigung.
+    why: >-                      # Pflicht. Warum die Regel gilt. Unbekannt? Fragen, nicht erfinden; notfalls TODO(<Quelle>)
+      Die Freigabe jeder Änderung bleibt beim Menschen.
+    enforce: text                # Pflicht. text = steht nur im Text; script = ein Skript prüft; hook = ein Sensor blockiert
+    source: Woher die Regel stammt (Datei, Abschnitt, Entscheidung)   # Pflicht
+    # applies_to: [skill-oder-etappe]   # nur im Bestellschein: für welche Etappen die Regel gilt

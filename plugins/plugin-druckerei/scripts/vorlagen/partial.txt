@@ -1,0 +1,4 @@
+<# partials/<name>.md: wortgleicher Text für mehrere Stellen. Diese Kommentarzeile erscheint nicht in der Ausgabe;
+   nenne darin, wo der Baustein steht. Einsetzen in einer Quelle mit:  <<= partial('<name>') >>  -#>
+## W-Einträge
+Einträge der Form `- **W · <Kurztitel>** · …` sind bindende Entscheidungen des Menschen.

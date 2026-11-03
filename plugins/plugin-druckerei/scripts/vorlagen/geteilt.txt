@@ -1,0 +1,7 @@
+---
+kind: shared                     # Pflicht. Liegt unter shared/; mehrere Skills lesen die Datei zur Laufzeit
+source: Woher der Inhalt stammt  # Pflicht
+---
+# Gemeinsamer Ablauf
+
+Text, den mehrere Skills mit `<PLUGIN>/shared/<pfad>.md` lesen. Gilt er nur beim Drucken, ist ein Partial besser.

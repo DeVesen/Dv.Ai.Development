@@ -1,0 +1,9 @@
+# Änderungsprotokoll (src/<plugin>/CHANGES.yaml): nur bei Plugins mit equivalent_to.
+# Jede Datei, die vom Bestand abweicht, steht hier; danach: druckerei pruefen, und bei gewollter Änderung den Stand abnehmen.
+changes:
+  - befund: "15"                 # Pflicht. Nummer der Entscheidung (Ziffern und Großbuchstaben)
+    titel: Was geändert wurde    # Pflicht
+    warum: Warum                 # freiwillig, aber empfohlen
+    dateien:                     # Pflicht. Pfade im fertigen Plugin
+      - skills/mein-skill/SKILL.md
+# Den abgenommenen Stand (stand:) schreibt die Druckerei selbst: druckerei abnehmen (bewusst, nach Prüfung der Änderung) oder druckerei deploy.

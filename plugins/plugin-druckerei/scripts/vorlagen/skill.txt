@@ -1,0 +1,15 @@
+---
+kind: skill                      # Pflicht
+source: Woher der Inhalt stammt  # Pflicht
+role: werkzeug                   # Pflicht. startbefehl = Einstieg für den Menschen; intern = nur über andere Skills; werkzeug = frei
+model_invocation: allowed        # Pflicht. allowed = Claude darf den Skill selbst ziehen; disabled = nur der Mensch tippt ihn
+frontmatter:                     # Pflicht. Kopf der fertigen SKILL.md, in dieser Reihenfolge
+  name: mein-skill               # Pflicht. = Ordnername, höchstens 64 Zeichen, ohne claude/anthropic
+  description: Does X for Y. Use when Z happens or someone asks for W.   # Pflicht. dritte Person, "Use when", ≤ 1024 Zeichen
+  argument-hint: <datei>         # freiwillig
+---
+
+# Mein Skill
+
+Pflichttext gehört hierher, Beispiele auf ein Beiblatt (references/). Unter 500 Zeilen.
+Bausteine einsetzen: <<= partial('name') >>  ·  Verweise auf andere Skills und Agents: <plugin>:<name>

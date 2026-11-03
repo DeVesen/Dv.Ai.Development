@@ -1,0 +1,23 @@
+# Regeldatei (src/<plugin>/rules/<name>.yaml): daraus entsteht eine geteilte Markdown-Datei mit nummerierten Regeln.
+# Die Begründungen (why) erscheinen nicht im Text, sie halten fest, warum es die Regel gibt.
+doc: shared/meine-regeln.md      # Pflicht. Ausgabepfad im Plugin, immer unter shared/
+title: Regeln für Beispiel       # Pflicht. Überschrift
+intro: Für wen und wann diese Regeln gelten, in ein bis zwei Sätzen.   # Pflicht
+sections:
+  - heading: Commits             # Pflicht
+    style: bullets               # Pflicht. bullets, numbered oder table
+    lead: Ein Satz vor der Liste.   # freiwillig
+    rules:
+      - id: R-501                # Pflicht, eindeutig
+        text: Du committest nur deine eigenen Dateien.   # Pflicht
+        why: Sonst landen Dateien einer Parallelsitzung im Commit.   # Pflicht
+        enforce: hook            # text, script oder hook
+        enforced_by: scripts/wache.js   # Pflicht bei script und hook: das Asset, das sie durchsetzt
+        source: Entscheidung vom 2026-11-03   # Pflicht
+  - heading: Rote Flaggen
+    style: table
+    table:
+      columns: [Gedanke, Richtig]
+      separator: "|---|---|"
+      rows:
+        - ["„Nur kurz alles committen.“", "Nur die eigenen Pfade."]

@@ -8,10 +8,13 @@ const { spawnSync } = require('node:child_process');
 const { describeTasks } = require('../plan-tasks');
 const { toPosix } = require('./posix');
 
+// Geänderte Pfade seit der Basis. Bei einer Umbenennung zählen alter und neuer Pfad: Der Plan nennt oft den alten, `--name-only` nur den neuen,
+// und die geplante Datei stünde sonst als 🔴 FEHLT da, obwohl der Commit sie verschoben hat.
 function changedFiles(repo, base) {
-  const result = spawnSync('git', ['-C', repo, 'diff', '--name-only', `${base}..HEAD`], { encoding: 'utf8' });
+  const result = spawnSync('git', ['-C', repo, 'diff', '--name-status', '-M', `${base}..HEAD`], { encoding: 'utf8' });
   if (result.status !== 0) throw new Error(`git diff ${base}..HEAD: ${result.stderr.trim()}`);
-  return result.stdout.split('\n').map((line) => line.trim()).filter(Boolean);
+  const paths = result.stdout.split('\n').map((line) => line.trim()).filter(Boolean).flatMap((line) => line.split('\t').slice(1));
+  return [...new Set(paths)];
 }
 
 // Plan, Spec, Umsetzungsbericht und Arbeitsbereiche gehören zum Vorgang, nicht zum Umfang des Plans.

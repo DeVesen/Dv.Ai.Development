@@ -118,3 +118,8 @@ test('reviewFollowupFlow_ImplementationWithoutReReview_ContinuesAtReportDataStep
   assert.ok(unchanged?.includes('weiter mit Schritt 3 dieses Abschnitts (`--ohne keine-aenderung`)'));
   assert.equal(text.includes('weiter mit dem Bericht'), false);
 });
+
+test('reviewFollowupFlow_ReworkAgent_RunsOnSonnet', () => {
+  const text = readText(FLOW);
+  assert.ok(text.includes('Der Agent-Aufruf trägt `model: sonnet`'));
+});

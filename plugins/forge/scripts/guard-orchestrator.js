@@ -7,6 +7,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { mustShowOf, decideTurnEnd } = require('./lib/must-show');
 const { turnText } = require('./lib/turn-text');
+const { readEntries, textOf, isToolResultEntry } = require('./lib/transcript');
 const { normalizePath: normalize } = require('./lib/posix');
 const { forbiddenIn } = require('./lib/git-commands');
 
@@ -465,14 +466,60 @@ function showsReport(text) {
   return REPORT_HEADINGS.some((heading) => lines.some((line) => line.startsWith(heading)));
 }
 
+const LAUNCHED = 'Async agent launched successfully';
+const AGENT_ID = /agentId: ([A-Za-z0-9_-]+)/;
+// Rückmeldung eines Agents: seine Nachricht (Meta-Eintrag) oder die Benachrichtigung der App mit seiner Kennung als `task-id`.
+const RETURNED = /<agent-message from="([A-Za-z0-9_-]+)"|<task-id>([A-Za-z0-9_-]+)<\/task-id>/g;
+const NEXT_STEP_TOOL = 'mcp__ccd_turn__wrap_up';
+
+function partsOf(entry) {
+  const content = entry.message?.content;
+  if (typeof content === 'string') return [{ type: 'text', text: content }];
+  return Array.isArray(content) ? content : [];
+}
+
+function partText(part) {
+  if (typeof part === 'string') return part;
+  return part?.type === 'tool_result' ? textOf(part.content) : part?.text ?? '';
+}
+
+// Agents, die die App im Lauf asynchron gestartet hat und deren Rückmeldung noch fehlt; über das ganze Protokoll, weil Rückmeldungen
+// als Meta-Einträge keinen neuen Zug beginnen.
+function openAgents(entries) {
+  const texts = entries.flatMap(partsOf).map(partText);
+  const open = new Set(texts.filter((text) => text.includes(LAUNCHED)).map((text) => AGENT_ID.exec(text)?.[1]).filter(Boolean));
+  for (const match of texts.join('\n').matchAll(RETURNED)) open.delete(match[1] ?? match[2]);
+  return open;
+}
+
+// Nachrichtenteile seit dem letzten Zugbeginn (Eingabe des Menschen, Nachricht einer Session, Benachrichtigung).
+function currentTurnParts(entries) {
+  const start = entries.findLastIndex((entry) => entry.type === 'user' && !entry.isMeta && !isToolResultEntry(entry));
+  return entries.slice(start + 1).flatMap(partsOf);
+}
+
+// Legitimes Zugende ohne Bericht: Der Lauf wartet auf einen asynchron gestarteten Agent, die Etappe meldet `needs-user`, oder der Zug
+// fragt den Menschen über das Next-Step-Feld und wartet auf ihn (`blocked: true`). `in-progress` allein zählt nicht: Die Statuszeile steht
+// an jedem Turn-Ende einer Etappe, ohne Wartegrund ist ein solches Ende das frühe Aufhören, das der Check fangen soll. Ein Block hier
+// triebe das Modell zu `run-end` und nähme dem Lauf die Git-Sperre.
+// `since`: Start des Laufs (`seit` im Lauf-Marker); ein Agent aus einem früheren Lauf derselben Session zählt nicht.
+function waitingTurn(input, shown, since) {
+  if (/STATUS=needs-user\b/.test(shown)) return true;
+  if (!input.transcript_path || !fs.existsSync(input.transcript_path)) return false;
+  const entries = readEntries(input.transcript_path).filter((entry) => !since || !entry.timestamp || entry.timestamp >= since);
+  if (openAgents(entries).size > 0) return true;
+  return currentTurnParts(entries).some((part) => part?.type === 'tool_use' && part.name === NEXT_STEP_TOOL
+    && part.input?.blocked === true && String(part.input?.ask ?? '').trim() !== '');
+}
+
 // Zugende eines Stufen-Orchestrator-Laufs ohne Bericht: einmal je Lauf blocken. Eine Frage an den Menschen
-// (Zugtext endet mit `?`) und ein gesetztes `pause` sind legitime Zugenden.
+// (Zugtext endet mit `?`), ein Wartezug (waitingTurn) und ein gesetztes `pause` sind legitime Zugenden.
 function onRunTurnEnd(input, marker, tmpRoot) {
   if (input.stop_hook_active || marker?.mustShow || marker?.paused) return null;
   const run = readRun(input.session_id, tmpRoot);
   if (!run || !STAGE_RUNS.includes(run.skill) || run.abschlussGeblockt) return null;
   const shown = turnText(input.transcript_path, input.last_assistant_message);
-  if (showsReport(shown) || lastFilledLine(shown).endsWith('?')) return null;
+  if (showsReport(shown) || lastFilledLine(shown).endsWith('?') || waitingTurn(input, shown, run.seit)) return null;
   fs.writeFileSync(runMarkerPath(input.session_id, tmpRoot), JSON.stringify({ ...run, abschlussGeblockt: 1 }));
   return REPORT_MISSING_REASON;
 }

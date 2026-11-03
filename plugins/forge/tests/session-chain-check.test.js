@@ -141,6 +141,36 @@ test('checkFinal_AbschlussPushedAndWorktreeRemoved_IsChecked', () => {
   assert.equal(result.geprueft.length, 3);
 });
 
+test('checkFinal_UmsetzungWithUnknownBasis_NamesTheGitError', () => {
+  // Arrange
+  const repo = makeRepo();
+  git(repo, 'branch', 'feature/x');
+
+  // Act
+  const result = checkFinal('umsetzung', repo, { commit: 'none', branch: 'feature/x', basis: 'gibt-es-nicht', worktree: repo });
+
+  // Assert
+  assert.equal(result.abweichungen.length, 1);
+  assert.match(result.abweichungen[0], /^Commits seit gibt-es-nicht auf feature\/x nicht zählbar: /);
+  assert.ok(!result.abweichungen[0].includes('\n'));
+});
+
+test('checkFinal_AbschlussFolderLeftWithoutRegistration_NamesTheLeftover', () => {
+  // Arrange
+  const repo = repoWithRemoteBranch();
+  git(repo, 'push', '--quiet', '-u', 'origin', 'feature/x');
+  const left = fs.mkdtempSync(path.join(os.tmpdir(), 'dv-forge-rest-'));
+  fs.mkdirSync(path.join(left, 'node_modules'));
+
+  // Act
+  const result = checkFinal('abschluss', repo, { commit: 'none', branch: 'feature/x', worktree: left });
+
+  // Assert
+  assert.equal(result.abweichungen.length, 1);
+  assert.match(result.abweichungen[0], /besteht noch, git kennt den Worktree nicht mehr/);
+  assert.match(result.abweichungen[0], /work\.js'\)\.removeDirectory\(process\.argv\[1\]\)/);
+});
+
 test('checkFinal_AbschlussWithoutUpstream_IsDeviation', () => {
   // Arrange
   const repo = repoWithRemoteBranch();
@@ -302,7 +332,7 @@ test('checkFinal_GrillDecisionCountDiffers_IsDeviation', () => {
   const one = checkFinal('grill', repo, { commit, spec, specKopie: copy, entscheidungen: ['Trenner'] });
 
   // Assert
-  assert.deepEqual(none.abweichungen, ['Spec docs/forge/x/spec.md seit grill-Start: 1 neue W-Einträge, aber 0 Entscheidungen gemeldet']);
+  assert.deepEqual(none.abweichungen, ['Spec docs/forge/x/spec.md seit grill-Start: 1 neue W-Einträge, aber 0 Entscheidungen gemeldet; neu: Trenner (je Entscheidung des Menschen ein --entscheidung)']);
   assert.deepEqual(one.abweichungen, []);
 });
 

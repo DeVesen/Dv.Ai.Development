@@ -35,6 +35,19 @@ test('planDiff_MissingModifyAndTest_ExtraFileOutsidePlan', () => {
   assert.deepEqual(result.extra, ['src/extra.js']);
 });
 
+test('planDiff_RenamedPlannedFile_IsNotMissing', () => {
+  const repo = makeRepo();
+  commitFile(repo, 'src/layout.scss', '.a { color: red; }\n', 'base');
+  const planText = ['# Demo — Umsetzungsplan', '', '---', '', '### Task 1: Layout', '', '**Dateien:**', '- Modify: `src/layout.scss`', ''].join('\n');
+  commitFile(repo, 'docs/forge/demo/plan.md', planText, 'plan');
+  const base = git(repo, 'rev-parse', 'HEAD');
+  git(repo, 'mv', 'src/layout.scss', 'src/shell.scss');
+  git(repo, 'commit', '--quiet', '-m', 'move layout');
+  const result = planDiff(path.join(repo, 'docs/forge/demo/plan.md'), repo, base);
+  assert.deepEqual(result.missing, []);
+  assert.deepEqual(result.extra, ['src/shell.scss']);
+});
+
 test('cli_WritesSkriptReviewAndAggregateIncludesIt', () => {
   const { repo, base, plan } = repoWithPlan();
   const out = path.join(repo, '.forge', 'w', 'skript.json');

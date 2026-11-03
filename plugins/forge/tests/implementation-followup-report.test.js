@@ -401,3 +401,15 @@ for (const parts of [['--', 'ber', 'icht'], ['--', 'art', 'efakt'], ['--', 'abl'
     assert.equal(fs.existsSync(path.join(dir, 'ablage')), false);
   });
 }
+
+test('implementationFollowup_YellowChosenWithoutReReview_StaysYellow', () => {
+  // Arrange
+  const dir = workspace([2]);
+
+  // Act
+  const { data } = run(dir, '', ['--ohne', 'blockiert']);
+
+  // Assert
+  assert.equal(data.openRed, 1);
+  assert.equal(data.open.find((entry) => entry.title === 'Schleife benennen').color, 'yellow');
+});

@@ -69,11 +69,13 @@ function isConfirmed(group, answer) {
   return judged === undefined ? answer.clean : judged === 'behoben';
 }
 
-// Farbe einer gewählten, nicht bestätigten Gruppe: Mit eigenem Gruppenurteil bleibt ihre Stufe (🟡 ist kein Hindernis);
-// ohne Nach-Review oder ohne eigenes Urteil zählt sie als Hindernis.
+// Farbe einer gewählten, nicht bestätigten Gruppe: Ein 🔴 bleibt Hindernis. Ohne Nach-Review (`blockiert`, `keine Änderung`) hat der
+// Umsetzer nichts geändert; ein 🟡 bleibt 🟡, sonst startete es als 🔴 eine weitere Runde mit derselben Eingabe. Mit Nach-Review bleibt
+// ein 🟡 nur mit eigenem Gruppenurteil 🟡; ohne Urteil ist die Änderung ungeprüft und zählt als Hindernis.
 function unconfirmedColor(group, reviewed, answer) {
-  const ownVerdict = reviewed.done && answer.verdict !== null && groupVerdict(group, answer) !== undefined;
-  return ownVerdict && group.severity !== '🔴' ? 'yellow' : 'red';
+  if (group.severity === '🔴') return 'red';
+  if (!reviewed.done) return 'yellow';
+  return answer.verdict !== null && groupVerdict(group, answer) !== undefined ? 'yellow' : 'red';
 }
 
 function angles(reviewers) {

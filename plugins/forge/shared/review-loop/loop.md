@@ -38,7 +38,7 @@ Start: `r = 1`, `nacharbeiten = 0`.
    5. `r = r+1`, weiter mit Schritt 1.
 
 ## Hintergrund oder Vordergrund
-Alle Agents laufen im Vordergrund mit `run_in_background: false`, weil der nächste Schritt auf sie wartet. Reviewer laufen trotzdem parallel, weil ihre Calls in einer Nachricht stehen. Nie `run_in_background: true`: Jeder Hintergrund-Agent weckt dich zweimal (Antwort und Benachrichtigung), und jeder Weckzug liest den ganzen Kontext neu.
+Alle Agents laufen im Vordergrund mit `run_in_background: false`, weil der nächste Schritt auf sie wartet. Reviewer laufen trotzdem parallel, weil ihre Calls in einer Nachricht stehen. Nie `run_in_background: true`: Jeder Hintergrund-Agent weckt dich zweimal (Antwort und Benachrichtigung), und jeder Weckzug liest den ganzen Kontext neu. Startet die App einen Agent trotzdem asynchron (Ergebnis `Async agent launched successfully`), beendest du den Zug ohne Bericht und wartest auf seine Rückmeldung; du pollst nie, weder mit `sleep` noch mit einer Schleife über die Ergebnisdatei.
 
 ## Jedes Ende
 Jedes Ende, auch `Ende` nach einem Fehler, schließt mit denselben zwei Befehlen: `node "<PLUGIN>/scripts/workspace.js" remove <rolle> <slug>`, sofern `prepare.js` einen Arbeitsbereich angelegt hat, dann `node "<PLUGIN>/scripts/guard-orchestrator.js" release <SESSION>`.

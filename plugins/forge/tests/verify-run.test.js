@@ -153,14 +153,14 @@ test('basisRun_LongOutput_KeepsTheWholeOutputNotOnlyTheTail', () => {
   assert.ok(result.laeufe[0].ausgabe.includes('zeile 100'));
 });
 
-test('basisRun_SeveralTestCommands_StopsAtTheFirstRedOneAndKeepsBothOutputs', () => {
+test('basisRun_SeveralTestCommands_RunsAllAndKeepsAllOutputs', () => {
   const first = `${NODE} -e "console.log('eins')"`;
   const second = `${NODE} -e "console.log('zwei'); process.exit(2)"`;
   const third = `${NODE} -e "console.log('drei')"`;
   const result = basisRun({ repo: makeRepo(), config: { Test: `${first} ; ${second} ; ${third}` } });
   assert.equal(result.laeufe[0].exit, 2);
   assert.match(result.laeufe[0].ausgabe, /eins[\s\S]*zwei/);
-  assert.equal(result.laeufe[0].ausgabe.includes('drei'), false);
+  assert.match(result.laeufe[0].ausgabe, /eins[\s\S]*zwei[\s\S]*drei/);
 });
 
 test('verifyRun_RunsKeepOnlyTheTailNotTheFullOutput', () => {
@@ -243,4 +243,51 @@ test('cli_CommandNotFound_PrintsUmgebungAndExitsZero', () => {
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /^PRUEFUNG ergebnis=umgebung /);
   assert.match(result.stdout, new RegExp(`^UMGEBUNG Befehl ${MISSING} nicht startbar$`, 'm'));
+});
+
+test('verifyRun_RedFirstTestCommand_StillRunsTheSecond', () => {
+  const result = verifyRun({ repo: makeRepo(), config: { Build: OK, Test: `${FAIL} ; ${OK}`, Lint: OK }, docker: noDocker });
+  assert.deepEqual(result.laeufe.map((run) => `${run.schluessel}:${run.exit}`), ['Build:0', 'Test:3', 'Test:0']);
+  assert.equal(result.ergebnis, 'rot');
+});
+
+test('verifyRun_TestcontainersWordInRealFailure_Rot', () => {
+  const command = `${NODE} -e "console.log('RealRegressionTest failed'); console.log('Testcontainers: postgres gestartet'); process.exit(1)"`;
+  const result = verifyRun({ repo: makeRepo(), config: { Build: '', Test: command, Lint: '' }, docker: noDocker });
+  assert.equal(result.ergebnis, 'rot');
+});
+
+test('notStartable_ToolchainReportsMissingTool_True', () => {
+  assert.equal(notStartable('dv-angular-test --root src/frontend', 1, 'Node-Pakete fehlen: @angular/core. Im Projektordner npm ci ausführen.'), true);
+  assert.equal(notStartable('dv-dotnet-build --path a.sln', 1, 'dotnet nicht gefunden. Ist das .NET SDK installiert und im PATH?'), true);
+});
+
+test('basisRun_CommandNotFound_OneRunWithUmgebung', () => {
+  const result = basisRun({ repo: makeRepo(), config: { Test: `${MISSING} --path x.sln` } });
+  assert.equal(result.laeufe.length, 1);
+  assert.deepEqual(result.umgebung, [`${MISSING} --path x.sln`]);
+  assert.equal(result.beideRot, false);
+});
+
+test('cli_BasisCommandNotFound_PrintsBasisUmgebungExitsThreeWithoutBasisRotFile', () => {
+  const repo = configRepo(`${MISSING} --path x.sln`);
+  const out = tempOut();
+  const result = basisCli(repo, out);
+  assert.equal(result.status, 3);
+  assert.equal(result.stdout, `BASIS umgebung
+UMGEBUNG Befehl ${MISSING} nicht startbar
+`);
+  assert.equal(fs.existsSync(path.join(path.dirname(out), 'basis-rot.md')), false);
+});
+
+test('verifyRun_DotnetTestcontainersWithoutDocker_Docker', () => {
+  const command = `${NODE} -e "console.log('Docker is either not running or misconfigured. Please ensure that Docker is running.'); process.exit(1)"`;
+  const result = verifyRun({ repo: makeRepo(), config: { Build: '', Test: command, Lint: OK }, docker: noDocker });
+  assert.equal(result.ergebnis, 'docker');
+});
+
+test('basisRun_RedFirstCommandAndMissingSecond_RunsBothAndReportsUmgebung', () => {
+  const result = basisRun({ repo: makeRepo(), config: { Test: `${FAIL} ; ${MISSING} --root x` } });
+  assert.equal(result.laeufe.length, 1);
+  assert.deepEqual(result.umgebung, [`${MISSING} --root x`]);
 });

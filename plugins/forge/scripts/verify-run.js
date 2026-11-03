@@ -5,7 +5,8 @@
 // Ausgabe: `PRUEFUNG ergebnis=<gruen|rot|docker|umgebung|keine> head=<sha> offen=<n> [datei=<pfad>]`, je Lauf eine Zeile `LAUF`,
 // je nicht startbarem Befehl `UMGEBUNG Befehl <x> nicht startbar`, je übersprungenem Schlüssel `UEBERSPRUNGEN`, bei Rot die letzten Zeilen der Ausgabe. Exit 1 bei `rot`, 2 bei falschem Aufruf.
 // `--basis <datei>`: Basis-Lauf vor Task 1. Nur `Test`, höchstens zweimal (der zweite Lauf nur nach einem roten ersten); beide Ausgaben vollständig
-// als JSON `{ laeufe: [{ exit, ausgabe }], beideRot }` in die Datei. Ausgabe `BASIS rot=nein|ja`, Exit 0. Ist nicht beideRot,
+// als JSON `{ laeufe: [{ exit, ausgabe }], beideRot }` in die Datei. Ausgabe `BASIS rot=nein|ja`, Exit 0; ist ein Befehl nicht startbar,
+// `BASIS umgebung` mit je einer Zeile `UMGEBUNG`, Exit 3 und ohne `basis-rot.md`. Ist nicht beideRot,
 // legt das Skript neben die Datei `basis-rot.md` mit `keine` an, die der Controller den Agents als `Basis rot:` übergibt.
 
 const fs = require('node:fs');
@@ -47,7 +48,12 @@ function main() {
   const { config } = readConfig(repo);
   if (values.basis) {
     const basis = basisRun({ repo, config });
-    writeResult(values.basis, { laeufe: basis.laeufe, beideRot: basis.beideRot });
+    writeResult(values.basis, { laeufe: basis.laeufe, beideRot: basis.beideRot, ...(basis.umgebung ? { umgebung: basis.umgebung } : {}) });
+    if (basis.umgebung) {
+      process.stdout.write(`${formatBasis(basis)}
+`);
+      process.exit(3);
+    }
     if (!basis.beideRot) fs.writeFileSync(path.join(path.dirname(path.resolve(values.basis)), 'basis-rot.md'), 'keine\n');
     process.stdout.write(`${formatBasis(basis)}\n`);
     return;

@@ -14,7 +14,7 @@ const IMPLEMENTATION_CATEGORIES = {
     'design-regelbruch': 'red', duplikat: 'red', verantwortung: 'yellow', lesbarkeit: 'yellow', 'muster-bruch': 'yellow', dateigroesse: 'yellow', anmerkung: 'green',
   },
   tests: {
-    'test-rot': 'red', 'suite-nicht-ausfuehrbar': 'red', 'test-ohne-assertion': 'red', 'testlauf-rauschen': 'yellow', 'test-schwach': 'yellow',
+    'test-rot': 'red', 'suite-nicht-ausfuehrbar': 'red', 'test-ohne-assertion': 'red', 'testlauf-rauschen': 'yellow', 'test-umgebung': 'yellow', 'test-schwach': 'yellow',
     'test-randfall-fehlt': 'yellow', 'test-flaky': 'green', anmerkung: 'green',
   },
   risks: {

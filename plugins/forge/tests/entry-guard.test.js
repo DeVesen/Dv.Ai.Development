@@ -149,3 +149,16 @@ test('hooksJson_UserPromptSubmit_RunsTheGuardPromptCommandThatBlocksTypedSubSkil
   // Assert
   assert.ok(commands.includes('node "${CLAUDE_PLUGIN_ROOT}/scripts/guard-orchestrator.js" prompt'));
 });
+
+test('guardOrchestrator_Require_DoesNotLoadStageGuard', () => {
+  // Arrange
+  const guard = path.join(__dirname, '..', 'scripts', 'guard-orchestrator.js');
+  const probe = 'require(process.argv[1]); process.stdout.write(String(Object.keys(require.cache).some((file) => /stage-guard\.js$/.test(file))));';
+
+  // Act
+  const result = spawnSync(process.execPath, ['-e', probe, guard], { encoding: 'utf8' });
+
+  // Assert
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, 'false');
+});

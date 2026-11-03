@@ -85,3 +85,11 @@ changes:
       - tests/prepare.test.js
       - tests/scout-texts.test.js
       - tests/orchestrator-report.test.js
+  - befund: "C"
+    titel: Die Spec-Nacharbeit übernimmt den bevorzugten Vorschlag ab der Empfehlungs-Schwelle ohne Rückfrage
+    warum: "Entscheidung des Menschen: Rückfragen nach den Reviewer-Runden ab der Schwelle selbst entscheiden. Die Plan-Nacharbeit fragt nur bei Spec-Widersprüchen; die Spec ändert sie nicht, deshalb bleibt sie unverändert."
+    dateien:
+      - scripts/lib/rework-input.js
+      - agents/spec-rework.md
+      - tests/review-flow-round-one.test.js
+      - tests/agents.test.js

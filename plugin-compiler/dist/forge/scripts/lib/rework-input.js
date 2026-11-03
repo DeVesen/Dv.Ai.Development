@@ -9,6 +9,7 @@ const { preferredProblem } = require('./scout-check');
 const { ROUND_ONE, readText, readLines, readJson, writeText } = require('./flow-files');
 const { hashFile } = require('../file-hash');
 const { readContext } = require('../workspace');
+const { readConfig, recommendationThreshold } = require('../forge-config');
 
 const SPEC_HASH_FILE = 'vorher-spec.sha256';
 
@@ -37,10 +38,25 @@ function preferredLines(scouted) {
   return preferredProblem(scouted) === null ? [`**Bevorzugt: ${scouted.preferred}**`] : [];
 }
 
-function proposalLines(group, proposals) {
+// Empfehlungs-Schwelle des Projekts, in dem das Dokument liegt, oder null ohne lesbare Einstellung (dann fragt die Nacharbeit wie bisher).
+function thresholdFor(doc) {
+  try {
+    return recommendationThreshold(readConfig(path.dirname(path.resolve(doc))).config);
+  } catch {
+    return null;
+  }
+}
+
+// Entscheidung C: Erreicht der bevorzugte Vorschlag mit seiner Scout-Sicherheit die Schwelle, setzt die Nacharbeit ihn ohne Rückfrage um.
+function adoptLines(scouted, threshold) {
+  if (threshold === null || preferredProblem(scouted) !== null || scouted.sicherheit === null || scouted.sicherheit < threshold) return [];
+  return [`**Übernehmen:** Sicherheit ${scouted.sicherheit} % ab Empfehlungs-Schwelle ${threshold} %`];
+}
+
+function proposalLines(group, proposals, threshold = null) {
   const scouted = proposals.get(`🔴 ${group.label}`);
   if (!scouted) return ['Scout-Vorschläge: keine'];
-  return ['Scout-Vorschläge:', ...scouted.proposals.map((text, index) => `${index + 1}. ${text}`), ...preferredLines(scouted)];
+  return ['Scout-Vorschläge:', ...scouted.proposals.map((text, index) => `${index + 1}. ${text}`), ...preferredLines(scouted), ...adoptLines(scouted, threshold)];
 }
 
 function questionLines(questions) {
@@ -54,7 +70,8 @@ function writeReworkInput(options) {
   const reds = readJson(path.join(dir, 'einstufung.json')).groups.filter((group) => group.color === 'red');
   const proposals = proposalsByGroup(path.join(dir, 'scout.md'));
   const questions = documentQuestions(options, readText(options.doc));
-  const blocks = reds.map((group) => [renderGroup(group), ...proposalLines(group, proposals)].join('\n'));
+  const threshold = thresholdFor(options.doc);
+  const blocks = reds.map((group) => [renderGroup(group), ...proposalLines(group, proposals, threshold)].join('\n'));
   const body = blocks.length > 0 ? blocks.join('\n\n') : 'Keine 🔴-Stellen.';
   writeText(path.join(dir, 'nacharbeit-eingabe.md'), [REWORK_MARK, '', body, ...questionLines(questions)].join('\n'));
   return [`NACHARBEIT stellen=${reds.length} fragen=${questions.length}`, snapshot(options.workspace, options.doc)].join('\n');

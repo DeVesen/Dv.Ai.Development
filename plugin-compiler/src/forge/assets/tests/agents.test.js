@@ -267,7 +267,9 @@ test('spec-rework_Body_ClarificationAndNewBehaviourWithEvidenceWrittenWithoutQue
     'Einen Beleg `Spec · <Stelle>` schlägst du in der Spec nach; sagt die Stelle nicht, was der Vorschlag festlegt, ist er kein Beleg.',
     '`- **R<n> · <Stelle>** — geändert — Neues Verhalten, Beleg: <Beleg> — <Begründung>`',
     '`"evidence": "<Beleg>"`',
-    'Nur neues Verhalten ohne Beleg entscheidet der Mensch',
+    // Entscheidung C: ab der Empfehlungs-Schwelle übernimmt die Nacharbeit den bevorzugten Vorschlag ohne Rückfrage.
+    'Nur neues Verhalten ohne Beleg und ohne Zeile `**Übernehmen:**` entscheidet der Mensch',
+    '`- **R<n> · <Stelle>** — geändert — Empfehlung übernommen (Sicherheit <n> %) — <Begründung>`',
     'Ein Beleg aus dem Bestand geht nie vor einen W-Eintrag.',
     'widerspricht der bevorzugte Scout-Vorschlag einem W-Eintrag, mit oder ohne Beleg',
     '- `evidence`: nur bei `changed` mit neuem Verhalten nach Regel 3',

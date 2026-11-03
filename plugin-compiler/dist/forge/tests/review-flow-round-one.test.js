@@ -511,3 +511,27 @@ test('rate_AnyRun_WritesExpectedReviewersIntoEinstufung', () => {
   flow('rate', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc, '--expect', 'consistency,clarity');
   assert.deepEqual(readJsonFile(path.join(env.workspace, 'runde-1', 'einstufung.json')).reviewers, ['consistency', 'clarity']);
 });
+
+// Entscheidung C: Ab der Empfehlungs-Schwelle steht unter dem bevorzugten Vorschlag die Zeile `**Übernehmen:**`; die Spec-Nacharbeit setzt
+// ihn dann ohne Rückfrage um. Darunter fehlt die Zeile, und neues Verhalten ohne Beleg bleibt eine Frage an den Menschen.
+test('reworkInput_PreferredFromThreshold_MarkedForAdoption', () => {
+  const { spawnSync: run } = require('node:child_process');
+  for (const [sicherheit, expected] of [[85, true], [60, false]]) {
+    // Arrange
+    const env = setup();
+    const repo = path.dirname(env.doc);
+    run('git', ['init', '-q'], { cwd: repo });
+    fs.writeFileSync(path.join(repo, 'CLAUDE.md'), '## dv-forge\n- Empfehlungs-Schwelle: 70\n');
+    writeReviewer(env, 'consistency', [finding({ location: 'AC-04', category: 'widerspruch' })]);
+    rate(env, 'consistency');
+    fs.writeFileSync(path.join(env.workspace, 'runde-1', 'scout.md'),
+      `## Scout-Vorschläge\n\n### 🔴 AC-04\nSicherheit: ${sicherheit} %\n1. D festlegen.\n**Bevorzugt: 1** — passt.\n`);
+
+    // Act
+    flow('rework-input', '--review', 'spec-review', '--dir', env.workspace, '--doc', env.doc);
+
+    // Assert
+    const input = fs.readFileSync(path.join(env.workspace, 'runde-1', 'nacharbeit-eingabe.md'), 'utf8');
+    assert.equal(input.includes(`**Übernehmen:** Sicherheit ${sicherheit} % ab Empfehlungs-Schwelle 70 %`), expected, `${sicherheit} %`);
+  }
+});

@@ -32,6 +32,10 @@ Liegt in `bin/` und läuft im Bash-Tool (Windows: `druckerei.cmd`). Braucht Pyth
 
 Beide greifen nur in Ordnern mit `druckerei.yaml`.
 
+## Verweise
+
+Ein Verweis auf eine Datei, ein Beiblatt, einen Skill, einen Agent oder ein Skript, das nicht gedruckt wird, ist immer ein Fehler und stoppt den Druck, auch bei `lint: bestand`. Ein Verweis ins Leere lässt den Agent raten. Markdown-Links gelten relativ zur Datei. Links in Codeblöcken zählen nicht, denn dort stehen Vorlagen, deren Ziel erst zur Laufzeit entsteht.
+
 ## Einrichten
 
 ```text

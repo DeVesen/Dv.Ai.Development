@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import posixpath
 import re
 import sys
 from dataclasses import dataclass, field
@@ -35,9 +36,9 @@ def mention_re(prefix: str) -> re.Pattern:
 def strict(cp) -> bool:
     """lint: streng (Standard) macht Stilfragen zu Fehlern; lint: bestand (übernommene Plugins) zu Warnungen."""
     return cp.manifest.data.get("lint", "streng") == "streng"
-SCRIPT_RE = re.compile(r"(?:<PLUGIN>/|\$\{CLAUDE_PLUGIN_ROOT\}/|\{\{PLUGIN\}\}/|`)(scripts/[\w./-]+\.js)")
+SCRIPT_RE = re.compile(r"(?:<PLUGIN>/|\$\{CLAUDE_PLUGIN_ROOT\}/|\{\{PLUGIN\}\}/|`)(scripts/[\w./-]+\.(?:js|mjs|cjs|sh|py|ps1))(?![\w.])")
 SHARED_RE = re.compile(r"(?:<PLUGIN>/|\$\{CLAUDE_PLUGIN_ROOT\}/|\{\{PLUGIN\}\}/|`)(shared/[\w./-]+\.md)")
-REF_RE = re.compile(r"`(references/[\w.-]+\.md)`")
+REF_RE = re.compile(r"`((?:references|templates)/[\w./-]+\.\w+)`")
 
 
 HEADER_TOKEN = "GENERIERT-nicht-editieren"
@@ -259,35 +260,45 @@ def check_plugin(cp: ComponentPlugin, rules: dict, terms_avoid: dict, report: Re
     report.stop_if_errors(f"Rendern ({cp.name})")
 
     # Verweise im Text: <präfix>:<name>, scripts/…, shared/…, references/…
-    bad = report.error if strict(cp) else report.warn  # lint: bestand meldet Altlasten nur
+    # Ein Verweis auf etwas, das es nicht gibt, ist immer ein Fehler, auch bei lint: bestand:
+    # Er lässt den Agent raten, was gemeint war.
     prefix = d.get("verweis_praefix", d["name"])
     mentions = mention_re(prefix)
+    skill_names = {c.out.split("/")[1] for c in cp.components if c.out.startswith("skills/")}
     for c in cp.components:
         me = fm_of(c).get("name") or c.out
         if c.src.data["kind"] == "reference":
             me = c.out.split("/")[1]  # Verweise einer Referenz gehören zu ihrem Skill
         cp.graph.setdefault(me, set())
-        for i, row in enumerate(c.text.split("\n")):
+        rows = c.text.split("\n")
+        for i, row in enumerate(rows):
             for mention in mentions.findall(row):
                 if mention not in names:
                     f, ln = body_line_of(c, f"{prefix}:{mention}")
-                    bad(f, ln, f"Verweis {prefix}:{mention}: weder Skill noch Agent")
+                    report.error(f, ln, f"Verweis {prefix}:{mention}: weder Skill noch Agent")
                 elif mention != me:
                     cp.graph[me].add(mention)
+            own = "/".join(c.out.split("/")[:2]) if c.out.startswith("skills/") else None
             for script in SCRIPT_RE.findall(row):
-                if script not in cp.assets:
+                if script not in cp.assets and not (own and f"{own}/{script}" in cp.assets):
                     f, ln = body_line_of(c, script)
-                    bad(f, ln, f"Verweis auf {script}: Skript gibt es nicht")
+                    report.error(f, ln, f"Verweis auf {script}: Skript gibt es nicht")
             for shared in SHARED_RE.findall(row):
                 if shared not in docs_out:
                     f, ln = body_line_of(c, shared)
-                    bad(f, ln, f"Verweis auf {shared}: Datei entsteht nicht")
-            if c.out.startswith("skills/") and c.src.data["kind"] == "skill":
-                skill_dir = c.out.rsplit("/", 1)[0]
+                    report.error(f, ln, f"Verweis auf {shared}: Datei entsteht nicht")
+            if c.out.startswith("skills/") and c.src.data["kind"] in ("skill", "reference"):
+                skill_dir = "/".join(c.out.split("/")[:2])
                 for ref in REF_RE.findall(row):
-                    if f"{skill_dir}/{ref}" not in docs_out:
-                        f, ln = body_line_of(c, ref)
-                        bad(f, ln, f"Verweis auf {ref}: gibt es in {skill_dir} nicht")
+                    if f"{skill_dir}/{ref}" in docs_out or f"{skill_dir}/{ref}" in cp.assets:
+                        continue
+                    # „`anderer-skill` → `references/x.md`“: der Absatz nennt den Skill, dem die Datei gehört
+                    named = {n for n in re.findall(r"`([a-z][a-z0-9-]*)`", paragraph_of(rows, i)) if n in skill_names}
+                    if any(f"skills/{n}/{ref}" in docs_out or f"skills/{n}/{ref}" in cp.assets for n in named):
+                        continue
+                    f, ln = body_line_of(c, ref)
+                    report.error(f, ln, f"Verweis auf {ref}: gibt es in {skill_dir} nicht"
+                                 + (f" und auch nicht in {', '.join(sorted(named))}" if named else ""))
         for word, owner in terms_avoid.items():
             for i, row in enumerate(c.text.split("\n")):
                 if re.search(rf"(?<![\w-]){re.escape(word)}(?![\w-])", row):
@@ -493,19 +504,25 @@ def lint_plugin(cp: ComponentPlugin, report: Report) -> None:
             head = lines[(content[:content.find("\n---\n", 4) + 5].count("\n")) if fm is not None else 0]
             if not head.startswith(f"<!--{HEADER_TOKEN}:"):
                 report.error(where, 1, "Kopfzeile „GENERIERT - nicht editieren“ fehlt direkt nach dem Frontmatter")
+            fenced = fence_mask(lines)
             for i, row in enumerate(lines, 1):
                 caps = CAPS_RE.search(row)
                 if caps and not REASON_RE.search(row):
                     report.warn(where, i, f"„{caps.group(1)}“ in Großbuchstaben ohne Begründung in derselben Zeile")
+                if fenced[i - 1]:
+                    continue  # Vorlagen und Beispiele in Codeblöcken; ihre Links gelten am Zielort (z. B. Memory)
+                base = path.rsplit("/", 1)[0] if "/" in path else ""
                 for target in LINK_RE.findall(row):
-                    if "://" in target:
+                    if "://" in target or target.startswith(("mailto:", "#")):
                         continue
-                    base = path.rsplit("/", 1)[0] if "/" in path else ""
-                    resolved = Path(base, target).as_posix()
+                    resolved = posixpath.normpath(posixpath.join(base, target))
+                    if resolved == ".." or resolved.startswith("../") or target.startswith(("/", "~")):
+                        report.error(where, i, f"Verweis auf {target} zeigt aus dem Plugin heraus; dort prüft die Druckerei nichts")
+                        continue
                     is_dir = any(f.startswith(resolved.rstrip("/") + "/") for f in cp.files)
                     if resolved not in cp.files and not is_dir:
-                        bad(where, i, f"Verweis auf {target}, die Datei wird nicht erzeugt")
-                    if "/references/" in path and target.endswith(".md"):
+                        report.error(where, i, f"Verweis auf {target}: {resolved} wird nicht erzeugt")
+                    elif "/references/" in path and target.endswith(".md") and not resolved.endswith("/SKILL.md"):
                         bad(where, i, f"Referenz verweist weiter auf {target}; erlaubt ist nur eine Ebene")
         if path.endswith("SKILL.md"):
             if len(lines) >= SKILL_MAX_LINES:
@@ -524,6 +541,33 @@ def lint_plugin(cp: ComponentPlugin, report: Report) -> None:
             if tools & {"Edit", "MultiEdit", "Bash"} and "review" in path and not path.endswith("-rework.md"):
                 report.warn(where, 4, f"Reviewer mit schreibfähigem Werkzeug {sorted(tools & {'Edit', 'MultiEdit', 'Bash'})}; nicht read-only")
     report.stop_if_errors(f"Lint ({cp.name})")
+
+
+def fence_mask(lines: list) -> list:
+    """True für jede Zeile in einem Codeblock (``` oder ~~~), einschließlich der Zaunzeilen."""
+    mask, fence = [], None
+    for row in lines:
+        mark = re.match(r"\s*(`{3,}|~{3,})", row)
+        if fence is None and mark:
+            fence = mark.group(1)[0] * len(mark.group(1))
+            mask.append(True)
+        elif fence is not None:
+            mask.append(True)
+            if mark and mark.group(1).startswith(fence):
+                fence = None
+        else:
+            mask.append(False)
+    return mask
+
+
+def paragraph_of(rows: list, i: int) -> str:
+    """Der Absatz um Zeile i: angrenzende Zeilen bis zur nächsten Leerzeile."""
+    start, end = i, i
+    while start > 0 and rows[start - 1].strip():
+        start -= 1
+    while end + 1 < len(rows) and rows[end + 1].strip():
+        end += 1
+    return "\n".join(rows[start:end + 1])
 
 
 def cp_asset_paths(cp: ComponentPlugin) -> set:

@@ -13,7 +13,7 @@ Druckt das ganze Projekt in einen Temp-Ordner und prüft alles, wie ein Deploy e
    - **Fehler** (`FEHLER <datei>:<zeile>: …`) mit der Stufe, in der der Druck abbrach. Nur die erste Stufe mit Fehlern ist aussagekräftig; spätere Stufen liefen nicht.
    - **TÜV:** je Plugin bestanden oder durchgefallen, mit den Hinweisen von `claude plugin validate`.
    - **Probeläufe:** bestandene und fehlgeschlagene Tests je Plugin.
-   - **Warnungen:** offene Begründungen, Altlasten im Modus `lint: bestand`, Reviewer mit schreibenden Werkzeugen.
+   - **Warnungen:** offene Begründungen, Stil-Altlasten im Modus `lint: bestand`, Reviewer mit schreibenden Werkzeugen.
    - **Gegenüber dist/:** wie viele Dateien ein Deploy ändern würde.
 3. Berichte in dieser Form, nichts davor:
    ```
@@ -26,5 +26,6 @@ Druckt das ganze Projekt in einen Temp-Ordner und prüft alles, wie ein Deploy e
 
 ## Grenzen
 - Warnungen blockieren keinen Deploy; Fehler, ein durchgefallener TÜV und rote Tests schon.
+- Ein Verweis auf etwas, das es nicht gibt, ist immer ein Fehler, auch bei `lint: bestand`. Du schlägst nie vor, ihn zur Warnung herabzustufen; Vorschlag ist der richtige Pfad oder das Streichen des Verweises.
 - Fehlt die claude CLI oder node, meldet der Try-Deploy den Schritt als übersprungen; das ist kein Grün für diesen Schritt.
 - `druckerei pruefen --schnell` druckt und prüft nur, ohne TÜV und Tests; der Sensor nutzt es nach jeder Änderung.

@@ -31,7 +31,7 @@ Markiert den Ordner als Projekt. Felder: `marketplace` (Name des Test-Marketplac
 ## Bestellschein (`src/plugins/<plugin>.yaml`)
 Sagt, welches Plugin gedruckt wird. Pflicht: `name`, `dir`, `version`, `description`, `source`. Wichtig sind außerdem:
 - `author`: ohne ihn besteht `claude plugin validate --strict` nicht.
-- `lint`: `streng` (Standard) oder `bestand` (frisch übernommen; Stilfragen nur als Warnung).
+- `lint`: `streng` (Standard) oder `bestand` (frisch übernommen; Stilfragen nur als Warnung, fehlende Verweisziele bleiben Fehler).
 - `verweis_praefix`: Präfix der Verweise `<präfix>:<skill>`; Standard ist der Name.
 - `intern_zusatz`: Satz, der an die description jedes Skills mit `role: intern` gehängt wird.
 - `assets`: `{from, to}` je Ordner; `to: "."` spiegelt den Ordner ins Plugin.

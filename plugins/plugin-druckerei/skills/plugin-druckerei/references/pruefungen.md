@@ -12,12 +12,14 @@ Der Druck läuft in festen Stufen. Findet eine Stufe einen Fehler, bricht der Dr
 | Glossar | nur bekannte Fachbegriffe, keine verbotenen Wörter | `„Phase“ ist laut Glossar zu vermeiden` | Begriff aus dem Wörterbuch nehmen |
 | Regeln und Hooks | `enforced_by` und Hook-Skripte existieren | `Hook SubagentStop: scripts/x.js gibt es nicht` | Skript als Asset ablegen oder Namen korrigieren |
 | Partials | jeder eingesetzte Baustein existiert | `Partial „w-eintraege“ nicht gefunden` | Baustein anlegen oder Namen korrigieren |
-| Verweise | `<plugin>:<name>`, `scripts/…`, `shared/…`, `references/…` lösen sich auf | `Verweis dv-x:pruefer: weder Skill noch Agent` | Namen korrigieren |
+| Verweise | `<plugin>:<name>`, `scripts/…`, `shared/…`, `references/…`, `templates/…` lösen sich auf; `references/…` auch im Skill, den der Absatz nennt (`` `anderer-skill` → `references/x.md` ``) | `Verweis dv-x:pruefer: weder Skill noch Agent` | Namen oder Pfad korrigieren |
 | Etappen-Kette | Skills, Folge-Etappen, Haltepunkte bekannt | `Skill planung gibt es nicht` | Kette oder Skill anpassen |
-| Lint | Kopfzeile, Name, description mit „Use when“, unter 500 Zeilen, Beiblätter eine Ebene, keine Großbuchstaben-Befehle ohne Grund | `description enthält kein „Use when …“` | Text der Quelle anpassen |
+| Lint | Markdown-Links `[…](pfad)` zeigen relativ zur Datei auf eine gedruckte Datei (`..` erlaubt, nicht aus dem Plugin heraus); Kopfzeile, Name, description mit „Use when“, unter 500 Zeilen, Beiblätter eine Ebene, keine Großbuchstaben-Befehle ohne Grund | `Verweis auf references/x.md: skills/a/references/references/x.md wird nicht erzeugt` | Pfad korrigieren; Stil: Text der Quelle anpassen |
 | Abgleich mit dem Bestand | nur bei `equivalent_to`: jede Abweichung steht im Änderungsprotokoll, Siegel stimmt | `weicht vom abgenommenen Stand ab … dann druckerei abnehmen` | Änderung prüfen; gewollt → `druckerei abnehmen`, sonst zurücknehmen |
 
-Mit `lint: bestand` sind Stil- und Altlastenfunde (Lint, kaputte Verweise im Bestand) Warnungen statt Fehler.
+**Verweise auf etwas, das es nicht gibt, sind immer Fehler**, auch bei `lint: bestand`: Ein solcher Verweis lässt den Agent raten, was gemeint war. Mit `lint: bestand` sind nur Stilfunde Warnungen statt Fehler (Beiblatt verweist weiter, SKILL.md zu lang, description ohne „Use when“, Großbuchstaben ohne Grund).
+
+Nicht geprüft werden Links in Codeblöcken (```): Das sind Vorlagen und Beispiele, deren Links erst am Zielort gelten, z. B. eine Memory-Datei, die ein Skill zur Laufzeit anlegt.
 
 ## Nach dem Druck (nur Try-Deploy und Deploy)
 - **TÜV:** `claude plugin validate --strict` für Marketplace und jedes Plugin; bei `lint: bestand` ohne `--strict`, die strengen Hinweise erscheinen dann als Warnung. Fehlt die claude CLI, wird der Schritt übersprungen und gemeldet.

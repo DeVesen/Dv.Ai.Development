@@ -147,6 +147,41 @@ class Uebernahme(Base):
         self.assertEqual(deployed.returncode, 0, deployed.stdout + deployed.stderr)
         self.assertTrue(os.stat(root / "dist" / "demo" / "bin" / "demo").st_mode & stat.S_IXUSR)
 
+    def add_files(self, plugin: Path, files: dict) -> None:
+        for rel, content in files.items():
+            path = plugin / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+
+    def test_neuAus_ValidReferenceForms_AreAccepted(self):
+        plugin = self.fake_plugin()
+        self.add_files(plugin, {
+            "skills/eins/references/tief.md": "# Tief\n\nZurück zu [eins](../SKILL.md), Beispiele in [../templates/beispiel.md](../templates/beispiel.md).\n"
+                                              "Siehe `zwei` → `references/anders.md`.\n\n"
+                                              "```markdown\n- [Memory](wird-zur-laufzeit-angelegt.md)\n```\n",
+            "skills/eins/templates/beispiel.md": "# Beispiel\n",
+            "skills/zwei/references/anders.md": "# Anders\n",
+        })
+        result = run("neu", str(self.tmp / "projekt"), "--aus", str(plugin), "--owner", "Test")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("FEHLER", result.stdout)
+
+    def test_neuAus_MissingTarget_IsAnErrorEvenForBestand(self):
+        plugin = self.fake_plugin()
+        self.add_files(plugin, {
+            "skills/eins/references/tief.md": "# Tief\n\nDetails in [x](references/fehlt.md).\n",
+        })
+        root = self.tmp / "projekt"
+        result = run("neu", str(root), "--aus", str(plugin), "--owner", "Test")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("lint: bestand", (root / "src" / "plugins" / "demo.yaml").read_text(encoding="utf-8"))
+        self.assertRegex(result.stdout, r"FEHLER demo/skills/eins/references/tief\.md:\d+: Verweis auf references/fehlt\.md")
+        source = root / "src" / "demo" / "skills" / "eins" / "references" / "tief.md"
+        source.write_text(source.read_text(encoding="utf-8").replace("[x](references/fehlt.md)", "`templates/fehlt-auch.md`"), encoding="utf-8")
+        result = run("pruefen", "--schnell", "--projekt", str(root))
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertRegex(result.stdout, r"FEHLER src/demo/skills/eins/references/tief\.md:\d+: Verweis auf templates/fehlt-auch\.md")
+
     def test_changeWithoutChangelog_IsAnError_AbnehmenAfterEntry(self):
         plugin = self.fake_plugin()
         root = self.tmp / "projekt"

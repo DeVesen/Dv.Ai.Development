@@ -16,9 +16,10 @@ Der Befehl `druckerei` liegt im `bin/` dieses Plugins und läuft im Bash-Tool. E
 4. **Nach jeder Änderung prüfen.** Der Sensor startet nach jedem Edit in `src/` die Schnellprüfung. Meldet sie einen Fehler mit Datei und Zeile, behebst du ihn, bevor du weiterschreibst. Ohne Sensor: `druckerei pruefen --schnell`.
 5. **Fragen gesammelt.** Offene Entscheidungen stellst du in einer Runde, je Frage genau eine Empfehlung mit Grund. Der Mensch antwortet mit „wie empfohlen“, korrigiert einzelne Punkte oder schreibt frei.
 6. **Version nur über Deploy.** Die Version steht allein im Bestellschein; `druckerei deploy` erhöht sie. Du änderst sie nicht von Hand.
+7. **Kein Verweis ins Leere.** Jeder Verweis auf eine Datei, ein Beiblatt, einen Skill, einen Agent oder ein Skript muss auf etwas zeigen, das gedruckt wird. Fehlt das Ziel, ist das ein **Fehler**, auch im Modus `lint: bestand`: Ein solcher Verweis lässt den Agent raten, was gemeint war. Du entschärfst ihn nie zur Warnung, sondern korrigierst den Pfad oder streichst den Verweis. Ist unklar, was gemeint war, fragst du den Menschen. Links in Codeblöcken (Vorlagen, Memory-Dateien, die erst zur Laufzeit entstehen) zählen nicht.
 
 ## Ablauf A: neues Plugin-Projekt
-1. Frage in einer Runde: Name des Plugins (`dv-…`, Kleinbuchstaben), ein Satz, was es kann, Ordner des Projekts, Besitzer (wird `author`). Empfehlung für den Ordner: neben den übrigen Projekten.
+1. Frage in einer Runde: Name des Plugins (`dv-…`, Kleinbuchstaben), ein Satz, was es kann, Ordner des Projekts, Besitzer (wird `author`). Empfehlung für den Ordner: `plugin-projekte/<name>`, der gemeinsame Ordner neben den übrigen Projekten.
 2. `druckerei neu <ordner> --name <name> --beschreibung "<satz>" --owner <besitzer>`. Das Gerüst druckt sofort einmal zur Kontrolle.
 3. Ersetze den Start-Skill durch den ersten echten Baustein (Ablauf B).
 4. `druckerei pruefen` (Try-Deploy, siehe Skill `try-deploy`).
@@ -34,12 +35,13 @@ Der Befehl `druckerei` liegt im `bin/` dieses Plugins und läuft im Bash-Tool. E
 8. Zum Schluss den Try-Deploy anbieten.
 
 ## Ablauf C: bestehendes Plugin übernehmen
-1. Neues Projekt dafür: `druckerei neu <ordner> --aus <plugin-ordner> --owner <besitzer>`; in ein bestehendes Projekt: `druckerei uebernehmen <plugin-ordner>`.
+1. Nur auf ausdrücklichen Wunsch des Menschen, und nur das genannte Plugin, nie mehrere auf einmal. Neues Projekt dafür: `druckerei neu <ordner> --aus <plugin-ordner> --owner <besitzer>`; in ein bestehendes Projekt: `druckerei uebernehmen <plugin-ordner>`.
 2. Die Übernahme ist wortgleich: Jede Markdown-Datei bekommt ein Deckblatt, doppelte Absätze werden Bausteine, `hooks.json` wird zu Daten, alles andere liegt unter `assets/`. Der Probedruck vergleicht jede Datei mit dem Bestand.
 3. Bausteine mit Namen wie `block-3` benennst du nach ihrem Inhalt um (Datei und jedes `partial('…')`).
-4. Die Warnungen sind Altlasten des Bestands (`lint: bestand`). Arbeite sie mit dem Menschen ab: je Warnung Vorschlag und Empfehlung in einer Runde, Änderung nach Freigabe, Eintrag im Änderungsprotokoll.
-5. Sind die Warnungen weg, stellst du `lint: streng` ein. Ab dann sind Stilfehler echte Fehler.
-6. Soll das Projekt die einzige Quelle werden, entfernt der Mensch `equivalent_to` und `changelog` aus dem Bestellschein.
+4. Fehler im Probedruck sind fast immer Verweise auf Dateien, Skills oder Skripte, die es nicht gibt. Sie gelten auch im Bestand als Fehler, weil sie den Agent raten lassen. Das Projekt bleibt angelegt; du legst je Fehler Vorschlag und Empfehlung in einer Runde vor, korrigierst nach Freigabe in `src/` und trägst die Datei im Änderungsprotokoll ein.
+5. Die Warnungen sind Stil-Altlasten des Bestands (`lint: bestand`). Arbeite sie genauso ab.
+6. Sind die Warnungen weg, stellst du `lint: streng` ein. Ab dann sind Stilfehler echte Fehler.
+7. Soll das Projekt die einzige Quelle werden, entfernt der Mensch `equivalent_to` und `changelog` aus dem Bestellschein.
 
 ## Ablauf D und E: prüfen und ausliefern
 - **Try-Deploy** (Skill `try-deploy`, Befehl `druckerei pruefen`): druckt in einen Temp-Ordner und prüft alles, ändert nichts.
@@ -55,3 +57,6 @@ Der Befehl `druckerei` liegt im `bin/` dieses Plugins und läuft im Bash-Tool. E
 | „Den Absatz kopiere ich in den zweiten Agent.“ | Baustein in `partials/`, an beiden Stellen einsetzen. |
 | „Version kurz hochsetzen.“ | Nur `druckerei deploy`. |
 | „Schnellprüfung rot, ich mache erst weiter.“ | Erst beheben; Folgefehler verdecken sonst die Ursache. |
+| „Der Verweis zeigt ins Leere, das ist im Bestand nur eine Warnung.“ | Fehlende Ziele sind immer Fehler; Pfad korrigieren oder Verweis streichen. |
+| „Der Agent findet die Datei schon irgendwie.“ | Er rät. Der Verweis nennt den genauen Pfad, relativ zur Datei. |
+| „Ich übernehme gleich alle Plugins.“ | Nur das Plugin, das der Mensch nennt. |

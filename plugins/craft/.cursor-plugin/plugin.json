@@ -1,0 +1,9 @@
+{
+  "name": "dv-craft",
+  "version": "1.0.2",
+  "description": "Software-Design-Skills fuer Dv.Ai.Development",
+  "author": {
+    "name": "DeVesen"
+  },
+  "skills": "./skills/"
+}

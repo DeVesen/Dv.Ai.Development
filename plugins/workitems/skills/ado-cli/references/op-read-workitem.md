@@ -24,12 +24,12 @@ Encoding-Regel aus `az-cli-operations.md` §0 zwingend: `> raw.json`, dann
 
 ```bash
 # Work Item — Volldump, kein --fields (siehe §1)
-az boards work-item show --id <id> --org https://dev.azure.com/TrumpfCorp -o json > "<scratchpad>/wi<id>.raw.json"
+az boards work-item show --id <id> --org "<ORG>" -o json > "<scratchpad>/wi<id>.raw.json"
 
 # Diskussion (siehe §2)
 az devops invoke --area wit --resource comments \
-  --route-parameters project="Laser Application Database" workItemId=<id> \
-  --org https://dev.azure.com/TrumpfCorp --api-version 7.1-preview > "<scratchpad>/wi<id>.comments.raw.json"
+  --route-parameters project="<PROJECT>" workItemId=<id> \
+  --org "<ORG>" --api-version 7.1-preview > "<scratchpad>/wi<id>.comments.raw.json"
 ```
 
 ---
@@ -99,7 +99,7 @@ SHA bzw. PR-ID.
 Die GUIDs bei Bedarf auflösen (nur wenn der Repo-Name für die Antwort relevant ist):
 
 ```bash
-az repos show --repository <repoGuid> --org https://dev.azure.com/TrumpfCorp --project "Laser Application Database" -o json
+az repos show --repository <repoGuid> --org "<ORG>" --project "<PROJECT>" -o json
 ```
 
 (verifiziert: `e2498a06-7a0c-4a5b-b11a-dc6292c7a863` = `lac-db`)

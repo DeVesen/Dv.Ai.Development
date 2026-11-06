@@ -1,19 +1,16 @@
 # ADO über az CLI — Kommando-Katalog (Lesen)
 
-**Diese Datei ist rein lesend.** Schreiben ist auf `--discussion`, `--state` und
-`--assigned-to` begrenzt und steht mit Bestätigungs-Ablauf in `az-cli-write.md`.
-`create`, `delete` und `relation add|remove` macht dieser Skill nie — das erledigt der
-Nutzer im Browser.
+**Diese Datei ist rein lesend.** Schreiben an Work Items steht mit Bestätigungs-Ablauf in
+`az-cli-write.md`, Pull Requests in `az-cli-pullrequests.md`. `delete` macht dieser Skill nie.
 
-**Feste Werte (dieses Projekt):**
-
-```
-ORG     = https://dev.azure.com/TrumpfCorp
-PROJECT = Laser Application Database
-```
+**Projektwerte:** `<ORG>` = `organization`, `<PROJECT>` = `project` aus
+`node "<PLUGIN>/scripts/ado-setup.js" show` (liest `.claude/ado.json`). Als
+**Literal** in den Befehl einsetzen, nicht als Shell-Variable: der Hook prüft nur Literalwerte
+gegen `ado.json`.
 
 **Vorbedingung:** `az extension add --name azure-devops` (einmalig; Signal für fehlende
-Extension ist „az boards unbekannt"), gültiger `az login` (`az account show`).
+Extension ist „az boards unbekannt"), Identitätsprüfung der Session bestanden (SKILL.md,
+„Vor der ersten Aktion“).
 
 ---
 
@@ -32,18 +29,18 @@ Was **nicht** hilft (alles verifiziert erfolglos): `PYTHONIOENCODING=utf-8`,
 Verbindliches Muster für jeden Call:
 
 ```bash
-az <befehl> ... -o json > "<scratchpad>/ado.raw.json"
-iconv -f cp1252 -t utf-8 "<scratchpad>/ado.raw.json" > "<scratchpad>/ado.json"
+az <befehl> ... -o json > "<scratchpad>/az.raw.json"
+iconv -f cp1252 -t utf-8 "<scratchpad>/az.raw.json" > "<scratchpad>/az.json"
 ```
 
-`<scratchpad>` = das Session-Scratchpad-Verzeichnis. Danach `ado.json` mit `Read` lesen.
+`<scratchpad>` = das Session-Scratchpad-Verzeichnis. Danach `az.json` mit `Read` lesen.
 
 ---
 
 ## §1 Work Item lesen
 
 ```bash
-az boards work-item show --id <ID> --org https://dev.azure.com/TrumpfCorp -o json
+az boards work-item show --id <ID> --org "<ORG>" -o json
 ```
 
 Relevante Felder im JSON:
@@ -72,8 +69,8 @@ nehmen und im JSON gezielt lesen.
 
 ```bash
 az devops invoke --area wit --resource comments \
-  --route-parameters project="Laser Application Database" workItemId=<ID> \
-  --org https://dev.azure.com/TrumpfCorp --api-version 7.1-preview
+  --route-parameters project="<PROJECT>" workItemId=<ID> \
+  --org "<ORG>" --api-version 7.1-preview
 ```
 
 Liefert `comments[].text` (HTML) je Beitrag, plus `createdBy.displayName` und `createdDate`.
@@ -87,7 +84,7 @@ Leeres `comments: []` heißt: keine Diskussion — kein Fehler.
 Comment-Text sind HTML. Bilder stehen als:
 
 ```html
-<img src="https://dev.azure.com/TrumpfCorp/<projectGuid>/_apis/wit/attachments/<attachmentGuid>?fileName=image.png">
+<img src="https://dev.azure.com/<org>/<projectGuid>/_apis/wit/attachments/<attachmentGuid>?fileName=image.png">
 ```
 
 ### Ablauf je Bild
@@ -98,7 +95,8 @@ Comment-Text sind HTML. Bilder stehen als:
    als `AttachedFile` (verifiziert 2026-08-17 an #299382: 4 Inline-Bilder, `relations[]`
    enthielt nur Parent und Branch). Wer auf `relations[]` prüft, übersieht sie komplett.
 2. **Token holen** — ADO-Resource-ID `499b84ac-1321-427f-aa17-267ca6975798`, **nicht** die
-   ARM-Default-Resource:
+   ARM-Default-Resource. Läuft automatisch im Projekt-Config-Ordner (`AZURE_CONFIG_DIR`),
+   also mit der Identität dieses Projekts. Den Token nie ausgeben, nie in Dateien schreiben:
    ```bash
    TOKEN=$(az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798 --query accessToken -o tsv)
    ```
@@ -155,8 +153,8 @@ Antwort explizit benennen, welches Bild fehlt, mit Bitte um manuelle Nachreichun
 ## §4 WIQL-Query
 
 ```bash
-az boards query --org https://dev.azure.com/TrumpfCorp --project "Laser Application Database" \
-  --wiql "SELECT [System.Id],[System.Title],[System.State] FROM WorkItems WHERE [System.TeamProject]='Laser Application Database' AND [System.WorkItemType]='Bug' AND [System.State]<>'Closed' ORDER BY [System.ChangedDate] DESC" \
+az boards query --org "<ORG>" --project "<PROJECT>" \
+  --wiql "SELECT [System.Id],[System.Title],[System.State] FROM WorkItems WHERE [System.TeamProject]='<PROJECT>' AND [System.WorkItemType]='Bug' AND [System.State]<>'Closed' ORDER BY [System.ChangedDate] DESC" \
   -o json
 ```
 
@@ -165,7 +163,7 @@ az boards query --org https://dev.azure.com/TrumpfCorp --project "Laser Applicat
 - Rückgabe: Array von `{ id, rev, fields{…}, relations, url }` — nur die im `SELECT`
   genannten Felder sind in `fields` gefüllt.
 - Statt `--wiql` geht auch `--id <queryId>` oder `--path <queryPath>` für gespeicherte Queries.
-- Sprint-Inhalt auflisten: `WHERE [System.IterationPath] UNDER 'Laser Application Database\\Sprint <n>'`.
+- Sprint-Inhalt auflisten: `WHERE [System.IterationPath] UNDER '<PROJECT>\\Sprint <n>'`.
 - Encoding-Regel aus §0 gilt auch hier.
 
 ---
@@ -176,7 +174,8 @@ az boards query --org https://dev.azure.com/TrumpfCorp --project "Laser Applicat
 |---------|-------------------|
 | `az boards` unbekannt | Extension fehlt → `az extension add --name azure-devops` |
 | `TF401019` / 404 auf ID | Work Item existiert nicht oder liegt in anderem Projekt |
-| 401 / `AADSTS` | Token abgelaufen → `az login` |
+| 401 / `AADSTS` / „Please run 'az login'“ | Anmeldung des Projekts fehlt oder ist abgelaufen → **stoppen**, dem Nutzer den Login-Befehl aus `ado-setup.js login-command` nennen. Nie selbst anmelden |
+| Hook-Meldung „Azure-DevOps-Aufruf blockiert“ | Grund aus der Meldung befolgen (Einrichtung, Neustart, falsche `--org`); nicht umgehen |
 | `--query` liefert leer in PowerShell | JMESPath-Quoting; Volldump nehmen und per `Read` auswerten |
 | Umlaute als `�` | §0 nicht befolgt — cp1252-Konvertierung fehlt |
 | „Project selection cancelled" | `--project` bzw. `--org` vergessen |

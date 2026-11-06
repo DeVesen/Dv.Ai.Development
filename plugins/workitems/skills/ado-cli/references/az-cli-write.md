@@ -52,14 +52,13 @@ Ergebnis suchen.
 Encoding wie beim Lesen: `az` schreibt die JSON-Antwort in **cp1252**. Antwort in Datei
 umleiten und konvertieren, wenn sie ausgewertet wird (`az-cli-operations.md` §0).
 
-```bash
-ORG="https://dev.azure.com/TrumpfCorp"
-```
+`<ORG>`/`<PROJECT>`: Werte aus `ado-setup.js show`, als Literal einsetzen (siehe
+`az-cli-operations.md`). Keine KI-Signatur in Kommentar, Titel oder Description.
 
 **Kommentar in die Diskussion posten:**
 
 ```bash
-az boards work-item update --id <ID> --org "$ORG" --discussion "<Text>" -o json > "<scratchpad>/wr.raw.json"
+az boards work-item update --id <ID> --org "<ORG>" --discussion "<Text>" -o json > "<scratchpad>/wr.raw.json"
 ```
 
 Der Text landet als Diskussions-Eintrag unter dem angemeldeten `az`-Account. Er ist in ADO
@@ -82,7 +81,7 @@ verwenden: `<div>`, `<b>`, `<ul><li>…</li></ul>`, `<br>` für Leerzeilen zwisc
 **State setzen:**
 
 ```bash
-az boards work-item update --id <ID> --org "$ORG" --state "<State>" -o json > "<scratchpad>/wr.raw.json"
+az boards work-item update --id <ID> --org "<ORG>" --state "<State>" -o json > "<scratchpad>/wr.raw.json"
 ```
 
 State-Namen sind prozess-abhängig — **nie raten**. Den Zielwert nennt der Nutzer, oder er
@@ -92,7 +91,7 @@ Ein ungültiger Wert schlägt mit einer Rule-Validation-Fehlermeldung fehl.
 **Assigned To setzen:**
 
 ```bash
-az boards work-item update --id <ID> --org "$ORG" --assigned-to "<user@domain>" -o json > "<scratchpad>/wr.raw.json"
+az boards work-item update --id <ID> --org "<ORG>" --assigned-to "<user@domain>" -o json > "<scratchpad>/wr.raw.json"
 ```
 
 Bevorzugt die **Mail-Adresse** übergeben, nicht den Anzeigenamen — Anzeigenamen sind
@@ -129,7 +128,7 @@ vorlegen, bestätigen, ausführen, Ergebnis prüfen) gilt beim Anlegen:
 
    ```bash
    az boards work-item create --title "<Titel>" --type "<Typ, z. B. 'User Story'>" \
-     --org "$ORG" --project "Laser Application Database" \
+     --org "<ORG>" --project "<PROJECT>" \
      --description "<HTML-Text, nur Kontext-Body, keine 'Kontext'-Überschrift>" \
      --fields "Microsoft.VSTS.Common.AcceptanceCriteria=<HTML-Liste, nur <ul><li>…</li></ul>, keine 'Akzeptanzkriterien'-Überschrift>" \
      -o json > "<scratchpad>/wr.raw.json"
@@ -142,7 +141,7 @@ vorlegen, bestätigen, ausführen, Ergebnis prüfen) gilt beim Anlegen:
 
    ```bash
    az boards work-item relation add --id <neue-ID> --relation-type parent \
-     --target-id <Feature-ID> --org "$ORG"
+     --target-id <Feature-ID> --org "<ORG>"
    ```
 6. **Ergebnis prüfen** — neues Item lesen, Titel/Typ/Description/Acceptance-Criteria/
    Parent-Feature nennen.
@@ -153,9 +152,9 @@ Für Parent/Child/Related an einem **bestehenden** Item, unabhängig vom Anlegen
 
 ```bash
 az boards work-item relation add --id <ID> --relation-type <parent|child|related> \
-  --target-id <Ziel-ID> --org "$ORG"
+  --target-id <Ziel-ID> --org "<ORG>"
 az boards work-item relation remove --id <ID> --relation-type <parent|child|related> \
-  --target-id <Ziel-ID> --org "$ORG"
+  --target-id <Ziel-ID> --org "<ORG>"
 ```
 
 Ziel-ID vorher einmal lesen und Titel zeigen (wie beim Anlegen) — nie eine Relation auf eine
@@ -168,4 +167,4 @@ ungeprüfte Nummer setzen. Ist-Stand (vorhandene Relationen) mit vorlegen, bevor
 | `TF401320` / Rule-Validation | State im aktuellen Prozess nicht erlaubt, oder Übergang vom Ist-State aus gesperrt |
 | `The identity ... could not be found` | `--assigned-to` unbekannt — falsche Mail oder Nutzer nicht im Projekt |
 | `TF401232` Work Item not found | falsche ID oder falsche Organisation |
-| 401 / `AADSTS` | `az login` abgelaufen |
+| 401 / `AADSTS` | Anmeldung des Projekts fehlt oder ist abgelaufen → **stoppen**, Nutzer den Login-Befehl nennen (`ado-setup.js login-command`); nie selbst anmelden, nichts weiter versuchen |

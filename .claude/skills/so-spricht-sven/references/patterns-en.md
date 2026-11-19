@@ -143,7 +143,7 @@ For English text. Same logic as `muster.md`: each pattern is the model's default
 
 ## F. Sven writing English
 
-Sven writes German. When he needs English (code comments, commit messages, docs, PR titles), the English must read as native, not translated.
+Sven writes German. When he needs English (code comments, commit messages, docs, PR titles), the English must read as native.
 
 - Same voice as in German: result first, short, imperative for commits ("Fix scanner truncating article numbers"), no filler.
 - Commit and PR titles: present tense imperative, no period, under about 70 characters.

@@ -30,7 +30,7 @@ Quelle: Nachrichten aus rund 35 Sessions (Juli bis November 2026). Rechtschreibf
 - **Eigenes vor Fremdem.** Misstrauen gegenüber fremder Software. Erst Aufwand und Nutzen nennen, dann Fremdes vorschlagen.
 - **Am Stück.** Fertige Ergebnisse in einem Wurf, nicht Häppchen über viele Runden. „Den kompletten Prompt in einem Stück."
 - **Am Beispiel.** ASCII-Skizzen und konkrete Fälle („zeige es erst am BAS-Beispiel") schlagen abstrakte Erklärung.
-- **Constraints sind heilig.** Was Sven ausdrücklich vorgibt, gilt wörtlich: Anzahl, Modell, Branch, Verbote.
+- **Constraints:** Was Sven vorgibt, gilt wörtlich: Anzahl, Modell, Branch, Verbote.
 
 ## Sprache und Form
 

@@ -1,6 +1,6 @@
-# KI-Muster (Deutsch, auch für Englisch anwendbar)
+# KI-Muster auf Deutsch
 
-Jedes Muster ist die Standardwahl eines Sprachmodells: Es schreibt, was für die meisten Leser und Themen passt. Ein Mensch wählt für einen Leser und ein Thema, deshalb sind seine Entscheidungen ungleichmäßiger und konkreter.
+Für englischen Text gilt `patterns-en.md`. Jedes Muster ist die Standardwahl eines Sprachmodells: Es schreibt, was für die meisten Leser und Themen passt. Ein Mensch wählt für einen Leser und ein Thema, deshalb sind seine Entscheidungen ungleichmäßiger und konkreter.
 
 Jeder Satz, den du behältst, muss etwas liefern, das der Leser noch nicht hat. Die Muster 1 bis 5 rechtfertigen eine Änderung schon beim ersten Fund. Muster mit *schwach allein* brauchen weitere Funde im selben Text.
 
@@ -158,6 +158,22 @@ Diese Reste ohne Ausnahme entfernen.
 **Problem:** In einer Antwort hat der Leser den Kontext schon. Ihn neu aufzubauen bringt nichts und vergräbt den Punkt. Mit der Entscheidung beginnen und nur den Grund behalten, der die Zustimmung ändern würde, meist einen Fakt, den der Leser nicht kennt, plus Link zum Handeln. Diagnose und Beleg gehören ins Ticket oder Dokument. Nur anwenden, wenn der Gesprächskontext sichtbar ist oder der Text klar eine Antwort ist, sonst nachfragen oder lassen.
 **Vorher:** Du hast recht, das ist ein Workaround. Der eigentliche Fix liegt im `MergeService`: Beim Verschieben müsste `pipeline_id` mit `parent_id` aktualisiert werden. Die betroffenen Zeilen lassen sich aus dem Audit-Log nachziehen. Ich habe QA geprüft: 123 Merges, nur 6 Zeilen falsch. Da der `MergeService` geteilt ist, würde ich lieber ein eigenes Ticket anlegen.
 **Nachher:** Stimmt, das ist ein Workaround. Ich lege für den Fix im `MergeService` und das Nachziehen der Zeilen ein eigenes Ticket an und lasse diesen PR bei dem einen Konto.
+
+## G. Typisch deutsch
+
+### 28. Nominalstil und Funktionsverbgefüge
+**Achten auf:** „die Durchführung einer Prüfung", „zur Anwendung bringen", „in Betracht ziehen", „eine Entscheidung treffen" (wo „entscheiden" reicht), „Gebrauch machen von", „zur Verfügung stellen", Ketten von Genitiven („die Verbesserung der Auswertung der Ergebnisse des Tests"), Substantive auf -ung, -keit, -heit, wo ein Verb stehen könnte.
+**Problem:** Der Satz hat ein dickes Substantiv statt eines Verbs und versteckt den Handelnden. Verb einsetzen, Handelnden nennen. Fachtexte dürfen Nominalstil behalten, wenn er Begriffe festlegt.
+**Vorher:** Die Durchführung der Prüfung erfolgt durch das Team unter Zuhilfenahme eines Skripts.
+**Nachher:** Das Team prüft mit einem Skript.
+
+### 29. Weichmacher und Konjunktiv-Ketten
+**Achten auf:** „man könnte", „eventuell wäre es denkbar", „es wäre sinnvoll, wenn", „würde ich vorschlagen", „möglicherweise sollte man".
+**Problem:** Der Konjunktiv macht jede Aussage unverbindlich. Sven formuliert klar. Direkt sagen: „Mach X." oder „Ich empfehle X, weil Y." *Schwach allein.*
+
+### 30. Denglisch ohne Fachnutzen
+**Achten auf:** „Das macht Sinn" (besser: „Das ergibt Sinn" oder „Das leuchtet ein"), „realisieren" für „merken", „eventuell" für „tatsächlich", „aktuell" für „derzeit" nur in Ordnung, „Meeting kicken", „committen auf" ohne Git-Bezug, „Call" statt „Gespräch" in formalem Text, „Feedback geben" in Floskeln.
+**Problem:** Anglizismen ohne Fachbezug klingen übersetzt. Fachbegriffe der Softwareentwicklung (Branch, Skill, Review, Commit) bleiben, wie Sven sie benutzt. Alles andere deutsch.
 
 ## Rhythmus-Kurzliste
 

@@ -78,3 +78,28 @@ Jedes Beispiel zeigt Vorher (KI-Ton) und Nachher (Svens Stimme) für eine Textar
 **Verblieben:** nichts.
 
 **Rückgabe, wenn der Kontext keine Fakten liefert:** Der Text enthält keine prüfbare Aussage. Claude erfindet keine, sondern fragt: „Worum geht es konkret, und was ändert sich für wen?" Alternativ bleibt nur ein schlichter Satz ohne neue Behauptung.
+
+## 8. Englisch: Commit-Text (Sven braucht englische Ausgabe)
+
+**Vorher (übersetzt gedacht):**
+> This commit makes the scanner now correctly work, so that the article numbers are not anymore cut off, which is a significant improvement of the robustness.
+
+**Nachher:**
+> Fix USB scanner truncating article numbers. The input field now keeps the full string until ENTER. Add a test with a 12-digit number.
+
+## 9. Englisch: KI-Text aufräumen (Modus C)
+
+**Vorher:**
+> Great question! It's not just a bug fix, it's a pivotal step toward a more robust, seamless experience. Additionally, the update showcases our commitment to quality. Let me know if you'd like more details!
+
+**Nachher:**
+> The update fixes the crash on empty carts and adds a test for it.
+
+(Wenn der Kontext keine Fakten liefert, fragt Claude nach dem Konkreten, statt zu erfinden.)
+
+## 10. Gemischter Text
+
+**Sven (Chat):** „Mach bitte den Fix für den scanner und schreib den commit auf englisch."
+
+**Antwort:** Deutsch im Chat, der Commit-Text englisch. Fachbegriffe wie Branch oder Commit bleiben in beiden Sprachen unverändert.
+> Erledigt, Commit: `fix(scanner): keep full article number until ENTER`

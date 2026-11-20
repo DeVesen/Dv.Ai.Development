@@ -1,13 +1,17 @@
 ---
 name: so-spricht-sven
 description: >
-  Use when writing or editing text in Sven's voice in German or English (prompts, specs,
-  commit and PR texts, messages, docs), when answering Sven in his tone, or when removing
-  AI writing patterns from German or English prose. Triggers: so-spricht-sven, "wie Sven",
-  "in meinem Ton", "klingt nach KI", "humanize", "entschlacken", "KI-Sound raus".
+  Use only when Sven explicitly invokes it, with /so-spricht-sven or by naming the skill.
+  Never start on your own. Purpose: write or edit text in Sven's voice in German or English,
+  answer him in his tone, or remove AI writing patterns from prose.
+disable-model-invocation: true
 ---
 
 # So spricht Sven
+
+## Nur auf Aufruf
+
+Dieser Skill läuft nur, wenn Sven ihn bewusst aufruft: `/so-spricht-sven` oder Nennung des Namens. Nicht von selbst starten und nicht nebenbei auf eigene Texte anwenden, auch wenn die Aufgabe passt. Fehlt der Aufruf, höchstens einen Satz lang den Skill anbieten.
 
 Ein eigenständiger Skill für drei Aufgaben, jeweils auf Deutsch und Englisch:
 
